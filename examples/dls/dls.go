@@ -613,7 +613,7 @@ func (ss *Sim) NewRun() {
 	ctx.Reset()
 	ctx.Mode = etime.Train
 	ss.Net.InitWeights(ctx)
-	ss.InitStats()
+	ss.StatsInit()
 	ss.StatCounters(0)
 	ss.Logs.ResetLog(etime.Train, etime.Epoch)
 	if ss.Config.OpenWeights != "" {
@@ -625,9 +625,9 @@ func (ss *Sim) NewRun() {
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 		Stats
 
-// InitStats initializes all the statistics.
+// StatsInit initializes all the statistics.
 // called at start of new run
-func (ss *Sim) InitStats() {
+func (ss *Sim) StatsInit() {
 	ss.Stats.SetInt("Di", 0)
 	ss.Stats.SetFloat("Pos", 0)
 	ss.Stats.SetFloat("Drive", 0)

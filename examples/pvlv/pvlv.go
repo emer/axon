@@ -463,7 +463,7 @@ func (ss *Sim) NewRun() {
 	ctx.Mode = etime.Train
 	ss.Net.InitWeights(ctx)
 	ss.LoadRunWeights()
-	ss.InitStats()
+	ss.StatsInit()
 	ss.StatCounters()
 	ss.Logs.ResetLog(etime.Train, etime.Condition)
 	ss.Logs.ResetLog(etime.Train, etime.Block)
@@ -473,9 +473,9 @@ func (ss *Sim) NewRun() {
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 		Stats
 
-// InitStats initializes all the statistics.
+// StatsInit initializes all the statistics.
 // called at start of new run
-func (ss *Sim) InitStats() {
+func (ss *Sim) StatsInit() {
 	ss.Stats.SetString("Debug", "") // special debug notes per trial
 	ss.Stats.SetString("Cond", "")
 	ss.Stats.SetString("TrialName", "")

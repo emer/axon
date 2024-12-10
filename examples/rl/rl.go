@@ -221,7 +221,7 @@ func (ss *Sim) Init() {
 	// selected or patterns have been modified etc
 	ss.GUI.StopNow = false
 	ss.ApplyParams()
-	ss.InitStats()
+	ss.StatsInit()
 	ss.NewRun()
 	ss.TrainUpdate.RecordSyns()
 	ss.TrainUpdate.Update(Train, Trial)
@@ -382,8 +382,8 @@ func (ss *Sim) RunName() string {
 	return ss.Current.StringValue("RunName", 1).String1D(0)
 }
 
-// InitStats initializes all the stats by calling Start across all modes and levels.
-func (ss *Sim) InitStats() {
+// StatsInit initializes all the stats by calling Start across all modes and levels.
+func (ss *Sim) StatsInit() {
 	for md, st := range ss.Loops.Stacks {
 		mode := md.(Modes)
 		for _, lev := range st.Order {
@@ -557,7 +557,7 @@ func (ss *Sim) ConfigGUI() {
 	// nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
 
 	ss.GUI.UpdateFiles()
-	ss.InitStats()
+	ss.StatsInit()
 	ss.GUI.FinalizeGUI(false)
 }
 

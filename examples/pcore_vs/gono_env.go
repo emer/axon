@@ -146,7 +146,7 @@ func (ev *GoNoEnv) State(el string) tensor.Values {
 }
 
 func (ev *GoNoEnv) String() string {
-	return fmt.Sprintf("Pos: %g  Neg: %g", ev.ACCPos, ev.ACCNeg)
+	return fmt.Sprintf("%4f_%4f", ev.ACCPos, ev.ACCNeg)
 }
 
 // RenderACC renders the given value in ACC popcode

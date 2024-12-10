@@ -14,6 +14,7 @@ import (
 	"math"
 
 	"cogentcore.org/core/base/mpi"
+	"cogentcore.org/core/base/num"
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/cli"
@@ -51,8 +52,8 @@ const (
 type Levels int32 //enums:enum
 const (
 	Cycle Levels = iota
+	Theta
 	Trial
-	Sequence
 	Epoch
 	Run
 )
@@ -284,7 +285,7 @@ func (ss *Sim) Init() {
 	// selected or patterns have been modified etc
 	ss.GUI.StopNow = false
 	ss.ApplyParams()
-	ss.InitStats()
+	ss.StatsInit()
 	ss.NewRun()
 	ss.TrainUpdate.RecordSyns()
 	ss.TrainUpdate.Update(Train, Trial)
@@ -316,6 +317,7 @@ func (ss *Sim) NetViewUpdater(mode enums.Enum) *axon.NetViewUpdate {
 func (ss *Sim) ConfigLoops() {
 	ls := looper.NewStacks()
 
+	ev := ss.Envs.ByModeDi(Test, 0).(*GoNoEnv)
 	trials := int(math32.IntMultipleGE(float32(ss.Config.Run.Trials), float32(ss.Config.Run.NData)))
 	cycles := ss.Config.Run.Cycles
 	plusPhase := ss.Config.Run.PlusCycles
@@ -323,28 +325,33 @@ func (ss *Sim) ConfigLoops() {
 	ls.AddStack(Train, Trial).
 		AddLevel(Run, ss.Config.Run.Runs).
 		AddLevel(Epoch, ss.Config.Run.Epochs).
-		AddLevel(Epoch, ss.Config.Run.Epochs).
 		AddLevelIncr(Trial, trials, ss.Config.Run.NData).
+		AddLevel(Theta, 3).
 		AddLevel(Cycle, cycles)
+
+	nTestInc := int(1.0/ev.TestInc) + 1
+	totTstTrls := ev.TestReps * nTestInc * nTestInc
+	testTrials := int(math32.IntMultipleGE(float32(totTstTrls), float32(ss.Config.Run.NData)))
 
 	ls.AddStack(Test, Trial).
 		AddLevel(Epoch, 1).
-		AddLevelIncr(Trial, trials, ss.Config.Run.NData).
+		AddLevelIncr(Trial, testTrials, ss.Config.Run.NData).
+		AddLevel(Theta, 3).
 		AddLevel(Cycle, cycles)
 
-	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, 50, cycles-plusPhase, cycles-1, Cycle, Trial, Train)
+	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, 50, cycles-plusPhase, cycles-1, Cycle, Theta, Train) // note: Theta
 
 	ls.Stacks[Train].OnInit.Add("Init", func() { ss.Init() })
 
-	ls.AddOnStartToLoop(Trial, "ApplyInputs", func(mode enums.Enum) {
-		seq := ls.Stacks[mode].Loops[Sequence].Counter.Cur
+	ls.AddOnStartToLoop(Theta, "ApplyInputs", func(mode enums.Enum) {
 		trial := ls.Stacks[mode].Loops[Trial].Counter.Cur
-		ss.ApplyInputs(mode.(Modes), seq, trial)
+		theta := ls.Stacks[mode].Loops[Theta].Counter.Cur
+		ss.ApplyInputs(mode.(Modes), trial, theta)
 	})
 
-	ls.AddOnEndToLoop(Trial, "GatedAction", func(mode enums.Enum) {
-		trial := ls.Stacks[mode].Loops[Trial].Counter.Cur
-		if trial == 1 {
+	ls.AddOnEndToLoop(Theta, "GatedAction", func(mode enums.Enum) {
+		theta := ls.Stacks[mode].Loops[Theta].Counter.Cur
+		if theta == 1 {
 			ss.GatedAction(mode.(Modes))
 		}
 	})
@@ -360,7 +367,7 @@ func (ss *Sim) ConfigLoops() {
 	})
 
 	if ss.Config.GUI {
-		axon.LooperUpdateNetView(ls, Cycle, Trial, ss.NetViewUpdater, ss.StatCounters)
+		axon.LooperUpdateNetView(ls, Cycle, Theta, ss.NetViewUpdater, ss.StatCounters)
 
 		ls.Stacks[Train].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })
 		ls.Stacks[Test].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })
@@ -374,17 +381,17 @@ func (ss *Sim) ConfigLoops() {
 
 // ApplyInputs applies input patterns from given environment for given mode.
 // Any other start-of-trial logic can also be put here.
-func (ss *Sim) ApplyInputs(mode Modes, seq, trial int) {
+func (ss *Sim) ApplyInputs(mode Modes, trial, theta int) {
 	net := ss.Net
 	ndata := int(net.Context().NData)
 	curModeDir := ss.Current.RecycleDir(mode.String())
 	lays := []string{"ACCPos", "ACCNeg"}
 	net.InitExt()
 	for di := range ndata {
-		idx := seq + di
+		idx := trial + di
 		ev := ss.Envs.ByModeDi(mode, di).(*GoNoEnv)
 		ev.Trial.Set(idx)
-		if trial == 0 {
+		if theta == 0 {
 			ev.Step()
 		} else {
 			for _, lnm := range lays {
@@ -396,7 +403,7 @@ func (ss *Sim) ApplyInputs(mode Modes, seq, trial int) {
 			}
 		}
 		curModeDir.StringValue("TrialName", ndata).SetString1D(ev.String(), di)
-		ss.ApplyRubicon(ev, mode, trial, uint32(di))
+		ss.ApplyRubicon(ev, mode, theta, uint32(di))
 	}
 	net.ApplyExts()
 }
@@ -542,8 +549,8 @@ func (ss *Sim) RunName() string {
 	return ss.Current.StringValue("RunName", 1).String1D(0)
 }
 
-// InitStats initializes all the stats by calling Start across all modes and levels.
-func (ss *Sim) InitStats() {
+// StatsInit initializes all the stats by calling Start across all modes and levels.
+func (ss *Sim) StatsInit() {
 	for md, st := range ss.Loops.Stacks {
 		mode := md.(Modes)
 		for _, lev := range st.Order {
@@ -557,7 +564,10 @@ func (ss *Sim) InitStats() {
 	if ss.GUI.Tabs != nil {
 		_, idx := ss.GUI.Tabs.CurrentTab()
 		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Trial))
-		ss.GUI.Tabs.PlotTensorFS(ss.Stats.RecycleDir("Train/TrialAll"))
+		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Epoch))
+		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Run))
+		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Test, Trial))
+		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Test, Epoch))
 		ss.GUI.Tabs.SelectTabIndex(idx)
 	}
 }
@@ -610,8 +620,7 @@ func (ss *Sim) ConfigStats() {
 
 	// up to a point, it is good to use loops over stats in one function,
 	// to reduce repetition of boilerplate.
-	statNames := []string{"DA_Act", "ACh_Act", "RewPred_Act", "RewInteg_Act"}
-	layerNames := []string{"TD", "ACh", "RewPred", "RewInteg"}
+	statNames := []string{"ACCPos", "ACCNeg", "Gated", "Should", "Match", "Rew", "ACCPosVM_RT", "ACCPosVM_ActAvg", "VMtxGo_ActAvg"}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		for si, name := range statNames {
 			modeDir := ss.Stats.RecycleDir(mode.String())
@@ -626,7 +635,7 @@ func (ss *Sim) ConfigStats() {
 				if ps := plot.GetStylersFrom(tsr); ps == nil {
 					ps.Add(func(s *plot.Style) {
 						s.Range.SetMin(0).SetMax(1)
-						if si == 0 {
+						if si < 3 {
 							s.On = true
 						}
 					})
@@ -636,17 +645,40 @@ func (ss *Sim) ConfigStats() {
 			}
 			switch level {
 			case Trial:
-				lnm := layerNames[si]
-				ly := ss.Net.LayerByName(lnm)
-				vidx, _ := ly.UnitVarIndex("Act")
 				for di := range ndata {
-					stat := float64(ly.UnitValue1D(vidx, 0, di))
-					curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
-					tsr.AppendRowFloat(stat)
+					ev := ss.Envs.ByModeDi(mode, di).(*GoNoEnv)
+					var stat float32
+					switch name {
+					case "ACCPos":
+						stat = ev.ACCPos
+					case "ACCNeg":
+						stat = ev.ACCNeg
+					case "Gated":
+						stat = num.FromBool[float32](ev.Gated)
+					case "Should":
+						stat = num.FromBool[float32](ev.Should)
+					case "Match":
+						stat = num.FromBool[float32](ev.Match)
+					case "Rew":
+						stat = ev.Rew
+					case "ACCPosVM_RT", "ACCPosVM_ActAvg", "VMtxGo_ActAvg":
+						stat = float32(curModeDir.Float32(name, ndata).Float1D(di))
+					}
+					curModeDir.Float32(name, ndata).SetFloat1D(float64(stat), di)
+					tsr.AppendRowFloat(float64(stat))
 				}
 			case Epoch:
-				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
-				tsr.AppendRowFloat(stat)
+				if mode == Train {
+					stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
+					tsr.AppendRowFloat(stat)
+					break
+				}
+				switch name {
+				case "TrialName":
+					stats.Groups(curModeDir, subDir.Value(name))
+				default:
+					stats.GroupStats(curModeDir, stats.StatMean, subDir.Value(name))
+				}
 			case Run:
 				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
 				tsr.AppendRowFloat(stat)
@@ -654,7 +686,7 @@ func (ss *Sim) ConfigStats() {
 		}
 	})
 
-	perTrlFunc := axon.StatPerTrialMSec(ss.Stats, "DA_Act", Train, Trial)
+	perTrlFunc := axon.StatPerTrialMSec(ss.Stats, "Gated", Train, Trial)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		perTrlFunc(mode, level, phase == Start)
 	})
@@ -674,12 +706,12 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 		return counters
 	}
 	counters += fmt.Sprintf(" TrialName: %s", curModeDir.StringValue("TrialName").String1D(di))
-	statNames := []string{"DA_Act"}
+	statNames := []string{"Gated"}
 	if level == Cycle || curModeDir.Node(statNames[0]) == nil {
 		return counters
 	}
 	for _, name := range statNames {
-		counters += fmt.Sprintf(" %s: %.4g", name, curModeDir.Float64(name).Float1D(di))
+		counters += fmt.Sprintf(" %s: %.4g", name, curModeDir.Float32(name).Float1D(di))
 	}
 	return counters
 }
@@ -706,7 +738,7 @@ func (ss *Sim) ConfigGUI() {
 	// nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
 
 	ss.GUI.UpdateFiles()
-	ss.InitStats()
+	ss.StatsInit()
 	ss.GUI.FinalizeGUI(false)
 }
 
