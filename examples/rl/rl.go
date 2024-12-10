@@ -525,7 +525,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 		return counters
 	}
 	counters += fmt.Sprintf(" TrialName: %s", curModeDir.StringValue("TrialName").String1D(di))
-	statNames := []string{"CorSim", "UnitErr", "Err"}
+	statNames := []string{"DA_Act"}
 	if level == Cycle || curModeDir.Node(statNames[0]) == nil {
 		return counters
 	}

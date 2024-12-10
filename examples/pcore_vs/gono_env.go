@@ -5,12 +5,12 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/popcode"
 )
 
@@ -21,7 +21,7 @@ type GoNoEnv struct {
 	Name string
 
 	// training or testing env?
-	Mode etime.Modes
+	Mode Modes
 
 	// trial counter -- set by caller for testing
 	Trial env.Counter
@@ -126,23 +126,27 @@ func (ev *GoNoEnv) Defaults() {
 }
 
 // Config configures the world
-func (ev *GoNoEnv) Config(mode etime.Modes, rndseed int64) {
+func (ev *GoNoEnv) Config(mode Modes, rndseed int64) {
 	ev.Mode = mode
 	ev.RandSeed = rndseed
 	ev.Rand.NewRand(ev.RandSeed)
 	ev.States = make(map[string]*tensor.Float32)
-	ev.States["ACCPos"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, "Y", "X")
-	ev.States["ACCNeg"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, "Y", "X")
-	ev.States["Rew"] = tensor.NewFloat32([]int{1, 1})
-	ev.States["SNc"] = tensor.NewFloat32([]int{1, 1})
+	ev.States["ACCPos"] = tensor.NewFloat32(ev.NUnitsY, ev.NUnitsX)
+	ev.States["ACCNeg"] = tensor.NewFloat32(ev.NUnitsY, ev.NUnitsX)
+	ev.States["Rew"] = tensor.NewFloat32(1, 1)
+	ev.States["SNc"] = tensor.NewFloat32(1, 1)
 }
 
 func (ev *GoNoEnv) Init(run int) {
 	ev.Trial.Init()
 }
 
-func (ev *GoNoEnv) State(el string) tensor.Tensor {
+func (ev *GoNoEnv) State(el string) tensor.Values {
 	return ev.States[el]
+}
+
+func (ev *GoNoEnv) String() string {
+	return fmt.Sprintf("Pos: %g  Neg: %g", ev.ACCPos, ev.ACCNeg)
 }
 
 // RenderACC renders the given value in ACC popcode
@@ -167,7 +171,7 @@ func (ev *GoNoEnv) RenderState() {
 func (ev *GoNoEnv) Step() bool {
 	nTestInc := int(1.0/ev.TestInc) + 1
 	if !ev.ManualValues {
-		if ev.Mode == etime.Test {
+		if ev.Mode == Test {
 			repn := ev.Trial.Cur / ev.TestReps
 			pos := repn / nTestInc
 			neg := repn % nTestInc
@@ -183,7 +187,7 @@ func (ev *GoNoEnv) Step() bool {
 	return true
 }
 
-func (ev *GoNoEnv) Action(action string, nop tensor.Tensor) {
+func (ev *GoNoEnv) Action(action string, nop tensor.Values) {
 	if action == "Gated" {
 		ev.Gated = true
 	} else {

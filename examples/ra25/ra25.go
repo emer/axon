@@ -610,6 +610,9 @@ func (ss *Sim) RunStats(mode Modes, level Levels, phase StatsPhase) {
 	if phase == Step && ss.GUI.Tabs != nil {
 		nm := mode.String() + "/" + level.String() + " Plot"
 		ss.GUI.Tabs.GoUpdatePlot(nm)
+		if level == Run {
+			ss.GUI.Tabs.GoUpdatePlot("Train/RunAll Plot")
+		}
 	}
 }
 
@@ -644,6 +647,7 @@ func (ss *Sim) InitStats() {
 		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Epoch))
 		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Run))
 		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Test, Trial))
+		ss.GUI.Tabs.PlotTensorFS(ss.Stats.RecycleDir("Train/RunAll"))
 		ss.GUI.Tabs.SelectTabIndex(idx)
 	}
 }
@@ -818,6 +822,11 @@ func (ss *Sim) ConfigStats() {
 	stateFunc := axon.StatLayerState(ss.Stats, net, Test, Trial, true, "ActM", "Input", "Output")
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		stateFunc(mode, level, phase == Start)
+	})
+
+	runAllFunc := axon.StatLevelAll(ss.Stats, Train, Run)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		runAllFunc(mode, level, phase == Start)
 	})
 }
 
