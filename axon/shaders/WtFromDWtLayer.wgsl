@@ -799,7 +799,7 @@ fn LayerParams_TrgAvgFromD(ly: ptr<function,LayerParams>, ctx: ptr<function,Cont
 			continue;
 		}
 		var ntrg = NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81], u32(ni), u32(TrgAvg))] + NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81], u32(ni), u32(DTrgAvg))];
-		ntrg = F32_ClipValue(&(*ly).Learn.TrgAvgAct.TrgRange, ntrg);
+		ntrg = F32_ClampValue(&(*ly).Learn.TrgAvgAct.TrgRange, ntrg);
 		NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81], u32(ni), u32(TrgAvg))] = ntrg;
 		NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81],
 		u32(ni), u32(DTrgAvg))] = 0.0;
@@ -948,7 +948,7 @@ struct F32 {
 	pad: i32,
 	pad1: i32, // for gpu use
 }
-fn F32_ClipValue(mr: ptr<function,F32>, val: f32) -> f32 {
+fn F32_ClampValue(mr: ptr<function,F32>, val: f32) -> f32 {
 	if (val < (*mr).Min) {
 		return (*mr).Min;
 	}

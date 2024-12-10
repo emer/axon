@@ -577,7 +577,7 @@ struct PopCodeParams {
 	MaxSigma: f32,
 	Clip: i32,
 }
-fn PopCodeParams_ClipValue(pc: ptr<function,PopCodeParams>, val: f32) -> f32 {
+fn PopCodeParams_ClampValue(pc: ptr<function,PopCodeParams>, val: f32) -> f32 {
 	var clipVal = val;
 	if (clipVal < (*pc).Min) {
 		clipVal = (*pc).Min;
@@ -591,7 +591,7 @@ fn PopCodeParams_ProjectParam(pc: ptr<function,PopCodeParams>, minParam: f32,max
 }
 fn PopCodeParams_EncodeValue(pc: ptr<function,PopCodeParams>, i: u32,n: u32, val: f32) -> f32 {
 	var eval = val;
-	var clipVal = PopCodeParams_ClipValue(pc, eval);
+	var clipVal = PopCodeParams_ClampValue(pc, eval);
 	if ((*pc).Clip == 1) {
 		eval = clipVal;
 	}
@@ -778,7 +778,7 @@ fn ActParams_InetFromG(ac: ptr<function,ActParams>, vm: f32,ge: f32,gl: f32,gi: 
 	}return inet;
 }
 fn ActParams_VmFromInet(ac: ptr<function,ActParams>, vm: f32,dt: f32,inet: f32) -> f32 {
-	return F32_ClipValue(&(*ac).VmRange, vm + dt*inet);
+	return F32_ClampValue(&(*ac).VmRange, vm + dt*inet);
 }
 fn ActParams_VmInteg(ac: ptr<function,ActParams>, vm: f32,dt: f32,ge: f32,gl: f32,gi: f32,gk: f32, nvm: ptr<function,f32>,inet: ptr<function,f32>) {
 	var dtEff = dt * (*ac).Dt.DtStep;
@@ -1749,7 +1749,7 @@ struct F32 {
 	pad: i32,
 	pad1: i32, // for gpu use
 }
-fn F32_ClipValue(mr: ptr<function,F32>, val: f32) -> f32 {
+fn F32_ClampValue(mr: ptr<function,F32>, val: f32) -> f32 {
 	if (val < (*mr).Min) {
 		return (*mr).Min;
 	}

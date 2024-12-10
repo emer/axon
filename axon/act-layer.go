@@ -663,7 +663,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, lpi, pi, ni, di uint32) {
 		Neurons.Set(GlobalScalars.Value(int(GvRew), int(di)), int(ni), int(di), int(Act))
 	case RWPredLayer:
 		// clipped linear
-		Neurons.Set(ly.RWPred.PredRange.ClipValue(Neurons.Value(int(ni), int(di), int(Ge))), int(ni), int(di), int(Act))
+		Neurons.Set(ly.RWPred.PredRange.ClampValue(Neurons.Value(int(ni), int(di), int(Ge))), int(ni), int(di), int(Act))
 		if pni == 0 {
 			LayerStates.Set(Neurons.Value(int(ni), int(di), int(ActInt)), int(li), int(di), int(LayerRewPredPos))
 		} else {

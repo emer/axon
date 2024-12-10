@@ -193,7 +193,7 @@ fn LayerParams_PostSpikeSpecial(ly: ptr<function,LayerParams>, ctx: ptr<function
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Act))] = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvRew), u32(di))];
 	}
 	case RWPredLayer: {
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Act))] = F32_ClipValue(&(*ly).RWPred.PredRange, Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Ge))]);
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Act))] = F32_ClampValue(&(*ly).RWPred.PredRange, Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Ge))]);
 		if (pni == 0) {
 			LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(li), u32(di), u32(LayerRewPredPos))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(ActInt))];
 		} else {
@@ -408,7 +408,7 @@ struct PopCodeParams {
 	MaxSigma: f32,
 	Clip: i32,
 }
-fn PopCodeParams_ClipValue(pc: ptr<function,PopCodeParams>, val: f32) -> f32 {
+fn PopCodeParams_ClampValue(pc: ptr<function,PopCodeParams>, val: f32) -> f32 {
 	var clipVal = val;
 	if (clipVal < (*pc).Min) {
 		clipVal = (*pc).Min;
@@ -422,7 +422,7 @@ fn PopCodeParams_ProjectParam(pc: ptr<function,PopCodeParams>, minParam: f32,max
 }
 fn PopCodeParams_EncodeValue(pc: ptr<function,PopCodeParams>, i: u32,n: u32, val: f32) -> f32 {
 	var eval = val;
-	var clipVal = PopCodeParams_ClipValue(pc, eval);
+	var clipVal = PopCodeParams_ClampValue(pc, eval);
 	if ((*pc).Clip == 1) {
 		eval = clipVal;
 	}
@@ -1095,7 +1095,7 @@ struct F32 {
 	pad: i32,
 	pad1: i32, // for gpu use
 }
-fn F32_ClipValue(mr: ptr<function,F32>, val: f32) -> f32 {
+fn F32_ClampValue(mr: ptr<function,F32>, val: f32) -> f32 {
 	if (val < (*mr).Min) {
 		return (*mr).Min;
 	}

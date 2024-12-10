@@ -653,7 +653,7 @@ func (pc *PopCodeParams) SetRange(min, max, minSigma, maxSigma float32) {
 }
 
 // ClipVal returns clipped (clamped) value in min / max range
-func (pc *PopCodeParams) ClipValue(val float32) float32 {
+func (pc *PopCodeParams) ClampValue(val float32) float32 {
 	clipVal := val
 	if clipVal < pc.Min {
 		clipVal = pc.Min
@@ -674,7 +674,7 @@ func (pc *PopCodeParams) ProjectParam(minParam, maxParam, clipVal float32) float
 // out of n total neurons. n must be 2 or more.
 func (pc *PopCodeParams) EncodeValue(i, n uint32, val float32) float32 {
 	eval := val
-	clipVal := pc.ClipValue(eval)
+	clipVal := pc.ClampValue(eval)
 	if pc.Clip.IsTrue() {
 		eval = clipVal
 	}
@@ -1242,7 +1242,7 @@ func (ac *ActParams) InetFromG(vm, ge, gl, gi, gk float32) float32 {
 
 // VmFromInet computes new Vm value from inet, clamping range
 func (ac *ActParams) VmFromInet(vm, dt, inet float32) float32 {
-	return ac.VmRange.ClipValue(vm + dt*inet)
+	return ac.VmRange.ClampValue(vm + dt*inet)
 }
 
 // VmInteg integrates Vm over VmSteps to obtain a more stable value

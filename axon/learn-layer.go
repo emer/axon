@@ -87,7 +87,7 @@ func (ly *LayerParams) TrgAvgFromD(ctx *Context) {
 			continue
 		}
 		ntrg := NeuronAvgs.Value(int(ni), int(TrgAvg)) + NeuronAvgs.Value(int(ni), int(DTrgAvg))
-		ntrg = ly.Learn.TrgAvgAct.TrgRange.ClipValue(ntrg)
+		ntrg = ly.Learn.TrgAvgAct.TrgRange.ClampValue(ntrg)
 		NeuronAvgs.Set(ntrg, int(ni), int(TrgAvg))
 		NeuronAvgs.Set(0.0, int(ni), int(DTrgAvg))
 	}

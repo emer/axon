@@ -511,7 +511,7 @@ func (sp *SWtParams) WtValue(swt, lwt float32) float32 {
 
 // ClipSWt returns SWt value clipped to valid range
 func (sp *SWtParams) ClipSWt(swt float32) float32 {
-	return sp.Limit.ClipValue(swt)
+	return sp.Limit.ClampValue(swt)
 }
 
 // ClipWt returns Wt value clipped to 0-1 range

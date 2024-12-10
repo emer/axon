@@ -11,7 +11,6 @@ import (
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/emergent/v2/etime"
 )
 
 // OnOff represents stimulus On / Off timing
@@ -112,10 +111,10 @@ func (ev *CondEnv) Label() string { return ev.Name }
 
 func (ev *CondEnv) Defaults() {
 	ev.TotTime = 20
-	ev.CSA.Set(true, 1, 6) // 10, 16
+	ev.CSA.Set(true, 10, 16) // 10, 16
 	ev.CSB.Set(false, 2, 10)
 	ev.CSC.Set(false, 2, 5)
-	ev.US.Set(true, 5, 6) // 15, 16
+	ev.US.Set(true, 15, 16) // 15, 16
 }
 
 func (ev *CondEnv) Validate() error {
@@ -125,15 +124,7 @@ func (ev *CondEnv) Validate() error {
 	return nil
 }
 
-func (ev *CondEnv) States() env.Elements {
-	els := env.Elements{
-		{"Input", []int{3, ev.TotTime}, []string{"3", "TotTime"}}, // CSC
-		{"Reward", []int{1}, nil},
-	}
-	return els
-}
-
-func (ev *CondEnv) State(element string) tensor.Tensor {
+func (ev *CondEnv) State(element string) tensor.Values {
 	switch element {
 	case "Input":
 		return &ev.Input
@@ -143,20 +134,14 @@ func (ev *CondEnv) State(element string) tensor.Tensor {
 	return nil
 }
 
-func (ev *CondEnv) Actions() env.Elements {
-	return nil
-}
-
 // String returns the current state as a string
 func (ev *CondEnv) String() string {
 	return fmt.Sprintf("S_%d_%g", ev.Event.Cur, ev.Reward.Values[0])
 }
 
 func (ev *CondEnv) Init(run int) {
-	ev.Input.SetShape([]int{3, ev.TotTime}, "3", "TotTime")
-	ev.Reward.SetShape([]int{1}, "1")
-	ev.Trial.Scale = etime.Trial
-	ev.Event.Scale = etime.Event
+	ev.Input.SetShapeSizes(3, ev.TotTime)
+	ev.Reward.SetShapeSizes(1)
 	ev.Trial.Init()
 	ev.Event.Init()
 	ev.Event.Max = ev.TotTime
@@ -215,7 +200,7 @@ func (ev *CondEnv) Step() bool {
 	return true
 }
 
-func (ev *CondEnv) Action(element string, input tensor.Tensor) {
+func (ev *CondEnv) Action(element string, input tensor.Values) {
 	// nop
 }
 
