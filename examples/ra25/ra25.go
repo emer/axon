@@ -670,29 +670,9 @@ func (ss *Sim) ConfigStats() {
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		runNameFunc(mode, level, phase == Start)
 	})
-
+	trialNameFunc := axon.StatTrialName(ss.Stats, ss.Current, ss.Loops, net, Trial)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		if level != Trial {
-			return
-		}
-		name := "TrialName"
-		modeDir := ss.Stats.RecycleDir(mode.String())
-		curModeDir := ss.Current.RecycleDir(mode.String())
-		levelDir := modeDir.RecycleDir(level.String())
-		tsr := levelDir.StringValue(name)
-		ndata := int(ss.Net.Context().NData)
-		if phase == Start {
-			tsr.SetNumRows(0)
-			plot.SetStylerTo(tsr, func(s *plot.Style) {
-				s.On = false
-			})
-			return
-		}
-		for di := range ndata {
-			// saved in apply inputs
-			trlNm := curModeDir.StringValue(name, ndata).String1D(di)
-			tsr.AppendRowString(trlNm)
-		}
+		trialNameFunc(mode, level, phase == Start)
 	})
 
 	// up to a point, it is good to use loops over stats in one function,
@@ -712,7 +692,7 @@ func (ss *Sim) ConfigStats() {
 			var stat float64
 			if phase == Start {
 				tsr.SetNumRows(0)
-				plot.SetStylerTo(tsr, func(s *plot.Style) {
+				plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
 					s.Range.SetMin(0).SetMax(1)
 					s.On = true
 					switch name {
@@ -818,7 +798,14 @@ func (ss *Sim) ConfigStats() {
 		stateFunc(mode, level, phase == Start)
 	})
 
-	runAllFunc := axon.StatLevelAll(ss.Stats, Train, Run)
+	runAllFunc := axon.StatLevelAll(ss.Stats, Train, Run, func(s *plot.Style, cl tensor.Values) {
+		name := metadata.Name(cl)
+		switch name {
+		case "FirstZero", "LastZero":
+			s.On = true
+			s.Range.SetMin(0)
+		}
+	})
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		runAllFunc(mode, level, phase == Start)
 	})

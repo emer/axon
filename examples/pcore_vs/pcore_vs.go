@@ -590,29 +590,9 @@ func (ss *Sim) ConfigStats() {
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		runNameFunc(mode, level, phase == Start)
 	})
-
+	trialNameFunc := axon.StatTrialName(ss.Stats, ss.Current, ss.Loops, net, Trial)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		if level != Trial {
-			return
-		}
-		name := "TrialName"
-		modeDir := ss.Stats.RecycleDir(mode.String())
-		curModeDir := ss.Current.RecycleDir(mode.String())
-		levelDir := modeDir.RecycleDir(level.String())
-		tsr := levelDir.StringValue(name)
-		ndata := int(ss.Net.Context().NData)
-		if phase == Start {
-			tsr.SetNumRows(0)
-			plot.SetStylerTo(tsr, func(s *plot.Style) {
-				s.On = false
-			})
-			return
-		}
-		for di := range ndata {
-			// saved in apply inputs
-			trlNm := curModeDir.StringValue(name, ndata).String1D(di)
-			tsr.AppendRowString(trlNm)
-		}
+		trialNameFunc(mode, level, phase == Start)
 	})
 
 	// up to a point, it is good to use loops over stats in one function,
@@ -629,7 +609,7 @@ func (ss *Sim) ConfigStats() {
 			var stat float64
 			if phase == Start {
 				tsr.SetNumRows(0)
-				plot.SetStylerTo(tsr, func(s *plot.Style) {
+				plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
 					s.Range.SetMin(0).SetMax(1)
 					if si >= 2 && si <= 5 {
 						s.On = true
@@ -673,7 +653,7 @@ func (ss *Sim) ConfigStats() {
 				stats.GroupStats(curModeDir, stats.StatMean, subDir.Value(name))
 				// note: results go under Group name: TrialName
 				gp := curModeDir.RecycleDir("Stats/TrialName/" + name).Value("Mean")
-				plot.SetStylerTo(gp, func(s *plot.Style) {
+				plot.SetFirstStylerTo(gp, func(s *plot.Style) {
 					if si >= 2 && si <= 3 {
 						s.On = true
 					}

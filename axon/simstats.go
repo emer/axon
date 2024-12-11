@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/base/timer"
 	"cogentcore.org/core/enums"
 	"cogentcore.org/core/plot"
@@ -144,7 +143,7 @@ func StatLoopCounters(statsDir, currentDir *tensorfs.Node, ls *looper.Stacks, ne
 				tsr := levelDir.Int(name)
 				if start {
 					tsr.SetNumRows(0)
-					plot.SetStylerTo(tsr, func(s *plot.Style) {
+					plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
 						s.Range.SetMin(0)
 					})
 					if level.Int64() == trialLevel.Int64() {
@@ -197,9 +196,6 @@ func StatRunName(statsDir, currentDir *tensorfs.Node, ls *looper.Stacks, net *Ne
 
 		if start {
 			tsr.SetNumRows(0)
-			plot.SetStylerTo(tsr, func(s *plot.Style) {
-				s.On = false
-			})
 			return
 		}
 		if level.Int64() == trialLevel.Int64() {
@@ -208,6 +204,31 @@ func StatRunName(statsDir, currentDir *tensorfs.Node, ls *looper.Stacks, net *Ne
 			}
 		} else {
 			tsr.AppendRowString(runNm)
+		}
+	}
+}
+
+// StatTrialName adds a "TrialName" stat to the given Trial level in every mode of looper,
+// which records the current value of the "TrialName" string in ss.Current, which
+// contains a string description of the current trial.
+func StatTrialName(statsDir, currentDir *tensorfs.Node, ls *looper.Stacks, net *Network, trialLevel enums.Enum) func(mode, level enums.Enum, start bool) {
+	return func(mode, level enums.Enum, start bool) {
+		if level.Int64() != trialLevel.Int64() {
+			return
+		}
+		name := "TrialName"
+		modeDir := statsDir.RecycleDir(mode.String())
+		curModeDir := currentDir.RecycleDir(mode.String())
+		levelDir := modeDir.RecycleDir(level.String())
+		tsr := levelDir.StringValue(name)
+		ndata := int(net.Context().NData)
+		if start {
+			tsr.SetNumRows(0)
+			return
+		}
+		for di := range ndata {
+			trlNm := curModeDir.StringValue(name, ndata).String1D(di)
+			tsr.AppendRowString(trlNm)
 		}
 	}
 }
@@ -232,7 +253,7 @@ func StatPerTrialMSec(statsDir *tensorfs.Node, statName string, trainMode enums.
 		tsr := levelDir.Float64(name)
 		if start {
 			tsr.SetNumRows(0)
-			plot.SetStylerTo(tsr, func(s *plot.Style) {
+			plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
 				s.Range.SetMin(0)
 			})
 			return
@@ -279,7 +300,7 @@ func StatLayerActGe(statsDir *tensorfs.Node, net *Network, trainMode, trialLevel
 				tsr := levelDir.Float64(name)
 				if start {
 					tsr.SetNumRows(0)
-					plot.SetStylerTo(tsr, func(s *plot.Style) {
+					plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
 						s.Range.SetMin(0)
 					})
 					continue
@@ -423,7 +444,7 @@ func StatPCA(statsDir, currentDir *tensorfs.Node, net *Network, interval int, tr
 				tsr := levelDir.Float64(name)
 				if start {
 					tsr.SetNumRows(0)
-					plot.SetStylerTo(tsr, func(s *plot.Style) {
+					plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
 						s.Range.SetMin(0)
 					})
 					continue
@@ -472,7 +493,7 @@ func StatPrevCorSim(statsDir, currentDir *tensorfs.Node, net *Network, trialLeve
 				tsr := levelDir.Float64(name)
 				if start {
 					tsr.SetNumRows(0)
-					plot.SetStylerTo(tsr, func(s *plot.Style) {
+					plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
 						s.Range.SetMin(0).SetMax(1)
 					})
 					continue
@@ -514,8 +535,9 @@ func StatPrevCorSim(statsDir, currentDir *tensorfs.Node, net *Network, trialLeve
 
 // StatLevelAll returns a Stats function that copies stats from given mode
 // and level, without resetting at the start, to accumulate all rows
-// over time until reset manually.
-func StatLevelAll(statsDir *tensorfs.Node, srcMode, srcLevel enums.Enum) func(mode, level enums.Enum, start bool) {
+// over time until reset manually. The styleFunc, if non-nil, does plot styling
+// based on the current column.
+func StatLevelAll(statsDir *tensorfs.Node, srcMode, srcLevel enums.Enum, styleFunc func(s *plot.Style, col tensor.Values)) func(mode, level enums.Enum, start bool) {
 	return func(mode, level enums.Enum, start bool) {
 		if srcMode.Int64() != mode.Int64() || srcLevel.Int64() != level.Int64() {
 			return
@@ -529,7 +551,11 @@ func StatLevelAll(statsDir *tensorfs.Node, srcMode, srcLevel enums.Enum) func(mo
 			if start {
 				trg := tensorfs.ValueType(allDir, cl.Name(), clv.DataType(), clv.Shape().Sizes...)
 				if trg.Len() == 0 {
-					metadata.CopyFrom(trg, clv)
+					if styleFunc != nil {
+						plot.SetFirstStylerTo(trg, func(s *plot.Style) {
+							styleFunc(s, clv)
+						})
+					}
 					trg.SetNumRows(0)
 				}
 			} else {
