@@ -542,12 +542,9 @@ func (ss *Sim) ConfigStats() {
 		ndata := int(ss.Net.Context().NData)
 		if phase == Start {
 			tsr.SetNumRows(0)
-			if ps := plot.GetStylersFrom(tsr); ps == nil {
-				ps.Add(func(s *plot.Style) {
-					s.On = false
-				})
-				plot.SetStylersTo(tsr, ps)
-			}
+			plot.SetStylerTo(tsr, func(s *plot.Style) {
+				s.On = false
+			})
 			return
 		}
 		for di := range ndata {
@@ -574,21 +571,18 @@ func (ss *Sim) ConfigStats() {
 			var stat float64
 			if phase == Start {
 				tsr.SetNumRows(0)
-				if ps := plot.GetStylersFrom(tsr); ps == nil {
-					ps.Add(func(s *plot.Style) {
-						s.Range.SetMin(0).SetMax(1)
-						s.On = true
-						switch name {
-						case "NZero":
+				plot.SetStylerTo(tsr, func(s *plot.Style) {
+					s.Range.SetMin(0).SetMax(1)
+					s.On = true
+					switch name {
+					case "NZero":
+						s.On = false
+					case "FirstZero", "LastZero":
+						if level < Run {
 							s.On = false
-						case "FirstZero", "LastZero":
-							if level < Run {
-								s.On = false
-							}
 						}
-					})
-					plot.SetStylersTo(tsr, ps)
-				}
+					}
+				})
 				switch name {
 				case "NZero":
 					if level == Epoch {

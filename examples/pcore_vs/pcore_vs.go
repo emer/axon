@@ -603,12 +603,9 @@ func (ss *Sim) ConfigStats() {
 		ndata := int(ss.Net.Context().NData)
 		if phase == Start {
 			tsr.SetNumRows(0)
-			if ps := plot.GetStylersFrom(tsr); ps == nil {
-				ps.Add(func(s *plot.Style) {
-					s.On = false
-				})
-				plot.SetStylersTo(tsr, ps)
-			}
+			plot.SetStylerTo(tsr, func(s *plot.Style) {
+				s.On = false
+			})
 			return
 		}
 		for di := range ndata {
@@ -632,15 +629,12 @@ func (ss *Sim) ConfigStats() {
 			var stat float64
 			if phase == Start {
 				tsr.SetNumRows(0)
-				if ps := plot.GetStylersFrom(tsr); ps == nil {
-					ps.Add(func(s *plot.Style) {
-						s.Range.SetMin(0).SetMax(1)
-						if si < 3 {
-							s.On = true
-						}
-					})
-					plot.SetStylersTo(tsr, ps)
-				}
+				plot.SetStylerTo(tsr, func(s *plot.Style) {
+					s.Range.SetMin(0).SetMax(1)
+					if si >= 2 && si <= 5 {
+						s.On = true
+					}
+				})
 				continue
 			}
 			switch level {
@@ -668,16 +662,29 @@ func (ss *Sim) ConfigStats() {
 					tsr.AppendRowFloat(float64(stat))
 				}
 			case Epoch:
+				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
+				tsr.AppendRowFloat(stat)
 				if mode == Train {
-					stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
-					tsr.AppendRowFloat(stat)
 					break
 				}
-				switch name {
-				case "TrialName":
-					stats.Groups(curModeDir, subDir.Value(name))
-				default:
-					stats.GroupStats(curModeDir, stats.StatMean, subDir.Value(name))
+				if si == 0 {
+					stats.Groups(curModeDir, subDir.Value("TrialName"))
+				}
+				stats.GroupStats(curModeDir, stats.StatMean, subDir.Value(name))
+				// note: results go under Group name: TrialName
+				gp := curModeDir.RecycleDir("Stats/TrialName/" + name).Value("Mean")
+				plot.SetStylerTo(gp, func(s *plot.Style) {
+					if si >= 2 && si <= 3 {
+						s.On = true
+					}
+				})
+				if si == len(statNames)-1 {
+					nrows := gp.DimSize(0)
+					row := curModeDir.RecycleDir("Stats").Int("Row", nrows)
+					for i := range nrows {
+						row.Set(i, i)
+					}
+					ss.GUI.Tabs.PlotTensorFS(curModeDir.RecycleDir("Stats"))
 				}
 			case Run:
 				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
@@ -729,6 +736,7 @@ func (ss *Sim) ConfigGUI() {
 	nv.Options.MaxRecs = 300
 	nv.SetNet(ss.Net)
 	ss.TrainUpdate.Config(nv, axon.Theta, ss.StatCounters)
+	ss.TestUpdate.Config(nv, axon.Theta, ss.StatCounters)
 	ss.GUI.OnStop = func(mode, level enums.Enum) {
 		vu := ss.NetViewUpdater(mode)
 		vu.UpdateWhenStopped(mode, level)

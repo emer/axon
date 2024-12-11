@@ -144,12 +144,9 @@ func StatLoopCounters(statsDir, currentDir *tensorfs.Node, ls *looper.Stacks, ne
 				tsr := levelDir.Int(name)
 				if start {
 					tsr.SetNumRows(0)
-					if ps := plot.GetStylersFrom(tsr); ps == nil {
-						ps.Add(func(s *plot.Style) {
-							s.Range.SetMin(0)
-						})
-						plot.SetStylersTo(tsr, ps)
-					}
+					plot.SetStylerTo(tsr, func(s *plot.Style) {
+						s.Range.SetMin(0)
+					})
 					if level.Int64() == trialLevel.Int64() {
 						for di := range ndata {
 							curModeDir.Int(name, ndata).SetInt1D(0, di)
@@ -200,12 +197,9 @@ func StatRunName(statsDir, currentDir *tensorfs.Node, ls *looper.Stacks, net *Ne
 
 		if start {
 			tsr.SetNumRows(0)
-			if ps := plot.GetStylersFrom(tsr); ps == nil {
-				ps.Add(func(s *plot.Style) {
-					s.On = false
-				})
-				plot.SetStylersTo(tsr, ps)
-			}
+			plot.SetStylerTo(tsr, func(s *plot.Style) {
+				s.On = false
+			})
 			return
 		}
 		if level.Int64() == trialLevel.Int64() {
@@ -238,12 +232,9 @@ func StatPerTrialMSec(statsDir *tensorfs.Node, statName string, trainMode enums.
 		tsr := levelDir.Float64(name)
 		if start {
 			tsr.SetNumRows(0)
-			if ps := plot.GetStylersFrom(tsr); ps == nil {
-				ps.Add(func(s *plot.Style) {
-					s.Range.SetMin(0)
-				})
-				plot.SetStylersTo(tsr, ps)
-			}
+			plot.SetStylerTo(tsr, func(s *plot.Style) {
+				s.Range.SetMin(0)
+			})
 			return
 		}
 		switch levi {
@@ -288,12 +279,9 @@ func StatLayerActGe(statsDir *tensorfs.Node, net *Network, trainMode, trialLevel
 				tsr := levelDir.Float64(name)
 				if start {
 					tsr.SetNumRows(0)
-					if ps := plot.GetStylersFrom(tsr); ps == nil {
-						ps.Add(func(s *plot.Style) {
-							s.Range.SetMin(0)
-						})
-						plot.SetStylersTo(tsr, ps)
-					}
+					plot.SetStylerTo(tsr, func(s *plot.Style) {
+						s.Range.SetMin(0)
+					})
 					continue
 				}
 				switch levi {
@@ -435,12 +423,9 @@ func StatPCA(statsDir, currentDir *tensorfs.Node, net *Network, interval int, tr
 				tsr := levelDir.Float64(name)
 				if start {
 					tsr.SetNumRows(0)
-					if ps := plot.GetStylersFrom(tsr); ps == nil {
-						ps.Add(func(s *plot.Style) {
-							s.Range.SetMin(0)
-						})
-						plot.SetStylersTo(tsr, ps)
-					}
+					plot.SetStylerTo(tsr, func(s *plot.Style) {
+						s.Range.SetMin(0)
+					})
 					continue
 				}
 				switch levi {
@@ -487,12 +472,9 @@ func StatPrevCorSim(statsDir, currentDir *tensorfs.Node, net *Network, trialLeve
 				tsr := levelDir.Float64(name)
 				if start {
 					tsr.SetNumRows(0)
-					if ps := plot.GetStylersFrom(tsr); ps == nil {
-						ps.Add(func(s *plot.Style) {
-							s.Range.SetMin(0).SetMax(1)
-						})
-						plot.SetStylersTo(tsr, ps)
-					}
+					plot.SetStylerTo(tsr, func(s *plot.Style) {
+						s.Range.SetMin(0).SetMax(1)
+					})
 					continue
 				}
 				switch levi {
