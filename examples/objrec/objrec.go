@@ -354,7 +354,7 @@ func (ss *Sim) ConfigLoops() {
 	})
 
 	if ss.Config.GUI {
-		axon.LooperUpdateNetView(ls, Cycle, Trial, ss.NetViewUpdater, ss.StatCounters)
+		axon.LooperUpdateNetView(ls, Cycle, Trial, ss.NetViewUpdater)
 
 		ls.Stacks[Train].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })
 		ls.Stacks[Test].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })
@@ -484,6 +484,8 @@ func (ss *Sim) StatsInit() {
 		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Epoch))
 		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Run))
 		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Test, Trial))
+		ev := ss.Envs.ByMode(Train).(*LEDEnv)
+		ss.GUI.Tabs.TensorGrid("Image", &ev.Vis.ImgTsr)
 		ss.GUI.Tabs.SelectTabIndex(idx)
 	}
 }

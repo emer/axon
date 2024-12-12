@@ -107,7 +107,7 @@ type RunConfig struct {
 
 	// PCAInterval is how often (in epochs) to compute PCA on hidden
 	// representations to measure variance.
-	PCAInterval int `default:"5"`
+	PCAInterval int `default:"10"`
 
 	// StartWeights is the name of weights file to load at start of first run.
 	StartWeights string

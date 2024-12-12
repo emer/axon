@@ -32,7 +32,7 @@ func LooperStandard(ls *looper.Stacks, net *Network, viewFunc func(mode enums.En
 		cycLoop := st.Loops[cycle]
 		cycLoop.OnStart.Add("Cycle", func() {
 			nCycles := fastNCycles
-			getNeurons := true // todo: need back for phases..
+			getNeurons := false
 			if ls.ModeStack().StepLevel.Int64() == cycle.Int64() {
 				nCycles = 1
 				getNeurons = true
@@ -40,11 +40,22 @@ func LooperStandard(ls *looper.Stacks, net *Network, viewFunc func(mode enums.En
 				if view.IsCycleUpdating() {
 					nCycles = 1
 					getNeurons = true
+				} else {
+					nCycles = min(nCycles, view.Time.Cycles())
+					if view.Time < Theta {
+						getNeurons = true
+					}
 				}
 			}
 			net.Cycle(nCycles, getNeurons)
 			if nCycles > 1 {
 				cycLoop.Counter.Cur += nCycles - 1
+			}
+			if UseGPU && !getNeurons {
+				ctx := net.Context()
+				for range nCycles {
+					ctx.CycleInc()
+				}
 			}
 		})
 
@@ -71,18 +82,16 @@ func LooperStandard(ls *looper.Stacks, net *Network, viewFunc func(mode enums.En
 // returned by the given viewFunc function.
 // The countersFunc returns the counters and other stats to display at the
 // bottom of the NetView, based on given mode and level.
-func LooperUpdateNetView(ls *looper.Stacks, cycle, trial enums.Enum, viewFunc func(mode enums.Enum) *NetViewUpdate, countersFunc func(mode, level enums.Enum) string) {
+func LooperUpdateNetView(ls *looper.Stacks, cycle, trial enums.Enum, viewFunc func(mode enums.Enum) *NetViewUpdate) {
 	for mode, st := range ls.Stacks {
 		viewUpdt := viewFunc(mode)
 		cycLoop := st.Loops[cycle]
 		cycLoop.OnEnd.Add("GUI:UpdateNetView", func() {
-			counters := countersFunc(mode, cycle)
-			viewUpdt.UpdateCycle(cycLoop.Counter.Cur, counters)
+			viewUpdt.UpdateCycle(cycLoop.Counter.Cur, mode, cycle)
 		})
 		trlLoop := st.Loops[trial]
 		trlLoop.OnEnd.Add("GUI:UpdateNetView", func() {
-			counters := countersFunc(mode, trial)
-			viewUpdt.GoUpdate(counters)
+			viewUpdt.GoUpdate(mode, trial)
 		})
 	}
 }
@@ -133,6 +142,11 @@ const (
 // ViewTimeCycles are the cycle intervals associated with each ViewTimes level.
 var ViewTimeCycles = []int{1, 10, 25, 50, 100, 150, 200}
 
+// Cycles returns the number of cycles associated with a given view time.
+func (vt ViewTimes) Cycles() int {
+	return ViewTimeCycles[vt]
+}
+
 // NetViewUpdate manages time scales for updating the NetView.
 // Use one of these for each mode you want to control separately.
 type NetViewUpdate struct {
@@ -150,7 +164,9 @@ type NetViewUpdate struct {
 	View *netview.NetView `display:"-"`
 }
 
-// Config configures for given NetView, time and counter func.
+// Config configures for given NetView, time and counter function,
+// which returns a string to show at the bottom of the netview,
+// given the current mode and level.
 func (vu *NetViewUpdate) Config(nv *netview.NetView, tm ViewTimes, fun func(mode, level enums.Enum) string) {
 	vu.View = nv
 	vu.On = true
@@ -171,13 +187,14 @@ func (vu *NetViewUpdate) ShouldUpdate() bool {
 // including recording new data and driving update of display.
 // This version is only for calling from a separate goroutine,
 // not the main event loop (see also Update).
-func (vu *NetViewUpdate) GoUpdate(counters string) {
+func (vu *NetViewUpdate) GoUpdate(mode, level enums.Enum) {
 	if !vu.ShouldUpdate() {
 		return
 	}
 	if vu.IsCycleUpdating() && vu.View.Options.Raster.On { // no update for raster
 		return
 	}
+	counters := vu.CounterFunc(mode, level)
 	vu.View.Record(counters, -1) // -1 = default incrementing raster
 	vu.View.GoUpdateView()
 }
@@ -217,13 +234,7 @@ func (vu *NetViewUpdate) IsCycleUpdating() bool {
 	if !vu.ShouldUpdate() {
 		return false
 	}
-	if vu.Time == Theta {
-		return false
-	}
-	if vu.Time == Cycle {
-		return true
-	}
-	if vu.View.Options.Raster.On {
+	if vu.View.Options.Raster.On || vu.Time == Cycle {
 		return true
 	}
 	return false
@@ -239,20 +250,21 @@ func (vu *NetViewUpdate) IsViewingSynapse() bool {
 
 // UpdateCycle triggers an update at the Cycle (Millisecond) timescale,
 // using given text to display at bottom of view
-func (vu *NetViewUpdate) UpdateCycle(cyc int, counters string) {
+func (vu *NetViewUpdate) UpdateCycle(cyc int, mode, level enums.Enum) {
 	if !vu.ShouldUpdate() {
+		return
+	}
+	if vu.View.Options.Raster.On {
+		counters := vu.CounterFunc(mode, level)
+		vu.updateCycleRaster(cyc, counters)
 		return
 	}
 	if vu.Time == Theta { // only trial
 		return
 	}
-	if vu.View.Options.Raster.On {
-		vu.updateCycleRaster(cyc, counters)
-		return
-	}
-	vtc := ViewTimeCycles[vu.Time]
-	if cyc%vtc == 0 {
-		vu.GoUpdate(counters)
+	vtc := vu.Time.Cycles()
+	if (cyc+1)%vtc == 0 {
+		vu.GoUpdate(mode, level)
 	}
 }
 
@@ -260,8 +272,8 @@ func (vu *NetViewUpdate) UpdateCycle(cyc int, counters string) {
 // it always records data at the cycle level.
 func (vu *NetViewUpdate) updateCycleRaster(cyc int, counters string) {
 	vu.View.Record(counters, cyc)
-	vtc := ViewTimeCycles[vu.Time]
-	if cyc%vtc == 0 {
+	vtc := vu.Time.Cycles()
+	if (cyc+1)%vtc == 0 {
 		vu.View.GoUpdateView()
 	}
 }

@@ -5,7 +5,6 @@ package axon
 import (
 	"embed"
 	"unsafe"
-
 	"cogentcore.org/core/gpu"
 	"cogentcore.org/core/tensor"
 )
@@ -27,28 +26,28 @@ var GPUSystem *gpu.ComputeSystem
 type GPUVars int32 //enums:enum
 
 const (
-	LayersVar        GPUVars = 0
-	PathsVar         GPUVars = 1
-	NetworkIxsVar    GPUVars = 2
-	PoolIxsVar       GPUVars = 3
-	NeuronIxsVar     GPUVars = 4
-	SynapseIxsVar    GPUVars = 5
-	PathSendConVar   GPUVars = 6
-	RecvPathIxsVar   GPUVars = 7
-	PathRecvConVar   GPUVars = 8
-	RecvSynIxsVar    GPUVars = 9
-	CtxVar           GPUVars = 10
-	NeuronsVar       GPUVars = 11
-	NeuronAvgsVar    GPUVars = 12
-	LayerStatesVar   GPUVars = 13
+	LayersVar GPUVars = 0
+	PathsVar GPUVars = 1
+	NetworkIxsVar GPUVars = 2
+	PoolIxsVar GPUVars = 3
+	NeuronIxsVar GPUVars = 4
+	SynapseIxsVar GPUVars = 5
+	PathSendConVar GPUVars = 6
+	RecvPathIxsVar GPUVars = 7
+	PathRecvConVar GPUVars = 8
+	RecvSynIxsVar GPUVars = 9
+	CtxVar GPUVars = 10
+	NeuronsVar GPUVars = 11
+	NeuronAvgsVar GPUVars = 12
+	LayerStatesVar GPUVars = 13
 	GlobalScalarsVar GPUVars = 14
 	GlobalVectorsVar GPUVars = 15
-	ExtsVar          GPUVars = 16
-	PoolsVar         GPUVars = 17
-	PoolsIntVar      GPUVars = 18
-	PathGBufVar      GPUVars = 19
-	PathGSynsVar     GPUVars = 20
-	SynapsesVar      GPUVars = 21
+	ExtsVar GPUVars = 16
+	PoolsVar GPUVars = 17
+	PoolsIntVar GPUVars = 18
+	PathGBufVar GPUVars = 19
+	PathGSynsVar GPUVars = 20
+	SynapsesVar GPUVars = 21
 	SynapseTracesVar GPUVars = 22
 )
 
@@ -89,6 +88,7 @@ func GPUInit() {
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/PlusPhaseNeuron.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/PlusPhasePool.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/PlusPhasePost.wgsl", sy)
+		gpu.NewComputePipelineShaderFS(shaders, "shaders/PlusPhaseStartContext.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/PlusPhaseStartNeuron.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/PoolGi.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/SendSpike.wgsl", sy)
@@ -216,7 +216,6 @@ func RunOneApplyExtsNeuron(n int, syncVars ...GPUVars) {
 		RunApplyExtsNeuronCPU(n)
 	}
 }
-
 // RunBeta1Neuron runs the Beta1Neuron kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -259,7 +258,6 @@ func RunOneBeta1Neuron(n int, syncVars ...GPUVars) {
 		RunBeta1NeuronCPU(n)
 	}
 }
-
 // RunBeta2Neuron runs the Beta2Neuron kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -302,7 +300,6 @@ func RunOneBeta2Neuron(n int, syncVars ...GPUVars) {
 		RunBeta2NeuronCPU(n)
 	}
 }
-
 // RunBetweenGi runs the BetweenGi kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -345,7 +342,6 @@ func RunOneBetweenGi(n int, syncVars ...GPUVars) {
 		RunBetweenGiCPU(n)
 	}
 }
-
 // RunCycleInc runs the CycleInc kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -388,7 +384,6 @@ func RunOneCycleInc(n int, syncVars ...GPUVars) {
 		RunCycleIncCPU(n)
 	}
 }
-
 // RunCycleNeuron runs the CycleNeuron kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -431,7 +426,6 @@ func RunOneCycleNeuron(n int, syncVars ...GPUVars) {
 		RunCycleNeuronCPU(n)
 	}
 }
-
 // RunCyclePost runs the CyclePost kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -474,7 +468,6 @@ func RunOneCyclePost(n int, syncVars ...GPUVars) {
 		RunCyclePostCPU(n)
 	}
 }
-
 // RunDWtFromDiSyn runs the DWtFromDiSyn kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -517,7 +510,6 @@ func RunOneDWtFromDiSyn(n int, syncVars ...GPUVars) {
 		RunDWtFromDiSynCPU(n)
 	}
 }
-
 // RunDWtSubMeanNeuron runs the DWtSubMeanNeuron kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -560,7 +552,6 @@ func RunOneDWtSubMeanNeuron(n int, syncVars ...GPUVars) {
 		RunDWtSubMeanNeuronCPU(n)
 	}
 }
-
 // RunDWtSyn runs the DWtSyn kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -603,7 +594,6 @@ func RunOneDWtSyn(n int, syncVars ...GPUVars) {
 		RunDWtSynCPU(n)
 	}
 }
-
 // RunGPUTestWrite runs the GPUTestWrite kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -646,7 +636,6 @@ func RunOneGPUTestWrite(n int, syncVars ...GPUVars) {
 		RunGPUTestWriteCPU(n)
 	}
 }
-
 // RunGatherSpikes runs the GatherSpikes kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -689,7 +678,6 @@ func RunOneGatherSpikes(n int, syncVars ...GPUVars) {
 		RunGatherSpikesCPU(n)
 	}
 }
-
 // RunInitGBuffsPath runs the InitGBuffsPath kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -732,7 +720,6 @@ func RunOneInitGBuffsPath(n int, syncVars ...GPUVars) {
 		RunInitGBuffsPathCPU(n)
 	}
 }
-
 // RunLayerGi runs the LayerGi kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -775,7 +762,6 @@ func RunOneLayerGi(n int, syncVars ...GPUVars) {
 		RunLayerGiCPU(n)
 	}
 }
-
 // RunMinusPhaseNeuron runs the MinusPhaseNeuron kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -818,7 +804,6 @@ func RunOneMinusPhaseNeuron(n int, syncVars ...GPUVars) {
 		RunMinusPhaseNeuronCPU(n)
 	}
 }
-
 // RunMinusPhasePool runs the MinusPhasePool kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -861,7 +846,6 @@ func RunOneMinusPhasePool(n int, syncVars ...GPUVars) {
 		RunMinusPhasePoolCPU(n)
 	}
 }
-
 // RunMinusPhasePost runs the MinusPhasePost kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -904,7 +888,6 @@ func RunOneMinusPhasePost(n int, syncVars ...GPUVars) {
 		RunMinusPhasePostCPU(n)
 	}
 }
-
 // RunNewStateLayer runs the NewStateLayer kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -947,7 +930,6 @@ func RunOneNewStateLayer(n int, syncVars ...GPUVars) {
 		RunNewStateLayerCPU(n)
 	}
 }
-
 // RunNewStateNeuron runs the NewStateNeuron kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -990,7 +972,6 @@ func RunOneNewStateNeuron(n int, syncVars ...GPUVars) {
 		RunNewStateNeuronCPU(n)
 	}
 }
-
 // RunPlusPhaseNeuron runs the PlusPhaseNeuron kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -1033,7 +1014,6 @@ func RunOnePlusPhaseNeuron(n int, syncVars ...GPUVars) {
 		RunPlusPhaseNeuronCPU(n)
 	}
 }
-
 // RunPlusPhasePool runs the PlusPhasePool kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -1076,7 +1056,6 @@ func RunOnePlusPhasePool(n int, syncVars ...GPUVars) {
 		RunPlusPhasePoolCPU(n)
 	}
 }
-
 // RunPlusPhasePost runs the PlusPhasePost kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -1119,7 +1098,48 @@ func RunOnePlusPhasePost(n int, syncVars ...GPUVars) {
 		RunPlusPhasePostCPU(n)
 	}
 }
+// RunPlusPhaseStartContext runs the PlusPhaseStartContext kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOnePlusPhaseStartContext call does Run and Done for a
+// single run-and-sync case.
+func RunPlusPhaseStartContext(n int) {
+	if UseGPU {
+		RunPlusPhaseStartContextGPU(n)
+	} else {
+		RunPlusPhaseStartContextCPU(n)
+	}
+}
 
+// RunPlusPhaseStartContextGPU runs the PlusPhaseStartContext kernel on the GPU. See [RunPlusPhaseStartContext] for more info.
+func RunPlusPhaseStartContextGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["PlusPhaseStartContext"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunPlusPhaseStartContextCPU runs the PlusPhaseStartContext kernel on the CPU.
+func RunPlusPhaseStartContextCPU(n int) {
+	gpu.VectorizeFunc(0, n, PlusPhaseStartContext)
+}
+
+// RunOnePlusPhaseStartContext runs the PlusPhaseStartContext kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOnePlusPhaseStartContext(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunPlusPhaseStartContextGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunPlusPhaseStartContextCPU(n)
+	}
+}
 // RunPlusPhaseStartNeuron runs the PlusPhaseStartNeuron kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -1162,7 +1182,6 @@ func RunOnePlusPhaseStartNeuron(n int, syncVars ...GPUVars) {
 		RunPlusPhaseStartNeuronCPU(n)
 	}
 }
-
 // RunPoolGi runs the PoolGi kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -1205,7 +1224,6 @@ func RunOnePoolGi(n int, syncVars ...GPUVars) {
 		RunPoolGiCPU(n)
 	}
 }
-
 // RunSendSpike runs the SendSpike kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -1248,7 +1266,6 @@ func RunOneSendSpike(n int, syncVars ...GPUVars) {
 		RunSendSpikeCPU(n)
 	}
 }
-
 // RunSlowAdaptLayer runs the SlowAdaptLayer kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -1291,7 +1308,6 @@ func RunOneSlowAdaptLayer(n int, syncVars ...GPUVars) {
 		RunSlowAdaptLayerCPU(n)
 	}
 }
-
 // RunSlowAdaptNeuron runs the SlowAdaptNeuron kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -1334,7 +1350,6 @@ func RunOneSlowAdaptNeuron(n int, syncVars ...GPUVars) {
 		RunSlowAdaptNeuronCPU(n)
 	}
 }
-
 // RunWtFromDWtLayer runs the WtFromDWtLayer kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -1377,7 +1392,6 @@ func RunOneWtFromDWtLayer(n int, syncVars ...GPUVars) {
 		RunWtFromDWtLayerCPU(n)
 	}
 }
-
 // RunWtFromDWtSyn runs the WtFromDWtSyn kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -1420,11 +1434,10 @@ func RunOneWtFromDWtSyn(n int, syncVars ...GPUVars) {
 		RunWtFromDWtSynCPU(n)
 	}
 }
-
 // RunDone must be called after Run* calls to start compute kernels.
 // This actually submits the kernel jobs to the GPU, and adds commands
 // to synchronize the given variables back from the GPU to the CPU.
-// After this function completes, the GPU results will be available in
+// After this function completes, the GPU results will be available in 
 // the specified variables.
 func RunDone(syncVars ...GPUVars) {
 	if !UseGPU {
@@ -1518,7 +1531,6 @@ func ToGPU(vars ...GPUVars) {
 		}
 	}
 }
-
 // RunGPUSync can be called to synchronize data between CPU and GPU.
 // Any prior ToGPU* calls will execute to send data to the GPU,
 // and any subsequent RunDone* calls will copy data back from the GPU.
@@ -1766,7 +1778,7 @@ func SyncFromGPU(vars ...GPUVars) {
 	}
 }
 
-// GetLayers returns a pointer to the given global variable:
+// GetLayers returns a pointer to the given global variable: 
 // [Layers] []LayerParams at given index.
 // To ensure that values are updated on the GPU, you must call [SetLayers].
 // after all changes have been made.
@@ -1774,7 +1786,7 @@ func GetLayers(idx uint32) *LayerParams {
 	return &Layers[idx]
 }
 
-// GetPaths returns a pointer to the given global variable:
+// GetPaths returns a pointer to the given global variable: 
 // [Paths] []PathParams at given index.
 // To ensure that values are updated on the GPU, you must call [SetPaths].
 // after all changes have been made.
@@ -1782,7 +1794,7 @@ func GetPaths(idx uint32) *PathParams {
 	return &Paths[idx]
 }
 
-// GetNetworkIxs returns a pointer to the given global variable:
+// GetNetworkIxs returns a pointer to the given global variable: 
 // [NetworkIxs] []NetworkIndexes at given index.
 // To ensure that values are updated on the GPU, you must call [SetNetworkIxs].
 // after all changes have been made.
@@ -1790,7 +1802,7 @@ func GetNetworkIxs(idx uint32) *NetworkIndexes {
 	return &NetworkIxs[idx]
 }
 
-// GetCtx returns a pointer to the given global variable:
+// GetCtx returns a pointer to the given global variable: 
 // [Ctx] []Context at given index.
 // To ensure that values are updated on the GPU, you must call [SetCtx].
 // after all changes have been made.

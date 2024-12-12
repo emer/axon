@@ -6,7 +6,9 @@
 
 package axon
 
-import "cogentcore.org/core/enums"
+import (
+	"cogentcore.org/core/enums"
+)
 
 // Cycle runs n cycles of activation updating.
 // If getNeurons is true, then neuron state is synced back
@@ -19,7 +21,7 @@ func (nt *Network) Cycle(ncyc int, getNeurons bool) {
 	ld := int(nix.NLayers * ctx.NData)
 	pd := int(nix.NPools * ctx.NData)
 
-	ToGPUCtxGlobal() // this is not a significant speed factor
+	// ToGPUCtxGlobal() // this is not a significant speed factor
 	for range ncyc {
 		RunGatherSpikes(nd)
 		RunLayerGi(ld)
@@ -96,7 +98,7 @@ func (nt *Network) ApplyExts() {
 	if !UseGPU {
 		return
 	}
-	ToGPU(ExtsVar)
+	ToGPUExts()
 	nix := nt.NetIxs()
 	ctx := nt.Context()
 	nd := int(nix.NNeurons * ctx.NData)
@@ -136,7 +138,7 @@ func (nt *Network) PlusPhaseStart() {
 	ctx := nt.Context()
 	nd := int(nix.NNeurons * ctx.NData)
 
-	ctx.PlusPhaseStart()
+	RunPlusPhaseStartContext(1)
 	RunPlusPhaseStartNeuron(nd)
 }
 
@@ -145,12 +147,14 @@ func (nt *Network) PlusPhaseStart() {
 func (nt *Network) PlusPhase() {
 	nix := nt.NetIxs()
 	ctx := nt.Context()
+	// fmt.Println("plus start:", ctx.Cycle)
 	nd := int(nix.NNeurons * ctx.NData)
 	pd := int(nix.NPools * ctx.NData)
 	RunPlusPhasePool(pd)
 	RunPlusPhaseNeuron(nd)
 	RunPlusPhasePost(int(nix.NLayers))
 	RunDoneLayersNeurons()
+	// fmt.Println("plus post sync:", ctx.Cycle)
 }
 
 // TargToExt sets external input Ext from target values Target
@@ -378,6 +382,15 @@ func MinusPhaseNeuron(i uint32) { //gosl:kernel
 func MinusPhasePost(li uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	Layers[li].MinusPhasePost(ctx)
+}
+
+// PlusPhaseStartContext is the kernel over 1 call to call PlusPhaseStart on context.
+func PlusPhaseStartContext(i uint32) { //gosl:kernel
+	if i != 0 {
+		return
+	}
+	ctx := GetCtx(0)
+	ctx.PlusPhaseStart()
 }
 
 // PlusPhaseStartNeuron is the kernel over Neurons * Data to

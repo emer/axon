@@ -341,7 +341,7 @@ func (ss *Sim) ConfigLoops() {
 	})
 
 	if ss.Config.GUI {
-		axon.LooperUpdateNetView(ls, Cycle, Trial, ss.NetViewUpdater, ss.StatCounters)
+		axon.LooperUpdateNetView(ls, Cycle, Trial, ss.NetViewUpdater)
 
 		ls.Stacks[Train].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })
 		ls.Stacks[Test].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })

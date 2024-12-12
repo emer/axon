@@ -921,9 +921,15 @@ func ToGPUIndexes() {
 }
 
 // ToGPUCtxGlobal copies Context and Global vars to the GPU.
-// This is done at start of each Cycle update.
 func ToGPUCtxGlobal() {
 	ToGPU(CtxVar, GlobalScalarsVar, GlobalVectorsVar)
+}
+
+// ToGPUExts copies Exts and Context and Global vars to the GPU.
+// This is done after ApplyInputs typically, and sets the network going
+// at the start of a new trial.
+func ToGPUExts() {
+	ToGPU(CtxVar, GlobalScalarsVar, GlobalVectorsVar, ExtsVar)
 }
 
 // ToGPULayers copies all the layer-level state to the GPU, including context and globals.
@@ -964,6 +970,10 @@ func ToGPUAll() {
 }
 
 // note: RunDone can only be run once, so all vars need to be present in the one call.
+
+func RunDoneContext() {
+	RunDone(CtxVar)
+}
 
 // RunDoneLayers finishes running and copies all the layer-level state from the GPU,
 // (and Context, Globals) but NOT neurons. This is the minimal case for Cycle().

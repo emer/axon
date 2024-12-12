@@ -157,7 +157,7 @@ type RunConfig struct {
 
 	// PCAInterval is how often (in epochs) to compute PCA on hidden
 	// representations to measure variance.
-	PCAInterval int `default:"5"`
+	PCAInterval int `default:"10"`
 
 	// StartWeights is the name of weights file to load at start of first run.
 	StartWeights string
@@ -478,7 +478,7 @@ func (ss *Sim) ConfigLoops() {
 	})
 
 	if ss.Config.GUI {
-		axon.LooperUpdateNetView(ls, Cycle, Trial, ss.NetViewUpdater, ss.StatCounters)
+		axon.LooperUpdateNetView(ls, Cycle, Trial, ss.NetViewUpdater)
 
 		ls.Stacks[Train].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })
 		ls.Stacks[Test].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })

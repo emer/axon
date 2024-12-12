@@ -12,6 +12,7 @@ package main
 import (
 	"fmt"
 
+	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/base/mpi"
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/base/reflectx"
@@ -281,7 +282,7 @@ func (ss *Sim) ConfigLoops() {
 	})
 
 	if ss.Config.GUI {
-		axon.LooperUpdateNetView(ls, Cycle, Trial, ss.NetViewUpdater, ss.StatCounters)
+		axon.LooperUpdateNetView(ls, Cycle, Trial, ss.NetViewUpdater)
 
 		ls.Stacks[Train].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })
 	}
@@ -499,7 +500,14 @@ func (ss *Sim) ConfigStats() {
 		perTrlFunc(mode, level, phase == Start)
 	})
 
-	trlAllFunc := axon.StatLevelAll(ss.Stats, Train, Trial)
+	trlAllFunc := axon.StatLevelAll(ss.Stats, Train, Trial, func(s *plot.Style, cl tensor.Values) {
+		s.Range.SetMin(0).SetMax(1)
+		name := metadata.Name(cl)
+		switch name {
+		case "DA_Act":
+			s.On = true
+		}
+	})
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		trlAllFunc(mode, level, phase == Start)
 	})

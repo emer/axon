@@ -8,6 +8,7 @@ import (
 	"image"
 
 	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/tensorcore"
 	"github.com/anthonynsimon/bild/transform"
 	"github.com/emer/vision/v2/fffb"
 	"github.com/emer/vision/v2/gabor"
@@ -90,8 +91,10 @@ func (vi *Vis) Defaults() {
 	vi.V1sKWTA.Defaults()
 	vi.ImgSize = image.Point{40, 40}
 	vi.V1sGabor.ToTensor(&vi.V1sGaborTsr)
-	// vi.ImgTsr.SetMetaData("image", "+")
-	// vi.ImgTsr.SetMetaData("grid-fill", "1")
+	tensorcore.AddGridStylerTo(&vi.ImgTsr, func(s *tensorcore.GridStyle) {
+		s.Image = true
+		s.Range.SetMin(0)
+	})
 }
 
 // SetImage sets current image for processing

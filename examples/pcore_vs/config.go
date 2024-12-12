@@ -82,7 +82,7 @@ type RunConfig struct {
 	Trials int `default:"128"`
 
 	// Cycles is the total number of cycles per trial: at least 200.
-	Cycles int `default:"300"`
+	Cycles int `default:"200"`
 
 	// PlusCycles is the total number of plus-phase cycles per trial. For Cycles=300, use 100.
 	PlusCycles int `default:"50"`
