@@ -36,7 +36,7 @@ func LooperStandard(ls *looper.Stacks, net *Network, viewFunc func(mode enums.En
 			if ls.ModeStack().StepLevel.Int64() == cycle.Int64() {
 				nCycles = 1
 				getNeurons = true
-			} else if view := viewFunc(mode); view != nil {
+			} else if view := viewFunc(mode); view != nil && view.View != nil {
 				if view.IsCycleUpdating() {
 					nCycles = 1
 					getNeurons = true
