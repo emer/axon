@@ -108,9 +108,10 @@ func (nt *Network) SetSubMean(trgAvg, path float32) {
 // in which case the method returns true so that the actual length of
 // dwts can be passed next time around.
 // Used for MPI sharing of weight changes across processors.
-// This calls SyncSynapsesFromGPU() (nop if not GPU) first.
+// This Sync's Layers and Synapses from GPU first (nop if not using).
 func (nt *Network) CollectDWts(dwts *[]float32) bool {
-	// nt.GPU.SyncSynapsesFromGPU()
+	RunGPUSync()
+	RunDoneLayersSynapses()
 	idx := 0
 	made := false
 	if *dwts == nil {
@@ -168,7 +169,7 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 // SetDWts sets the DWt weight changes from given array of floats, which must be correct size
 // navg is the number of processors aggregated in these dwts -- some variables need to be
 // averaged instead of summed (e.g., ActAvg)
-// This calls SyncSynapsesToGPU() (nop if not GPU) after.
+// This Sync's Layers and Synapses to the GPU after (nop if not using).
 func (nt *Network) SetDWts(dwts []float32, navg int) {
 	idx := 0
 	davg := 1 / float32(navg)
@@ -206,7 +207,9 @@ func (nt *Network) SetDWts(dwts []float32, navg int) {
 			idx += int(pj.NSyns)
 		}
 	}
-	// nt.GPU.SyncSynapsesToGPU() // gpu will use dwts to update
+	ToGPULayersSynapses()
+	RunGPUSync()
+	RunDone()
 }
 
 //gosl:start

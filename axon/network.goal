@@ -926,8 +926,6 @@ func ToGPUCtxGlobal() {
 	ToGPU(CtxVar, GlobalScalarsVar, GlobalVectorsVar)
 }
 
-// todo: probably don't need PoolsIntVar beyond the first init
-
 // ToGPULayers copies all the layer-level state to the GPU, including context and globals.
 func ToGPULayers() {
 	ToGPU(CtxVar, GlobalScalarsVar, GlobalVectorsVar, LayerStatesVar, PoolsVar, PoolsIntVar)
@@ -946,6 +944,12 @@ func ToGPULayersNeurons() {
 // ToGPUSynapses copies the Synapse state to the GPU.
 func ToGPUSynapses() {
 	ToGPU(SynapsesVar)
+}
+
+// ToGPULayersSynapses copies the Layers and Synapse state to the GPU.
+func ToGPULayersSynapses() {
+	ToGPULayers()
+	ToGPUSynapses()
 }
 
 // ToGPUAll copies all state up to the GPU. Only for InitWeights.
@@ -975,6 +979,12 @@ func RunDoneLayersNeurons() {
 
 // RunDoneSynapses finishes running and copies the Synapse state back.
 func RunDoneSynapses() {
+	RunDone(SynapsesVar)
+}
+
+// RunDoneLayersSynapses finishes running and copies the Layers and Synapse state back.
+// This is sufficient for saving synaptic weights.
+func RunDoneLayersSynapses() {
 	RunDone(SynapsesVar)
 }
 
@@ -1058,13 +1068,16 @@ func (nt *Network) DeleteAll() {
 }
 
 func (nt *Network) WriteWeightsJSON(w io.Writer) error {
-	// nt.GPU.SyncAllFromGPU()
+	RunGPUSync()
+	RunDoneLayersSynapses()
 	return nt.NetworkBase.WriteWeightsJSON(w)
 }
 
 func (nt *Network) ReadWeightsJSON(r io.Reader) error {
 	err := nt.NetworkBase.ReadWeightsJSON(r)
-	// nt.GPU.SyncAllToGPU() // needs loaded adapting layer params too
+	ToGPULayersSynapses()
+	RunGPUSync()
+	RunDone()
 	return err
 }
 
