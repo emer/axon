@@ -14,14 +14,11 @@ import (
 	"math"
 	"math/rand"
 
-	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/base/timer"
-	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/etime"
-	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/patgen"
 	"github.com/emer/emergent/v2/paths"
 )
@@ -30,33 +27,38 @@ import (
 // ./bench -epochs 100 -pats 10 -units 100 -threads=1
 // so these params below are reasonable for actually learning (eventually)
 
-var ParamSets = params.Sets{
+var LayerParams = axon.LayerSheets{
 	"Base": {
-		{Sel: "Path", Doc: "",
-			Params: params.Params{
-				pt.Learn.LRate.Base = "0.1", // 0.1 is default, 0.05 for TrSpk = .5
-				pt.SWts.Adapt.LRate = "0.1", // .1 >= .2,
-				pt.SWts.Init.SPct =   "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-			}},
 		{Sel: "Layer", Doc: "",
-			Params: params.Params{
-				ly.Inhib.ActAvg.Nominal = "0.08",
-				ly.Inhib.Layer.Gi =       "1.05",
-				ly.Acts.Gbar.L =          "0.2",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.08
+				ly.Inhib.Layer.Gi = 1.05
+				ly.Acts.Gbar.L = 0.2
 			}},
 		{Sel: "#Input", Doc: "",
-			Params: params.Params{
-				ly.Inhib.Layer.Gi = "0.9", // 0.9 > 1.0
-				ly.Acts.Clamp.Ge =  "1.5",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.Layer.Gi = 0.9 // 0.9 > 1.0
+				ly.Acts.Clamp.Ge = 1.5
 			}},
 		{Sel: "#Output", Doc: "",
-			Params: params.Params{
-				ly.Inhib.Layer.Gi = "0.70",
-				ly.Acts.Clamp.Ge =  "0.8",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.Layer.Gi = 0.70
+				ly.Acts.Clamp.Ge = 0.8
+			}},
+	},
+}
+
+var PathParams = axon.PathSheets{
+	"Base": {
+		{Sel: "Path", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.Learn.LRate.Base = 0.1 // 0.1 is default, 0.05 for TrSpk = .5
+				pt.SWts.Adapt.LRate = 0.1 // .1 >= .2,
+				pt.SWts.Init.SPct = 0.5   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
-			Params: params.Params{
-				pt.PathScale.Rel = "0.2",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Rel = 0.2
 			}},
 	},
 }
@@ -79,16 +81,13 @@ func ConfigNet(net *axon.Network, ctx *axon.Context, threads, units int, verbose
 	net.BidirConnectLayers(hid3Lay, outLay, full)
 
 	net.RecFunTimes = verbose
-	net.GPU.RecFunTimes = verbose
 
 	// builds with default threads
-	if err := net.Build(ctx); err != nil {
+	if err := net.Build(); err != nil {
 		panic(err)
 	}
 	net.Defaults()
-	if _, err := net.ApplyParams(ParamSets["Base"], false); err != nil {
-		panic(err)
-	}
+	axon.ApplyParamSheets(net, LayerParams["Base"], PathParams["Base"])
 
 	if threads == 0 {
 		if verbose {
@@ -98,7 +97,7 @@ func ConfigNet(net *axon.Network, ctx *axon.Context, threads, units int, verbose
 		net.SetNThreads(threads)
 	}
 
-	net.InitWeights(ctx)
+	net.InitWeights()
 }
 
 func ConfigPats(dt *table.Table, pats, units int) {
@@ -107,15 +106,15 @@ func ConfigPats(dt *table.Table, pats, units int) {
 	// fmt.Printf("shape: %v\n", shp)
 
 	dt.AddStringColumn("Name")
-	dt.AddFloat32TensorColumn("Input", shp, "Y", "X")
-	dt.AddFloat32TensorColumn("Output", shp, "Y", "X")
+	dt.AddFloat32Column("Input", shp...)
+	dt.AddFloat32Column("Output", shp...)
 	dt.SetNumRows(pats)
 
 	// note: actually can learn if activity is .15 instead of .25
 	nOn := units / 8
 
-	patgen.PermutedBinaryRows(dt.Columns[1], nOn, 1, 0)
-	patgen.PermutedBinaryRows(dt.Columns[2], nOn, 1, 0)
+	patgen.PermutedBinaryRows(dt.ColumnByIndex(1), nOn, 1, 0)
+	patgen.PermutedBinaryRows(dt.ColumnByIndex(2), nOn, 1, 0)
 }
 
 func ConfigEpcLog(dt *table.Table) {
@@ -132,13 +131,14 @@ func ConfigEpcLog(dt *table.Table) {
 }
 
 func TrainNet(net *axon.Network, ctx *axon.Context, pats, epcLog *table.Table, epcs int, verbose, gpu bool) {
-	net.InitWeights(ctx)
+	if gpu {
+		// gpu.SetDebug(true)
+		axon.GPUInit()
+		axon.UseGPU = true
+	}
+	net.InitWeights()
 	np := pats.NumRows()
 	porder := rand.Perm(np) // randomly permuted order of ints
-
-	if gpu {
-		net.ConfigGPUnoGUI(ctx)
-	}
 
 	epcLog.SetNumRows(epcs)
 
@@ -147,10 +147,11 @@ func TrainNet(net *axon.Network, ctx *axon.Context, pats, epcLog *table.Table, e
 	hid2Lay := net.LayerByName("Hidden2")
 	outLay := net.LayerByName("Output")
 
-	inPats := errors.Log1(pats.ColumnByName("Input")).(*tensor.Float32)
-	outPats := errors.Log1(pats.ColumnByName("Output")).(*tensor.Float32)
+	inPats := pats.Column("Input")
+	outPats := pats.Column("Output")
 
 	cycPerQtr := 50
+	cycPerStep := 50
 
 	tmr := timer.Time{}
 	tmr.Start()
@@ -160,31 +161,30 @@ func TrainNet(net *axon.Network, ctx *axon.Context, pats, epcLog *table.Table, e
 		cntErr := 0
 		sse := 0.0
 		for pi := 0; pi < np; pi++ {
+			ctx.NewState(etime.Train, false)
+
 			ppi := porder[pi]
-			inp := inPats.SubSpace([]int{ppi})
-			outp := outPats.SubSpace([]int{ppi})
+			inp := inPats.SubSpace(ppi)
+			outp := outPats.SubSpace(ppi)
 
-			inLay.ApplyExt(ctx, 0, inp)
-			outLay.ApplyExt(ctx, 0, outp)
-			net.ApplyExts(ctx)
+			inLay.ApplyExt(0, inp)
+			outLay.ApplyExt(0, outp)
+			net.ApplyExts()
 
-			net.NewState(ctx)
-			ctx.NewState(etime.Train)
 			for qtr := 0; qtr < 4; qtr++ {
 				for cyc := 0; cyc < cycPerQtr; cyc++ {
-					net.Cycle(ctx)
-					ctx.CycleInc()
+					net.Cycle(cycPerStep, false)
+					cyc += cycPerStep - 1
 				}
 				if qtr == 2 {
-					net.MinusPhase(ctx)
-					ctx.NewPhase(true)
-					net.PlusPhaseStart(ctx)
+					net.MinusPhase()
+					net.PlusPhaseStart()
 				}
 			}
-			net.PlusPhase(ctx)
-			net.DWt(ctx)
-			net.WtFromDWt(ctx)
-			outPhaseDiff += outLay.Values[0].PhaseDiff.Cor
+			net.PlusPhase()
+			net.DWtToWt()
+			phasedif := axon.LayerStates.Value(int(outLay.Index), int(0), int(axon.LayerPhaseDiff))
+			outPhaseDiff += 1.0 - phasedif
 			pSSE := outLay.PctUnitErr(ctx)[0]
 			sse += pSSE
 			if pSSE != 0 {
@@ -199,19 +199,18 @@ func TrainNet(net *axon.Network, ctx *axon.Context, pats, epcLog *table.Table, e
 		t := tmr.Stop()
 		tmr.Start()
 		if verbose {
-			fmt.Printf("epc: %v  \tPhaseDiff: %v \tAvgPhaseDiff: %v \tTime:%v\n", epc, outPhaseDiff, outLay.Values[0].PhaseDiff.Avg, t)
+			fmt.Printf("epc: %v  \tPhaseDiff: %v \tTime:%v\n", epc, outPhaseDiff, t)
 		}
 
-		epcLog.SetFloat("Epoch", epc, float64(epc))
-		epcLog.SetFloat("PhaseDiff", epc, float64(outPhaseDiff))
-		epcLog.SetFloat("AvgPhaseDiff", epc, float64(outLay.Values[0].PhaseDiff.Avg))
-		epcLog.SetFloat("SSE", epc, sse)
-		epcLog.SetFloat("CountErr", epc, float64(cntErr))
-		epcLog.SetFloat("PctErr", epc, pctErr)
-		epcLog.SetFloat("PctCor", epc, pctCor)
-		epcLog.SetFloat("Hid1ActAvg", epc, float64(hid1Lay.Values[0].ActAvg.ActMAvg))
-		epcLog.SetFloat("Hid2ActAvg", epc, float64(hid2Lay.Values[0].ActAvg.ActMAvg))
-		epcLog.SetFloat("OutActAvg", epc, float64(outLay.Values[0].ActAvg.ActMAvg))
+		epcLog.Column("Epoch").SetFloat1D(float64(epc), epc)
+		epcLog.Column("PhaseDiff").SetFloat1D(float64(outPhaseDiff), epc)
+		epcLog.Column("SSE").SetFloat1D(sse, epc)
+		epcLog.Column("CountErr").SetFloat1D(float64(cntErr), epc)
+		epcLog.Column("PctErr").SetFloat1D(pctErr, epc)
+		epcLog.Column("PctCor").SetFloat1D(pctCor, epc)
+		epcLog.Column("Hid1ActAvg").SetFloat1D(float64(axon.PoolAvgMax(axon.AMAct, axon.AMMinus, axon.Avg, hid1Lay.Params.PoolIndex(0), 0)), epc)
+		epcLog.Column("Hid2ActAvg").SetFloat1D(float64(axon.PoolAvgMax(axon.AMAct, axon.AMMinus, axon.Avg, hid2Lay.Params.PoolIndex(0), 0)), epc)
+		epcLog.Column("OutActAvg").SetFloat1D(float64(axon.PoolAvgMax(axon.AMAct, axon.AMMinus, axon.Avg, outLay.Params.PoolIndex(0), 0)), epc)
 	}
 	tmr.Stop()
 	if verbose {
@@ -221,5 +220,5 @@ func TrainNet(net *axon.Network, ctx *axon.Context, pats, epcLog *table.Table, e
 		fmt.Printf("Total Secs: %v\n", tmr.Total)
 	}
 
-	net.GPU.Destroy()
+	axon.GPURelease()
 }

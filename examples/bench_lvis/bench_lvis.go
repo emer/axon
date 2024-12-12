@@ -172,9 +172,9 @@ func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, p
 
 	net.InitWeights()
 
-	if useGPU {
-		fmt.Println(axon.GPUSystem.Vars().StringDoc())
-	}
+	// if useGPU {
+	// 	fmt.Println(axon.GPUSystem.Vars().StringDoc())
+	// }
 
 	np := pats.NumRows()
 	porder := rand.Perm(np) // randomly permuted order of ints
