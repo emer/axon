@@ -120,9 +120,6 @@ type Config struct {
 	// After configuration, it contains list of include files added.
 	Includes []string
 
-	// if true, use Rescorla-Wagner -- set in code or rebuild network
-	RW bool
-
 	// GUI means open the GUI. Otherwise it runs automatically and quits,
 	// saving results to log files.
 	GUI bool `default:"true"`

@@ -9,8 +9,6 @@ import (
 
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/tensor/stats/metric"
-	"cogentcore.org/core/tensor/stats/simat"
 	"cogentcore.org/core/tensor/table"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/etime"
@@ -66,7 +64,7 @@ type VSPatchEnv struct {
 	PatVocab patgen.Vocab
 
 	// pattern similarity matrix
-	PatSimMat simat.SimMat
+	// PatSimMat simat.SimMat
 
 	// random number generator for the env -- all random calls must use this
 	Rand randx.SysRand `display:"-"`
@@ -98,6 +96,10 @@ func (ev *VSPatchEnv) Defaults() {
 	ev.NUnits = ev.NUnitsY * ev.NUnitsX
 }
 
+func (ev *VSPatchEnv) String() string {
+	return fmt.Sprintf("Cond_%d_Rew_%g", ev.Cond, ev.CondRew)
+}
+
 // SetCondValues sets values of each condition incrementing upward
 func (ev *VSPatchEnv) SetCondValues() {
 	pc := float32(1) / (float32(ev.NConds) + 1)
@@ -120,7 +122,7 @@ func (ev *VSPatchEnv) Config(mode etime.Modes, rndseed int64) {
 	ev.RandSeed = rndseed
 	ev.Rand.NewRand(ev.RandSeed)
 	ev.States = make(map[string]*tensor.Float32)
-	ev.States["State"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, "Y", "X")
+	ev.States["State"] = tensor.NewFloat32(ev.NUnitsY, ev.NUnitsX)
 	ev.CondValues = make([]float32, ev.NConds)
 	ev.Sequence.Max = ev.NConds
 	ev.Trial.Max = ev.NTrials
@@ -139,9 +141,9 @@ func (ev *VSPatchEnv) ConfigPats() {
 	patgen.AddVocabPermutedBinary(ev.PatVocab, "Protos", ev.NConds, ev.NUnitsY, ev.NUnitsX, pctAct, minDiff)
 
 	npats := ev.NConds * ev.NTrials
-	ev.Pats = table.NewTable()
+	ev.Pats = table.New()
 	ev.Pats.AddStringColumn("Name")
-	ev.Pats.AddFloat32TensorColumn("Input", []int{ev.NUnitsY, ev.NUnitsX}, "Y", "X")
+	ev.Pats.AddFloat32Column("Input", ev.NUnitsY, ev.NUnitsX)
 	ev.Pats.SetNumRows(npats)
 
 	idx := 0
@@ -150,13 +152,13 @@ func (ev *VSPatchEnv) ConfigPats() {
 		tsr, _ := patgen.AddVocabRepeat(ev.PatVocab, condNm, ev.NTrials, "Protos", i)
 		patgen.FlipBitsRows(tsr, flipBits, flipBits, 1, 0)
 		for j := 0; j < ev.NTrials; j++ {
-			ev.Pats.SetTensor("Input", idx+j, tsr.SubSpace([]int{j}))
-			ev.Pats.SetString("Name", idx+j, fmt.Sprintf("Cond%d_Trial%d", i, j))
+			ev.Pats.Column("Input").SetRowTensor(tsr.SubSpace(j), idx+j)
+			ev.Pats.Column("Name").SetStringRow(fmt.Sprintf("Cond%d_Trial%d", i, j), idx+j, 0)
 		}
 		idx += ev.NTrials
 	}
 
-	ev.PatSimMat.TableColumn(table.NewIndexView(ev.Pats), "Input", "Name", true, metric.Correlation64)
+	// ev.PatSimMat.TableColumn(table.NewIndexView(ev.Pats), "Input", "Name", true, metric.Correlation64)
 }
 
 func (ev *VSPatchEnv) Init(run int) {
@@ -164,7 +166,7 @@ func (ev *VSPatchEnv) Init(run int) {
 	ev.Trial.Init()
 }
 
-func (ev *VSPatchEnv) State(el string) tensor.Tensor {
+func (ev *VSPatchEnv) State(el string) tensor.Values {
 	return ev.States[el]
 }
 
@@ -172,7 +174,7 @@ func (ev *VSPatchEnv) State(el string) tensor.Tensor {
 func (ev *VSPatchEnv) RenderState(cond, trial int) {
 	st := ev.States["State"]
 	idx := cond*ev.NTrials + trial
-	st.CopyFrom(ev.Pats.Tensor("Input", idx))
+	st.CopyFrom(ev.Pats.Column("Input").RowTensor(idx))
 }
 
 // Step does one step -- must set Trial.Cur first if doing testing
@@ -200,7 +202,7 @@ func (ev *VSPatchEnv) Step() bool {
 	return true
 }
 
-func (ev *VSPatchEnv) Action(action string, nop tensor.Tensor) {
+func (ev *VSPatchEnv) Action(action string, nop tensor.Values) {
 }
 
 func (ev *VSPatchEnv) ComputeDA(rew float32) {

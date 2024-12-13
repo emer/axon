@@ -11,10 +11,9 @@ package main
 
 import (
 	"fmt"
-	"math"
+	"math/rand/v2"
 
 	"cogentcore.org/core/base/mpi"
-	"cogentcore.org/core/base/num"
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/cli"
@@ -29,6 +28,7 @@ import (
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/env"
+	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/paths"
 )
@@ -160,30 +160,38 @@ func (ss *Sim) ConfigEnv() {
 	// Can be called multiple times -- don't re-create
 	newEnv := (len(ss.Envs) == 0)
 
+	var trn0 *VSPatchEnv
 	for di := 0; di < ss.Config.Run.NData; di++ {
-		var trn, tst *GoNoEnv
+		var trn, tst *VSPatchEnv
 		if newEnv {
-			trn = &GoNoEnv{}
-			tst = &GoNoEnv{}
+			trn = &VSPatchEnv{}
+			tst = &VSPatchEnv{}
 		} else {
-			trn = ss.Envs.ByModeDi(Train, di).(*GoNoEnv)
-			tst = ss.Envs.ByModeDi(Test, di).(*GoNoEnv)
+			trn = ss.Envs.ByModeDi(etime.Train, di).(*VSPatchEnv)
+			tst = ss.Envs.ByModeDi(etime.Test, di).(*VSPatchEnv)
 		}
 
 		// note: names must be standard here!
-		trn.Name = env.ModeDi(Train, di)
+		trn.Name = env.ModeDi(etime.Train, di)
 		trn.Defaults()
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
 		}
-		trn.Config(Train, 73+int64(di)*73)
+		trn.Config(etime.Train, 73+int64(di)*73)
+		if di == 0 {
+			trn.ConfigPats()
+			trn0 = trn
+		} else {
+			trn.Pats = trn0.Pats
+		}
 
-		tst.Name = env.ModeDi(Test, di)
+		tst.Name = env.ModeDi(etime.Test, di)
 		tst.Defaults()
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(tst, ss.Config.Env.Env)
 		}
-		tst.Config(Test, 181+int64(di)*181)
+		tst.Config(etime.Test, 181+int64(di)*181)
+		tst.Pats = trn0.Pats
 
 		trn.Init(0)
 		tst.Init(0)
@@ -196,71 +204,33 @@ func (ss *Sim) ConfigEnv() {
 	}
 }
 
-func (ss *Sim) ConfigRubicon(trn *GoNoEnv) {
+func (ss *Sim) ConfigRubicon(trn *VSPatchEnv) {
 	pv := &ss.Net.Rubicon
-	pv.SetNUSs(2, 1)
+	pv.SetNUSs(1, 1)
+	pv.Defaults()
 	pv.Urgency.U50 = 20 // 20 def
+	pv.LHb.VSPatchGain = 3
+	pv.LHb.VSPatchNonRewThr = 0.1
+	pv.USs.PVposGain = 10
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ss.Config.Run.NData)
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
-	ev := ss.Envs.ByModeDi(Train, 0).(*GoNoEnv)
+	ev := ss.Envs.ByModeDi(Train, 0).(*VSPatchEnv)
 
-	np := 1
-	nuY := ev.NUnitsY
-	nuX := ev.NUnitsX
 	space := float32(2)
-
-	one2one := paths.NewOneToOne()
 	full := paths.NewFull()
-	_ = full
-	mtxRandPath := paths.NewPoolUniformRand()
-	mtxRandPath.PCon = 0.5
-	_ = mtxRandPath
 
-	mtxGo, mtxNo, gpePr, gpeAk, stn, gpi := net.AddVBG("", 1, np, nuY, nuX, nuY, nuX, space)
-	_, _ = gpePr, gpeAk
+	// mtxRandPath := paths.NewPoolUniformRand()
+	// mtxRandPath.PCon = 0.5
+	// _ = mtxRandPath
 
-	snc := net.AddLayer2D("SNc", axon.InputLayer, 1, 1)
-	_ = snc
+	in := net.AddLayer2D("State", axon.InputLayer, ev.NUnitsY, ev.NUnitsX)
+	vSpatchD1, vSpatchD2 := net.AddVSPatchLayers("", 1, 6, 6, space)
 
-	urge := net.AddUrgencyLayer(5, 4)
-	_ = urge
-
-	accPos := net.AddLayer4D("ACCPos", axon.InputLayer, 1, np, nuY, nuX)
-	accNeg := net.AddLayer4D("ACCNeg", axon.InputLayer, 1, np, nuY, nuX)
-	accPos.AddClass("ACC")
-	accNeg.AddClass("ACC")
-
-	accPosPT, accPosVM := net.AddPTMaintThalForSuper(accPos, nil, "VM", "PFCPath", one2one, full, one2one, true, space)
-	_ = accPosPT
-
-	net.ConnectLayers(accPos, stn, full, axon.ForwardPath).AddClass("CortexToSTN")
-	net.ConnectLayers(accNeg, stn, full, axon.ForwardPath).AddClass("CortexToSTN")
-
-	net.ConnectLayers(gpi, accPosVM, full, axon.InhibPath).AddClass("BgFixed")
-
-	mtxGo.SetBuildConfig("ThalLay1Name", accPosVM.Name)
-	mtxNo.SetBuildConfig("ThalLay1Name", accPosVM.Name)
-
-	net.ConnectToVSMatrix(accPos, mtxGo, full).AddClass("ACCToVMtx")
-	net.ConnectToVSMatrix(accNeg, mtxNo, full).AddClass("ACCToVMtx")
-	// cross connections:
-	net.ConnectToVSMatrix(accPos, mtxNo, full).AddClass("ACCToVMtx")
-	net.ConnectToVSMatrix(accNeg, mtxGo, full).AddClass("ACCToVMtx")
-
-	net.ConnectToVSMatrix(urge, mtxGo, full)
-
-	accPosVM.PlaceRightOf(gpi, space)
-	snc.PlaceRightOf(accPosVM, space)
-	urge.PlaceRightOf(snc, space)
-	gpeAk.PlaceAbove(gpi)
-	stn.PlaceRightOf(gpePr, space)
-	mtxGo.PlaceAbove(gpeAk)
-	accPos.PlaceAbove(mtxGo)
-	accNeg.PlaceRightOf(accPos, space)
+	net.ConnectToVSPatch(in, vSpatchD1, vSpatchD2, full)
 
 	net.Build()
 	net.Defaults()
@@ -317,7 +287,7 @@ func (ss *Sim) NetViewUpdater(mode enums.Enum) *axon.NetViewUpdate {
 func (ss *Sim) ConfigLoops() {
 	ls := looper.NewStacks()
 
-	ev := ss.Envs.ByModeDi(Test, 0).(*GoNoEnv)
+	ev := ss.Envs.ByModeDi(Train, 0).(*VSPatchEnv)
 	trials := int(math32.IntMultipleGE(float32(ss.Config.Run.Trials), float32(ss.Config.Run.NData)))
 	cycles := ss.Config.Run.Cycles
 	plusPhase := ss.Config.Run.PlusCycles
@@ -329,13 +299,9 @@ func (ss *Sim) ConfigLoops() {
 		AddLevel(Theta, 3).
 		AddLevel(Cycle, cycles)
 
-	nTestInc := int(1.0/ev.TestInc) + 1
-	totTstTrls := ev.TestReps * nTestInc * nTestInc
-	testTrials := int(math32.IntMultipleGE(float32(totTstTrls), float32(ss.Config.Run.NData)))
-
 	ls.AddStack(Test, Trial).
 		AddLevel(Epoch, 1).
-		AddLevelIncr(Trial, testTrials, ss.Config.Run.NData).
+		AddLevelIncr(Trial, trials, ss.Config.Run.NData).
 		AddLevel(Theta, 3).
 		AddLevel(Cycle, cycles)
 
@@ -349,17 +315,22 @@ func (ss *Sim) ConfigLoops() {
 		ss.ApplyInputs(mode.(Modes), trial, theta)
 	})
 
-	ls.AddOnEndToLoop(Theta, "GatedAction", func(mode enums.Enum) {
-		theta := ls.Stacks[mode].Loops[Theta].Counter.Cur
-		if theta == 1 {
-			ss.GatedAction(mode.(Modes))
-		}
-	})
-
 	ls.Loop(Train, Run).OnStart.Add("NewRun", ss.NewRun)
 
 	ls.AddOnStartToAll("StatsStart", ss.StatsStart)
 	ls.AddOnEndToAll("StatsStep", ss.StatsStep)
+
+	trainEpoch := ls.Loop(Train, Epoch)
+	trainEpoch.OnEnd.Add("NewConds", func() {
+		trnEpc := trainEpoch.Counter.Cur
+		if trnEpc > 1 && trnEpc%ss.Config.Run.CondEpochs == 0 {
+			ord := rand.Perm(ev.NConds)
+			for di := 0; di < ss.Config.Run.NData; di++ {
+				ev := ss.Envs.ByModeDi(etime.Train, di).(*VSPatchEnv)
+				ev.SetCondValuesPermute(ord)
+			}
+		}
+	})
 
 	ls.Loop(Train, Run).OnEnd.Add("SaveWeights", func() {
 		ctrString := fmt.Sprintf("%03d_%05d", ls.Loop(Train, Run).Counter.Cur, ls.Loop(Train, Epoch).Counter.Cur)
@@ -367,7 +338,7 @@ func (ss *Sim) ConfigLoops() {
 	})
 
 	if ss.Config.GUI {
-		axon.LooperUpdateNetView(ls, Cycle, Theta, ss.NetViewUpdater, ss.StatCounters)
+		axon.LooperUpdateNetView(ls, Cycle, Theta, ss.NetViewUpdater)
 
 		ls.Stacks[Train].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })
 		ls.Stacks[Test].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })
@@ -385,21 +356,16 @@ func (ss *Sim) ApplyInputs(mode Modes, trial, theta int) {
 	net := ss.Net
 	ndata := int(net.Context().NData)
 	curModeDir := ss.Current.RecycleDir(mode.String())
-	lays := []string{"ACCPos", "ACCNeg"}
+	lays := []string{"State"}
 	net.InitExt()
 	for di := range ndata {
-		idx := trial + di
-		ev := ss.Envs.ByModeDi(mode, di).(*GoNoEnv)
-		ev.Trial.Set(idx)
-		if theta == 0 {
-			ev.Step()
-		} else {
-			for _, lnm := range lays {
-				ly := ss.Net.LayerByName(lnm)
-				st := ev.State(ly.Name)
-				if st != nil {
-					ly.ApplyExt(uint32(di), st)
-				}
+		ev := ss.Envs.ByModeDi(mode, di).(*VSPatchEnv)
+		ev.Step()
+		for _, lnm := range lays {
+			ly := ss.Net.LayerByName(lnm)
+			st := ev.State(ly.Name)
+			if st != nil {
+				ly.ApplyExt(uint32(di), st)
 			}
 		}
 		curModeDir.StringValue("TrialName", ndata).SetString1D(ev.String(), di)
@@ -409,75 +375,35 @@ func (ss *Sim) ApplyInputs(mode Modes, trial, theta int) {
 }
 
 // ApplyRubicon applies Rubicon reward inputs
-func (ss *Sim) ApplyRubicon(ev *GoNoEnv, mode Modes, trial int, di uint32) {
+func (ss *Sim) ApplyRubicon(ev *VSPatchEnv, mode Modes, trial int, di uint32) {
 	pv := &ss.Net.Rubicon
+	pv.NewState(di, &ss.Net.Rand) // first before anything else is updated
 	pv.EffortUrgencyUpdate(di, 1)
 	if mode == Test {
 		pv.Urgency.Reset(di)
 	}
-
-	switch trial {
-	case 0:
-		axon.GlobalSetRew(di, 0, false) // no rew
-		axon.GlobalScalars.Set(0, int(axon.GvACh), int(di))
-	case 1:
-		axon.GlobalSetRew(di, 0, false) // no rew
-		axon.GlobalScalars.Set(1, int(axon.GvACh), int(di))
-	case 2:
-		axon.GlobalScalars.Set(1, int(axon.GvACh), int(di))
-		ss.GatedRew(ev, di)
+	if trial == ev.NTrials-1 {
+		axon.GlobalScalars.Set(1, int(di), int(axon.GvACh))
+		ss.ApplyRew(di, ev.Rew)
+	} else {
+		ss.ApplyRew(di, 0)
+		axon.GlobalScalars.Set(0, int(di), int(axon.GvACh))
 	}
 }
 
-// GatedRew applies reward input based on gating action and input
-func (ss *Sim) GatedRew(ev *GoNoEnv, di uint32) {
-	// note: not using RPE here at this point
-	rew := ev.Rew
-	ss.SetRew(rew, di)
-}
-
-func (ss *Sim) SetRew(rew float32, di uint32) {
+// ApplyRew applies reward input based on gating action and input
+func (ss *Sim) ApplyRew(di uint32, rew float32) {
 	pv := &ss.Net.Rubicon
-	axon.GlobalSetRew(di, rew, true)
-	axon.GlobalScalars.Set(rew, int(axon.GvDA), int(di)) // no reward prediction error
 	if rew > 0 {
-		pv.SetUS(di, axon.Positive, 0, 1)
+		pv.SetUS(di, axon.Positive, 0, rew)
 	} else if rew < 0 {
-		pv.SetUS(di, axon.Negative, 0, 1)
+		pv.SetUS(di, axon.Negative, 0, -rew)
 	}
-}
-
-// GatedAction records gating action and generates reward
-// this happens at the end of Trial == 1 (2nd trial)
-// so that the reward is present during the final trial when learning occurs.
-func (ss *Sim) GatedAction(mode Modes) {
-	ctx := ss.Net.Context()
-	curModeDir := ss.Current.RecycleDir(mode.String())
-	mtxly := ss.Net.LayerByName("VMtxGo")
-	vmly := ss.Net.LayerByName("ACCPosVM")
-	vmlpi := vmly.Params.PoolIndex(0)
-	mtxlpi := mtxly.Params.PoolIndex(0)
-	nan := math.NaN()
-	ndata := int(ctx.NData)
-	for di := 0; di < ndata; di++ {
-		ev := ss.Envs.ByModeDi(mode, di).(*GoNoEnv)
-		didGate := mtxly.Params.AnyGated(uint32(di))
-		action := "Gated"
-		if !didGate {
-			action = "NoGate"
-		}
-		ev.Action(action, nil)
-		rt := axon.LayerStates.Value(vmly.Index, di, int(axon.LayerRT))
-		if rt > 0 {
-			curModeDir.Float32("ACCPosVM_RT", ndata).SetFloat1D(float64(rt/200), di)
-		} else {
-			curModeDir.Float32("ACCPosVM_RT", ndata).SetFloat1D(nan, di)
-		}
-		cycavg := float64(axon.PoolAvgMax(axon.AMCaPMax, axon.AMCycle, axon.Avg, vmlpi, uint32(di)))
-		curModeDir.Float32("ACCPosVM_ActAvg", ndata).SetFloat1D(cycavg, di)
-		cycavg = float64(axon.PoolAvgMax(axon.AMCaPMax, axon.AMCycle, axon.Avg, mtxlpi, uint32(di)))
-		curModeDir.Float32("VMtxGo_ActAvg", ndata).SetFloat1D(cycavg, di)
-	}
+	drvs := []float32{1}
+	pv.SetDrives(di, 1, drvs...)
+	pv.Step(di, &ss.Net.Rand)
+	axon.GlobalScalars.Set(rew, int(axon.GvDA), int(di)) // no reward prediction error
+	// axon.GlobalScalars[di, di, axon.GvDA, axon.GlbV(ctx] = axon.GvLHbPVDA) // normally set by VTA layer, including CS
 }
 
 // NewRun intializes a new Run level of the model.
@@ -597,7 +523,7 @@ func (ss *Sim) ConfigStats() {
 
 	// up to a point, it is good to use loops over stats in one function,
 	// to reduce repetition of boilerplate.
-	statNames := []string{"ACCPos", "ACCNeg", "Gated", "Should", "Match", "Rew", "ACCPosVM_RT", "ACCPosVM_ActAvg", "VMtxGo_ActAvg"}
+	statNames := []string{"Cond", "CondRew", "Rew", "RewPred", "RewPred_NR", "DA", "DA_NR"}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		for si, name := range statNames {
 			modeDir := ss.Stats.RecycleDir(mode.String())
@@ -620,23 +546,22 @@ func (ss *Sim) ConfigStats() {
 			switch level {
 			case Trial:
 				for di := range ndata {
-					ev := ss.Envs.ByModeDi(mode, di).(*GoNoEnv)
+					ev := ss.Envs.ByModeDi(mode, di).(*VSPatchEnv)
 					var stat float32
 					switch name {
-					case "ACCPos":
-						stat = ev.ACCPos
-					case "ACCNeg":
-						stat = ev.ACCNeg
-					case "Gated":
-						stat = num.FromBool[float32](ev.Gated)
-					case "Should":
-						stat = num.FromBool[float32](ev.Should)
-					case "Match":
-						stat = num.FromBool[float32](ev.Match)
+					case "Cond":
+						stat = float32(ev.Cond)
+					case "CondRew":
+						stat = ev.CondRew
 					case "Rew":
-						stat = ev.Rew
-					case "ACCPosVM_RT", "ACCPosVM_ActAvg", "VMtxGo_ActAvg":
-						stat = float32(curModeDir.Float32(name, ndata).Float1D(di))
+						stat = axon.GlobalScalars.Value(di, int(axon.GvRew))
+					case "RewPred":
+						stat = axon.GlobalScalars.Value(di, int(axon.GvRewPred))
+					case "DA":
+						stat = ev.DA
+					case "RewPred_NR":
+
+					case "DA_NR":
 					}
 					curModeDir.Float32(name, ndata).SetFloat1D(float64(stat), di)
 					tsr.AppendRowFloat(float64(stat))
@@ -722,8 +647,8 @@ func (ss *Sim) ConfigGUI() {
 		vu.UpdateWhenStopped(mode, level)
 	}
 
-	// nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1, 2.75) // more "head on" than default which is more "top down"
-	// nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
+	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 2.15, 2.45)
+	nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
 
 	ss.GUI.UpdateFiles()
 	ss.StatsInit()
