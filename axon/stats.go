@@ -139,7 +139,7 @@ func (ly *Layer) LocalistErr4D(ctx *Context) (err []bool, minusIndex, plusIndex 
 // AvgMaxVarByPool returns the average and maximum value of given variable
 // for given pool index (0 = entire layer, 1.. are subpools for 4D only).
 // Uses fast index-based variable access.
-func (ly *Layer) AvgMaxVarByPool(ctx *Context, varNm string, poolIndex, di int) minmax.AvgMax32 {
+func (ly *Layer) AvgMaxVarByPool(varNm string, poolIndex, di int) minmax.AvgMax32 {
 	var am minmax.AvgMax32
 	vidx, err := ly.UnitVarIndex(varNm)
 	if err != nil {
@@ -155,8 +155,8 @@ func (ly *Layer) AvgMaxVarByPool(ctx *Context, varNm string, poolIndex, di int) 
 		if NeuronIsOff(ni) {
 			continue
 		}
-		vl := ly.UnitValue1D(vidx, int(ni), di)
-		am.UpdateValue(vl, int32(ni))
+		vl := ly.UnitValue1D(vidx, int(lni), di)
+		am.UpdateValue(vl, int32(lni))
 	}
 	am.CalcAvg()
 	return am

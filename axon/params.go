@@ -52,7 +52,7 @@ func (pr *Params) Config(layer LayerSheets, path PathSheets, extraSheets, tag st
 		report += " Tag: " + tag
 	}
 	if report != "" {
-		mpi.Printf("Params Set: %s", report)
+		mpi.Printf("Params Set: %s\n", report)
 	}
 }
 

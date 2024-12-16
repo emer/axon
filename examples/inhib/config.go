@@ -6,91 +6,99 @@ package main
 
 import "cogentcore.org/core/math32/vecint"
 
-// EnvConfig has config params for environment
-// note: only adding fields for key Env params that matter for both Network and Env
-// other params are set via the Env map data mechanism.
-type EnvConfig struct {
-
-	// env parameters -- can set any field/subfield on Env struct, using standard TOML formatting
-	Env map[string]any
-
-	// percent of active units in input layer (literally number of active units, because input has 100 units total)
-	InputPct float32 `default:"15" min:"5" max:"50" step:"1"`
-}
-
-// ParamConfig has config parameters related to sim params
+// ParamConfig has config parameters related to sim params.
 type ParamConfig struct {
 
-	// network parameters
-	Network map[string]any
+	// InputPct has the percent of active units in input layer
+	// (literally number of active units, because input has 100 units total).
+	InputPct float32 `default:"15" min:"5" max:"50" step:"1"`
 
-	// number of hidden layers to add
+	// NLayers is the number of hidden layers to add.
 	NLayers int `default:"2" min:"1"`
 
-	// size of hidden layers
-	HidSize vecint.Vector2i `default:"{'X':10,'Y':10}"`
+	// HiddenSize is the size of hidden layers.
+	HiddenSize vecint.Vector2i `default:"{'X':10,'Y':10}"`
 
-	// Extra Param Sheet name(s) to use (space separated if multiple) -- must be valid name as listed in compiled-in params or loaded params
+	// Sheet is the extra params sheet name(s) to use (space separated
+	// if multiple). Must be valid name as listed in compiled-in params
+	// or loaded params.
 	Sheet string
 
-	// extra tag to add to file names and logs saved from this run
+	// Tag is an extra tag to add to file names and logs saved from this run.
 	Tag string
 
-	// user note -- describe the run params etc -- like a git commit message for the run
+	// Note is additional info to describe the run params etc,
+	// like a git commit message for the run.
 	Note string
 
-	// Name of the JSON file to input saved parameters from.
-	File string `nest:"+"`
-
-	// Save a snapshot of all current param and config settings in a directory named params_<datestamp> (or _good if Good is true), then quit -- useful for comparing to later changes and seeing multiple views of current params
+	// SaveAll will save a snapshot of all current param and config settings
+	// in a directory named params_<datestamp> (or _good if Good is true),
+	// then quit. Useful for comparing to later changes and seeing multiple
+	// views of current params.
 	SaveAll bool `nest:"+"`
 
-	// for SaveAll, save to params_good for a known good params state.  This can be done prior to making a new release after all tests are passing -- add results to git to provide a full diff record of all params over time.
+	// Good is for SaveAll, save to params_good for a known good params state.
+	// This can be done prior to making a new release after all tests are passing.
+	// Add results to git to provide a full diff record of all params over level.
 	Good bool `nest:"+"`
 }
 
-// RunConfig has config parameters related to running the sim
+// RunConfig has config parameters related to running the sim.
 type RunConfig struct {
 
-	// use the GPU for computation -- generally faster even for small models if NData ~16
-	GPU bool `default:"true"`
+	// GPU uses the GPU for computation, largely for testing purposes here.
+	GPU bool `default:"false"`
+
+	// Trials is the total number of trials of different random patterns to generate.
+	Trials int `default:"10"`
+
+	// Cycles is the total number of cycles per trial: at least 200.
+	Cycles int `default:"200"`
+
+	// PlusCycles is the total number of plus-phase cycles per trial. For Cycles=300, use 100.
+	PlusCycles int `default:"50"`
 }
 
-// LogConfig has config parameters related to logging data
+// LogConfig has config parameters related to logging data.
 type LogConfig struct {
 
-	// if true, save train epoch log to file, as .epc.tsv typically
-	Epoch bool `default:"true" nest:"+"`
-
-	// if true, save train trial log to file, as .trl.tsv typically. May be large.
-	Trial bool `default:"false" nest:"+"`
-
-	// if true, save network activation etc data from testing trials, for later viewing in netview
-	NetData bool
+	// Save has the list of levels to save log files for.
+	Save []string `default:"['Trial', 'Cycle']" nest:"+"`
 }
 
-// Config is a standard Sim config -- use as a starting point.
+// Config has the overall Sim configuration options.
 type Config struct {
 
-	// specify include files here, and after configuration, it contains list of include files added
-	Includes []string
+	// Name is the short name of the sim.
+	Name string `display:"-" default:"Inhib"`
 
-	// open the GUI -- does not automatically run -- if false, then runs automatically and quits
+	// Title is the longer title of the sim.
+	Title string `display:"-" default:"Axon inhibition test"`
+
+	// URL is a link to the online README or other documentation for this sim.
+	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/inhib/README.md"`
+
+	// Doc is brief documentation of the sim.
+	Doc string `display:"-" default:"This explores how inhibitory interneurons can dynamically control overall activity levels within the network, by providing both feedforward and feedback inhibition to excitatory pyramidal neurons.."`
+
+	// Includes has a list of additional config files to include.
+	// After configuration, it contains list of include files added.
+	Includes []string `display:"-"`
+
+	// GUI means open the GUI. Otherwise it runs automatically and quits,
+	// saving results to log files.
 	GUI bool `default:"true"`
 
-	// log debugging information
+	// Debug reports debugging information.
 	Debug bool
 
-	// environment configuration options
-	Env EnvConfig `display:"add-fields"`
-
-	// parameter related configuration options
+	// Params has parameter related configuration options.
 	Params ParamConfig `display:"add-fields"`
 
-	// sim running related configuration options
+	// Run has sim running related configuration options.
 	Run RunConfig `display:"add-fields"`
 
-	// data logging related configuration options
+	// Log has data logging related configuration options.
 	Log LogConfig `display:"add-fields"`
 }
 
