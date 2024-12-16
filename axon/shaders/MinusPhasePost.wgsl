@@ -1252,7 +1252,7 @@ fn LayerParams_MatrixGated(ly: ptr<function,LayerParams>, ctx: ptr<function,Cont
 				for (var spi = u32(1); spi < (*ly).Indexes.NPools; spi++) {
 					var pi = LayerParams_PoolIndex(ly, spi);
 					if (poolIndex < 0 && PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(PoolGated))] > 0) {
-						poolIndex = i32(pi);
+						poolIndex = i32(spi);
 					}
 				}
 				if (poolIndex > 0) {

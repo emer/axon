@@ -22,6 +22,7 @@ import (
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/plot"
+	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/stats/stats"
 	"cogentcore.org/core/tensor/tensorfs"
 	"cogentcore.org/core/tree"
@@ -177,7 +178,7 @@ func (ss *Sim) ConfigEnv() {
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
 		}
-		trn.Config(etime.Train, 73+int64(di)*73)
+		trn.Config(etime.Train, di, 73+int64(di)*73)
 		if di == 0 {
 			trn.ConfigPats()
 			trn0 = trn
@@ -190,7 +191,7 @@ func (ss *Sim) ConfigEnv() {
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(tst, ss.Config.Env.Env)
 		}
-		tst.Config(etime.Test, 181+int64(di)*181)
+		tst.Config(etime.Test, di, 181+int64(di)*181)
 		tst.Pats = trn0.Pats
 
 		trn.Init(0)
@@ -296,13 +297,13 @@ func (ss *Sim) ConfigLoops() {
 		AddLevel(Run, ss.Config.Run.Runs).
 		AddLevel(Epoch, ss.Config.Run.Epochs).
 		AddLevelIncr(Trial, trials, ss.Config.Run.NData).
-		AddLevel(Theta, 3).
+		AddLevel(Theta, ev.Thetas).
 		AddLevel(Cycle, cycles)
 
 	ls.AddStack(Test, Trial).
 		AddLevel(Epoch, 1).
 		AddLevelIncr(Trial, trials, ss.Config.Run.NData).
-		AddLevel(Theta, 3).
+		AddLevel(Theta, ev.Thetas).
 		AddLevel(Cycle, cycles)
 
 	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, 50, cycles-plusPhase, cycles-1, Cycle, Theta, Train) // note: Theta
@@ -375,19 +376,19 @@ func (ss *Sim) ApplyInputs(mode Modes, trial, theta int) {
 }
 
 // ApplyRubicon applies Rubicon reward inputs
-func (ss *Sim) ApplyRubicon(ev *VSPatchEnv, mode Modes, trial int, di uint32) {
+func (ss *Sim) ApplyRubicon(ev *VSPatchEnv, mode Modes, theta int, di uint32) {
 	pv := &ss.Net.Rubicon
 	pv.NewState(di, &ss.Net.Rand) // first before anything else is updated
 	pv.EffortUrgencyUpdate(di, 1)
-	if mode == Test {
-		pv.Urgency.Reset(di)
-	}
-	if trial == ev.NTrials-1 {
-		axon.GlobalScalars.Set(1, int(di), int(axon.GvACh))
+	// if mode == Test {
+	pv.Urgency.Reset(di)
+	// }
+	if theta == ev.Thetas-1 {
+		axon.GlobalScalars.Set(1, int(axon.GvACh), int(di))
 		ss.ApplyRew(di, ev.Rew)
 	} else {
 		ss.ApplyRew(di, 0)
-		axon.GlobalScalars.Set(0, int(di), int(axon.GvACh))
+		axon.GlobalScalars.Set(0, int(axon.GvACh), int(di))
 	}
 }
 
@@ -399,11 +400,11 @@ func (ss *Sim) ApplyRew(di uint32, rew float32) {
 	} else if rew < 0 {
 		pv.SetUS(di, axon.Negative, 0, -rew)
 	}
-	drvs := []float32{1}
-	pv.SetDrives(di, 1, drvs...)
+	pv.SetDrives(di, 1, 1)
 	pv.Step(di, &ss.Net.Rand)
-	axon.GlobalScalars.Set(rew, int(axon.GvDA), int(di)) // no reward prediction error
-	// axon.GlobalScalars[di, di, axon.GvDA, axon.GlbV(ctx] = axon.GvLHbPVDA) // normally set by VTA layer, including CS
+	// normally set by VTA layer, including CS:
+	lhbDA := axon.GlobalScalars.Value(int(axon.GvLHbPVDA), int(di))
+	axon.GlobalScalars.Set(lhbDA, int(axon.GvDA), int(di))
 }
 
 // NewRun intializes a new Run level of the model.
@@ -431,7 +432,7 @@ func (ss *Sim) AddStat(f func(mode Modes, level Levels, phase StatsPhase)) {
 func (ss *Sim) StatsStart(lmd, ltm enums.Enum) {
 	mode := lmd.(Modes)
 	level := ltm.(Levels)
-	if level <= Trial {
+	if level <= Theta {
 		return
 	}
 	ss.RunStats(mode, level-1, Start)
@@ -523,7 +524,8 @@ func (ss *Sim) ConfigStats() {
 
 	// up to a point, it is good to use loops over stats in one function,
 	// to reduce repetition of boilerplate.
-	statNames := []string{"Cond", "CondRew", "Rew", "RewPred", "RewPred_NR", "DA", "DA_NR"}
+	statNames := []string{"Cond", "CondRew", "Rew", "RewPred", "DA", "RewPred_NR", "DA_NR"}
+	numStats := len(statNames)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		for si, name := range statNames {
 			modeDir := ss.Stats.RecycleDir(mode.String())
@@ -541,12 +543,19 @@ func (ss *Sim) ConfigStats() {
 						s.On = true
 					}
 				})
+				if si == numStats-1 && level == Epoch {
+					all, _ := levelDir.Values()
+					for _, ts := range all {
+						ts.(tensor.Values).SetNumRows(0)
+					}
+				}
 				continue
 			}
 			switch level {
-			case Trial:
+			case Trial, Theta:
 				for di := range ndata {
 					ev := ss.Envs.ByModeDi(mode, di).(*VSPatchEnv)
+					theta := ev.Theta.Cur
 					var stat float32
 					switch name {
 					case "Cond":
@@ -554,14 +563,23 @@ func (ss *Sim) ConfigStats() {
 					case "CondRew":
 						stat = ev.CondRew
 					case "Rew":
-						stat = axon.GlobalScalars.Value(di, int(axon.GvRew))
+						stat = axon.GlobalScalars.Value(int(axon.GvRew), di)
 					case "RewPred":
-						stat = axon.GlobalScalars.Value(di, int(axon.GvRewPred))
+						stat = axon.GlobalScalars.Value(int(axon.GvRewPred), di)
+						ev.RewPred = stat
+						if level == Theta && theta == ev.Thetas-1 {
+							ev.RewPred_NR = stat
+						}
 					case "DA":
-						stat = ev.DA
+						stat = axon.GlobalScalars.Value(int(axon.GvDA), di)
+						ev.DA = stat
+						if level == Theta && theta == ev.Thetas-1 {
+							ev.DA_NR = stat
+						}
 					case "RewPred_NR":
-
+						stat = ev.RewPred_NR
 					case "DA_NR":
+						stat = ev.DA_NR
 					}
 					curModeDir.Float32(name, ndata).SetFloat1D(float64(stat), di)
 					tsr.AppendRowFloat(float64(stat))
@@ -569,27 +587,42 @@ func (ss *Sim) ConfigStats() {
 			case Epoch:
 				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
 				tsr.AppendRowFloat(stat)
-				if mode == Train {
-					break
-				}
 				if si == 0 {
-					stats.Groups(curModeDir, subDir.Value("TrialName"))
+					stats.Groups(curModeDir, subDir.Value("Cond"))
+					break
+				} else {
+					stats.GroupStats(curModeDir, stats.StatMean, subDir.Value(name))
 				}
-				stats.GroupStats(curModeDir, stats.StatMean, subDir.Value(name))
-				// note: results go under Group name: TrialName
-				gp := curModeDir.RecycleDir("Stats/TrialName/" + name).Value("Mean")
+				// note: results go under Group name: Cond
+				gp := curModeDir.RecycleDir("Stats/Cond/" + name).Value("Mean")
 				plot.SetFirstStylerTo(gp, func(s *plot.Style) {
-					if si >= 2 && si <= 3 {
+					s.Range.SetMin(0)
+					if si >= 2 && si <= 4 {
 						s.On = true
 					}
 				})
-				if si == len(statNames)-1 {
+				if si == numStats-1 {
 					nrows := gp.DimSize(0)
 					row := curModeDir.RecycleDir("Stats").Int("Row", nrows)
 					for i := range nrows {
 						row.Set(i, i)
 					}
+					_, idx := ss.GUI.Tabs.CurrentTab()
+					gpst := curModeDir.RecycleDir("Stats/Cond").Value("Cond")
+					for j := range gpst.DimSize(0) {
+						val := gpst.String1D(j)
+						for si, name := range statNames {
+							if si == 0 {
+								continue
+							}
+							svals := curModeDir.RecycleDir("Stats/Cond/" + name).Value("Mean")
+							snm := "Cond_" + val + "_" + name
+							tsr := levelDir.Float64(snm)
+							tsr.AppendRowFloat(svals.Float1D(j))
+						}
+					}
 					ss.GUI.Tabs.PlotTensorFS(curModeDir.RecycleDir("Stats"))
+					ss.GUI.Tabs.SelectTabIndex(idx)
 				}
 			case Run:
 				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
@@ -598,7 +631,7 @@ func (ss *Sim) ConfigStats() {
 		}
 	})
 
-	perTrlFunc := axon.StatPerTrialMSec(ss.Stats, "Gated", Train, Trial)
+	perTrlFunc := axon.StatPerTrialMSec(ss.Stats, Train, Trial)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		perTrlFunc(mode, level, phase == Start)
 	})
@@ -618,12 +651,12 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 		return counters
 	}
 	counters += fmt.Sprintf(" TrialName: %s", curModeDir.StringValue("TrialName").String1D(di))
-	statNames := []string{"Gated"}
+	statNames := []string{"Rew", "RewPred", "DA", "RewPred_NR", "DA_NR"}
 	if level == Cycle || curModeDir.Node(statNames[0]) == nil {
 		return counters
 	}
 	for _, name := range statNames {
-		counters += fmt.Sprintf(" %s: %.4g", name, curModeDir.Float32(name).Float1D(di))
+		counters += fmt.Sprintf(" %s: %.4g", name, curModeDir.Value(name).Float1D(di))
 	}
 	return counters
 }

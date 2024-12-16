@@ -621,7 +621,7 @@ func (ss *Sim) ConfigStats() {
 		}
 	})
 
-	perTrlFunc := axon.StatPerTrialMSec(ss.Stats, "Err", Train, Trial)
+	perTrlFunc := axon.StatPerTrialMSec(ss.Stats, Train, Trial)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		perTrlFunc(mode, level, phase == Start)
 	})

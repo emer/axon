@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/timer"
 	"cogentcore.org/core/enums"
 	"cogentcore.org/core/plot"
@@ -236,8 +237,7 @@ func StatTrialName(statsDir, currentDir *tensorfs.Node, ls *looper.Stacks, net *
 // StatPerTrialMSec returns a Stats function that reports the number of milliseconds
 // per trial, for the given levels and training mode enum values.
 // Stats will be recorded a levels above the given trial level.
-// The statName is the name of another stat that is used to get the number of trials.
-func StatPerTrialMSec(statsDir *tensorfs.Node, statName string, trainMode enums.Enum, trialLevel enums.Enum) func(mode, level enums.Enum, start bool) {
+func StatPerTrialMSec(statsDir *tensorfs.Node, trainMode enums.Enum, trialLevel enums.Enum) func(mode, level enums.Enum, start bool) {
 	var epcTimer timer.Time
 	levels := make([]enums.Enum, 10) // should be enough
 	levels[0] = trialLevel
@@ -262,7 +262,7 @@ func StatPerTrialMSec(statsDir *tensorfs.Node, statName string, trainMode enums.
 		case 1:
 			epcTimer.Stop()
 			subd := modeDir.RecycleDir(levels[0].String())
-			trls := subd.Value(statName) // must be a stat
+			trls := errors.Ignore1(subd.Values())[0] // must be a stat
 			epcTimer.N = trls.Len()
 			pertrl := float64(epcTimer.Avg()) / float64(time.Millisecond)
 			tsr.AppendRowFloat(pertrl)

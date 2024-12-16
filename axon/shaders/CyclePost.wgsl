@@ -208,10 +208,10 @@ fn LayerParams_CyclePostVTALayer(ly: ptr<function,LayerParams>, ctx: ptr<functio
 fn LayerParams_CyclePostVSPatchLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, pi: u32,di: u32, spi: i32) {
 	var casd = PoolAvgMax(AMCaD, AMCycle, Avg, pi, di);
 	if ((*ly).Learn.NeuroMod.DAMod == D1Mod) {
-		GlobalVectors[Index3D(TensorStrides[110], TensorStrides[111], TensorStrides[112], u32(GvVSPatchD1), u32(u32(pi - 1)), u32(di))] = casd;
+		GlobalVectors[Index3D(TensorStrides[110], TensorStrides[111], TensorStrides[112], u32(GvVSPatchD1), u32(u32(spi - 1)), u32(di))] = casd;
 	} else {
 		GlobalVectors[Index3D(TensorStrides[110], TensorStrides[111], TensorStrides[112],
-		u32(GvVSPatchD2), u32(u32(pi - 1)), u32(di))] = casd;
+		u32(GvVSPatchD2), u32(u32(spi - 1)), u32(di))] = casd;
 	}
 }
 

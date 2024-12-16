@@ -15,7 +15,13 @@ import (
 	"github.com/emer/emergent/v2/patgen"
 )
 
-// VSPatchEnv implements simple Go vs. NoGo input patterns to test BG learning.
+// VSPatchEnv implements a simple training environment for VSPatch reward
+// prediction learning, with a given number of theta steps within
+// an overall trial, that lead up to a reward outcome delivery at the end.
+// There is a fixed progression of patterns for each theta step, generated from
+// a prototypical pattern for each condition. The different trial steps
+// iterate through different conditions, each of which has a different reward level.
+// Rewards can be graded or probabilistic.
 type VSPatchEnv struct {
 
 	// name of environment -- Train or Test
@@ -24,11 +30,16 @@ type VSPatchEnv struct {
 	// training or testing env?
 	Mode etime.Modes
 
-	// sequence counter is for the condition
-	Sequence env.Counter `display:"inline"`
+	// Di is the data parallel index for this env, which determines
+	// the starting offset for the condition so that it matches
+	// what would happen sequentially.
+	Di int
 
-	// trial counter is for the step within condition
+	// trial counter is outer loop over thetas, iterates over Conds up to NCond
 	Trial env.Counter `display:"inline"`
+
+	// theta counter is for the step within trial
+	Theta env.Counter `display:"inline"`
 
 	// current condition index
 	Cond int
@@ -43,7 +54,7 @@ type VSPatchEnv struct {
 	NConds int
 
 	// number of trials
-	NTrials int
+	Thetas int
 
 	// condition current values
 	CondValues []float32
@@ -75,14 +86,20 @@ type VSPatchEnv struct {
 	// named states: ACCPos, ACCNeg
 	States map[string]*tensor.Float32
 
-	// current reward value -- is 0 until final trial
+	// current reward value -- is 0 until final theta step.
 	Rew float32 `edit:"-"`
 
-	// reward prediction from model
+	// reward prediction from model for current theta step.
 	RewPred float32 `edit:"-"`
 
-	// DA = reward prediction error: Rew - RewPred
+	// DA = reward prediction error on current theta step: Rew - RewPred
 	DA float32 `edit:"-"`
+
+	// non-reward prediction from model, from theta step just before reward.
+	RewPred_NR float32 `edit:"-"`
+
+	// DA = non-reward prediction error: Rew - RewPred_NR
+	DA_NR float32 `edit:"-"`
 }
 
 func (ev *VSPatchEnv) Label() string { return ev.Name }
@@ -90,7 +107,7 @@ func (ev *VSPatchEnv) Label() string { return ev.Name }
 func (ev *VSPatchEnv) Defaults() {
 	ev.Probs = true
 	ev.NConds = 4
-	ev.NTrials = 3
+	ev.Thetas = 3
 	ev.NUnitsY = 5
 	ev.NUnitsX = 5
 	ev.NUnits = ev.NUnitsY * ev.NUnitsX
@@ -117,15 +134,16 @@ func (ev *VSPatchEnv) SetCondValuesPermute(ord []int) {
 }
 
 // Config configures the world
-func (ev *VSPatchEnv) Config(mode etime.Modes, rndseed int64) {
+func (ev *VSPatchEnv) Config(mode etime.Modes, di int, rndseed int64) {
 	ev.Mode = mode
+	ev.Di = di
 	ev.RandSeed = rndseed
 	ev.Rand.NewRand(ev.RandSeed)
 	ev.States = make(map[string]*tensor.Float32)
 	ev.States["State"] = tensor.NewFloat32(ev.NUnitsY, ev.NUnitsX)
 	ev.CondValues = make([]float32, ev.NConds)
-	ev.Sequence.Max = ev.NConds
-	ev.Trial.Max = ev.NTrials
+	ev.Trial.Max = ev.NConds
+	ev.Theta.Max = ev.Thetas
 	ev.SetCondValues()
 }
 
@@ -140,7 +158,7 @@ func (ev *VSPatchEnv) ConfigPats() {
 	flipBits := patgen.NFromPct(flipPct, nOn)
 	patgen.AddVocabPermutedBinary(ev.PatVocab, "Protos", ev.NConds, ev.NUnitsY, ev.NUnitsX, pctAct, minDiff)
 
-	npats := ev.NConds * ev.NTrials
+	npats := ev.NConds * ev.Thetas
 	ev.Pats = table.New()
 	ev.Pats.AddStringColumn("Name")
 	ev.Pats.AddFloat32Column("Input", ev.NUnitsY, ev.NUnitsX)
@@ -149,21 +167,21 @@ func (ev *VSPatchEnv) ConfigPats() {
 	idx := 0
 	for i := 0; i < ev.NConds; i++ {
 		condNm := fmt.Sprintf("cond%d", i)
-		tsr, _ := patgen.AddVocabRepeat(ev.PatVocab, condNm, ev.NTrials, "Protos", i)
+		tsr, _ := patgen.AddVocabRepeat(ev.PatVocab, condNm, ev.Thetas, "Protos", i)
 		patgen.FlipBitsRows(tsr, flipBits, flipBits, 1, 0)
-		for j := 0; j < ev.NTrials; j++ {
+		for j := 0; j < ev.Thetas; j++ {
 			ev.Pats.Column("Input").SetRowTensor(tsr.SubSpace(j), idx+j)
-			ev.Pats.Column("Name").SetStringRow(fmt.Sprintf("Cond%d_Trial%d", i, j), idx+j, 0)
+			ev.Pats.Column("Name").SetStringRow(fmt.Sprintf("Cond%d_Theta%d", i, j), idx+j, 0)
 		}
-		idx += ev.NTrials
+		idx += ev.Thetas
 	}
 
 	// ev.PatSimMat.TableColumn(table.NewIndexView(ev.Pats), "Input", "Name", true, metric.Correlation64)
 }
 
 func (ev *VSPatchEnv) Init(run int) {
-	ev.Sequence.Init()
 	ev.Trial.Init()
+	ev.Theta.Init()
 }
 
 func (ev *VSPatchEnv) State(el string) tensor.Values {
@@ -173,18 +191,19 @@ func (ev *VSPatchEnv) State(el string) tensor.Values {
 // RenderState renders the given condition, trial
 func (ev *VSPatchEnv) RenderState(cond, trial int) {
 	st := ev.States["State"]
-	idx := cond*ev.NTrials + trial
+	idx := cond*ev.Thetas + trial
 	st.CopyFrom(ev.Pats.Column("Input").RowTensor(idx))
 }
 
-// Step does one step -- must set Trial.Cur first if doing testing
+// Step does one step -- must set Theta.Cur first if doing testing
 func (ev *VSPatchEnv) Step() bool {
-	ev.RenderState(ev.Sequence.Cur, ev.Trial.Cur)
+	cond := (ev.Di + ev.Trial.Cur) % ev.NConds
+	ev.Cond = cond
+	ev.RenderState(cond, ev.Theta.Cur)
 	ev.Rew = 0
-	rv := ev.CondValues[ev.Sequence.Cur]
-	ev.Cond = ev.Sequence.Cur // todo: randomize
+	rv := ev.CondValues[cond]
 	ev.CondRew = rv
-	if ev.Trial.Cur == ev.NTrials-1 {
+	if ev.Theta.Cur == ev.Thetas-1 {
 		if ev.Probs {
 			if randx.BoolP32(rv, &ev.Rand) {
 				ev.Rew = 1
@@ -195,15 +214,12 @@ func (ev *VSPatchEnv) Step() bool {
 			ev.Rew = rv
 		}
 	}
-	ev.Sequence.Same()
-	if ev.Trial.Incr() {
-		ev.Sequence.Incr()
+	ev.Trial.Same()
+	if ev.Theta.Incr() {
+		ev.Trial.Incr()
 	}
 	return true
 }
 
 func (ev *VSPatchEnv) Action(action string, nop tensor.Values) {
-}
-
-func (ev *VSPatchEnv) ComputeDA(rew float32) {
 }

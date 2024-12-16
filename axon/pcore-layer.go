@@ -172,7 +172,7 @@ func (ly *LayerParams) MatrixGated(ctx *Context) {
 				for spi := uint32(1); spi < ly.Indexes.NPools; spi++ {
 					pi := ly.PoolIndex(spi)
 					if poolIndex < 0 && PoolsInt.Value(int(pi), int(di), int(PoolGated)) > 0 {
-						poolIndex = int32(pi)
+						poolIndex = int32(spi)
 					}
 				}
 				if poolIndex > 0 {

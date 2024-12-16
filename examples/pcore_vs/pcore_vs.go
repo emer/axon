@@ -649,6 +649,7 @@ func (ss *Sim) ConfigStats() {
 				}
 				if si == 0 {
 					stats.Groups(curModeDir, subDir.Value("TrialName"))
+					break
 				}
 				stats.GroupStats(curModeDir, stats.StatMean, subDir.Value(name))
 				// note: results go under Group name: TrialName
@@ -673,7 +674,7 @@ func (ss *Sim) ConfigStats() {
 		}
 	})
 
-	perTrlFunc := axon.StatPerTrialMSec(ss.Stats, "Gated", Train, Trial)
+	perTrlFunc := axon.StatPerTrialMSec(ss.Stats, Train, Trial)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		perTrlFunc(mode, level, phase == Start)
 	})

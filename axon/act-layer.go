@@ -844,9 +844,9 @@ func (ly *LayerParams) CyclePostVTALayer(ctx *Context, di uint32) {
 func (ly *LayerParams) CyclePostVSPatchLayer(ctx *Context, pi, di uint32, spi int32) {
 	casd := PoolAvgMax(AMCaD, AMCycle, Avg, pi, di)
 	if ly.Learn.NeuroMod.DAMod == D1Mod {
-		GlobalVectors.Set(casd, int(GvVSPatchD1), int(uint32(pi-1)), int(di))
+		GlobalVectors.Set(casd, int(GvVSPatchD1), int(uint32(spi-1)), int(di))
 	} else {
-		GlobalVectors.Set(casd, int(GvVSPatchD2), int(uint32(pi-1)), int(di))
+		GlobalVectors.Set(casd, int(GvVSPatchD2), int(uint32(spi-1)), int(di))
 	}
 }
 
@@ -1070,7 +1070,7 @@ func (ly *LayerParams) PlusPhasePost(ctx *Context) {
 			for di := uint32(0); di < ctx.NData; di++ {
 				pi := ly.PoolIndex(spi)
 				val := PoolAvgMax(AMCaD, AMCycle, Avg, pi, di)
-				GlobalVectors.Set(val, int(GvOFCposPTMaint), int(uint32(pi-1)), int(di))
+				GlobalVectors.Set(val, int(GvOFCposPTMaint), int(uint32(spi-1)), int(di))
 			}
 		}
 	}
