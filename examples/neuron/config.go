@@ -4,133 +4,136 @@
 
 package main
 
-// ParamConfig has config parameters related to sim params
+// ParamConfig has config parameters related to sim params.
 type ParamConfig struct {
 
-	// network parameters
-	Network map[string]any
-
-	// Extra Param Sheet name(s) to use (space separated if multiple) -- must be valid name as listed in compiled-in params or loaded params
+	// Sheet is the extra params sheet name(s) to use (space separated
+	// if multiple). Must be valid name as listed in compiled-in params
+	// or loaded params.
 	Sheet string
 
-	// extra tag to add to file names and logs saved from this run
+	// Tag is an extra tag to add to file names and logs saved from this run.
 	Tag string
 
-	// user note -- describe the run params etc -- like a git commit message for the run
+	// Note is additional info to describe the run params etc,
+	// like a git commit message for the run.
 	Note string
 
-	// Name of the JSON file to input saved parameters from.
-	File string `nest:"+"`
-
-	// Save a snapshot of all current param and config settings in a directory named params_<datestamp> (or _good if Good is true), then quit -- useful for comparing to later changes and seeing multiple views of current params
+	// SaveAll will save a snapshot of all current param and config settings
+	// in a directory named params_<datestamp> (or _good if Good is true),
+	// then quit. Useful for comparing to later changes and seeing multiple
+	// views of current params.
 	SaveAll bool `nest:"+"`
 
-	// for SaveAll, save to params_good for a known good params state.  This can be done prior to making a new release after all tests are passing -- add results to git to provide a full diff record of all params over time.
+	// Good is for SaveAll, save to params_good for a known good params state.
+	// This can be done prior to making a new release after all tests are passing.
+	// Add results to git to provide a full diff record of all params over level.
 	Good bool `nest:"+"`
 }
 
-// RunConfig has config parameters related to running the sim
+// RunConfig has config parameters related to running the sim.
 type RunConfig struct {
 
-	// use the GPU for computation -- only for testing in this model -- not faster
-	GPU bool `default:"false"`
+	// Cycles is the total number of cycles to run.
+	Cycles int `min:"10" default:"200"`
 
-	// number of parallel threads for CPU computation -- 0 = use default
-	NThreads int `default:"2"`
-
-	// starting run number -- determines the random seed -- runs counts from there -- can do all runs in parallel by launching separate jobs with each run, runs = 1
-	Run int `default:"0"`
-
-	// total number of runs to do when running Train
-	NRuns int `default:"1" min:"1"`
-
-	// total number of epochs per run
-	NEpochs int `default:"1"`
-}
-
-// LogConfig has config parameters related to logging data
-type LogConfig struct {
-
-	// if true, save final weights after each run
-	SaveWeights bool
-
-	// if true, save cycle log to file, as .cyc.tsv typically
-	Cycle bool `default:"true" nest:"+"`
-
-	// if true, save network activation etc data from testing trials, for later viewing in netview
-	NetData bool
-}
-
-// Config is a standard Sim config -- use as a starting point.
-type Config struct {
-
-	// clamp constant Ge value -- otherwise drive discrete spiking input
-	GeClamp bool `default:"true"`
-
-	// frequency of input spiking for !GeClamp mode
-	SpikeHz float32 `default:"50"`
-
-	// Raw synaptic excitatory conductance
-	Ge float32 `min:"0" step:"0.01" default:"0.1"`
-
-	// Inhibitory conductance
-	Gi float32 `min:"0" step:"0.01" default:"0.1"`
-
-	// excitatory reversal (driving) potential -- determines where excitation pushes Vm up to
-	ErevE float32 `min:"0" max:"1" step:"0.01" default:"1"`
-
-	// leak reversal (driving) potential -- determines where excitation pulls Vm down to
-	ErevI float32 `min:"0" max:"1" step:"0.01" default:"0.3"`
-
-	// the variance parameter for Gaussian noise added to unit activations on every cycle
-	Noise float32 `min:"0" step:"0.01"`
-
-	// apply sodium-gated potassium adaptation mechanisms that cause the neuron to reduce spiking over time
-	KNaAdapt bool `default:"true"`
-
-	// strength of mAHP M-type channel -- used to be implemented by KNa but now using the more standard M-type channel mechanism
-	MahpGbar float32 `default:"0.05"`
-
-	// strength of NMDA current -- 0.006 default for posterior cortex
-	NMDAGbar float32 `default:"0.006"`
-
-	// strength of GABAB current -- 0.015 default for posterior cortex
-	GABABGbar float32 `default:"0.015"`
-
-	// strength of VGCC voltage gated calcium current -- only activated during spikes -- this is now an essential part of Ca-driven learning to reflect recv spiking in the Ca signal -- but if too strong leads to runaway excitatory bursting.
-	VGCCGbar float32 `default:"0.02"`
-
-	// strength of A-type potassium channel -- this is only active at high (depolarized) membrane potentials -- only during spikes -- useful to counteract VGCC's
-	AKGbar float32 `default:"0.1"`
-
-	// total number of cycles to run
-	NCycles int `min:"10" default:"200"`
-
-	// when does excitatory input into neuron come on?
+	// OnCycle is when the excitatory input into the neuron turns on.
 	OnCycle int `min:"0" default:"10"`
 
-	// when does excitatory input into neuron go off?
+	// OffCycle is when does excitatory input into the neuron turns off.
 	OffCycle int `min:"0" default:"160"`
+}
 
-	// how often to update display (in cycles)
-	UpdateInterval int `min:"1" default:"10" `
+// LogConfig has config parameters related to logging data.
+type LogConfig struct {
 
-	// specify include files here, and after configuration, it contains list of include files added
-	Includes []string
+	// Save saves a log file when run in nogui mode.
+	Save bool
+}
 
-	// open the GUI -- does not automatically run -- if false, then runs automatically and quits
+// Config has the overall Sim configuration options.
+type Config struct {
+
+	// Name is the short name of the sim.
+	Name string `display:"-" default:"Neuron"`
+
+	// Title is the longer title of the sim.
+	Title string `display:"-" default:"Axon single neuron"`
+
+	// URL is a link to the online README or other documentation for this sim.
+	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/neuron/README.md"`
+
+	// Doc is brief documentation of the sim.
+	Doc string `display:"-" default:"This simulation demonstrates the basic properties of neural spiking and rate-code activation, reflecting a balance of excitatory and inhibitory influences (including leak and synaptic inhibition)."`
+
+	// GeClamp clamps a constant Ge value; otherwise there is a discrete spiking input.
+	GeClamp bool `default:"true"`
+
+	// SpikeHz is the frequency of input spiking for !GeClamp mode.
+	SpikeHz float32 `default:"50"`
+
+	// Ge is the raw synaptic excitatory conductance.
+	Ge float32 `min:"0" step:"0.01" default:"0.1"`
+
+	// Gi is the raw inhibitory conductance.
+	Gi float32 `min:"0" step:"0.01" default:"0.1"`
+
+	// ErevE is the excitatory reversal (driving) potential; determines where excitation pushes Vm up to.
+	ErevE float32 `min:"0" max:"1" step:"0.01" default:"1"`
+
+	// ErevI is the leak reversal (driving) potential; determines where excitation pulls Vm down to.
+	ErevI float32 `min:"0" max:"1" step:"0.01" default:"0.3"`
+
+	// Noise is the variance parameter for Gaussian noise added to unit activations on every cycle.
+	Noise float32 `min:"0" step:"0.01"`
+
+	// KNaAdapt activates sodium-gated potassium adaptation mechanisms
+	// that cause the neuron to reduce spiking over time.
+	KNaAdapt bool `default:"true"`
+
+	// MahpGbar is the strength of mAHP M-type channel, which drives adaptation
+	// similar to KNa adaptation mechanisms.
+	MahpGbar float32 `default:"0.05"`
+
+	// NMDAGbar is the strength of the NMDA excitatory Ca++ current,
+	// which has a long time constant and is essential for establishing
+	// a more stable neural representation over time.
+	NMDAGbar float32 `default:"0.006"`
+
+	// GABABGbar is the strength of the GABAB inhibitory Cl- current,
+	// which also has a long time constant like NMDA, and works in opposition to it,
+	// synergistically helping to establish stable neural representations.
+	GABABGbar float32 `default:"0.015"`
+
+	// VGCCCGBar is the strength of the VGCC voltage gated calcium current.
+	// This is only activated during spikes, and is an essential part of the Ca-driven
+	// learning to reflect recv spiking in the Ca signal. If too strong it can leads
+	// to runaway excitatory bursting.
+	VGCCGbar float32 `default:"0.02"`
+
+	// AKGbar is the strength of the A-type potassium channel, which is only active
+	// at high (depolarized) membrane potentials, i.e., during spikes.
+	// It is useful to balance against the excitatiohn from VGCC's.
+	AKGbar float32 `default:"0.1"`
+
+	// Includes has a list of additional config files to include.
+	// After configuration, it contains list of include files added.
+	Includes []string `display:"-"`
+
+	// GUI means open the GUI. Otherwise it runs automatically and quits,
+	// saving results to log files.
 	GUI bool `default:"true"`
 
-	// log debugging information
+	// Debug reports debugging information.
 	Debug bool
 
-	// parameter related configuration options
+	// Params has parameter related configuration options.
 	Params ParamConfig `display:"add-fields"`
 
-	// sim running related configuration options
+	// Run has sim running related configuration options.
 	Run RunConfig `display:"add-fields"`
 
-	// data logging related configuration options
+	// Log has data logging related configuration options.
 	Log LogConfig `display:"add-fields"`
 }
 
