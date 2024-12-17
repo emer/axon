@@ -5,12 +5,12 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/emergent/v2/etime"
 )
 
 // MotorSeqEnv implements simple motor sequencing patterns to test DS BG learning.
@@ -23,7 +23,7 @@ type MotorSeqEnv struct {
 	Name string
 
 	// training or testing env?
-	Mode etime.Modes
+	Mode Modes
 
 	// trial counter for index into sequence
 	Trial env.Counter
@@ -110,17 +110,17 @@ func (ev *MotorSeqEnv) Defaults() {
 }
 
 // Config configures the world
-func (ev *MotorSeqEnv) Config(mode etime.Modes, rndseed int64) {
+func (ev *MotorSeqEnv) Config(mode Modes, rndseed int64) {
 	ev.Mode = mode
 	ev.RandSeed = rndseed
 	ev.Rand.NewRand(ev.RandSeed)
 	ev.States = make(map[string]*tensor.Float32)
-	ev.States["State"] = tensor.NewFloat32([]int{ev.NUnitsPer, ev.NActions}, "Y", "X")
-	ev.States["Target"] = tensor.NewFloat32([]int{ev.NUnitsPer, ev.NActions}, "Y", "X")
-	ev.States["Action"] = tensor.NewFloat32([]int{ev.NUnitsPer, ev.NActions}, "Y", "X")
-	ev.States["PrevAction"] = tensor.NewFloat32([]int{ev.NUnitsPer, ev.NActions + 1}, "Y", "X")
-	ev.States["Rew"] = tensor.NewFloat32([]int{1, 1})
-	ev.States["SNc"] = tensor.NewFloat32([]int{1, 1})
+	ev.States["State"] = tensor.NewFloat32(ev.NUnitsPer, ev.NActions)
+	ev.States["Target"] = tensor.NewFloat32(ev.NUnitsPer, ev.NActions)
+	ev.States["Action"] = tensor.NewFloat32(ev.NUnitsPer, ev.NActions)
+	ev.States["PrevAction"] = tensor.NewFloat32(ev.NUnitsPer, ev.NActions+1)
+	ev.States["Rew"] = tensor.NewFloat32(1, 1)
+	ev.States["SNc"] = tensor.NewFloat32(1, 1)
 }
 
 func (ev *MotorSeqEnv) InitSeqMap() {
@@ -133,6 +133,10 @@ func (ev *MotorSeqEnv) InitSeqMap() {
 	// ev.SeqMap[0] = 3 // 3, 2 good test cases -- can learn but not initial bias -- 3 esp hard
 }
 
+func (ev *MotorSeqEnv) String() string {
+	return fmt.Sprintf("%d", ev.Target)
+}
+
 func (ev *MotorSeqEnv) Init(run int) {
 	ev.Trial.Max = ev.SeqLen + 1 // rew
 	ev.Trial.Init()
@@ -142,7 +146,7 @@ func (ev *MotorSeqEnv) Init(run int) {
 	ev.RewPred = ev.RewPredMin
 }
 
-func (ev *MotorSeqEnv) State(el string) tensor.Tensor {
+func (ev *MotorSeqEnv) State(el string) tensor.Values {
 	return ev.States[el]
 }
 
@@ -157,7 +161,7 @@ func (ev *MotorSeqEnv) RenderLocalist(name string, idx int) {
 	av := ev.States[name]
 	av.SetZeros()
 	for yi := 0; yi < ev.NUnitsPer; yi++ {
-		av.Set([]int{yi, idx}, 1)
+		av.Set(1, yi, idx)
 	}
 }
 
@@ -173,8 +177,8 @@ func (ev *MotorSeqEnv) IsRewTrialPostStep() bool {
 func (ev *MotorSeqEnv) RenderState() {
 	trl := ev.Trial.Cur
 	ev.RenderBlank("Action")
-	ev.States["SNc"].Set1D(0, ev.RPE)
-	ev.States["Rew"].Set1D(0, ev.Rew)
+	ev.States["SNc"].Set1D(ev.RPE, 0)
+	ev.States["Rew"].Set1D(ev.Rew, 0)
 	if ev.IsRewTrial() {
 		ev.RenderBlank("State")
 		ev.RenderBlank("Target")
@@ -202,7 +206,7 @@ func (ev *MotorSeqEnv) Step() bool {
 
 // Action records the current action taken by model, at end of minus phase
 // Computes Rew* at end of sequence
-func (ev *MotorSeqEnv) Action(action string, nop tensor.Tensor) {
+func (ev *MotorSeqEnv) Action(action string, nop tensor.Values) {
 	ev.PrevAction = ev.CurAction
 	ev.CurAction, _ = strconv.Atoi(action)
 	// fmt.Println("act:", ev.Trial.Cur, action, ev.CurAction, ev.Target, ev.NCorrect)
@@ -259,7 +263,7 @@ func (ev *MotorSeqEnv) DecodeLocalist(vt *tensor.Float32) int {
 	for i := 0; i < dx; i++ {
 		var sum float32
 		for j := 0; j < ev.NUnitsPer; j++ {
-			sum += vt.Value([]int{j, i})
+			sum += vt.Value(j, i)
 		}
 		if sum > mx {
 			mx = sum

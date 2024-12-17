@@ -3,272 +3,191 @@
 // license that can be found in the LICENSE file.
 package main
 
-import (
-	"github.com/emer/emergent/v2/params"
-)
+import "github.com/emer/axon/v2/axon"
 
-// ParamSets is the default set of parameters -- Base is always applied,
-// and others can be optionally selected to apply on top of that
-var ParamSets = params.Sets{
+// LayerParams sets the minimal non-default params.
+// Base is always applied, and others can be optionally selected to apply on top of that.
+var LayerParams = axon.LayerSheets{
 	"Base": {
 		{Sel: "Layer", Doc: "clamp gain makes big diff on overall excitation, gating propensity",
-			Params: params.Params{
-				ly.Acts.Clamp.Ge = "1.0", // 1.5 is def, was 0.6 (too low)
-				ly.Acts.Noise.On = "true",
-				ly.Acts.Noise.Ge = "0.0001", // 0.0001 > others; could just be noise ;)
-				ly.Acts.Noise.Gi = "0.0001", // 0.0001 perhaps better than others
-			},
-			Hypers: params.Hypers{
-				ly.Acts.Noise.Ge = {"Tweak = "-"},
+			Set: func(ly *axon.LayerParams) {
+				ly.Acts.Clamp.Ge = 1.0 // 1.5 is def, was 0.6 (too low)
+				ly.Acts.Noise.On.SetBool(true)
+				ly.Acts.Noise.Ge = 0.0001 // 0.0001 > others; could just be noise ;)
+				ly.Acts.Noise.Gi = 0.0001 // 0.0001 perhaps better than others
 			}},
 		{Sel: ".MatrixLayer", Doc: "all mtx",
-			Params: params.Params{
-				ly.Inhib.Pool.Gi =             "0.5",  // 0.5 > others
-				ly.Learn.NeuroMod.BurstGain =  "0.1",  // 0.1 == 0.2 > 0.05 > 0.5 -- key lrate modulator
-				ly.Learn.NeuroMod.DAModGain =  "0.2",  // 0.2 >= 0.5 (orig) > 0
-				ly.Learn.RLRate.On =           "true", // note: applied for tr update trials
-				ly.Learn.TrgAvgAct.RescaleOn = "true", // true > false
-			},
-			Hypers: params.Hypers{
-				ly.Learn.NeuroMod.BurstGain = {"Tweak": "-"},
-				ly.Acts.Kir.Gbar":            {"Tweak": "-"},
-				ly.Inhib.Pool.Gi":            {"Tweak": "-"},
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.Pool.Gi = 0.5                     // 0.5 > others
+				ly.Learn.NeuroMod.BurstGain = 0.1          // 0.1 == 0.2 > 0.05 > 0.5 -- key lrate modulator
+				ly.Learn.NeuroMod.DAModGain = 0.2          // 0.2 >= 0.5 (orig) > 0
+				ly.Learn.RLRate.On.SetBool(true)           // note: applied for tr update trials
+				ly.Learn.TrgAvgAct.RescaleOn.SetBool(true) // true > false
 			}},
 		{Sel: ".DSTNLayer", Doc: "all STN",
-			Params: params.Params{
-				ly.Acts.Init.GeBase =           "0.1",
-				ly.Acts.Kir.Gbar =              "10",   // 10 > 5  > 2 -- key for pause
-				ly.Acts.SKCa.Gbar =             "2",    // 2 > 5 >> 1 (for Kir = 10)
-				ly.Inhib.Layer.On =             "true", // actually needs this
-				ly.Inhib.Layer.Gi =             "0.5",
-				ly.Learn.NeuroMod.AChDisInhib = "0",
-			},
-			Hypers: params.Hypers{
-				ly.Acts.Init.GeBase = {"Tweak = "-"},
-				ly.Acts.Kir.Gbar =    {"Tweak = "-"},
-				ly.Acts.SKCa.Gbar =   {"Tweak = "-"},
+			Set: func(ly *axon.LayerParams) {
+				ly.Acts.Init.GeBase = 0.1
+				ly.Acts.Kir.Gbar = 10           // 10 > 5  > 2 -- key for pause
+				ly.Acts.SKCa.Gbar = 2           // 2 > 5 >> 1 (for Kir = 10)
+				ly.Inhib.Layer.On.SetBool(true) // actually needs this
+				ly.Inhib.Layer.Gi = 0.5
+				ly.Learn.NeuroMod.AChDisInhib = 0
 			}},
 		{Sel: "#M1VM", Doc: "",
-			Params: params.Params{
-				ly.Learn.NeuroMod.AChDisInhib = "0",
+			Set: func(ly *axon.LayerParams) {
+				ly.Learn.NeuroMod.AChDisInhib = 0
 			}},
 		{Sel: ".PTMaintLayer", Doc: "time integration params",
-			Params: params.Params{
-				ly.Inhib.Layer.Gi =       "2.4",   // 2.4 def > 1.4
-				ly.Inhib.ActAvg.Nominal = "0.3",   // 0.3 def -- key but wrong!
-				ly.Acts.Decay.OnRew =     "true",  // true def -- seems better?
-				ly.Acts.Dend.ModGain =    "1.0",   // 1.5 def
-				ly.Acts.Kir.Gbar =        "0",     // no real diff here over range 0-10
-				ly.Acts.MaintNMDA.Gbar =  "0.007", // 0.007 default
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.Layer.Gi = 2.4           // 2.4 def > 1.4
+				ly.Inhib.ActAvg.Nominal = 0.3     // 0.3 def -- key but wrong!
+				ly.Acts.Decay.OnRew.SetBool(true) // true def -- seems better?
+				ly.Acts.Dend.ModGain = 1.0        // 1.5 def
+				ly.Acts.Kir.Gbar = 0              // no real diff here over range 0-10
+				ly.Acts.MaintNMDA.Gbar = 0.007    // 0.007 default
 			}},
 		{Sel: ".PTPredLayer", Doc: "",
-			Params: params.Params{
-				ly.Inhib.Layer.Gi = "0.8",  // 0.8 def
-				ly.CT.GeGain =      "0.05", // 0.05 def
-				ly.CT.DecayTau =    "50",   // 50 def
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.Layer.Gi = 0.8 // 0.8 def
+				ly.CT.GeGain = 0.05     // 0.05 def
+				ly.CT.DecayTau = 50     // 50 def
 			}},
 		{Sel: ".CTLayer", Doc: "",
-			Params: params.Params{
-				ly.Inhib.Layer.Gi = "1.4", // 0.8 def
-				ly.CT.GeGain =      "5",   // 2 def
-				ly.CT.DecayTau =    "50",  // 50 def
-			}},
-		{Sel: ".CTtoPred", Doc: "",
-			Params: params.Params{
-				pt.PathScale.Abs = "2", // 1 def
-			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
-		{Sel: ".PTtoPred", Doc: "",
-			Params: params.Params{
-				pt.PathScale.Abs = "1", // was 6
-			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.Layer.Gi = 1.4 // 0.8 def
+				ly.CT.GeGain = 5        // 2 def
+				ly.CT.DecayTau = 50     // 50 def
 			}},
 		{Sel: "#MotorBS", Doc: "",
-			Params: params.Params{
-				ly.Inhib.Layer.On = "true",
-				ly.Inhib.Pool.On =  "false",
-				ly.Inhib.Layer.Gi = "0.2", // 0.2 def
-				ly.Acts.Clamp.Ge =  "2",   // 2 > 1.5, >> 1 -- absolutely critical given GPi inhib
-			},
-			Hypers: params.Hypers{
-				ly.Acts.Clamp.Ge = {"Tweak = "-"},
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.Layer.On.SetBool(true)
+				ly.Inhib.Pool.On.SetBool(false)
+				ly.Inhib.Layer.Gi = 0.2 // 0.2 def
+				ly.Acts.Clamp.Ge = 2    // 2 > 1.5, >> 1 -- absolutely critical given GPi inhib
 			}},
 		{Sel: "#DGPeAk", Doc: "arkypallidal",
-			Params: params.Params{
-				ly.Acts.Init.GeBase = "0.2", // 0.2 > 0.3, 0.1
-				ly.Acts.Init.GeVar =  "0.1", // 0.1 == 0.2 > 0.05
-			},
-			Hypers: params.Hypers{
-				ly.Acts.Init.GeBase = {"Tweak = "-"},
-				ly.Acts.Init.GeVar =  {"Tweak = "-"},
-			}},
-		////////////////////////////////////////////
-		// Paths
-		// {Sel: "Path", Doc: "",
-		// 	Params: params.Params{
-		// 		pt.Learn.LRate.Base = "0.02", // 0.04 > 0.02 probably
-		// 	}},
-		{Sel: ".DSMatrixPath", Doc: "",
-			Params: params.Params{
-				pt.PathScale.Abs =        "1.8",   // 1.8 > others
-				pt.Learn.LRate.Base =     "0.02",  // rlr sig: .02 > .015 .025
-				pt.Learn.Trace.LearnThr = "0.1",   // 0.1 > 0 > 0.2
-				pt.Matrix.Credit =        "0.6",   // key param, 0.6 > 0.5, 0.4, 0.7, 1 with pf modulation
-				pt.Matrix.BasePF =        "0.005", // 0.005 > 0.01, 0.002 etc
-				pt.Matrix.Delta =         "1",     // should always be 1 except for testing; adjust lrate to compensate
-				pt.SWts.Adapt.On =        "false", // false > true here
-			},
-			Hypers: params.Hypers{
-				pt.Learn.LRate.Base = {"Tweak = "-"},
-				pt.PathScale.Abs =    {"Tweak = "-"},
-				pt.Matrix.BasePF =    {"Tweak = "-"},
-			}},
-		{Sel: ".SuperToPT", Doc: "one-to-one from super",
-			Params: params.Params{
-				pt.PathScale.Abs = "0.5",
-			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
-		{Sel: ".PTSelfMaint", Doc: "",
-			Params: params.Params{
-				pt.PathScale.Abs = "1", // 1 def
-			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
-		{Sel: ".SuperToThal", Doc: "",
-			Params: params.Params{
-				pt.PathScale.Abs = "3.0", // 3
-			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
-		{Sel: ".ToM1", Doc: "",
-			Params: params.Params{
-				pt.PathScale.Abs = "1.5", // now 1.5 > 2 > 1 ..
-			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
-		{Sel: "#StateToM1", Doc: "",
-			Params: params.Params{
-				pt.PathScale.Abs = "1", // 1 > 1.5, 2, 0.5 etc
-			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
-		{Sel: "#DGPiToPF", Doc: "",
-			Params: params.Params{
-				pt.PathScale.Abs = "0.4", // 0.4 >= 0.5, 0.3, 0.2 >> higher
-			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
-		{Sel: "#MotorBSToPF", Doc: "",
-			Params: params.Params{
-				pt.PathScale.Abs = "1", // 1 > 1.1 > 0.9 >> 0.5
-			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
-		// {Sel: ".StateToDMtx", Doc: "",
-		// 	Params: params.Params{
-		// 		pt.PathScale.Abs = "1.5", // 1.8 def
-		// 	},
-		// 	Hypers: params.Hypers{
-		// 		pt.PathScale.Abs = {"Tweak = "-"},
-		// 	}},
-		// {Sel: ".CLToDMtx", Doc: "",
-		// 	Params: params.Params{
-		// 		pt.Learn.Learn =   "false",
-		// 		pt.PathScale.Rel = "0.001",
-		// 	},
-		// 	Hypers: params.Hypers{
-		// 		pt.PathScale.Rel = {"Tweak = "-"},
-		// 	}},
-		{Sel: "#DGPiToM1VM", Doc: "final inhibition",
-			Params: params.Params{
-				pt.PathScale.Abs = "2", // 2
-			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
-		{Sel: "#DGPiToMotorBS", Doc: "final inhibition",
-			Params: params.Params{
-				pt.PathScale.Abs = "3", // 3 > 2.5, 3.5
-			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
-		{Sel: ".M1ToMotorBS", Doc: "",
-			Params: params.Params{
-				pt.PathScale.Abs = "2", // 2 > 1.5, 2.5
-			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
-		{Sel: "#M1PTToMotorBS", Doc: "",
-			Params: params.Params{
-				pt.PathScale.Abs = "2", // 2
-				pt.PathScale.Rel = "1", // 1
-			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
-		{Sel: "#M1PTToVL", Doc: "",
-			Params: params.Params{
-				pt.PathScale.Abs = "1",   // 1
-				pt.PathScale.Rel = "0.1", // 0.1 > 0.2, .05, 0
-			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
-		// {Sel: "#M1PTpToMotorBS", Doc: "",
-		// 	Params: params.Params{
-		// 		pt.PathScale.Abs = "2",
-		// 		pt.PathScale.Rel = "1",
-		// 	},
-		// 	Hypers: params.Hypers{
-		// 		pt.PathScale.Abs = {"Tweak = "-"},
-		// 	}},
-		{Sel: "#M1ToMotorBS", Doc: "weaker; note: this is a proxy for cerebellum etc inputs",
-			Params: params.Params{
-				pt.PathScale.Abs = "1.5", // 1.5 > 1, 2, 2.5
-			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
-		{Sel: "#DMtxNoToDMtxGo", Doc: "weakish no->go inhibition is beneficial",
-			Params: params.Params{
-				pt.PathScale.Rel = "0.1",   // 0.1 > 0.05
-				pt.Learn.Learn =   "false", // no-learn better than learn
-			},
-			Hypers: params.Hypers{
-				pt.PathScale.Rel = {"Tweak = "-"},
-			}},
-		{Sel: "#DGPeAkToDMtxNo", Doc: "go disinhibition",
-			Params: params.Params{
-				pt.PathScale.Abs = "6",
-			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
+			Set: func(ly *axon.LayerParams) {
+				ly.Acts.Init.GeBase = 0.2 // 0.2 > 0.3, 0.1
+				ly.Acts.Init.GeVar = 0.1  // 0.1 == 0.2 > 0.05
 			}},
 	},
-	"NoiseOff = {
+	"NoiseOff": {
 		{Sel: "Layer", Doc: "turn off noise",
-			Params: params.Params{
-				ly.Acts.Noise.On = "false",
+			Set: func(ly *axon.LayerParams) {
+				ly.Acts.Noise.On.SetBool(false)
 			}},
 	},
 }
 
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
+// PathParams sets the minimal non-default params.
+// Base is always applied, and others can be optionally selected to apply on top of that.
+var PathParams = axon.PathSheets{
+	"Base": {
+		// {Sel: "Path", Doc: "",
+		// 	Set: func(pt *axon.PathParams) {
+		// 		pt.Learn.LRate.Base = 0.02 // 0.04 > 0.02 probably
+		// 	}},
+		{Sel: ".CTtoPred", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 2 // 1 def
+			}},
+		{Sel: ".PTtoPred", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1 // was 6
+			}},
+		{Sel: ".DSMatrixPath", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1.8          // 1.8 > others
+				pt.Learn.LRate.Base = 0.02      // rlr sig: .02 > .015 .025
+				pt.Learn.Trace.LearnThr = 0.1   // 0.1 > 0 > 0.2
+				pt.Matrix.Credit = 0.6          // key param, 0.6 > 0.5, 0.4, 0.7, 1 with pf modulation
+				pt.Matrix.BasePF = 0.005        // 0.005 > 0.01, 0.002 etc
+				pt.Matrix.Delta = 1             // should always be 1 except for testing; adjust lrate to compensate
+				pt.SWts.Adapt.On.SetBool(false) // false > true here
+			}},
+		{Sel: ".SuperToPT", Doc: "one-to-one from super",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 0.5
+			}},
+		{Sel: ".PTSelfMaint", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1 // 1 def
+			}},
+		{Sel: ".SuperToThal", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 3.0 // 3
+			}},
+		{Sel: ".ToM1", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1.5 // now 1.5 > 2 > 1 ..
+			}},
+		{Sel: "#StateToM1", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1 // 1 > 1.5, 2, 0.5 etc
+			}},
+		{Sel: "#DGPiToPF", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 0.4 // 0.4 >= 0.5, 0.3, 0.2 >> higher
+			}},
+		{Sel: "#MotorBSToPF", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1 // 1 > 1.1 > 0.9 >> 0.5
+			}},
+		// {Sel: ".StateToDMtx", Doc: "",
+		// 	Set: func(pt *axon.PathParams) {
+		// 		pt.PathScale.Abs = 1.5 // 1.8 def
+		// 	}},
+		// {Sel: ".CLToDMtx", Doc: "",
+		// 	Set: func(pt *axon.PathParams) {
+		// 		pt.Learn.Learn =   false
+		// 		pt.PathScale.Rel = 0.001
+		// 	}},
+		{Sel: "#DGPiToM1VM", Doc: "final inhibition",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 2 // 2
+			}},
+		{Sel: "#DGPiToMotorBS", Doc: "final inhibition",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 3 // 3 > 2.5, 3.5
+			}},
+		{Sel: ".M1ToMotorBS", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 2 // 2 > 1.5, 2.5
+			}},
+		{Sel: "#M1PTToMotorBS", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 2 // 2
+				pt.PathScale.Rel = 1 // 1
+			}},
+		{Sel: "#M1PTToVL", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1   // 1
+				pt.PathScale.Rel = 0.1 // 0.1 > 0.2, .05, 0
+			}},
+		// {Sel: "#M1PTpToMotorBS", Doc: "",
+		// 	Set: func(pt *axon.PathParams) {
+		// 		pt.PathScale.Abs = 2
+		// 		pt.PathScale.Rel = 1
+		// 	}},
+		{Sel: "#M1ToMotorBS", Doc: "weaker; note: this is a proxy for cerebellum etc inputs",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1.5 // 1.5 > 1, 2, 2.5
+			}},
+		{Sel: "#DMtxNoToDMtxGo", Doc: "weakish no->go inhibition is beneficial",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Rel = 0.1        // 0.1 > 0.05
+				pt.Learn.Learn.SetBool(false) // no-learn better than learn
+			}},
+		{Sel: "#DGPeAkToDMtxNo", Doc: "go disinhibition",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 6
+			}},
+	},
+}
+
+/////////
+
+/*
 
 // ParamSetsDefs contains the full set of parameters, many of which are at default values
 // and have informed the default values in the first place.
@@ -290,12 +209,6 @@ var ParamSetsDefs = params.Sets{
 				ly.Learn.NeuroMod.BurstGain =   "0.1", // 0.1 == 0.2 > 0.05 > 0.5 -- key lrate modulator
 				ly.Learn.NeuroMod.AChDisInhib = "0",
 			},
-			Hypers: params.Hypers{
-				ly.Learn.NeuroMod.BurstGain = {"Tweak = "-"},
-				ly.Acts.Kir.Gbar =            {"Tweak = "-"},
-				ly.Acts.NMDA.Gbar =           {"Tweak = "-"},
-				ly.Inhib.Layer.Gi =           {"Tweak = "-"},
-			}},
 		{Sel: ".DSTNLayer", Doc: "all STN",
 			Params: params.Params{
 				ly.Acts.Init.GeBase =           "0.1",
@@ -306,11 +219,6 @@ var ParamSetsDefs = params.Sets{
 				ly.Inhib.Layer.FB =             "0",
 				ly.Learn.NeuroMod.AChDisInhib = "0",
 			},
-			Hypers: params.Hypers{
-				ly.Acts.Init.GeBase = {"Tweak = "-"},
-				ly.Acts.Kir.Gbar =    {"Tweak = "-"},
-				ly.Acts.SKCa.Gbar =   {"Tweak = "-"},
-			}},
 		{Sel: "#PF", Doc: "",
 			Params: params.Params{
 				ly.Inhib.Layer.On = "false",
@@ -321,110 +229,64 @@ var ParamSetsDefs = params.Sets{
 				ly.Acts.Init.GeBase = "0.4", // 0.4 > 0.3, 0.5
 				ly.Acts.Init.GeVar =  "0.2",
 			},
-			Hypers: params.Hypers{
-				ly.Acts.Init.GeBase = {"Tweak = "-"},
-			}},
 		{Sel: "#DGPeAk", Doc: "arkypallidal",
 			Params: params.Params{
 				ly.Acts.Init.GeBase = "0.2", // 0.2 > 0.3, 0.1
 				ly.Acts.Init.GeVar =  "0.1", // 0.1 == 0.2 > 0.05
 			},
-			Hypers: params.Hypers{
-				ly.Acts.Init.GeBase = {"Tweak = "-"},
-				ly.Acts.Init.GeVar =  {"Tweak = "-"},
-			}},
 		{Sel: "#DGPi", Doc: "",
 			Params: params.Params{
 				ly.Acts.Init.GeBase = "0.3", // 0.3 > 0.2, 0.1
 				ly.Acts.Init.GeVar =  "0.1",
 			},
-			Hypers: params.Hypers{
-				ly.Acts.Init.GeBase = {"Tweak = "-"},
-			}},
 		{Sel: "#DGPeAkToDMtxGo", Doc: "go disinhibition",
 			Params: params.Params{
 				pt.PathScale.Abs = "3",
 			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
 		{Sel: "#DMtxGoToDGPeAk", Doc: "go inhibition",
 			Params: params.Params{
 				pt.PathScale.Abs = ".5", // stronger = more binary
 			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
 		{Sel: "#DMtxNoToDGPePr", Doc: "proto = primary classical NoGo pathway",
 			Params: params.Params{
 				pt.PathScale.Abs = "1", // 1 fully inhibits Pr
 			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
 		{Sel: ".ToDSTN", Doc: "excitatory inputs",
 			Params: params.Params{
 				pt.PathScale.Abs = "1",
 			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
 		{Sel: "#DMtxGoToDGPi", Doc: "go influence on gating -- slightly weaker than integrated GPePr",
 			Params: params.Params{
 				pt.PathScale.Abs = "1", // 1 > 1.1, .9 and lower (not huge diffs)
 			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
 		{Sel: "#DGPePrToDSTN", Doc: "enough to kick off the ping-pong dynamics for STN.",
 			Params: params.Params{
 				pt.PathScale.Abs = "0.5",
 			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
 		{Sel: "#DSTNToDGPePr", Doc: "stronger STN -> DGPePr to kick it high at start",
 			Params: params.Params{
 				pt.PathScale.Abs = "0.5",
 			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
 		{Sel: "#DSTNToDGPeAk", Doc: "this is weak biologically -- could try 0",
 			Params: params.Params{
 				pt.PathScale.Abs = "0.1",
 			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
 		{Sel: "#DGPePrToDGPePr", Doc: "self-inhib -- only source of self reg",
 			Params: params.Params{
 				pt.PathScale.Abs = "4",
 			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
 		{Sel: "#DGPePrToDGPeAk", Doc: "just enough to knock down in baseline state",
 			Params: params.Params{
 				pt.PathScale.Abs = "1",
 			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
 		{Sel: "#DGPePrToDGPi", Doc: "nogo influence on gating -- decreasing produces more graded function of Go",
 			Params: params.Params{
 				pt.PathScale.Abs = "1", // 1 >> 2
 			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
 		{Sel: "#DSTNToDGPi", Doc: "strong initial phasic activation",
 			Params: params.Params{
 				pt.PathScale.Abs = ".2",
 			},
-			Hypers: params.Hypers{
-				pt.PathScale.Abs = {"Tweak = "-"},
-			}},
 		{Sel: ".PFToDMtx", Doc: "",
 			Params: params.Params{
 				pt.Learn.Learn =   "false",
@@ -433,3 +295,5 @@ var ParamSetsDefs = params.Sets{
 			}},
 	},
 }
+
+*/
