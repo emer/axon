@@ -17,6 +17,7 @@ type EnvConfig struct {
 
 // ParamConfig has config parameters related to sim params.
 type ParamConfig struct {
+
 	// Tweak means to perform automated parameter tweaking for
 	// parameters marked Hypers Tweak = log,incr, or [vals].
 	Tweak bool

@@ -5,7 +5,8 @@
 package main
 
 import (
-	"cogentcore.org/core/base/errors"
+	"fmt"
+
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
@@ -59,6 +60,10 @@ type PFCMaintEnv struct {
 
 func (ev *PFCMaintEnv) Label() string { return ev.Name }
 
+func (ev *PFCMaintEnv) String() string {
+	return fmt.Sprintf("%d", ev.Trial.Cur)
+}
+
 func (ev *PFCMaintEnv) Defaults() {
 	ev.NItems = 10
 	ev.NTrials = 10
@@ -73,9 +78,9 @@ func (ev *PFCMaintEnv) Config(mode etime.Modes, rndseed int64) {
 	ev.RandSeed = rndseed
 	ev.Rand.NewRand(ev.RandSeed)
 	ev.States = make(map[string]*tensor.Float32)
-	ev.States["Item"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, "Y", "X")
-	ev.States["Time"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NTrials}, "Y", "Time")
-	ev.States["GPi"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, "Y", "X")
+	ev.States["Item"] = tensor.NewFloat32(ev.NUnitsY, ev.NUnitsX)
+	ev.States["Time"] = tensor.NewFloat32(ev.NUnitsY, ev.NTrials)
+	ev.States["GPi"] = tensor.NewFloat32(ev.NUnitsY, ev.NUnitsX)
 	ev.Sequence.Max = ev.NItems
 	ev.Trial.Max = ev.NTrials
 	ev.ConfigPats()
@@ -83,9 +88,10 @@ func (ev *PFCMaintEnv) Config(mode etime.Modes, rndseed int64) {
 
 func (ev *PFCMaintEnv) ConfigPats() {
 	npats := ev.NItems
+	ev.Pats.Init()
 	ev.Pats.DeleteAll()
 	ev.Pats.AddStringColumn("Name")
-	ev.Pats.AddFloat32TensorColumn("Item", []int{ev.NUnitsY, ev.NUnitsX}, "Y", "X")
+	ev.Pats.AddFloat32Column("Item", ev.NUnitsY, ev.NUnitsX)
 	ev.Pats.SetNumRows(npats)
 
 	pctAct := float32(0.2)
@@ -95,7 +101,7 @@ func (ev *PFCMaintEnv) ConfigPats() {
 	nOn := patgen.NFromPct(pctAct, nUn)
 	minDiff := patgen.NFromPct(minPctDiff, nOn)
 
-	patgen.PermutedBinaryMinDiff(errors.Log1(ev.Pats.ColumnByName("Item")).(*tensor.Float32), nOn, 1, 0, minDiff)
+	patgen.PermutedBinaryMinDiff(ev.Pats.Columns.At("Item").(*tensor.Float32), nOn, 1, 0, minDiff)
 }
 
 func (ev *PFCMaintEnv) Init(run int) {
@@ -103,7 +109,7 @@ func (ev *PFCMaintEnv) Init(run int) {
 	ev.Trial.Init()
 }
 
-func (ev *PFCMaintEnv) State(el string) tensor.Tensor {
+func (ev *PFCMaintEnv) State(el string) tensor.Values {
 	return ev.States[el]
 }
 
@@ -112,17 +118,17 @@ func (ev *PFCMaintEnv) RenderLocalist(name string, idx int) {
 	av := ev.States[name]
 	av.SetZeros()
 	for yi := 0; yi < ev.NUnitsY; yi++ {
-		av.Set([]int{yi, idx}, 1)
+		av.Set(1, yi, idx)
 	}
 }
 
 // RenderState renders the given condition, trial
 func (ev *PFCMaintEnv) RenderState(item, trial int) {
 	st := ev.States["Item"]
-	st.CopyFrom(ev.Pats.Tensor("Item", item))
+	st.CopyFrom(ev.Pats.Column("Item").RowTensor(item))
 	ev.RenderLocalist("Time", trial)
 	st = ev.States["GPi"]
-	st.CopyFrom(ev.Pats.Tensor("Item", item))
+	st.CopyFrom(ev.Pats.Column("Item").RowTensor(item))
 	if trial == 0 {
 		st.SetZeros()
 	}
@@ -138,8 +144,5 @@ func (ev *PFCMaintEnv) Step() bool {
 	return true
 }
 
-func (ev *PFCMaintEnv) Action(action string, nop tensor.Tensor) {
-}
-
-func (ev *PFCMaintEnv) ComputeDA(rew float32) {
+func (ev *PFCMaintEnv) Action(action string, nop tensor.Values) {
 }

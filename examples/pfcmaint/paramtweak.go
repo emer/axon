@@ -4,6 +4,7 @@
 
 package main
 
+/*
 import (
 	"fmt"
 	"time"
@@ -89,3 +90,5 @@ func (ss *Sim) RunParamTweak() {
 
 	ss.Net.GPU.Destroy() // safe even if no GPU
 }
+
+*/
