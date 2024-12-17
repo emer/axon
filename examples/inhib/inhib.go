@@ -450,16 +450,11 @@ func (ss *Sim) ConfigStats() {
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		trialNameFunc(mode, level, phase == Start)
 	})
-	lays := net.LayersByType(axon.InputLayer, axon.SuperLayer)
-	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Test, Cycle, lays...)
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		actGeFunc(mode, level, phase == Start)
-	})
 
 	// up to a point, it is good to use loops over stats in one function,
 	// to reduce repetition of boilerplate.
 	layers := ss.Net.LayersByType(axon.SuperLayer) // axon.InputLayer,
-	statNames := []string{"Spikes", "Gi", "TotalGi", "FFs", "FBs", "FSi", "SSi", "SSf", "FSGi", "SSGi"}
+	statNames := []string{"Spikes", "Ge", "Act", "Gi", "TotalGi", "FFs", "FBs", "FSi", "SSi", "SSf", "FSGi", "SSGi"}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		for _, lnm := range layers {
 			ly := ss.Net.LayerByName(lnm)
@@ -490,6 +485,10 @@ func (ss *Sim) ConfigStats() {
 					switch stnm {
 					case "Spikes":
 						stat = ly.AvgMaxVarByPool("Spike", 0, di).Avg
+					case "Ge":
+						stat = axon.PoolAvgMax(axon.AMGeInt, axon.AMCycle, axon.Avg, uint32(pi), uint32(di))
+					case "Act":
+						stat = axon.PoolAvgMax(axon.AMAct, axon.AMCycle, axon.Avg, uint32(pi), uint32(di))
 					case "Gi":
 						stat = axon.Neurons.Value(int(ly.NeurStIndex), di, int(axon.Gi))
 					default:
