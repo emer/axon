@@ -52,8 +52,8 @@ const (
 type Levels int32 //enums:enum
 const (
 	Cycle Levels = iota
-	Theta
 	Trial
+	Sequence
 	Epoch
 	Run
 	Expt
@@ -383,33 +383,31 @@ func (ss *Sim) ConfigLoops() {
 	ls := looper.NewStacks()
 
 	ev := ss.Envs.ByModeDi(Train, 0).(*MotorSeqEnv)
-	trials := int(math32.IntMultipleGE(float32(ss.Config.Run.Trials), float32(ss.Config.Run.NData)))
+	seqs := int(math32.IntMultipleGE(float32(ss.Config.Run.Sequences), float32(ss.Config.Run.NData)))
 	cycles := ss.Config.Run.Cycles
 	plusPhase := ss.Config.Run.PlusCycles
-	nThetas := ev.SeqLen + 1 // 1 reward at end
+	seqLen := ev.SeqLen + 1 // 1 reward at end
 
 	ls.AddStack(Train, Trial).
 		AddLevel(Expt, 1).
 		AddLevel(Run, ss.Config.Run.Runs).
 		AddLevel(Epoch, ss.Config.Run.Epochs).
-		AddLevelIncr(Trial, trials, ss.Config.Run.NData).
-		AddLevel(Theta, nThetas).
+		AddLevelIncr(Sequence, seqs, ss.Config.Run.NData).
+		AddLevel(Trial, seqLen).
 		AddLevel(Cycle, cycles)
 
 	ls.AddStack(Test, Trial).
 		AddLevel(Epoch, 1).
-		AddLevelIncr(Trial, trials, ss.Config.Run.NData).
-		AddLevel(Theta, nThetas).
+		AddLevelIncr(Sequence, seqs, ss.Config.Run.NData).
+		AddLevel(Trial, seqLen).
 		AddLevel(Cycle, cycles)
 
-	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, 50, cycles-plusPhase, cycles-1, Cycle, Theta, Train) // note: Theta
+	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, 50, cycles-plusPhase, cycles-1, Cycle, Trial, Train)
 
 	ls.Stacks[Train].OnInit.Add("Init", func() { ss.Init() })
 
-	ls.AddOnStartToLoop(Theta, "ApplyInputs", func(mode enums.Enum) {
-		trial := ls.Stacks[mode].Loops[Trial].Counter.Cur
-		theta := ls.Stacks[mode].Loops[Theta].Counter.Cur
-		ss.ApplyInputs(mode.(Modes), trial, theta)
+	ls.AddOnStartToLoop(Trial, "ApplyInputs", func(mode enums.Enum) {
+		ss.ApplyInputs(mode.(Modes))
 	})
 
 	for mode, st := range ls.Stacks {
@@ -440,7 +438,7 @@ func (ss *Sim) ConfigLoops() {
 	})
 
 	if ss.Config.GUI {
-		axon.LooperUpdateNetView(ls, Cycle, Theta, ss.NetViewUpdater)
+		axon.LooperUpdateNetView(ls, Cycle, Trial, ss.NetViewUpdater)
 
 		ls.Stacks[Train].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })
 		ls.Stacks[Test].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })
@@ -454,8 +452,10 @@ func (ss *Sim) ConfigLoops() {
 
 // ApplyInputs applies input patterns from given environment for given mode.
 // Any other start-of-trial logic can also be put here.
-func (ss *Sim) ApplyInputs(mode Modes, trial, theta int) {
+func (ss *Sim) ApplyInputs(mode Modes) {
 	net := ss.Net
+	ss.Net.InitExt()
+
 	ndata := int(net.Context().NData)
 	curModeDir := ss.Current.RecycleDir(mode.String())
 	lays := []string{"State", "S1", "Target", "SNc"}
@@ -667,7 +667,7 @@ func (ss *Sim) StatsStart(lmd, ltm enums.Enum) {
 func (ss *Sim) StatsStep(lmd, ltm enums.Enum) {
 	mode := lmd.(Modes)
 	level := ltm.(Levels)
-	if level == Cycle {
+	if level < Trial {
 		return
 	}
 	ss.RunStats(mode, level, Step)
@@ -714,10 +714,12 @@ func (ss *Sim) StatsInit() {
 	}
 	if ss.GUI.Tabs != nil {
 		_, idx := ss.GUI.Tabs.CurrentTab()
-		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Trial))
+		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Sequence))
 		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Epoch))
 		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Run))
+		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Trial))
 		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Test, Trial))
+		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Test, Sequence))
 		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Test, Epoch))
 		ss.GUI.Tabs.SelectTabIndex(idx)
 	}
@@ -732,29 +734,69 @@ func (ss *Sim) ConfigStats() {
 
 	ss.SetRunName()
 
+	// note: Trial level is not recorded, only the sequence
+
 	// last arg(s) are levels to exclude
-	counterFunc := axon.StatLoopCounters(ss.Stats, ss.Current, ss.Loops, net, Theta, Cycle)
+	counterFunc := axon.StatLoopCounters(ss.Stats, ss.Current, ss.Loops, net, Sequence, Cycle)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		counterFunc(mode, level, phase == Start)
 	})
-	runNameFunc := axon.StatRunName(ss.Stats, ss.Current, ss.Loops, net, Theta, Cycle)
+	runNameFunc := axon.StatRunName(ss.Stats, ss.Current, ss.Loops, net, Sequence, Cycle)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		runNameFunc(mode, level, phase == Start)
 	})
-	trialNameFunc := axon.StatTrialName(ss.Stats, ss.Current, ss.Loops, net, Theta)
+	trialNameFunc := axon.StatTrialName(ss.Stats, ss.Current, ss.Loops, net, Trial)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		trialNameFunc(mode, level, phase == Start)
 	})
-	perTrlFunc := axon.StatPerTrialMSec(ss.Stats, Train, Theta)
+	perTrlFunc := axon.StatPerTrialMSec(ss.Stats, Train, Sequence)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		perTrlFunc(mode, level, phase == Start)
 	})
 
-	// up to a point, it is good to use loops over stats in one function,
-	// to reduce repetition of boilerplate.
-	statNames := []string{"Action", "Target", "Correct", "NCorrect", "Rew", "RewPred", "RPE", "RewEpc"}
+	// trialstats are only reported for di = 0
+	trialStats := []string{"Action", "Target", "Correct"}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		for si, name := range statNames {
+		if level != Trial {
+			return
+		}
+		for si, name := range trialStats {
+			modeDir := ss.Stats.RecycleDir(mode.String())
+			curModeDir := ss.Current.RecycleDir(mode.String())
+			levelDir := modeDir.RecycleDir(level.String())
+			di := 0 //
+			tsr := levelDir.Float64(name)
+			if phase == Start {
+				tsr.SetNumRows(0)
+				plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
+					s.Range.SetMin(0).SetMax(1)
+					if si >= 2 && si <= 5 {
+						s.On = true
+					}
+				})
+				continue
+			}
+			ev := ss.Envs.ByModeDi(mode, di).(*MotorSeqEnv)
+			var stat float32
+			switch name {
+			case "Action":
+				stat = float32(ev.CurAction)
+			case "Target":
+				stat = float32(ev.Target)
+			case "Correct":
+				stat = num.FromBool[float32](ev.Correct)
+			}
+			curModeDir.Float32(name, 1).SetFloat1D(float64(stat), di)
+			tsr.AppendRowFloat(float64(stat))
+		}
+	})
+
+	seqStats := []string{"NCorrect", "Rew", "RewPred", "RPE", "RewEpc"}
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		if level <= Trial {
+			return
+		}
+		for _, name := range seqStats {
 			modeDir := ss.Stats.RecycleDir(mode.String())
 			curModeDir := ss.Current.RecycleDir(mode.String())
 			levelDir := modeDir.RecycleDir(level.String())
@@ -766,24 +808,16 @@ func (ss *Sim) ConfigStats() {
 				tsr.SetNumRows(0)
 				plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
 					s.Range.SetMin(0).SetMax(1)
-					if si >= 2 && si <= 5 {
-						s.On = true
-					}
+					s.On = true
 				})
 				continue
 			}
 			switch level {
-			case Theta:
+			case Sequence:
 				for di := range ndata {
 					ev := ss.Envs.ByModeDi(mode, di).(*MotorSeqEnv)
 					var stat float32
 					switch name {
-					case "Action":
-						stat = float32(ev.CurAction)
-					case "Target":
-						stat = float32(ev.Target)
-					case "Correct":
-						stat = num.FromBool[float32](ev.Correct)
 					case "NCorrect":
 						stat = float32(ev.PrevNCorrect)
 					case "Rew":
@@ -802,7 +836,6 @@ func (ss *Sim) ConfigStats() {
 			}
 		}
 	})
-
 }
 
 // StatCounters returns counters string to show at bottom of netview.
@@ -819,12 +852,12 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 		return counters
 	}
 	counters += fmt.Sprintf(" TrialName: %s", curModeDir.StringValue("TrialName").String1D(di))
-	statNames := []string{"Gated"}
+	statNames := []string{"Action", "Target", "Correct"}
 	if level == Cycle || curModeDir.Node(statNames[0]) == nil {
 		return counters
 	}
 	for _, name := range statNames {
-		counters += fmt.Sprintf(" %s: %.4g", name, curModeDir.Float32(name).Float1D(di))
+		counters += fmt.Sprintf(" %s: %.4g", name, curModeDir.Value(name).Float1D(di))
 	}
 	return counters
 }

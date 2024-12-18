@@ -50,11 +50,11 @@ var _LevelsValues = []Levels{0, 1, 2, 3, 4, 5}
 // LevelsN is the highest valid value for type Levels, plus one.
 const LevelsN Levels = 6
 
-var _LevelsValueMap = map[string]Levels{`Cycle`: 0, `Theta`: 1, `Trial`: 2, `Epoch`: 3, `Run`: 4, `Expt`: 5}
+var _LevelsValueMap = map[string]Levels{`Cycle`: 0, `Trial`: 1, `Sequence`: 2, `Epoch`: 3, `Run`: 4, `Expt`: 5}
 
 var _LevelsDescMap = map[Levels]string{0: ``, 1: ``, 2: ``, 3: ``, 4: ``, 5: ``}
 
-var _LevelsMap = map[Levels]string{0: `Cycle`, 1: `Theta`, 2: `Trial`, 3: `Epoch`, 4: `Run`, 5: `Expt`}
+var _LevelsMap = map[Levels]string{0: `Cycle`, 1: `Trial`, 2: `Sequence`, 3: `Epoch`, 4: `Run`, 5: `Expt`}
 
 // String returns the string representation of this Levels value.
 func (i Levels) String() string { return enums.String(i, _LevelsMap) }

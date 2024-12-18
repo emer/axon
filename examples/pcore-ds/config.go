@@ -64,7 +64,7 @@ type ParamConfig struct {
 // RunConfig has config parameters related to running the sim.
 type RunConfig struct {
 
-	// GPU uses the GPU for computation; only for testing in this model -- not faster.
+	// GPU uses the GPU for computation.
 	GPU bool `default:"true"`
 
 	// NData is the number of data-parallel items to process in parallel per trial.
@@ -82,14 +82,14 @@ type RunConfig struct {
 	Run int `default:"0"`
 
 	// Runs is the total number of runs to do when running Train, starting from Run.
-	Runs int `default:"1" min:"1"`
+	Runs int `default:"25" min:"1"`
 
 	// Epochs is the total number of epochs per run.
-	Epochs int `default:"30"`
+	Epochs int `default:"50"`
 
-	// Trials is the total number of trials per epoch.
+	// Sequences is the total number of sequences per epoch.
 	// Should be an even multiple of NData.
-	Trials int `default:"128"`
+	Sequences int `default:"128"`
 
 	// Cycles is the total number of cycles per trial: at least 200.
 	Cycles int `default:"200"`
