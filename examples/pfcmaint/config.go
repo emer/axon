@@ -64,7 +64,7 @@ type RunConfig struct {
 	// NData is the number of data-parallel items to process in parallel per trial.
 	// Is significantly faster for both CPU and GPU.  Results in an effective
 	// mini-batch of learning.
-	NData int `default:"16" min:"1"`
+	NData int `default:"2" min:"1"`
 
 	// NThreads is the number of parallel threads for CPU computation;
 	// 0 = use default.
@@ -79,11 +79,11 @@ type RunConfig struct {
 	Runs int `default:"1" min:"1"`
 
 	// Epochs is the total number of epochs per run.
-	Epochs int `default:"30"`
+	Epochs int `default:"50"`
 
 	// Trials is the total number of trials per epoch.
 	// Should be an even multiple of NData.
-	Trials int `default:"64"`
+	Trials int `default:"128"`
 
 	// Cycles is the total number of cycles per trial: at least 200.
 	Cycles int `default:"200"`

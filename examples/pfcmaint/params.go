@@ -54,9 +54,14 @@ var LayerParams = axon.LayerSheets{
 // Base is always applied, and others can be optionally selected to apply on top of that.
 var PathParams = axon.PathSheets{
 	"Base": {
+		{Sel: "Path", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.Learn.LRate.Base = 0.01
+			}},
 		{Sel: ".PFCPath", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 1.0
+				pt.Learn.LRate.Base = 0.01
 			}},
 		{Sel: "#GPiToPFCThal", Doc: "",
 			Set: func(pt *axon.PathParams) {

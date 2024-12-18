@@ -733,19 +733,19 @@ func (ss *Sim) ConfigStats() {
 	ss.SetRunName()
 
 	// last arg(s) are levels to exclude
-	counterFunc := axon.StatLoopCounters(ss.Stats, ss.Current, ss.Loops, net, Trial, Cycle)
+	counterFunc := axon.StatLoopCounters(ss.Stats, ss.Current, ss.Loops, net, Theta, Cycle)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		counterFunc(mode, level, phase == Start)
 	})
-	runNameFunc := axon.StatRunName(ss.Stats, ss.Current, ss.Loops, net, Trial, Cycle)
+	runNameFunc := axon.StatRunName(ss.Stats, ss.Current, ss.Loops, net, Theta, Cycle)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		runNameFunc(mode, level, phase == Start)
 	})
-	trialNameFunc := axon.StatTrialName(ss.Stats, ss.Current, ss.Loops, net, Trial)
+	trialNameFunc := axon.StatTrialName(ss.Stats, ss.Current, ss.Loops, net, Theta)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		trialNameFunc(mode, level, phase == Start)
 	})
-	perTrlFunc := axon.StatPerTrialMSec(ss.Stats, Train, Trial)
+	perTrlFunc := axon.StatPerTrialMSec(ss.Stats, Train, Theta)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		perTrlFunc(mode, level, phase == Start)
 	})
@@ -773,7 +773,7 @@ func (ss *Sim) ConfigStats() {
 				continue
 			}
 			switch level {
-			case Trial:
+			case Theta:
 				for di := range ndata {
 					ev := ss.Envs.ByModeDi(mode, di).(*MotorSeqEnv)
 					var stat float32
@@ -796,33 +796,7 @@ func (ss *Sim) ConfigStats() {
 					curModeDir.Float32(name, ndata).SetFloat1D(float64(stat), di)
 					tsr.AppendRowFloat(float64(stat))
 				}
-			case Epoch:
-				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
-				tsr.AppendRowFloat(stat)
-				// if mode == Train {
-				// 	break
-				// }
-				// if si == 0 {
-				// 	stats.Groups(curModeDir, subDir.Value("TrialName"))
-				// 	break
-				// }
-				// stats.GroupStats(curModeDir, stats.StatMean, subDir.Value(name))
-				// // note: results go under Group name: TrialName
-				// gp := curModeDir.RecycleDir("Stats/TrialName/" + name).Value("Mean")
-				// plot.SetFirstStylerTo(gp, func(s *plot.Style) {
-				// 	if si >= 2 && si <= 3 {
-				// 		s.On = true
-				// 	}
-				// })
-				// if si == len(statNames)-1 {
-				// 	nrows := gp.DimSize(0)
-				// 	row := curModeDir.RecycleDir("Stats").Int("Row", nrows)
-				// 	for i := range nrows {
-				// 		row.Set(i, i)
-				// 	}
-				// 	ss.GUI.Tabs.PlotTensorFS(curModeDir.RecycleDir("Stats"))
-				// }
-			case Run:
+			default:
 				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
 				tsr.AppendRowFloat(stat)
 			}

@@ -42,7 +42,6 @@ const (
 type Levels int32 //enums:enum
 const (
 	Cycle Levels = iota
-	Theta
 	Trial
 	Epoch
 	Run
@@ -149,8 +148,8 @@ func (ss *Sim) Run() {
 func (ss *Sim) ConfigEnv() {
 	// Can be called multiple times -- don't re-create
 	newEnv := (len(ss.Envs) == 0)
-
-	for di := 0; di < ss.Config.Run.NData; di++ {
+	ndata := ss.Config.Run.NData
+	for di := 0; di < ndata; di++ {
 		var trn, tst *PFCMaintEnv
 		if newEnv {
 			trn = &PFCMaintEnv{}
@@ -166,14 +165,14 @@ func (ss *Sim) ConfigEnv() {
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
 		}
-		trn.Config(etime.Train, 73+int64(di)*73)
+		trn.Config(etime.Train, di, ndata, 73) // same seeds so same pats
 
 		tst.Name = env.ModeDi(etime.Test, di)
 		tst.Defaults()
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(tst, ss.Config.Env.Env)
 		}
-		tst.Config(etime.Test, 181+int64(di)*181)
+		tst.Config(etime.Test, di, ndata, 181)
 
 		trn.Init(0)
 		tst.Init(0)
@@ -275,7 +274,6 @@ func (ss *Sim) NetViewUpdater(mode enums.Enum) *axon.NetViewUpdate {
 func (ss *Sim) ConfigLoops() {
 	ls := looper.NewStacks()
 
-	ev := ss.Envs.ByModeDi(Train, 0).(*PFCMaintEnv)
 	trials := int(math32.IntMultipleGE(float32(ss.Config.Run.Trials), float32(ss.Config.Run.NData)))
 	cycles := ss.Config.Run.Cycles
 	plusPhase := ss.Config.Run.PlusCycles
@@ -284,22 +282,20 @@ func (ss *Sim) ConfigLoops() {
 		AddLevel(Run, ss.Config.Run.Runs).
 		AddLevel(Epoch, ss.Config.Run.Epochs).
 		AddLevelIncr(Trial, trials, ss.Config.Run.NData).
-		AddLevel(Theta, ev.NTrials).
 		AddLevel(Cycle, cycles)
 
 	ls.AddStack(Test, Trial).
 		AddLevel(Epoch, 1).
 		AddLevelIncr(Trial, trials, ss.Config.Run.NData).
-		AddLevel(Theta, ev.NTrials).
 		AddLevel(Cycle, cycles)
 
-	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, 50, cycles-plusPhase, cycles-1, Cycle, Theta, Train) // note: Theta
+	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, 50, cycles-plusPhase, cycles-1, Cycle, Trial, Train)
 
 	ls.Stacks[Train].OnInit.Add("Init", func() { ss.Init() })
 
-	ls.AddOnStartToLoop(Theta, "ApplyInputs", func(mode enums.Enum) {
+	ls.AddOnStartToLoop(Trial, "ApplyInputs", func(mode enums.Enum) {
 		trial := ls.Stacks[mode].Loops[Trial].Counter.Cur
-		theta := ls.Stacks[mode].Loops[Theta].Counter.Cur
+		theta := ls.Stacks[mode].Loops[Trial].Counter.Cur
 		ss.ApplyInputs(mode.(Modes), trial, theta)
 	})
 
@@ -314,7 +310,7 @@ func (ss *Sim) ConfigLoops() {
 	})
 
 	if ss.Config.GUI {
-		axon.LooperUpdateNetView(ls, Cycle, Theta, ss.NetViewUpdater)
+		axon.LooperUpdateNetView(ls, Cycle, Trial, ss.NetViewUpdater)
 
 		ls.Stacks[Train].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })
 		ls.Stacks[Test].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })
@@ -503,6 +499,7 @@ func (ss *Sim) ConfigStats() {
 				itemly := ss.Net.LayerByName("ItemP")
 				timely := ss.Net.LayerByName("TimeP")
 				for di := range ndata {
+					ev := ss.Envs.ByModeDi(mode, di).(*PFCMaintEnv)
 					var stat float64
 					switch name {
 					case "ItemP_CorSim":
@@ -510,23 +507,26 @@ func (ss *Sim) ConfigStats() {
 					case "TimeP_CorSim":
 						stat = 1.0 - float64(axon.LayerStates.Value(int(timely.Index), int(di), int(axon.LayerPhaseDiff)))
 					}
+					if ev.Trial.Prev == 0 { // unpredictable
+						stat = 1
+					}
 					curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
 					tsr.AppendRowFloat(stat)
 				}
-			case Epoch, Run:
+			default:
 				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
 				tsr.AppendRowFloat(stat)
 			}
 		}
 	})
 
-	prevCorFunc := axon.StatPrevCorSim(ss.Stats, ss.Current, net, Theta, "ItemP", "TimeP")
+	prevCorFunc := axon.StatPrevCorSim(ss.Stats, ss.Current, net, Trial, "ItemP", "TimeP")
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		prevCorFunc(mode, level, phase == Start)
 	})
 
 	lays := net.LayersByClass("PFC")
-	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Theta, lays...)
+	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		actGeFunc(mode, level, phase == Start)
 	})
@@ -547,12 +547,12 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 		return counters
 	}
 	counters += fmt.Sprintf(" TrialName: %s", curModeDir.StringValue("TrialName").String1D(di))
-	statNames := []string{"Gated"}
+	statNames := []string{"ItemP_CorSim", "TimeP_CorSim"}
 	if level == Cycle || curModeDir.Node(statNames[0]) == nil {
 		return counters
 	}
 	for _, name := range statNames {
-		counters += fmt.Sprintf(" %s: %.4g", name, curModeDir.Float32(name).Float1D(di))
+		counters += fmt.Sprintf(" %s: %.4g", name, curModeDir.Value(name).Float1D(di))
 	}
 	return counters
 }

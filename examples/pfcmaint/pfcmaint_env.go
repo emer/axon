@@ -6,6 +6,7 @@ package pfcmaint
 
 import (
 	"fmt"
+	"log/slog"
 
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/tensor"
@@ -30,8 +31,17 @@ type PFCMaintEnv struct {
 	// trial counter is for the maint step within item
 	Trial env.Counter `display:"inline"`
 
-	// number of different items to maintain
+	// Di is the data parallel index.
+	Di int
+
+	// ndata is number of data parallel total.
+	NData int
+
+	// number of different items to maintain.
 	NItems int
+
+	// StartItem is item we start on, based on Di, NData.
+	StartItem int
 
 	// number of trials to maintain
 	NTrials int
@@ -73,15 +83,22 @@ func (ev *PFCMaintEnv) Defaults() {
 }
 
 // Config configures the world
-func (ev *PFCMaintEnv) Config(mode etime.Modes, rndseed int64) {
+func (ev *PFCMaintEnv) Config(mode etime.Modes, di, ndata int, rndseed int64) {
 	ev.Mode = mode
+	ev.Di = di
+	ev.NData = ndata
 	ev.RandSeed = rndseed
 	ev.Rand.NewRand(ev.RandSeed)
 	ev.States = make(map[string]*tensor.Float32)
 	ev.States["Item"] = tensor.NewFloat32(ev.NUnitsY, ev.NUnitsX)
 	ev.States["Time"] = tensor.NewFloat32(ev.NUnitsY, ev.NTrials)
 	ev.States["GPi"] = tensor.NewFloat32(ev.NUnitsY, ev.NUnitsX)
-	ev.Sequence.Max = ev.NItems
+	if ev.NItems%ndata != 0 {
+		slog.Error("PFCMaintEnv: Number of items must be evenly divisible by NData", "NItems:", ev.NItems, "NData:", ndata)
+	}
+	nper := ev.NItems / ndata
+	ev.Sequence.Max = nper
+	ev.StartItem = ev.Di * nper
 	ev.Trial.Max = ev.NTrials
 	ev.ConfigPats()
 }
@@ -136,7 +153,8 @@ func (ev *PFCMaintEnv) RenderState(item, trial int) {
 
 // Step does one step -- must set Trial.Cur first if doing testing
 func (ev *PFCMaintEnv) Step() bool {
-	ev.RenderState(ev.Sequence.Cur, ev.Trial.Cur)
+	item := ev.StartItem + ev.Sequence.Cur
+	ev.RenderState(item, ev.Trial.Cur)
 	ev.Sequence.Same()
 	if ev.Trial.Incr() {
 		ev.Sequence.Incr()
