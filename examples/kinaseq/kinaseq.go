@@ -7,13 +7,8 @@ package main
 import (
 	"fmt"
 	"math/rand"
-	"reflect"
 
 	"cogentcore.org/core/math32"
-	"cogentcore.org/core/math32/minmax"
-	"cogentcore.org/core/tensor/stats/stats"
-	"github.com/emer/emergent/v2/elog"
-	"github.com/emer/emergent/v2/etime"
 )
 
 // NBins is the number of spike bins
@@ -59,7 +54,7 @@ func (kn *KinaseNeuron) StartTrial() {
 // based on target spiking firing rate.
 func (ss *Sim) Cycle(kn *KinaseNeuron, expInt float32, cyc int) {
 	kn.Spike = 0
-	cycPerBin := ss.Config.Run.NCycles / NBins
+	cycPerBin := ss.Config.Run.Cycles / NBins
 	bin := cyc / cycPerBin
 	if expInt > 0 {
 		kn.SpikeP *= rand.Float32()
@@ -163,6 +158,7 @@ func (ss *Sim) Sweep() {
 	// hz := []float32{25, 50, 100}
 	// nhz := len(hz)
 
+	ss.StatsStart(Test, Condition)
 	nhz := 100 / 5
 	hz := make([]float32, nhz)
 	i := 0
@@ -179,48 +175,50 @@ func (ss *Sim) Sweep() {
 			condStr := fmt.Sprintf("%03d -> %03d", minusHz, plusHz)
 			ss.Kinase.Condition = cond
 			ss.Kinase.Cond = condStr
-			ss.RunImpl(minusHz, plusHz, ss.Config.Run.NTrials)
+			ss.RunImpl(minusHz, plusHz, ss.Config.Run.Trials)
 			cond++
 		}
 	}
-	// note: can get this by setting x axis
-	// ss.Plot("DWtPlot").Update()
-	// ss.Plot("DWtVarPlot").Update()
 }
 
 // Run runs for given parameters
 func (ss *Sim) Run() {
-	cr := &ss.Config.Run
-	ss.RunImpl(cr.MinusHz, cr.PlusHz, cr.NTrials)
+	ss.RunImpl(ss.Config.MinusHz, ss.Config.PlusHz, ss.Config.Run.Trials)
 }
 
 // RunImpl runs NTrials, recording to RunLog and TrialLog
 func (ss *Sim) RunImpl(minusHz, plusHz float32, ntrials int) {
+	if ss.GUI.StopNow {
+		return
+	}
+	ss.StatsStart(Test, Trial)
 	ss.Kinase.Init()
 	for trl := 0; trl < ntrials; trl++ {
 		ss.Kinase.Trial = trl
 		ss.TrialImpl(minusHz, plusHz)
 	}
-	ss.Logs.LogRow(etime.Test, etime.Condition, ss.Kinase.Condition)
-	ss.GUI.UpdatePlot(etime.Test, etime.Condition)
+	ss.StatsStep(Test, Condition)
 }
 
 func (ss *Sim) Trial() {
-	cr := &ss.Config.Run
 	ss.Kinase.Init()
-	ss.TrialImpl(cr.MinusHz, cr.PlusHz)
+	ss.TrialImpl(ss.Config.MinusHz, ss.Config.PlusHz)
 }
 
 // TrialImpl runs one trial for given parameters
 func (ss *Sim) TrialImpl(minusHz, plusHz float32) {
-	cfg := &ss.Config
+	if ss.GUI.StopNow {
+		return
+	}
+	ss.StatsStart(Test, Trial)
+	cfg := ss.Config
 	ks := &ss.Kinase
 	ks.MinusHz = minusHz
 	ks.PlusHz = plusHz
 	ks.Cycle = 0
 	ks.ErrDWt = (plusHz - minusHz) / 100
 
-	minusCycles := cfg.Run.NCycles - cfg.Run.PlusCycles
+	minusCycles := cfg.Run.Cycles - cfg.Run.PlusCycles
 
 	ks.StartTrial()
 	for phs := 0; phs < 2; phs++ {
@@ -234,7 +232,7 @@ func (ss *Sim) TrialImpl(minusHz, plusHz float32) {
 			rhz = plusHz
 			maxcyc = cfg.Run.PlusCycles
 		}
-		shz := rhz + cfg.Run.SendDiffHz
+		shz := rhz + cfg.SendDiffHz
 		if shz < 0 {
 			shz = 0
 		}
@@ -252,7 +250,7 @@ func (ss *Sim) TrialImpl(minusHz, plusHz float32) {
 
 			ca := ks.Send.CaSyn * ks.Recv.CaSyn
 			ss.SynCa.FromCa(ca, &ks.StdSyn.CaM, &ks.StdSyn.CaP, &ks.StdSyn.CaD)
-			ss.Logs.LogRow(etime.Test, etime.Cycle, ks.Cycle)
+			ss.StatsStep(Test, Cycle)
 			ks.Cycle++
 		}
 	}
@@ -265,90 +263,5 @@ func (ss *Sim) TrialImpl(minusHz, plusHz float32) {
 	ss.LinearSynCa.FinalCa(ks.SpikeBins[0], ks.SpikeBins[1], ks.SpikeBins[2], ks.SpikeBins[3], ks.SpikeBins[4], ks.SpikeBins[5], ks.SpikeBins[6], ks.SpikeBins[7], &ks.LinearSyn.CaP, &ks.LinearSyn.CaD)
 	ks.LinearSyn.DWt = ks.LinearSyn.CaP - ks.LinearSyn.CaD
 
-	ss.GUI.UpdatePlot(etime.Test, etime.Cycle)
-	ss.Logs.LogRow(etime.Test, etime.Trial, ks.Trial)
-	ss.GUI.UpdatePlot(etime.Test, etime.Trial)
-}
-
-func (ss *Sim) ConfigKinaseLogItems() {
-	lg := &ss.Logs
-	ks := &ss.Kinase
-	val := reflect.ValueOf(ks).Elem()
-	parName := ""
-	times := []etime.Times{etime.Condition, etime.Trial, etime.Cycle}
-	tn := len(times)
-	WalkFields(val,
-		func(parent reflect.Value, field reflect.StructField, value reflect.Value) bool {
-			if field.Name == "SpikeBins" {
-				return false
-			}
-			return true
-		},
-		func(parent reflect.Value, field reflect.StructField, value reflect.Value) {
-			fkind := field.Type.Kind()
-			fname := field.Name
-			if val.Interface() == parent.Interface() { // top-level
-				if fkind == reflect.Struct {
-					parName = fname
-					return
-				}
-			} else {
-				fname = parName + "." + fname
-			}
-			itm := lg.AddItem(&elog.Item{
-				Name:   fname,
-				Type:   fkind,
-				FixMax: false,
-				Range:  minmax.F32{Max: 1},
-				Write: elog.WriteMap{
-					etime.Scope(etime.AllModes, etime.Cycle): func(ctx *elog.Context) {
-						fany := value.Interface()
-						switch fkind {
-						case reflect.Float32:
-							ctx.SetFloat32(fany.(float32))
-						case reflect.Int:
-							ctx.SetFloat32(float32(fany.(int)))
-						case reflect.String:
-							ctx.SetString(fany.(string))
-						}
-					},
-				}})
-			for ti := 0; ti < tn-1; ti++ {
-				if fkind == reflect.Float32 {
-					itm.Write[etime.Scope(etime.AllModes, times[ti])] = func(ctx *elog.Context) {
-						ctx.SetAgg(ctx.Mode, times[ti+1], stats.Mean)
-					}
-				} else {
-					itm.Write[etime.Scope(etime.Test, times[ti])] = func(ctx *elog.Context) {
-						fany := value.Interface()
-						switch fkind {
-						case reflect.Int:
-							ctx.SetFloat32(float32(fany.(int)))
-						case reflect.String:
-							ctx.SetString(fany.(string))
-						}
-					}
-				}
-			}
-		})
-}
-
-func WalkFields(parent reflect.Value, should func(parent reflect.Value, field reflect.StructField, value reflect.Value) bool, walk func(parent reflect.Value, field reflect.StructField, value reflect.Value)) {
-	typ := parent.Type()
-	for i := 0; i < typ.NumField(); i++ {
-		field := typ.Field(i)
-		if !field.IsExported() {
-			continue
-		}
-		value := parent.Field(i)
-		if !should(parent, field, value) {
-			continue
-		}
-		if field.Type.Kind() == reflect.Struct {
-			walk(parent, field, value)
-			WalkFields(value, should, walk)
-		} else {
-			walk(parent, field, value)
-		}
-	}
+	ss.StatsStep(Test, Trial)
 }

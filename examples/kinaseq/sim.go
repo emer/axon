@@ -1,42 +1,63 @@
-// Copyright (c) 2019, The Emergent Authors. All rights reserved.
+// Copyright (c) 2024, The Emergent Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-/*
-kinaseq: Explores calcium-based synaptic learning rules,
-specifically at the synaptic level.
-*/
+// kinaseq: Explores calcium-based synaptic learning rules,
+// specifically at the synaptic level.
 package main
 
-//go:generate core generate -add-types
+//go:generate core generate -add-types -add-funcs
 
 import (
-	"os"
+	"reflect"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/mpi"
+	"cogentcore.org/core/base/randx"
+	"cogentcore.org/core/base/reflectx"
+	"cogentcore.org/core/cli"
 	"cogentcore.org/core/core"
+	"cogentcore.org/core/enums"
 	"cogentcore.org/core/icons"
+	"cogentcore.org/core/plot"
 	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/stats/stats"
+	"cogentcore.org/core/tensor/tensorfs"
 	"cogentcore.org/core/tree"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/axon/v2/kinase"
-	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
-	"github.com/emer/emergent/v2/elog"
-	"github.com/emer/emergent/v2/estats"
-	"github.com/emer/emergent/v2/etime"
 )
 
 func main() {
-	sim := &Sim{}
-	sim.New()
-	sim.ConfigAll()
-	if sim.Config.GUI {
-		sim.RunGUI()
-	} else {
-		sim.RunNoGUI()
-	}
+	cfg := &Config{}
+	cli.SetFromDefaults(cfg)
+	opts := cli.DefaultOptions(cfg.Name, cfg.Title)
+	opts.DefaultFiles = append(opts.DefaultFiles, "config.toml")
+	cli.Run(opts, cfg, RunSim)
 }
+
+// Modes are the looping modes (Stacks) for running and statistics.
+type Modes int32 //enums:enum
+const (
+	Test Modes = iota
+)
+
+// Levels are the looping levels for running and statistics.
+type Levels int32 //enums:enum
+const (
+	Cycle Levels = iota
+	Trial
+	Condition
+)
+
+// StatsPhase is the phase of stats processing for given mode, level.
+// Accumulated values are reset at Start, added each Step.
+type StatsPhase int32 //enums:enum
+const (
+	Start StatsPhase = iota
+	Step
+)
 
 // see config.go for Config
 
@@ -48,7 +69,7 @@ func main() {
 type Sim struct {
 
 	// simulation configuration parameters -- set by .toml config file and / or args
-	Config Config `new-window:"+"`
+	Config *Config `new-window:"+"`
 
 	// Kinase NeurCa params
 	NeurCa kinase.NeurCaParams
@@ -65,92 +86,240 @@ type Sim struct {
 	// Training data for least squares solver
 	TrainData tensor.Float64
 
-	// axon timing parameters and state
-	Context axon.Context `new-window:"+"`
+	// Root is the root tensorfs directory, where all stats and other misc sim data goes.
+	Root *tensorfs.Node `display:"-"`
 
-	// contains computed statistic values
-	Stats estats.Stats `new-window:"+"`
+	// Stats has the stats directory within Root.
+	Stats *tensorfs.Node `display:"-"`
 
-	// logging
-	Logs elog.Logs `new-window:"+"`
+	// Current has the current stats values within Stats.
+	Current *tensorfs.Node `display:"-"`
 
-	// manages all the gui elements
+	// StatFuncs are statistics functions called at given mode and level,
+	// to perform all stats computations. phase = Start does init at start of given level,
+	// and all intialization / configuration (called during Init too).
+	StatFuncs []func(mode Modes, level Levels, phase StatsPhase) `display:"-"`
+
+	// GUI manages all the GUI elements
 	GUI egui.GUI `display:"-"`
 
-	// map of values for detailed debugging / testing
-	ValMap map[string]float32 `display:"-"`
+	// RandSeeds is a list of random seeds to use for each run.
+	RandSeeds randx.Seeds `display:"-"`
 }
 
-// New creates new blank elements and initializes defaults
-func (ss *Sim) New() {
-	econfig.Config(&ss.Config, "config.toml")
-	ss.SynCa.Defaults()
-	ss.NeurCa.Defaults()
-	ss.LinearSynCa.Defaults()
-	ss.SynCa.Dt.PDTauForNCycles(ss.Config.Run.NCycles)
-	ss.NeurCa.Dt.PDTauForNCycles(ss.Config.Run.NCycles)
-	ss.LinearSynCa.WtsForNCycles(ss.Config.Run.NCycles)
-	ss.Stats.Init()
-	ss.ValMap = make(map[string]float32)
+// RunSim runs the simulation with given configuration.
+func RunSim(cfg *Config) error {
+	sim := &Sim{}
+	sim.Config = cfg
+	sim.New()
+	return nil
 }
 
 func (ss *Sim) Defaults() {
+	cli.SetFromDefaults(&ss.Config)
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////
-// 		Configs
-
-// ConfigAll configures all the elements using the standard functions
-func (ss *Sim) ConfigAll() {
+func (ss *Sim) New() {
+	ss.Root, _ = tensorfs.NewDir("Root")
+	tensorfs.CurRoot = ss.Root
+	ss.RandSeeds.Init(100) // max 100 runs
+	ss.InitRandSeed(0)
+	ss.SynCa.Defaults()
+	ss.NeurCa.Defaults()
+	ss.LinearSynCa.Defaults()
+	ss.SynCa.Dt.PDTauForNCycles(ss.Config.Run.Cycles)
+	ss.NeurCa.Dt.PDTauForNCycles(ss.Config.Run.Cycles)
+	ss.LinearSynCa.WtsForNCycles(ss.Config.Run.Cycles)
 	ss.ConfigKinase()
-	ss.ConfigLogs()
+	ss.ConfigStats()
 	if ss.Config.Params.SaveAll {
 		ss.Config.Params.SaveAll = false
-		os.Exit(0)
+		return
+	}
+	if ss.Config.GUI {
+		ss.RunGUI()
+	} else {
+		ss.RunNoGUI()
 	}
 }
+
+////////  Init, utils
 
 // Init restarts the run, and initializes everything, including network weights
 // and resets the epoch log table
 func (ss *Sim) Init() {
-	ss.Context.Reset()
-	ss.Kinase.Init()
-	ss.ConfigKinase()
+	ss.SetRunName()
+	ss.InitRandSeed(0)
 	ss.GUI.StopNow = false
+	ss.ConfigKinase()
+	ss.StatsInit()
 }
 
-func (ss *Sim) ConfigLogs() {
-	ss.ConfigKinaseLogItems()
-	ss.Logs.CreateTables()
-
-	ss.Logs.PlotItems("Send.Spike", "Recv.Spike")
-
-	ss.Logs.SetContext(&ss.Stats, nil)
-	ss.Logs.ResetLog(etime.Test, etime.Cycle)
+// InitRandSeed initializes the random seed based on current training run number
+func (ss *Sim) InitRandSeed(run int) {
+	ss.RandSeeds.Set(run)
 }
 
-func (ss *Sim) ResetTstCycPlot() {
-	ss.Logs.ResetLog(etime.Test, etime.Cycle)
-	ss.GUI.UpdatePlot(etime.Test, etime.Cycle)
+// Stop tells the sim to stop running
+func (ss *Sim) Stop() {
+	ss.GUI.StopNow = true
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////
-// 		GUI
+//////// Stats
+
+// AddStat adds a stat compute function.
+func (ss *Sim) AddStat(f func(mode Modes, level Levels, phase StatsPhase)) {
+	ss.StatFuncs = append(ss.StatFuncs, f)
+}
+
+// StatsStart is called by Looper at the start of given level, for each iteration.
+// It needs to call RunStats Start at the next level down.
+// e.g., each Epoch is the start of the full set of Trial Steps.
+func (ss *Sim) StatsStart(lmd, ltm enums.Enum) {
+	mode := lmd.(Modes)
+	level := ltm.(Levels)
+	if level < Trial {
+		return
+	}
+	ss.RunStats(mode, level-1, Start)
+}
+
+// StatsStep is called by Looper at each step of iteration,
+// where it accumulates the stat results.
+func (ss *Sim) StatsStep(lmd, ltm enums.Enum) {
+	mode := lmd.(Modes)
+	level := ltm.(Levels)
+	ss.RunStats(mode, level, Step)
+	tensorfs.DirTable(axon.StatsNode(ss.Stats, mode, level), nil).WriteToLog()
+}
+
+// RunStats runs the StatFuncs for given mode, level and phase.
+func (ss *Sim) RunStats(mode Modes, level Levels, phase StatsPhase) {
+	for _, sf := range ss.StatFuncs {
+		sf(mode, level, phase)
+	}
+	if phase == Step && ss.GUI.Tabs != nil {
+		nm := mode.String() + "/" + level.String() + " Plot"
+		ss.GUI.Tabs.GoUpdatePlot(nm)
+	}
+}
+
+// SetRunName sets the overall run name, used for naming output logs and weight files
+// based on params extra sheets and tag, and starting run number (for distributed runs).
+func (ss *Sim) SetRunName() string {
+	runName := "Run"
+	ss.Current.StringValue("RunName", 1).SetString1D(runName, 0)
+	return runName
+}
+
+// RunName returns the overall run name, used for naming output logs and weight files
+// based on params extra sheets and tag, and starting run number (for distributed runs).
+func (ss *Sim) RunName() string {
+	return ss.Current.StringValue("RunName", 1).String1D(0)
+}
+
+// StatsInit initializes all the stats by calling Start across all modes and levels.
+func (ss *Sim) StatsInit() {
+	ss.RunStats(Test, Cycle, Start)
+	ss.RunStats(Test, Trial, Start)
+	ss.RunStats(Test, Condition, Start)
+	if ss.GUI.Tabs != nil {
+		_, idx := ss.GUI.Tabs.CurrentTab()
+		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Test, Cycle))
+		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Test, Trial))
+		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Test, Condition))
+		if idx < 0 {
+			idx = 0
+		}
+		ss.GUI.Tabs.SelectTabIndex(idx)
+	}
+}
+
+// ConfigStats handles configures functions to do all stats computation
+// in the tensorfs system.
+func (ss *Sim) ConfigStats() {
+	ss.Stats, _ = ss.Root.Mkdir("Stats")
+	ss.Current, _ = ss.Stats.Mkdir("Current")
+
+	ss.SetRunName()
+
+	vals := axon.StructValues(&ss.Kinase,
+		func(parent reflect.Value, field reflect.StructField, value reflect.Value) bool {
+			if field.Name == "SpikeBins" {
+				return false
+			}
+			return true
+		})
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		for _, sv := range vals {
+			name := sv.Path
+			kind := sv.Field.Type.Kind()
+			isNumber := reflectx.KindIsNumber(kind)
+			modeDir := ss.Stats.RecycleDir(mode.String())
+			curModeDir := ss.Current.RecycleDir(mode.String())
+			levelDir := modeDir.RecycleDir(level.String())
+			tsr := tensorfs.ValueType(levelDir, name, kind)
+			if phase == Start {
+				tsr.SetNumRows(0)
+				plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
+					s.Range.SetMin(0)
+					switch level {
+					case Cycle:
+						switch name {
+						case "Send.Spike", "Recv.Spike", "StdSyn.CaP", "StdSyn.CaD":
+							s.On = true
+						}
+					case Trial:
+						switch name {
+						case "StdSyn.CaP", "StdSyn.CaD", "StdSyn.DWt", "LinearSyn.CaP", "LinearSyn.CaD", "LinearSyn.DWt":
+							s.On = true
+						case "Cycle":
+							s.Group = "none"
+						}
+					case Condition:
+						switch name {
+						case "StdSyn.DWt", "LinearSyn.DWt", "ErrDWt":
+							s.On = true
+						case "Cycle", "Trial":
+							s.Group = "none"
+						}
+					}
+				})
+				continue
+			}
+			switch level {
+			case Cycle:
+				if isNumber {
+					stat := errors.Log1(reflectx.ToFloat(sv.Value.Interface()))
+					tsr.AppendRowFloat(stat)
+					tensorfs.ValueType(curModeDir, name, kind, 1).SetFloat1D(stat, 0)
+				} else {
+					stat := reflectx.ToString(sv.Value.Interface())
+					tsr.AppendRowString(stat)
+					curModeDir.StringValue(name, 1).SetString1D(stat, 0)
+				}
+			default:
+				if isNumber {
+					subDir := modeDir.RecycleDir((level - 1).String())
+					stat := stats.StatMean.Call(subDir.Value(name)).Float1D(0)
+					tsr.AppendRowFloat(stat)
+				}
+			}
+		}
+	})
+}
+
+//////// GUI
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
-	title := "Kinase Eq"
-	ss.GUI.MakeBody(ss, "kinaseq", title, `kinaseq: Explores calcium-based synaptic learning rules, specifically at the synaptic level. See <a href="https://github.com/emer/axon/blob/main/examples/kinaseq/README.md">README.md on GitHub</a>.</p>`)
+	ss.GUI.MakeBody(ss, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
+	ss.GUI.FS = ss.Root
+	ss.GUI.DataRoot = "Root"
 	ss.GUI.CycleUpdateInterval = 10
 
-	ss.GUI.AddPlots(title, &ss.Logs)
-	// key := etime.Scope(etime.Test, etime.Cycle)
-	// tcp, _ := ss.GUI.Tabs.NewTab("TstCycPlot")
-	// plt := ss.GUI.NewPlot(key, tcp)
-	// plt.SetTable(ss.Logs.Table(etime.Test, etime.Cycle))
-	// egui.ConfigPlotFromLog("Neuron", plt, &ss.Logs, key)
-	// ss.TstCycPlot = plt
-
+	ss.GUI.UpdateFiles()
+	ss.StatsInit()
 	ss.GUI.FinalizeGUI(false)
 }
 
@@ -167,7 +336,7 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 		Tooltip: "Stops running.",
 		Active:  egui.ActiveRunning,
 		Func: func() {
-			// ss.Stop()
+			ss.Stop()
 			ss.GUI.UpdateWindow()
 		},
 	})
@@ -218,7 +387,7 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 		Tooltip: "Reset TstCycPlot.",
 		Active:  egui.ActiveStopped,
 		Func: func() {
-			ss.ResetTstCycPlot()
+			ss.StatsInit()
 			ss.GUI.UpdateWindow()
 		},
 	})
@@ -232,12 +401,23 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 			ss.GUI.UpdateWindow()
 		},
 	})
-	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "README",
+	tree.Add(p, func(w *core.Separator) {})
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{
+		Label:   "New Seed",
+		Icon:    icons.Add,
+		Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
+		Active:  egui.ActiveAlways,
+		Func: func() {
+			ss.RandSeeds.NewSeeds()
+		},
+	})
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{
+		Label:   "README",
 		Icon:    icons.FileMarkdown,
 		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 		Active:  egui.ActiveAlways,
 		Func: func() {
-			core.TheApp.OpenURL("https://github.com/emer/axon/blob/main/examples/neuron/README.md")
+			core.TheApp.OpenURL(ss.Config.URL)
 		},
 	})
 }
@@ -249,17 +429,17 @@ func (ss *Sim) RunGUI() {
 }
 
 func (ss *Sim) RunNoGUI() {
+	ss.Init()
+
 	if ss.Config.Params.Note != "" {
 		mpi.Printf("Note: %s\n", ss.Config.Params.Note)
 	}
-	if ss.Config.Log.SaveWeights {
-		mpi.Printf("Saving final weights per run\n")
-	}
 
-	ss.Init()
-	// if ss.Config.Log.Cycle {
-	// 	dt := ss.Logs.Table(etime.Test, etime.Cycle)
-	// 	// fnm := ecmd.LogFilename("cyc", netName, runName)
-	// 	dt.SaveCSV(core.Filename(fnm), table.Tab, table.Headers)
-	// }
+	// runName := ss.SetRunName()
+	// netName := ss.Net.Name
+	// axon.OpenLogFiles(ss.Loops, ss.Stats, netName, runName, [][]string{[]string{"Cycle"}})
+
+	mpi.Printf("Running %d Cycles\n", ss.Config.Run.Cycles)
+	ss.Sweep()
+	// axon.CloseLogFiles(ss.Loops, ss.Stats, Cycle)
 }

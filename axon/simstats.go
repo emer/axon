@@ -5,6 +5,7 @@
 package axon
 
 import (
+	"reflect"
 	"strings"
 	"time"
 
@@ -562,6 +563,59 @@ func StatLevelAll(statsDir *tensorfs.Node, srcMode, srcLevel enums.Enum, styleFu
 				trg := tensorfs.ValueType(allDir, cl.Name(), clv.DataType())
 				trg.AppendRow(clv.RowTensor(clv.DimSize(0) - 1))
 			}
+		}
+	}
+}
+
+// FieldValue holds the value of a field in a struct.
+type FieldValue struct {
+	Path          string
+	Field         reflect.StructField
+	Value, Parent reflect.Value
+}
+
+// StructValues returns a list of [FieldValue]s for fields of given struct,
+// including any sub-fields, subject to filtering from the given should function
+// which returns true for anything to include and false to exclude.
+// You must pass a pointer to the object, so that the values are addressable.
+func StructValues(obj any, should func(parent reflect.Value, field reflect.StructField, value reflect.Value) bool) []*FieldValue {
+	var vals []*FieldValue
+	val := reflect.ValueOf(obj).Elem()
+	parName := ""
+	WalkFields(val, should,
+		func(parent reflect.Value, field reflect.StructField, value reflect.Value) {
+			fkind := field.Type.Kind()
+			fname := field.Name
+			if val.Interface() == parent.Interface() { // top-level
+				if fkind == reflect.Struct {
+					parName = fname
+					return
+				}
+			} else {
+				fname = parName + "." + fname
+			}
+			sv := &FieldValue{Path: fname, Field: field, Value: value, Parent: parent}
+			vals = append(vals, sv)
+		})
+	return vals
+}
+
+func WalkFields(parent reflect.Value, should func(parent reflect.Value, field reflect.StructField, value reflect.Value) bool, walk func(parent reflect.Value, field reflect.StructField, value reflect.Value)) {
+	typ := parent.Type()
+	for i := 0; i < typ.NumField(); i++ {
+		field := typ.Field(i)
+		if !field.IsExported() {
+			continue
+		}
+		value := parent.Field(i)
+		if !should(parent, field, value) {
+			continue
+		}
+		if field.Type.Kind() == reflect.Struct {
+			walk(parent, field, value)
+			WalkFields(value, should, walk)
+		} else {
+			walk(parent, field, value)
 		}
 	}
 }

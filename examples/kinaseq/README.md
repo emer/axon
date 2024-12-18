@@ -22,6 +22,8 @@ For the rate-code activations in Leabra, the product of these averages is likely
 
 # Synapse-level integration of spikes
 
+TODO: needs updating!
+
 For spiking, the relative timing of pre-post spiking has been an obsession since the discovery of STDP.
 
 However, at a computational level, capturing these pre-post timing interactions clearly requires computationally expensive synapse-level integration.  Thus, a major technical issue we address is how to more efficiently integrate this synapse-level signal at the theoretically most efficient level which is when either the sender or receiver spikes, with the subsequent integration computed based on time passed instead of incrementally updating.
