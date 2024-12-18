@@ -108,6 +108,12 @@ func (pt *Path) InitWeightsSyn(ctx *Context, syni uint32, rnd randx.Rand, mean, 
 	pt.Params.SWts.InitWeightsSyn(ctx, syni, rnd, mean, spct)
 }
 
+// InitWeightsSynTrace initializes SynapseTraces values
+// for an individual synapse.
+func (pt *Path) InitWeightsSynTrace(ctx *Context, syni, di uint32) {
+	pt.Params.SWts.InitWeightsSynTrace(ctx, syni, di)
+}
+
 // InitWeights initializes weight values according to SWt params,
 // enforcing current constraints.
 func (pt *Path) InitWeights(ctx *Context, nt *Network) {
@@ -130,6 +136,9 @@ func (pt *Path) InitWeights(ctx *Context, nt *Network) {
 		for _, syi := range syIndexes {
 			syni := pt.SynStIndex + syi
 			pt.InitWeightsSyn(ctx, syni, &nt.Rand, smn, spct)
+			for di := uint32(0); di < ctx.NData; di++ {
+				pt.InitWeightsSynTrace(ctx, syni, di)
+			}
 		}
 	}
 	if pt.Params.SWts.Adapt.On.IsTrue() && !rlay.Params.IsTarget() {

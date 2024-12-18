@@ -603,6 +603,14 @@ func (sp *SWtParams) InitWeightsSyn(ctx *Context, syni uint32, rnd randx.Rand, m
 	Synapses.Set(0, int(syni), int(DSWt))
 }
 
+// InitWeightsSynTrace initializes SynapseTrace values
+// for an individual synapse.
+func (sp *SWtParams) InitWeightsSynTrace(ctx *Context, syni, di uint32) {
+	SynapseTraces.Set(0, int(syni), int(di), int(Tr))
+	SynapseTraces.Set(0, int(syni), int(di), int(DTr))
+	SynapseTraces.Set(0, int(syni), int(di), int(DiDWt))
+}
+
 //gosl:start
 
 // LRateParams manages learning rate parameters
