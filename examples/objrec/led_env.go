@@ -10,8 +10,8 @@ import (
 
 	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/vision/v2/vfilter"
-	"github.com/emer/vision/v2/vxform"
+	"github.com/emer/v1vision/vfilter"
+	"github.com/emer/v1vision/vxform"
 )
 
 // LEDEnv generates images of old-school "LED" style "letters" composed of a set of horizontal

@@ -547,6 +547,10 @@ func (ss *Sim) ConfigStats() {
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		trialNameFunc(mode, level, phase == Start)
 	})
+	perTrlFunc := axon.StatPerTrialMSec(ss.Stats, Train, Trial)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		perTrlFunc(mode, level, phase == Start)
+	})
 
 	// up to a point, it is good to use loops over stats in one function,
 	// to reduce repetition of boilerplate.
@@ -584,19 +588,11 @@ func (ss *Sim) ConfigStats() {
 					curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
 					tsr.AppendRowFloat(stat)
 				}
-			case Epoch:
-				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
-				tsr.AppendRowFloat(stat)
-			case Run:
+			case Epoch, Run:
 				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
 				tsr.AppendRowFloat(stat)
 			}
 		}
-	})
-
-	perTrlFunc := axon.StatPerTrialMSec(ss.Stats, Train, Trial)
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		perTrlFunc(mode, level, phase == Start)
 	})
 
 	prevCorFunc := axon.StatPrevCorSim(ss.Stats, ss.Current, net, Trial, "DepthP", "HeadDirP")

@@ -5,7 +5,7 @@
 // pfcmaint: This project tests prefrontal cortex (PFC) active
 // maintenance mechanisms supported by the pyramidal tract (PT) neurons,
 // in the PTMaint layer type.
-package main
+package pfcmaint
 
 //go:generate core generate -add-types -add-funcs
 
@@ -15,7 +15,6 @@ import (
 	"cogentcore.org/core/base/mpi"
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/base/reflectx"
-	"cogentcore.org/core/cli"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/enums"
 	"cogentcore.org/core/icons"
@@ -31,14 +30,6 @@ import (
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/paths"
 )
-
-func main() {
-	cfg := &Config{}
-	cli.SetFromDefaults(cfg)
-	opts := cli.DefaultOptions(cfg.Name, cfg.Title)
-	opts.DefaultFiles = append(opts.DefaultFiles, "config.toml")
-	cli.Run(opts, cfg, RunSim)
-}
 
 // Modes are the looping modes (Stacks) for running and statistics.
 type Modes int32 //enums:enum
@@ -489,9 +480,9 @@ func (ss *Sim) ConfigStats() {
 
 	// up to a point, it is good to use loops over stats in one function,
 	// to reduce repetition of boilerplate.
-	statNames := []string{"ItemP", "TimeP"}
+	statNames := []string{"ItemP_CorSim", "TimeP_CorSim"}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		for si, name := range statNames {
+		for _, name := range statNames {
 			modeDir := ss.Stats.RecycleDir(mode.String())
 			curModeDir := ss.Current.RecycleDir(mode.String())
 			levelDir := modeDir.RecycleDir(level.String())
@@ -503,30 +494,43 @@ func (ss *Sim) ConfigStats() {
 				tsr.SetNumRows(0)
 				plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
 					s.Range.SetMin(0).SetMax(1)
-					if si >= 2 && si <= 5 {
-						s.On = true
-					}
+					s.On = true
 				})
 				continue
 			}
 			switch level {
 			case Trial:
+				itemly := ss.Net.LayerByName("ItemP")
+				timely := ss.Net.LayerByName("TimeP")
 				for di := range ndata {
-					var stat float32
+					var stat float64
 					switch name {
+					case "ItemP_CorSim":
+						stat = 1.0 - float64(axon.LayerStates.Value(int(itemly.Index), int(di), int(axon.LayerPhaseDiff)))
+					case "TimeP_CorSim":
+						stat = 1.0 - float64(axon.LayerStates.Value(int(timely.Index), int(di), int(axon.LayerPhaseDiff)))
 					}
-					curModeDir.Float32(name, ndata).SetFloat1D(float64(stat), di)
-					tsr.AppendRowFloat(float64(stat))
+					curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
+					tsr.AppendRowFloat(stat)
 				}
-			case Epoch:
-				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
-				tsr.AppendRowFloat(stat)
-			case Run:
+			case Epoch, Run:
 				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
 				tsr.AppendRowFloat(stat)
 			}
 		}
 	})
+
+	prevCorFunc := axon.StatPrevCorSim(ss.Stats, ss.Current, net, Theta, "ItemP", "TimeP")
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		prevCorFunc(mode, level, phase == Start)
+	})
+
+	lays := net.LayersByClass("PFC")
+	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Theta, lays...)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		actGeFunc(mode, level, phase == Start)
+	})
+
 }
 
 // StatCounters returns counters string to show at bottom of netview.

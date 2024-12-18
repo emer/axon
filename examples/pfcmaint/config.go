@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package main
+package pfcmaint
 
 // EnvConfig has config params for environment.
 type EnvConfig struct {
@@ -83,7 +83,7 @@ type RunConfig struct {
 
 	// Trials is the total number of trials per epoch.
 	// Should be an even multiple of NData.
-	Trials int `default:"128"`
+	Trials int `default:"64"`
 
 	// Cycles is the total number of cycles per trial: at least 200.
 	Cycles int `default:"200"`
