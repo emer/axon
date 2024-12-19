@@ -16,10 +16,12 @@ package armaze
 //go:generate core generate -add-types
 
 import (
+	"fmt"
+
 	"cogentcore.org/core/base/randx"
+	"cogentcore.org/core/cli"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/tensor"
-	"github.com/emer/emergent/v2/econfig"
 )
 
 // Actions is a list of mutually exclusive states
@@ -119,10 +121,12 @@ type Env struct {
 
 func (ev *Env) Label() string { return ev.Name }
 
+func (ev *Env) String() string { return fmt.Sprintf("%d_%d_%d", ev.Arm, ev.Pos, ev.Dist) }
+
 // Defaults sets default params
 func (ev *Env) Defaults() {
 	ev.Config.Defaults()
-	econfig.SetFromDefaults(&ev.Config)
+	cli.SetFromDefaults(&ev.Config)
 	ev.Config.Update()
 }
 
@@ -159,16 +163,16 @@ func (ev *Env) Init(run int) {
 	ev.UpdateMaxLength()
 
 	ev.States = make(map[string]*tensor.Float32)
-	ev.States["CS"] = tensor.NewFloat32([]int{cfg.Params.NYReps, cfg.NArms})
-	ev.States["Pos"] = tensor.NewFloat32([]int{cfg.Params.NYReps, ev.MaxLength + 1})
-	ev.States["Dist"] = tensor.NewFloat32([]int{cfg.Params.NYReps, ev.MaxLength + 1})
-	ev.States["Action"] = tensor.NewFloat32([]int{cfg.Params.NYReps, int(ActionsN)})
+	ev.States["CS"] = tensor.NewFloat32(cfg.Params.NYReps, cfg.NArms)
+	ev.States["Pos"] = tensor.NewFloat32(cfg.Params.NYReps, ev.MaxLength+1)
+	ev.States["Dist"] = tensor.NewFloat32(cfg.Params.NYReps, ev.MaxLength+1)
+	ev.States["Action"] = tensor.NewFloat32(cfg.Params.NYReps, int(ActionsN))
 
 	ev.NewStart()
 	ev.JustConsumed = true // will trigger a new start again on Step
 }
 
-func (ev *Env) State(el string) tensor.Tensor {
+func (ev *Env) State(el string) tensor.Values {
 	return ev.States[el]
 }
 
@@ -301,7 +305,7 @@ func (ev *Env) RenderLocalist(name string, val int) {
 		return
 	}
 	for y := 0; y < ev.Config.Params.NYReps; y++ {
-		st.Set([]int{y, val}, 1.0)
+		st.Set(1.0, y, val)
 	}
 }
 
@@ -310,7 +314,7 @@ func (ev *Env) RenderLocalist4D(name string, val int) {
 	st := ev.States[name]
 	st.SetZeros()
 	for y := 0; y < ev.Config.Params.NYReps; y++ {
-		st.Set([]int{0, val, y, 0}, 1.0)
+		st.Set(1.0, 0, val, y, 0)
 	}
 }
 
@@ -341,7 +345,7 @@ func (ev *Env) DecodeLocalist(vt *tensor.Float32) int {
 	for i := 0; i < dx; i++ {
 		var sum float32
 		for j := 0; j < ev.Config.Params.NYReps; j++ {
-			sum += vt.Value([]int{j, i})
+			sum += vt.Value(j, i)
 		}
 		if sum > max {
 			max = sum
@@ -353,7 +357,7 @@ func (ev *Env) DecodeLocalist(vt *tensor.Float32) int {
 
 // Action records the LastAct and renders it, but does not
 // update the state accordingly.
-func (ev *Env) Action(action string, nop tensor.Tensor) {
+func (ev *Env) Action(action string, nop tensor.Values) {
 	act := None
 	act.SetString(action)
 	ev.LastAct = act

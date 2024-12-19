@@ -71,7 +71,7 @@ func (tr *StateTrace) AddRec(ctx *axon.Context, di uint32, ev *Env, net *axon.Ne
 		rec.Time = ctx.Time
 		rec.Trial = int(ctx.TrialsTotal)
 		for i := 0; i < ev.Config.NDrives; i++ {
-			rec.Drives[i] = axon.GlbUSposV(ctx, di, axon.GvDrives, uint32(1+i))
+			rec.Drives[i] = axon.GlobalVectors.Value(int(axon.GvDrives), int(1+i), int(di))
 		}
 	}
 

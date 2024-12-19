@@ -28,6 +28,14 @@ func StatsNode(statsDir *tensorfs.Node, mode, level enums.Enum) *tensorfs.Node {
 	return modeDir.RecycleDir(level.String())
 }
 
+func StatsLayerValues(net *Network, curDir *tensorfs.Node, mode enums.Enum, di int, layName, varName string) *tensor.Float32 {
+	curModeDir := curDir.RecycleDir(mode.String())
+	ly := net.LayerByName(layName)
+	tsr := curModeDir.Float32(layName+"_"+varName, ly.Shape.Sizes...)
+	ly.UnitValuesTensor(tsr, varName, di)
+	return tsr
+}
+
 // LogFilename returns a standard log file name as netName_runName_logName.tsv
 func LogFilename(netName, runName, logName string) string {
 	return netName + "_" + runName + "_" + logName + ".tsv"

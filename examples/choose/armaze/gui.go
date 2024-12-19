@@ -16,6 +16,7 @@ import (
 	"cogentcore.org/core/events"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/plot"
 	"cogentcore.org/core/plot/plotcore"
 	"cogentcore.org/core/styles"
 	"cogentcore.org/core/styles/abilities"
@@ -494,7 +495,7 @@ func (vw *GUI) ConfigView3D(se *xyz.Scene) {
 }
 
 func (vw *GUI) ConfigUSPlots() {
-	dp := table.NewTable()
+	dp := table.New()
 	dp.AddStringColumn("US")
 	dp.AddFloat64Column("Drive")
 	dp.AddFloat64Column("OFC")
@@ -502,35 +503,30 @@ func (vw *GUI) ConfigUSPlots() {
 	dp.SetNumRows(vw.Env.Config.NDrives + 1)
 
 	vw.USposData = dp
-	vw.USposPlot.Options.Type = plotcore.Bar
-	vw.USposPlot.Options.Title = "Positive USs"
-	vw.USposPlot.Options.Scale = 1
-	vw.USposPlot.Options.XAxis = "US"
+	// vw.USposPlot.Options.Type = plotcore.Bar
+	// vw.USposPlot.Options.Title = "Positive USs"
+	// vw.USposPlot.Options.Scale = 1
+	// vw.USposPlot.Options.XAxis = "US"
 
-	dn := table.NewTable()
+	dn := table.New()
 	dn.AddStringColumn("US")
 	dn.AddFloat64Column("OFC")
 	dn.AddFloat64Column("USin")
 	dn.SetNumRows(vw.Env.Config.NNegUSs + 2)
 
 	vw.USnegData = dn
-	vw.USnegPlot.Options.Type = plotcore.Bar
-	vw.USnegPlot.Options.Title = "Negative USs"
-	vw.USnegPlot.Options.Scale = 1
-	vw.USnegPlot.Options.XAxis = "US"
+	// vw.USnegPlot.Options.Type = plotcore.Bar
+	// vw.USnegPlot.Options.Title = "Negative USs"
+	// vw.USnegPlot.Options.Scale = 1
+	// vw.USnegPlot.Options.XAxis = "US"
 
 	cols := []string{"Drive", "USin", "OFC"}
-	for i, cl := range cols {
-		dp.SetMetaData(cl+":On", "true")
-		dp.SetMetaData(cl+":FixMin", "true")
-		dp.SetMetaData(cl+":FixMax", "true")
-		dp.SetMetaData(cl+":Max", "1")
-		if i > 0 {
-			dn.SetMetaData(cl+":On", "true")
-			dn.SetMetaData(cl+":FixMin", "true")
-			dn.SetMetaData(cl+":FixMax", "true")
-			dn.SetMetaData(cl+":Max", "1")
-		}
+	for _, cl := range cols {
+		plot.SetFirstStylerTo(cl, func(s *plot.Style) {
+			s.On = true
+			s.Range.SetMin(0).SetMax(1)
+
+		})
 	}
 	vw.USposPlot.SetTable(dp)
 	vw.USnegPlot.SetTable(dn)
@@ -595,9 +591,10 @@ func (vw *GUI) ConfigWorldView(tg *tensorcore.TensorGrid) {
 		}
 		colormap.AvailableMaps[cnm] = cm
 	}
-	tg.Display.Defaults()
-	tg.Display.ColorMap = core.ColorMapName(cnm)
-	tg.Display.GridFill = 1
+	tensorcore.AddGridStylerTo(tg, func(s *tensorcore.GridStyle) {
+		s.ColorMap = core.ColorMapName(cnm)
+		s.GridFill = 1
+	})
 }
 
 func (vw *GUI) UpdateWorld(ctx *axon.Context, ev *Env, net *axon.Network, state TraceStates) {

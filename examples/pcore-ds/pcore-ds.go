@@ -517,14 +517,9 @@ func (ss *Sim) TakeAction(net *axon.Network, mode Modes) {
 	ss.Net.ApplyExts() // required!
 }
 
-// DecodeAct decodes the VL ActM state to find closest action pattern
+// DecodeAct decodes the MotorBS ActM state to find closest action pattern
 func (ss *Sim) DecodeAct(ev *MotorSeqEnv, mode Modes, di int) int {
-	curModeDir := ss.Current.RecycleDir(mode.String())
-	lnm := "MotorBS"
-	vnm := "CaPM"
-	ly := ss.Net.LayerByName(lnm)
-	tsr := curModeDir.Float32(lnm+"_"+vnm, ly.Shape.Sizes...)
-	ly.UnitValuesTensor(tsr, vnm, di)
+	tsr := axon.StatsLayerValues(ss.Net, ss.Current, mode, di, "MotorBS", "CaPM")
 	return ss.SoftMaxChoose4D(tsr, mode)
 	// return ss.HardChoose4D(tsr, mode)
 }
