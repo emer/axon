@@ -19,8 +19,8 @@ var LayerParams = axon.LayerSheets{
 				// ly.Inhib.Pool.On =        true
 				// ly.Act.Gbar.L =        0.1
 				ly.Inhib.ActAvg.Nominal = 0.05
-				ly.Inhib.Layer.On = false
-				ly.Inhib.Pool.On = true
+				ly.Inhib.Layer.On.SetBool(false)
+				ly.Inhib.Pool.On.SetBool(true)
 				ly.Inhib.Pool.Gi = 1.1
 				ly.Acts.Clamp.Ge = 1.4
 				// ly.Learn.TrgAvgAct.SubMean =       0
@@ -56,8 +56,8 @@ var LayerParams = axon.LayerSheets{
 		{Sel: "#CA1", Doc: "CA1 only Pools",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.03
-				ly.Inhib.Layer.On = false
-				ly.Inhib.Pool.On = true
+				ly.Inhib.Layer.On.SetBool(false)
+				ly.Inhib.Pool.On.SetBool(true)
 				ly.Inhib.Pool.Gi = 1.1
 				// ly.Learn.TrgAvgAct.SubMean =       0
 				// ly.Learn.TrgAvgAct.On =       false
@@ -78,10 +78,10 @@ var PathParams = axon.PathSheets{
 		// 	}},
 		{Sel: ".InhibLateral", Doc: "circle lateral inhibitory connection -- good params, longer time, more ABmem",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.Learn = false // ??? not sure
+				pt.Learn.Learn.SetBool(false) // ??? not sure
 				// pt.SWts.Init.Mean = 1     // 0.1 was the standard Grid model as of 02242023
 				pt.SWts.Init.Var = 0
-				pt.SWts.Init.Sym = false
+				pt.SWts.Init.Sym.SetBool(false)
 				pt.PathScale.Abs = 0.1 // lower is better for spiking model?
 			}},
 		// {Sel: ".EcCa1Path", Doc: "encoder pathways -- Abs only affecting ec3toca1 and ec5toca1, not ca1toec5",
@@ -91,14 +91,14 @@ var PathParams = axon.PathSheets{
 		// 	}},
 		{Sel: ".HippoCHL", Doc: "hippo CHL pathways -- no norm, moment, but YES wtbal = sig better",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.Learn = true
+				pt.Learn.Learn.SetBool(true)
 				// pt.CHL.Hebb =              0.01 // .01 > .05? > .1?
 				pt.Learn.LRate.Base = 0.2 // .2
 			}},
 		{Sel: ".PPath", Doc: "performant path, new Dg error-driven EcCa1Path paths",
 			Set: func(pt *axon.PathParams) {
 				// pt.PathScale.Abs = 0.8 // 0.8 helps preventing CA3 fixation
-				pt.Learn.Learn = true
+				pt.Learn.Learn.SetBool(true)
 				pt.Learn.LRate.Base = 0.2 // err driven: .15 > .2 > .25 > .1
 			}},
 		{Sel: "#CA1ToEC5", Doc: "extra strong from CA1 to EC5",
@@ -108,18 +108,18 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: "#InputToEC2", Doc: "for CAN ec2",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 2.0 // 2 vs. 1: memory much better, FirstPerfect generally longer
-				pt.Learn.Learn = false // no learning better
+				pt.PathScale.Rel = 2.0        // 2 vs. 1: memory much better, FirstPerfect generally longer
+				pt.Learn.Learn.SetBool(false) // no learning better
 			}},
 		{Sel: "#InputToEC3", Doc: "one-to-one input to EC",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.Learn = false
+				pt.Learn.Learn.SetBool(false)
 				pt.SWts.Init.Mean = 0.8
 				pt.SWts.Init.Var = 0.0
 			}},
 		{Sel: "#EC3ToEC2", Doc: "copied from InputToEC2",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.Learn = false // no learning better
+				pt.Learn.Learn.SetBool(false) // no learning better
 				//pt.Learn.LRate.Base = 0.01
 				//pt.SWts.Init.Mean = 0.8 // 0.8 is for one to one deterministic connections, not for learning!
 				//pt.SWts.Init.Var =         "0
@@ -127,14 +127,14 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: "#EC5ToEC3", Doc: "one-to-one out to in",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.Learn = false
+				pt.Learn.Learn.SetBool(false)
 				pt.SWts.Init.Mean = 0.9
 				pt.SWts.Init.Var = 0.01
 				pt.PathScale.Rel = 0.5 // was 0.5
 			}},
 		{Sel: "#DGToCA3", Doc: "Mossy fibers: strong, non-learning",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.Learn = false // learning here definitely does NOT work!
+				pt.Learn.Learn.SetBool(false) // learning here definitely does NOT work!
 				// pt.SWts.Init.Mean = 0.9 // commmenting this our prevents CA3 overactivation
 				pt.SWts.Init.Var = 0.01
 				pt.PathScale.Rel = 4 // err del 4: 4 > 6 > 8
@@ -157,7 +157,7 @@ var PathParams = axon.PathSheets{
 				// pt.Hip.Err = 0.8
 				// pt.Hip.SAvgCor = 0.1
 				// pt.Hip.SNominal = 0.02 // !! need to keep it the same as actual layer Nominal
-				pt.Learn.Learn = true // absolutely essential to have on! learning slow if off. key for NoDGLearn
+				pt.Learn.Learn.SetBool(true) // absolutely essential to have on! learning slow if off. key for NoDGLearn
 				pt.PathScale.Abs = 0.7
 				pt.Learn.LRate.Base = 0.2
 			}},

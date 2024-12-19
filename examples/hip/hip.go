@@ -9,9 +9,7 @@ package main
 
 import (
 	"fmt"
-	"io/fs"
 
-	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/base/mpi"
 	"cogentcore.org/core/base/randx"
@@ -30,13 +28,13 @@ import (
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/looper"
-	"github.com/emer/emergent/v2/patgen"
 	"github.com/emer/emergent/v2/paths"
 )
 
 func main() {
 	cfg := &Config{}
 	cli.SetFromDefaults(cfg)
+	cfg.Defaults()
 	opts := cli.DefaultOptions(cfg.Name, cfg.Title)
 	opts.DefaultFiles = append(opts.DefaultFiles, "config.toml")
 	cli.Run(opts, cfg, RunSim)
@@ -137,8 +135,7 @@ func (ss *Sim) Run() {
 		axon.GPUInit()
 		axon.UseGPU = true
 	}
-	// ss.ConfigInputs()
-	ss.OpenInputs()
+	ss.ConfigInputs()
 	ss.ConfigEnv()
 	ss.ConfigNet(ss.Net)
 	ss.ConfigLoops()
@@ -156,6 +153,76 @@ func (ss *Sim) Run() {
 	} else {
 		ss.RunNoGUI()
 	}
+}
+
+////////  Inputs
+
+func (ss *Sim) ConfigInputs() {
+
+	// todo: redo patgen using tensorfs
+
+	// hp := &ss.Config.Hip
+	// ecY := hp.EC3NPool.Y
+	// ecX := hp.EC3NPool.X
+	// plY := hp.EC3NNrn.Y // good idea to get shorter vars when used frequently
+	// plX := hp.EC3NNrn.X // makes much more readable
+	// npats := ss.Config.Run.NTrials
+	// pctAct := ss.Config.Mod.ECPctAct
+	// minDiff := ss.Config.Pat.MinDiffPct
+	// nOn := patgen.NFromPct(pctAct, plY*plX)
+	// ctxtflip := patgen.NFromPct(ss.Config.Pat.CtxtFlipPct, nOn)
+	// patgen.AddVocabEmpty(ss.PoolVocab, "empty", npats, plY, plX)
+	// patgen.AddVocabPermutedBinary(ss.PoolVocab, "A", npats, plY, plX, pctAct, minDiff)
+	// patgen.AddVocabPermutedBinary(ss.PoolVocab, "B", npats, plY, plX, pctAct, minDiff)
+	// patgen.AddVocabPermutedBinary(ss.PoolVocab, "C", npats, plY, plX, pctAct, minDiff)
+	// patgen.AddVocabPermutedBinary(ss.PoolVocab, "lA", npats, plY, plX, pctAct, minDiff)
+	// patgen.AddVocabPermutedBinary(ss.PoolVocab, "lB", npats, plY, plX, pctAct, minDiff)
+	// patgen.AddVocabPermutedBinary(ss.PoolVocab, "ctxt", 3, plY, plX, pctAct, minDiff) // totally diff
+	//
+	// for i := 0; i < (ecY-1)*ecX*3; i++ { // 12 contexts! 1: 1 row of stimuli pats; 3: 3 diff ctxt bases
+	// 	list := i / ((ecY - 1) * ecX)
+	// 	ctxtNm := fmt.Sprintf("ctxt%d", i+1)
+	// 	tsr, _ := patgen.AddVocabRepeat(ss.PoolVocab, ctxtNm, npats, "ctxt", list)
+	// 	patgen.FlipBitsRows(tsr, ctxtflip, ctxtflip, 1, 0)
+	// 	//todo: also support drifting
+	// 	//solution 2: drift based on last trial (will require sequential learning)
+	// 	//patgen.VocabDrift(ss.PoolVocab, ss.NFlipBits, "ctxt"+strconv.Itoa(i+1))
+	// }
+	//
+	// patgen.InitPats(ss.TrainAB, "TrainAB", "TrainAB Pats", "Input", "EC5", npats, ecY, ecX, plY, plX)
+	// patgen.MixPats(ss.TrainAB, ss.PoolVocab, "Input", []string{"A", "B", "ctxt1", "ctxt2", "ctxt3", "ctxt4"})
+	// patgen.MixPats(ss.TrainAB, ss.PoolVocab, "EC5", []string{"A", "B", "ctxt1", "ctxt2", "ctxt3", "ctxt4"})
+	//
+	// patgen.InitPats(ss.TestAB, "TestAB", "TestAB Pats", "Input", "EC5", npats, ecY, ecX, plY, plX)
+	// patgen.MixPats(ss.TestAB, ss.PoolVocab, "Input", []string{"A", "empty", "ctxt1", "ctxt2", "ctxt3", "ctxt4"})
+	// patgen.MixPats(ss.TestAB, ss.PoolVocab, "EC5", []string{"A", "B", "ctxt1", "ctxt2", "ctxt3", "ctxt4"})
+	//
+	// patgen.InitPats(ss.TrainAC, "TrainAC", "TrainAC Pats", "Input", "EC5", npats, ecY, ecX, plY, plX)
+	// patgen.MixPats(ss.TrainAC, ss.PoolVocab, "Input", []string{"A", "C", "ctxt5", "ctxt6", "ctxt7", "ctxt8"})
+	// patgen.MixPats(ss.TrainAC, ss.PoolVocab, "EC5", []string{"A", "C", "ctxt5", "ctxt6", "ctxt7", "ctxt8"})
+	//
+	// patgen.InitPats(ss.TestAC, "TestAC", "TestAC Pats", "Input", "EC5", npats, ecY, ecX, plY, plX)
+	// patgen.MixPats(ss.TestAC, ss.PoolVocab, "Input", []string{"A", "empty", "ctxt5", "ctxt6", "ctxt7", "ctxt8"})
+	// patgen.MixPats(ss.TestAC, ss.PoolVocab, "EC5", []string{"A", "C", "ctxt5", "ctxt6", "ctxt7", "ctxt8"})
+	//
+	// patgen.InitPats(ss.PreTrainLure, "PreTrainLure", "PreTrainLure Pats", "Input", "EC5", npats, ecY, ecX, plY, plX)
+	// patgen.MixPats(ss.PreTrainLure, ss.PoolVocab, "Input", []string{"lA", "lB", "ctxt9", "ctxt10", "ctxt11", "ctxt12"}) // arbitrary ctxt here
+	// patgen.MixPats(ss.PreTrainLure, ss.PoolVocab, "EC5", []string{"lA", "lB", "ctxt9", "ctxt10", "ctxt11", "ctxt12"})   // arbitrary ctxt here
+	//
+	// patgen.InitPats(ss.TestLure, "TestLure", "TestLure Pats", "Input", "EC5", npats, ecY, ecX, plY, plX)
+	// patgen.MixPats(ss.TestLure, ss.PoolVocab, "Input", []string{"lA", "empty", "ctxt9", "ctxt10", "ctxt11", "ctxt12"}) // arbitrary ctxt here
+	// patgen.MixPats(ss.TestLure, ss.PoolVocab, "EC5", []string{"lA", "lB", "ctxt9", "ctxt10", "ctxt11", "ctxt12"})      // arbitrary ctxt here
+	//
+	// ss.TrainAll = ss.TrainAB.Clone()
+	// ss.TrainAll.AppendRows(ss.TrainAC)
+	// ss.TrainAll.AppendRows(ss.PreTrainLure)
+	// ss.TrainAll.MetaData["name"] = "TrainAll"
+	// ss.TrainAll.MetaData["desc"] = "All Training Patterns"
+	//
+	// ss.TestABAC = ss.TestAB.Clone()
+	// ss.TestABAC.AppendRows(ss.TestAC)
+	// ss.TestABAC.MetaData["name"] = "TestABAC"
+	// ss.TestABAC.MetaData["desc"] = "All Testing Patterns"
 }
 
 func (ss *Sim) ConfigEnv() {
@@ -182,11 +249,11 @@ func (ss *Sim) ConfigEnv() {
 
 	// note: names must be standard here!
 	trn.Name = Train.String()
-	trn.Config(table.NewView(inputs))
+	trn.Config(table.NewView(inputs)) // todo: TrainAB
 	trn.Validate()
 
 	tst.Name = Test.String()
-	tst.Config(table.NewView(inputs))
+	tst.Config(table.NewView(inputs)) // todo: TestABAC
 	tst.Sequential = true
 	tst.Validate()
 
@@ -201,34 +268,21 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ss.Config.Run.NData)
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
-	inp := net.AddLayer2D("Input", axon.InputLayer, 5, 5)
-	hid1 := net.AddLayer2D("Hidden1", axon.SuperLayer, ss.Config.Params.Hidden1Size.Y, ss.Config.Params.Hidden1Size.X)
-	hid2 := net.AddLayer2D("Hidden2", axon.SuperLayer, ss.Config.Params.Hidden2Size.Y, ss.Config.Params.Hidden2Size.X)
-	out := net.AddLayer2D("Output", axon.TargetLayer, 5, 5)
-
-	// use this to position layers relative to each other
-	// hid2.PlaceRightOf(hid1, 2)
-
-	// note: see emergent/path module for all the options on how to connect
-	// NewFull returns a new paths.Full connectivity pattern
-	full := paths.NewFull()
-
-	net.ConnectLayers(inp, hid1, full, axon.ForwardPath)
-	net.BidirConnectLayers(hid1, hid2, full)
-	net.BidirConnectLayers(hid2, out, full)
-
-	// net.LateralConnectLayerPath(hid1, full, &axon.HebbPath{}).SetType(InhibPath)
-
-	// note: if you wanted to change a layer type from e.g., Target to Compare, do this:
-	// out.Type = axon.CompareLayer
-	// that would mean that the output layer doesn't reflect target values in plus phase
-	// and thus removes error-driven learning -- but stats are still computed.
+	hip := &ss.Config.Hip
+	in := net.AddLayer4D("Input", axon.InputLayer, hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X)
+	inToEc2 := paths.NewUniformRand()
+	inToEc2.PCon = ss.Config.Params.InToEc2PCon
+	onetoone := paths.NewOneToOne()
+	ec2, ec3, _, _, _, _ := net.AddHip(hip, 2)
+	net.ConnectLayers(in, ec2, inToEc2, axon.ForwardPath)
+	net.ConnectLayers(in, ec3, onetoone, axon.ForwardPath)
+	ec2.PlaceAbove(in)
 
 	net.Build()
 	net.Defaults()
 	net.SetNThreads(ss.Config.Run.NThreads)
 	ss.ApplyParams()
-	net.InitWeights()
+	// net.InitWeights()
 }
 
 func (ss *Sim) ApplyParams() {
@@ -305,17 +359,17 @@ func (ss *Sim) ConfigLoops() {
 	ls.Loop(Train, Run).OnStart.Add("NewRun", ss.NewRun)
 
 	trainEpoch := ls.Loop(Train, Epoch)
-	trainEpoch.IsDone.AddBool("NZeroStop", func() bool {
-		stopNz := ss.Config.Run.NZero
-		if stopNz <= 0 {
-			return false
-		}
-		curModeDir := ss.Current.RecycleDir(Train.String())
-		curNZero := int(curModeDir.Value("NZero").Float1D(-1))
-		stop := curNZero >= stopNz
-		return stop
-		return false
-	})
+	// trainEpoch.IsDone.AddBool("NZeroStop", func() bool {
+	// 	stopNz := ss.Config.Run.NZero
+	// 	if stopNz <= 0 {
+	// 		return false
+	// 	}
+	// 	curModeDir := ss.Current.RecycleDir(Train.String())
+	// 	curNZero := int(curModeDir.Value("NZero").Float1D(-1))
+	// 	stop := curNZero >= stopNz
+	// 	return stop
+	// 	return false
+	// })
 
 	trainEpoch.OnStart.Add("TestAtInterval", func() {
 		if (ss.Config.Run.TestInterval > 0) && ((trainEpoch.Counter.Cur+1)%ss.Config.Run.TestInterval == 0) {
@@ -375,10 +429,6 @@ func (ss *Sim) NewRun() {
 	ss.Envs.ByMode(Test).Init(0)
 	ctx.Reset()
 	ss.Net.InitWeights()
-	if ss.Config.Run.StartWeights != "" {
-		ss.Net.OpenWeightsJSON(core.Filename(ss.Config.Run.StartWeights))
-		mpi.Printf("Starting with initial weights from: %s\n", ss.Config.Run.StartWeights)
-	}
 }
 
 // TestAll runs through the full set of testing items
@@ -386,43 +436,6 @@ func (ss *Sim) TestAll() {
 	ss.Envs.ByMode(Test).Init(0)
 	ss.Loops.ResetAndRun(Test)
 	ss.Loops.Mode = Train // important because this is called from Train Run: go back.
-}
-
-////////  Inputs
-
-func (ss *Sim) ConfigInputs() {
-	dt := table.New()
-	metadata.SetName(dt, "Train")
-	metadata.SetDoc(dt, "Training inputs")
-	dt.AddStringColumn("Name")
-	dt.AddFloat32Column("Input", 5, 5)
-	dt.AddFloat32Column("Output", 5, 5)
-	dt.SetNumRows(25)
-
-	patgen.PermutedBinaryMinDiff(dt.ColumnByIndex(1).Tensor.(*tensor.Float32), 6, 1, 0, 3)
-	patgen.PermutedBinaryMinDiff(dt.ColumnByIndex(2).Tensor.(*tensor.Float32), 6, 1, 0, 3)
-	dt.SaveCSV("random_5x5_25_gen.tsv", tensor.Tab, table.Headers)
-
-	tensorfs.DirFromTable(ss.Root.RecycleDir("Inputs/Train"), dt)
-}
-
-// OpenTable opens a [table.Table] from embedded content, storing
-// the data in the given tensorfs directory.
-func (ss *Sim) OpenTable(dir *tensorfs.Node, fsys fs.FS, fnm, name, docs string) (*table.Table, error) {
-	dt := table.New()
-	metadata.SetName(dt, name)
-	metadata.SetDoc(dt, docs)
-	err := dt.OpenFS(content, fnm, tensor.Tab)
-	if errors.Log(err) != nil {
-		return dt, err
-	}
-	tensorfs.DirFromTable(dir.RecycleDir(name), dt)
-	return dt, err
-}
-
-func (ss *Sim) OpenInputs() {
-	dir := ss.Root.RecycleDir("Inputs")
-	ss.OpenTable(dir, content, "random_5x5_25.tsv", "Train", "Training inputs")
 }
 
 //////// Stats
@@ -591,29 +604,29 @@ func (ss *Sim) ConfigStats() {
 					tsr.AppendRowFloat(stat)
 				}
 			case Epoch:
-				nz := curModeDir.Float64("NZero", 1).Float1D(0)
+				// nz := curModeDir.Float64("NZero", 1).Float1D(0)
 				switch name {
-				case "NZero":
-					err := stats.StatSum.Call(subDir.Value("Err")).Float1D(0)
-					stat = curModeDir.Float64(name, 1).Float1D(0)
-					if err == 0 {
-						stat++
-					} else {
-						stat = 0
-					}
-					curModeDir.Float64(name, 1).SetFloat1D(stat, 0)
-				case "FirstZero":
-					stat = curModeDir.Float64(name, 1).Float1D(0)
-					if stat < 0 && nz == 1 {
-						stat = curModeDir.Int("Epoch", 1).Float1D(0)
-					}
-					curModeDir.Float64(name, 1).SetFloat1D(stat, 0)
-				case "LastZero":
-					stat = curModeDir.Float64(name, 1).Float1D(0)
-					if stat < 0 && nz >= float64(ss.Config.Run.NZero) {
-						stat = curModeDir.Int("Epoch", 1).Float1D(0)
-					}
-					curModeDir.Float64(name, 1).SetFloat1D(stat, 0)
+				// case "NZero":
+				// 	err := stats.StatSum.Call(subDir.Value("Err")).Float1D(0)
+				// 	stat = curModeDir.Float64(name, 1).Float1D(0)
+				// 	if err == 0 {
+				// 		stat++
+				// 	} else {
+				// 		stat = 0
+				// 	}
+				// 	curModeDir.Float64(name, 1).SetFloat1D(stat, 0)
+				// case "FirstZero":
+				// 	stat = curModeDir.Float64(name, 1).Float1D(0)
+				// 	if stat < 0 && nz == 1 {
+				// 		stat = curModeDir.Int("Epoch", 1).Float1D(0)
+				// 	}
+				// 	curModeDir.Float64(name, 1).SetFloat1D(stat, 0)
+				// case "LastZero":
+				// 	stat = curModeDir.Float64(name, 1).Float1D(0)
+				// 	if stat < 0 && nz >= float64(ss.Config.Run.NZero) {
+				// 		stat = curModeDir.Int("Epoch", 1).Float1D(0)
+				// 	}
+				// 	curModeDir.Float64(name, 1).SetFloat1D(stat, 0)
 				default:
 					stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
 				}
@@ -639,17 +652,6 @@ func (ss *Sim) ConfigStats() {
 	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		actGeFunc(mode, level, phase == Start)
-	})
-
-	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, lays...)
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		trnEpc := ss.Loops.Loop(Train, Epoch).Counter.Cur
-		pcaFunc(mode, level, phase == Start, trnEpc)
-	})
-
-	stateFunc := axon.StatLayerState(ss.Stats, net, Test, Trial, true, "ActM", "Input", "Output")
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		stateFunc(mode, level, phase == Start)
 	})
 
 	runAllFunc := axon.StatLevelAll(ss.Stats, Train, Run, func(s *plot.Style, cl tensor.Values) {

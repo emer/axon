@@ -113,7 +113,7 @@ func (hip *HipConfig) Defaults() {
 
 // AddHip adds a new Hippocampal network for episodic memory.
 // Returns layers most likely to be used for remaining connections and positions.
-func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (ec2, ec3, dg, ca3, ca1, ec5 *Layer) {
+func (net *Network) AddHip(hip *HipConfig, space float32) (ec2, ec3, dg, ca3, ca1, ec5 *Layer) {
 	// Trisynaptic Pathway (TSP)
 	ec2 = net.AddLayer2D("EC2", SuperLayer, hip.EC2Size.Y, hip.EC2Size.X)
 	ec2.SetSampleIndexesShape(emer.Layer2DSampleIndexes(ec2, 10))
