@@ -1,56 +1,70 @@
-// Copyright (c) 2020, The Emergent Authors. All rights reserved.
+// Copyright (c) 2024, The Emergent Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
 // hip runs a hippocampus model for testing parameters and new learning ideas
 package main
 
-//go:generate core generate -add-types
+//go:generate core generate -add-types -add-funcs
 
 import (
 	"fmt"
-	"log"
-	"math"
-	"math/rand"
-	"os"
-	"reflect"
-	"strconv"
-	"strings"
+	"io/fs"
 
+	"cogentcore.org/core/base/errors"
+	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/base/mpi"
-	"cogentcore.org/core/base/num"
 	"cogentcore.org/core/base/randx"
+	"cogentcore.org/core/cli"
 	"cogentcore.org/core/core"
+	"cogentcore.org/core/enums"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/plot"
 	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/tensor/stats/metric"
+	"cogentcore.org/core/tensor/stats/stats"
 	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/core/tensor/tensorfs"
 	"cogentcore.org/core/tree"
 	"github.com/emer/axon/v2/axon"
-	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
-	"github.com/emer/emergent/v2/elog"
-	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/emergent/v2/estats"
-	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/looper"
-	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/patgen"
 	"github.com/emer/emergent/v2/paths"
 )
 
 func main() {
-	sim := &Sim{}
-	sim.New()
-	sim.ConfigAll()
-	if sim.Config.GUI {
-		sim.RunGUI()
-	} else {
-		sim.RunNoGUI()
-	}
+	cfg := &Config{}
+	cli.SetFromDefaults(cfg)
+	opts := cli.DefaultOptions(cfg.Name, cfg.Title)
+	opts.DefaultFiles = append(opts.DefaultFiles, "config.toml")
+	cli.Run(opts, cfg, RunSim)
 }
+
+// Modes are the looping modes (Stacks) for running and statistics.
+type Modes int32 //enums:enum
+const (
+	Train Modes = iota
+	Test
+)
+
+// Levels are the looping levels for running and statistics.
+type Levels int32 //enums:enum
+const (
+	Cycle Levels = iota
+	Trial
+	Epoch
+	Run
+)
+
+// StatsPhase is the phase of stats processing for given mode, level.
+// Accumulated values are reset at Start, added each Step.
+type StatsPhase int32 //enums:enum
+const (
+	Start StatsPhase = iota
+	Step
+)
 
 // see params.go for params
 
@@ -62,111 +76,85 @@ func main() {
 type Sim struct {
 
 	// simulation configuration parameters -- set by .toml config file and / or args
-	Config Config `new-window:"+"`
+	Config *Config `new-window:"+"`
 
-	// the network -- click to view / edit parameters for layers, paths, etc
+	// Net is the network: click to view / edit parameters for layers, paths, etc.
 	Net *axon.Network `new-window:"+" display:"no-inline"`
 
-	// all parameter management
-	Params emer.NetParams `display:"add-fields"`
+	// Params manages network parameter setting.
+	Params axon.Params
 
-	// contains looper control loops for running sim
-	Loops *looper.Manager `new-window:"+" display:"no-inline"`
+	// Loops are the the control loops for running the sim, in different Modes
+	// across stacks of Levels.
+	Loops *looper.Stacks `new-window:"+" display:"no-inline"`
 
-	// contains computed statistic values
-	Stats estats.Stats `new-window:"+"`
-
-	// Contains all the logs and information about the logs.'
-	Logs elog.Logs `new-window:"+"`
-
-	// if true, run in pretrain mode
-	PretrainMode bool
-
-	// pool patterns vocabulary
-	PoolVocab patgen.Vocab `display:"no-inline"`
-
-	// AB training patterns to use
-	TrainAB *table.Table `display:"no-inline"`
-
-	// AC training patterns to use
-	TrainAC *table.Table `display:"no-inline"`
-
-	// AB testing patterns to use
-	TestAB *table.Table `display:"no-inline"`
-
-	// AC testing patterns to use
-	TestAC *table.Table `display:"no-inline"`
-
-	// Lure pretrain patterns to use
-	PreTrainLure *table.Table `display:"no-inline"`
-
-	// Lure testing patterns to use
-	TestLure *table.Table `display:"no-inline"`
-
-	// all training patterns -- for pretrain
-	TrainAll *table.Table `display:"no-inline"`
-
-	// TestAB + TestAC
-	TestABAC *table.Table `display:"no-inline"`
-
-	// Environments
+	// Envs provides mode-string based storage of environments.
 	Envs env.Envs `new-window:"+" display:"no-inline"`
 
-	// axon timing parameters and state
-	Context axon.Context `new-window:"+"`
+	// TrainUpdate has Train mode netview update parameters.
+	TrainUpdate axon.NetViewUpdate `display:"inline"`
 
-	// netview update parameters
-	ViewUpdate netview.ViewUpdate `display:"add-fields"`
+	// TestUpdate has Test mode netview update parameters.
+	TestUpdate axon.NetViewUpdate `display:"inline"`
 
-	// manages all the gui elements
+	// Root is the root tensorfs directory, where all stats and other misc sim data goes.
+	Root *tensorfs.Node `display:"-"`
+
+	// Stats has the stats directory within Root.
+	Stats *tensorfs.Node `display:"-"`
+
+	// Current has the current stats values within Stats.
+	Current *tensorfs.Node `display:"-"`
+
+	// StatFuncs are statistics functions called at given mode and level,
+	// to perform all stats computations. phase = Start does init at start of given level,
+	// and all intialization / configuration (called during Init too).
+	StatFuncs []func(mode Modes, level Levels, phase StatsPhase) `display:"-"`
+
+	// GUI manages all the GUI elements
 	GUI egui.GUI `display:"-"`
 
-	// a list of random seeds to use for each run
+	// RandSeeds is a list of random seeds to use for each run.
 	RandSeeds randx.Seeds `display:"-"`
 }
 
-// New creates new blank elements and initializes defaults
-func (ss *Sim) New() {
-	ss.Config.Defaults()
-	econfig.Config(&ss.Config, "config.toml")
-	ss.Config.Hip.EC5Clamp = true      // must be true in hip.go to have a target layer
-	ss.Config.Hip.EC5ClampTest = false // key to be off for cmp stats on completion region
-
-	ss.Net = axon.NewNetwork("Hip")
-	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
-	ss.Stats.Init()
-
-	ss.PoolVocab = patgen.Vocab{}
-	ss.TrainAB = table.New()
-	ss.TrainAC = table.New()
-	ss.TestAB = table.New()
-	ss.TestAC = table.New()
-	ss.PreTrainLure = table.New()
-	ss.TestLure = table.New()
-	ss.TrainAll = table.New()
-	ss.TestABAC = table.New()
-	ss.PretrainMode = false
-
-	ss.RandSeeds.Init(100) // max 100 runs
-	ss.InitRandSeed(0)
-	ss.Context.Defaults()
+// RunSim runs the simulation with given configuration.
+func RunSim(cfg *Config) error {
+	sim := &Sim{}
+	sim.Config = cfg
+	sim.Run()
+	return nil
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////
-// 		Configs
-
-// Config configures all the elements using the standard functions
-func (ss *Sim) ConfigAll() {
-	ss.ConfigPats()
-	// ss.OpenPats()
+func (ss *Sim) Run() {
+	ss.Root, _ = tensorfs.NewDir("Root")
+	tensorfs.CurRoot = ss.Root
+	ss.Net = axon.NewNetwork(ss.Config.Name)
+	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag)
+	ss.RandSeeds.Init(100) // max 100 runs
+	ss.InitRandSeed(0)
+	if ss.Config.Run.GPU {
+		axon.GPUInit()
+		axon.UseGPU = true
+	}
+	// ss.ConfigInputs()
+	ss.OpenInputs()
 	ss.ConfigEnv()
 	ss.ConfigNet(ss.Net)
-	ss.ConfigLogs()
 	ss.ConfigLoops()
+	ss.ConfigStats()
+	// if ss.Config.Run.GPU {
+	// 	fmt.Println(axon.GPUSystem.Vars().StringDoc())
+	// }
 	if ss.Config.Params.SaveAll {
 		ss.Config.Params.SaveAll = false
-		ss.Net.SaveParamsSnapshot(&ss.Params.Params, &ss.Config, ss.Config.Params.Good)
-		os.Exit(0)
+		ss.Net.SaveParamsSnapshot(&ss.Config, ss.Config.Params.Good)
+		return
+	}
+	if ss.Config.GUI {
+		ss.RunGUI()
+	} else {
+		ss.RunNoGUI()
 	}
 }
 
@@ -177,17 +165,28 @@ func (ss *Sim) ConfigEnv() {
 		trn = &env.FixedTable{}
 		tst = &env.FixedTable{}
 	} else {
-		trn = ss.Envs.ByMode(etime.Train).(*env.FixedTable)
-		tst = ss.Envs.ByMode(etime.Test).(*env.FixedTable)
+		trn = ss.Envs.ByMode(Train).(*env.FixedTable)
+		tst = ss.Envs.ByMode(Test).(*env.FixedTable)
 	}
 
+	inputs := tensorfs.DirTable(ss.Root.RecycleDir("Inputs/Train"), nil)
+
+	// this logic can be used to create train-test splits of a set of patterns:
+	// n := inputs.NumRows()
+	// order := rand.Perm(n)
+	// ntrn := int(0.85 * float64(n))
+	// trnEnv := table.NewView(inputs)
+	// tstEnv := table.NewView(inputs)
+	// trnEnv.Indexes = order[:ntrn]
+	// tstEnv.Indexes = order[ntrn:]
+
 	// note: names must be standard here!
-	trn.Name = etime.Train.String()
-	trn.Config(table.NewIndexView(ss.TrainAB))
+	trn.Name = Train.String()
+	trn.Config(table.NewView(inputs))
 	trn.Validate()
 
-	tst.Name = etime.Test.String()
-	tst.Config(table.NewIndexView(ss.TestABAC))
+	tst.Name = Test.String()
+	tst.Config(table.NewView(inputs))
 	tst.Sequential = true
 	tst.Validate()
 
@@ -199,643 +198,531 @@ func (ss *Sim) ConfigEnv() {
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
-	ctx := &ss.Context
-	hip := &ss.Config.Hip
-	net.SetMaxData(ctx, ss.Config.Run.NData)
+	net.SetMaxData(ss.Config.Run.NData)
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
-	in := net.AddLayer4D("Input", axon.InputLayer, hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X)
-	inToEc2 := paths.NewUniformRand()
-	inToEc2.PCon = ss.Config.Mod.InToEc2PCon
-	onetoone := paths.NewOneToOne()
-	ec2, ec3, _, _, _, _ := net.AddHip(ctx, hip, 2)
-	net.ConnectLayers(in, ec2, inToEc2, axon.ForwardPath)
-	net.ConnectLayers(in, ec3, onetoone, axon.ForwardPath)
-	ec2.PlaceAbove(in)
+	inp := net.AddLayer2D("Input", axon.InputLayer, 5, 5)
+	hid1 := net.AddLayer2D("Hidden1", axon.SuperLayer, ss.Config.Params.Hidden1Size.Y, ss.Config.Params.Hidden1Size.X)
+	hid2 := net.AddLayer2D("Hidden2", axon.SuperLayer, ss.Config.Params.Hidden2Size.Y, ss.Config.Params.Hidden2Size.X)
+	out := net.AddLayer2D("Output", axon.TargetLayer, 5, 5)
 
-	err := net.Build(ctx)
-	if err != nil {
-		log.Println(err)
-		return
-	}
+	// use this to position layers relative to each other
+	// hid2.PlaceRightOf(hid1, 2)
+
+	// note: see emergent/path module for all the options on how to connect
+	// NewFull returns a new paths.Full connectivity pattern
+	full := paths.NewFull()
+
+	net.ConnectLayers(inp, hid1, full, axon.ForwardPath)
+	net.BidirConnectLayers(hid1, hid2, full)
+	net.BidirConnectLayers(hid2, out, full)
+
+	// net.LateralConnectLayerPath(hid1, full, &axon.HebbPath{}).SetType(InhibPath)
+
+	// note: if you wanted to change a layer type from e.g., Target to Compare, do this:
+	// out.Type = axon.CompareLayer
+	// that would mean that the output layer doesn't reflect target values in plus phase
+	// and thus removes error-driven learning -- but stats are still computed.
+
+	net.Build()
 	net.Defaults()
 	net.SetNThreads(ss.Config.Run.NThreads)
 	ss.ApplyParams()
-	net.InitWeights(ctx)
-	net.InitTopoSWts()
+	net.InitWeights()
 }
 
 func (ss *Sim) ApplyParams() {
-	ss.Params.Network = ss.Net
-	ss.Params.SetAll()
-	if ss.Config.Params.Network != nil {
-		ss.Params.SetNetworkMap(ss.Net, ss.Config.Params.Network)
-	}
+	ss.Params.ApplyAll(ss.Net)
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// 	    Init, utils
+////////  Init, utils
 
 // Init restarts the run, and initializes everything, including network weights
 // and resets the epoch log table
 func (ss *Sim) Init() {
-	if ss.Config.GUI {
-		ss.Stats.SetString("RunName", ss.Params.RunName(0)) // in case user interactively changes tag
-	}
 	ss.Loops.ResetCounters()
+	ss.SetRunName()
+	ss.InitRandSeed(0)
+	// ss.ConfigEnv() // re-config env just in case a different set of patterns was
+	// selected or patterns have been modified etc
 	ss.GUI.StopNow = false
 	ss.ApplyParams()
-	ss.Net.GPU.SyncParamsToGPU()
+	ss.StatsInit()
 	ss.NewRun()
-	ss.ViewUpdate.RecordSyns()
-	ss.ViewUpdate.Update()
-}
-
-func (ss *Sim) TestInit() {
-	ss.Loops.ResetCountersByMode(etime.Test)
+	ss.TrainUpdate.RecordSyns()
+	ss.TrainUpdate.Update(Train, Trial)
 }
 
 // InitRandSeed initializes the random seed based on current training run number
 func (ss *Sim) InitRandSeed(run int) {
-	rand.Seed(ss.RandSeeds[run])
 	ss.RandSeeds.Set(run)
 	ss.RandSeeds.Set(run, &ss.Net.Rand)
-	patgen.NewRand(ss.RandSeeds[run])
+}
+
+// CurrentMode returns the current Train / Test mode from Context.
+func (ss *Sim) CurrentMode() Modes {
+	ctx := ss.Net.Context()
+	var md Modes
+	md.SetInt64(int64(ctx.Mode))
+	return md
+}
+
+// NetViewUpdater returns the NetViewUpdate for given mode.
+func (ss *Sim) NetViewUpdater(mode enums.Enum) *axon.NetViewUpdate {
+	if mode.Int64() == Train.Int64() {
+		return &ss.TrainUpdate
+	}
+	return &ss.TestUpdate
 }
 
 // ConfigLoops configures the control loops: Training, Testing
 func (ss *Sim) ConfigLoops() {
-	man := looper.NewManager()
+	ls := looper.NewStacks()
 
-	trls := int(math32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
+	trials := int(math32.IntMultipleGE(float32(ss.Config.Run.Trials), float32(ss.Config.Run.NData)))
+	cycles := ss.Config.Run.Cycles
+	plusPhase := ss.Config.Run.PlusCycles
 
-	man.AddStack(etime.Train).AddTime(etime.Run, ss.Config.Run.Runs).AddTime(etime.Epoch, ss.Config.Run.Epochs).AddTimeIncr(etime.Trial, trls, ss.Config.Run.NData).AddTime(etime.Cycle, 200)
+	ls.AddStack(Train, Trial).
+		AddLevel(Run, ss.Config.Run.Runs).
+		AddLevel(Epoch, ss.Config.Run.Epochs).
+		AddLevelIncr(Trial, trials, ss.Config.Run.NData).
+		AddLevel(Cycle, cycles)
 
-	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTimeIncr(etime.Trial, 2*trls, ss.Config.Run.NData).AddTime(etime.Cycle, 200)
+	ls.AddStack(Test, Trial).
+		AddLevel(Epoch, 1).
+		AddLevelIncr(Trial, trials, ss.Config.Run.NData).
+		AddLevel(Cycle, cycles)
 
-	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)              // plus phase timing
-	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdate) // std algo code
+	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, 50, cycles-plusPhase, cycles-1, Cycle, Trial, Train)
 
-	ss.Net.ConfigLoopsHip(&ss.Context, man, &ss.Config.Hip, &ss.PretrainMode)
+	ls.Stacks[Train].OnInit.Add("Init", func() { ss.Init() })
 
-	for m, _ := range man.Stacks {
-		stack := man.Stacks[m]
-		stack.Loops[etime.Trial].OnStart.Add("ApplyInputs", func() {
-			ss.ApplyInputs()
-		})
-	}
+	ls.AddOnStartToLoop(Trial, "ApplyInputs", func(mode enums.Enum) {
+		ss.ApplyInputs(mode.(Modes))
+	})
 
-	man.GetLoop(etime.Train, etime.Run).OnStart.Add("NewRun", ss.NewRun)
+	ls.Loop(Train, Run).OnStart.Add("NewRun", ss.NewRun)
 
-	// Add Testing
-	trainEpoch := man.GetLoop(etime.Train, etime.Epoch)
-	trainEpoch.OnEnd.Add("TestAtInterval", func() {
+	trainEpoch := ls.Loop(Train, Epoch)
+	trainEpoch.IsDone.AddBool("NZeroStop", func() bool {
+		stopNz := ss.Config.Run.NZero
+		if stopNz <= 0 {
+			return false
+		}
+		curModeDir := ss.Current.RecycleDir(Train.String())
+		curNZero := int(curModeDir.Value("NZero").Float1D(-1))
+		stop := curNZero >= stopNz
+		return stop
+		return false
+	})
+
+	trainEpoch.OnStart.Add("TestAtInterval", func() {
 		if (ss.Config.Run.TestInterval > 0) && ((trainEpoch.Counter.Cur+1)%ss.Config.Run.TestInterval == 0) {
-			// Note the +1 so that it doesn't occur at the 0th timestep.
 			ss.TestAll()
-
-			// switch to AC
-			trn := ss.Envs.ByMode(etime.Train).(*env.FixedTable)
-			tstEpcLog := ss.Logs.Tables[etime.Scope(etime.Test, etime.Epoch)]
-			epc := ss.Stats.Int("Epoch")
-			abMem := float32(tstEpcLog.Table.Float("ABMem", epc))
-			if (trn.Table.Table.MetaData["name"] == "TrainAB") && (abMem >= ss.Config.Run.StopMem || epc == ss.Config.Run.Epochs/2) {
-				ss.Stats.SetInt("FirstPerfect", epc)
-				trn.Config(table.NewIndexView(ss.TrainAC))
-				trn.Validate()
-			}
 		}
 	})
 
-	// early stop
-	man.GetLoop(etime.Train, etime.Epoch).IsDone["ACMemStop"] = func() bool {
-		// This is calculated in TrialStats
-		tstEpcLog := ss.Logs.Tables[etime.Scope(etime.Test, etime.Epoch)]
-		acMem := float32(tstEpcLog.Table.Float("ACMem", ss.Stats.Int("Epoch")))
-		stop := acMem >= ss.Config.Run.StopMem
-		return stop
-	}
+	ls.AddOnStartToAll("StatsStart", ss.StatsStart)
+	ls.AddOnEndToAll("StatsStep", ss.StatsStep)
 
-	/////////////////////////////////////////////
-	// Logging
-
-	man.GetLoop(etime.Test, etime.Epoch).OnEnd.Add("LogTestErrors", func() {
-		axon.LogTestErrors(&ss.Logs)
+	ls.Loop(Train, Run).OnEnd.Add("SaveWeights", func() {
+		ctrString := fmt.Sprintf("%03d_%05d", ls.Loop(Train, Run).Counter.Cur, ls.Loop(Train, Epoch).Counter.Cur)
+		axon.SaveWeightsIfConfigSet(ss.Net, ss.Config.Log.SaveWeights, ctrString, ss.RunName())
 	})
 
-	man.AddOnEndToAll("Log", ss.Log)
-	axon.LooperResetLogBelow(man, &ss.Logs)
+	if ss.Config.GUI {
+		axon.LooperUpdateNetView(ls, Cycle, Trial, ss.NetViewUpdater)
 
-	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("RunStats", func() {
-		ss.Logs.RunStats("PctCor", "FirstZero", "LastZero")
-	})
-
-	// Save weights to file, to look at later
-	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("SaveWeights", func() {
-		ctrString := ss.Stats.PrintValues([]string{"Run", "Epoch"}, []string{"%03d", "%05d"}, "_")
-		axon.SaveWeightsIfConfigSet(ss.Net, ss.Config.Log.SaveWeights, ctrString, ss.Stats.String("RunName"))
-	})
-
-	////////////////////////////////////////////
-	// GUI
-
-	if !ss.Config.GUI {
-		man.GetLoop(etime.Test, etime.Trial).Main.Add("NetDataRecord", func() {
-			ss.GUI.NetDataRecord(ss.ViewUpdate.Text)
-		})
-	} else {
-		axon.LooperUpdateNetView(man, &ss.ViewUpdate, ss.Net, ss.NetViewCounters)
-		axon.LooperUpdatePlots(man, &ss.GUI)
+		ls.Stacks[Train].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })
+		ls.Stacks[Test].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })
 	}
 
 	if ss.Config.Debug {
-		mpi.Println(man.DocString())
+		mpi.Println(ls.DocString())
 	}
-	ss.Loops = man
+	ss.Loops = ls
 }
 
-// ApplyInputs applies input patterns from given environment.
-// It is good practice to have this be a separate method with appropriate
-// args so that it can be used for various different contexts
-// (training, testing, etc).
-func (ss *Sim) ApplyInputs() {
-	ctx := &ss.Context
+// ApplyInputs applies input patterns from given environment for given mode.
+// Any other start-of-trial logic can also be put here.
+func (ss *Sim) ApplyInputs(mode Modes) {
 	net := ss.Net
-	ev := ss.Envs.ByMode(ctx.Mode).(*env.FixedTable)
+	ndata := int(net.Context().NData)
+	curModeDir := ss.Current.RecycleDir(mode.String())
+	ev := ss.Envs.ByMode(mode)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
-	net.InitExt(ctx)
-	for di := uint32(0); di < ctx.NData; di++ {
+	net.InitExt()
+	for di := range ndata {
 		ev.Step()
-		// note: must save env state for logging / stats due to data parallel re-use of same env
-		ss.Stats.SetStringDi("TrialName", int(di), ev.TrialName.Cur)
+		curModeDir.StringValue("TrialName", ndata).SetString1D(ev.String(), di)
 		for _, lnm := range lays {
 			ly := ss.Net.LayerByName(lnm)
-			pats := ev.State(ly.Name)
-			if pats != nil {
-				ly.ApplyExt(ctx, di, pats)
+			st := ev.State(ly.Name)
+			if st != nil {
+				ly.ApplyExt(uint32(di), st)
 			}
 		}
 	}
-	net.ApplyExts(ctx) // now required for GPU mode
+	net.ApplyExts()
 }
 
-// NewRun intializes a new run of the model, using the TrainEnv.Run counter
-// for the new run value
+// NewRun intializes a new Run level of the model.
 func (ss *Sim) NewRun() {
-	ctx := &ss.Context
-	ss.InitRandSeed(ss.Loops.GetLoop(etime.Train, etime.Run).Counter.Cur)
-	ss.ConfigPats()
-	ss.ConfigEnv()
+	ctx := ss.Net.Context()
+	ss.InitRandSeed(ss.Loops.Loop(Train, Run).Counter.Cur)
+	ss.Envs.ByMode(Train).Init(0)
+	ss.Envs.ByMode(Test).Init(0)
 	ctx.Reset()
-	ctx.Mode = etime.Train
-	ss.Net.InitWeights(ctx)
-	ss.StatsInit()
-	ss.StatCounters(0)
-	ss.Logs.ResetLog(etime.Train, etime.Epoch)
-	ss.Logs.ResetLog(etime.Test, etime.Epoch)
+	ss.Net.InitWeights()
+	if ss.Config.Run.StartWeights != "" {
+		ss.Net.OpenWeightsJSON(core.Filename(ss.Config.Run.StartWeights))
+		mpi.Printf("Starting with initial weights from: %s\n", ss.Config.Run.StartWeights)
+	}
 }
 
 // TestAll runs through the full set of testing items
 func (ss *Sim) TestAll() {
-	ss.Envs.ByMode(etime.Test).Init(0)
-	ss.Loops.ResetAndRun(etime.Test)
-	ss.Loops.Mode = etime.Train // Important to reset Mode back to Train because this is called from within the Train Run.
+	ss.Envs.ByMode(Test).Init(0)
+	ss.Loops.ResetAndRun(Test)
+	ss.Loops.Mode = Train // important because this is called from Train Run: go back.
 }
 
-/////////////////////////////////////////////////////////////////////////
-//   Pats
+////////  Inputs
 
-func (ss *Sim) ConfigPats() {
-	hp := &ss.Config.Hip
-	ecY := hp.EC3NPool.Y
-	ecX := hp.EC3NPool.X
-	plY := hp.EC3NNrn.Y // good idea to get shorter vars when used frequently
-	plX := hp.EC3NNrn.X // makes much more readable
-	npats := ss.Config.Run.NTrials
-	pctAct := ss.Config.Mod.ECPctAct
-	minDiff := ss.Config.Pat.MinDiffPct
-	nOn := patgen.NFromPct(pctAct, plY*plX)
-	ctxtflip := patgen.NFromPct(ss.Config.Pat.CtxtFlipPct, nOn)
-	patgen.AddVocabEmpty(ss.PoolVocab, "empty", npats, plY, plX)
-	patgen.AddVocabPermutedBinary(ss.PoolVocab, "A", npats, plY, plX, pctAct, minDiff)
-	patgen.AddVocabPermutedBinary(ss.PoolVocab, "B", npats, plY, plX, pctAct, minDiff)
-	patgen.AddVocabPermutedBinary(ss.PoolVocab, "C", npats, plY, plX, pctAct, minDiff)
-	patgen.AddVocabPermutedBinary(ss.PoolVocab, "lA", npats, plY, plX, pctAct, minDiff)
-	patgen.AddVocabPermutedBinary(ss.PoolVocab, "lB", npats, plY, plX, pctAct, minDiff)
-	patgen.AddVocabPermutedBinary(ss.PoolVocab, "ctxt", 3, plY, plX, pctAct, minDiff) // totally diff
+func (ss *Sim) ConfigInputs() {
+	dt := table.New()
+	metadata.SetName(dt, "Train")
+	metadata.SetDoc(dt, "Training inputs")
+	dt.AddStringColumn("Name")
+	dt.AddFloat32Column("Input", 5, 5)
+	dt.AddFloat32Column("Output", 5, 5)
+	dt.SetNumRows(25)
 
-	for i := 0; i < (ecY-1)*ecX*3; i++ { // 12 contexts! 1: 1 row of stimuli pats; 3: 3 diff ctxt bases
-		list := i / ((ecY - 1) * ecX)
-		ctxtNm := fmt.Sprintf("ctxt%d", i+1)
-		tsr, _ := patgen.AddVocabRepeat(ss.PoolVocab, ctxtNm, npats, "ctxt", list)
-		patgen.FlipBitsRows(tsr, ctxtflip, ctxtflip, 1, 0)
-		//todo: also support drifting
-		//solution 2: drift based on last trial (will require sequential learning)
-		//patgen.VocabDrift(ss.PoolVocab, ss.NFlipBits, "ctxt"+strconv.Itoa(i+1))
+	patgen.PermutedBinaryMinDiff(dt.ColumnByIndex(1).Tensor.(*tensor.Float32), 6, 1, 0, 3)
+	patgen.PermutedBinaryMinDiff(dt.ColumnByIndex(2).Tensor.(*tensor.Float32), 6, 1, 0, 3)
+	dt.SaveCSV("random_5x5_25_gen.tsv", tensor.Tab, table.Headers)
+
+	tensorfs.DirFromTable(ss.Root.RecycleDir("Inputs/Train"), dt)
+}
+
+// OpenTable opens a [table.Table] from embedded content, storing
+// the data in the given tensorfs directory.
+func (ss *Sim) OpenTable(dir *tensorfs.Node, fsys fs.FS, fnm, name, docs string) (*table.Table, error) {
+	dt := table.New()
+	metadata.SetName(dt, name)
+	metadata.SetDoc(dt, docs)
+	err := dt.OpenFS(content, fnm, tensor.Tab)
+	if errors.Log(err) != nil {
+		return dt, err
 	}
-
-	patgen.InitPats(ss.TrainAB, "TrainAB", "TrainAB Pats", "Input", "EC5", npats, ecY, ecX, plY, plX)
-	patgen.MixPats(ss.TrainAB, ss.PoolVocab, "Input", []string{"A", "B", "ctxt1", "ctxt2", "ctxt3", "ctxt4"})
-	patgen.MixPats(ss.TrainAB, ss.PoolVocab, "EC5", []string{"A", "B", "ctxt1", "ctxt2", "ctxt3", "ctxt4"})
-
-	patgen.InitPats(ss.TestAB, "TestAB", "TestAB Pats", "Input", "EC5", npats, ecY, ecX, plY, plX)
-	patgen.MixPats(ss.TestAB, ss.PoolVocab, "Input", []string{"A", "empty", "ctxt1", "ctxt2", "ctxt3", "ctxt4"})
-	patgen.MixPats(ss.TestAB, ss.PoolVocab, "EC5", []string{"A", "B", "ctxt1", "ctxt2", "ctxt3", "ctxt4"})
-
-	patgen.InitPats(ss.TrainAC, "TrainAC", "TrainAC Pats", "Input", "EC5", npats, ecY, ecX, plY, plX)
-	patgen.MixPats(ss.TrainAC, ss.PoolVocab, "Input", []string{"A", "C", "ctxt5", "ctxt6", "ctxt7", "ctxt8"})
-	patgen.MixPats(ss.TrainAC, ss.PoolVocab, "EC5", []string{"A", "C", "ctxt5", "ctxt6", "ctxt7", "ctxt8"})
-
-	patgen.InitPats(ss.TestAC, "TestAC", "TestAC Pats", "Input", "EC5", npats, ecY, ecX, plY, plX)
-	patgen.MixPats(ss.TestAC, ss.PoolVocab, "Input", []string{"A", "empty", "ctxt5", "ctxt6", "ctxt7", "ctxt8"})
-	patgen.MixPats(ss.TestAC, ss.PoolVocab, "EC5", []string{"A", "C", "ctxt5", "ctxt6", "ctxt7", "ctxt8"})
-
-	patgen.InitPats(ss.PreTrainLure, "PreTrainLure", "PreTrainLure Pats", "Input", "EC5", npats, ecY, ecX, plY, plX)
-	patgen.MixPats(ss.PreTrainLure, ss.PoolVocab, "Input", []string{"lA", "lB", "ctxt9", "ctxt10", "ctxt11", "ctxt12"}) // arbitrary ctxt here
-	patgen.MixPats(ss.PreTrainLure, ss.PoolVocab, "EC5", []string{"lA", "lB", "ctxt9", "ctxt10", "ctxt11", "ctxt12"})   // arbitrary ctxt here
-
-	patgen.InitPats(ss.TestLure, "TestLure", "TestLure Pats", "Input", "EC5", npats, ecY, ecX, plY, plX)
-	patgen.MixPats(ss.TestLure, ss.PoolVocab, "Input", []string{"lA", "empty", "ctxt9", "ctxt10", "ctxt11", "ctxt12"}) // arbitrary ctxt here
-	patgen.MixPats(ss.TestLure, ss.PoolVocab, "EC5", []string{"lA", "lB", "ctxt9", "ctxt10", "ctxt11", "ctxt12"})      // arbitrary ctxt here
-
-	ss.TrainAll = ss.TrainAB.Clone()
-	ss.TrainAll.AppendRows(ss.TrainAC)
-	ss.TrainAll.AppendRows(ss.PreTrainLure)
-	ss.TrainAll.MetaData["name"] = "TrainAll"
-	ss.TrainAll.MetaData["desc"] = "All Training Patterns"
-
-	ss.TestABAC = ss.TestAB.Clone()
-	ss.TestABAC.AppendRows(ss.TestAC)
-	ss.TestABAC.MetaData["name"] = "TestABAC"
-	ss.TestABAC.MetaData["desc"] = "All Testing Patterns"
+	tensorfs.DirFromTable(dir.RecycleDir(name), dt)
+	return dt, err
 }
 
-func (ss *Sim) OpenPats() {
-	dt := ss.TrainAB
-	dt.SetMetaData("name", "TrainAB")
-	dt.SetMetaData("desc", "Training patterns")
-	err := dt.OpenCSV("random_5x5_25.tsv", table.Tab)
-	if err != nil {
-		log.Println(err)
+func (ss *Sim) OpenInputs() {
+	dir := ss.Root.RecycleDir("Inputs")
+	ss.OpenTable(dir, content, "random_5x5_25.tsv", "Train", "Training inputs")
+}
+
+//////// Stats
+
+// AddStat adds a stat compute function.
+func (ss *Sim) AddStat(f func(mode Modes, level Levels, phase StatsPhase)) {
+	ss.StatFuncs = append(ss.StatFuncs, f)
+}
+
+// StatsStart is called by Looper at the start of given level, for each iteration.
+// It needs to call RunStats Start at the next level down.
+// e.g., each Epoch is the start of the full set of Trial Steps.
+func (ss *Sim) StatsStart(lmd, ltm enums.Enum) {
+	mode := lmd.(Modes)
+	level := ltm.(Levels)
+	if level <= Trial {
+		return
+	}
+	ss.RunStats(mode, level-1, Start)
+}
+
+// StatsStep is called by Looper at each step of iteration,
+// where it accumulates the stat results.
+func (ss *Sim) StatsStep(lmd, ltm enums.Enum) {
+	mode := lmd.(Modes)
+	level := ltm.(Levels)
+	if level == Cycle {
+		return
+	}
+	ss.RunStats(mode, level, Step)
+	tensorfs.DirTable(axon.StatsNode(ss.Stats, mode, level), nil).WriteToLog()
+}
+
+// RunStats runs the StatFuncs for given mode, level and phase.
+func (ss *Sim) RunStats(mode Modes, level Levels, phase StatsPhase) {
+	for _, sf := range ss.StatFuncs {
+		sf(mode, level, phase)
+	}
+	if phase == Step && ss.GUI.Tabs != nil {
+		nm := mode.String() + "/" + level.String() + " Plot"
+		ss.GUI.Tabs.GoUpdatePlot(nm)
+		if level == Run {
+			ss.GUI.Tabs.GoUpdatePlot("Train/RunAll Plot")
+		}
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////
-// 		Stats
+// SetRunName sets the overall run name, used for naming output logs and weight files
+// based on params extra sheets and tag, and starting run number (for distributed runs).
+func (ss *Sim) SetRunName() string {
+	runName := ss.Params.RunName(ss.Config.Run.Run)
+	ss.Current.StringValue("RunName", 1).SetString1D(runName, 0)
+	return runName
+}
 
-// StatsInit initializes all the statistics.
-// called at start of new run
+// RunName returns the overall run name, used for naming output logs and weight files
+// based on params extra sheets and tag, and starting run number (for distributed runs).
+func (ss *Sim) RunName() string {
+	return ss.Current.StringValue("RunName", 1).String1D(0)
+}
+
+// StatsInit initializes all the stats by calling Start across all modes and levels.
 func (ss *Sim) StatsInit() {
-	ss.Stats.SetFloat("UnitErr", 0.0)
-	ss.Stats.SetFloat("PhaseDiff", 0.0)
-	ss.Stats.SetFloat("TrgOnWasOffAll", 0.0)
-	ss.Stats.SetFloat("TrgOnWasOffCmp", 0.0)
-	ss.Stats.SetFloat("TrgOffWasOn", 0.0)
-	ss.Stats.SetFloat("ABMem", 0.0)
-	ss.Stats.SetFloat("ACMem", 0.0)
-	ss.Stats.SetFloat("Mem", 0.0)
-	ss.Stats.SetInt("FirstPerfect", -1) // first epoch at when AB Mem is perfect
-	ss.Stats.SetInt("RecallItem", -1)   // item recalled in EC5 completion pool
-	ss.Stats.SetFloat("ABRecMem", 0.0)  // similar to ABMem but using correlation on completion pool
-	ss.Stats.SetFloat("ACRecMem", 0.0)
-
-	ss.Logs.InitErrStats() // inits TrlErr, FirstZero, LastZero, NZero
-}
-
-// StatCounters saves current counters to Stats, so they are available for logging etc
-// Also saves a string rep of them for ViewUpdate.Text
-func (ss *Sim) StatCounters(di int) {
-	ctx := &ss.Context
-	mode := ctx.Mode
-	ss.Loops.Stacks[mode].CountersToStats(&ss.Stats)
-	// always use training epoch..
-	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-	ss.Stats.SetInt("Epoch", trnEpc)
-	trl := ss.Stats.Int("Trial")
-	ss.Stats.SetInt("Trial", trl+di)
-	ss.Stats.SetInt("Di", di)
-	ss.Stats.SetInt("Cycle", int(ctx.Cycle))
-	ss.Stats.SetString("TrialName", ss.Stats.StringDi("TrialName", di))
-}
-
-func (ss *Sim) NetViewCounters(tm etime.Times) {
-	if ss.ViewUpdate.View == nil {
-		return
-	}
-	di := ss.ViewUpdate.View.Di
-	if tm == etime.Trial {
-		ss.TrialStats(di) // get trial stats for current di
-	}
-	ss.StatCounters(di)
-	ss.ViewUpdate.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "TrialName", "Cycle", "UnitErr", "TrlErr", "PhaseDiff"})
-}
-
-// TrialStats computes the trial-level statistics.
-// Aggregation is done directly from log data.
-func (ss *Sim) TrialStats(di int) {
-	out := ss.Net.LayerByName("EC5")
-
-	ss.Stats.SetFloat("PhaseDiff", float64(out.Values[di].PhaseDiff.Cor))
-	ss.Stats.SetFloat("UnitErr", out.PctUnitErr(&ss.Context)[di])
-	ss.MemStats(ss.Loops.Mode, di)
-
-	if ss.Stats.Float("UnitErr") > ss.Config.Mod.MemThr {
-		ss.Stats.SetFloat("TrlErr", 1)
-	} else {
-		ss.Stats.SetFloat("TrlErr", 0)
-	}
-}
-
-// MemStats computes ActM vs. Target on ECout with binary counts
-// must be called at end of 3rd quarter so that Target values are
-// for the entire full pattern as opposed to the plus-phase target
-// values clamped from ECin activations
-func (ss *Sim) MemStats(mode etime.Modes, di int) {
-	memthr := ss.Config.Mod.MemThr
-	ecout := ss.Net.LayerByName("EC5")
-	inp := ss.Net.LayerByName("Input") // note: must be input b/c ECin can be active
-	nn := ecout.Shape.Len()
-	actThr := float32(0.2)
-	trgOnWasOffAll := 0.0 // all units
-	trgOnWasOffCmp := 0.0 // only those that required completion, missing in ECin
-	trgOffWasOn := 0.0    // should have been off
-	cmpN := 0.0           // completion target
-	trgOnN := 0.0
-	trgOffN := 0.0
-	actMi, _ := ecout.UnitVarIndex("ActM")
-	targi, _ := ecout.UnitVarIndex("Target")
-
-	ss.Stats.SetFloat("ABMem", math.NaN())
-	ss.Stats.SetFloat("ACMem", math.NaN())
-	ss.Stats.SetFloat("ABRecMem", math.NaN())
-	ss.Stats.SetFloat("ACRecMem", math.NaN())
-
-	trialnm := ss.Stats.StringDi("TrialName", di)
-	isAB := strings.Contains(trialnm, "AB")
-
-	for ni := 0; ni < nn; ni++ {
-		actm := ecout.UnitValue1D(actMi, ni, di)
-		trg := ecout.UnitValue1D(targi, ni, di) // full pattern target
-		inact := inp.UnitValue1D(actMi, ni, di)
-		if trg < actThr { // trgOff
-			trgOffN += 1
-			if actm > actThr {
-				trgOffWasOn += 1
+	for md, st := range ss.Loops.Stacks {
+		mode := md.(Modes)
+		for _, lev := range st.Order {
+			level := lev.(Levels)
+			if level == Cycle {
+				continue
 			}
-		} else { // trgOn
-			trgOnN += 1
-			if inact < actThr { // missing in ECin -- completion target
-				cmpN += 1
-				if actm < actThr {
-					trgOnWasOffAll += 1
-					trgOnWasOffCmp += 1
+			ss.RunStats(mode, level, Start)
+		}
+	}
+	if ss.GUI.Tabs != nil {
+		_, idx := ss.GUI.Tabs.CurrentTab()
+		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Epoch))
+		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Run))
+		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Test, Trial))
+		ss.GUI.Tabs.PlotTensorFS(ss.Stats.RecycleDir("Train/RunAll"))
+		ss.GUI.Tabs.SelectTabIndex(idx)
+	}
+}
+
+// ConfigStats handles configures functions to do all stats computation
+// in the tensorfs system.
+func (ss *Sim) ConfigStats() {
+	net := ss.Net
+	ss.Stats, _ = ss.Root.Mkdir("Stats")
+	ss.Current, _ = ss.Stats.Mkdir("Current")
+
+	ss.SetRunName()
+
+	// last arg(s) are levels to exclude
+	counterFunc := axon.StatLoopCounters(ss.Stats, ss.Current, ss.Loops, net, Trial, Cycle)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		counterFunc(mode, level, phase == Start)
+	})
+	runNameFunc := axon.StatRunName(ss.Stats, ss.Current, ss.Loops, net, Trial, Cycle)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		runNameFunc(mode, level, phase == Start)
+	})
+	trialNameFunc := axon.StatTrialName(ss.Stats, ss.Current, ss.Loops, net, Trial)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		trialNameFunc(mode, level, phase == Start)
+	})
+
+	// up to a point, it is good to use loops over stats in one function,
+	// to reduce repetition of boilerplate.
+	statNames := []string{"CorSim", "UnitErr", "Err", "NZero", "FirstZero", "LastZero"}
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		for _, name := range statNames {
+			if name == "NZero" && (mode != Train || level == Trial) {
+				return
+			}
+			modeDir := ss.Stats.RecycleDir(mode.String())
+			curModeDir := ss.Current.RecycleDir(mode.String())
+			levelDir := modeDir.RecycleDir(level.String())
+			subDir := modeDir.RecycleDir((level - 1).String()) // note: will fail for Cycle
+			tsr := levelDir.Float64(name)
+			ndata := int(ss.Net.Context().NData)
+			var stat float64
+			if phase == Start {
+				tsr.SetNumRows(0)
+				plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
+					s.Range.SetMin(0).SetMax(1)
+					s.On = true
+					switch name {
+					case "NZero":
+						s.On = false
+					case "FirstZero", "LastZero":
+						if level < Run {
+							s.On = false
+						}
+					}
+				})
+				switch name {
+				case "NZero":
+					if level == Epoch {
+						curModeDir.Float64(name, 1).SetFloat1D(0, 0)
+					}
+				case "FirstZero", "LastZero":
+					if level == Epoch {
+						curModeDir.Float64(name, 1).SetFloat1D(-1, 0)
+					}
 				}
-			} else {
-				if actm < actThr {
-					trgOnWasOffAll += 1
+				continue
+			}
+			switch level {
+			case Trial:
+				out := ss.Net.LayerByName("Output")
+				for di := range ndata {
+					var stat float64
+					switch name {
+					case "CorSim":
+						stat = 1.0 - float64(axon.LayerStates.Value(int(out.Index), int(di), int(axon.LayerPhaseDiff)))
+					case "UnitErr":
+						stat = out.PctUnitErr(ss.Net.Context())[di]
+					case "Err":
+						uniterr := curModeDir.Float64("UnitErr", ndata).Float1D(di)
+						stat = 1.0
+						if uniterr == 0 {
+							stat = 0
+						}
+					}
+					curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
+					tsr.AppendRowFloat(stat)
 				}
+			case Epoch:
+				nz := curModeDir.Float64("NZero", 1).Float1D(0)
+				switch name {
+				case "NZero":
+					err := stats.StatSum.Call(subDir.Value("Err")).Float1D(0)
+					stat = curModeDir.Float64(name, 1).Float1D(0)
+					if err == 0 {
+						stat++
+					} else {
+						stat = 0
+					}
+					curModeDir.Float64(name, 1).SetFloat1D(stat, 0)
+				case "FirstZero":
+					stat = curModeDir.Float64(name, 1).Float1D(0)
+					if stat < 0 && nz == 1 {
+						stat = curModeDir.Int("Epoch", 1).Float1D(0)
+					}
+					curModeDir.Float64(name, 1).SetFloat1D(stat, 0)
+				case "LastZero":
+					stat = curModeDir.Float64(name, 1).Float1D(0)
+					if stat < 0 && nz >= float64(ss.Config.Run.NZero) {
+						stat = curModeDir.Int("Epoch", 1).Float1D(0)
+					}
+					curModeDir.Float64(name, 1).SetFloat1D(stat, 0)
+				default:
+					stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
+				}
+				tsr.AppendRowFloat(stat)
+			case Run:
+				switch name {
+				case "NZero", "FirstZero", "LastZero":
+					stat = subDir.Value(name).Float1D(-1)
+				default:
+					stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
+				}
+				tsr.AppendRowFloat(stat)
 			}
 		}
-	}
-	trgOnWasOffAll /= trgOnN
-	trgOffWasOn /= trgOffN
-	if mode == etime.Train { // no compare
-		if trgOnWasOffAll < memthr && trgOffWasOn < memthr {
-			ss.Stats.SetFloat("Mem", 1)
-		} else {
-			ss.Stats.SetFloat("Mem", 0)
-		}
-	} else { // test
-		if cmpN > 0 { // should be
-			trgOnWasOffCmp /= cmpN
-			if trgOnWasOffCmp < memthr && trgOffWasOn < memthr {
-				ss.Stats.SetFloat("Mem", 1)
-				if isAB {
-					ss.Stats.SetFloat("ABMem", 1)
-				} else {
-					ss.Stats.SetFloat("ACMem", 1)
-				}
-			} else {
-				ss.Stats.SetFloat("Mem", 0)
-				if isAB {
-					ss.Stats.SetFloat("ABMem", 0)
-				} else {
-					ss.Stats.SetFloat("ACMem", 0)
-				}
-			}
-		}
-	}
-	ss.Stats.SetFloat("TrgOnWasOffAll", trgOnWasOffAll)
-	ss.Stats.SetFloat("TrgOnWasOffCmp", trgOnWasOffCmp)
-	ss.Stats.SetFloat("TrgOffWasOn", trgOffWasOn)
+	})
 
-	// take completion pool to do CosDiff
-	var recallPat tensor.Float32
-	ecout.UnitValuesTensor(&recallPat, "ActM", di)
-	mostSimilar := -1
-	highestCosDiff := float32(0)
-	var cosDiff float32
-	var patToComplete *tensor.Float32
-	var correctIndex int
-	if isAB {
-		patToComplete, _ = ss.PoolVocab.ByName("B")
-		correctIndex, _ = strconv.Atoi(strings.Split(trialnm, "AB")[1])
-	} else {
-		patToComplete, _ = ss.PoolVocab.ByName("C")
-		correctIndex, _ = strconv.Atoi(strings.Split(trialnm, "AC")[0])
-	}
-	for i := 0; i < patToComplete.DimSize(0); i++ { // for each item in the list
-		cosDiff = metric.Correlation32(recallPat.SubSpace([]int{0, 1}).(*tensor.Float32).Values, patToComplete.SubSpace([]int{i}).(*tensor.Float32).Values)
-		if cosDiff > highestCosDiff {
-			highestCosDiff = cosDiff
-			mostSimilar = i
-		}
-	}
+	perTrlFunc := axon.StatPerTrialMSec(ss.Stats, Train, Trial)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		perTrlFunc(mode, level, phase == Start)
+	})
 
-	ss.Stats.SetInt("RecallItem", mostSimilar)
-	if isAB {
-		ss.Stats.SetFloat("ABRecMem", num.FromBool[float64](mostSimilar == correctIndex))
-	} else {
-		ss.Stats.SetFloat("ACRecMem", num.FromBool[float64](mostSimilar == correctIndex))
-	}
+	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
+	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, lays...)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		actGeFunc(mode, level, phase == Start)
+	})
+
+	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, lays...)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		trnEpc := ss.Loops.Loop(Train, Epoch).Counter.Cur
+		pcaFunc(mode, level, phase == Start, trnEpc)
+	})
+
+	stateFunc := axon.StatLayerState(ss.Stats, net, Test, Trial, true, "ActM", "Input", "Output")
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		stateFunc(mode, level, phase == Start)
+	})
+
+	runAllFunc := axon.StatLevelAll(ss.Stats, Train, Run, func(s *plot.Style, cl tensor.Values) {
+		name := metadata.Name(cl)
+		switch name {
+		case "FirstZero", "LastZero":
+			s.On = true
+			s.Range.SetMin(0)
+		}
+	})
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		runAllFunc(mode, level, phase == Start)
+	})
 }
 
-//////////////////////////////////////////////////////////////////////////////
-// 		Logging
-
-func (ss *Sim) AddLogItems() {
-	itemNames := []string{"PhaseDiff", "UnitErr", "PctCor", "PctErr", "TrgOnWasOffAll", "TrgOnWasOffCmp", "TrgOffWasOn", "Mem", "ABMem", "ACMem", "ABRecMem", "ACRecMem"}
-	for _, st := range itemNames {
-		stnm := st
-		tonm := "Tst" + st
-		ss.Logs.AddItem(&elog.Item{
-			Name: tonm,
-			Type: reflect.Float64,
-			Write: elog.WriteMap{
-				etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetFloat64(ctx.ItemFloat(etime.Test, etime.Epoch, stnm))
-				},
-				etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
-					ctx.SetFloat64(ctx.ItemFloat(etime.Test, etime.Epoch, stnm)) // take the last epoch
-					// ctx.SetAgg(ctx.Mode, etime.Epoch, stats.Max) // stats.Max for max over epochs
-				}}})
+// StatCounters returns counters string to show at bottom of netview.
+func (ss *Sim) StatCounters(mode, level enums.Enum) string {
+	counters := ss.Loops.Stacks[mode].CountersString()
+	vu := ss.NetViewUpdater(mode)
+	if vu == nil || vu.View == nil {
+		return counters
 	}
+	di := vu.View.Di
+	counters += fmt.Sprintf(" Di: %d", di)
+	curModeDir := ss.Current.RecycleDir(mode.String())
+	if curModeDir.Node("TrialName") == nil {
+		return counters
+	}
+	counters += fmt.Sprintf(" TrialName: %s", curModeDir.StringValue("TrialName").String1D(di))
+	statNames := []string{"CorSim", "UnitErr", "Err"}
+	if level == Cycle || curModeDir.Node(statNames[0]) == nil {
+		return counters
+	}
+	for _, name := range statNames {
+		counters += fmt.Sprintf(" %s: %.4g", name, curModeDir.Float64(name).Float1D(di))
+	}
+	return counters
 }
 
-func (ss *Sim) ConfigLogs() {
-	ss.Stats.SetString("RunName", ss.Params.RunName(0)) // used for naming logs, stats, etc
-
-	ss.Logs.AddCounterItems(etime.Run, etime.Epoch, etime.Trial, etime.Cycle)
-	ss.Logs.AddStatIntNoAggItem(etime.AllModes, etime.Trial, "Di")
-	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
-	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
-
-	ss.Logs.AddStatAggItem("PhaseDiff", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("UnitErr", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("TrgOnWasOffAll", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("TrgOnWasOffCmp", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("TrgOffWasOn", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("ABMem", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("ACMem", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("Mem", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("ABRecMem", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("ACRecMem", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatIntNoAggItem(etime.Train, etime.Run, "FirstPerfect")
-	ss.Logs.AddStatIntNoAggItem(etime.Train, etime.Trial, "RecallItem")
-	ss.Logs.AddStatIntNoAggItem(etime.Test, etime.Trial, "RecallItem")
-	ss.Logs.AddErrStatAggItems("TrlErr", etime.Run, etime.Epoch, etime.Trial)
-
-	// ss.Logs.AddCopyFromFloatItems(etime.Train, etime.Epoch, etime.Test, etime.Epoch, "Tst", "PhaseDiff", "UnitErr", "PctCor", "PctErr", "TrgOnWasOffAll", "TrgOnWasOffCmp", "TrgOffWasOn", "Mem")
-	ss.AddLogItems()
-
-	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
-
-	layers := ss.Net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
-	axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Train, etime.Epoch, etime.Trial)
-	axon.LogInputLayer(&ss.Logs, ss.Net, etime.Train)
-
-	// axon.LogAddPCAItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
-
-	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net, etime.Test, etime.Cycle)
-	ss.Logs.AddLayerTensorItems(ss.Net, "ActM", etime.Test, etime.Trial, "TargetLayer")
-	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "TargetLayer")
-
-	ss.Logs.PlotItems("TrgOnWasOffAll", "TrgOnWasOffCmp", "ABMem", "ACMem", "ABRecMem", "ACRecMem", "TstTrgOnWasOffAll", "TstTrgOnWasOffCmp", "TstMem", "TstABMem", "TstACMem", "TstABRecMem", "TstACRecMem")
-
-	ss.Logs.CreateTables()
-	ss.Logs.SetMeta(etime.Train, etime.Run, "TrgOnWasOffAll:On", "-")
-	ss.Logs.SetMeta(etime.Train, etime.Run, "TrgOnWasOffCmp:On", "-")
-	ss.Logs.SetMeta(etime.Train, etime.Run, "ABMem:On", "-")
-	ss.Logs.SetMeta(etime.Train, etime.Run, "ACMem:On", "-")
-	ss.Logs.SetMeta(etime.Train, etime.Run, "ABRecMem:On", "-")
-	ss.Logs.SetMeta(etime.Train, etime.Run, "ACRecMem:On", "-")
-	ss.Logs.SetMeta(etime.Train, etime.Run, "TstTrgOnWasOffAll:On", "-")
-	ss.Logs.SetMeta(etime.Train, etime.Run, "TstTrgOnWasOffCmp:On", "-")
-	ss.Logs.SetMeta(etime.Train, etime.Run, "TstMem:On", "-")
-	ss.Logs.SetMeta(etime.Train, etime.Run, "TstACMem:On", "-")
-	ss.Logs.SetMeta(etime.Train, etime.Run, "TstACRecMem:On", "-")
-	ss.Logs.SetMeta(etime.Train, etime.Run, "FirstPerfect:On", "+")
-	ss.Logs.SetMeta(etime.Train, etime.Run, "Type", "Bar")
-	ss.Logs.SetContext(&ss.Stats, ss.Net)
-	// don't plot certain combinations we don't use
-	ss.Logs.NoPlot(etime.Train, etime.Cycle)
-	ss.Logs.NoPlot(etime.Test, etime.Run)
-	// note: Analyze not plotted by default
-	ss.Logs.SetMeta(etime.Train, etime.Run, "LegendCol", "RunName")
-}
-
-// Log is the main logging function, handles special things for different scopes
-func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
-	ctx := &ss.Context
-	if mode != etime.Analyze {
-		ctx.Mode = mode // Also set specifically in a Loop callback.
-	}
-	dt := ss.Logs.Table(mode, time)
-	if dt == nil {
-		return
-	}
-	row := dt.Rows
-
-	switch {
-	case time == etime.Cycle:
-		return
-	case time == etime.Trial:
-		for di := 0; di < int(ctx.NData); di++ {
-			ss.TrialStats(di)
-			ss.StatCounters(di)
-			ss.Logs.LogRowDi(mode, time, row, di)
-		}
-		return // don't do reg below
-	}
-
-	ss.Logs.LogRow(mode, time, row) // also logs to file, etc
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////
-// 		Gui
+//////// GUI
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
-	title := "Axon Hippocampus"
-	ss.GUI.MakeBody(ss, "hip", title, `Benchmarking`)
+	ss.GUI.MakeBody(ss, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
+	ss.GUI.FS = ss.Root
+	ss.GUI.DataRoot = "Root"
 	ss.GUI.CycleUpdateInterval = 10
 
 	nv := ss.GUI.AddNetView("Network")
-	nv.Options.MaxRecs = 300
+	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles
+	nv.Options.Raster.Max = ss.Config.Run.Cycles
 	nv.SetNet(ss.Net)
-	ss.ViewUpdate.Config(nv, etime.Phase, etime.Phase)
-	ss.GUI.ViewUpdate = &ss.ViewUpdate
+	ss.TrainUpdate.Config(nv, axon.Theta, ss.StatCounters)
+	ss.TestUpdate.Config(nv, axon.Theta, ss.StatCounters)
+	ss.GUI.OnStop = func(mode, level enums.Enum) {
+		vu := ss.NetViewUpdater(mode)
+		vu.UpdateWhenStopped(mode, level)
+	}
 
 	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1, 2.75) // more "head on" than default which is more "top down"
 	nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
 
-	ss.GUI.AddPlots(title, &ss.Logs)
-
+	ss.GUI.UpdateFiles()
+	ss.StatsInit()
 	ss.GUI.FinalizeGUI(false)
-	if ss.Config.Run.GPU {
-		// vgpu.Debug = ss.Config.Debug // when debugging GPU..
-		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
-		core.TheApp.AddQuitCleanFunc(func() {
-			ss.Net.GPU.Destroy()
-		})
-	}
 }
 
 func (ss *Sim) MakeToolbar(p *tree.Plan) {
-	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
-		Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
-		Active:  egui.ActiveStopped,
-		Func: func() {
-			ss.Init()
-			ss.GUI.UpdateWindow()
-		},
-	})
+	ss.GUI.AddLooperCtrl(p, ss.Loops)
 
-	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Test Init", Icon: icons.Update,
-		Tooltip: "Call ResetCountersByMode with test mode and update GUI.",
-		Active:  egui.ActiveStopped,
-		Func: func() {
-			ss.TestInit()
-			ss.GUI.UpdateWindow()
-		},
-	})
-
-	ss.GUI.AddLooperCtrl(p, ss.Loops, []etime.Modes{etime.Train, etime.Test})
-
-	////////////////////////////////////////////////
 	tree.Add(p, func(w *core.Separator) {})
-	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Reset RunLog",
-		Icon:    icons.Reset,
-		Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
-		Active:  egui.ActiveAlways,
-		Func: func() {
-			ss.Logs.ResetLog(etime.Train, etime.Run)
-			ss.GUI.UpdatePlot(etime.Train, etime.Run)
-		},
-	})
-	////////////////////////////////////////////////
-	tree.Add(p, func(w *core.Separator) {})
-	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "New Seed",
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{
+		Label:   "New Seed",
 		Icon:    icons.Add,
 		Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
 		Active:  egui.ActiveAlways,
@@ -843,12 +730,13 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 			ss.RandSeeds.NewSeeds()
 		},
 	})
-	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "README",
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{
+		Label:   "README",
 		Icon:    icons.FileMarkdown,
 		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 		Active:  egui.ActiveAlways,
 		Func: func() {
-			core.TheApp.OpenURL("https://github.com/emer/axon/blob/main/examples/hip/README.md")
+			core.TheApp.OpenURL(ss.Config.URL)
 		},
 	})
 }
@@ -860,96 +748,25 @@ func (ss *Sim) RunGUI() {
 }
 
 func (ss *Sim) RunNoGUI() {
+	ss.Init()
+
 	if ss.Config.Params.Note != "" {
 		mpi.Printf("Note: %s\n", ss.Config.Params.Note)
 	}
 	if ss.Config.Log.SaveWeights {
 		mpi.Printf("Saving final weights per run\n")
 	}
-	runName := ss.Params.RunName(ss.Config.Run.Run)
-	ss.Stats.SetString("RunName", runName) // used for naming logs, stats, etc
+
+	runName := ss.SetRunName()
 	netName := ss.Net.Name
-
-	elog.SetLogFile(&ss.Logs, ss.Config.Log.Trial, etime.Train, etime.Trial, "trl", netName, runName)
-	elog.SetLogFile(&ss.Logs, ss.Config.Log.Epoch, etime.Train, etime.Epoch, "epc", netName, runName)
-	elog.SetLogFile(&ss.Logs, ss.Config.Log.Run, etime.Train, etime.Run, "run", netName, runName)
-	elog.SetLogFile(&ss.Logs, ss.Config.Log.TestEpoch, etime.Test, etime.Epoch, "tst_epc", netName, runName)
-	elog.SetLogFile(&ss.Logs, ss.Config.Log.TestTrial, etime.Test, etime.Trial, "tst_trl", netName, runName)
-
-	netdata := ss.Config.Log.NetData
-	if netdata {
-		mpi.Printf("Saving NetView data from testing\n")
-		ss.GUI.InitNetData(ss.Net, 200)
-	}
-
-	// for standalone no gui run
-	if ss.Config.Run.GPU {
-		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
-	}
-	mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
-
-	ss.Init()
+	cfg := &ss.Config.Log
+	axon.OpenLogFiles(ss.Loops, ss.Stats, netName, runName, [][]string{cfg.Train, cfg.Test})
 
 	mpi.Printf("Running %d Runs starting at %d\n", ss.Config.Run.Runs, ss.Config.Run.Run)
-	ss.Loops.GetLoop(etime.Train, etime.Run).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.Runs)
+	ss.Loops.Loop(Train, Run).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.Runs)
 
-	ss.Loops.Run(etime.Train)
+	ss.Loops.Run(Train)
 
-	// for factor run
-	// ss.TwoFactorRun()
-
-	ss.Logs.CloseLogFiles()
-
-	if netdata {
-		ss.GUI.SaveNetData(ss.Stats.String("RunName"))
-	}
-
-	ss.Net.GPU.Destroy() // safe even if no GPU
-}
-
-var ConfigFiles = []string{"smallhip", "medhip"}
-
-var ListSizes = []int{20}
-
-// TwoFactorRun runs outer-loop crossed with inner-loop params
-func (ss *Sim) TwoFactorRun() {
-	for _, config := range ConfigFiles {
-		for _, listSize := range ListSizes {
-
-			ss.Net.GPU.Destroy()
-			ss.Net = axon.NewNetwork("")
-			ss.Params.Network = ss.Net
-
-			// setting name for this factor combo
-			ss.Params.Tag = fmt.Sprintf("%s_%d", config, listSize)
-			ss.Stats.SetString("RunName", ss.Params.RunName(ss.Config.Run.Run))
-
-			ss.Config.Run.NTrials = listSize
-			econfig.OpenWithIncludes(&ss.Config, config+".toml")
-
-			// reconfig for this factor combo
-			ss.InitRandSeed(0)
-			ss.ConfigPats()
-			ss.ConfigEnv()
-			ss.ConfigNet(ss.Net)
-			ss.ConfigLoops()
-
-			if ss.Config.Run.GPU {
-				ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
-			}
-			mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
-
-			ss.Init()
-
-			mpi.Printf("Running %d Runs starting at %d\n", ss.Config.Run.Runs, ss.Config.Run.Run)
-			ss.Loops.GetLoop(etime.Train, etime.Run).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.Runs)
-
-			// print our info for checking purposes
-			fmt.Println("CA3 shape: ", ss.Net.LayerByName("CA3").Shape.Sizes)
-			fmt.Println("EC2 shape: ", ss.Net.LayerByName("EC2").Shape.Sizes)
-			fmt.Println("# of pairs: ", ss.TrainAB.Rows)
-
-			ss.Loops.Run(etime.Train)
-		}
-	}
+	axon.CloseLogFiles(ss.Loops, ss.Stats, Cycle)
+	axon.GPURelease()
 }
