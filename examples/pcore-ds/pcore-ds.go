@@ -202,9 +202,9 @@ func (ss *Sim) ConfigEnv() {
 }
 
 func (ss *Sim) ConfigRubicon(trn *MotorSeqEnv) {
-	pv := &ss.Net.Rubicon
-	pv.SetNUSs(2, 1)
-	pv.Urgency.U50 = 20 // 20 def
+	rp := &ss.Net.Rubicon
+	rp.SetNUSs(2, 1)
+	rp.Urgency.U50 = 20 // 20 def
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
@@ -479,9 +479,9 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 
 // ApplyRubicon applies Rubicon reward inputs
 func (ss *Sim) ApplyRubicon(ev *MotorSeqEnv, mode Modes, inRew bool, di uint32) {
-	pv := &ss.Net.Rubicon
-	pv.EffortUrgencyUpdate(di, 1)
-	pv.Urgency.Reset(di)
+	rp := &ss.Net.Rubicon
+	rp.EffortUrgencyUpdate(di, 1)
+	rp.Urgency.Reset(di)
 
 	if inRew {
 		axon.GlobalScalars.Set(1, int(axon.GvACh), int(di))
@@ -493,13 +493,13 @@ func (ss *Sim) ApplyRubicon(ev *MotorSeqEnv, mode Modes, inRew bool, di uint32) 
 }
 
 func (ss *Sim) SetRew(rew float32, di uint32) {
-	pv := &ss.Net.Rubicon
+	rp := &ss.Net.Rubicon
 	axon.GlobalSetRew(di, rew, true)
 	axon.GlobalScalars.Set(rew, int(axon.GvDA), int(di)) // no reward prediction error
 	if rew > 0 {
-		pv.SetUS(di, axon.Positive, 0, 1)
+		rp.SetUS(di, axon.Positive, 0, 1)
 	} else if rew < 0 {
-		pv.SetUS(di, axon.Negative, 0, 1)
+		rp.SetUS(di, axon.Negative, 0, 1)
 	}
 }
 
@@ -682,7 +682,6 @@ func (ss *Sim) RunStats(mode Modes, level Levels, phase StatsPhase) {
 	if phase == Step && ss.GUI.Tabs != nil {
 		nm := mode.String() + "/" + level.String() + " Plot"
 		ss.GUI.Tabs.GoUpdatePlot(nm)
-		ss.GUI.Tabs.GoUpdatePlot("Train/TrialAll Plot")
 	}
 }
 
@@ -872,7 +871,8 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.CycleUpdateInterval = 10
 
 	nv := ss.GUI.AddNetView("Network")
-	nv.Options.MaxRecs = 300
+	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles
+	nv.Options.Raster.Max = ss.Config.Run.Cycles
 	nv.SetNet(ss.Net)
 	ss.TrainUpdate.Config(nv, axon.Theta, ss.StatCounters)
 	ss.TestUpdate.Config(nv, axon.Theta, ss.StatCounters)

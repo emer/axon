@@ -95,7 +95,7 @@ func SetStim(tsr *tensor.Float32, nyrep int, stm string) int {
 	xy = append(xy, 0)
 	for y := 0; y < nyrep; y++ {
 		xy[2] = y
-		tsr.Set(xy, 1)
+		tsr.Set(1, xy...)
 	}
 	return stidx
 }
@@ -120,7 +120,7 @@ func SetContext(tsr *tensor.Float32, nyrep int, ctx string) int {
 	xy = append(xy, 0)
 	for y := 0; y < nyrep; y++ {
 		xy[2] = y
-		tsr.Set(xy, 1)
+		tsr.Set(1, xy...)
 	}
 	return ctidx
 }
@@ -150,7 +150,7 @@ func SetUSTime(tsr *tensor.Float32, nyrep, stidx, tick, start, end int) bool {
 	}
 	for y := 0; y < nyrep; y++ {
 		idx[2] = y
-		tsr.Set(idx, 1)
+		tsr.Set(1, idx...)
 	}
 	return true
 }
@@ -163,7 +163,7 @@ func SetTime(tsr *tensor.Float32, nyrep int, tick int) {
 	idx := []int{0, tick, 0, 0}
 	for y := 0; y < nyrep; y++ {
 		idx[2] = y
-		tsr.Set(idx, 1)
+		tsr.Set(1, idx...)
 	}
 }
 
@@ -172,6 +172,6 @@ func SetUS(tsr *tensor.Float32, nyrep int, pv int, mag float32) {
 	idx := []int{0, pv, 0, 0}
 	for y := 0; y < nyrep; y++ {
 		idx[2] = y
-		tsr.Set(idx, mag)
+		tsr.Set(mag, idx...)
 	}
 }

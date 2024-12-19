@@ -11,7 +11,6 @@ import (
 
 	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/emergent/v2/etime"
 )
 
 // CondEnv provides a flexible implementation of standard Pavlovian
@@ -86,29 +85,24 @@ func (ev *CondEnv) Config(rmax int, rnm string) {
 	ev.RunName = rnm
 	ev.Run.Max = rmax
 	ev.NYReps = 4
-	ev.Run.Scale = etime.Run
-	ev.Condition.Scale = etime.Condition
-	ev.Block.Scale = etime.Block
-	ev.Sequence.Scale = etime.Sequence
-	ev.Tick.Scale = etime.Tick
-
 	ev.CurStates = make(map[string]*tensor.Float32)
 
 	stsh := []int{StimShape[0], StimShape[1], ev.NYReps, 1}
-	ev.CurStates["CS"] = tensor.NewFloat32(stsh)
+	ev.CurStates["CS"] = tensor.NewFloat32(stsh...)
 	ctsh := []int{ContextShape[0], ContextShape[1], ev.NYReps, 1}
-	ev.CurStates["ContextIn"] = tensor.NewFloat32(ctsh)
+	ev.CurStates["ContextIn"] = tensor.NewFloat32(ctsh...)
 	ustsh := make([]int, 4)
 	copy(ustsh, USTimeShape)
 	ustsh[2] = ev.NYReps
-	ev.CurStates["USTimeIn"] = tensor.NewFloat32(ustsh)
-	ev.CurStates["Time"] = tensor.NewFloat32([]int{1, MaxTime, ev.NYReps, 1})
+	ev.CurStates["USTimeIn"] = tensor.NewFloat32(ustsh...)
+	ev.CurStates["Time"] = tensor.NewFloat32(1, MaxTime, ev.NYReps, 1)
 	ussh := []int{USShape[0], USShape[1], ev.NYReps, 1}
-	ev.CurStates["USpos"] = tensor.NewFloat32(ussh)
-	ev.CurStates["USneg"] = tensor.NewFloat32(ussh)
+	ev.CurStates["USpos"] = tensor.NewFloat32(ussh...)
+	ev.CurStates["USneg"] = tensor.NewFloat32(ussh...)
 }
 
-func (ev *CondEnv) Label() string { return ev.Name }
+func (ev *CondEnv) Label() string  { return ev.Name }
+func (ev *CondEnv) String() string { return ev.SequenceName }
 
 // Init sets current run index and max
 func (ev *CondEnv) Init(ridx int) {
@@ -142,7 +136,7 @@ func (ev *CondEnv) InitCond() {
 	ev.Tick.Max = trl.NTicks
 }
 
-func (ev *CondEnv) State(element string) tensor.Tensor {
+func (ev *CondEnv) State(element string) tensor.Values {
 	return ev.CurStates[element]
 }
 
@@ -168,7 +162,7 @@ func (ev *CondEnv) Step() bool {
 	return true
 }
 
-func (ev *CondEnv) Action(_ string, _ tensor.Tensor) {
+func (ev *CondEnv) Action(_ string, _ tensor.Values) {
 	// nop
 }
 

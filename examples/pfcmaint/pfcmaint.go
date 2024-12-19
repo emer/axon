@@ -222,8 +222,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 }
 
 func (ss *Sim) ConfigRubicon() {
-	pv := &ss.Net.Rubicon
-	pv.SetNUSs(1, 1)
+	rp := &ss.Net.Rubicon
+	rp.SetNUSs(1, 1)
 }
 
 func (ss *Sim) ApplyParams() {
@@ -348,8 +348,8 @@ func (ss *Sim) ApplyInputs(mode Modes, trial, theta int) {
 
 // ApplyRubicon applies Rubicon reward inputs
 func (ss *Sim) ApplyRubicon(ev *PFCMaintEnv, mode Modes, trial int, di uint32) {
-	pv := &ss.Net.Rubicon
-	pv.NewState(di, &ss.Net.Rand) // first before anything else is updated
+	rp := &ss.Net.Rubicon
+	rp.NewState(di, &ss.Net.Rand) // first before anything else is updated
 	if ev.Trial.Cur == 0 {        // reset maint on rew -- trial counter wraps around to 0
 		axon.GlobalSetRew(di, 1, true)
 	}
@@ -567,7 +567,8 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.CycleUpdateInterval = 10
 
 	nv := ss.GUI.AddNetView("Network")
-	nv.Options.MaxRecs = 300
+	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles
+	nv.Options.Raster.Max = ss.Config.Run.Cycles
 	nv.SetNet(ss.Net)
 	ss.TrainUpdate.Config(nv, axon.Theta, ss.StatCounters)
 	ss.TestUpdate.Config(nv, axon.Theta, ss.StatCounters)
