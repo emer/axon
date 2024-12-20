@@ -1,3 +1,5 @@
+//go:build not
+
 package main
 
 import (

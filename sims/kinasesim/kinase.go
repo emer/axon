@@ -172,7 +172,7 @@ func (ss *Sim) Sweep() {
 		minusHz := hz[mi]
 		for pi := 0; pi < nhz; pi++ {
 			plusHz := hz[pi]
-			condStr := fmt.Sprintf("%03d -> %03d", minusHz, plusHz)
+			condStr := fmt.Sprintf("%03d -> %03d", int(minusHz), int(plusHz))
 			ss.Kinase.Condition = cond
 			ss.Kinase.Cond = condStr
 			ss.RunImpl(minusHz, plusHz, ss.Config.Run.Trials)
