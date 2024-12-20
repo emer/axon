@@ -411,9 +411,9 @@ func TestNetActShort(t *testing.T) {
 }
 
 func TestGPUAct(t *testing.T) {
-	// if os.Getenv("TEST_GPU") != "true" {
-	// 	t.Skip("Set TEST_GPU env var to run GPU tests")
-	// }
+	if os.Getenv("TEST_GPU") != "true" {
+		t.Skip("Set TEST_GPU env var to run GPU tests")
+	}
 	NetActTestShort(t, Tol6, true)
 	// NetActTest(t, Tol6, true, true)
 }
