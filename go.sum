@@ -36,8 +36,8 @@ github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dlclark/regexp2 v1.11.0 h1:G/nrcoOa7ZXlpoa/91N3X7mM3r8eIlMBBJZvsz/mxKI=
 github.com/dlclark/regexp2 v1.11.0/go.mod h1:DHkYz0B9wPfa6wondMfaivmHpzrQ3v9q8cnmRbL6yW8=
-github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20241201091049-2bf1680528df h1:mYQPr9cA5hrcnXe/ZBL4eShmo9hXH/Jn2O0EIHE0Lp0=
-github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20241201091049-2bf1680528df/go.mod h1:mW3FS2fPR2gdVu+oXmri3Rw6hDgBz+JUFZf7+4WJL0E=
+github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20241220000411-ea37889cc253 h1:kJjaVx/Um7XLRMOOpiIeOL5quT/Oc5rXsgKiPxbRxo8=
+github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20241220000411-ea37889cc253/go.mod h1:mW3FS2fPR2gdVu+oXmri3Rw6hDgBz+JUFZf7+4WJL0E=
 github.com/emer/v1vision v0.1.0 h1:XpNBhRFQYghzaGm8e7wktivOUMRfMPvyIc88tRqBstc=
 github.com/emer/v1vision v0.1.0/go.mod h1:bvigJ6rebuyuuQNZuGBMveDdCsOQYwC5rhzS/DtKjMQ=
 github.com/ergochat/readline v0.1.2 h1:zxiwQB8DyTLD0HSWthJlnvs5E2X1qnyXZ44RFf1jRlg=
