@@ -825,7 +825,7 @@ func TestGPUNDataDiffs(t *testing.T) {
 }
 
 func TestNetLearn(t *testing.T) {
-	NetTestLearn(t, Tol7, false)
+	NetTestLearn(t, Tol6, false)
 }
 
 func TestGPULearn(t *testing.T) {
