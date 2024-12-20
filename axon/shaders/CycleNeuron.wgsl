@@ -987,9 +987,14 @@ struct KirParams {
 fn KirParams_Minf(kp: ptr<function,KirParams>, vbio: f32) -> f32 {
 	return 1.0 / (1.0 + FastExp((vbio-((*kp).MinfOff))/(*kp).MinfTau));
 }
+fn KirParams_MTau(kp: ptr<function,KirParams>, vbio: f32) -> f32 {
+	var alpha = 0.1 * FastExp((vbio-((*kp).RiseOff))/(-(*kp).RiseTau));
+	var beta = 0.27 / (1.0 + FastExp((vbio-((*kp).DecayOff))/(-(*kp).DecayTau)));
+	var sum = alpha + beta;return 1.0 / sum;
+}
 fn KirParams_DM(kp: ptr<function,KirParams>, vbio: f32,m: f32) -> f32 {
 	var minf = KirParams_Minf(kp, vbio);
-	var mtau = f32(4.0);
+	var mtau = KirParams_MTau(kp, vbio);
 	var dm = (minf - m) / (mtau * 3); // 3 = Q10
 return dm;
 }

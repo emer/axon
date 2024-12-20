@@ -165,7 +165,7 @@ func (ss *Sim) ConfigEnv() {
 		tst = ss.Envs.ByMode(Test).(*env.FixedTable)
 	}
 
-	inputs := tensorfs.DirTable(ss.Root.RecycleDir("Inputs/Test"), nil)
+	inputs := tensorfs.DirTable(ss.Root.Dir("Inputs/Test"), nil)
 
 	tst.Name = Test.String()
 	tst.Config(table.NewView(inputs))
@@ -318,7 +318,7 @@ func (ss *Sim) ConfigLoops() {
 // Any other start-of-trial logic can also be put here.
 func (ss *Sim) ApplyInputs(mode Modes) {
 	net := ss.Net
-	curModeDir := ss.Current.RecycleDir(mode.String())
+	curModeDir := ss.Current.Dir(mode.String())
 	ev := ss.Envs.ByMode(mode)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	net.InitExt()
@@ -355,7 +355,7 @@ func (ss *Sim) ConfigInputs() {
 
 	patgen.PermutedBinaryMinDiff(dt.ColumnByIndex(1).Tensor.(*tensor.Float32), int(ss.Config.Params.InputPct), 1, 0, int(ss.Config.Params.InputPct)/2)
 
-	tensorfs.DirFromTable(ss.Root.RecycleDir("Inputs/Test"), dt)
+	tensorfs.DirFromTable(ss.Root.Dir("Inputs/Test"), dt)
 }
 
 //////// Stats
@@ -432,8 +432,8 @@ func (ss *Sim) StatsInit() {
 // in the tensorfs system.
 func (ss *Sim) ConfigStats() {
 	net := ss.Net
-	ss.Stats, _ = ss.Root.Mkdir("Stats")
-	ss.Current, _ = ss.Stats.Mkdir("Current")
+	ss.Stats = ss.Root.Dir("Stats")
+	ss.Current = ss.Stats.Dir("Current")
 
 	ss.SetRunName()
 
@@ -462,9 +462,9 @@ func (ss *Sim) ConfigStats() {
 			di := 0
 			for _, stnm := range statNames {
 				name := lnm + "_" + stnm
-				modeDir := ss.Stats.RecycleDir(mode.String())
-				curModeDir := ss.Current.RecycleDir(mode.String())
-				levelDir := modeDir.RecycleDir(level.String())
+				modeDir := ss.Stats.Dir(mode.String())
+				curModeDir := ss.Current.Dir(mode.String())
+				levelDir := modeDir.Dir(level.String())
 				tsr := levelDir.Float64(name)
 				ndata := 1
 				if phase == Start {
@@ -499,7 +499,7 @@ func (ss *Sim) ConfigStats() {
 					curModeDir.Float64(name, ndata).SetFloat1D(float64(stat), di)
 					tsr.AppendRowFloat(float64(stat))
 				default:
-					subDir := modeDir.RecycleDir((level - 1).String())
+					subDir := modeDir.Dir((level - 1).String())
 					stat := stats.StatMean.Call(subDir.Value(name)).Float1D(0)
 					tsr.AppendRowFloat(stat)
 				}
@@ -523,7 +523,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 	}
 	di := vu.View.Di
 	counters += fmt.Sprintf(" Di: %d", di)
-	curModeDir := ss.Current.RecycleDir(mode.String())
+	curModeDir := ss.Current.Dir(mode.String())
 	if curModeDir.Node("TrialName") == nil {
 		return counters
 	}

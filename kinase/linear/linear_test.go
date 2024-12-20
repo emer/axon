@@ -7,6 +7,7 @@ package kinase
 import (
 	"testing"
 
+	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
 )
 
@@ -18,6 +19,6 @@ func TestLinear(t *testing.T) {
 	ls.Update()
 	ls.Init()
 	ls.Run()
-	ls.Data.SaveCSV("linear_data.tsv", table.Tab, table.Headers)
+	ls.Data.SaveCSV("linear_data.tsv", tensor.Tab, table.Headers)
 	ls.Regress()
 }

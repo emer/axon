@@ -1,6 +1,6 @@
 # sKCa: Voltage-gated Calcium Channels
 
-This plots the sKCa current function, which is describes the small-conductance calcium-activated potassium channel, using the equations described in Fujita et al (2012) based on Gunay et al (2008), (also Muddapu & Chakravarthy, 2021).  There is a gating factor M that depends on the Ca concentration, modeled using an X / (X + C50) form Hill equation:
+This plots the sKCa current function, which describes the small-conductance calcium-activated potassium channel, using the equations described in Fujita et al (2012) based on Gunay et al (2008), (also Muddapu & Chakravarthy, 2021).  There is a gating factor M that depends on the Ca concentration, modeled using an X / (X + C50) form Hill equation:
 
 ```Go
 M_hill(ca) = ca^h / (ca^h + c50^h)

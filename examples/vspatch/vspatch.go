@@ -356,7 +356,7 @@ func (ss *Sim) ConfigLoops() {
 func (ss *Sim) ApplyInputs(mode Modes, trial, theta int) {
 	net := ss.Net
 	ndata := int(net.Context().NData)
-	curModeDir := ss.Current.RecycleDir(mode.String())
+	curModeDir := ss.Current.Dir(mode.String())
 	lays := []string{"State"}
 	net.InitExt()
 	for di := range ndata {
@@ -503,8 +503,8 @@ func (ss *Sim) StatsInit() {
 // in the tensorfs system.
 func (ss *Sim) ConfigStats() {
 	net := ss.Net
-	ss.Stats, _ = ss.Root.Mkdir("Stats")
-	ss.Current, _ = ss.Stats.Mkdir("Current")
+	ss.Stats = ss.Root.Dir("Stats")
+	ss.Current = ss.Stats.Dir("Current")
 
 	ss.SetRunName()
 
@@ -528,10 +528,10 @@ func (ss *Sim) ConfigStats() {
 	numStats := len(statNames)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		for si, name := range statNames {
-			modeDir := ss.Stats.RecycleDir(mode.String())
-			curModeDir := ss.Current.RecycleDir(mode.String())
-			levelDir := modeDir.RecycleDir(level.String())
-			subDir := modeDir.RecycleDir((level - 1).String()) // note: will fail for Cycle
+			modeDir := ss.Stats.Dir(mode.String())
+			curModeDir := ss.Current.Dir(mode.String())
+			levelDir := modeDir.Dir(level.String())
+			subDir := modeDir.Dir((level - 1).String()) // note: will fail for Cycle
 			tsr := levelDir.Float64(name)
 			ndata := int(ss.Net.Context().NData)
 			var stat float64
@@ -594,7 +594,7 @@ func (ss *Sim) ConfigStats() {
 					stats.GroupStats(curModeDir, stats.StatMean, subDir.Value(name))
 				}
 				// note: results go under Group name: Cond
-				gp := curModeDir.RecycleDir("Stats/Cond/" + name).Value("Mean")
+				gp := curModeDir.Dir("Stats/Cond/" + name).Value("Mean")
 				plot.SetFirstStylerTo(gp, func(s *plot.Style) {
 					s.Range.SetMin(0)
 					if si >= 2 && si <= 4 {
@@ -603,25 +603,25 @@ func (ss *Sim) ConfigStats() {
 				})
 				if si == numStats-1 {
 					nrows := gp.DimSize(0)
-					row := curModeDir.RecycleDir("Stats").Int("Row", nrows)
+					row := curModeDir.Dir("Stats").Int("Row", nrows)
 					for i := range nrows {
 						row.Set(i, i)
 					}
 					_, idx := ss.GUI.Tabs.CurrentTab()
-					gpst := curModeDir.RecycleDir("Stats/Cond").Value("Cond")
+					gpst := curModeDir.Dir("Stats/Cond").Value("Cond")
 					for j := range gpst.DimSize(0) {
 						val := gpst.String1D(j)
 						for si, name := range statNames {
 							if si == 0 {
 								continue
 							}
-							svals := curModeDir.RecycleDir("Stats/Cond/" + name).Value("Mean")
+							svals := curModeDir.Dir("Stats/Cond/" + name).Value("Mean")
 							snm := "Cond_" + val + "_" + name
 							tsr := levelDir.Float64(snm)
 							tsr.AppendRowFloat(svals.Float1D(j))
 						}
 					}
-					ss.GUI.Tabs.PlotTensorFS(curModeDir.RecycleDir("Stats"))
+					ss.GUI.Tabs.PlotTensorFS(curModeDir.Dir("Stats"))
 					ss.GUI.Tabs.SelectTabIndex(idx)
 				}
 			case Run:
@@ -646,7 +646,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 	}
 	di := vu.View.Di
 	counters += fmt.Sprintf(" Di: %d", di)
-	curModeDir := ss.Current.RecycleDir(mode.String())
+	curModeDir := ss.Current.Dir(mode.String())
 	if curModeDir.Node("TrialName") == nil {
 		return counters
 	}

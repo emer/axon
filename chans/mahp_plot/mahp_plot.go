@@ -2,35 +2,24 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// mahp_plot plots an equation updating over time in a table.Table and PlotView.
-package main
+// mahp_plot plots the M-type voltage gated potassium channel,
+// important for after-hyperpolarization (AHP).
+package mahp_plot
 
 //go:generate core generate -add-types
 
 import (
-	"strconv"
-
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
-	"cogentcore.org/core/plot/plotcore"
-	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/core/plot"
+	"cogentcore.org/core/tensor/databrowser"
+	"cogentcore.org/core/tensor/tensorfs"
 	"cogentcore.org/core/tree"
 	"github.com/emer/axon/v2/chans"
 )
 
-func main() {
-	sim := &Sim{}
-	sim.Config()
-	sim.VmRun()
-	b := sim.ConfigGUI()
-	b.RunMainWindow()
-}
-
-// LogPrec is precision for saving float values in logs
-const LogPrec = 4
-
-// Sim holds the params, table, etc
-type Sim struct {
+// Plot holds the params, table, etc
+type Plot struct {
 
 	// mAHP function
 	Mahp chans.MahpParams `display:"inline"`
@@ -59,202 +48,131 @@ type Sim struct {
 	// time-run ending membrane potential
 	TimeVend float32
 
-	// table for plot
-	Table *table.Table `display:"no-inline"`
-
-	// the plot
-	Plot *plotcore.PlotEditor `display:"-"`
-
-	// table for plot
-	TimeTable *table.Table `display:"no-inline"`
-
-	// the plot
-	TimePlot *plotcore.PlotEditor `display:"-"`
+	Dir  *tensorfs.Node     `display:"-"`
+	Tabs databrowser.Tabber `display:"-"`
 }
 
 // Config configures all the elements using the standard functions
-func (ss *Sim) Config() {
-	ss.Mahp.Defaults()
-	ss.Mahp.Gbar = 1
-	ss.Vstart = -100
-	ss.Vend = 100
-	ss.Vstep = 1
-	ss.TimeSteps = 300
-	ss.TimeSpike = true
-	ss.SpikeFreq = 50
-	ss.TimeVstart = -70
-	ss.TimeVend = -50
-	ss.Update()
-	ss.Table = table.New()
-	ss.ConfigTable(ss.Table)
-	ss.TimeTable = table.New()
-	ss.ConfigTimeTable(ss.TimeTable)
+func (pl *Plot) Config(parent *tensorfs.Node, tabs databrowser.Tabber) {
+	pl.Dir = parent.Dir("Mahp")
+	pl.Tabs = tabs
+
+	pl.Mahp.Defaults()
+	pl.Mahp.Gbar = 1
+	pl.Vstart = -100
+	pl.Vend = 100
+	pl.Vstep = 1
+	pl.TimeSteps = 300
+	pl.TimeSpike = true
+	pl.SpikeFreq = 50
+	pl.TimeVstart = -70
+	pl.TimeVend = -50
+	pl.Update()
 }
 
 // Update updates computed values
-func (ss *Sim) Update() {
+func (pl *Plot) Update() {
 }
 
-// VmRun plots the equation as a function of V
-func (ss *Sim) VmRun() { //types:add
-	ss.Update()
-	dt := ss.Table
+// GVRun plots the conductance G (and other variables) as a function of V.
+func (pl *Plot) GVRun() { //types:add
+	pl.Update()
+	dir := pl.Dir.Dir("G_V")
 
-	mp := &ss.Mahp
-
-	nv := int((ss.Vend - ss.Vstart) / ss.Vstep)
-	dt.SetNumRows(nv)
-	for vi := 0; vi < nv; vi++ {
-		vbio := ss.Vstart + float32(vi)*ss.Vstep
+	mp := &pl.Mahp
+	nv := int((pl.Vend - pl.Vstart) / pl.Vstep)
+	for vi := range nv {
+		vbio := pl.Vstart + float32(vi)*pl.Vstep
 		var ninf, tau float32
 		mp.NinfTauFromV(vbio, &ninf, &tau)
 
-		dt.SetFloat("V", vi, float64(vbio))
-		dt.SetFloat("Ninf", vi, float64(ninf))
-		dt.SetFloat("Tau", vi, float64(tau))
+		dir.Float64("V", nv).SetFloat1D(float64(vbio), vi)
+		dir.Float64("Ninf", nv).SetFloat1D(float64(ninf), vi)
+		dir.Float64("Tau", nv).SetFloat1D(float64(tau), vi)
 	}
-	if ss.Plot != nil {
-		ss.Plot.UpdatePlot()
+	plot.SetFirstStylerTo(dir.Float64("V"), func(s *plot.Style) {
+		s.Role = plot.X
+	})
+	ons := []string{"Ninf", "Tau"}
+	for _, on := range ons {
+		plot.SetFirstStylerTo(dir.Float64(on), func(s *plot.Style) {
+			s.On = true
+			s.Plot.Title = "Mahp G(V)"
+		})
+	}
+	if pl.Tabs != nil && pl.Tabs.AsDataTabs().IsVisible() {
+		pl.Tabs.PlotTensorFS(dir)
 	}
 }
-
-func (ss *Sim) ConfigTable(dt *table.Table) {
-	dt.SetMetaData("name", "mAHPplotTable")
-	dt.SetMetaData("read-only", "true")
-	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
-
-	dt.AddFloat64Column("V")
-	dt.AddFloat64Column("Ninf")
-	dt.AddFloat64Column("Tau")
-	dt.SetNumRows(0)
-}
-
-func (ss *Sim) ConfigPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
-	plt.Options.Title = "mAHP V Function Plot"
-	plt.Options.XAxis = "V"
-	plt.SetTable(dt)
-	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColumnOptions("V", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("Ninf", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	plt.SetColumnOptions("Tau", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 1)
-	return plt
-}
-
-/////////////////////////////////////////////////////////////////
 
 // TimeRun runs the equation over time.
-func (ss *Sim) TimeRun() { //types:add
-	ss.Update()
-	dt := ss.TimeTable
+func (pl *Plot) TimeRun() { //types:add
+	pl.Update()
+	dir := pl.Dir.Dir("G_Time")
+	nv := pl.TimeSteps
 
-	mp := &ss.Mahp
+	mp := &pl.Mahp
 
 	var n, tau float32
-	mp.NinfTauFromV(ss.TimeVstart, &n, &tau)
+	mp.NinfTauFromV(pl.TimeVstart, &n, &tau)
 	kna := float32(0)
 	msdt := float32(0.001)
-	v := ss.TimeVstart
-	vinc := float32(2) * (ss.TimeVend - ss.TimeVstart) / float32(ss.TimeSteps)
+	v := pl.TimeVstart
+	vinc := float32(2) * (pl.TimeVend - pl.TimeVstart) / float32(pl.TimeSteps)
 
-	isi := int(1000 / ss.SpikeFreq)
-
-	dt.SetNumRows(ss.TimeSteps)
-	for ti := 1; ti <= ss.TimeSteps; ti++ {
+	isi := int(1000 / pl.SpikeFreq)
+	for ti := range nv {
 		vnorm := chans.VFromBio(v)
-		t := float32(ti) * msdt
+		t := float32(ti+1) * msdt
 
 		var ninf, tau float32
 		mp.NinfTauFromV(v, &ninf, &tau)
 		g := mp.GmAHP(vnorm, &n)
 
-		dt.SetFloat("Time", ti, float64(t))
-		dt.SetFloat("V", ti, float64(v))
-		dt.SetFloat("GmAHP", ti, float64(g))
-		dt.SetFloat("N", ti, float64(n))
-		dt.SetFloat("Ninf", ti, float64(ninf))
-		dt.SetFloat("Tau", ti, float64(tau))
-		dt.SetFloat("Kna", ti, float64(kna))
+		dir.Float64("Time", nv).SetFloat1D(float64(t), ti)
+		dir.Float64("V", nv).SetFloat1D(float64(v), ti)
+		dir.Float64("GmAHP", nv).SetFloat1D(float64(g), ti)
+		dir.Float64("N", nv).SetFloat1D(float64(n), ti)
+		dir.Float64("Ninf", nv).SetFloat1D(float64(ninf), ti)
+		dir.Float64("Tau", nv).SetFloat1D(float64(tau), ti)
+		dir.Float64("Kna", nv).SetFloat1D(float64(kna), ti)
 
-		if ss.TimeSpike {
+		if pl.TimeSpike {
 			si := ti % isi
 			if si == 0 {
-				v = ss.TimeVend
+				v = pl.TimeVend
 				kna += 0.05 * (1 - kna)
 			} else {
-				v = ss.TimeVstart + (float32(si)/float32(isi))*(ss.TimeVend-ss.TimeVstart)
+				v = pl.TimeVstart + (float32(si)/float32(isi))*(pl.TimeVend-pl.TimeVstart)
 				kna -= kna / 50
 			}
 		} else {
 			v += vinc
-			if v > ss.TimeVend {
-				v = ss.TimeVend
+			if v > pl.TimeVend {
+				v = pl.TimeVend
 			}
 		}
 	}
-	if ss.TimePlot != nil {
-		ss.TimePlot.UpdatePlot()
+	plot.SetFirstStylerTo(dir.Float64("Time"), func(s *plot.Style) {
+		s.Role = plot.X
+	})
+	ons := []string{"GmAHP", "N"}
+	for _, on := range ons {
+		plot.SetFirstStylerTo(dir.Float64(on), func(s *plot.Style) {
+			s.On = true
+			s.Plot.Title = "Mahp G(t)"
+		})
+	}
+	if pl.Tabs != nil && pl.Tabs.AsDataTabs().IsVisible() {
+		pl.Tabs.PlotTensorFS(dir)
 	}
 }
 
-func (ss *Sim) ConfigTimeTable(dt *table.Table) {
-	dt.SetMetaData("name", "mAHPplotTable")
-	dt.SetMetaData("read-only", "true")
-	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
-
-	dt.AddFloat64Column("Time")
-	dt.AddFloat64Column("V")
-	dt.AddFloat64Column("GmAHP")
-	dt.AddFloat64Column("N")
-	dt.AddFloat64Column("Ninf")
-	dt.AddFloat64Column("Tau")
-	dt.AddFloat64Column("Kna")
-	dt.SetNumRows(0)
-}
-
-func (ss *Sim) ConfigTimePlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
-	plt.Options.Title = "Time Function Plot"
-	plt.Options.XAxis = "Time"
-	plt.SetTable(dt)
-	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColumnOptions("Time", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("V", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("GmAHP", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("N", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("Ninf", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("Tau", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("Kna", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 1)
-	return plt
-}
-
-// ConfigGUI configures the Cogent Core GUI interface for this simulation.
-func (ss *Sim) ConfigGUI() *core.Body {
-	b := core.NewBody("Mahp Plot")
-
-	split := core.NewSplits(b)
-	core.NewForm(split).SetStruct(ss)
-
-	tv := core.NewTabs(split)
-
-	vgp, _ := tv.NewTab("V-G Plot")
-	ss.Plot = plotcore.NewSubPlot(vgp)
-	ss.ConfigPlot(ss.Plot, ss.Table)
-
-	ttp, _ := tv.NewTab("TimePlot")
-	ss.TimePlot = plotcore.NewSubPlot(ttp)
-	ss.ConfigTimePlot(ss.TimePlot, ss.TimeTable)
-
-	split.SetSplits(.3, .7)
-
-	b.AddTopBar(func(bar *core.Frame) {
-		core.NewToolbar(bar).Maker(func(p *tree.Plan) {
-			tree.Add(p, func(w *core.FuncButton) {
-				w.SetFunc(ss.VmRun).SetIcon(icons.PlayArrow)
-			})
-			tree.Add(p, func(w *core.FuncButton) {
-				w.SetFunc(ss.TimeRun).SetIcon(icons.PlayArrow)
-			})
-		})
+func (pl *Plot) MakeToolbar(p *tree.Plan) {
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(pl.GVRun).SetIcon(icons.PlayArrow)
 	})
-
-	return b
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(pl.TimeRun).SetIcon(icons.PlayArrow)
+	})
 }

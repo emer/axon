@@ -2,39 +2,25 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// gabab_plot plots an equation updating over time in a table.Table and PlotView.
-package main
+// gabab_plot plots GABA-B long-duration inhibitory channel equations.
+package gabab_plot
 
 //go:generate core generate -add-types
 
 import (
 	"math"
-	"strconv"
 
+	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
-	"cogentcore.org/core/math32"
-	"cogentcore.org/core/plot/plotcore"
-	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/core/plot"
+	"cogentcore.org/core/tensor/databrowser"
+	"cogentcore.org/core/tensor/tensorfs"
 	"cogentcore.org/core/tree"
 	"github.com/emer/axon/v2/chans"
 )
 
-func main() {
-	sim := &Sim{}
-	sim.Config()
-	sim.VGRun()
-	sim.SGRun()
-	b := sim.ConfigGUI()
-	b.RunMainWindow()
-}
-
-// LogPrec is precision for saving float values in logs
-const LogPrec = 4
-
-// Sim holds the params, table, etc
-type Sim struct {
-
+type Plot struct {
 	// standard chans version of GABAB
 	GABAstd chans.GABABParams
 
@@ -80,261 +66,164 @@ type Sim struct {
 	// time increment per step
 	TimeInc float64
 
-	// table for plot
-	VGTable *table.Table `display:"no-inline"`
-
-	// table for plot
-	SGTable *table.Table `display:"no-inline"`
-
-	// table for plot
-	TimeTable *table.Table `display:"no-inline"`
-
-	// the plot
-	VGPlot *plotcore.PlotEditor `display:"-"`
-
-	// the plot
-	SGPlot *plotcore.PlotEditor `display:"-"`
-
-	// the plot
-	TimePlot *plotcore.PlotEditor `display:"-"`
+	Dir  *tensorfs.Node     `display:"-"`
+	Tabs databrowser.Tabber `display:"-"`
 }
 
 // Config configures all the elements using the standard functions
-func (ss *Sim) Config() {
-	ss.GABAstd.Defaults()
-	ss.GABAstd.GiSpike = 1
-	ss.GABAbv = 0.1
-	ss.GABAbo = 10
-	ss.GABAberev = -90
-	ss.Vstart = -90
-	ss.Vend = 0
-	ss.Vstep = .01
-	ss.Smax = 30
-	ss.RiseTau = 45
-	ss.DecayTau = 50
-	ss.GsXInit = 1
-	ss.TimeSteps = 200
-	ss.TimeInc = .001
-	ss.Update()
+func (pl *Plot) Config(parent *tensorfs.Node, tabs databrowser.Tabber) {
+	pl.Dir = parent.Dir("GabaB")
+	pl.Tabs = tabs
 
-	ss.VGTable = table.New()
-	ss.ConfigVGTable(ss.VGTable)
-
-	ss.SGTable = table.New()
-	ss.ConfigSGTable(ss.SGTable)
-
-	ss.TimeTable = table.New()
-	ss.ConfigTimeTable(ss.TimeTable)
+	pl.GABAstd.Defaults()
+	pl.GABAstd.GiSpike = 1
+	pl.GABAbv = 0.1
+	pl.GABAbo = 10
+	pl.GABAberev = -90
+	pl.Vstart = -90
+	pl.Vend = 0
+	pl.Vstep = .01
+	pl.Smax = 30
+	pl.RiseTau = 45
+	pl.DecayTau = 50
+	pl.GsXInit = 1
+	pl.TimeSteps = 200
+	pl.TimeInc = .001
+	pl.Update()
 }
 
 // Update updates computed values
-func (ss *Sim) Update() {
-	ss.TauFact = math.Pow(ss.DecayTau/ss.RiseTau, ss.RiseTau/(ss.DecayTau-ss.RiseTau))
-	ss.MaxTime = ((ss.RiseTau * ss.DecayTau) / (ss.DecayTau - ss.RiseTau)) * math.Log(ss.DecayTau/ss.RiseTau)
+func (pl *Plot) Update() {
+	pl.TauFact = math.Pow(pl.DecayTau/pl.RiseTau, pl.RiseTau/(pl.DecayTau-pl.RiseTau))
+	pl.MaxTime = ((pl.RiseTau * pl.DecayTau) / (pl.DecayTau - pl.RiseTau)) * math.Log(pl.DecayTau/pl.RiseTau)
 }
 
-// VGRun runs the V-G equation.
-func (ss *Sim) VGRun() { //types:add
-	ss.Update()
-	dt := ss.VGTable
+// GVRun plots the conductance G (and other variables) as a function of V.
+func (pl *Plot) GVRun() { //types:add
+	pl.Update()
+	dir := pl.Dir.Dir("G_V")
 
-	nv := int((ss.Vend - ss.Vstart) / ss.Vstep)
-	dt.SetNumRows(nv)
+	nv := int((pl.Vend - pl.Vstart) / pl.Vstep)
 	v := 0.0
 	g := 0.0
-	for vi := 0; vi < nv; vi++ {
-		v = ss.Vstart + float64(vi)*ss.Vstep
-		g = float64(ss.GABAstd.Gbar) * (v - ss.GABAberev) / (1 + math.Exp(ss.GABAbv*((v-ss.GABAberev)+ss.GABAbo)))
-		gs := ss.GABAstd.Gbar * ss.GABAstd.GFromV(chans.VFromBio(float32(v)))
+	for vi := range nv {
+		v = pl.Vstart + float64(vi)*pl.Vstep
+		g = float64(pl.GABAstd.Gbar) * (v - pl.GABAberev) / (1 + math.Exp(pl.GABAbv*((v-pl.GABAberev)+pl.GABAbo)))
+		gs := pl.GABAstd.Gbar * pl.GABAstd.GFromV(chans.VFromBio(float32(v)))
 
-		gbug := 0.2 / (1.0 + math32.FastExp(float32(0.1*((v+90)+10))))
-
-		dt.SetFloat("V", vi, v)
-		dt.SetFloat("GgabaB", vi, g)
-		dt.SetFloat("GgabaB_std", vi, float64(gs))
-		dt.SetFloat("GgabaB_bug", vi, float64(gbug))
+		dir.Float64("V", nv).SetFloat1D(v, vi)
+		dir.Float64("GgabaB", nv).SetFloat1D(g, vi)
+		dir.Float64("GgabaBstd", nv).SetFloat1D(float64(gs), vi)
 	}
-	if ss.VGPlot != nil {
-		ss.VGPlot.UpdatePlot()
+	metadata.SetDoc(dir.Float64("GgabaBstd"), "std is from code actually used in models")
+	plot.SetFirstStylerTo(dir.Float64("V"), func(s *plot.Style) {
+		s.Role = plot.X
+	})
+	ons := []string{"GgabaB"}
+	for _, on := range ons {
+		plot.SetFirstStylerTo(dir.Float64(on), func(s *plot.Style) {
+			s.On = true
+			s.Plot.Title = "GABA-B G(V)"
+		})
+	}
+	if pl.Tabs != nil && pl.Tabs.AsDataTabs().IsVisible() {
+		pl.Tabs.PlotTensorFS(dir)
 	}
 }
 
-func (ss *Sim) ConfigVGTable(dt *table.Table) {
-	dt.SetMetaData("name", "GABABplotTable")
-	dt.SetMetaData("read-only", "true")
-	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
+// GSRun plots conductance over spiking.
+func (pl *Plot) GSRun() { //types:add
+	pl.Update()
+	dir := pl.Dir.Dir("G_Spike")
 
-	dt.AddFloat64Column("V")
-	dt.AddFloat64Column("GgabaB")
-	dt.AddFloat64Column("GgabaB_std")
-	dt.AddFloat64Column("GgabaB_bug")
-	dt.SetNumRows(0)
-}
-
-func (ss *Sim) ConfigVGPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
-	plt.Options.Title = "V-G Function Plot"
-	plt.Options.XAxis = "V"
-	plt.SetTable(dt)
-	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColumnOptions("V", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("GgabaB", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("GgabaB_std", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	return plt
-}
-
-//////////////////////////////////////////////////
-
-// SGRun runs the spike-g equation.
-func (ss *Sim) SGRun() { //types:add
-	ss.Update()
-	dt := ss.SGTable
-
-	nv := int(float64(ss.Smax) / ss.Vstep)
-	dt.SetNumRows(nv)
+	nv := int(float64(pl.Smax) / pl.Vstep)
 	s := 0.0
 	g := 0.0
-	for si := 0; si < nv; si++ {
-		s = float64(si) * ss.Vstep
+	for si := range nv {
+		s = float64(si) * pl.Vstep
 		g = 1.0 / (1.0 + math.Exp(-(s-7.1)/1.4))
-		gs := ss.GABAstd.GFromS(float32(s))
+		gs := pl.GABAstd.GFromS(float32(s))
 
-		dt.SetFloat("S", si, s)
-		dt.SetFloat("GgabaB_max", si, g)
-		dt.SetFloat("GgabaBstd_max", si, float64(gs))
+		dir.Float64("S", nv).SetFloat1D(s, si)
+		dir.Float64("GgabaB_max", nv).SetFloat1D(g, si)
+		dir.Float64("GgabaBstd_max", nv).SetFloat1D(float64(gs), si)
 	}
-	if ss.SGPlot != nil {
-		ss.SGPlot.UpdatePlot()
+	metadata.SetDoc(dir.Float64("GgabaBstd_max"), "std is from code actually used in models")
+	plot.SetFirstStylerTo(dir.Float64("S"), func(s *plot.Style) {
+		s.Role = plot.X
+	})
+	ons := []string{"GgabaB_max"}
+	for _, on := range ons {
+		plot.SetFirstStylerTo(dir.Float64(on), func(s *plot.Style) {
+			s.On = true
+			s.Plot.Title = "GABAB G(spike)"
+		})
+	}
+	if pl.Tabs != nil && pl.Tabs.AsDataTabs().IsVisible() {
+		pl.Tabs.PlotTensorFS(dir)
 	}
 }
 
-func (ss *Sim) ConfigSGTable(dt *table.Table) {
-	dt.SetMetaData("name", "SG_GABAplotTable")
-	dt.SetMetaData("read-only", "true")
-	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
+// TimeRun runs the equations over time.
+func (pl *Plot) TimeRun() { //types:add
+	pl.Update()
+	dir := pl.Dir.Dir("G_Time")
+	nv := pl.TimeSteps
 
-	dt.AddFloat64Column("S")
-	dt.AddFloat64Column("GgabaB_max")
-	dt.AddFloat64Column("GgabaBstd_max")
-	dt.SetNumRows(0)
-}
-
-func (ss *Sim) ConfigSGPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
-	plt.Options.Title = "S-G Function Plot"
-	plt.Options.XAxis = "S"
-	plt.SetTable(dt)
-	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColumnOptions("S", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("GgabaB_max", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("GgabaBstd_max", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	return plt
-}
-
-//////////////////////////////////////////////////
-
-// TimeRun runs the equation.
-func (ss *Sim) TimeRun() { //types:add
-	ss.Update()
-	dt := ss.TimeTable
-
-	dt.SetNumRows(ss.TimeSteps)
 	time := 0.0
 	gs := 0.0
-	x := ss.GsXInit
-	gabaBx := float32(ss.GsXInit)
+	x := pl.GsXInit
+	gabaBx := float32(pl.GsXInit)
 	gabaB := float32(0.0)
 	gi := 0.0 // just goes down
-	for t := 0; t < ss.TimeSteps; t++ {
+	for t := range nv {
 		// record starting state first, then update
-		dt.SetFloat("Time", t, time)
-		dt.SetFloat("Gs", t, gs)
-		dt.SetFloat("GsX", t, x)
-		dt.SetFloat("GABAB", t, float64(gabaB))
-		dt.SetFloat("GABABx", t, float64(gabaBx))
+		dir.Float64("Time", nv).SetFloat1D(float64(time), t)
+		dir.Float64("GabaB", nv).SetFloat1D(float64(gs), t)
+		dir.Float64("GabaBX", nv).SetFloat1D(float64(x), t)
+		dir.Float64("GabaBstd", nv).SetFloat1D(float64(gabaB), t)
+		dir.Float64("GabaBXstd", nv).SetFloat1D(float64(gabaBx), t)
 
 		gis := 1.0 / (1.0 + math.Exp(-(gi-7.1)/1.4))
-		dGs := (ss.TauFact*x - gs) / ss.RiseTau
-		dXo := -x / ss.DecayTau
+		dGs := (pl.TauFact*x - gs) / pl.RiseTau
+		dXo := -x / pl.DecayTau
 		gs += dGs
 		x += gis + dXo
 
 		var dG, dX float32
-		ss.GABAstd.BiExp(gabaB, gabaBx, &dG, &dX)
-		dt.SetFloat("dG", t, float64(dG))
-		dt.SetFloat("dX", t, float64(dX))
+		pl.GABAstd.BiExp(gabaB, gabaBx, &dG, &dX)
+		dir.Float64("dG", nv).SetFloat1D(float64(dG), t)
+		dir.Float64("dX", nv).SetFloat1D(float64(dX), t)
 
-		ss.GABAstd.GABAB(float32(gi), &gabaB, &gabaBx)
+		pl.GABAstd.GABAB(float32(gi), &gabaB, &gabaBx)
 
-		time += ss.TimeInc
+		time += pl.TimeInc
 	}
-	if ss.TimePlot != nil {
-		ss.TimePlot.UpdatePlot()
-	}
-}
-
-func (ss *Sim) ConfigTimeTable(dt *table.Table) {
-	dt.SetMetaData("name", "TimeGaBabplotTable")
-	dt.SetMetaData("read-only", "true")
-	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
-
-	dt.AddFloat64Column("Time")
-	dt.AddFloat64Column("Gs")
-	dt.AddFloat64Column("GsX")
-	dt.AddFloat64Column("GABAB")
-	dt.AddFloat64Column("GABABx")
-	dt.AddFloat64Column("dG")
-	dt.AddFloat64Column("dX")
-	dt.SetNumRows(0)
-}
-
-func (ss *Sim) ConfigTimePlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
-	plt.Options.Title = "G Time Function Plot"
-	plt.Options.XAxis = "Time"
-	plt.SetTable(dt)
-	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColumnOptions("Time", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("Gs", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("GsX", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("GABAB", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("GABABx", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	return plt
-}
-
-// ConfigGUI configures the Cogent Core GUI interface for this simulation.
-func (ss *Sim) ConfigGUI() *core.Body {
-	b := core.NewBody("Gabab Plot")
-
-	split := core.NewSplits(b)
-	core.NewForm(split).SetStruct(ss)
-
-	tv := core.NewTabs(split)
-
-	tvg, _ := tv.NewTab("V-G Plot")
-	ss.VGPlot = plotcore.NewSubPlot(tvg)
-	ss.ConfigVGPlot(ss.VGPlot, ss.VGTable)
-
-	tsg, _ := tv.NewTab("S-G Plot")
-	ss.SGPlot = plotcore.NewSubPlot(tsg)
-	ss.ConfigSGPlot(ss.SGPlot, ss.SGTable)
-
-	ttp, _ := tv.NewTab("TimePlot")
-	ss.TimePlot = plotcore.NewSubPlot(ttp)
-	ss.ConfigTimePlot(ss.TimePlot, ss.TimeTable)
-
-	split.SetSplits(.3, .7)
-
-	b.AddTopBar(func(bar *core.Frame) {
-		core.NewToolbar(bar).Maker(func(p *tree.Plan) {
-			tree.Add(p, func(w *core.FuncButton) {
-				w.SetFunc(ss.VGRun).SetIcon(icons.PlayArrow)
-			})
-			tree.Add(p, func(w *core.FuncButton) {
-				w.SetFunc(ss.SGRun).SetIcon(icons.PlayArrow)
-			})
-			tree.Add(p, func(w *core.FuncButton) {
-				w.SetFunc(ss.TimeRun).SetIcon(icons.PlayArrow)
-			})
-		})
+	metadata.SetDoc(dir.Float64("GabaBstd"), "std is from code actually used in models")
+	metadata.SetDoc(dir.Float64("GabaBXstd"), "std is from code actually used in models")
+	plot.SetFirstStylerTo(dir.Float64("Time"), func(s *plot.Style) {
+		s.Role = plot.X
 	})
+	ons := []string{"GabaB", "GabaBX"}
+	for _, on := range ons {
+		plot.SetFirstStylerTo(dir.Float64(on), func(s *plot.Style) {
+			s.On = true
+			s.Plot.Title = "GABAB G(t)"
+		})
+	}
+	if pl.Tabs != nil && pl.Tabs.AsDataTabs().IsVisible() {
+		pl.Tabs.PlotTensorFS(dir)
+	}
+}
 
-	return b
+func (pl *Plot) MakeToolbar(p *tree.Plan) {
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(pl.GVRun).SetIcon(icons.PlayArrow)
+	})
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(pl.GSRun).SetIcon(icons.PlayArrow)
+	})
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(pl.TimeRun).SetIcon(icons.PlayArrow)
+	})
 }

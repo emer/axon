@@ -2,36 +2,24 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// ska_plot plots an equation updating over time in a table.Table and PlotView.
-package main
+// skca_plot plots the small-conductance calcium-activated potassium channel.
+package skca_plot
 
 //go:generate core generate -add-types
 
 import (
-	"strconv"
-
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
-	"cogentcore.org/core/plot/plotcore"
-	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/core/plot"
+	"cogentcore.org/core/tensor/databrowser"
+	"cogentcore.org/core/tensor/tensorfs"
 	"cogentcore.org/core/tree"
 	"github.com/emer/axon/v2/chans"
 	"github.com/emer/axon/v2/kinase"
 )
 
-func main() {
-	sim := &Sim{}
-	sim.Config()
-	sim.CamRun()
-	b := sim.ConfigGUI()
-	b.RunMainWindow()
-}
-
-// LogPrec is precision for saving float values in logs
-const LogPrec = 4
-
-// Sim holds the params, table, etc
-type Sim struct {
+// Plot holds the params, table, etc
+type Plot struct {
 
 	// SKCa params
 	SKCa chans.SKCaParams
@@ -54,89 +42,65 @@ type Sim struct {
 	// spiking frequency
 	SpikeFreq float32
 
-	// table for plot
-	Table *table.Table `display:"no-inline"`
-
-	// the plot
-	Plot *plotcore.PlotEditor `display:"-"`
-
-	// table for plot
-	TimeTable *table.Table `display:"no-inline"`
-
-	// the plot
-	TimePlot *plotcore.PlotEditor `display:"-"`
+	Dir  *tensorfs.Node     `display:"-"`
+	Tabs databrowser.Tabber `display:"-"`
 }
 
 // Config configures all the elements using the standard functions
-func (ss *Sim) Config() {
-	ss.SKCa.Defaults()
-	ss.SKCa.Gbar = 1
-	ss.CaParams.Defaults()
-	ss.CaStep = .05
-	ss.TimeSteps = 200 * 3
-	ss.TimeSpike = true
-	ss.NoSpikeThr = 0.5
-	ss.SpikeFreq = 100
-	ss.Update()
-	ss.Table = table.New()
-	ss.ConfigTable(ss.Table)
-	ss.TimeTable = table.New()
-	ss.ConfigTimeTable(ss.TimeTable)
+func (pl *Plot) Config(parent *tensorfs.Node, tabs databrowser.Tabber) {
+	pl.Dir = parent.Dir("SKCa")
+	pl.Tabs = tabs
+
+	pl.SKCa.Defaults()
+	pl.SKCa.Gbar = 1
+	pl.CaParams.Defaults()
+	pl.CaStep = .05
+	pl.TimeSteps = 200 * 3
+	pl.TimeSpike = true
+	pl.NoSpikeThr = 0.5
+	pl.SpikeFreq = 100
+	pl.Update()
 }
 
 // Update updates computed values
-func (ss *Sim) Update() {
+func (pl *Plot) Update() {
 }
 
-// CamRun plots the equation as a function of Ca
-func (ss *Sim) CamRun() { //types:add
-	ss.Update()
-	dt := ss.Table
+// GCaRun plots the conductance G (and other variables) as a function of Ca.
+func (pl *Plot) GCaRun() { //types:add
+	pl.Update()
+	dir := pl.Dir.Dir("G_V")
 
-	nv := int(1.0 / ss.CaStep)
-	dt.SetNumRows(nv)
-	for vi := 0; vi < nv; vi++ {
-		cai := float32(vi) * ss.CaStep
-		mh := ss.SKCa.MAsympHill(cai)
-		mg := ss.SKCa.MAsympGW06(cai)
+	nv := int(1.0 / pl.CaStep)
+	for vi := range nv {
+		cai := float32(vi) * pl.CaStep
+		mh := pl.SKCa.MAsympHill(cai)
+		mg := pl.SKCa.MAsympGW06(cai)
 
-		dt.SetFloat("Ca", vi, float64(cai))
-		dt.SetFloat("Mhill", vi, float64(mh))
-		dt.SetFloat("Mgw06", vi, float64(mg))
+		dir.Float64("Ca", nv).SetFloat1D(float64(cai), vi)
+		dir.Float64("Mhill", nv).SetFloat1D(float64(mh), vi)
+		dir.Float64("Mgw06", nv).SetFloat1D(float64(mg), vi)
 	}
-	if ss.Plot != nil {
-		ss.Plot.UpdatePlot()
+	plot.SetFirstStylerTo(dir.Float64("Ca"), func(s *plot.Style) {
+		s.Role = plot.X
+	})
+	ons := []string{"Mhill", "Mgw06"}
+	for _, on := range ons {
+		plot.SetFirstStylerTo(dir.Float64(on), func(s *plot.Style) {
+			s.On = true
+			s.Plot.Title = "sK Ca G(Ca)"
+		})
+	}
+	if pl.Tabs != nil && pl.Tabs.AsDataTabs().IsVisible() {
+		pl.Tabs.PlotTensorFS(dir)
 	}
 }
-
-func (ss *Sim) ConfigTable(dt *table.Table) {
-	dt.SetMetaData("name", "SKCaPlotTable")
-	dt.SetMetaData("read-only", "true")
-	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
-
-	dt.AddFloat64Column("Ca")
-	dt.AddFloat64Column("Mhill")
-	dt.AddFloat64Column("Mgw06")
-	dt.SetNumRows(0)
-}
-
-func (ss *Sim) ConfigPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
-	plt.Options.Title = "SKCa Ca-G Function Plot"
-	plt.Options.XAxis = "Ca"
-	plt.SetTable(dt)
-	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColumnOptions("Ca", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("Mhill", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	plt.SetColumnOptions("Mgw06", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 1)
-	return plt
-}
-
-/////////////////////////////////////////////////////////////////
 
 // TimeRun runs the equation over time.
-func (ss *Sim) TimeRun() { //types:add
-	ss.Update()
-	dt := ss.TimeTable
+func (pl *Plot) TimeRun() { //types:add
+	pl.Update()
+	dir := pl.Dir.Dir("G_Time")
+	nv := pl.TimeSteps
 
 	caIn := float32(1)
 	caR := float32(0)
@@ -144,30 +108,28 @@ func (ss *Sim) TimeRun() { //types:add
 	spike := float32(0)
 	msdt := float32(0.001)
 
-	caM := float32(0)
-	caP := float32(0)
+	// caM := float32(0)
+	// caP := float32(0)
 	caD := float32(0)
 
-	isi := int(1000 / ss.SpikeFreq)
+	isi := int(1000 / pl.SpikeFreq)
 	trial := 0
-
-	dt.SetNumRows(ss.TimeSteps)
-	for ti := 0; ti < ss.TimeSteps; ti++ {
+	for ti := range nv {
 		trial = ti / 200
 		t := float32(ti) * msdt
-		m = ss.SKCa.MFromCa(caR, m)
-		ss.SKCa.CaInRFromSpike(spike, caD, &caIn, &caR)
+		m = pl.SKCa.MFromCa(caR, m)
+		pl.SKCa.CaInRFromSpike(spike, caD, &caIn, &caR)
 
-		dt.SetFloat("Time", ti, float64(t))
-		dt.SetFloat("Spike", ti, float64(spike))
-		dt.SetFloat("CaM", ti, float64(caM))
-		dt.SetFloat("CaP", ti, float64(caP))
-		dt.SetFloat("CaD", ti, float64(caD))
-		dt.SetFloat("CaIn", ti, float64(caIn))
-		dt.SetFloat("CaR", ti, float64(caR))
-		dt.SetFloat("M", ti, float64(m))
+		dir.Float64("Time", nv).SetFloat1D(float64(t), ti)
+		dir.Float64("Spike", nv).SetFloat1D(float64(spike), ti)
+		// dir.Float64("CaM", nv).SetFloat1D(float64(caM), ti)
+		// dir.Float64("CaP", nv).SetFloat1D(float64(caP), ti)
+		// dir.Float64("CaD", nv).SetFloat1D(float64(caD), ti)
+		dir.Float64("CaIn", nv).SetFloat1D(float64(caIn), ti)
+		dir.Float64("CaR", nv).SetFloat1D(float64(caR), ti)
+		dir.Float64("M", nv).SetFloat1D(float64(m), ti)
 
-		if m < ss.NoSpikeThr && trial%2 == 0 && ti%isi == 0 { // spike on even trials
+		if m < pl.NoSpikeThr && trial%2 == 0 && ti%isi == 0 { // spike on even trials
 			spike = 1
 		} else {
 			spike = 0
@@ -175,72 +137,26 @@ func (ss *Sim) TimeRun() { //types:add
 		// todo: update
 		// ss.CaParams.FromSpike(spike, &caM, &caP, &caD)
 	}
-	if ss.TimePlot != nil {
-		ss.TimePlot.UpdatePlot()
+	plot.SetFirstStylerTo(dir.Float64("Time"), func(s *plot.Style) {
+		s.Role = plot.X
+	})
+	ons := []string{"Spike", "CaIn", "CaR", "M"}
+	for _, on := range ons {
+		plot.SetFirstStylerTo(dir.Float64(on), func(s *plot.Style) {
+			s.On = true
+			s.Plot.Title = "sK Ca G(t)"
+		})
+	}
+	if pl.Tabs != nil && pl.Tabs.AsDataTabs().IsVisible() {
+		pl.Tabs.PlotTensorFS(dir)
 	}
 }
 
-func (ss *Sim) ConfigTimeTable(dt *table.Table) {
-	dt.SetMetaData("name", "CagCcplotTable")
-	dt.SetMetaData("read-only", "true")
-	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
-
-	dt.AddFloat64Column("Time")
-	dt.AddFloat64Column("Spike")
-	dt.AddFloat64Column("CaM")
-	dt.AddFloat64Column("CaP")
-	dt.AddFloat64Column("CaD")
-	dt.AddFloat64Column("CaIn")
-	dt.AddFloat64Column("CaR")
-	dt.AddFloat64Column("M")
-	dt.SetNumRows(0)
-}
-
-func (ss *Sim) ConfigTimePlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
-	plt.Options.Title = "Time Function Plot"
-	plt.Options.XAxis = "Time"
-	plt.SetTable(dt)
-	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColumnOptions("Time", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("Spike", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	plt.SetColumnOptions("CaM", plotcore.Off, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	plt.SetColumnOptions("CaP", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	plt.SetColumnOptions("CaD", plotcore.Off, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	plt.SetColumnOptions("CaIn", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	plt.SetColumnOptions("CaR", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	plt.SetColumnOptions("M", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	return plt
-}
-
-// ConfigGUI configures the Cogent Core GUI interface for this simulation.
-func (ss *Sim) ConfigGUI() *core.Body {
-	b := core.NewBody("Skca Plot")
-
-	split := core.NewSplits(b)
-	core.NewForm(split).SetStruct(ss)
-
-	tv := core.NewTabs(split)
-
-	cgp, _ := tv.NewTab("Ca-G Plot")
-	ss.Plot = plotcore.NewSubPlot(cgp)
-	ss.ConfigPlot(ss.Plot, ss.Table)
-
-	ttp, _ := tv.NewTab("TimePlot")
-	ss.TimePlot = plotcore.NewSubPlot(ttp)
-	ss.ConfigTimePlot(ss.TimePlot, ss.TimeTable)
-
-	split.SetSplits(.3, .7)
-
-	b.AddTopBar(func(bar *core.Frame) {
-		core.NewToolbar(bar).Maker(func(p *tree.Plan) {
-			tree.Add(p, func(w *core.FuncButton) {
-				w.SetFunc(ss.CamRun).SetIcon(icons.PlayArrow)
-			})
-			tree.Add(p, func(w *core.FuncButton) {
-				w.SetFunc(ss.TimeRun).SetIcon(icons.PlayArrow)
-			})
-		})
+func (pl *Plot) MakeToolbar(p *tree.Plan) {
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(pl.GCaRun).SetIcon(icons.PlayArrow)
 	})
-
-	return b
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(pl.TimeRun).SetIcon(icons.PlayArrow)
+	})
 }

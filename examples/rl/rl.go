@@ -298,7 +298,7 @@ func (ss *Sim) ConfigLoops() {
 func (ss *Sim) ApplyInputs(mode Modes) {
 	net := ss.Net
 	ndata := int(net.Context().NData)
-	curModeDir := ss.Current.RecycleDir(mode.String())
+	curModeDir := ss.Current.Dir(mode.String())
 	ev := ss.Envs.ByMode(mode).(*CondEnv)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	net.InitExt()
@@ -398,7 +398,7 @@ func (ss *Sim) StatsInit() {
 	if ss.GUI.Tabs != nil {
 		_, idx := ss.GUI.Tabs.CurrentTab()
 		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Trial))
-		ss.GUI.Tabs.PlotTensorFS(ss.Stats.RecycleDir("Train/TrialAll"))
+		ss.GUI.Tabs.PlotTensorFS(ss.Stats.Dir("Train/TrialAll"))
 		ss.GUI.Tabs.SelectTabIndex(idx)
 	}
 }
@@ -407,8 +407,8 @@ func (ss *Sim) StatsInit() {
 // in the tensorfs system.
 func (ss *Sim) ConfigStats() {
 	net := ss.Net
-	ss.Stats, _ = ss.Root.Mkdir("Stats")
-	ss.Current, _ = ss.Stats.Mkdir("Current")
+	ss.Stats = ss.Root.Dir("Stats")
+	ss.Current = ss.Stats.Dir("Current")
 
 	ss.SetRunName()
 
@@ -427,9 +427,9 @@ func (ss *Sim) ConfigStats() {
 			return
 		}
 		name := "TrialName"
-		modeDir := ss.Stats.RecycleDir(mode.String())
-		curModeDir := ss.Current.RecycleDir(mode.String())
-		levelDir := modeDir.RecycleDir(level.String())
+		modeDir := ss.Stats.Dir(mode.String())
+		curModeDir := ss.Current.Dir(mode.String())
+		levelDir := modeDir.Dir(level.String())
 		tsr := levelDir.StringValue(name)
 		ndata := int(ss.Net.Context().NData)
 		if phase == Start {
@@ -453,10 +453,10 @@ func (ss *Sim) ConfigStats() {
 	rwLayerNames := []string{"DA", "ACh", "RWPred", "RWPred"}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		for si, name := range statNames {
-			modeDir := ss.Stats.RecycleDir(mode.String())
-			curModeDir := ss.Current.RecycleDir(mode.String())
-			levelDir := modeDir.RecycleDir(level.String())
-			subDir := modeDir.RecycleDir((level - 1).String()) // note: will fail for Cycle
+			modeDir := ss.Stats.Dir(mode.String())
+			curModeDir := ss.Current.Dir(mode.String())
+			levelDir := modeDir.Dir(level.String())
+			subDir := modeDir.Dir((level - 1).String()) // note: will fail for Cycle
 			tsr := levelDir.Float64(name)
 			ndata := int(ss.Net.Context().NData)
 			var stat float64
@@ -522,7 +522,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 	}
 	di := vu.View.Di
 	counters += fmt.Sprintf(" Di: %d", di)
-	curModeDir := ss.Current.RecycleDir(mode.String())
+	curModeDir := ss.Current.Dir(mode.String())
 	if curModeDir.Node("TrialName") == nil {
 		return counters
 	}
@@ -574,7 +574,7 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 		Active:  egui.ActiveAlways,
 		Func: func() {
 			name := "Train/TrialAll"
-			levelDir := ss.Stats.RecycleDir(name)
+			levelDir := ss.Stats.Dir(name)
 			cols := levelDir.ValuesFunc(nil)
 			for _, cl := range cols {
 				cl.(tensor.Values).SetNumRows(0)

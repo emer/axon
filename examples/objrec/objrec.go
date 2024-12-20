@@ -332,7 +332,7 @@ func (ss *Sim) ConfigLoops() {
 		if stopNz <= 0 {
 			return false
 		}
-		curModeDir := ss.Current.RecycleDir(Train.String())
+		curModeDir := ss.Current.Dir(Train.String())
 		curNZero := int(curModeDir.Value("NZero").Float1D(-1))
 		stop := curNZero >= stopNz
 		return stop
@@ -371,7 +371,7 @@ func (ss *Sim) ConfigLoops() {
 func (ss *Sim) ApplyInputs(mode Modes) {
 	net := ss.Net
 	ndata := int(net.Context().NData)
-	curModeDir := ss.Current.RecycleDir(mode.String())
+	curModeDir := ss.Current.Dir(mode.String())
 	ev := ss.Envs.ByMode(mode).(*LEDEnv)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	net.InitExt()
@@ -494,8 +494,8 @@ func (ss *Sim) StatsInit() {
 // in the tensorfs system.
 func (ss *Sim) ConfigStats() {
 	net := ss.Net
-	ss.Stats, _ = ss.Root.Mkdir("Stats")
-	ss.Current, _ = ss.Stats.Mkdir("Current")
+	ss.Stats = ss.Root.Dir("Stats")
+	ss.Current = ss.Stats.Dir("Current")
 
 	ss.SetRunName()
 
@@ -521,10 +521,10 @@ func (ss *Sim) ConfigStats() {
 			if name == "NZero" && (mode != Train || level == Trial) {
 				return
 			}
-			modeDir := ss.Stats.RecycleDir(mode.String())
-			curModeDir := ss.Current.RecycleDir(mode.String())
-			levelDir := modeDir.RecycleDir(level.String())
-			subDir := modeDir.RecycleDir((level - 1).String()) // note: will fail for Cycle
+			modeDir := ss.Stats.Dir(mode.String())
+			curModeDir := ss.Current.Dir(mode.String())
+			levelDir := modeDir.Dir(level.String())
+			subDir := modeDir.Dir((level - 1).String()) // note: will fail for Cycle
 			tsr := levelDir.Float64(name)
 			ndata := int(ss.Net.Context().NData)
 			var stat float64
@@ -653,7 +653,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 	}
 	di := vu.View.Di
 	counters += fmt.Sprintf(" Di: %d", di)
-	curModeDir := ss.Current.RecycleDir(mode.String())
+	curModeDir := ss.Current.Dir(mode.String())
 	if curModeDir.Node("TrialName") == nil {
 		return counters
 	}

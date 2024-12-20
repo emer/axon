@@ -1,0 +1,34 @@
+           VGPi		Nominal:	  1.00	
+
+         VGPePr		Nominal:	  1.00	
+
+         VGPeAk		Nominal:	  1.00	
+
+           VSTN		Nominal:	  0.15	
+						Layer.Gi:	  0.50	
+
+         VMtxGo		Nominal:	  0.25	Params: .MatrixLayer: 0.25
+						Layer.Gi:	  0.50	Params: .MatrixLayer: 0.5
+
+         VMtxNo		Nominal:	  0.25	Params: .MatrixLayer: 0.25
+						Layer.Gi:	  0.50	Params: .MatrixLayer: 0.5
+
+            SNc		Nominal:	  0.10	
+						Layer.Gi:	  0.90	
+
+        Urgency		Nominal:	  0.20	
+						Layer.Gi:	  0.50	
+
+         ACCPos		Nominal:	  0.10	
+						Layer.Gi:	  0.90	
+
+         ACCNeg		Nominal:	  0.10	
+						Layer.Gi:	  0.90	
+
+       ACCPosPT		Nominal:	  0.02	
+						Layer.Gi:	  0.50	
+						Pool.Gi: 	  0.50	
+
+       ACCPosVM		Nominal:	  0.10	
+						Layer.Gi:	  0.60	
+

@@ -315,7 +315,7 @@ func (ss *Sim) ConfigEnv() {
 		tst = ss.Envs.ByMode(Test).(*env.FixedTable)
 	}
 
-	inputs := tensorfs.DirTable(ss.Root.RecycleDir("Inputs/Train"), nil)
+	inputs := tensorfs.DirTable(ss.Root.Dir("Inputs/Train"), nil)
 
 	// this logic can be used to create train-test splits of a set of patterns:
 	// n := inputs.NumRows()
@@ -456,7 +456,7 @@ func (ss *Sim) ConfigLoops() {
 		if stopNz <= 0 {
 			return false
 		}
-		curModeDir := ss.Current.RecycleDir(Train.String())
+		curModeDir := ss.Current.Dir(Train.String())
 		curNZero := int(curModeDir.Value("NZero").Float1D(-1))
 		stop := curNZero >= stopNz
 		return stop
@@ -495,7 +495,7 @@ func (ss *Sim) ConfigLoops() {
 func (ss *Sim) ApplyInputs(mode Modes) {
 	net := ss.Net
 	ndata := int(net.Context().NData)
-	curModeDir := ss.Current.RecycleDir(mode.String())
+	curModeDir := ss.Current.Dir(mode.String())
 	ev := ss.Envs.ByMode(mode)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	net.InitExt()
@@ -549,7 +549,7 @@ func (ss *Sim) ConfigInputs() {
 	patgen.PermutedBinaryMinDiff(dt.ColumnByIndex(2).Tensor.(*tensor.Float32), 6, 1, 0, 3)
 	dt.SaveCSV("random_5x5_25_gen.tsv", tensor.Tab, table.Headers)
 
-	tensorfs.DirFromTable(ss.Root.RecycleDir("Inputs/Train"), dt)
+	tensorfs.DirFromTable(ss.Root.Dir("Inputs/Train"), dt)
 }
 
 // OpenTable opens a [table.Table] from embedded content, storing
@@ -562,12 +562,12 @@ func (ss *Sim) OpenTable(dir *tensorfs.Node, fsys fs.FS, fnm, name, docs string)
 	if errors.Log(err) != nil {
 		return dt, err
 	}
-	tensorfs.DirFromTable(dir.RecycleDir(name), dt)
+	tensorfs.DirFromTable(dir.Dir(name), dt)
 	return dt, err
 }
 
 func (ss *Sim) OpenInputs() {
-	dir := ss.Root.RecycleDir("Inputs")
+	dir := ss.Root.Dir("Inputs")
 	ss.OpenTable(dir, content, "random_5x5_25.tsv", "Train", "Training inputs")
 }
 
@@ -647,7 +647,7 @@ func (ss *Sim) StatsInit() {
 		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Epoch))
 		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Run))
 		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Test, Trial))
-		ss.GUI.Tabs.PlotTensorFS(ss.Stats.RecycleDir("Train/RunAll"))
+		ss.GUI.Tabs.PlotTensorFS(ss.Stats.Dir("Train/RunAll"))
 		ss.GUI.Tabs.SelectTabIndex(idx)
 	}
 }
@@ -656,8 +656,8 @@ func (ss *Sim) StatsInit() {
 // in the tensorfs system.
 func (ss *Sim) ConfigStats() {
 	net := ss.Net
-	ss.Stats, _ = ss.Root.Mkdir("Stats")
-	ss.Current, _ = ss.Stats.Mkdir("Current")
+	ss.Stats = ss.Root.Dir("Stats")
+	ss.Current = ss.Stats.Dir("Current")
 
 	ss.SetRunName()
 
@@ -683,10 +683,10 @@ func (ss *Sim) ConfigStats() {
 			if name == "NZero" && (mode != Train || level == Trial) {
 				return
 			}
-			modeDir := ss.Stats.RecycleDir(mode.String())
-			curModeDir := ss.Current.RecycleDir(mode.String())
-			levelDir := modeDir.RecycleDir(level.String())
-			subDir := modeDir.RecycleDir((level - 1).String()) // note: will fail for Cycle
+			modeDir := ss.Stats.Dir(mode.String())
+			curModeDir := ss.Current.Dir(mode.String())
+			levelDir := modeDir.Dir(level.String())
+			subDir := modeDir.Dir((level - 1).String()) // note: will fail for Cycle
 			tsr := levelDir.Float64(name)
 			ndata := int(ss.Net.Context().NData)
 			var stat float64
@@ -820,7 +820,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 	}
 	di := vu.View.Di
 	counters += fmt.Sprintf(" Di: %d", di)
-	curModeDir := ss.Current.RecycleDir(mode.String())
+	curModeDir := ss.Current.Dir(mode.String())
 	if curModeDir.Node("TrialName") == nil {
 		return counters
 	}

@@ -360,16 +360,16 @@ func (ss *Sim) StatsInit() {
 func (ss *Sim) ConfigStats() {
 	net := ss.Net
 	ly := net.LayerByName("Neuron")
-	ss.Stats, _ = ss.Root.Mkdir("Stats")
-	ss.Current, _ = ss.Stats.Mkdir("Current")
+	ss.Stats = ss.Root.Dir("Stats")
+	ss.Current = ss.Stats.Dir("Current")
 
 	ss.SetRunName()
 
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		name := "Cycle"
-		modeDir := ss.Stats.RecycleDir(mode.String())
-		curModeDir := ss.Current.RecycleDir(mode.String())
-		levelDir := modeDir.RecycleDir(level.String())
+		modeDir := ss.Stats.Dir(mode.String())
+		curModeDir := ss.Current.Dir(mode.String())
+		levelDir := modeDir.Dir(level.String())
 		tsr := levelDir.Int(name)
 		if phase == Start {
 			tsr.SetNumRows(0)
@@ -386,9 +386,9 @@ func (ss *Sim) ConfigStats() {
 	vars := []string{"GeSyn", "Ge", "Gi", "Inet", "Vm", "Act", "Spike", "Gk", "ISI", "ISIAvg", "VmDend", "GnmdaSyn", "Gnmda", "GABAB", "GgabaB", "Gvgcc", "VgccM", "VgccH", "Gak", "MahpN", "GknaMed", "GknaSlow", "GiSyn"}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		for _, name := range vars {
-			modeDir := ss.Stats.RecycleDir(mode.String())
-			curModeDir := ss.Current.RecycleDir(mode.String())
-			levelDir := modeDir.RecycleDir(level.String())
+			modeDir := ss.Stats.Dir(mode.String())
+			curModeDir := ss.Current.Dir(mode.String())
+			levelDir := modeDir.Dir(level.String())
 			tsr := levelDir.Float64(name)
 			if phase == Start {
 				tsr.SetNumRows(0)
@@ -408,7 +408,7 @@ func (ss *Sim) ConfigStats() {
 				curModeDir.Float64(name, 1).SetFloat1D(stat, 0)
 				tsr.AppendRowFloat(stat)
 			case Trial:
-				subDir := modeDir.RecycleDir((level - 1).String())
+				subDir := modeDir.Dir((level - 1).String())
 				stat := stats.StatMean.Call(subDir.Value(name)).Float1D(0)
 				tsr.AppendRowFloat(stat)
 			}

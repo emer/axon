@@ -1,0 +1,131 @@
+[[Base]]
+  Sel = "Layer"
+  Desc = "generic layer params"
+  [Base.Params]
+    "Layer.Acts.AK.Gbar" = "0.1"
+    "Layer.Acts.Decay.Act" = "0.0"
+    "Layer.Acts.Decay.Glong" = "0.0"
+    "Layer.Acts.Dend.GbarExp" = "0.2"
+    "Layer.Acts.Dend.GbarR" = "3"
+    "Layer.Acts.Dend.SSGi" = "2"
+    "Layer.Acts.Dt.LongAvgTau" = "20"
+    "Layer.Acts.Dt.VmDendTau" = "5"
+    "Layer.Acts.GabaB.Gbar" = "0.015"
+    "Layer.Acts.Gbar.L" = "0.2"
+    "Layer.Acts.NMDA.Gbar" = "0.006"
+    "Layer.Acts.NMDA.MgC" = "1.4"
+    "Layer.Acts.NMDA.Voff" = "0"
+    "Layer.Acts.Sahp.CaTau" = "10"
+    "Layer.Acts.Sahp.Gbar" = "0.1"
+    "Layer.Acts.Sahp.Off" = "0.8"
+    "Layer.Acts.Sahp.Slope" = "0.02"
+    "Layer.Inhib.ActAvg.AdaptGi" = "false"
+    "Layer.Inhib.ActAvg.Nominal" = "0.15"
+    "Layer.Inhib.Layer.FB" = "1"
+    "Layer.Inhib.Layer.Gi" = "1.0"
+    "Layer.Learn.LrnNMDA.Gbar" = "0.006"
+    "Layer.Learn.TrgAvgAct.ErrLRate" = "0.02"
+    "Layer.Learn.TrgAvgAct.SubMean" = "1"
+    "Layer.Learn.TrgAvgAct.SynScaleRate" = "0.005"
+
+[[Base]]
+  Sel = ".SuperLayer"
+  Desc = "super layer params"
+  [Base.Params]
+    "Layer.Bursts.ThrAbs" = "0.1"
+    "Layer.Bursts.ThrRel" = "0.1"
+
+[[Base]]
+  Sel = ".InLay"
+  Desc = "input layers need more inhibition"
+  [Base.Params]
+    "Layer.Acts.Clamp.Ge" = "1.5"
+    "Layer.Inhib.ActAvg.Nominal" = "0.15"
+    "Layer.Inhib.Layer.Gi" = "0.9"
+
+[[Base]]
+  Sel = ".CTLayer"
+  Desc = "CT NMDA gbar factor is key"
+  [Base.Params]
+    "Layer.Acts.Decay.Act" = "0.0"
+    "Layer.Acts.Decay.Glong" = "0.0"
+    "Layer.Acts.Dend.SSGi" = "0"
+    "Layer.Acts.GabaB.Gbar" = "0.015"
+    "Layer.Acts.MaintNMDA.Gbar" = "0.007"
+    "Layer.Acts.MaintNMDA.Tau" = "200"
+    "Layer.Acts.NMDA.Gbar" = "0.007"
+    "Layer.Acts.NMDA.Tau" = "200"
+    "Layer.CT.DecayTau" = "50"
+    "Layer.CT.GeGain" = "2.0"
+    "Layer.Inhib.Layer.FB" = "1"
+    "Layer.Inhib.Layer.Gi" = "2.2"
+    "Layer.Learn.TrgAvgAct.SubMean" = "1"
+    "Layer.Learn.TrgAvgAct.SynScaleRate" = "0.005"
+
+[[Base]]
+  Sel = ".PulvinarLayer"
+  Desc = "pulvinar"
+  [Base.Params]
+    "Layer.Acts.Decay.AHP" = "0.0"
+    "Layer.Acts.Decay.Act" = "0.0"
+    "Layer.Acts.Decay.Glong" = "0.0"
+    "Layer.Acts.Spikes.Tr" = "3"
+    "Layer.Inhib.Layer.FB" = "1"
+    "Layer.Inhib.Layer.Gi" = "0.75"
+    "Layer.Learn.RLRate.SigmoidMin" = "1.0"
+    "Layer.Pulv.DriveScale" = "0.2"
+    "Layer.Pulv.FullDriveAct" = "0.6"
+
+[[Base]]
+  Sel = "Path"
+  Desc = "std"
+  [Base.Params]
+    "Path.Com.PFail" = "0.0"
+    "Path.Learn.LRate.Base" = "0.03"
+    "Path.Learn.Trace.SubMean" = "0"
+    "Path.Learn.Trace.Tau" = "2"
+    "Path.SWts.Adapt.LRate" = "0.01"
+    "Path.SWts.Init.SPct" = "1.0"
+
+[[Base]]
+  Sel = ".BackPath"
+  Desc = "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates"
+  [Base.Params]
+    "Path.PathScale.Rel" = "0.2"
+
+[[Base]]
+  Sel = ".CTCtxtPath"
+  Desc = "all CT context paths"
+  [Base.Params]
+    "Path.Learn.LRate.Base" = "0.02"
+    "Path.Learn.Trace.SubMean" = "0"
+    "Path.Learn.Trace.Tau" = "2"
+
+[[Base]]
+  Sel = ".CTFromSuper"
+  Desc = "full > 1to1"
+  [Base.Params]
+    "Path.Learn.Learn" = "true"
+    "Path.SWts.Init.Mean" = "0.5"
+    "Path.SWts.Init.Var" = "0.25"
+
+[[Base]]
+  Sel = ".CTSelfCtxt"
+  Desc = ""
+  [Base.Params]
+    "Path.PathScale.Rel" = "0.5"
+    "Path.SWts.Init.Sym" = "true"
+
+[[Base]]
+  Sel = ".CTSelfMaint"
+  Desc = ""
+  [Base.Params]
+    "Path.Com.GType" = "MaintG"
+    "Path.PathScale.Abs" = "0.5"
+    "Path.SWts.Init.Sym" = "true"
+
+[[Base]]
+  Sel = ".FromPulv"
+  Desc = ""
+  [Base.Params]
+    "Path.PathScale.Rel" = "0.1"

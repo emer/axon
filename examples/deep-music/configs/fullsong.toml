@@ -1,7 +1,0 @@
-[Env]
-	FullSong = true
-
-[Run]
-	NTrials = 768  # number of rows in song
-	NEpochs = 500
-	

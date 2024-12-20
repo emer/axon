@@ -2,35 +2,22 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// kir_plot plots an equation updating over time in a table.Table and PlotView.
-package main
+// kir_plot plots the kIR inward rectifying potassium (K) channel equations.
+package kir_plot
 
 //go:generate core generate -add-types
 
 import (
-	"strconv"
-
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
-	"cogentcore.org/core/plot/plotcore"
-	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/core/plot"
+	"cogentcore.org/core/tensor/databrowser"
+	"cogentcore.org/core/tensor/tensorfs"
 	"cogentcore.org/core/tree"
 	"github.com/emer/axon/v2/chans"
 )
 
-func main() {
-	sim := &Sim{}
-	sim.Config()
-	sim.VmRun()
-	b := sim.ConfigGUI()
-	b.RunMainWindow()
-}
-
-// LogPrec is precision for saving float values in logs
-const LogPrec = 4
-
-// Sim holds the params, table, etc
-type Sim struct {
+type Plot struct {
 
 	// kIR function
 	Kir chans.KirParams
@@ -59,204 +46,136 @@ type Sim struct {
 	// time-run ending membrane potential
 	TimeVend float32
 
-	// table for plot
-	Table *table.Table `display:"no-inline"`
-
-	// the plot
-	Plot *plotcore.PlotEditor `display:"-"`
-
-	// table for plot
-	TimeTable *table.Table `display:"no-inline"`
-
-	// the plot
-	TimePlot *plotcore.PlotEditor `display:"-"`
+	Dir  *tensorfs.Node     `display:"-"`
+	Tabs databrowser.Tabber `display:"-"`
 }
 
 // Config configures all the elements using the standard functions
-func (ss *Sim) Config() {
-	ss.Kir.Defaults()
-	ss.Kir.Gbar = 1
-	ss.Vstart = -100
-	ss.Vend = 0
-	ss.Vstep = 1
-	ss.TimeSteps = 300
-	ss.TimeSpike = true
-	ss.SpikeFreq = 50
-	ss.TimeVstart = -70
-	ss.TimeVend = -50
-	ss.Update()
-	ss.Table = table.New()
-	ss.ConfigTable(ss.Table)
-	ss.TimeTable = table.New()
-	ss.ConfigTimeTable(ss.TimeTable)
+func (pl *Plot) Config(parent *tensorfs.Node, tabs databrowser.Tabber) {
+	pl.Dir = parent.Dir("kIR")
+	pl.Tabs = tabs
+
+	pl.Kir.Defaults()
+	pl.Kir.Gbar = 1
+	pl.Vstart = -100
+	pl.Vend = 0
+	pl.Vstep = 1
+	pl.TimeSteps = 300
+	pl.TimeSpike = true
+	pl.SpikeFreq = 50
+	pl.TimeVstart = -70
+	pl.TimeVend = -50
+	pl.Update()
 }
 
 // Update updates computed values
-func (ss *Sim) Update() {
+func (pl *Plot) Update() {
 }
 
 // VmRun plots the equation as a function of V
-func (ss *Sim) VmRun() { //types:add
-	ss.Update()
-	dt := ss.Table
+func (pl *Plot) GVRun() { //types:add
+	pl.Update()
+	dir := pl.Dir.Dir("G_V")
 
-	mp := &ss.Kir
-
-	nv := int((ss.Vend - ss.Vstart) / ss.Vstep)
-	dt.SetNumRows(nv)
+	mp := &pl.Kir
+	nv := int((pl.Vend - pl.Vstart) / pl.Vstep)
 	m := mp.MinfRest()
 	for vi := 0; vi < nv; vi++ {
-		vbio := ss.Vstart + float32(vi)*ss.Vstep
+		vbio := pl.Vstart + float32(vi)*pl.Vstep
 		v := chans.VFromBio(vbio)
-		g := mp.Gkir(v, &m)
-		var minf, mtau float32
-		mp.MRates(vbio, &minf, &mtau)
+		g := mp.Gkir(v, m)
+		dm := mp.DM(vbio, m)
+		m += dm
+		minf := mp.Minf(vbio)
+		mtau := mp.MTau(vbio)
 
-		dt.SetFloat("V", vi, float64(vbio))
-		dt.SetFloat("GkIR", vi, float64(g))
-		dt.SetFloat("M", vi, float64(m))
-		dt.SetFloat("Minf", vi, float64(minf))
-		dt.SetFloat("Mtau", vi, float64(mtau))
+		dir.Float64("V", nv).SetFloat1D(float64(vbio), vi)
+		dir.Float64("GkIR", nv).SetFloat1D(float64(g), vi)
+		dir.Float64("M", nv).SetFloat1D(float64(m), vi)
+		dir.Float64("Minf", nv).SetFloat1D(float64(minf), vi)
+		dir.Float64("Mtau", nv).SetFloat1D(float64(mtau), vi)
 	}
-	if ss.Plot != nil {
-		ss.Plot.UpdatePlot()
+	plot.SetFirstStylerTo(dir.Float64("V"), func(s *plot.Style) {
+		s.Role = plot.X
+	})
+	ons := []string{"GkIR", "M"}
+	for _, on := range ons {
+		plot.SetFirstStylerTo(dir.Float64(on), func(s *plot.Style) {
+			s.On = true
+			s.Plot.Title = "kIR G(V)"
+		})
+	}
+	if pl.Tabs != nil && pl.Tabs.AsDataTabs().IsVisible() {
+		pl.Tabs.PlotTensorFS(dir)
 	}
 }
-
-func (ss *Sim) ConfigTable(dt *table.Table) {
-	dt.SetMetaData("name", "kIRplotTable")
-	dt.SetMetaData("read-only", "true")
-	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
-
-	dt.AddFloat64Column("V")
-	dt.AddFloat64Column("GkIR")
-	dt.AddFloat64Column("M")
-	dt.AddFloat64Column("Minf")
-	dt.AddFloat64Column("Mtau")
-	dt.SetNumRows(0)
-}
-
-func (ss *Sim) ConfigPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
-	plt.Options.Title = "kIR V Function Plot"
-	plt.Options.XAxis = "V"
-	plt.SetTable(dt)
-	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColumnOptions("V", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("GkIR", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	plt.SetColumnOptions("M", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 1)
-	plt.SetColumnOptions("Minf", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 1)
-	plt.SetColumnOptions("Mtau", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 1)
-	return plt
-}
-
-/////////////////////////////////////////////////////////////////
 
 // TimeRun runs the equation over time.
-func (ss *Sim) TimeRun() { //types:add
-	ss.Update()
-	dt := ss.TimeTable
+func (pl *Plot) TimeRun() { //types:add
+	pl.Update()
+	dir := pl.Dir.Dir("G_Time")
+	nv := pl.TimeSteps
 
-	mp := &ss.Kir
+	mp := &pl.Kir
 
 	m := mp.MinfRest()
 	msdt := float32(0.001)
-	v := ss.TimeVstart
-	vinc := float32(2) * (ss.TimeVend - ss.TimeVstart) / float32(ss.TimeSteps)
+	v := pl.TimeVstart
+	vinc := float32(2) * (pl.TimeVend - pl.TimeVstart) / float32(pl.TimeSteps)
 
-	isi := int(1000 / ss.SpikeFreq)
+	isi := int(1000 / pl.SpikeFreq)
 
-	dt.SetNumRows(ss.TimeSteps)
-	for ti := 1; ti <= ss.TimeSteps; ti++ {
+	for ti := range nv {
 		vnorm := chans.VFromBio(v)
-		t := float32(ti) * msdt
+		t := float32(ti+1) * msdt
 
-		g := mp.Gkir(vnorm, &m)
-		var minf, mtau float32
-		mp.MRates(v, &minf, &mtau)
+		g := mp.Gkir(vnorm, m)
+		dm := mp.DM(v, m)
+		m += dm
+		minf := mp.Minf(v)
+		mtau := mp.MTau(v)
 
-		dt.SetFloat("Time", ti, float64(t))
-		dt.SetFloat("V", ti, float64(v))
-		dt.SetFloat("GkIR", ti, float64(g))
-		dt.SetFloat("M", ti, float64(m))
-		dt.SetFloat("Minf", ti, float64(minf))
-		dt.SetFloat("Mtau", ti, float64(mtau))
+		dir.Float64("Time", nv).SetFloat1D(float64(t), ti)
+		dir.Float64("V", nv).SetFloat1D(float64(v), ti)
+		dir.Float64("GkIR", nv).SetFloat1D(float64(g), ti)
+		dir.Float64("M", nv).SetFloat1D(float64(m), ti)
+		dir.Float64("Minf", nv).SetFloat1D(float64(minf), ti)
+		dir.Float64("Mtau", nv).SetFloat1D(float64(mtau), ti)
 
-		if ss.TimeSpike {
+		if pl.TimeSpike {
 			si := ti % isi
 			if si == 0 {
-				v = ss.TimeVend
+				v = pl.TimeVend
 			} else {
-				v = ss.TimeVstart + (float32(si)/float32(isi))*(ss.TimeVend-ss.TimeVstart)
+				v = pl.TimeVstart + (float32(si)/float32(isi))*(pl.TimeVend-pl.TimeVstart)
 			}
 		} else {
 			v += vinc
-			if v > ss.TimeVend {
-				v = ss.TimeVend
+			if v > pl.TimeVend {
+				v = pl.TimeVend
 			}
 		}
 	}
-	if ss.TimePlot != nil {
-		ss.TimePlot.UpdatePlot()
+	plot.SetFirstStylerTo(dir.Float64("Time"), func(s *plot.Style) {
+		s.Role = plot.X
+	})
+	ons := []string{"V", "GkIR", "M"}
+	for _, on := range ons {
+		plot.SetFirstStylerTo(dir.Float64(on), func(s *plot.Style) {
+			s.On = true
+			s.Plot.Title = "GkIR G(t)"
+		})
+	}
+	if pl.Tabs != nil && pl.Tabs.AsDataTabs().IsVisible() {
+		pl.Tabs.PlotTensorFS(dir)
 	}
 }
 
-func (ss *Sim) ConfigTimeTable(dt *table.Table) {
-	dt.SetMetaData("name", "kIRplotTable")
-	dt.SetMetaData("read-only", "true")
-	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
-
-	dt.AddFloat64Column("Time")
-	dt.AddFloat64Column("V")
-	dt.AddFloat64Column("GkIR")
-	dt.AddFloat64Column("M")
-	dt.AddFloat64Column("Minf")
-	dt.AddFloat64Column("Mtau")
-	dt.SetNumRows(0)
-}
-
-func (ss *Sim) ConfigTimePlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
-	plt.Options.Title = "Time Function Plot"
-	plt.Options.XAxis = "Time"
-	plt.SetTable(dt)
-	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColumnOptions("Time", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("V", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("GkIR", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("M", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("Minf", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 1)
-	plt.SetColumnOptions("Mtau", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 1)
-	return plt
-}
-
-// ConfigGUI configures the Cogent Core GUI interface for this simulation.
-func (ss *Sim) ConfigGUI() *core.Body {
-	b := core.NewBody("Kir Plot")
-
-	split := core.NewSplits(b)
-	core.NewForm(split).SetStruct(ss)
-
-	tv := core.NewTabs(split)
-
-	vgp, _ := tv.NewTab("V-G Plot")
-	ss.Plot = plotcore.NewSubPlot(vgp)
-	ss.ConfigPlot(ss.Plot, ss.Table)
-
-	ttp, _ := tv.NewTab("TimePlot")
-	ss.TimePlot = plotcore.NewSubPlot(ttp)
-	ss.ConfigTimePlot(ss.TimePlot, ss.TimeTable)
-
-	split.SetSplits(.3, .7)
-
-	b.AddTopBar(func(bar *core.Frame) {
-		core.NewToolbar(bar).Maker(func(p *tree.Plan) {
-			tree.Add(p, func(w *core.FuncButton) {
-				w.SetFunc(ss.VmRun).SetIcon(icons.PlayArrow)
-			})
-			tree.Add(p, func(w *core.FuncButton) {
-				w.SetFunc(ss.TimeRun).SetIcon(icons.PlayArrow)
-			})
-		})
+func (pl *Plot) MakeToolbar(p *tree.Plan) {
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(pl.GVRun).SetIcon(icons.PlayArrow)
 	})
-
-	return b
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(pl.TimeRun).SetIcon(icons.PlayArrow)
+	})
 }

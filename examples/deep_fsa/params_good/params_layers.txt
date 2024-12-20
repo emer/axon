@@ -1,0 +1,15 @@
+          Input		Nominal:	  0.15	Params: .InLay: 0.15 | Base:Layer: 0.15
+						Layer.Gi:	  0.90	Params: .InLay: 0.9 | Layer: 1.0
+
+         InputP		Nominal:	  0.15	Params: .InLay: 0.15 | Layer: 0.15
+						Layer.Gi:	  0.75	Params: .PulvinarLayer: 0.75 | .InLay: 0.9 | Layer: 1.0
+
+        Targets		Nominal:	  0.15	Params: .InLay: 0.15 | Layer: 0.15
+						Layer.Gi:	  0.90	Params: .InLay: 0.9 | Layer: 1.0
+
+         Hidden		Nominal:	  0.15	Params: Layer: 0.15
+						Layer.Gi:	  1.00	Params: Layer: 1.0
+
+       HiddenCT		Nominal:	  0.15	Params: Layer: 0.15
+						Layer.Gi:	  2.20	Params: .CTLayer: 2.2 | Layer: 1.0
+

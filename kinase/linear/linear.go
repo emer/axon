@@ -97,6 +97,7 @@ func (ls *Linear) Update() {
 }
 
 func (ls *Linear) Init() {
+	ls.Data.Init()
 	ls.Send.Init()
 	ls.Recv.Init()
 	ls.StdSyn.Init()
@@ -238,8 +239,8 @@ func (ls *Linear) Run() {
 }
 
 func (ls *Linear) SetSynState(sy *Synapse, row int) {
-	ls.Data.Column("StdCa").SetFloatRowCell(float64(sy.CaP), row, 0)
-	ls.Data.Column("StdCa").SetFloatRowCell(float64(sy.CaD), row, 1)
+	ls.Data.Column("StdCa").SetFloatRow(float64(sy.CaP), row, 0)
+	ls.Data.Column("StdCa").SetFloatRow(float64(sy.CaD), row, 1)
 }
 
 func (ls *Linear) SetBins(sn, rn *Neuron, off, row int) {
@@ -247,7 +248,7 @@ func (ls *Linear) SetBins(sn, rn *Neuron, off, row int) {
 		r := rn.SpikeBins[i]
 		bs := (r * s) / 10.0
 		ls.SpikeBins[i] = bs
-		ls.Data.Column("State").SetFloatRowCell(float64(bs), row, off+i)
+		ls.Data.Column("State").SetFloatRow(float64(bs), row, off+i)
 	}
 }
 
@@ -255,8 +256,8 @@ func (ls *Linear) SetBins(sn, rn *Neuron, off, row int) {
 func (ls *Linear) Trial(sendMinusHz, sendPlusHz, recvMinusHz, recvPlusHz float32, ti, row int) {
 	// ls.ErrDWt = (plusHz - minusHz) / 100
 
-	ls.Data.Column("Trial").SetFloatRow(float64(ti), row)
-	ls.Data.Column("Hz").SetFloatRowCell(float64(sendMinusHz), row, 0)
+	ls.Data.Column("Trial").SetFloatRow(float64(ti), row, 0)
+	ls.Data.Column("Hz").SetFloatRow(float64(sendMinusHz), row, 0)
 	ls.Data.Column("Hz").SetFloat(float64(sendPlusHz), row, 1)
 	ls.Data.Column("Hz").SetFloat(float64(recvMinusHz), row, 2)
 	ls.Data.Column("Hz").SetFloat(float64(recvPlusHz), row, 3)

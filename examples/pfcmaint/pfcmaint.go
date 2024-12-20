@@ -327,7 +327,7 @@ func (ss *Sim) ConfigLoops() {
 func (ss *Sim) ApplyInputs(mode Modes, trial, theta int) {
 	net := ss.Net
 	ndata := int(net.Context().NData)
-	curModeDir := ss.Current.RecycleDir(mode.String())
+	curModeDir := ss.Current.Dir(mode.String())
 	lays := []string{"Item", "Time", "GPi"}
 	net.InitExt()
 	for di := range ndata {
@@ -451,8 +451,8 @@ func (ss *Sim) StatsInit() {
 // in the tensorfs system.
 func (ss *Sim) ConfigStats() {
 	net := ss.Net
-	ss.Stats, _ = ss.Root.Mkdir("Stats")
-	ss.Current, _ = ss.Stats.Mkdir("Current")
+	ss.Stats = ss.Root.Dir("Stats")
+	ss.Current = ss.Stats.Dir("Current")
 
 	ss.SetRunName()
 
@@ -479,10 +479,10 @@ func (ss *Sim) ConfigStats() {
 	statNames := []string{"ItemP_CorSim", "TimeP_CorSim"}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		for _, name := range statNames {
-			modeDir := ss.Stats.RecycleDir(mode.String())
-			curModeDir := ss.Current.RecycleDir(mode.String())
-			levelDir := modeDir.RecycleDir(level.String())
-			subDir := modeDir.RecycleDir((level - 1).String()) // note: will fail for Cycle
+			modeDir := ss.Stats.Dir(mode.String())
+			curModeDir := ss.Current.Dir(mode.String())
+			levelDir := modeDir.Dir(level.String())
+			subDir := modeDir.Dir((level - 1).String()) // note: will fail for Cycle
 			tsr := levelDir.Float64(name)
 			ndata := int(ss.Net.Context().NData)
 			var stat float64
@@ -542,7 +542,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 	}
 	di := vu.View.Di
 	counters += fmt.Sprintf(" Di: %d", di)
-	curModeDir := ss.Current.RecycleDir(mode.String())
+	curModeDir := ss.Current.Dir(mode.String())
 	if curModeDir.Node("TrialName") == nil {
 		return counters
 	}

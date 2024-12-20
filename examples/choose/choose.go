@@ -474,7 +474,7 @@ func (ss *Sim) ConfigLoops() {
 func (ss *Sim) TakeAction(net *axon.Network, mode Modes) {
 	rp := &net.Rubicon
 	ctx := net.Context()
-	curModeDir := ss.Current.RecycleDir(mode.String())
+	curModeDir := ss.Current.Dir(mode.String())
 	mtxLy := net.LayerByName("VMtxGo")
 	vlly := net.LayerByName("VL")
 	threshold := float32(0.1)
@@ -574,7 +574,7 @@ func (ss *Sim) ApplyAction(mode Modes, di int) {
 func (ss *Sim) ApplyInputs(mode Modes) {
 	net := ss.Net
 	ss.Net.InitExt()
-	curModeDir := ss.Current.RecycleDir(mode.String())
+	curModeDir := ss.Current.Dir(mode.String())
 	lays := []string{"Dist", "CS"}
 	ndata := int(net.Context().NData)
 
@@ -708,8 +708,8 @@ func (ss *Sim) StatsInit() {
 // in the tensorfs system.
 func (ss *Sim) ConfigStats() {
 	net := ss.Net
-	ss.Stats, _ = ss.Root.Mkdir("Stats")
-	ss.Current, _ = ss.Stats.Mkdir("Current")
+	ss.Stats = ss.Root.Dir("Stats")
+	ss.Current = ss.Stats.Dir("Current")
 
 	ss.SetRunName()
 
@@ -739,10 +739,10 @@ func (ss *Sim) ConfigStats() {
 	// 		return
 	// 	}
 	// 	for _, name := range seqStats {
-	// 		modeDir := ss.Stats.RecycleDir(mode.String())
-	// 		curModeDir := ss.Current.RecycleDir(mode.String())
-	// 		levelDir := modeDir.RecycleDir(level.String())
-	// 		subDir := modeDir.RecycleDir((level - 1).String()) // note: will fail for Cycle
+	// 		modeDir := ss.Stats.Dir(mode.String())
+	// 		curModeDir := ss.Current.Dir(mode.String())
+	// 		levelDir := modeDir.Dir(level.String())
+	// 		subDir := modeDir.Dir((level - 1).String()) // note: will fail for Cycle
 	// 		tsr := levelDir.Float64(name)
 	// 		ndata := int(ss.Net.Context().NData)
 	// 		var stat float64
@@ -775,7 +775,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 	}
 	di := vu.View.Di
 	counters += fmt.Sprintf(" Di: %d", di)
-	curModeDir := ss.Current.RecycleDir(mode.String())
+	curModeDir := ss.Current.Dir(mode.String())
 	if curModeDir.Node("TrialName") == nil {
 		return counters
 	}

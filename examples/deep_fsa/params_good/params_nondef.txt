@@ -1,0 +1,11 @@
+InputP.Pulv.DriveScale: 0.2 // (Default: 0.1)<br>
+InputP.HiddenCTToInputP.Learn.LRate.Base: 0.03 // (Default: 0.04,0.1,0.2)<br>
+Hidden.InputToHidden.Learn.LRate.Base: 0.03 // (Default: 0.04,0.1,0.2)<br>
+Hidden.InputPToHidden.Learn.LRate.Base: 0.03 // (Default: 0.04,0.1,0.2)<br>
+HiddenCT.Inhib.Layer.Gi: 2.2 // (Default: 1,1.1,0.75,0.9)<br>
+HiddenCT.Inhib.Pool.Gi: 2.2 // (Default: 1,1.1,0.75,0.9)<br>
+HiddenCT.HiddenToHiddenCT.Learn.LRate.Base: 0.02 // (Default: 0.04,0.1,0.2)<br>
+HiddenCT.HiddenCTToHiddenCT.Learn.LRate.Base: 0.02 // (Default: 0.04,0.1,0.2)<br>
+HiddenCT.HiddenCTToHiddenCT.PathScale.Abs: 0.5 // (Default: 1)<br>
+HiddenCT.HiddenCTToHiddenCT.Learn.LRate.Base: 0.03 // (Default: 0.04,0.1,0.2)<br>
+HiddenCT.InputPToHiddenCT.Learn.LRate.Base: 0.03 // (Default: 0.04,0.1,0.2)<br>

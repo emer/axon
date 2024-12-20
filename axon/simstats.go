@@ -24,12 +24,12 @@ import (
 
 // StatsNode returns tensorfs Dir Node for given mode, level.
 func StatsNode(statsDir *tensorfs.Node, mode, level enums.Enum) *tensorfs.Node {
-	modeDir := statsDir.RecycleDir(mode.String())
-	return modeDir.RecycleDir(level.String())
+	modeDir := statsDir.Dir(mode.String())
+	return modeDir.Dir(level.String())
 }
 
 func StatsLayerValues(net *Network, curDir *tensorfs.Node, mode enums.Enum, di int, layName, varName string) *tensor.Float32 {
-	curModeDir := curDir.RecycleDir(mode.String())
+	curModeDir := curDir.Dir(mode.String())
 	ly := net.LayerByName(layName)
 	tsr := curModeDir.Float32(layName+"_"+varName, ly.Shape.Sizes...)
 	ly.UnitValuesTensor(tsr, varName, di)
@@ -147,9 +147,9 @@ func StatLoopCounters(statsDir, currentDir *tensorfs.Node, ls *looper.Stacks, ne
 				}
 				name := prefix + lev.String() // name of stat = level
 				ndata := int(net.Context().NData)
-				modeDir := statsDir.RecycleDir(mode.String())
-				curModeDir := currentDir.RecycleDir(mode.String())
-				levelDir := modeDir.RecycleDir(level.String())
+				modeDir := statsDir.Dir(mode.String())
+				curModeDir := currentDir.Dir(mode.String())
+				levelDir := modeDir.Dir(level.String())
 				tsr := levelDir.Int(name)
 				if start {
 					tsr.SetNumRows(0)
@@ -198,8 +198,8 @@ func StatLoopCounters(statsDir, currentDir *tensorfs.Node, ls *looper.Stacks, ne
 func StatRunName(statsDir, currentDir *tensorfs.Node, ls *looper.Stacks, net *Network, trialLevel enums.Enum, exclude ...enums.Enum) func(mode, level enums.Enum, start bool) {
 	return func(mode, level enums.Enum, start bool) {
 		name := "RunName"
-		modeDir := statsDir.RecycleDir(mode.String())
-		levelDir := modeDir.RecycleDir(level.String())
+		modeDir := statsDir.Dir(mode.String())
+		levelDir := modeDir.Dir(level.String())
 		tsr := levelDir.StringValue(name)
 		ndata := int(net.Context().NData)
 		runNm := currentDir.StringValue(name, 1).String1D(0)
@@ -227,9 +227,9 @@ func StatTrialName(statsDir, currentDir *tensorfs.Node, ls *looper.Stacks, net *
 			return
 		}
 		name := "TrialName"
-		modeDir := statsDir.RecycleDir(mode.String())
-		curModeDir := currentDir.RecycleDir(mode.String())
-		levelDir := modeDir.RecycleDir(level.String())
+		modeDir := statsDir.Dir(mode.String())
+		curModeDir := currentDir.Dir(mode.String())
+		levelDir := modeDir.Dir(level.String())
 		tsr := levelDir.StringValue(name)
 		ndata := int(net.Context().NData)
 		if start {
@@ -257,8 +257,8 @@ func StatPerTrialMSec(statsDir *tensorfs.Node, trainMode enums.Enum, trialLevel 
 		}
 		levels[levi] = level
 		name := "PerTrialMSec"
-		modeDir := statsDir.RecycleDir(mode.String())
-		levelDir := modeDir.RecycleDir(level.String())
+		modeDir := statsDir.Dir(mode.String())
+		levelDir := modeDir.Dir(level.String())
 		tsr := levelDir.Float64(name)
 		if start {
 			tsr.SetNumRows(0)
@@ -270,14 +270,14 @@ func StatPerTrialMSec(statsDir *tensorfs.Node, trainMode enums.Enum, trialLevel 
 		switch levi {
 		case 1:
 			epcTimer.Stop()
-			subd := modeDir.RecycleDir(levels[0].String())
+			subd := modeDir.Dir(levels[0].String())
 			trls := errors.Ignore1(subd.Values())[0] // must be a stat
 			epcTimer.N = trls.Len()
 			pertrl := float64(epcTimer.Avg()) / float64(time.Millisecond)
 			tsr.AppendRowFloat(pertrl)
 			epcTimer.ResetStart()
 		default:
-			subd := modeDir.RecycleDir(levels[levi-1].String())
+			subd := modeDir.Dir(levels[levi-1].String())
 			stat := stats.StatMean.Call(subd.Value(name))
 			tsr.AppendRow(stat)
 		}
@@ -298,8 +298,8 @@ func StatLayerActGe(statsDir *tensorfs.Node, net *Network, trainMode, trialLevel
 			return
 		}
 		levels[levi] = level
-		modeDir := statsDir.RecycleDir(mode.String())
-		levelDir := modeDir.RecycleDir(level.String())
+		modeDir := statsDir.Dir(mode.String())
+		levelDir := modeDir.Dir(level.String())
 		ndata := net.Context().NData
 		for _, lnm := range layerNames {
 			for si, statName := range statNames {
@@ -329,7 +329,7 @@ func StatLayerActGe(statsDir *tensorfs.Node, net *Network, trainMode, trialLevel
 						tsr.AppendRowFloat(float64(stat))
 					}
 				default:
-					subd := modeDir.RecycleDir(levels[levi-1].String())
+					subd := modeDir.Dir(levels[levi-1].String())
 					stat := stats.StatMean.Call(subd.Value(name))
 					tsr.AppendRow(stat)
 				}
@@ -347,8 +347,8 @@ func StatLayerState(statsDir *tensorfs.Node, net *Network, smode, slevel enums.E
 		if mode.Int64() != smode.Int64() || level.Int64() != slevel.Int64() {
 			return
 		}
-		modeDir := statsDir.RecycleDir(mode.String())
-		levelDir := modeDir.RecycleDir(level.String())
+		modeDir := statsDir.Dir(mode.String())
+		levelDir := modeDir.Dir(level.String())
 		ndata := int(net.Context().NData)
 		if !isTrialLevel {
 			ndata = 1
@@ -393,10 +393,10 @@ func StatPCA(statsDir, currentDir *tensorfs.Node, net *Network, interval int, tr
 			return
 		}
 		levels[levi] = level
-		modeDir := statsDir.RecycleDir(mode.String())
-		curModeDir := currentDir.RecycleDir(mode.String())
-		pcaDir := statsDir.RecycleDir("PCA")
-		levelDir := modeDir.RecycleDir(level.String())
+		modeDir := statsDir.Dir(mode.String())
+		curModeDir := currentDir.Dir(mode.String())
+		pcaDir := statsDir.Dir("PCA")
+		levelDir := modeDir.Dir(level.String())
 		ndata := int(net.Context().NData)
 		for _, lnm := range layerNames {
 			ly := net.LayerByName(lnm)
@@ -470,7 +470,7 @@ func StatPCA(statsDir, currentDir *tensorfs.Node, net *Network, interval int, tr
 					}
 					tsr.AppendRowFloat(float64(stat))
 				default:
-					subd := modeDir.RecycleDir(levels[levi-1].String())
+					subd := modeDir.Dir(levels[levi-1].String())
 					stat := stats.StatMean.Call(subd.Value(name))
 					tsr.AppendRow(stat)
 				}
@@ -491,9 +491,9 @@ func StatPrevCorSim(statsDir, currentDir *tensorfs.Node, net *Network, trialLeve
 			return
 		}
 		levels[levi] = level
-		modeDir := statsDir.RecycleDir(mode.String())
-		curModeDir := currentDir.RecycleDir(mode.String())
-		levelDir := modeDir.RecycleDir(level.String())
+		modeDir := statsDir.Dir(mode.String())
+		curModeDir := currentDir.Dir(mode.String())
+		levelDir := modeDir.Dir(level.String())
 		ndata := int(net.Context().NData)
 		for _, lnm := range layerNames {
 			for si, statName := range statNames {
@@ -533,7 +533,7 @@ func StatPrevCorSim(statsDir, currentDir *tensorfs.Node, net *Network, trialLeve
 						tsr.AppendRowFloat(stat)
 					}
 				default:
-					subd := modeDir.RecycleDir(levels[levi-1].String())
+					subd := modeDir.Dir(levels[levi-1].String())
 					stat := stats.StatMean.Call(subd.Value(name))
 					tsr.AppendRow(stat)
 				}
@@ -551,9 +551,9 @@ func StatLevelAll(statsDir *tensorfs.Node, srcMode, srcLevel enums.Enum, styleFu
 		if srcMode.Int64() != mode.Int64() || srcLevel.Int64() != level.Int64() {
 			return
 		}
-		modeDir := statsDir.RecycleDir(mode.String())
-		levelDir := modeDir.RecycleDir(level.String())
-		allDir := modeDir.RecycleDir(level.String() + "All")
+		modeDir := statsDir.Dir(mode.String())
+		levelDir := modeDir.Dir(level.String())
+		allDir := modeDir.Dir(level.String() + "All")
 		cols := levelDir.NodesFunc(nil) // all nodes
 		for _, cl := range cols {
 			clv := cl.Tensor.(tensor.Values)

@@ -1,0 +1,35 @@
+
+Layer: Depth
+
+Layer: DepthP
+	     DepthHidCT	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  1.00
+
+Layer: HeadDir
+
+Layer: HeadDirP
+	   HeadDirHidCT	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:  1.00
+
+Layer: Action
+
+Layer: DepthHid
+	         DepthP	       BackPath	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.03
+								    Rel Params: .FromPulv: 0.1 | .BackPath: 0.2
+	         Action	    ForwardPath	Abs:	  1.00	Rel:	  2.00	GScale:	  0.22	Rel:  0.65
+								    Rel Params: #ActionToDepthHid: 2.0
+	          Depth	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.06	Rel:  0.32
+
+Layer: DepthHidCT
+	       DepthHid	     CTCtxtPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.91	Rel:  0.91
+	         DepthP	       BackPath	Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.09
+								    Rel Params: .FromPulv: 0.1 | .BackPath: 0.2
+
+Layer: HeadDirHid
+	       HeadDirP	       BackPath	Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.05
+								    Rel Params: .FromPulv: 0.1 | .BackPath: 0.2
+	         Action	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.16	Rel:  0.48
+	        HeadDir	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.24	Rel:  0.48
+
+Layer: HeadDirHidCT
+	     HeadDirHid	     CTCtxtPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.91	Rel:  0.91
+	       HeadDirP	       BackPath	Abs:	  1.00	Rel:	  0.10	GScale:	  0.05	Rel:  0.09
+								    Rel Params: .FromPulv: 0.1 | .BackPath: 0.2

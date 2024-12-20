@@ -10,9 +10,9 @@ import (
 
 //gosl:start chans
 
-// KirParams control the Kir potassium inwardly rectifying current,
+// KirParams control the kIR potassium inwardly rectifying current,
 // based on the equations from Lindroos et al (2018).
-// The conductance is highest at low membrane potentials
+// The conductance is highest at low membrane potentials.
 type KirParams struct {
 
 	// overall strength multiplier of Kir current.
@@ -86,9 +86,7 @@ func (kp *KirParams) MTau(vbio float32) float32 {
 // DM computes the change in M gating parameter
 func (kp *KirParams) DM(vbio, m float32) float32 {
 	minf := kp.Minf(vbio)
-	// mtau := kp.MTau(vbio)
-	// minf := float32(0.15)
-	mtau := float32(4.0)
+	mtau := kp.MTau(vbio)
 	dm := (minf - m) / (mtau * 3) // 3 = Q10
 	return dm
 }

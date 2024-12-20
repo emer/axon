@@ -10,8 +10,12 @@ import (
 
 //gosl:start chans
 
-// GABABParams control the GABAB dynamics in PFC Maint neurons,
-// based on Brunel & Wang (2001) parameters.
+// GABA-B is an inhibitory channel activated by the usual GABA inhibitory neurotransmitter,
+// which is coupled to the GIRK G-protein coupled inwardly rectifying potassium (K) channel.
+// It is ubiquitous in the brain, and critical for stability of spiking patterns over time in axon.
+// The inward rectification is caused by a Mg+ ion block *from the inside* of the neuron,
+// which means that these channels are most open when the neuron is hyperpolarized (inactive),
+// and thus it serves to keep inactive neurons inactive. Based on Thomson & Destexhe (1999).
 type GABABParams struct {
 
 	// overall strength multiplier of GABA-B current. The 0.015 default is a high value that works well in smaller networks -- larger networks may benefit from lower levels (e.g., 0.012).

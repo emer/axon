@@ -2,35 +2,23 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// sahp_plot plots an equation updating over time in a table.Table and PlotView.
-package main
+// sahp_plot plots the slow afterhyperpolarizing (sAHP) channel,
+package sahp_plot
 
 //go:generate core generate -add-types
 
 import (
-	"strconv"
-
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
-	"cogentcore.org/core/plot/plotcore"
-	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/core/plot"
+	"cogentcore.org/core/tensor/databrowser"
+	"cogentcore.org/core/tensor/tensorfs"
 	"cogentcore.org/core/tree"
 	"github.com/emer/axon/v2/chans"
 )
 
-func main() {
-	sim := &Sim{}
-	sim.Config()
-	sim.CaRun()
-	b := sim.ConfigGUI()
-	b.RunMainWindow()
-}
-
-// LogPrec is precision for saving float values in logs
-const LogPrec = 4
-
-// Sim holds the params, table, etc
-type Sim struct {
+// Plot holds the params, table, etc
+type Plot struct {
 
 	// sAHP function
 	Sahp chans.SahpParams `display:"inline"`
@@ -53,184 +41,110 @@ type Sim struct {
 	// time-run CaD value at end of each theta cycle
 	TimeCaD float32
 
-	// table for plot
-	Table *table.Table `display:"no-inline"`
-
-	// the plot
-	Plot *plotcore.PlotEditor `display:"-"`
-
-	// table for plot
-	TimeTable *table.Table `display:"no-inline"`
-
-	// the plot
-	TimePlot *plotcore.PlotEditor `display:"-"`
+	Dir  *tensorfs.Node     `display:"-"`
+	Tabs databrowser.Tabber `display:"-"`
 }
 
 // Config configures all the elements using the standard functions
-func (ss *Sim) Config() {
-	ss.Sahp.Defaults()
-	ss.Sahp.Gbar = 1
-	ss.CaStart = 0
-	ss.CaEnd = 1.5
-	ss.CaStep = 0.01
-	ss.TimeSteps = 30
-	ss.TimeCaStart = 0
-	ss.TimeCaD = 1
-	ss.Update()
-	ss.Table = table.New()
-	ss.ConfigTable(ss.Table)
-	ss.TimeTable = table.New()
-	ss.ConfigTimeTable(ss.TimeTable)
+func (pl *Plot) Config(parent *tensorfs.Node, tabs databrowser.Tabber) {
+	pl.Dir = parent.Dir("sAHP")
+	pl.Tabs = tabs
+
+	pl.Sahp.Defaults()
+	pl.Sahp.Gbar = 1
+	pl.CaStart = 0
+	pl.CaEnd = 1.5
+	pl.CaStep = 0.01
+	pl.TimeSteps = 30
+	pl.TimeCaStart = 0
+	pl.TimeCaD = 1
+	pl.Update()
 }
 
 // Update updates computed values
-func (ss *Sim) Update() {
+func (pl *Plot) Update() {
 }
 
-// CaRun plots the equation as a function of V
-func (ss *Sim) CaRun() { //types:add
-	ss.Update()
-	dt := ss.Table
+// GCaRun plots the conductance G (and other variables) as a function of Ca.
+func (pl *Plot) GCaRun() { //types:add
+	pl.Update()
+	dir := pl.Dir.Dir("G_Ca")
 
-	mp := &ss.Sahp
-
-	nv := int((ss.CaEnd - ss.CaStart) / ss.CaStep)
-	dt.SetNumRows(nv)
-	for vi := 0; vi < nv; vi++ {
-		ca := ss.CaStart + float32(vi)*ss.CaStep
+	mp := &pl.Sahp
+	nv := int((pl.CaEnd - pl.CaStart) / pl.CaStep)
+	for vi := range nv {
+		ca := pl.CaStart + float32(vi)*pl.CaStep
 		var ninf, tau float32
 		mp.NinfTauFromCa(ca, &ninf, &tau)
 
-		dt.SetFloat("Ca", vi, float64(ca))
-		dt.SetFloat("Ninf", vi, float64(ninf))
-		dt.SetFloat("Tau", vi, float64(tau))
+		dir.Float64("Ca", nv).SetFloat1D(float64(ca), vi)
+		dir.Float64("Ninf", nv).SetFloat1D(float64(ninf), vi)
+		dir.Float64("Tau", nv).SetFloat1D(float64(tau), vi)
 	}
-	if ss.Plot != nil {
-		ss.Plot.UpdatePlot()
+	plot.SetFirstStylerTo(dir.Float64("Ca"), func(s *plot.Style) {
+		s.Role = plot.X
+	})
+	ons := []string{"Ninf", "Tau"}
+	for _, on := range ons {
+		plot.SetFirstStylerTo(dir.Float64(on), func(s *plot.Style) {
+			s.On = true
+			s.Plot.Title = "sAHP G(Ca)"
+		})
+	}
+	if pl.Tabs != nil && pl.Tabs.AsDataTabs().IsVisible() {
+		pl.Tabs.PlotTensorFS(dir)
 	}
 }
-
-func (ss *Sim) ConfigTable(dt *table.Table) {
-	dt.SetMetaData("name", "sAHPplotTable")
-	dt.SetMetaData("read-only", "true")
-	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
-
-	dt.AddFloat64Column("Ca")
-	dt.AddFloat64Column("Ninf")
-	dt.AddFloat64Column("Tau")
-	dt.SetNumRows(0)
-}
-
-func (ss *Sim) ConfigPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
-	plt.Options.Title = "sAHP Ca Function Plot"
-	plt.Options.XAxis = "Ca"
-	plt.SetTable(dt)
-	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColumnOptions("Ca", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("Ninf", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	plt.SetColumnOptions("Tau", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 1)
-	return plt
-}
-
-/////////////////////////////////////////////////////////////////
 
 // TimeRun runs the equation over time.
-func (ss *Sim) TimeRun() { //types:add
-	ss.Update()
-	dt := ss.TimeTable
+func (pl *Plot) TimeRun() { //types:add
+	pl.Update()
+	dir := pl.Dir.Dir("G_Time")
+	nv := pl.TimeSteps
 
-	mp := &ss.Sahp
-
+	mp := &pl.Sahp
 	var n, tau float32
-	mp.NinfTauFromCa(ss.TimeCaStart, &n, &tau)
-	ca := ss.TimeCaStart
-
-	dt.SetNumRows(ss.TimeSteps)
-	for ti := 1; ti <= ss.TimeSteps; ti++ {
-		t := float32(ti)
+	mp.NinfTauFromCa(pl.TimeCaStart, &n, &tau)
+	ca := pl.TimeCaStart
+	for ti := range nv {
+		t := float32(ti + 1)
 
 		var ninf, tau float32
 		mp.NinfTauFromCa(ca, &ninf, &tau)
 		dn := mp.DNFromV(ca, n)
 		g := mp.GsAHP(n)
 
-		dt.SetFloat("Time", ti, float64(t))
-		dt.SetFloat("Ca", ti, float64(ca))
-		dt.SetFloat("GsAHP", ti, float64(g))
-		dt.SetFloat("N", ti, float64(n))
-		dt.SetFloat("dN", ti, float64(dn))
-		dt.SetFloat("Ninf", ti, float64(ninf))
-		dt.SetFloat("Tau", ti, float64(tau))
+		dir.Float64("Time", nv).SetFloat1D(float64(t), ti)
+		dir.Float64("Ca", nv).SetFloat1D(float64(ca), ti)
+		dir.Float64("GsAHP", nv).SetFloat1D(float64(g), ti)
+		dir.Float64("N", nv).SetFloat1D(float64(n), ti)
+		dir.Float64("dN", nv).SetFloat1D(float64(dn), ti)
+		dir.Float64("Ninf", nv).SetFloat1D(float64(ninf), ti)
+		dir.Float64("Tau", nv).SetFloat1D(float64(tau), ti)
 
-		ca = mp.CaInt(ca, ss.TimeCaD)
+		ca = mp.CaInt(ca, pl.TimeCaD)
 		n += dn
 	}
-	if ss.TimePlot != nil {
-		ss.TimePlot.UpdatePlot()
+	plot.SetFirstStylerTo(dir.Float64("Time"), func(s *plot.Style) {
+		s.Role = plot.X
+	})
+	ons := []string{"Ca", "GsAHP", "N"}
+	for _, on := range ons {
+		plot.SetFirstStylerTo(dir.Float64(on), func(s *plot.Style) {
+			s.On = true
+			s.Plot.Title = "sAHP G(t)"
+		})
+	}
+	if pl.Tabs != nil && pl.Tabs.AsDataTabs().IsVisible() {
+		pl.Tabs.PlotTensorFS(dir)
 	}
 }
 
-func (ss *Sim) ConfigTimeTable(dt *table.Table) {
-	dt.SetMetaData("name", "sAHPplotTable")
-	dt.SetMetaData("read-only", "true")
-	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
-
-	dt.AddFloat64Column("Time")
-	dt.AddFloat64Column("Ca")
-	dt.AddFloat64Column("GsAHP")
-	dt.AddFloat64Column("N")
-	dt.AddFloat64Column("dN")
-	dt.AddFloat64Column("Ninf")
-	dt.AddFloat64Column("Tau")
-	dt.AddFloat64Column("Kna")
-	dt.SetNumRows(0)
-}
-
-func (ss *Sim) ConfigTimePlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
-	plt.Options.Title = "Time Function Plot"
-	plt.Options.XAxis = "Time"
-	plt.SetTable(dt)
-	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColumnOptions("Time", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("Ca", plotcore.On, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("GsAHP", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("N", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("dN", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("Ninf", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("Tau", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColumnOptions("Kna", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 1)
-	return plt
-}
-
-// ConfigGUI configures the Cogent Core GUI interface for this simulation.
-func (ss *Sim) ConfigGUI() *core.Body {
-	b := core.NewBody("Sahp Plot")
-
-	split := core.NewSplits(b)
-	core.NewForm(split).SetStruct(ss)
-
-	tv := core.NewTabs(split)
-
-	cgp, _ := tv.NewTab("Ca-G Plot")
-	ss.Plot = plotcore.NewSubPlot(cgp)
-	ss.ConfigPlot(ss.Plot, ss.Table)
-
-	ttp, _ := tv.NewTab("TimePlot")
-	ss.TimePlot = plotcore.NewSubPlot(ttp)
-	ss.ConfigTimePlot(ss.TimePlot, ss.TimeTable)
-
-	split.SetSplits(.3, .7)
-
-	b.AddTopBar(func(bar *core.Frame) {
-		core.NewToolbar(bar).Maker(func(p *tree.Plan) {
-			tree.Add(p, func(w *core.FuncButton) {
-				w.SetFunc(ss.CaRun).SetIcon(icons.PlayArrow)
-			})
-			tree.Add(p, func(w *core.FuncButton) {
-				w.SetFunc(ss.TimeRun).SetIcon(icons.PlayArrow)
-			})
-		})
+func (pl *Plot) MakeToolbar(p *tree.Plan) {
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(pl.GCaRun).SetIcon(icons.PlayArrow)
 	})
-
-	return b
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(pl.TimeRun).SetIcon(icons.PlayArrow)
+	})
 }
