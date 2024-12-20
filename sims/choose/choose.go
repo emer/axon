@@ -24,7 +24,7 @@ import (
 	"cogentcore.org/core/tensor/tensorfs"
 	"cogentcore.org/core/tree"
 	"github.com/emer/axon/v2/axon"
-	"github.com/emer/axon/v2/examples/choose/armaze"
+	"github.com/emer/axon/v2/sims/choose/armaze"
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/looper"

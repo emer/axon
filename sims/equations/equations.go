@@ -93,9 +93,12 @@ type Plots struct {
 	// (also Muddapu & Chakravarthy, 2021): X^h / (X^h + C50^h) where h ~= 4 (hard coded)
 	SKCa chanplots.SKCaPlot `new-window:"+" display:"no-inline"`
 
-	// VGCC control the standard L-type Ca channel.
+	// VGCC plots the standard L-type voltage gated Ca channel.
 	// All functions based on Urakubo et al (2008).
 	VGCC chanplots.VGCCPlot `new-window:"+" display:"no-inline"`
+
+	// SynCa plots synaptic calcium according to the kinase calcium dynamics.
+	SynCa chanplots.SynCaPlot `new-window:"+" display:"no-inline"`
 }
 
 func (pl *Plots) Config(root *tensorfs.Node) {
@@ -107,4 +110,5 @@ func (pl *Plots) Config(root *tensorfs.Node) {
 	pl.Sahp.Config(root, pl.GUI.Tabs)
 	pl.SKCa.Config(root, pl.GUI.Tabs)
 	pl.VGCC.Config(root, pl.GUI.Tabs)
+	pl.SynCa.Config(root, pl.GUI.Tabs)
 }

@@ -6,7 +6,7 @@ package main
 
 import (
 	"cogentcore.org/core/cli"
-	"github.com/emer/axon/v2/examples/pfcmaint"
+	"github.com/emer/axon/v2/sims/pfcmaint"
 )
 
 func main() {
