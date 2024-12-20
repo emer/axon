@@ -109,17 +109,20 @@ type Network struct {
 	// based on state updated here.
 	Rubicon Rubicon
 
-	// array of layers.
+	// Layers is the array of layers, used for CPU initialization, not GPU computation.
 	Layers []*Layer
 
-	// pointers to all pathways in the network, sender-based.
+	// Paths has pointers to all pathways in the network, sender-based, for CPU initialization,
+	// not GPU computation.
 	Paths []*Path `display:"-"`
 
 	// LayerClassMap is a map from class name to layer names.
 	LayerClassMap map[string][]string `display:"-"`
 
-	// number of threads to use for parallel processing.
+	// NThreads is number of threads to use for parallel processing.
 	NThreads int
+
+	// todo: following is basically obsolete:
 
 	// record function timer information.
 	RecFunTimes bool `display:"-"`

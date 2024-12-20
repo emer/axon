@@ -123,6 +123,7 @@ func (nt *Network) MinusPhase() {
 	RunMinusPhasePool(int(nix.NPools))
 	RunMinusPhaseNeuron(nd)
 	RunMinusPhasePost(int(nix.NLayers))
+	RunDoneLayersNeurons() // this is critical for action-taking models to have the minus phase state
 }
 
 // PlusPhaseStart does updating at the start of the plus phase:
