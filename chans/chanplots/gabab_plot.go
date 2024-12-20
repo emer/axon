@@ -2,10 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// gabab_plot plots GABA-B long-duration inhibitory channel equations.
-package gabab_plot
-
-//go:generate core generate -add-types
+package chanplots
 
 import (
 	"math"
@@ -20,7 +17,7 @@ import (
 	"github.com/emer/axon/v2/chans"
 )
 
-type Plot struct {
+type GababPlot struct {
 	// standard chans version of GABAB
 	GABAstd chans.GABABParams
 
@@ -71,7 +68,7 @@ type Plot struct {
 }
 
 // Config configures all the elements using the standard functions
-func (pl *Plot) Config(parent *tensorfs.Node, tabs databrowser.Tabber) {
+func (pl *GababPlot) Config(parent *tensorfs.Node, tabs databrowser.Tabber) {
 	pl.Dir = parent.Dir("GabaB")
 	pl.Tabs = tabs
 
@@ -93,13 +90,13 @@ func (pl *Plot) Config(parent *tensorfs.Node, tabs databrowser.Tabber) {
 }
 
 // Update updates computed values
-func (pl *Plot) Update() {
+func (pl *GababPlot) Update() {
 	pl.TauFact = math.Pow(pl.DecayTau/pl.RiseTau, pl.RiseTau/(pl.DecayTau-pl.RiseTau))
 	pl.MaxTime = ((pl.RiseTau * pl.DecayTau) / (pl.DecayTau - pl.RiseTau)) * math.Log(pl.DecayTau/pl.RiseTau)
 }
 
 // GVRun plots the conductance G (and other variables) as a function of V.
-func (pl *Plot) GVRun() { //types:add
+func (pl *GababPlot) GVRun() { //types:add
 	pl.Update()
 	dir := pl.Dir.Dir("G_V")
 
@@ -132,7 +129,7 @@ func (pl *Plot) GVRun() { //types:add
 }
 
 // GSRun plots conductance over spiking.
-func (pl *Plot) GSRun() { //types:add
+func (pl *GababPlot) GSRun() { //types:add
 	pl.Update()
 	dir := pl.Dir.Dir("G_Spike")
 
@@ -165,7 +162,7 @@ func (pl *Plot) GSRun() { //types:add
 }
 
 // TimeRun runs the equations over time.
-func (pl *Plot) TimeRun() { //types:add
+func (pl *GababPlot) TimeRun() { //types:add
 	pl.Update()
 	dir := pl.Dir.Dir("G_Time")
 	nv := pl.TimeSteps
@@ -216,7 +213,7 @@ func (pl *Plot) TimeRun() { //types:add
 	}
 }
 
-func (pl *Plot) MakeToolbar(p *tree.Plan) {
+func (pl *GababPlot) MakeToolbar(p *tree.Plan) {
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(pl.GVRun).SetIcon(icons.PlayArrow)
 	})

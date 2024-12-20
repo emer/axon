@@ -10,14 +10,7 @@ package main
 
 import (
 	"cogentcore.org/core/tensor/tensorfs"
-	"github.com/emer/axon/v2/chans/ak_plot"
-	"github.com/emer/axon/v2/chans/gabab_plot"
-	"github.com/emer/axon/v2/chans/kir_plot"
-	"github.com/emer/axon/v2/chans/mahp_plot"
-	"github.com/emer/axon/v2/chans/nmda_plot"
-	"github.com/emer/axon/v2/chans/sahp_plot"
-	"github.com/emer/axon/v2/chans/skca_plot"
-	"github.com/emer/axon/v2/chans/vgcc_plot"
+	"github.com/emer/axon/v2/chans/chanplots"
 	"github.com/emer/emergent/v2/egui"
 )
 
@@ -46,7 +39,7 @@ type Plots struct {
 	// voltage gated calcium channels which can otherwise drive runaway excitatory currents.
 	// See AKsParams for a much simpler version that works fine when full AP-like spikes are
 	// not simulated, as in our standard axon models.
-	AK ak_plot.Plot `new-window:"+" display:"no-inline"`
+	AK chanplots.AKPlot `new-window:"+" display:"no-inline"`
 
 	// GABA-B is an inhibitory channel activated by the usual GABA inhibitory neurotransmitter,
 	// which is coupled to the GIRK G-protein coupled inwardly rectifying potassium (K) channel.
@@ -54,12 +47,12 @@ type Plots struct {
 	// The inward rectification is caused by a Mg+ ion block *from the inside* of the neuron,
 	// which means that these channels are most open when the neuron is hyperpolarized (inactive),
 	// and thus it serves to keep inactive neurons inactive. Based on Thomson & Destexhe (1999).
-	GABAB gabab_plot.Plot `new-window:"+" display:"no-inline"`
+	GABAB chanplots.GababPlot `new-window:"+" display:"no-inline"`
 
 	// Kir is the kIR potassium inwardly rectifying current,
 	// based on the equations from Lindroos et al (2018).
 	// The conductance is highest at low membrane potentials.
-	Kir kir_plot.Plot `new-window:"+" display:"no-inline"`
+	Kir chanplots.KirPlot `new-window:"+" display:"no-inline"`
 
 	// Mahp implements an M-type medium afterhyperpolarizing (mAHP) channel,
 	// where m also stands for muscarinic due to the ACh inactivation of this channel.
@@ -68,14 +61,14 @@ type Plots struct {
 	// There is one gating variable n updated over time with a tau that is also voltage dependent.
 	// The infinite-time value of n is voltage dependent according to a logistic function
 	// of the membrane potential, centered at Voff with slope Vslope.
-	Mahp mahp_plot.Plot `new-window:"+" display:"no-inline"`
+	Mahp chanplots.MahpPlot `new-window:"+" display:"no-inline"`
 
 	// NMDA implements NMDA dynamics, based on Jahr & Stevens (1990) equations
 	// which are widely used in models, from Brunel & Wang (2001) to Sanders et al. (2013).
 	// The overall conductance is a function of a voltage-dependent postsynaptic factor based
 	// on Mg ion blockage, and presynaptic Glu-based opening, which in a simple model just
 	// increments
-	NMDA nmda_plot.Plot `new-window:"+" display:"no-inline"`
+	NMDA chanplots.NMDAPlot `new-window:"+" display:"no-inline"`
 
 	// Sahp implements a slow afterhyperpolarizing (sAHP) channel,
 	// It has a slowly accumulating calcium value, aggregated at the
@@ -85,7 +78,7 @@ type Plots struct {
 	// For the theta-cycle updating, the normal m-type tau is all within
 	// the scope of a single theta cycle, so we just omit the time integration
 	// of the n gating value, but tau is computed in any case.
-	Sahp sahp_plot.Plot `new-window:"+" display:"no-inline"`
+	Sahp chanplots.SahpPlot `new-window:"+" display:"no-inline"`
 
 	// SKCa describes the small-conductance calcium-activated potassium channel,
 	// activated by intracellular stores in a way that drives pauses in firing,
@@ -98,11 +91,11 @@ type Plots struct {
 	// CaM = K channel conductance gating factor driven by CaR binding,
 	// computed using the Hill equations described in Fujita et al (2012), Gunay et al (2008)
 	// (also Muddapu & Chakravarthy, 2021): X^h / (X^h + C50^h) where h ~= 4 (hard coded)
-	SKCa skca_plot.Plot `new-window:"+" display:"no-inline"`
+	SKCa chanplots.SKCaPlot `new-window:"+" display:"no-inline"`
 
 	// VGCC control the standard L-type Ca channel.
 	// All functions based on Urakubo et al (2008).
-	VGCC vgcc_plot.Plot `new-window:"+" display:"no-inline"`
+	VGCC chanplots.VGCCPlot `new-window:"+" display:"no-inline"`
 }
 
 func (pl *Plots) Config(root *tensorfs.Node) {

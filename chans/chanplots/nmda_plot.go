@@ -2,10 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// nmda_plot plots NMDA Ca++ channel equations.
-package nmda_plot
-
-//go:generate core generate -add-types
+package chanplots
 
 import (
 	"math"
@@ -20,7 +17,7 @@ import (
 	"github.com/emer/axon/v2/chans"
 )
 
-type Plot struct {
+type NMDAPlot struct {
 
 	// standard NMDA implementation in chans
 	NMDAStd chans.NMDAParams
@@ -66,7 +63,7 @@ type Plot struct {
 }
 
 // Config configures all the elements using the standard functions
-func (pl *Plot) Config(parent *tensorfs.Node, tabs databrowser.Tabber) {
+func (pl *NMDAPlot) Config(parent *tensorfs.Node, tabs databrowser.Tabber) {
 	pl.Dir = parent.Dir("NMDA")
 	pl.Tabs = tabs
 
@@ -88,14 +85,14 @@ func (pl *Plot) Config(parent *tensorfs.Node, tabs databrowser.Tabber) {
 }
 
 // Update updates computed values
-func (pl *Plot) Update() {
+func (pl *NMDAPlot) Update() {
 }
 
 // Equation here:
 // https://brian2.readthedocs.io/en/stable/examples/frompapers.Brunel_Wang_2001.html
 
 // GVRun plots the conductance G (and other variables) as a function of V.
-func (pl *Plot) GVRun() { //types:add
+func (pl *NMDAPlot) GVRun() { //types:add
 	pl.Update()
 	dir := pl.Dir.Dir("G_V")
 
@@ -136,7 +133,7 @@ func (pl *Plot) GVRun() { //types:add
 }
 
 // TimeRun runs the equation over time.
-func (pl *Plot) TimeRun() { //types:add
+func (pl *NMDAPlot) TimeRun() { //types:add
 	pl.Update()
 	dir := pl.Dir.Dir("G_Time")
 	nv := pl.TimeSteps
@@ -172,7 +169,7 @@ func (pl *Plot) TimeRun() { //types:add
 	}
 }
 
-func (pl *Plot) MakeToolbar(p *tree.Plan) {
+func (pl *NMDAPlot) MakeToolbar(p *tree.Plan) {
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(pl.GVRun).SetIcon(icons.PlayArrow)
 	})

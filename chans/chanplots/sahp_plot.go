@@ -2,10 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// sahp_plot plots the slow afterhyperpolarizing (sAHP) channel,
-package sahp_plot
-
-//go:generate core generate -add-types
+package chanplots
 
 import (
 	"cogentcore.org/core/core"
@@ -17,8 +14,7 @@ import (
 	"github.com/emer/axon/v2/chans"
 )
 
-// Plot holds the params, table, etc
-type Plot struct {
+type SahpPlot struct {
 
 	// sAHP function
 	Sahp chans.SahpParams `display:"inline"`
@@ -46,7 +42,7 @@ type Plot struct {
 }
 
 // Config configures all the elements using the standard functions
-func (pl *Plot) Config(parent *tensorfs.Node, tabs databrowser.Tabber) {
+func (pl *SahpPlot) Config(parent *tensorfs.Node, tabs databrowser.Tabber) {
 	pl.Dir = parent.Dir("sAHP")
 	pl.Tabs = tabs
 
@@ -62,11 +58,11 @@ func (pl *Plot) Config(parent *tensorfs.Node, tabs databrowser.Tabber) {
 }
 
 // Update updates computed values
-func (pl *Plot) Update() {
+func (pl *SahpPlot) Update() {
 }
 
 // GCaRun plots the conductance G (and other variables) as a function of Ca.
-func (pl *Plot) GCaRun() { //types:add
+func (pl *SahpPlot) GCaRun() { //types:add
 	pl.Update()
 	dir := pl.Dir.Dir("G_Ca")
 
@@ -97,7 +93,7 @@ func (pl *Plot) GCaRun() { //types:add
 }
 
 // TimeRun runs the equation over time.
-func (pl *Plot) TimeRun() { //types:add
+func (pl *SahpPlot) TimeRun() { //types:add
 	pl.Update()
 	dir := pl.Dir.Dir("G_Time")
 	nv := pl.TimeSteps
@@ -140,7 +136,7 @@ func (pl *Plot) TimeRun() { //types:add
 	}
 }
 
-func (pl *Plot) MakeToolbar(p *tree.Plan) {
+func (pl *SahpPlot) MakeToolbar(p *tree.Plan) {
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(pl.GCaRun).SetIcon(icons.PlayArrow)
 	})

@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// vgcc_plot plots the voltage gated calcium channel equations.
-package vgcc_plot
+package chanplots
 
 //go:generate core generate -add-types
 
 import (
+	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/plot"
@@ -17,19 +17,22 @@ import (
 	"github.com/emer/axon/v2/chans"
 )
 
-type Plot struct {
+type AKPlot struct {
 
-	// VGCC function
-	VGCC chans.VGCCParams
+	// AK function
+	AK chans.AKParams
+
+	// AKs simplified function
+	AKs chans.AKsParams
 
 	// starting voltage
-	Vstart float32 `default:"-90"`
+	Vstart float32 `default:"-100"`
 
 	// ending voltage
-	Vend float32 `default:"0"`
+	Vend float32 `default:"100"`
 
 	// voltage increment
-	Vstep float32 `default:"1"`
+	Vstep float32 `default:"0.01"`
 
 	// number of time steps
 	TimeSteps int
@@ -50,58 +53,74 @@ type Plot struct {
 	Tabs databrowser.Tabber `display:"-"`
 }
 
-// Config configures all the elements using the standard functions
-func (pl *Plot) Config(parent *tensorfs.Node, tabs databrowser.Tabber) {
-	pl.Dir = parent.Dir("VGCC")
+// Config configures the plot
+func (pl *AKPlot) Config(parent *tensorfs.Node, tabs databrowser.Tabber) {
+	pl.Dir = parent.Dir("AK")
 	pl.Tabs = tabs
 
-	pl.VGCC.Defaults()
-	pl.VGCC.Gbar = 1
-	pl.Vstart = -90
-	pl.Vend = 2
-	pl.Vstep = 0.01
+	pl.AK.Defaults()
+	pl.AK.Gbar = 1
+	pl.AKs.Defaults()
+	pl.AKs.Gbar = 1
+	pl.Vstart = -100
+	pl.Vend = 100
+	pl.Vstep = .01
 	pl.TimeSteps = 200
 	pl.TimeSpike = true
 	pl.SpikeFreq = 50
-	pl.TimeVstart = -70
+	pl.TimeVstart = -50
 	pl.TimeVend = -20
 	pl.Update()
 }
 
-// Update updates computed values
-func (pl *Plot) Update() {
+func (pl *AKPlot) Update() {
+	pl.AK.Update()
 }
 
 // GVRun plots the conductance G (and other variables) as a function of V.
-func (pl *Plot) GVRun() { //types:add
+func (pl *AKPlot) GVRun() { //types:add
 	pl.Update()
 	dir := pl.Dir.Dir("G_V")
 
+	ap := &pl.AK
 	nv := int((pl.Vend - pl.Vstart) / pl.Vstep)
 	for vi := range nv {
-		v := pl.Vstart + float32(vi)*pl.Vstep
-		vnorm := chans.VFromBio(v)
-		g := pl.VGCC.GFromV(vnorm)
-		m := pl.VGCC.MFromV(v)
-		h := pl.VGCC.HFromV(v)
-		var dm, dh float32
-		pl.VGCC.DMHFromV(vnorm, m, h, &dm, &dh)
+		vbio := pl.Vstart + float32(vi)*pl.Vstep
+		vnorm := chans.VFromBio(vbio)
+		k := ap.KFromV(vbio)
+		a := ap.AlphaFromVK(vbio, k)
+		b := ap.BetaFromVK(vbio, k)
+		mt := ap.MTauFromAlphaBeta(a, b)
+		ht := ap.HTauFromV(vbio)
+		m := ap.MFromAlpha(a)
+		h := ap.HFromV(vbio)
+		g := ap.Gak(m, h)
 
-		dir.Float64("V", nv).SetFloat1D(float64(v), vi)
-		dir.Float64("Gvgcc", nv).SetFloat1D(float64(g), vi)
+		ms := pl.AKs.MFromV(vbio)
+		gs := pl.AKs.Gak(vnorm)
+
+		dir.Float64("V", nv).SetFloat1D(float64(vbio), vi)
+		dir.Float64("Gak", nv).SetFloat1D(float64(g), vi)
 		dir.Float64("M", nv).SetFloat1D(float64(m), vi)
 		dir.Float64("H", nv).SetFloat1D(float64(h), vi)
-		dir.Float64("dM", nv).SetFloat1D(float64(dm), vi)
-		dir.Float64("dH", nv).SetFloat1D(float64(dh), vi)
+		dir.Float64("MTau", nv).SetFloat1D(float64(mt), vi)
+		dir.Float64("HTau", nv).SetFloat1D(float64(ht), vi)
+		dir.Float64("K", nv).SetFloat1D(float64(k), vi)
+		dir.Float64("Alpha", nv).SetFloat1D(float64(a), vi)
+		dir.Float64("Beta", nv).SetFloat1D(float64(b), vi)
+		dir.Float64("Ms", nv).SetFloat1D(float64(ms), vi)
+		dir.Float64("Gaks", nv).SetFloat1D(float64(gs), vi)
 	}
+	metadata.SetDoc(dir.Float64("Gaks"), "Gaks is the simplified AK conductance, actually used in models")
+	metadata.SetDoc(dir.Float64("Ms"), "Ms is the simplified AK M gate, actually used in models")
 	plot.SetFirstStylerTo(dir.Float64("V"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
-	ons := []string{"Gvgcc", "M", "H"}
+	ons := []string{"Gak", "M", "H", "Gaks"}
 	for _, on := range ons {
 		plot.SetFirstStylerTo(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
-			s.Plot.Title = "VGCC G(V)"
+			s.Plot.Title = "AK G(V)"
 		})
 	}
 	if pl.Tabs != nil && pl.Tabs.AsDataTabs().IsVisible() {
@@ -109,12 +128,13 @@ func (pl *Plot) GVRun() { //types:add
 	}
 }
 
-// TimeRun runs the equation over time.
-func (pl *Plot) TimeRun() { //types:add
+// TimeRun runs the equations over time.
+func (pl *AKPlot) TimeRun() { //types:add
 	pl.Update()
 	dir := pl.Dir.Dir("G_Time")
 	nv := pl.TimeSteps
 
+	ap := &pl.AK
 	m := float32(0)
 	h := float32(1)
 	msdt := float32(0.001)
@@ -123,23 +143,34 @@ func (pl *Plot) TimeRun() { //types:add
 
 	isi := int(1000 / pl.SpikeFreq)
 	var g float32
-
 	for ti := range nv {
 		vnorm := chans.VFromBio(v)
 		t := float32(ti) * msdt
-		g = pl.VGCC.Gvgcc(vnorm, m, h)
-		var dm, dh float32
-		pl.VGCC.DMHFromV(vnorm, m, h, &dm, &dh)
-		m += dm
-		h += dh
+
+		k := ap.KFromV(v)
+		a := ap.AlphaFromVK(v, k)
+		b := ap.BetaFromVK(v, k)
+		mt := ap.MTauFromAlphaBeta(a, b)
+		ht := ap.HTauFromV(v)
+		g = ap.Gak(m, h)
+
+		dm, dh := pl.AK.DMHFromV(vnorm, m, h)
 
 		dir.Float64("Time", nv).SetFloat1D(float64(t), ti)
-		dir.Float64("V", nv).SetFloat1D(float64(v), ti)
-		dir.Float64("Gvgcc", nv).SetFloat1D(float64(g), ti)
+		dir.Float64("Gak", nv).SetFloat1D(float64(g), ti)
 		dir.Float64("M", nv).SetFloat1D(float64(m), ti)
 		dir.Float64("H", nv).SetFloat1D(float64(h), ti)
 		dir.Float64("dM", nv).SetFloat1D(float64(dm), ti)
 		dir.Float64("dH", nv).SetFloat1D(float64(dh), ti)
+		dir.Float64("MTau", nv).SetFloat1D(float64(mt), ti)
+		dir.Float64("HTau", nv).SetFloat1D(float64(ht), ti)
+		dir.Float64("K", nv).SetFloat1D(float64(k), ti)
+		dir.Float64("Alpha", nv).SetFloat1D(float64(a), ti)
+		dir.Float64("Beta", nv).SetFloat1D(float64(b), ti)
+
+		g = pl.AK.Gak(m, h)
+		m += dm // already in msec time constants
+		h += dh
 
 		if pl.TimeSpike {
 			if ti%isi < 3 {
@@ -157,11 +188,11 @@ func (pl *Plot) TimeRun() { //types:add
 	plot.SetFirstStylerTo(dir.Float64("Time"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
-	ons := []string{"Gvgcc", "V", "M", "H"}
+	ons := []string{"Gak", "M", "H"}
 	for _, on := range ons {
 		plot.SetFirstStylerTo(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
-			s.Plot.Title = "VGCC G(t)"
+			s.Plot.Title = "AK G(t)"
 		})
 	}
 	if pl.Tabs != nil && pl.Tabs.AsDataTabs().IsVisible() {
@@ -169,7 +200,7 @@ func (pl *Plot) TimeRun() { //types:add
 	}
 }
 
-func (pl *Plot) MakeToolbar(p *tree.Plan) {
+func (pl *AKPlot) MakeToolbar(p *tree.Plan) {
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(pl.GVRun).SetIcon(icons.PlayArrow)
 	})

@@ -2,10 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// kir_plot plots the kIR inward rectifying potassium (K) channel equations.
-package kir_plot
-
-//go:generate core generate -add-types
+package chanplots
 
 import (
 	"cogentcore.org/core/core"
@@ -17,16 +14,16 @@ import (
 	"github.com/emer/axon/v2/chans"
 )
 
-type Plot struct {
+type VGCCPlot struct {
 
-	// kIR function
-	Kir chans.KirParams
+	// VGCC function
+	VGCC chans.VGCCParams
 
 	// starting voltage
-	Vstart float32 `default:"-100"`
+	Vstart float32 `default:"-90"`
 
 	// ending voltage
-	Vend float32 `default:"100"`
+	Vend float32 `default:"0"`
 
 	// voltage increment
 	Vstep float32 `default:"1"`
@@ -51,58 +48,57 @@ type Plot struct {
 }
 
 // Config configures all the elements using the standard functions
-func (pl *Plot) Config(parent *tensorfs.Node, tabs databrowser.Tabber) {
-	pl.Dir = parent.Dir("kIR")
+func (pl *VGCCPlot) Config(parent *tensorfs.Node, tabs databrowser.Tabber) {
+	pl.Dir = parent.Dir("VGCC")
 	pl.Tabs = tabs
 
-	pl.Kir.Defaults()
-	pl.Kir.Gbar = 1
-	pl.Vstart = -100
-	pl.Vend = 0
-	pl.Vstep = 1
-	pl.TimeSteps = 300
+	pl.VGCC.Defaults()
+	pl.VGCC.Gbar = 1
+	pl.Vstart = -90
+	pl.Vend = 2
+	pl.Vstep = 0.01
+	pl.TimeSteps = 200
 	pl.TimeSpike = true
 	pl.SpikeFreq = 50
 	pl.TimeVstart = -70
-	pl.TimeVend = -50
+	pl.TimeVend = -20
 	pl.Update()
 }
 
 // Update updates computed values
-func (pl *Plot) Update() {
+func (pl *VGCCPlot) Update() {
 }
 
-// VmRun plots the equation as a function of V
-func (pl *Plot) GVRun() { //types:add
+// GVRun plots the conductance G (and other variables) as a function of V.
+func (pl *VGCCPlot) GVRun() { //types:add
 	pl.Update()
 	dir := pl.Dir.Dir("G_V")
 
-	mp := &pl.Kir
 	nv := int((pl.Vend - pl.Vstart) / pl.Vstep)
-	m := mp.MinfRest()
-	for vi := 0; vi < nv; vi++ {
-		vbio := pl.Vstart + float32(vi)*pl.Vstep
-		v := chans.VFromBio(vbio)
-		g := mp.Gkir(v, m)
-		dm := mp.DM(vbio, m)
-		m += dm
-		minf := mp.Minf(vbio)
-		mtau := mp.MTau(vbio)
+	for vi := range nv {
+		v := pl.Vstart + float32(vi)*pl.Vstep
+		vnorm := chans.VFromBio(v)
+		g := pl.VGCC.GFromV(vnorm)
+		m := pl.VGCC.MFromV(v)
+		h := pl.VGCC.HFromV(v)
+		var dm, dh float32
+		pl.VGCC.DMHFromV(vnorm, m, h, &dm, &dh)
 
-		dir.Float64("V", nv).SetFloat1D(float64(vbio), vi)
-		dir.Float64("GkIR", nv).SetFloat1D(float64(g), vi)
+		dir.Float64("V", nv).SetFloat1D(float64(v), vi)
+		dir.Float64("Gvgcc", nv).SetFloat1D(float64(g), vi)
 		dir.Float64("M", nv).SetFloat1D(float64(m), vi)
-		dir.Float64("Minf", nv).SetFloat1D(float64(minf), vi)
-		dir.Float64("Mtau", nv).SetFloat1D(float64(mtau), vi)
+		dir.Float64("H", nv).SetFloat1D(float64(h), vi)
+		dir.Float64("dM", nv).SetFloat1D(float64(dm), vi)
+		dir.Float64("dH", nv).SetFloat1D(float64(dh), vi)
 	}
 	plot.SetFirstStylerTo(dir.Float64("V"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
-	ons := []string{"GkIR", "M"}
+	ons := []string{"Gvgcc", "M", "H"}
 	for _, on := range ons {
 		plot.SetFirstStylerTo(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
-			s.Plot.Title = "kIR G(V)"
+			s.Plot.Title = "VGCC G(V)"
 		})
 	}
 	if pl.Tabs != nil && pl.Tabs.AsDataTabs().IsVisible() {
@@ -111,43 +107,42 @@ func (pl *Plot) GVRun() { //types:add
 }
 
 // TimeRun runs the equation over time.
-func (pl *Plot) TimeRun() { //types:add
+func (pl *VGCCPlot) TimeRun() { //types:add
 	pl.Update()
 	dir := pl.Dir.Dir("G_Time")
 	nv := pl.TimeSteps
 
-	mp := &pl.Kir
-
-	m := mp.MinfRest()
+	m := float32(0)
+	h := float32(1)
 	msdt := float32(0.001)
 	v := pl.TimeVstart
 	vinc := float32(2) * (pl.TimeVend - pl.TimeVstart) / float32(pl.TimeSteps)
 
 	isi := int(1000 / pl.SpikeFreq)
+	var g float32
 
 	for ti := range nv {
 		vnorm := chans.VFromBio(v)
-		t := float32(ti+1) * msdt
-
-		g := mp.Gkir(vnorm, m)
-		dm := mp.DM(v, m)
+		t := float32(ti) * msdt
+		g = pl.VGCC.Gvgcc(vnorm, m, h)
+		var dm, dh float32
+		pl.VGCC.DMHFromV(vnorm, m, h, &dm, &dh)
 		m += dm
-		minf := mp.Minf(v)
-		mtau := mp.MTau(v)
+		h += dh
 
 		dir.Float64("Time", nv).SetFloat1D(float64(t), ti)
 		dir.Float64("V", nv).SetFloat1D(float64(v), ti)
-		dir.Float64("GkIR", nv).SetFloat1D(float64(g), ti)
+		dir.Float64("Gvgcc", nv).SetFloat1D(float64(g), ti)
 		dir.Float64("M", nv).SetFloat1D(float64(m), ti)
-		dir.Float64("Minf", nv).SetFloat1D(float64(minf), ti)
-		dir.Float64("Mtau", nv).SetFloat1D(float64(mtau), ti)
+		dir.Float64("H", nv).SetFloat1D(float64(h), ti)
+		dir.Float64("dM", nv).SetFloat1D(float64(dm), ti)
+		dir.Float64("dH", nv).SetFloat1D(float64(dh), ti)
 
 		if pl.TimeSpike {
-			si := ti % isi
-			if si == 0 {
+			if ti%isi < 3 {
 				v = pl.TimeVend
 			} else {
-				v = pl.TimeVstart + (float32(si)/float32(isi))*(pl.TimeVend-pl.TimeVstart)
+				v = pl.TimeVstart
 			}
 		} else {
 			v += vinc
@@ -159,11 +154,11 @@ func (pl *Plot) TimeRun() { //types:add
 	plot.SetFirstStylerTo(dir.Float64("Time"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
-	ons := []string{"V", "GkIR", "M"}
+	ons := []string{"Gvgcc", "V", "M", "H"}
 	for _, on := range ons {
 		plot.SetFirstStylerTo(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
-			s.Plot.Title = "GkIR G(t)"
+			s.Plot.Title = "VGCC G(t)"
 		})
 	}
 	if pl.Tabs != nil && pl.Tabs.AsDataTabs().IsVisible() {
@@ -171,7 +166,7 @@ func (pl *Plot) TimeRun() { //types:add
 	}
 }
 
-func (pl *Plot) MakeToolbar(p *tree.Plan) {
+func (pl *VGCCPlot) MakeToolbar(p *tree.Plan) {
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(pl.GVRun).SetIcon(icons.PlayArrow)
 	})
