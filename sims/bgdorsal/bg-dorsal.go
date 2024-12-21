@@ -423,8 +423,8 @@ func (ss *Sim) ConfigLoops() {
 	ls.Loop(Train, Run).OnStart.Add("NewRun", ss.NewRun)
 
 	ls.Loop(Train, Epoch).IsDone.AddBool("StopCrit", func() bool {
-		curModeDir := ss.Current.Dir(Train.String())
-		rew := curModeDir.Value("RewEpc").Float1D(-1)
+		epcDir := ss.Stats.Dir(Train.String()).Dir(Epoch.String())
+		rew := epcDir.Value("Rew").Float1D(-1)
 		stop := rew >= 0.98
 		return stop
 	})
@@ -785,7 +785,7 @@ func (ss *Sim) ConfigStats() {
 		}
 	})
 
-	seqStats := []string{"NCorrect", "Rew", "RewPred", "RPE", "RewEpc"}
+	seqStats := []string{"NCorrect", "Rew", "RewPred", "RPE"}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		if level <= Trial {
 			return
@@ -824,10 +824,40 @@ func (ss *Sim) ConfigStats() {
 					curModeDir.Float32(name, ndata).SetFloat1D(float64(stat), di)
 					tsr.AppendRowFloat(float64(stat))
 				}
-			default:
+			case Epoch:
 				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
 				tsr.AppendRowFloat(stat)
+			default: // Run, Expt
+				stat = stats.StatFinal.Call(subDir.Value(name)).Float1D(0)
+				tsr.AppendRowFloat(stat)
 			}
+		}
+	})
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		if level <= Epoch {
+			return
+		}
+		name := "EpochsToCrit"
+		modeDir := ss.Stats.Dir(mode.String())
+		levelDir := modeDir.Dir(level.String())
+		subDir := modeDir.Dir((level - 1).String()) // note: will fail for Cycle
+		tsr := levelDir.Float64(name)
+		if phase == Start {
+			tsr.SetNumRows(0)
+			plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
+				s.Range.SetMin(0)
+				s.On = true
+			})
+			return
+		}
+		var stat float64
+		switch level {
+		case Run:
+			stat = float64(ss.Loops.Loop(mode, (level - 1)).Counter.Cur)
+			tsr.AppendRowFloat(stat)
+		default: // in case higher
+			stat = stats.StatFinal.Call(subDir.Value(name)).Float1D(0)
+			tsr.AppendRowFloat(stat)
 		}
 	})
 }

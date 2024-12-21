@@ -85,7 +85,7 @@ type RunConfig struct {
 	Runs int `default:"25" min:"1"`
 
 	// Epochs is the total number of epochs per run.
-	Epochs int `default:"50"`
+	Epochs int `default:"100"`
 
 	// Sequences is the total number of sequences per epoch.
 	// Should be an even multiple of NData.
