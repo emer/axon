@@ -209,6 +209,7 @@ func (ss *Sim) ConfigRubicon(trn *MotorSeqEnv) {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ss.Config.Run.NData)
+	net.Context().ThetaCycles = int32(ss.Config.Run.Cycles)
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
 	ev := ss.Envs.ByModeDi(Train, 0).(*MotorSeqEnv)
@@ -824,11 +825,11 @@ func (ss *Sim) ConfigStats() {
 					curModeDir.Float32(name, ndata).SetFloat1D(float64(stat), di)
 					tsr.AppendRowFloat(float64(stat))
 				}
-			case Epoch:
-				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
-				tsr.AppendRowFloat(stat)
-			default: // Run, Expt
+			case Run:
 				stat = stats.StatFinal.Call(subDir.Value(name)).Float1D(0)
+				tsr.AppendRowFloat(stat)
+			default:
+				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
 				tsr.AppendRowFloat(stat)
 			}
 		}
@@ -907,7 +908,7 @@ func (ss *Sim) ConfigGUI() {
 	}
 
 	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1.0, 2.5)
-	nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, -0.03, 0.02), math32.Vec3(0, 1, 0))
+	nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, -0.1, 0.02), math32.Vec3(0, 1, 0))
 
 	ss.GUI.UpdateFiles()
 	ss.StatsInit()

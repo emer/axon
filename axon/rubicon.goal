@@ -632,7 +632,7 @@ type Rubicon struct {
 
 	// controls how positive and negative USs are weighted and integrated to
 	// compute an overall PV primary value.
-	USs USParams `display:"inline"`
+	USs USParams `display:"add-fields"`
 
 	// lateral habenula (LHb) parameters and state, which drives
 	// dipping / pausing in dopamine when the predicted positive
@@ -641,7 +641,7 @@ type Rubicon struct {
 	LHb LHbParams `display:"inline"`
 
 	// parameters for giving up based on PV pos - neg difference
-	GiveUp GiveUpParams `display:"inline"`
+	GiveUp GiveUpParams `display:"add-fields"`
 
 	// population code decoding parameters for estimates from layers
 	ValDecode popcode.OneD `display:"inline"`

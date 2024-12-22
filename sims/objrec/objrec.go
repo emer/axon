@@ -610,12 +610,7 @@ func (ss *Sim) ConfigStats() {
 				}
 				tsr.AppendRowFloat(stat)
 			case Run:
-				switch name {
-				case "NZero", "FirstZero", "LastZero":
-					stat = subDir.Value(name).Float1D(-1)
-				default:
-					stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
-				}
+				stat = stats.StatFinal.Call(subDir.Value(name)).Float1D(0)
 				tsr.AppendRowFloat(stat)
 			}
 		}

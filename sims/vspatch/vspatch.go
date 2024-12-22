@@ -625,7 +625,7 @@ func (ss *Sim) ConfigStats() {
 					ss.GUI.Tabs.SelectTabIndex(idx)
 				}
 			case Run:
-				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
+				stat = stats.StatFinal.Call(subDir.Value(name)).Float1D(0)
 				tsr.AppendRowFloat(stat)
 			}
 		}
