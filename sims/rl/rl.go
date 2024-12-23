@@ -364,8 +364,8 @@ func (ss *Sim) RunStats(mode Modes, level Levels, phase StatsPhase) {
 	}
 	if phase == Step && ss.GUI.Tabs != nil {
 		nm := mode.String() + "/" + level.String() + " Plot"
-		ss.GUI.Tabs.GoUpdatePlot(nm)
-		ss.GUI.Tabs.GoUpdatePlot("Train/TrialAll Plot")
+		ss.GUI.Tabs.AsLab().GoUpdatePlot(nm)
+		ss.GUI.Tabs.AsLab().GoUpdatePlot("Train/TrialAll Plot")
 	}
 }
 
@@ -396,10 +396,11 @@ func (ss *Sim) StatsInit() {
 		}
 	}
 	if ss.GUI.Tabs != nil {
-		_, idx := ss.GUI.Tabs.CurrentTab()
-		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Trial))
-		ss.GUI.Tabs.PlotTensorFS(ss.Stats.Dir("Train/TrialAll"))
-		ss.GUI.Tabs.SelectTabIndex(idx)
+		tbs := ss.GUI.Tabs.AsLab()
+		_, idx := tbs.CurrentTab()
+		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Trial))
+		tbs.PlotTensorFS(ss.Stats.Dir("Train/TrialAll"))
+		tbs.SelectTabIndex(idx)
 	}
 }
 
@@ -579,7 +580,7 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 			for _, cl := range cols {
 				cl.(tensor.Values).SetNumRows(0)
 			}
-			ss.GUI.Tabs.UpdatePlot(name + " Plot")
+			ss.GUI.Tabs.AsLab().UpdatePlot(name + " Plot")
 		},
 	})
 	tree.Add(p, func(w *core.Separator) {})

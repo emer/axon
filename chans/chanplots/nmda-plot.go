@@ -127,8 +127,8 @@ func (pl *NMDAPlot) GVRun() { //types:add
 			s.Plot.Title = "NMDA G(V)"
 		})
 	}
-	if pl.Tabs != nil && pl.Tabs.AsDataTabs().IsVisible() {
-		pl.Tabs.PlotTensorFS(dir)
+	if pl.Tabs != nil && pl.Tabs.AsLab().IsVisible() {
+		pl.Tabs.AsLab().PlotTensorFS(dir)
 	}
 }
 
@@ -164,8 +164,8 @@ func (pl *NMDAPlot) TimeRun() { //types:add
 			s.Plot.Title = "NMDA G(t)"
 		})
 	}
-	if pl.Tabs != nil && pl.Tabs.AsDataTabs().IsVisible() {
-		pl.Tabs.PlotTensorFS(dir)
+	if pl.Tabs != nil && pl.Tabs.AsLab().IsVisible() {
+		pl.Tabs.AsLab().PlotTensorFS(dir)
 	}
 }
 

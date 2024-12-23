@@ -665,7 +665,7 @@ func (ss *Sim) RunStats(mode Modes, level Levels, phase StatsPhase) {
 	}
 	if phase == Step && ss.GUI.Tabs != nil {
 		nm := mode.String() + "/" + level.String() + " Plot"
-		ss.GUI.Tabs.GoUpdatePlot(nm)
+		ss.GUI.Tabs.AsLab().GoUpdatePlot(nm)
 	}
 }
 
@@ -696,11 +696,12 @@ func (ss *Sim) StatsInit() {
 		}
 	}
 	if ss.GUI.Tabs != nil {
-		_, idx := ss.GUI.Tabs.CurrentTab()
-		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Epoch))
-		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Run))
-		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Trial))
-		ss.GUI.Tabs.SelectTabIndex(idx)
+		tbs := ss.GUI.Tabs.AsLab()
+		_, idx := tbs.CurrentTab()
+		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Epoch))
+		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Run))
+		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Trial))
+		tbs.SelectTabIndex(idx)
 	}
 }
 

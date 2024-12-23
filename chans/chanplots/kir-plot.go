@@ -102,8 +102,8 @@ func (pl *KirPlot) GVRun() { //types:add
 			s.Plot.Title = "kIR G(V)"
 		})
 	}
-	if pl.Tabs != nil && pl.Tabs.AsDataTabs().IsVisible() {
-		pl.Tabs.PlotTensorFS(dir)
+	if pl.Tabs != nil && pl.Tabs.AsLab().IsVisible() {
+		pl.Tabs.AsLab().PlotTensorFS(dir)
 	}
 }
 
@@ -163,8 +163,8 @@ func (pl *KirPlot) TimeRun() { //types:add
 			s.Plot.Title = "GkIR G(t)"
 		})
 	}
-	if pl.Tabs != nil && pl.Tabs.AsDataTabs().IsVisible() {
-		pl.Tabs.PlotTensorFS(dir)
+	if pl.Tabs != nil && pl.Tabs.AsLab().IsVisible() {
+		pl.Tabs.AsLab().PlotTensorFS(dir)
 	}
 }
 

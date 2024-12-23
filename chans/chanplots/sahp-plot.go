@@ -87,8 +87,8 @@ func (pl *SahpPlot) GCaRun() { //types:add
 			s.Plot.Title = "sAHP G(Ca)"
 		})
 	}
-	if pl.Tabs != nil && pl.Tabs.AsDataTabs().IsVisible() {
-		pl.Tabs.PlotTensorFS(dir)
+	if pl.Tabs != nil && pl.Tabs.AsLab().IsVisible() {
+		pl.Tabs.AsLab().PlotTensorFS(dir)
 	}
 }
 
@@ -131,8 +131,8 @@ func (pl *SahpPlot) TimeRun() { //types:add
 			s.Plot.Title = "sAHP G(t)"
 		})
 	}
-	if pl.Tabs != nil && pl.Tabs.AsDataTabs().IsVisible() {
-		pl.Tabs.PlotTensorFS(dir)
+	if pl.Tabs != nil && pl.Tabs.AsLab().IsVisible() {
+		pl.Tabs.AsLab().PlotTensorFS(dir)
 	}
 }
 

@@ -326,7 +326,7 @@ func (ss *Sim) RunStats(mode Modes, level Levels, phase StatsPhase) {
 	}
 	if phase == Step && ss.GUI.Tabs != nil {
 		nm := mode.String() + "/" + level.String() + " Plot"
-		ss.GUI.Tabs.GoUpdatePlot(nm)
+		ss.GUI.Tabs.AsLab().GoUpdatePlot(nm)
 	}
 }
 
@@ -349,9 +349,10 @@ func (ss *Sim) StatsInit() {
 	ss.RunStats(Test, Cycle, Start)
 	ss.RunStats(Test, Trial, Start)
 	if ss.GUI.Tabs != nil {
-		_, idx := ss.GUI.Tabs.CurrentTab()
-		ss.GUI.Tabs.PlotTensorFS(axon.StatsNode(ss.Stats, Test, Cycle))
-		ss.GUI.Tabs.SelectTabIndex(idx)
+		tbs := ss.GUI.Tabs.AsLab()
+		_, idx := tbs.CurrentTab()
+		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Test, Cycle))
+		tbs.SelectTabIndex(idx)
 	}
 }
 

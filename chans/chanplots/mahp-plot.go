@@ -95,8 +95,8 @@ func (pl *MahpPlot) GVRun() { //types:add
 			s.Plot.Title = "Mahp G(V)"
 		})
 	}
-	if pl.Tabs != nil && pl.Tabs.AsDataTabs().IsVisible() {
-		pl.Tabs.PlotTensorFS(dir)
+	if pl.Tabs != nil && pl.Tabs.AsLab().IsVisible() {
+		pl.Tabs.AsLab().PlotTensorFS(dir)
 	}
 }
 
@@ -158,8 +158,8 @@ func (pl *MahpPlot) TimeRun() { //types:add
 			s.Plot.Title = "Mahp G(t)"
 		})
 	}
-	if pl.Tabs != nil && pl.Tabs.AsDataTabs().IsVisible() {
-		pl.Tabs.PlotTensorFS(dir)
+	if pl.Tabs != nil && pl.Tabs.AsLab().IsVisible() {
+		pl.Tabs.AsLab().PlotTensorFS(dir)
 	}
 }
 
