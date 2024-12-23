@@ -1,7 +1,7 @@
 package axon
 
 import (
-	"cogentcore.org/core/goal/gosl/slrand"
+	"cogentcore.org/lab/gosl/slrand"
 )
 
 //gosl:start

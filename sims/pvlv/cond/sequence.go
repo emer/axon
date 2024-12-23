@@ -7,8 +7,8 @@ package cond
 import (
 	"math/rand"
 
-	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/lab/base/randx"
 )
 
 // Valence

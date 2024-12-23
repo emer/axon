@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"math/rand"
 
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/v1vision/vfilter"
 	"github.com/emer/v1vision/vxform"

@@ -7,7 +7,7 @@
 package axon
 
 import (
-	"cogentcore.org/core/base/randx"
+	"cogentcore.org/lab/base/randx"
 )
 
 // InitWeights initializes the weight values in the network, i.e., resetting learning

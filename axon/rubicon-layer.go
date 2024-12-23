@@ -10,8 +10,8 @@ import (
 	"log"
 	"strings"
 
-	"cogentcore.org/core/goal/gosl/slbool"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/lab/gosl/slbool"
 )
 
 //gosl:start rubicon_layers

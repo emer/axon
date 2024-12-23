@@ -18,10 +18,10 @@ package armaze
 import (
 	"fmt"
 
-	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/cli"
 	"cogentcore.org/core/math32/minmax"
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/base/randx"
+	"cogentcore.org/lab/tensor"
 )
 
 // Actions is a list of mutually exclusive states

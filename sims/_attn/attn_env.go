@@ -11,7 +11,7 @@ import (
 
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/vecint"
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 	"github.com/emer/emergent/v2/efuns"
 	"github.com/emer/emergent/v2/env"
 )

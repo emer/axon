@@ -10,8 +10,8 @@ import (
 	"log"
 	"sync/atomic"
 
-	"cogentcore.org/core/goal/gosl/slbool"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/lab/gosl/slbool"
 	"github.com/emer/axon/v2/fsfffb"
 )
 

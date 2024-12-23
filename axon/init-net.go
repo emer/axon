@@ -7,7 +7,7 @@
 package axon
 
 import (
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 	"github.com/emer/emergent/v2/paths"
 )
 

@@ -7,9 +7,9 @@ package main
 import (
 	"fmt"
 
-	"cogentcore.org/core/base/randx"
-	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/lab/base/randx"
+	"cogentcore.org/lab/table"
+	"cogentcore.org/lab/tensor"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/patgen"

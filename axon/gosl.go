@@ -6,7 +6,7 @@ import (
 	"embed"
 	"unsafe"
 	"cogentcore.org/core/gpu"
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 )
 
 //go:embed shaders/*.wgsl

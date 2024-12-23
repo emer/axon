@@ -4,7 +4,7 @@
 
 package main
 
-import "cogentcore.org/core/base/mpi"
+import "cogentcore.org/lab/base/mpi"
 
 // EnvConfig has config params for environment.
 type EnvConfig struct {

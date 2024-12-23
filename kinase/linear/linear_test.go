@@ -7,8 +7,8 @@ package kinase
 import (
 	"testing"
 
-	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/lab/table"
+	"cogentcore.org/lab/tensor"
 )
 
 func TestLinear(t *testing.T) {

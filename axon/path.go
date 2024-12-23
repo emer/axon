@@ -16,7 +16,7 @@ import (
 	"cogentcore.org/core/base/indent"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/paths"
 	"github.com/emer/emergent/v2/weights"

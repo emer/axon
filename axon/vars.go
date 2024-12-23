@@ -4,7 +4,7 @@
 
 package axon
 
-import "cogentcore.org/core/tensor"
+import "cogentcore.org/lab/tensor"
 
 //go:generate gosl -exclude=Update,UpdateParams,Defaults,AllParams,ShouldDisplay
 

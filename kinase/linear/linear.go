@@ -10,9 +10,9 @@ import (
 	"math/rand"
 
 	"cogentcore.org/core/math32"
-	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/tensor/stats/glm"
-	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/lab/stats/glm"
+	"cogentcore.org/lab/table"
+	"cogentcore.org/lab/tensor"
 	"github.com/emer/axon/v2/kinase"
 )
 

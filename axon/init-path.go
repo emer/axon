@@ -7,8 +7,8 @@
 package axon
 
 import (
-	"cogentcore.org/core/base/randx"
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/base/randx"
+	"cogentcore.org/lab/tensor"
 )
 
 // index naming:

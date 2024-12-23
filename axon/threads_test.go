@@ -11,8 +11,8 @@ import (
 	"math/rand"
 	"testing"
 
-	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/lab/table"
+	"cogentcore.org/lab/tensor"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/patgen"
 	"github.com/emer/emergent/v2/paths"

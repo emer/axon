@@ -7,8 +7,8 @@ package axon
 import (
 	"fmt"
 
-	"cogentcore.org/core/base/mpi"
 	"cogentcore.org/core/core"
+	"cogentcore.org/lab/base/mpi"
 )
 
 ////////////////////////////////////////////////////

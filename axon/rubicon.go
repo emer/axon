@@ -11,8 +11,8 @@ import (
 	"log/slog"
 
 	"cogentcore.org/core/base/num"
-	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/lab/base/randx"
 	"github.com/emer/emergent/v2/popcode"
 )
 

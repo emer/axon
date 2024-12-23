@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"cogentcore.org/core/base/num"
-	"cogentcore.org/core/goal/gosl/slbool"
+	"cogentcore.org/lab/gosl/slbool"
 )
 
 //gosl:start

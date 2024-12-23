@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"cogentcore.org/core/tensor/stats/stats"
+	"cogentcore.org/lab/stats/stats"
 )
 
 func TestPCore(t *testing.T) {

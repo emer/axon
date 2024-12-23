@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"math/rand"
 
-	"cogentcore.org/core/base/randx"
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/base/randx"
+	"cogentcore.org/lab/tensor"
 	"github.com/emer/emergent/v2/env"
 )
 

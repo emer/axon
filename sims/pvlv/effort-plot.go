@@ -12,12 +12,12 @@ import (
 	"strconv"
 
 	"cogentcore.org/core/base/num"
-	"cogentcore.org/core/base/randx"
+	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32/minmax"
-	"cogentcore.org/core/plot/plotcore"
-	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/lab/plotcore"
+	"cogentcore.org/lab/table"
 	"cogentcore.org/core/tree"
 	"github.com/emer/axon/v2/axon"
 )

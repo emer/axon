@@ -16,9 +16,9 @@ import (
 	"strings"
 	"testing"
 
-	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/math32"
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/base/randx"
+	"cogentcore.org/lab/tensor"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/paths"

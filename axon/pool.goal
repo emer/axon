@@ -7,7 +7,7 @@ package axon
 import (
 	"log"
 	"sync/atomic"
-	"cogentcore.org/core/base/atomicx"
+	"cogentcore.org/lab/base/atomicx"
 	"cogentcore.org/core/math32"
 	"github.com/emer/axon/v2/fsfffb"
 )

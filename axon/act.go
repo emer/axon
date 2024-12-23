@@ -9,10 +9,10 @@ package axon
 import (
 	"math"
 
-	"cogentcore.org/core/base/randx"
-	"cogentcore.org/core/goal/gosl/slbool"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
+	"cogentcore.org/lab/base/randx"
+	"cogentcore.org/lab/gosl/slbool"
 	"github.com/emer/axon/v2/chans"
 )
 

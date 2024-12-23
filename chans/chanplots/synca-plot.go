@@ -10,10 +10,10 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
-	"cogentcore.org/core/plot"
-	"cogentcore.org/core/tensor/databrowser"
-	"cogentcore.org/core/tensor/tensorfs"
 	"cogentcore.org/core/tree"
+	"cogentcore.org/lab/lab"
+	"cogentcore.org/lab/plot"
+	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/axon/v2/kinase"
 )
 
@@ -38,12 +38,12 @@ type SynCaPlot struct {
 	// number of time steps
 	TimeSteps int
 
-	Dir  *tensorfs.Node     `display:"-"`
-	Tabs databrowser.Tabber `display:"-"`
+	Dir  *tensorfs.Node `display:"-"`
+	Tabs lab.Tabber     `display:"-"`
 }
 
 // Config configures all the elements using the standard functions
-func (pl *SynCaPlot) Config(parent *tensorfs.Node, tabs databrowser.Tabber) {
+func (pl *SynCaPlot) Config(parent *tensorfs.Node, tabs lab.Tabber) {
 	pl.Dir = parent.Dir("SynCa")
 	pl.Tabs = tabs
 

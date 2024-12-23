@@ -4,7 +4,7 @@
 
 package chans
 
-import "cogentcore.org/core/goal/gosl/slbool"
+import "cogentcore.org/lab/gosl/slbool"
 
 //gosl:start chans
 

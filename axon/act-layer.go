@@ -8,7 +8,7 @@ package axon
 
 import (
 	"cogentcore.org/core/math32"
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 	"github.com/emer/axon/v2/fsfffb"
 )
 

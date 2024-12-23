@@ -6,8 +6,8 @@ package axon
 
 import (
 	"cogentcore.org/core/enums"
-	"cogentcore.org/core/goal/gosl/slbool"
-	"cogentcore.org/core/goal/gosl/slrand"
+	"cogentcore.org/lab/gosl/slbool"
+	"cogentcore.org/lab/gosl/slrand"
 )
 
 //gosl:start

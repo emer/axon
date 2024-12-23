@@ -9,7 +9,7 @@ package main
 //go:generate core generate -add-types
 
 import (
-	"cogentcore.org/core/tensor/tensorfs"
+	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/axon/v2/chans/chanplots"
 	"github.com/emer/emergent/v2/egui"
 )

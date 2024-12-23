@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"cogentcore.org/core/core"
-	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/lab/table"
 	"github.com/emer/axon/v2/axon"
 )
 

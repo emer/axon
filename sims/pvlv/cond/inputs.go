@@ -4,7 +4,7 @@
 
 package cond
 
-import "cogentcore.org/core/tensor"
+import "cogentcore.org/lab/tensor"
 
 var (
 	NUSs = 4

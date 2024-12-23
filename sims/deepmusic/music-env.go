@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"cogentcore.org/core/math32/minmax"
-	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/lab/table"
+	"cogentcore.org/lab/tensor"
 	"github.com/emer/emergent/v2/env"
 	"gitlab.com/gomidi/midi/v2"
 	"gitlab.com/gomidi/midi/v2/gm"

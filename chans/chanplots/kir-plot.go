@@ -7,10 +7,10 @@ package chanplots
 import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
-	"cogentcore.org/core/plot"
-	"cogentcore.org/core/tensor/databrowser"
-	"cogentcore.org/core/tensor/tensorfs"
 	"cogentcore.org/core/tree"
+	"cogentcore.org/lab/lab"
+	"cogentcore.org/lab/plot"
+	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/axon/v2/chans"
 )
 
@@ -43,12 +43,12 @@ type KirPlot struct {
 	// time-run ending membrane potential
 	TimeVend float32
 
-	Dir  *tensorfs.Node     `display:"-"`
-	Tabs databrowser.Tabber `display:"-"`
+	Dir  *tensorfs.Node `display:"-"`
+	Tabs lab.Tabber     `display:"-"`
 }
 
 // Config configures all the elements using the standard functions
-func (pl *KirPlot) Config(parent *tensorfs.Node, tabs databrowser.Tabber) {
+func (pl *KirPlot) Config(parent *tensorfs.Node, tabs lab.Tabber) {
 	pl.Dir = parent.Dir("kIR")
 	pl.Tabs = tabs
 

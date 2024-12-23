@@ -9,7 +9,7 @@ import (
 	"log/slog"
 
 	"cogentcore.org/core/base/num"
-	"cogentcore.org/core/base/randx"
+	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/core/math32"
 	"github.com/emer/emergent/v2/popcode"
 )

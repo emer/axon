@@ -14,9 +14,9 @@ import (
 	"math"
 	"math/rand"
 
-	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/base/timer"
-	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/lab/base/randx"
+	"cogentcore.org/lab/table"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/patgen"

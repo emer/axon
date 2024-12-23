@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"testing"
 
-	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/lab/table"
 	"github.com/emer/axon/v2/axon"
 	"github.com/stretchr/testify/require"
 )

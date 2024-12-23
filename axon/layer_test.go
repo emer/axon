@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 	"github.com/emer/emergent/v2/paths"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

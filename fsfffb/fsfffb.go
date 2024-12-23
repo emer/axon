@@ -13,7 +13,7 @@ package fsfffb
 
 //go:generate core generate -add-types
 
-import "cogentcore.org/core/goal/gosl/slbool"
+import "cogentcore.org/lab/gosl/slbool"
 
 //gosl:start
 
