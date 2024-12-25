@@ -160,6 +160,7 @@ func (ss *Sim) Run() {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(1)
+	net.Context().ThetaCycles = int32(ss.Config.Run.Cycles)
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
 	in := net.AddLayer2D("Input", axon.InputLayer, 1, 1)
