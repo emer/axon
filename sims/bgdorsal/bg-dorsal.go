@@ -403,7 +403,7 @@ func (ss *Sim) ConfigLoops() {
 		AddLevel(Trial, seqLen).
 		AddLevel(Cycle, cycles)
 
-	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, 50, cycles-plusPhase, cycles-1, Cycle, Trial, Train)
+	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, 10, cycles-plusPhase, cycles-1, Cycle, Trial, Train)
 
 	ls.Stacks[Train].OnInit.Add("Init", func() { ss.Init() })
 
@@ -419,6 +419,11 @@ func (ss *Sim) ConfigLoops() {
 			ss.TakeAction(ss.Net, mode.(Modes))
 			return false
 		})
+		// plusPhase := st.Loops[Cycle].EventByName("MinusPhase:End")
+		// st.Loops[Trial].OnEnd.Prepend("TakeAction", func() bool {
+		// 	ss.TakeAction(ss.Net, mode.(Modes))
+		// 	return false
+		// })
 	}
 
 	ls.Loop(Train, Run).OnStart.Add("NewRun", ss.NewRun)
