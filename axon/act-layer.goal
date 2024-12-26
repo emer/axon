@@ -747,9 +747,12 @@ func (ly *LayerParams) CyclePost(ctx *Context, di uint32) {
 // CyclePostLayer is called for all layer types
 func (ly *LayerParams) CyclePostLayer(ctx *Context, lpi, di uint32) {
 	casp := PoolAvgMax(AMCaP, AMCycle, Max, lpi, di)
-	if ctx.Cycle >= ly.Acts.Dt.MaxCycStart && casp > 0.5 { // todo: param
-		if LayerStates[ly.Index, di, LayerRT] <= 0 {
+	if ctx.Cycle >= ly.Acts.Dt.MaxCycStart {
+		if casp > ly.Inhib.ActAvg.RTThr && LayerStates[ly.Index, di, LayerRT] <= 0 {
 			LayerStates[ly.Index, di, LayerRT] = float32(ctx.Cycle)
+		}
+		if PoolsInt[lpi, di, PoolGated] > 0 && LayerStates[ly.Index, di, GatedRT] <= 0 {
+			LayerStates[ly.Index, di, GatedRT] = float32(ctx.Cycle)
 		}
 	}
 }
@@ -884,6 +887,7 @@ func (ly *LayerParams) NewStateLayer(ctx *Context) {
 		ly.Acts.Clamp.IsInput.SetBool(ly.IsInput())
 		ly.Acts.Clamp.IsTarget.SetBool(ly.IsTarget())
 		LayerStates[ly.Index, di, LayerRT] = -1.0
+		LayerStates[ly.Index, di, GatedRT] = -1.0
 
 		for spi := uint32(0); spi < np; spi++ {
 			pi := ly.PoolIndex(spi)

@@ -749,9 +749,12 @@ func (ly *LayerParams) CyclePost(ctx *Context, di uint32) {
 // CyclePostLayer is called for all layer types
 func (ly *LayerParams) CyclePostLayer(ctx *Context, lpi, di uint32) {
 	casp := PoolAvgMax(AMCaP, AMCycle, Max, lpi, di)
-	if ctx.Cycle >= ly.Acts.Dt.MaxCycStart && casp > 0.5 { // todo: param
-		if LayerStates.Value(int(ly.Index), int(di), int(LayerRT)) <= 0 {
+	if ctx.Cycle >= ly.Acts.Dt.MaxCycStart {
+		if casp > ly.Inhib.ActAvg.RTThr && LayerStates.Value(int(ly.Index), int(di), int(LayerRT)) <= 0 {
 			LayerStates.Set(float32(ctx.Cycle), int(ly.Index), int(di), int(LayerRT))
+		}
+		if PoolsInt.Value(int(lpi), int(di), int(PoolGated)) > 0 && LayerStates.Value(int(ly.Index), int(di), int(GatedRT)) <= 0 {
+			LayerStates.Set(float32(ctx.Cycle), int(ly.Index), int(di), int(GatedRT))
 		}
 	}
 }
@@ -885,6 +888,7 @@ func (ly *LayerParams) NewStateLayer(ctx *Context) {
 		ly.Acts.Clamp.IsInput.SetBool(ly.IsInput())
 		ly.Acts.Clamp.IsTarget.SetBool(ly.IsTarget())
 		LayerStates.Set(-1.0, int(ly.Index), int(di), int(LayerRT))
+		LayerStates.Set(-1.0, int(ly.Index), int(di), int(GatedRT))
 
 		for spi := uint32(0); spi < np; spi++ {
 			pi := ly.PoolIndex(spi)

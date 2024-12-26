@@ -420,7 +420,7 @@ const GlobalScalarVarsN: GlobalScalarVars = 57;
 const GlobalVectorVarsN: GlobalVectorVars = 10;
 const GPUVarsN: GPUVars = 23;
 const LayerTypesN: LayerTypes = 30;
-const LayerVarsN: LayerVars = 11;
+const LayerVarsN: LayerVars = 12;
 const ViewTimesN: ViewTimes = 7;
 const DAModTypesN: DAModTypes = 4;
 const ValenceTypesN: ValenceTypes = 3;
@@ -568,13 +568,13 @@ struct HipPathParams {
 //////// import: "inhib.go"
 struct ActAvgParams {
 	Nominal: f32,
+	RTThr: f32,
 	AdaptGi: i32,
 	Offset: f32,
 	HiTol: f32,
 	LoTol: f32,
 	AdaptRate: f32,
 	pad: f32,
-	pad1: f32,
 }
 fn ActAvgParams_Adapt(aa: ptr<function,ActAvgParams>, gimult: ptr<function,f32>, act: f32) -> bool {
 	var trg = (*aa).Nominal + (*aa).Offset;
@@ -726,8 +726,9 @@ const  LayerPhaseDiff: LayerVars = 5;
 const  LayerPhaseDiffAvg: LayerVars = 6;
 const  LayerPhaseDiffVar: LayerVars = 7;
 const  LayerRT: LayerVars = 8;
-const  LayerRewPredPos: LayerVars = 9;
-const  LayerRewPredNeg: LayerVars = 10;
+const  GatedRT: LayerVars = 9;
+const  LayerRewPredPos: LayerVars = 10;
+const  LayerRewPredNeg: LayerVars = 11;
 
 //////// import: "learn-layer.go"
 fn LayerParams_SlowAdaptLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>) {

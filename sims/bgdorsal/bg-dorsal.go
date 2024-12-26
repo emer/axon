@@ -217,6 +217,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	np := 1
 	nuPer := ev.NUnitsPer
 	nAct := ev.NActions
+	nSeq := ev.SeqLen
 	nuX := 6
 	nuY := 6
 	nuCtxY := 6
@@ -238,7 +239,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	snc := net.AddLayer2D("SNc", axon.InputLayer, 1, 1)
 	_ = snc
 
-	state := net.AddLayer4D("State", axon.InputLayer, 1, np, nuPer, nAct)
+	state := net.AddLayer4D("State", axon.InputLayer, 1, np, nuPer, nSeq)
 	s1 := net.AddLayer4D("S1", axon.InputLayer, 1, np, nuPer, nAct+1)
 
 	targ := net.AddLayer2D("Target", axon.InputLayer, nuPer, nAct) // Target: just for vis
@@ -755,8 +756,8 @@ func (ss *Sim) ConfigStats() {
 		perTrlFunc(mode, level, phase == Start)
 	})
 
-	// trialstats are only reported for di = 0
-	trialStats := []string{"Action", "Target", "Correct"}
+	vmly := ss.Net.LayerByName("M1VM")
+	trialStats := []string{"Di", "Action", "Target", "Correct", "RT"}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		if level != Trial {
 			return
@@ -765,34 +766,43 @@ func (ss *Sim) ConfigStats() {
 			modeDir := ss.Stats.Dir(mode.String())
 			curModeDir := ss.Current.Dir(mode.String())
 			levelDir := modeDir.Dir(level.String())
-			di := 0 //
-			tsr := levelDir.Float64(name)
-			if phase == Start {
-				tsr.SetNumRows(0)
-				plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
-					s.Range.SetMin(0).SetMax(1)
-					if si >= 2 && si <= 5 {
-						s.On = true
+			ndata := int(ss.Net.Context().NData)
+			for di := range ndata {
+				tsr := levelDir.Float64(name)
+				if phase == Start {
+					tsr.SetNumRows(0)
+					plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
+						s.Range.SetMin(0).SetMax(1)
+						if si >= 3 && si <= 4 {
+							s.On = true
+						}
+					})
+					continue
+				}
+				ev := ss.Envs.ByModeDi(mode, di).(*MotorSeqEnv)
+				var stat float32
+				switch name {
+				case "Di":
+					stat = float32(di)
+				case "Action":
+					stat = float32(ev.CurAction)
+				case "Target":
+					stat = float32(ev.Target)
+				case "Correct":
+					stat = num.FromBool[float32](ev.Correct)
+				case "RT":
+					stat = axon.LayerStates.Value(vmly.Index, di, int(axon.GatedRT))
+					if stat < 0 {
+						stat = math32.NaN()
 					}
-				})
-				continue
+				}
+				curModeDir.Float32(name, ndata).SetFloat1D(float64(stat), di)
+				tsr.AppendRowFloat(float64(stat))
 			}
-			ev := ss.Envs.ByModeDi(mode, di).(*MotorSeqEnv)
-			var stat float32
-			switch name {
-			case "Action":
-				stat = float32(ev.CurAction)
-			case "Target":
-				stat = float32(ev.Target)
-			case "Correct":
-				stat = num.FromBool[float32](ev.Correct)
-			}
-			curModeDir.Float32(name, 1).SetFloat1D(float64(stat), di)
-			tsr.AppendRowFloat(float64(stat))
 		}
 	})
 
-	seqStats := []string{"NCorrect", "Rew", "RewPred", "RPE"}
+	seqStats := []string{"NCorrect", "Rew", "RewPred", "RPE", "RT"}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		if level <= Trial {
 			return
@@ -827,6 +837,8 @@ func (ss *Sim) ConfigStats() {
 						stat = ev.RewPred
 					case "RPE":
 						stat = ev.RPE
+					case "RT":
+						stat = float32(stats.StatMean.Call(subDir.Value(name)).Float1D(0))
 					}
 					curModeDir.Float32(name, ndata).SetFloat1D(float64(stat), di)
 					tsr.AppendRowFloat(float64(stat))
@@ -883,7 +895,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 		return counters
 	}
 	counters += fmt.Sprintf(" TrialName: %s", curModeDir.StringValue("TrialName").String1D(di))
-	statNames := []string{"Action", "Target", "Correct"}
+	statNames := []string{"Action", "Target", "Correct", "RT"}
 	if level == Cycle || curModeDir.Node(statNames[0]) == nil {
 		return counters
 	}

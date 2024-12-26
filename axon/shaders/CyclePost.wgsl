@@ -122,9 +122,12 @@ fn LayerParams_CyclePost(ly: ptr<function,LayerParams>, ctx: ptr<function,Contex
 }
 fn LayerParams_CyclePostLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, lpi: u32,di: u32) {
 	var casp = PoolAvgMax(AMCaP, AMCycle, Max, lpi, di);
-	if ((*ctx).Cycle >= (*ly).Acts.Dt.MaxCycStart && casp > 0.5) { // todo: param
-		if (LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32((*ly).Index), u32(di), u32(LayerRT))] <= 0) {
+	if ((*ctx).Cycle >= (*ly).Acts.Dt.MaxCycStart) {
+		if (casp > (*ly).Inhib.ActAvg.RTThr && LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32((*ly).Index), u32(di), u32(LayerRT))] <= 0) {
 			LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32((*ly).Index), u32(di), u32(LayerRT))] = f32((*ctx).Cycle);
+		}
+		if (PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(lpi), u32(di), u32(PoolGated))] > 0 && LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32((*ly).Index), u32(di), u32(GatedRT))] <= 0) {
+			LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32((*ly).Index), u32(di), u32(GatedRT))] = f32((*ctx).Cycle);
 		}
 	}
 }
@@ -555,7 +558,7 @@ const GlobalScalarVarsN: GlobalScalarVars = 57;
 const GlobalVectorVarsN: GlobalVectorVars = 10;
 const GPUVarsN: GPUVars = 23;
 const LayerTypesN: LayerTypes = 30;
-const LayerVarsN: LayerVars = 11;
+const LayerVarsN: LayerVars = 12;
 const ViewTimesN: ViewTimes = 7;
 const DAModTypesN: DAModTypes = 4;
 const ValenceTypesN: ValenceTypes = 3;
@@ -703,13 +706,13 @@ struct HipPathParams {
 //////// import: "inhib.go"
 struct ActAvgParams {
 	Nominal: f32,
+	RTThr: f32,
 	AdaptGi: i32,
 	Offset: f32,
 	HiTol: f32,
 	LoTol: f32,
 	AdaptRate: f32,
 	pad: f32,
-	pad1: f32,
 }
 struct InhibParams {
 	ActAvg: ActAvgParams,
@@ -854,8 +857,9 @@ const  LayerPhaseDiff: LayerVars = 5;
 const  LayerPhaseDiffAvg: LayerVars = 6;
 const  LayerPhaseDiffVar: LayerVars = 7;
 const  LayerRT: LayerVars = 8;
-const  LayerRewPredPos: LayerVars = 9;
-const  LayerRewPredNeg: LayerVars = 10;
+const  GatedRT: LayerVars = 9;
+const  LayerRewPredPos: LayerVars = 10;
+const  LayerRewPredNeg: LayerVars = 11;
 
 //////// import: "learn-layer.go"
 

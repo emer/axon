@@ -112,6 +112,7 @@ fn LayerParams_NewStateLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Co
 		(*ly).Acts.Clamp.IsInput = i32(LayerParams_IsInput(ly));
 		(*ly).Acts.Clamp.IsTarget = i32(LayerParams_IsTarget(ly));
 		LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32((*ly).Index), u32(di), u32(LayerRT))] = -1.0;
+		LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32((*ly).Index), u32(di), u32(GatedRT))] = -1.0;
 		for (var spi = u32(0); spi < np; spi++) {
 			var pi = LayerParams_PoolIndex(ly, spi);
 			LayerParams_NewStatePool(ly, ctx, pi, di); // also calls DecayState on pool
@@ -471,7 +472,7 @@ const GlobalScalarVarsN: GlobalScalarVars = 57;
 const GlobalVectorVarsN: GlobalVectorVars = 10;
 const GPUVarsN: GPUVars = 23;
 const LayerTypesN: LayerTypes = 30;
-const LayerVarsN: LayerVars = 11;
+const LayerVarsN: LayerVars = 12;
 const ViewTimesN: ViewTimes = 7;
 const DAModTypesN: DAModTypes = 4;
 const ValenceTypesN: ValenceTypes = 3;
@@ -619,13 +620,13 @@ struct HipPathParams {
 //////// import: "inhib.go"
 struct ActAvgParams {
 	Nominal: f32,
+	RTThr: f32,
 	AdaptGi: i32,
 	Offset: f32,
 	HiTol: f32,
 	LoTol: f32,
 	AdaptRate: f32,
 	pad: f32,
-	pad1: f32,
 }
 fn ActAvgParams_AvgFromAct(aa: ptr<function,ActAvgParams>, avg: ptr<function,f32>, act: f32, dt: f32) {
 	if (act < 0.0001) {
@@ -789,8 +790,9 @@ const  LayerPhaseDiff: LayerVars = 5;
 const  LayerPhaseDiffAvg: LayerVars = 6;
 const  LayerPhaseDiffVar: LayerVars = 7;
 const  LayerRT: LayerVars = 8;
-const  LayerRewPredPos: LayerVars = 9;
-const  LayerRewPredNeg: LayerVars = 10;
+const  GatedRT: LayerVars = 9;
+const  LayerRewPredPos: LayerVars = 10;
+const  LayerRewPredNeg: LayerVars = 11;
 
 //////// import: "learn-layer.go"
 

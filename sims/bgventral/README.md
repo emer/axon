@@ -1,6 +1,6 @@
-# pcore
+# BG Ventral
 
-This is a simple test of the [pcore](../../PCORE_BG.md) model of basal ganglia (BG) function, in the **Ventral Striatum** (VS).  See [pcore_ds](../pcore_ds) for the Dorsal Striatum (DS) model, which is optimized for motor control via PFC gating and descending disinhibitory modulation.
+This is a test of the [pcore](../../PCORE_BG.md) model of basal ganglia (BG) function, in the **Ventral Striatum** (VS).  See [bgdorsal](../bgdorsal) for the Dorsal Striatum (DS) model, which is optimized for motor control via PFC gating and descending disinhibitory modulation.
 
 This test model has all of the standard PFC layers, which are kept busy by predicting a sequence of input values on the `In` layer, via the [deep](../../DEEP.md) predictive learning mechanism (`InP` is the pulvinar layer representing the prediction of `In`).  This prediction task is completely orthogonal from the gating decision made by the BG, which is driven by the `ACCPos` and `ACCNeg` layers.
 

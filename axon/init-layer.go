@@ -26,6 +26,7 @@ func (ly *Layer) InitWeights(ctx *Context, nt *Network) { //types:add
 		LayerStates.Set(0, int(li), int(di), int(LayerPhaseDiffAvg))
 		LayerStates.Set(0, int(li), int(di), int(LayerPhaseDiffVar))
 		LayerStates.Set(-1, int(li), int(di), int(LayerRT))
+		LayerStates.Set(-1, int(li), int(di), int(GatedRT))
 		LayerStates.Set(0, int(li), int(di), int(LayerRewPredPos))
 		LayerStates.Set(0, int(li), int(di), int(LayerRewPredNeg))
 	}

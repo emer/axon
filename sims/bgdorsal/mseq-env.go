@@ -115,7 +115,7 @@ func (ev *MotorSeqEnv) Config(mode Modes, rndseed int64) {
 	ev.RandSeed = rndseed
 	ev.Rand.NewRand(ev.RandSeed)
 	ev.States = make(map[string]*tensor.Float32)
-	ev.States["State"] = tensor.NewFloat32(ev.NUnitsPer, ev.NActions)
+	ev.States["State"] = tensor.NewFloat32(ev.NUnitsPer, ev.SeqLen)
 	ev.States["Target"] = tensor.NewFloat32(ev.NUnitsPer, ev.NActions)
 	ev.States["Action"] = tensor.NewFloat32(ev.NUnitsPer, ev.NActions)
 	ev.States["PrevAction"] = tensor.NewFloat32(ev.NUnitsPer, ev.NActions+1)
@@ -160,7 +160,10 @@ func (ev *MotorSeqEnv) RenderBlank(name string) {
 func (ev *MotorSeqEnv) RenderLocalist(name string, idx int) {
 	av := ev.States[name]
 	av.SetZeros()
-	for yi := 0; yi < ev.NUnitsPer; yi++ {
+	if idx >= av.DimSize(1) {
+		return
+	}
+	for yi := range ev.NUnitsPer {
 		av.Set(1, yi, idx)
 	}
 }

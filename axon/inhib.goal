@@ -23,25 +23,56 @@ import (
 // average activity within a target range.
 type ActAvgParams struct {
 
-	// nominal estimated average activity level in the layer, which is used in computing the scaling factor on sending pathways from this layer.  In general it should roughly match the layer ActAvg.ActMAvg value, which can be logged using the axon.LogAddDiagnosticItems function.  If layers receiving from this layer are not getting enough Ge excitation, then this Nominal level can be lowered to increase pathway strength (fewer active neurons means each one contributes more, so scaling factor goes as the inverse of activity level), or vice-versa if Ge is too high.  It is also the basis for the target activity level used for the AdaptGi option -- see the Offset which is added to this value.
+	// Nominal is the estimated average activity level in the layer, which is
+	// used in computing the scaling factor on sending pathways from this layer.
+	// In general it should roughly match the layer ActAvg.ActMAvg value, which
+	// can be logged using the axon.LogAddDiagnosticItems function.
+	// If layers receiving from this layer are not getting enough Ge excitation,
+	// then this Nominal level can be lowered to increase pathway strength
+	// (fewer active neurons means each one contributes more, so scaling factor
+	//  goes as the inverse of activity level), or vice-versa if Ge is too high.
+	// It is also the basis for the target activity level used for the AdaptGi
+	//  option: see the Offset which is added to this value.
 	Nominal float32 `min:"0" step:"0.01"`
 
-	// enable adapting of layer inhibition Gi multiplier factor (stored in layer GiMult value) to maintain a target layer level of ActAvg.Nominal.  This generally works well and improves the long-term stability of the models.  It is not enabled by default because it depends on having established a reasonable Nominal + Offset target activity level.
+	// RTThr is the reaction time (RT) threshold activity level in the layer,
+	// in terms of the maximum CaP level of any neuron in the layer. The
+	// LayerStates LayerRT value is recorded for the cycle at which this
+	// level is exceeded within a theta cycle, after Acts.Dt.MaxCycStart cycles.
+	RTThr float32 `default:"0.5"`
+
+	// AdaptGi enables adapting of layer inhibition Gi multiplier factor
+	// (stored in layer GiMult value) to maintain a target layer level of
+	// ActAvg.Nominal. This generally works well and improves the long-term
+	// stability of the models. It is not enabled by default because it depends
+	// on having established a reasonable Nominal + Offset target activity level.
 	AdaptGi slbool.Bool
 
-	// offset to add to Nominal for the target average activity that drives adaptation of Gi for this layer.  Typically the Nominal level is good, but sometimes Nominal must be adjusted up or down to achieve desired Ge scaling, so this Offset can compensate accordingly.
+	// Offset is added to Nominal for the target average activity that drives
+	// adaptation of Gi for this layer.  Typically the Nominal level is good,
+	// but sometimes Nominal must be adjusted up or down to achieve desired Ge
+	// scaling, so this Offset can compensate accordingly.
 	Offset float32 `default:"0" min:"0" step:"0.01"`
 
-	// tolerance for higher than Target target average activation as a proportion of that target value (0 = exactly the target, 0.2 = 20% higher than target) -- only once activations move outside this tolerance are inhibitory values adapted.
+	// HiTol is the tolerance for higher than Target target average activation
+	// as a proportion of that target value (0 = exactly the target, 0.2 = 20%
+	// higher than target). Only once activations move outside this tolerance
+	//  are inhibitory values adapted.
 	HiTol float32 `default:"0"`
 
-	// tolerance for lower than Target target average activation as a proportion of that target value (0 = exactly the target, 0.5 = 50% lower than target) -- only once activations move outside this tolerance are inhibitory values adapted.
+	// LoTol is the tolerance for lower than Target target average activation
+	// as a proportion of that target value (0 = exactly the target, 0.5 = 50%
+	// lower than target). Only once activations move outside this tolerance are
+	//  inhibitory values adapted.
 	LoTol float32 `default:"0.8"`
 
-	// rate of Gi adaptation as function of AdaptRate * (Target - ActMAvg) / Target -- occurs at spaced intervals determined by Network.SlowInterval value -- slower values such as 0.01 may be needed for large networks and sparse layers.
+	// AdaptRate is the rate of Gi adaptation as function of
+	// AdaptRate * (Target - ActMAvg) / Target. This occurs at spaced intervals
+	// determined by Network.SlowInterval value. Slower values such as 0.01 may
+	// be needed for large networks and sparse layers.
 	AdaptRate float32 `default:"0.1"`
 
-	pad, pad1 float32
+	pad float32
 }
 
 func (aa *ActAvgParams) Update() {
@@ -49,6 +80,7 @@ func (aa *ActAvgParams) Update() {
 
 func (aa *ActAvgParams) Defaults() {
 	aa.Nominal = 0.1
+	aa.RTThr = 0.5
 	aa.Offset = 0
 	aa.HiTol = 0
 	aa.LoTol = 0.8
