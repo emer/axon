@@ -1,8 +1,8 @@
-# pcore_ds
+# BG Dorsal
 
-This is a simple test of the [pcore](../../PCORE_BG.md) model of basal ganglia (BG) function, in the **Dorsal Striatum** (DS).  See [pcore_vs](../pcore_vs) for the Ventral Striatum (VS) model, which is optimized for making global Go vs. No decisions based on cost / benefit inputs (see also [BOA](../boa)).
+This is a test of the [pcore](../../PCORE_BG.md) model of basal ganglia (BG) function, in the **Dorsal Striatum** (DS).  See [bgventral](../bgventral) for the Ventral Striatum (VS) model, which is optimized for making global Go vs. No decisions based on cost / benefit inputs (see also [Rubicon](../../Rubicon.md).
 
-The DS is the input layer for the primary motor control part of the basal ganglia, and this model learns to execute a sequence of motor actions through reinforcement  learning (RL), getting positive reinforcement for correct actions and lack of reinforcement for incorrect ones.  Critically, there is no omnicient "teacher" input: the model has to discover the correct action sequence purely through trial and error, "online" learning (i.e., it learns on a trial-by-trial basis as it acts).  This is the only biologically / ecologically realistic form of RL.
+The DS is the input layer for the primary motor control part of the basal ganglia, and this model learns to execute a sequence of motor actions through reinforcement  learning (RL), getting positive reinforcement for correct actions and lack of reinforcement for incorrect ones.  Critically, there is no omnicient "teacher" input: the model has to discover the correct action sequence purely through trial and error, "online" learning (i.e., it learns on a trial-by-trial basis as it acts). This is the only biologically / ecologically realistic form of RL.
 
 The model also has mechanisms to learn about the space of possible motor actions and their parameterization in the DS, which is driven by ascending pathways from the brainstem and spinal motor system, via the deep cerebellar nuclei (DCN) to the CL (central lateral) nucleus of the thalamus.  This pathway is not currently beneficial in the model, and will be revisited once a simple model of the cerebellum is implemented, in the context of more fine-grained parameterized motor control.  The descending pathway from motor cortex also conveys useful motor signal information, and these cortical reps are directly shaped by the same ascending motor signals.
 
@@ -30,7 +30,7 @@ The learned weights to the BG clearly show that it is disinhibiting the appropri
 
 # TODO:
 
-* Set number of cycles per trial in terms of BG motor gating timing: constant offset from onset of VM gating timing, with a cutoff for "nothing happening" trials.
+* Set number of cycles per trial in terms of BG motor gating timing: constant offset from onset of VM gating timing, with a cutoff for "nothing happening" trials. This is likely especially important with new linear approx to SynCa learning, which has degraded learning at 300 cycles, which had been significantly better.
 
 * "CL" not beneficial (implemented as direct MotorBS -> Matrix pathways): rel weight of 0.002 is OK but starts to actually impair above that.  Likely that a functional cerebellum is needed to make this useful.  Also, investigate other modulatory inputs to CL that might alter its signal.  Key ref for diffs between CL and PF: LaceyBolamMagill07: C. J. Lacey, J. P. Bolam, P. J. Magill, Novel and distinct operational principles of intralaminar thalamic neurons and their striatal pathways. J. Neurosci. 27, 4374–4384 (2007).
 

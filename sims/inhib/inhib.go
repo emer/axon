@@ -293,7 +293,7 @@ func (ss *Sim) ConfigLoops() {
 		AddLevelIncr(Trial, ss.Config.Run.Trials, 1).
 		AddLevel(Cycle, cycles)
 
-	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, 10, cycles-plusPhase, cycles-1, Cycle, Trial, Train)
+	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, cycles-plusPhase, cycles-1, Cycle, Trial, Train)
 
 	// ls.Stacks[Train].OnInit.Add("Init", func() { ss.Init() })
 

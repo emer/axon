@@ -8,28 +8,24 @@ import (
 	"cogentcore.org/core/enums"
 )
 
-// Cycle runs n cycles of activation updating.
+// Cycle runs one cycle of activation updating, equivalent to 1 msec.
 // If getNeurons is true, then neuron state is synced back
-// from the GPU (for cycle-level display etc). Otherwise only
-// layer-level state is synced.
-func (nt *Network) Cycle(ncyc int, getNeurons bool) {
+// from the GPU (for cycle-level display etc). Otherwise, nothing is.
+func (nt *Network) Cycle(getNeurons bool) {
 	nix := nt.NetIxs()
 	ctx := nt.Context()
 	nd := int(nix.NNeurons * ctx.NData)
 	ld := int(nix.NLayers * ctx.NData)
 	pd := int(nix.NPools * ctx.NData)
 
-	// ToGPUCtxGlobal() // this is not a significant speed factor
-	for range ncyc {
-		RunGatherSpikes(nd)
-		RunLayerGi(ld)
-		RunBetweenGi(ld)
-		RunPoolGi(pd)
-		RunCycleNeuron(nd)
-		RunSendSpike(nd)
-		RunCyclePost(ld)
-		RunCycleInc(1)
-	}
+	RunGatherSpikes(nd)
+	RunLayerGi(ld)
+	RunBetweenGi(ld)
+	RunPoolGi(pd)
+	RunCycleNeuron(nd)
+	RunSendSpike(nd)
+	RunCyclePost(ld)
+	RunCycleInc(1)
 
 	if getNeurons {
 		RunDoneLayersNeurons()

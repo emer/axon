@@ -13,15 +13,13 @@ import (
 // LooperStandard adds all the standard Axon Trial and Cycle level processing calls
 // to the given Looper Stacks. cycle and trial are the enums for the looper levels,
 // trainMode is the training mode enum value.
-//   - fastNCycles is the number of cycles to run in one chunk, when single-cycle iteration
-//     is not otherwise required (based on step level, netview update level).
 //   - minus and plus phases of the theta cycle (trial), at plusStart (150) and plusEnd (199) cycles.
-//   - embedded beta phases within theta, that record St1 and St2 states.
+//   - embedded beta phases within theta, that record Beta1 and Beta2 states.
 //   - net.Cycle() at every cycle step.
 //   - net.DWt() and net.WtFromDWt() learning calls in training mode, with netview update
 //     between these two calls if it is visible and viewing synapse variables.
 //   - netview update calls at appropriate levels (no-op if no GUI)
-func LooperStandard(ls *looper.Stacks, net *Network, viewFunc func(mode enums.Enum) *NetViewUpdate, fastNCycles, plusStart, plusEnd int, cycle, trial, trainMode enums.Enum) {
+func LooperStandard(ls *looper.Stacks, net *Network, viewFunc func(mode enums.Enum) *NetViewUpdate, plusStart, plusEnd int, cycle, trial, trainMode enums.Enum) {
 	ls.AddEventAllModes(cycle, "Beta1", 50, func() { net.Beta1() })
 	ls.AddEventAllModes(cycle, "Beta2", 100, func() { net.Beta2() })
 
@@ -31,31 +29,22 @@ func LooperStandard(ls *looper.Stacks, net *Network, viewFunc func(mode enums.En
 	for mode, st := range ls.Stacks {
 		cycLoop := st.Loops[cycle]
 		cycLoop.OnStart.Add("Cycle", func() {
-			nCycles := fastNCycles
 			getNeurons := false
 			if ls.ModeStack().StepLevel.Int64() == cycle.Int64() {
-				nCycles = 1
 				getNeurons = true
 			} else if view := viewFunc(mode); view != nil && view.View != nil {
 				if view.IsCycleUpdating() {
-					nCycles = 1
 					getNeurons = true
 				} else {
-					nCycles = min(nCycles, view.Time.Cycles())
 					if view.Time < Theta {
 						getNeurons = true
 					}
 				}
 			}
-			net.Cycle(nCycles, getNeurons)
-			if nCycles > 1 {
-				cycLoop.Counter.Cur += nCycles - 1
-			}
+			net.Cycle(getNeurons)
 			if UseGPU && !getNeurons {
 				ctx := net.Context()
-				for range nCycles {
-					ctx.CycleInc()
-				}
+				ctx.CycleInc() // keep synced
 			}
 		})
 
