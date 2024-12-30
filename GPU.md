@@ -144,7 +144,7 @@ The following Layer and Path level types contain most of the core algorithm spec
 * `LayerParams` in `layerparams.go` has all the core algorithm parameters and methods that run on both the GPU and the CPU.  This file is converted to `shaders/layerparams.wgsl` by [gosl](https://github.com/goki/gosl).  All the methods must have args providing all of the state that is needed for the computation, which is supplied either by the GPU or CPU.  The overall layer-level parameters are further defined in:
     + `ActParams` in `act.go` -- for computing spiking neural activation.
     + `InhibParams` in `inhib.go` -- for simulated inhibitory interneuron inhibition.
-    + `LearnNeurParams` in `learn.go` -- learning-related functions at the neuron level.
+    + `LearnNeuronParams` in `learn.go` -- learning-related functions at the neuron level.
 
 * `PathParams` in `pathparams.go` has all the core algorithm parameters and methods that run on both the GPU and CPU, likewise converted to `shaders/pathparams.wgsl`.  The specific params are in:
     + `SynComParams` at the bottom of `act.go` -- synaptic communication params used in computing spiking activation.

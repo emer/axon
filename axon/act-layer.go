@@ -476,7 +476,7 @@ func (ly *LayerParams) GFromRawSyn(ctx *Context, ni, di uint32) {
 	geSyn := Neurons.Value(int(ni), int(di), int(GeSyn))
 	ly.Acts.NMDAFromRaw(ctx, ni, di, geRaw+extraRaw)
 	ly.Acts.MaintNMDAFromRaw(ctx, ni, di) // uses GMaintRaw directly
-	ly.Learn.LrnNMDAFromRaw(ctx, ni, di, geRaw)
+	ly.Learn.LearnNMDAFromRaw(ctx, ni, di, geRaw)
 	ly.Acts.GvgccFromVm(ctx, ni, di)
 	ege := Neurons.Value(int(ni), int(di), int(Gnmda)) + Neurons.Value(int(ni), int(di), int(GnmdaMaint)) + Neurons.Value(int(ni), int(di), int(Gvgcc)) + extraSyn
 	ly.Acts.GeFromSyn(ctx, ni, di, geSyn, ege) // sets nrn.GeExt too
@@ -534,7 +534,7 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, lpi, ni, di uint32) {
 		Neurons.Set(Neurons.Value(int(ni), int(di), int(GeInt)), int(ni), int(di), int(GeIntNorm))
 	}
 	if ctx.Cycle >= ly.Acts.Dt.MaxCycStart {
-		Neurons.SetAdd(ly.Learn.CaSpk.Dt.PDt*(Neurons.Value(int(ni), int(di), int(CaM))-Neurons.Value(int(ni), int(di), int(CaPMaxCa))), int(ni), int(di), int(CaPMaxCa))
+		Neurons.SetAdd(ly.Learn.CaSpike.Dt.PDt*(Neurons.Value(int(ni), int(di), int(CaM))-Neurons.Value(int(ni), int(di), int(CaPMaxCa))), int(ni), int(di), int(CaPMaxCa))
 		spkmax := Neurons.Value(int(ni), int(di), int(CaPMaxCa))
 		if spkmax > Neurons.Value(int(ni), int(di), int(CaPMax)) {
 			Neurons.Set(spkmax, int(ni), int(di), int(CaPMax))

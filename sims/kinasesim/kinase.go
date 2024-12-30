@@ -9,7 +9,55 @@ import (
 	"math/rand"
 
 	"cogentcore.org/core/math32"
+	"github.com/emer/axon/v2/kinase"
 )
+
+// SynCaParams has rate constants for integrating spike-driven Ca calcium
+// at different time scales, including final CaP = CaMKII and CaD = DAPK1
+// timescales for LTP potentiation vs. LTD depression factors.
+type SynCaParams struct { //types:add
+
+	// time constant for integrating spike-driven calcium trace at sender and recv
+	// neurons, CaSyn, which then drives synapse-level integration of the
+	// joint pre * post synapse-level activity, in cycles (msec).
+	// Note: if this param is changed, then there will be a change in effective
+	// learning rate that can be compensated for by multiplying
+	// PathParams.Learn.KinaseCa.CaScale by sqrt(30 / sqrt(SynTau)
+	SynTau float32 `default:"30" min:"1"`
+
+	// rate = 1 / tau
+	SynDt float32 `display:"-" json:"-" xml:"-" edit:"-"`
+
+	// CaScale is a scaling multiplier on synaptic Ca values,
+	// which due to the multiplication of send * recv are smaller in magnitude.
+	// The default 12 value keeps them in roughly the unit scale,
+	// and affects effective learning rate.
+	CaScale float32 `default:"12"`
+
+	pad, pad1, pad2 int32
+
+	// time constants for integrating at M, P, and D cascading levels
+	Dt kinase.CaDtParams `display:"inline"`
+}
+
+func (kp *SynCaParams) Defaults() {
+	kp.SynTau = 30
+	kp.CaScale = 12
+	kp.Dt.Defaults()
+	kp.Update()
+}
+
+func (kp *SynCaParams) Update() {
+	kp.SynDt = 1 / kp.SynTau
+	kp.Dt.Update()
+}
+
+// FromCa updates CaM, CaP, CaD from given current synaptic calcium value,
+// which is a faster time-integral of calcium typically.
+// ca is multiplied by CaScale.
+func (kp *SynCaParams) FromCa(ca float32, caM, caP, caD *float32) {
+	kp.Dt.FromCa(kp.CaScale*ca, caM, caP, caD)
+}
 
 // NBins is the number of spike bins
 const NBins = 8
@@ -22,7 +70,12 @@ type KinaseNeuron struct {
 	// Neuron probability of spiking
 	SpikeP float32
 
-	// CaSyn is spike-driven calcium trace for synapse-level Ca-driven learning: exponential integration of SpikeG * Spike at SynTau time constant (typically 30).  Synapses integrate send.CaSyn * recv.CaSyn across M, P, D time integrals for the synaptic trace driving credit assignment in learning. Time constant reflects binding time of Glu to NMDA and Ca buffering postsynaptically, and determines time window where pre * post spiking must overlap to drive learning.
+	// CaSyn is spike-driven calcium trace for synapse-level Ca-driven learning:
+	// exponential integration of SpikeG * Spike at SynTau time constant (typically 30).
+	// Synapses integrate send.CaSyn * recv.CaSyn across M, P, D time integrals for the
+	// synaptic trace driving credit assignment in learning. Time constant reflects
+	// binding time of Glu to NMDA and Ca buffering postsynaptically, and determines
+	// time window where pre * post spiking must overlap to drive learning.
 	CaSyn float32
 
 	// regression variables
@@ -65,7 +118,7 @@ func (ss *Sim) Cycle(kn *KinaseNeuron, expInt float32, cyc int) {
 			kn.SpikeBins[bin] += 1
 		}
 	}
-	kn.CaSyn += ss.NeurCa.SynDt * (ss.NeurCa.SpikeG*kn.Spike - kn.CaSyn)
+	kn.CaSyn += ss.SynCa.SynDt * (ss.CaSpike.SpikeG*kn.Spike - kn.CaSyn)
 }
 
 func (kn *KinaseNeuron) SetInput(inputs []float32, off int) {

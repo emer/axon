@@ -95,7 +95,7 @@ type LayerParams struct {
 	LayInhib LayerInhibIndexes `display:"inline"`
 
 	// Learn has learning parameters and methods that operate at the neuron level.
-	Learn LearnNeurParams `display:"add-fields"`
+	Learn LearnNeuronParams `display:"add-fields"`
 
 	// Bursts has [BurstParams] that determine how the 5IB Burst activation
 	// is computed from CaP integrated spiking values in Super layers.

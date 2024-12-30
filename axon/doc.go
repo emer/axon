@@ -36,7 +36,7 @@ labeled as opposed to just structurally so, to keep things clearer and better or
 overall:
 * ActParams -- activation params, at the Neuron level (in act.go)
 * InhibParams -- inhibition params, at the Layer / Pool level (in inhib.go)
-* LearnNeurParams -- learning parameters at the Neuron level (running-averages that drive learning)
+* LearnNeuronParams -- learning parameters at the Neuron level (running-averages that drive learning)
 * LearnSynParams -- learning parameters at the Synapse level (both in learn.go)
 
 The levels of structure and state are:

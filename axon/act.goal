@@ -277,7 +277,7 @@ type DecayParams struct {
 	// decay of afterhyperpolarization currents, including mAHP, sAHP, and KNa, Kir -- has a separate decay because often useful to have this not decay at all even if decay is on.
 	AHP float32 `default:"0" max:"1" min:"0"`
 
-	// decay of Ca variables driven by spiking activity used in learning: CaSpk* and Ca* variables. These are typically not decayed but may need to be in some situations.
+	// decay of Ca variables driven by spiking activity used in learning: CaSpike* and Ca* variables. These are typically not decayed but may need to be in some situations.
 	LearnCa float32 `default:"0" max:"1" min:"0"`
 
 	// decay layer at end of ThetaCycle when there is a global reward -- true by default for PTPred, PTMaint and PFC Super layers
@@ -1065,7 +1065,7 @@ func (ac *ActParams) NMDAFromRaw(ctx *Context, ni, di uint32, geTot float32) {
 	geT := max(geTot, 0.0)
 	Neurons[ni, di, GnmdaSyn] = ac.NMDA.NMDASyn(Neurons[ni, di, GnmdaSyn], geT)
 	Neurons[ni, di, Gnmda] = ac.NMDA.Gnmda(Neurons[ni, di, GnmdaSyn], Neurons[ni, di, VmDend])
-	// note: nrn.NmdaCa computed via Learn.LrnNMDA in learn.go, CaM method
+	// note: nrn.NmdaCa computed via Learn.LearnNMDA in learn.go, CaM method
 }
 
 // MaintNMDAFromRaw updates all the Maint NMDA variables from

@@ -102,7 +102,7 @@ func (ly *Layer) Defaults() { //types:add
 			LayerStates.Set(1, int(li), int(di), int(LayerGiMult))
 		}
 		ly.Params.Learn.CaLearn.Dt.PDTauForNCycles(int(ctx.ThetaCycles))
-		ly.Params.Learn.CaSpk.Dt.PDTauForNCycles(int(ctx.ThetaCycles))
+		ly.Params.Learn.CaSpike.Dt.PDTauForNCycles(int(ctx.ThetaCycles))
 	}
 	for _, pt := range ly.RecvPaths { // must do path defaults first, then custom
 		pt.Defaults()

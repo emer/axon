@@ -21,7 +21,7 @@ type SKCaPlot struct {
 	SKCa chans.SKCaParams
 
 	// time constants for integrating Ca from spiking across M, P and D cascading levels
-	CaParams kinase.NeurCaParams
+	CaParams kinase.CaSpikeParams
 
 	// threshold of SK M gating factor above which the neuron cannot spike
 	NoSpikeThr float32 `default:"0.5"`

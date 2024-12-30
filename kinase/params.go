@@ -71,13 +71,13 @@ func (kp *CaDtParams) FromCa(ca float32, caM, caP, caD *float32) {
 	*caD += kp.DDt * (*caP - *caD)
 }
 
-// NeurCaParams parameterizes the neuron-level spike-driven calcium
+// CaSpikeParams parameterizes the neuron-level spike-driven calcium
 // signals, starting with CaSyn that is integrated at the neuron level
 // and drives synapse-level, pre * post Ca integration, which provides the Tr
 // trace that multiplies error signals, and drives learning directly for Target layers.
 // CaSpk* values are integrated separately at the Neuron level and used for UpdateThr
 // and RLRate as a proxy for the activation (spiking) based learning signal.
-type NeurCaParams struct {
+type CaSpikeParams struct {
 
 	// SpikeG is a gain multiplier on spike impulses for computing CaSpk:
 	// increasing this directly affects the magnitude of the trace values,
@@ -87,74 +87,27 @@ type NeurCaParams struct {
 	// 12, vs 8 for smaller.
 	SpikeG float32 `default:"8,12"`
 
-	// time constant for integrating spike-driven calcium trace at sender and recv
-	// neurons, CaSyn, which then drives synapse-level integration of the
-	// joint pre * post synapse-level activity, in cycles (msec).
-	// Note: if this param is changed, then there will be a change in effective
-	// learning rate that can be compensated for by multiplying
-	// PathParams.Learn.KinaseCa.CaScale by sqrt(30 / sqrt(SynTau)
-	SynTau float32 `default:"30" min:"1"`
-
-	// rate = 1 / tau
-	SynDt float32 `display:"-" json:"-" xml:"-" edit:"-"`
-
-	pad int32
+	pad, pad1, pad2 int32
 
 	// time constants for integrating CaSpk across M, P and D cascading levels.
 	// Typically the same as in CaLrn and Path level for synaptic integration.
 	Dt CaDtParams `display:"inline"`
 }
 
-func (np *NeurCaParams) Defaults() {
+func (np *CaSpikeParams) Defaults() {
 	np.SpikeG = 8
-	np.SynTau = 30
 	np.Dt.Defaults()
 	np.Update()
 }
 
-func (np *NeurCaParams) Update() {
+func (np *CaSpikeParams) Update() {
 	np.Dt.Update()
-	np.SynDt = 1 / np.SynTau
 }
 
 // CaFromSpike updates Ca variables from spike input which is either 0 or 1
-func (np *NeurCaParams) CaFromSpike(spike float32, caSyn, caM, caP, caD *float32) {
+func (np *CaSpikeParams) CaFromSpike(spike float32, caM, caP, caD *float32) {
 	nsp := np.SpikeG * spike
-	*caSyn += np.SynDt * (nsp - *caSyn)
 	np.Dt.FromCa(nsp, caM, caP, caD)
-}
-
-// SynCaParams has rate constants for integrating spike-driven Ca calcium
-// at different time scales, including final CaP = CaMKII and CaD = DAPK1
-// timescales for LTP potentiation vs. LTD depression factors.
-type SynCaParams struct { //types:add
-	// CaScale is a scaling multiplier on synaptic Ca values,
-	// which due to the multiplication of send * recv are smaller in magnitude.
-	// The default 12 value keeps them in roughly the unit scale,
-	// and affects effective learning rate.
-	CaScale float32 `default:"12"`
-
-	pad, pad1, pad2 int32
-
-	// time constants for integrating at M, P, and D cascading levels
-	Dt CaDtParams `display:"inline"`
-}
-
-func (kp *SynCaParams) Defaults() {
-	kp.CaScale = 12
-	kp.Dt.Defaults()
-	kp.Update()
-}
-
-func (kp *SynCaParams) Update() {
-	kp.Dt.Update()
-}
-
-// FromCa updates CaM, CaP, CaD from given current synaptic calcium value,
-// which is a faster time-integral of calcium typically.
-// ca is multiplied by CaScale.
-func (kp *SynCaParams) FromCa(ca float32, caM, caP, caD *float32) {
-	kp.Dt.FromCa(kp.CaScale*ca, caM, caP, caD)
 }
 
 // todo: support fixed float arrays in gosl

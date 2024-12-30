@@ -93,8 +93,7 @@ func (np *LearnCaParams) LearnCas(ctx *Context, ni, di uint32) {
 	Neurons.Set(Neurons.Value(int(ni), int(di), int(LearnCaP))-Neurons.Value(int(ni), int(di), int(LearnCaD)), int(ni), int(di), int(CaDiff))
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  TrgAvgActParams
+////////  TrgAvgActParams
 
 // TrgAvgActParams govern the target and actual long-term average activity in neurons.
 // Target value is adapted by neuron-wise error and difference in actual vs. target.
@@ -153,8 +152,7 @@ func (ta *TrgAvgActParams) ShouldDisplay(field string) bool {
 	}
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  RLRateParams
+////////  RLRateParams
 
 // RLRateParams are recv neuron learning rate modulation parameters.
 // Has two factors: the derivative of the sigmoid based on CaD
@@ -258,18 +256,26 @@ func (rl *RLRateParams) RLRateDiff(scap, scad float32) float32 {
 	return rl.Min
 }
 
-// axon.LearnNeurParams manages learning-related parameters at the neuron-level.
+// axon.LearnNeuronParams manages learning-related parameters at the neuron-level.
 // This is mainly the running average activations that drive learning
-type LearnNeurParams struct {
+type LearnNeuronParams struct {
 
-	// parameterizes the neuron-level calcium signals driving learning: LearnCa = NMDA + VGCC Ca sources, where VGCC can be simulated from spiking or use the more complex and dynamic VGCC channel directly.  LearnCa is then integrated in a cascading manner at multiple time scales: CaM (as in calmodulin), CaP (ltP, CaMKII, plus phase), CaD (ltD, DAPK1, minus phase).
+	// CaLearn parameterizes the neuron-level calcium signals driving learning:
+	// LearnCa = NMDA + VGCC Ca sources, where VGCC can be simulated from spiking
+	// or use the more complex and dynamic VGCC channel directly.  LearnCa is then
+	// integrated in a cascading manner at multiple time scales:
+	// LearnCaM (as in calmodulin), LearnCaP (ltP, CaMKII, plus phase),
+	// LearnCaD (ltD, DAPK1, minus phase).
 	CaLearn LearnCaParams `display:"inline"`
 
-	// parameterizes the neuron-level spike-driven calcium signals, starting with CaSyn that is integrated at the neuron level, and drives synapse-level, pre * post Ca integration, which provides the Tr trace that multiplies error signals, and drives learning directly for Target layers. CaSpk* values are integrated separately at the Neuron level and used for UpdateThr and RLRate as a proxy for the activation (spiking) based learning signal.
-	CaSpk kinase.NeurCaParams `display:"inline"`
+	// CaSpike parameterizes the neuron-level spike-driven calcium signals:
+	// CaM (calmodulin), CaP (ltP, CaMKII, plus phase), CaD (ltD, DAPK1, minus phase).
+	// These values are used in various cases as a proxy for the activation (spiking)
+	// based learning signal.
+	CaSpike kinase.CaSpikeParams `display:"inline"`
 
 	// NMDA channel parameters used for learning, vs. the ones driving activation -- allows exploration of learning parameters independent of their effects on active maintenance contributions of NMDA, and may be supported by different receptor subtypes
-	LrnNMDA chans.NMDAParams `display:"inline"`
+	LearnNMDA chans.NMDAParams `display:"inline"`
 
 	// synaptic scaling parameters for regulating overall average activity compared to neuron's own target level
 	TrgAvgAct TrgAvgActParams `display:"inline"`
@@ -281,29 +287,29 @@ type LearnNeurParams struct {
 	NeuroMod NeuroModParams `display:"inline"`
 }
 
-func (ln *LearnNeurParams) Update() {
+func (ln *LearnNeuronParams) Update() {
 	ln.CaLearn.Update()
-	ln.CaSpk.Update()
-	ln.LrnNMDA.Update()
+	ln.CaSpike.Update()
+	ln.LearnNMDA.Update()
 	ln.TrgAvgAct.Update()
 	ln.RLRate.Update()
 	ln.NeuroMod.Update()
 }
 
-func (ln *LearnNeurParams) Defaults() {
+func (ln *LearnNeuronParams) Defaults() {
 	ln.CaLearn.Defaults()
-	ln.CaSpk.Defaults()
-	ln.LrnNMDA.Defaults()
-	ln.LrnNMDA.ITau = 1
-	ln.LrnNMDA.Update()
+	ln.CaSpike.Defaults()
+	ln.LearnNMDA.Defaults()
+	ln.LearnNMDA.ITau = 1
+	ln.LearnNMDA.Update()
 	ln.TrgAvgAct.Defaults()
 	ln.RLRate.Defaults()
 	ln.NeuroMod.Defaults()
 }
 
-// InitLearnCaSpk initializes the neuron-level calcium learning and spking variables.
+// InitLearnNeurCa initializes the neuron-level calcium learning and spking variables.
 // Called by InitWeights (at start of learning).
-func (ln *LearnNeurParams) InitNeurCa(ctx *Context, ni, di uint32) {
+func (ln *LearnNeuronParams) InitNeurCa(ctx *Context, ni, di uint32) {
 	Neurons.Set(0, int(ni), int(di), int(GnmdaLrn))
 	Neurons.Set(0, int(ni), int(di), int(NmdaCa))
 
@@ -322,26 +328,25 @@ func (ln *LearnNeurParams) InitNeurCa(ctx *Context, ni, di uint32) {
 	Neurons.Set(0, int(ni), int(di), int(CaDiff))
 }
 
-// LrnNMDAFromRaw updates the separate NMDA conductance and calcium values
+// LearnNMDAFromRaw updates the separate NMDA conductance and calcium values
 // based on GeTot = GeRaw + external ge conductance.  These are the variables
 // that drive learning -- can be the same as activation but also can be different
 // for testing learning Ca effects independent of activation effects.
-func (ln *LearnNeurParams) LrnNMDAFromRaw(ctx *Context, ni, di uint32, geTot float32) {
+func (ln *LearnNeuronParams) LearnNMDAFromRaw(ctx *Context, ni, di uint32, geTot float32) {
 	geEff := max(geTot, 0.0)
 	vmd := Neurons.Value(int(ni), int(di), int(VmDend))
-	Neurons.Set(ln.LrnNMDA.NMDASyn(Neurons.Value(int(ni), int(di), int(GnmdaLrn)), geEff), int(ni), int(di), int(GnmdaLrn))
-	gnmda := ln.LrnNMDA.Gnmda(Neurons.Value(int(ni), int(di), int(GnmdaLrn)), vmd)
-	Neurons.Set(float32(gnmda*ln.LrnNMDA.CaFromV(vmd)), int(ni), int(di), int(NmdaCa))
+	Neurons.Set(ln.LearnNMDA.NMDASyn(Neurons.Value(int(ni), int(di), int(GnmdaLrn)), geEff), int(ni), int(di), int(GnmdaLrn))
+	gnmda := ln.LearnNMDA.Gnmda(Neurons.Value(int(ni), int(di), int(GnmdaLrn)), vmd)
+	Neurons.Set(float32(gnmda*ln.LearnNMDA.CaFromV(vmd)), int(ni), int(di), int(NmdaCa))
 }
 
-// CaFromSpike updates all spike-driven calcium variables, including LearnCa and CaSpk.
+// CaFromSpike updates all spike-driven calcium variables, including LearnCa and CaSpike.
 // Computed after new activation for current cycle is updated.
-func (ln *LearnNeurParams) CaFromSpike(ctx *Context, ni, di uint32) {
-	var caSyn float32
+func (ln *LearnNeuronParams) CaFromSpike(ctx *Context, ni, di uint32) {
 	caSpkM := Neurons.Value(int(ni), int(di), int(CaM))
 	caSpkP := Neurons.Value(int(ni), int(di), int(CaP))
 	caSpkD := Neurons.Value(int(ni), int(di), int(CaD))
-	ln.CaSpk.CaFromSpike(Neurons.Value(int(ni), int(di), int(Spike)), &caSyn, &caSpkM, &caSpkP, &caSpkD)
+	ln.CaSpike.CaFromSpike(Neurons.Value(int(ni), int(di), int(Spike)), &caSpkM, &caSpkP, &caSpkD)
 	Neurons.Set(caSpkM, int(ni), int(di), int(CaM))
 	Neurons.Set(caSpkP, int(ni), int(di), int(CaP))
 	Neurons.Set(caSpkD, int(ni), int(di), int(CaD))
@@ -349,8 +354,7 @@ func (ln *LearnNeurParams) CaFromSpike(ctx *Context, ni, di uint32) {
 	ln.CaLearn.LearnCas(ctx, ni, di)
 }
 
-///////////////////////////////////////////////////////////////////////
-//  SWtParams
+////////  SWtParams
 
 // SigFun is the sigmoid function for value w in 0-1 range, with gain and offset params
 func SigFun(w, gain, off float32) float32 {
@@ -685,8 +689,7 @@ func (tp *TraceParams) TrFromCa(tr float32, ca float32) float32 {
 	return tr + tp.Dt*(ca-tr)
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  LRateMod
+////////  LRateMod
 
 // LRateMod implements global learning rate modulation, based on a performance-based
 // factor, for example error.  Increasing levels of the factor = higher learning rate.
@@ -755,8 +758,7 @@ func (lr *LRateMod) LRateMod(net *Network, fact float32) float32 {
 
 //gosl:start
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  HebbParams
+////////  HebbParams
 
 // HebbParams for optional hebbian learning that replaces the
 // default learning rule, based on S = sending activity,
@@ -792,8 +794,7 @@ func (hp *HebbParams) ShouldDisplay(field string) bool {
 	}
 }
 
-///////////////////////////////////////////////////////////////////////
-//  LearnSynParams
+////////  LearnSynParams
 
 // LearnSynParams manages learning-related parameters at the synapse-level.
 type LearnSynParams struct {

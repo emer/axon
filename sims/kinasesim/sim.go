@@ -71,11 +71,11 @@ type Sim struct {
 	// simulation configuration parameters -- set by .toml config file and / or args
 	Config *Config `new-window:"+"`
 
-	// Kinase NeurCa params
-	NeurCa kinase.NeurCaParams
+	// Kinase CaSpike params
+	CaSpike kinase.CaSpikeParams
 
 	// Kinase SynCa params
-	SynCa kinase.SynCaParams
+	SynCa SynCaParams
 
 	// Kinase LinearSynCa params
 	LinearSynCa kinase.SynCaLinear
@@ -125,10 +125,10 @@ func (ss *Sim) New() {
 	ss.RandSeeds.Init(100) // max 100 runs
 	ss.InitRandSeed(0)
 	ss.SynCa.Defaults()
-	ss.NeurCa.Defaults()
+	ss.CaSpike.Defaults()
 	ss.LinearSynCa.Defaults()
 	ss.SynCa.Dt.PDTauForNCycles(ss.Config.Run.Cycles)
-	ss.NeurCa.Dt.PDTauForNCycles(ss.Config.Run.Cycles)
+	ss.CaSpike.Dt.PDTauForNCycles(ss.Config.Run.Cycles)
 	ss.LinearSynCa.WtsForNCycles(ss.Config.Run.Cycles)
 	ss.ConfigKinase()
 	ss.ConfigStats()

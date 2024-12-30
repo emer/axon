@@ -474,7 +474,7 @@ func (ly *LayerParams) GFromRawSyn(ctx *Context, ni, di uint32) {
 	geSyn := Neurons[ni, di, GeSyn]
 	ly.Acts.NMDAFromRaw(ctx, ni, di, geRaw+extraRaw)
 	ly.Acts.MaintNMDAFromRaw(ctx, ni, di) // uses GMaintRaw directly
-	ly.Learn.LrnNMDAFromRaw(ctx, ni, di, geRaw)
+	ly.Learn.LearnNMDAFromRaw(ctx, ni, di, geRaw)
 	ly.Acts.GvgccFromVm(ctx, ni, di)
 	ege := Neurons[ni, di, Gnmda] + Neurons[ni, di, GnmdaMaint] + Neurons[ni, di, Gvgcc] + extraSyn
 	ly.Acts.GeFromSyn(ctx, ni, di, geSyn, ege) // sets nrn.GeExt too
@@ -532,7 +532,7 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, lpi, ni, di uint32) {
 		Neurons[ni, di, GeIntNorm] = Neurons[ni, di, GeInt]
 	}
 	if ctx.Cycle >= ly.Acts.Dt.MaxCycStart {
-		Neurons[ni, di, CaPMaxCa] += ly.Learn.CaSpk.Dt.PDt * (Neurons[ni, di, CaM] - Neurons[ni, di, CaPMaxCa])
+		Neurons[ni, di, CaPMaxCa] += ly.Learn.CaSpike.Dt.PDt * (Neurons[ni, di, CaM] - Neurons[ni, di, CaPMaxCa])
 		spkmax := Neurons[ni, di, CaPMaxCa]
 		if spkmax > Neurons[ni, di, CaPMax] {
 			Neurons[ni, di, CaPMax] = spkmax

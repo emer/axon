@@ -733,15 +733,8 @@ struct CaDtParams { //types:add
 	pad: i32,
 	pad1: i32,
 }
-struct NeurCaParams {
+struct CaSpikeParams {
 	SpikeG: f32,
-	SynTau: f32,
-	SynDt: f32,
-	pad: i32,
-	Dt: CaDtParams,
-}
-struct SynCaParams { //types:add
-	CaScale: f32,
 	pad: i32,
 	pad1: i32,
 	pad2: i32,
@@ -795,7 +788,7 @@ struct LayerParams {
 	Acts: ActParams,
 	Inhib: InhibParams,
 	LayInhib: LayerInhibIndexes,
-	Learn: LearnNeurParams,
+	Learn: LearnNeuronParams,
 	Bursts: BurstParams,
 	CT: CTParams,
 	Pulv: PulvParams,
@@ -900,10 +893,10 @@ struct RLRateParams {
 	Min: f32,
 	pad: i32,
 }
-struct LearnNeurParams {
+struct LearnNeuronParams {
 	CaLearn: LearnCaParams,
-	CaSpk: NeurCaParams,
-	LrnNMDA: NMDAParams,
+	CaSpike: CaSpikeParams,
+	LearnNMDA: NMDAParams,
 	TrgAvgAct: TrgAvgActParams,
 	RLRate: RLRateParams,
 	NeuroMod: NeuroModParams,
