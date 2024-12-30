@@ -157,74 +157,6 @@ func (ss *Sim) Run() {
 
 ////////  Inputs
 
-func (ss *Sim) ConfigInputs() {
-
-	// todo: redo patgen using tensorfs
-
-	// hp := &ss.Config.Hip
-	// ecY := hp.EC3NPool.Y
-	// ecX := hp.EC3NPool.X
-	// plY := hp.EC3NNrn.Y // good idea to get shorter vars when used frequently
-	// plX := hp.EC3NNrn.X // makes much more readable
-	// npats := ss.Config.Run.NTrials
-	// pctAct := ss.Config.Mod.ECPctAct
-	// minDiff := ss.Config.Pat.MinDiffPct
-	// nOn := patgen.NFromPct(pctAct, plY*plX)
-	// ctxtflip := patgen.NFromPct(ss.Config.Pat.CtxtFlipPct, nOn)
-	// patgen.AddVocabEmpty(ss.PoolVocab, "empty", npats, plY, plX)
-	// patgen.AddVocabPermutedBinary(ss.PoolVocab, "A", npats, plY, plX, pctAct, minDiff)
-	// patgen.AddVocabPermutedBinary(ss.PoolVocab, "B", npats, plY, plX, pctAct, minDiff)
-	// patgen.AddVocabPermutedBinary(ss.PoolVocab, "C", npats, plY, plX, pctAct, minDiff)
-	// patgen.AddVocabPermutedBinary(ss.PoolVocab, "lA", npats, plY, plX, pctAct, minDiff)
-	// patgen.AddVocabPermutedBinary(ss.PoolVocab, "lB", npats, plY, plX, pctAct, minDiff)
-	// patgen.AddVocabPermutedBinary(ss.PoolVocab, "ctxt", 3, plY, plX, pctAct, minDiff) // totally diff
-	//
-	// for i := 0; i < (ecY-1)*ecX*3; i++ { // 12 contexts! 1: 1 row of stimuli pats; 3: 3 diff ctxt bases
-	// 	list := i / ((ecY - 1) * ecX)
-	// 	ctxtNm := fmt.Sprintf("ctxt%d", i+1)
-	// 	tsr, _ := patgen.AddVocabRepeat(ss.PoolVocab, ctxtNm, npats, "ctxt", list)
-	// 	patgen.FlipBitsRows(tsr, ctxtflip, ctxtflip, 1, 0)
-	// 	//todo: also support drifting
-	// 	//solution 2: drift based on last trial (will require sequential learning)
-	// 	//patgen.VocabDrift(ss.PoolVocab, ss.NFlipBits, "ctxt"+strconv.Itoa(i+1))
-	// }
-	//
-	// patgen.InitPats(ss.TrainAB, "TrainAB", "TrainAB Pats", "Input", "EC5", npats, ecY, ecX, plY, plX)
-	// patgen.MixPats(ss.TrainAB, ss.PoolVocab, "Input", []string{"A", "B", "ctxt1", "ctxt2", "ctxt3", "ctxt4"})
-	// patgen.MixPats(ss.TrainAB, ss.PoolVocab, "EC5", []string{"A", "B", "ctxt1", "ctxt2", "ctxt3", "ctxt4"})
-	//
-	// patgen.InitPats(ss.TestAB, "TestAB", "TestAB Pats", "Input", "EC5", npats, ecY, ecX, plY, plX)
-	// patgen.MixPats(ss.TestAB, ss.PoolVocab, "Input", []string{"A", "empty", "ctxt1", "ctxt2", "ctxt3", "ctxt4"})
-	// patgen.MixPats(ss.TestAB, ss.PoolVocab, "EC5", []string{"A", "B", "ctxt1", "ctxt2", "ctxt3", "ctxt4"})
-	//
-	// patgen.InitPats(ss.TrainAC, "TrainAC", "TrainAC Pats", "Input", "EC5", npats, ecY, ecX, plY, plX)
-	// patgen.MixPats(ss.TrainAC, ss.PoolVocab, "Input", []string{"A", "C", "ctxt5", "ctxt6", "ctxt7", "ctxt8"})
-	// patgen.MixPats(ss.TrainAC, ss.PoolVocab, "EC5", []string{"A", "C", "ctxt5", "ctxt6", "ctxt7", "ctxt8"})
-	//
-	// patgen.InitPats(ss.TestAC, "TestAC", "TestAC Pats", "Input", "EC5", npats, ecY, ecX, plY, plX)
-	// patgen.MixPats(ss.TestAC, ss.PoolVocab, "Input", []string{"A", "empty", "ctxt5", "ctxt6", "ctxt7", "ctxt8"})
-	// patgen.MixPats(ss.TestAC, ss.PoolVocab, "EC5", []string{"A", "C", "ctxt5", "ctxt6", "ctxt7", "ctxt8"})
-	//
-	// patgen.InitPats(ss.PreTrainLure, "PreTrainLure", "PreTrainLure Pats", "Input", "EC5", npats, ecY, ecX, plY, plX)
-	// patgen.MixPats(ss.PreTrainLure, ss.PoolVocab, "Input", []string{"lA", "lB", "ctxt9", "ctxt10", "ctxt11", "ctxt12"}) // arbitrary ctxt here
-	// patgen.MixPats(ss.PreTrainLure, ss.PoolVocab, "EC5", []string{"lA", "lB", "ctxt9", "ctxt10", "ctxt11", "ctxt12"})   // arbitrary ctxt here
-	//
-	// patgen.InitPats(ss.TestLure, "TestLure", "TestLure Pats", "Input", "EC5", npats, ecY, ecX, plY, plX)
-	// patgen.MixPats(ss.TestLure, ss.PoolVocab, "Input", []string{"lA", "empty", "ctxt9", "ctxt10", "ctxt11", "ctxt12"}) // arbitrary ctxt here
-	// patgen.MixPats(ss.TestLure, ss.PoolVocab, "EC5", []string{"lA", "lB", "ctxt9", "ctxt10", "ctxt11", "ctxt12"})      // arbitrary ctxt here
-	//
-	// ss.TrainAll = ss.TrainAB.Clone()
-	// ss.TrainAll.AppendRows(ss.TrainAC)
-	// ss.TrainAll.AppendRows(ss.PreTrainLure)
-	// ss.TrainAll.MetaData["name"] = "TrainAll"
-	// ss.TrainAll.MetaData["desc"] = "All Training Patterns"
-	//
-	// ss.TestABAC = ss.TestAB.Clone()
-	// ss.TestABAC.AppendRows(ss.TestAC)
-	// ss.TestABAC.MetaData["name"] = "TestABAC"
-	// ss.TestABAC.MetaData["desc"] = "All Testing Patterns"
-}
-
 func (ss *Sim) ConfigEnv() {
 	// Can be called multiple times -- don't re-create
 	var trn, tst *env.FixedTable
@@ -236,7 +168,8 @@ func (ss *Sim) ConfigEnv() {
 		tst = ss.Envs.ByMode(Test).(*env.FixedTable)
 	}
 
-	inputs := tensorfs.DirTable(ss.Root.Dir("Inputs/Train"), nil)
+	trnAB := tensorfs.DirTable(ss.Root.Dir("ABAC/Inputs/TrainAB"), nil)
+	tstAll := tensorfs.DirTable(ss.Root.Dir("ABAC/Inputs/TestAll"), nil)
 
 	// this logic can be used to create train-test splits of a set of patterns:
 	// n := inputs.NumRows()
@@ -249,11 +182,11 @@ func (ss *Sim) ConfigEnv() {
 
 	// note: names must be standard here!
 	trn.Name = Train.String()
-	trn.Config(table.NewView(inputs)) // todo: TrainAB
+	trn.Config(table.NewView(trnAB))
 	trn.Validate()
 
 	tst.Name = Test.String()
-	tst.Config(table.NewView(inputs)) // todo: TestABAC
+	tst.Config(table.NewView(tstAll))
 	tst.Sequential = true
 	tst.Validate()
 

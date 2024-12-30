@@ -15,9 +15,12 @@ type EnvConfig struct {
 	// using standard TOML formatting.
 	Env map[string]any
 
+	// ECPctAct is percent activation in EC pool, used in patgen for input generation.
+	ECPctAct float64 `default:"0.2"`
+
 	// MinDiffPct is the minimum difference between item random patterns,
 	// as a proportion (0-1) of total active
-	MinDiffPct float32 `default:"0.5"`
+	MinDiffPct float64 `default:"0.5"`
 
 	// DriftCtxt means use drifting context representations,
 	// otherwise does bit flips from prototype.
@@ -25,10 +28,10 @@ type EnvConfig struct {
 
 	// CtxtFlipPct is the proportion (0-1) of active bits to flip
 	// for each context pattern, relative to a prototype, for non-drifting.
-	CtxtFlipPct float32 `default:"0.25"`
+	CtxtFlipPct float64 `default:"0.25"`
 
 	// DriftPct is percentage of active bits that drift, per step, for drifting context.
-	DriftPct float32 `default:"0.1"`
+	DriftPct float64 `default:"0.1"`
 }
 
 // ParamConfig has config parameters related to sim params.
@@ -36,9 +39,6 @@ type ParamConfig struct {
 
 	// InToEc2PCon is percent connectivity from Input to EC2.
 	InToEc2PCon float32 `default:"0.25"`
-
-	// ECPctAct is percent activation in EC pool, used in patgen for input generation.
-	ECPctAct float32 `default:"0.2"`
 
 	// Sheet is the extra params sheet name(s) to use (space separated
 	// if multiple). Must be valid name as listed in compiled-in params
