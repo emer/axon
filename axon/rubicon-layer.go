@@ -25,26 +25,34 @@ import (
 // ACh modulates excitability of goal-gating layers.
 type LDTParams struct {
 
-	// threshold per input source, on absolute value (magnitude), to count as a significant reward event, which then drives maximal ACh -- set to 0 to disable this nonlinear behavior
+	// SrcThr is the threshold per input source, on absolute value (magnitude),
+	// to count as a significant reward event, which then drives maximal ACh.
+	// Set to 0 to disable this nonlinear behavior.
 	SrcThr float32 `default:"0.05"`
 
-	// use the global Context.NeuroMod.HasRew flag -- if there is some kind of external reward being given, then ACh goes to 1, else 0 for this component
+	// Rew uses the global Context.NeuroMod.HasRew flag to drive ACh:
+	// if there is some kind of external reward being given, then
+	// ACh goes to 1, else 0 for this component.
 	Rew slbool.Bool `default:"true"`
 
-	// extent to which active goal maintenance (via Global GoalMaint)
+	// MaintInhib is the extent to which active goal maintenance (via Global GoalMaint)
 	// inhibits ACh signals: when goal engaged, distractability is lower.
 	MaintInhib float32 `default:"0.8" max:"1" min:"0"`
 
-	// idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay1Name if present -- -1 if not used
+	// index of Layer to get max activity from; set during Build from BuildConfig
+	// SrcLay1Name if present -- -1 if not used.
 	SrcLay1Index int32 `edit:"-"`
 
-	// idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay2Name if present -- -1 if not used
+	// index of Layer to get max activity from; set during Build from BuildConfig
+	// SrcLay2Name if present -- -1 if not used.
 	SrcLay2Index int32 `edit:"-"`
 
-	// idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay3Name if present -- -1 if not used
+	// index of Layer to get max activity from; set during Build from BuildConfig
+	// SrcLay3Name if present -- -1 if not used.
 	SrcLay3Index int32 `edit:"-"`
 
-	// idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay4Name if present -- -1 if not used
+	// index of Layer to get max activity from; set during Build from BuildConfig
+	// SrcLay4Name if present -- -1 if not used.
 	SrcLay4Index int32 `edit:"-"`
 
 	pad float32

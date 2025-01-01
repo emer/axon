@@ -243,7 +243,7 @@ func TestSpikeProp(t *testing.T) {
 		inCyc := 0
 		hidCyc := 0
 		for cyc := range 100 {
-			net.Cycle(1, true)
+			net.Cycle(true)
 			// fmt.Println(cyc, Neurons[hidLay.NeurStIndex, 0, Ge], Neurons[hidLay.NeurStIndex, 0, GeRaw])
 			if Neurons.Value(int(inLay.NeurStIndex), int(0), int(Spike)) > 0 {
 				// fmt.Println("in spike:", cyc)
@@ -341,7 +341,7 @@ func TestInitWeights(t *testing.T) {
 
 			for qtr := range 4 {
 				for range 50 {
-					testNet.Cycle(1, true)
+					testNet.Cycle(true)
 				}
 				if qtr == 2 {
 					testNet.MinusPhase()
@@ -399,11 +399,7 @@ func TestGPUState(t *testing.T) {
 }
 
 func TestNetAct(t *testing.T) {
-	NetActTest(t, Tol7, false, false) // gpu, chunked
-}
-
-func TestNetActChunked(t *testing.T) {
-	NetActTest(t, Tol7, false, true)
+	NetActTest(t, Tol7, false) // gpu
 }
 
 func TestNetActShort(t *testing.T) {
@@ -415,14 +411,14 @@ func TestGPUAct(t *testing.T) {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
 	NetActTestShort(t, Tol6, true)
-	// NetActTest(t, Tol6, true, true)
+	// NetActTest(t, Tol6, true)
 }
 
 // NetActTest runs an activation test on the network and checks
 // for key values relative to known standards.
 // Note: use NetDebugAct for printf debugging of all values --
 // "this is only a test"
-func NetActTest(t *testing.T, tol float32, gpu, chunked bool) {
+func NetActTest(t *testing.T, tol float32, gpu bool) {
 	if gpu {
 		GPUInit()
 		UseGPU = true
@@ -471,7 +467,6 @@ func NetActTest(t *testing.T, tol float32, gpu, chunked bool) {
 	outActs := []float32{}
 	outGes := []float32{}
 	outGis := []float32{}
-
 	cycPerQtr := 50
 
 	for pi := range 2 {
@@ -484,13 +479,8 @@ func NetActTest(t *testing.T, tol float32, gpu, chunked bool) {
 		testNet.ApplyExts() // key now for GPU
 
 		for qtr := range 4 {
-			if chunked {
-				testNet.Cycle(cycPerQtr, true)
-			} else {
-				for cyc := range cycPerQtr {
-					_ = cyc
-					testNet.Cycle(1, true)
-				}
+			for range cycPerQtr {
+				testNet.Cycle(true)
 			}
 			if qtr == 2 {
 				testNet.MinusPhase()
@@ -602,7 +592,7 @@ func NetActTestShort(t *testing.T, tol float32, gpu bool) {
 		for qtr := range qtrs {
 			for cyc := range cycPerQtr {
 				_ = cyc
-				testNet.Cycle(1, true)
+				testNet.Cycle(true)
 			}
 			if qtr == 2 {
 				testNet.MinusPhase()
@@ -734,7 +724,7 @@ func RunDebugAct(t *testing.T, testNet *Network, printValues bool, gpu bool, ini
 		for qtr := 0; qtr < nQtrs; qtr++ {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {
 				// testNet.GPUTestWrite()
-				testNet.Cycle(1, true) // get neuron state
+				testNet.Cycle(true) // get neuron state
 
 				for ni := 0; ni < 4; ni++ {
 					for li := 0; li < 3; li++ {
@@ -907,7 +897,7 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 
 		for qtr := 0; qtr < 4; qtr++ {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {
-				testNet.Cycle(1, true)
+				testNet.Cycle(true)
 
 				hidLay.UnitValues(&hidAct, "Act", 0)
 				hidLay.UnitValues(&hidGes, "Ge", 0)
@@ -1060,7 +1050,7 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 		testNet.NewState(etime.Train, false)
 		for qtr := 0; qtr < 4; qtr++ {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {
-				testNet.Cycle(1, true)
+				testNet.Cycle(true)
 
 				hidLay.UnitValues(&hidAct, "Act", 0)
 				hidLay.UnitValues(&hidGes, "Ge", 0)
@@ -1218,7 +1208,7 @@ func RunDebugLearn(t *testing.T, testNet *Network, printValues bool, gpu bool, i
 
 		for qtr := 0; qtr < 4; qtr++ {
 			for cyc := 0; cyc < 50; cyc++ {
-				testNet.Cycle(1, true)
+				testNet.Cycle(true)
 			}
 			if qtr == 2 {
 				testNet.MinusPhase()
@@ -1452,7 +1442,7 @@ func TestInhibAct(t *testing.T) {
 		inhibNet.NewState(etime.Train, false)
 		for qtr := 0; qtr < 4; qtr++ {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {
-				inhibNet.Cycle(1, true)
+				inhibNet.Cycle(true)
 
 				if printCycs {
 					inLay.UnitValues(&inActs, "Act", 0)
@@ -1674,6 +1664,34 @@ func TestRubiconGiveUp(t *testing.T) {
 		fmt.Printf("%g\tp: %g\tb: %v\n", v, p, b)
 	}
 }
+
+// func TestGateSync(t *testing.T) {
+// 	newTestNet(1)
+// 	minusBins := int32(6)
+// 	plusBins := int32(2)
+// 	ni := uint32(0)
+// 	di := uint32(0)
+// 	for i := range 8 {
+// 		Neurons[ni, di, SpikeBin0 + NeuronVars(i)] = float32(i)
+// 	}
+// 	ly := &Layers[0]
+// 	ly.Learn.GateSync.ShiftBins(1, minusBins, plusBins, ni, di)
+// 	for i := range minusBins {
+// 		// fmt.Println(i, Neurons[ni, di, SpikeBin0 + NeuronVars(i)])
+// 		assert.Equal(t, float32(i+1), Neurons[ni, di, SpikeBin0 + NeuronVars(i)])
+// 	}
+// 	for i := range plusBins {
+// 		assert.Equal(t, float32(0), Neurons[ni, di, SpikeBin0 + NeuronVars(minusBins+i)])
+// 	}
+// 	ly.Learn.GateSync.ShiftBins(-1, 6, 2, ni, di)
+// 	for i := range minusBins {
+// 		// fmt.Println(i, Neurons[ni, di, SpikeBin0 + NeuronVars(i)])
+// 		assert.Equal(t, float32(max(i,1)), Neurons[ni, di, SpikeBin0 + NeuronVars(i)])
+// 	}
+// 	for i := range plusBins {
+// 		assert.Equal(t, float32(0), Neurons[ni, di, SpikeBin0 + NeuronVars(minusBins+i)])
+// 	}
+// }
 
 // func TestSWtInit(t *testing.T) {
 // 	pj := &PathParams{}

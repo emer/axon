@@ -400,10 +400,11 @@ func (ly *Layer) Build() error {
 // PostBuild performs special post-Build() configuration steps for specific algorithms,
 // using configuration data set in BuildConfig during the ConfigNet process.
 func (ly *Layer) PostBuild() {
-	ly.Params.LayInhib.Index1 = ly.BuildConfigFindLayer("LayInhib1Name", false) // optional
-	ly.Params.LayInhib.Index2 = ly.BuildConfigFindLayer("LayInhib2Name", false) // optional
-	ly.Params.LayInhib.Index3 = ly.BuildConfigFindLayer("LayInhib3Name", false) // optional
-	ly.Params.LayInhib.Index4 = ly.BuildConfigFindLayer("LayInhib4Name", false) // optional
+	ly.Params.LayInhib.Index1 = ly.BuildConfigFindLayer("LayInhib1Name", false)           // optional
+	ly.Params.LayInhib.Index2 = ly.BuildConfigFindLayer("LayInhib2Name", false)           // optional
+	ly.Params.LayInhib.Index3 = ly.BuildConfigFindLayer("LayInhib3Name", false)           // optional
+	ly.Params.LayInhib.Index4 = ly.BuildConfigFindLayer("LayInhib4Name", false)           // optional
+	ly.Params.Learn.GateSync.GateLayIndex = ly.BuildConfigFindLayer("GateLayName", false) // optional
 
 	switch ly.Type {
 	case PulvinarLayer:
@@ -453,8 +454,7 @@ func (ly *Layer) UnitVarNum() int {
 
 // UnitValue1D returns value of given variable index on given unit, using 1-dimensional index.
 // returns NaN on invalid index.
-// This is the core unit var access method used by other methods,
-// so it is the only one that needs to be updated for derived layer types.
+// This is the core unit var access method used by other methods.
 func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
 	if idx < 0 || idx >= int(ly.NNeurons) {
 		return math32.NaN()
@@ -467,8 +467,10 @@ func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
 	}
 	ni := ly.NeurStIndex + uint32(idx)
 	nvars := ly.UnitVarNum()
-	if varIndex >= nvars-NNeuronLayerVars {
-		lvi := varIndex - (ly.UnitVarNum() - NNeuronLayerVars)
+	neurVars := int(SpikeBins) + NNeuronSpikeBins
+	layVarSt := nvars - NNeuronLayerVars
+	if varIndex >= layVarSt {
+		lvi := varIndex - layVarSt
 		switch lvi {
 		case 0:
 			return GlobalScalars.Value(int(GvDA), int(uint32(di)))
@@ -482,9 +484,15 @@ func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
 			pi := ly.Params.PoolIndex(NeuronIxs.Value(int(ni), int(NrnSubPool)))
 			return float32(PoolsInt.Value(int(pi), int(di), int(PoolGated)))
 		}
-	} else if NeuronVars(varIndex) >= NeuronVarsN {
-		return NeuronAvgs.Value(int(ni), int(NeuronVars(varIndex)-NeuronVarsN))
+	} else if varIndex >= neurVars {
+		return NeuronAvgs.Value(int(ni), int(NeuronVars(varIndex-neurVars)))
+	} else if varIndex < int(SpikeBins) {
+		return Neurons.Value(int(ni), int(di), int(varIndex))
 	} else {
+		sbin := varIndex - int(SpikeBins)
+		if sbin >= int(NetworkIxs[0].NSpikeBins) {
+			return math32.NaN()
+		}
 		return Neurons.Value(int(ni), int(di), int(varIndex))
 	}
 	return math32.NaN()

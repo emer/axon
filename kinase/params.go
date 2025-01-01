@@ -4,7 +4,7 @@
 
 package kinase
 
-//gosl:start kinase
+//gosl:start
 
 // CaDtParams has rate constants for integrating Ca calcium
 // at different time scales, including final CaP = CaMKII and CaD = DAPK1
@@ -110,64 +110,7 @@ func (np *CaSpikeParams) CaFromSpike(spike float32, caM, caP, caD *float32) {
 	np.Dt.FromCa(nsp, caM, caP, caD)
 }
 
-// todo: support fixed float arrays in gosl
-
-// BinWeights are 8 coefficients for computing Ca based on binned
-// spike counts, for linear regression computation.
-type BinWeights struct { //types:add
-	Bin0, Bin1, Bin2, Bin3, Bin4, Bin5, Bin6, Bin7 float32
-}
-
-func (bw *BinWeights) Init(b0, b1, b2, b3, b4, b5, b6, b7 float32) {
-	bw.Bin0 = b0
-	bw.Bin1 = b1
-	bw.Bin2 = b2
-	bw.Bin3 = b3
-	bw.Bin4 = b4
-	bw.Bin5 = b5
-	bw.Bin6 = b6
-	bw.Bin7 = b7
-}
-
-// Product returns product of weights times bin values
-func (bw *BinWeights) Product(b0, b1, b2, b3, b4, b5, b6, b7 float32) float32 {
-	return bw.Bin0*b0 + bw.Bin1*b1 + bw.Bin2*b2 + bw.Bin3*b3 + bw.Bin4*b4 + bw.Bin5*b5 + bw.Bin6*b6 + bw.Bin7*b7
-}
-
-// SynCaLinear computes synaptic calcium using linear equations fit to
-// cascading Ca integration, for computing final CaP = CaMKII (LTP)
-// and CaD = DAPK1 (LTD) factors as a function of product of binned
-// spike totals on the sending and receiving neurons.
-type SynCaLinear struct { //types:add
-	CaP BinWeights `display:"inline"`
-	CaD BinWeights `display:"inline"`
-
-	// CaGain is extra multiplier for Synaptic Ca
-	CaGain          float32 `default:"1"`
-	pad, pad1, pad2 float32
-}
-
-func (kp *SynCaLinear) Defaults() {
-	kp.Theta200plus50()
-	kp.CaGain = 1
-}
-
-func (kp *SynCaLinear) Update() {
-}
-
-// // FinalCa4 uses a linear regression to compute the final Ca values
-// func (kp *SynCaLinear) FinalCa4(b0, b1, b2, b3 float32, caP, caD *float32) {
-// 	*caP = kp.CaP.Product(b0, b1, b2, b3)
-// 	*caD = kp.CaD.Product(b0, b1, b2, b3)
-// }
-
-// FinalCa uses a linear regression to compute the final Ca values
-func (kp *SynCaLinear) FinalCa(b0, b1, b2, b3, b4, b5, b6, b7 float32, caP, caD *float32) {
-	*caP = kp.CaGain * kp.CaP.Product(b0, b1, b2, b3, b4, b5, b6, b7)
-	*caD = kp.CaGain * kp.CaD.Product(b0, b1, b2, b3, b4, b5, b6, b7)
-}
-
-//gosl:end kinase
+//gosl:end
 
 // PDTauForNCycles sets the PTau and DTau parameters in proportion to the
 // total number of cycles per theta learning trial, e.g., 200 = 40, 280 = 60
@@ -178,25 +121,83 @@ func (kp *CaDtParams) PDTauForNCycles(ncycles int) {
 	kp.Update()
 }
 
-// Theta200plus50 sets bin weights for a theta cycle learning trial of 200 cycles
-// and a plus phase of 50
-func (kp *SynCaLinear) Theta200plus50() {
-	kp.CaP.Init(0.3, 0.4, 0.55, 0.65, 0.75, 0.85, 1.0, 1.0) // linear progression
-	kp.CaD.Init(0.5, 0.65, 0.75, 0.9, 0.9, 0.9, 0.65, 0.55) // up and down
-}
+// SpikeBinWts generates the weighting factors for integrating [SpikeBins] neuron
+// level spikes that have been multiplied send * recv to generate a synapse-level
+// spike coincidence factor, used for the trace in the kinase learning rule.
+// There are separate weights for two time scales of integration: CaP and CaD.
+// nplus is the number of spike bins associated with the plus phase,
+// which sets the natural timescale of the integration: total spike bins can
+// be proportional to the plus phase (e.g., 4x for standard 200 / 50 total / plus),
+// or longer if there is a longer minus phase window (which is downweighted).
+func SpikeBinWts(nplus int, cp, cd []float32) {
+	n := len(cp)
+	nminus := n - nplus
+	// CaP goes basically linearly up to flat plus phase
+	for i := nminus; i < n; i++ {
+		cp[i] = 1
+	}
+	// prior two nplus windows ("middle") go up from .5 to 1
+	inc := float32(.5) / float32(2*nplus)
+	mid := n - 3*nplus
+	cur := float32(1.0) - inc
+	for i := nminus - 1; i >= mid; i-- {
+		cp[i] = cur
+		cur -= inc
+	}
+	// then drop off at .25 per plus phase window
+	inc = float32(.25) / float32(nplus)
+	for i := mid - 1; i >= 0; i-- {
+		cp[i] = cur
+		cur -= inc
+		if cur < 0 {
+			cur = 0
+		}
+	}
 
-// Theta280plus70 sets bin weights for a theta cycle learning trial of 280 cycles
-// and a plus phase of 70, with PTau & DTau at 56 (PDTauForNCycles)
-func (kp *SynCaLinear) Theta280plus70() {
-	kp.CaP.Init(0.0, 0.1, 0.23, 0.35, 0.45, 0.55, 0.75, 0.75)
-	kp.CaD.Init(0.2, 0.3, 0.4, 0.5, 0.5, 0.5, 0.4, 0.3)
-}
-
-// WtsForNCycles sets the linear weights
-func (kp *SynCaLinear) WtsForNCycles(ncycles int) {
-	if ncycles >= 280 {
-		kp.Theta280plus70()
-	} else {
-		kp.Theta200plus50()
+	// CaD drops off from .9 to .5 in plus
+	inc = float32(.4) / float32(nplus)
+	cur = 0.9 - inc
+	for i := nminus; i < n; i++ {
+		cd[i] = cur
+		cur -= inc
+	}
+	// is steady at .9 in the previous plus chunk
+	pplus := nminus - nplus
+	for i := nminus - 1; i >= pplus; i-- {
+		cd[i] = 0.9
+	}
+	// then drops off again symmetrically back to .5
+	inc = float32(.4) / float32(nplus+1)
+	cur = 0.9
+	for i := pplus - 1; i >= 0; i-- {
+		cd[i] = cur
+		cur -= inc
+		if cur < 0 {
+			cur = 0
+		}
+	}
+	var cpsum, cdsum float32
+	for i := range n {
+		cpsum += cp[i]
+		cdsum += cd[i]
+	}
+	cpnorm := cdsum / cpsum
+	for i := range n {
+		cp[i] *= cpnorm
 	}
 }
+
+// Theta200plus50 sets bin weights for a theta cycle learning trial of 200 cycles
+// and a plus phase of 50
+// func (kp *SynCaLinear) Theta200plus50() {
+// 	// todo: compute these weights into GlobalScalars. Normalize?
+// 	kp.CaP.Init(0.3, 0.4, 0.55, 0.65, 0.75, 0.85, 1.0, 1.0) // linear progression
+// 	kp.CaD.Init(0.5, 0.65, 0.75, 0.9, 0.9, 0.9, 0.65, 0.55) // up and down
+// }
+//
+// // Theta280plus70 sets bin weights for a theta cycle learning trial of 280 cycles
+// // and a plus phase of 70, with PTau & DTau at 56 (PDTauForNCycles)
+// func (kp *SynCaLinear) Theta280plus70() {
+// 	kp.CaP.Init(0.0, 0.1, 0.23, 0.35, 0.45, 0.55, 0.75, 0.75)
+// 	kp.CaD.Init(0.2, 0.3, 0.4, 0.5, 0.5, 0.5, 0.4, 0.3)
+// }

@@ -1034,8 +1034,9 @@ func (ac *ActParams) InitActs(ctx *Context, ni, di uint32) {
 	Neurons[ni, di, CtxtGeRaw] = 0
 	Neurons[ni, di, CtxtGeOrig] = 0
 
-	for i := range 8 {
-		Neurons[ni, di, SpikeBin0+NeuronVars(i)] = 0.0
+	mx := NetworkIxs[0].NSpikeBins
+	for i := range mx {
+		Neurons[ni, di, SpikeBins+NeuronVars(i)] = 0.0
 	}
 
 	ac.InitLongActs(ctx, ni, di)

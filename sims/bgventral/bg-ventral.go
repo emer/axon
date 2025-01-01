@@ -221,7 +221,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mtxRandPath.PCon = 0.5
 	_ = mtxRandPath
 
-	mtxGo, mtxNo, gpePr, gpeAk, stn, gpi := net.AddVBG("", 1, np, nuY, nuX, nuY, nuX, space)
+	mtxGo, mtxNo, gpePr, gpeAk, stn, gpi := net.AddVentralBG("", 1, np, nuY, nuX, nuY, nuX, space)
 	_, _ = gpePr, gpeAk
 
 	snc := net.AddLayer2D("SNc", axon.InputLayer, 1, 1)

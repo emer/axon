@@ -50,33 +50,16 @@ func (pt *PathParams) DWtSyn(ctx *Context, rlay *LayerParams, syni, si, ri, di u
 // SynCa gets the synaptic calcium P (potentiation) and D (depression)
 // values, using optimized computation.
 func (pt *PathParams) SynCa(ctx *Context, si, ri, di uint32, syCaP, syCaD *float32) {
-	rb0 := Neurons.Value(int(ri), int(di), int(SpikeBin0))
-	sb0 := Neurons.Value(int(si), int(di), int(SpikeBin0))
-	rb1 := Neurons.Value(int(ri), int(di), int(SpikeBin1))
-	sb1 := Neurons.Value(int(si), int(di), int(SpikeBin1))
-	rb2 := Neurons.Value(int(ri), int(di), int(SpikeBin2))
-	sb2 := Neurons.Value(int(si), int(di), int(SpikeBin2))
-	rb3 := Neurons.Value(int(ri), int(di), int(SpikeBin3))
-	sb3 := Neurons.Value(int(si), int(di), int(SpikeBin3))
-	rb4 := Neurons.Value(int(ri), int(di), int(SpikeBin4))
-	sb4 := Neurons.Value(int(si), int(di), int(SpikeBin4))
-	rb5 := Neurons.Value(int(ri), int(di), int(SpikeBin5))
-	sb5 := Neurons.Value(int(si), int(di), int(SpikeBin5))
-	rb6 := Neurons.Value(int(ri), int(di), int(SpikeBin6))
-	sb6 := Neurons.Value(int(si), int(di), int(SpikeBin6))
-	rb7 := Neurons.Value(int(ri), int(di), int(SpikeBin7))
-	sb7 := Neurons.Value(int(si), int(di), int(SpikeBin7))
-
-	b0 := 0.1 * (rb0 * sb0)
-	b1 := 0.1 * (rb1 * sb1)
-	b2 := 0.1 * (rb2 * sb2)
-	b3 := 0.1 * (rb3 * sb3)
-	b4 := 0.1 * (rb4 * sb4)
-	b5 := 0.1 * (rb5 * sb5)
-	b6 := 0.1 * (rb6 * sb6)
-	b7 := 0.1 * (rb7 * sb7)
-
-	pt.Learn.KinaseCa.FinalCa(b0, b1, b2, b3, b4, b5, b6, b7, syCaP, syCaD)
+	nbins := NetworkIxs[0].NSpikeBins
+	cadSt := GvSpikeBinWts + GlobalScalarVars(nbins)
+	var cp, cd float32
+	for i := range nbins {
+		sp := 0.1 * Neurons.Value(int(ri), int(di), int(SpikeBins+NeuronVars(i))) * Neurons.Value(int(si), int(di), int(SpikeBins+NeuronVars(i)))
+		cp += sp * GlobalScalars.Value(int(GvSpikeBinWts+GlobalScalarVars(i)), int(0))
+		cd += sp * GlobalScalars.Value(int(cadSt+GlobalScalarVars(i)), int(0))
+	}
+	*syCaP = pt.Learn.Trace.CaGain * cp
+	*syCaD = pt.Learn.Trace.CaGain * cd
 }
 
 // DWtSynCortex computes the weight change (learning) at given synapse for cortex.

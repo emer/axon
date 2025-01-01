@@ -33,6 +33,7 @@ import (
 	"cogentcore.org/core/texteditor"
 	"cogentcore.org/core/tree"
 	"cogentcore.org/lab/tensor"
+	"github.com/emer/axon/v2/kinase"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/paths"
 )
@@ -55,6 +56,10 @@ type NetworkIndexes struct {
 	// MaxDelay is the maximum synaptic delay across all pathways at the time of
 	// [Network.Build]. This determines the size of the spike sending delay buffers.
 	MaxDelay uint32 `edit:-"-"`
+
+	// NSpikeBins is the total number of spike bins in unit variables.
+	// Set to Context.ThetaCycles / SpikeBinCycles in Build.
+	NSpikeBins int32 `edit:"-"`
 
 	// NLayers is the number of layers in the network.
 	NLayers uint32 `edit:"-"`
@@ -88,6 +93,8 @@ type NetworkIndexes struct {
 
 	// GPUSyncCaBanks is the total number of SynCa banks of GPUMaxBufferBytes arrays in GPU.
 	GPUSynCaBanks uint32 `edit:"-"`
+
+	pad, pad1, pad2 uint32
 }
 
 //gosl:end
@@ -211,7 +218,7 @@ type Network struct {
 	LayerStates tensor.Float32 `display:"-"`
 
 	// GlobalScalars are the global scalar state variables.
-	// [GlobalScalarsN][Data]
+	// [GlobalScalarsN+2*NSpikeBins][Data]
 	GlobalScalars tensor.Float32 `display:"-"`
 
 	// GlobalVectors are the global vector state variables.
@@ -526,7 +533,7 @@ func (nt *Network) AllGlobals() string {
 	str := ""
 	for di := uint32(0); di < md; di++ {
 		str += fmt.Sprintf("\n###############################\nData Index: %02d\n\n", di)
-		for vv := GvRew; vv < GlobalScalarVarsN; vv++ {
+		for vv := GvRew; vv < GvSpikeBinWts; vv++ {
 			str += fmt.Sprintf("%20s:\t%7.4f\n", vv.String(), GlobalScalars.Value(int(vv), int(di)))
 		}
 		for vv := GvCost; vv <= GvCostRaw; vv++ {
@@ -551,6 +558,14 @@ func (nt *Network) AllGlobals() string {
 			str += "\n"
 		}
 	}
+	str += "\n###############################\nSpike Bin Weights\n\n"
+	for i := range nix.NSpikeBins {
+		str += fmt.Sprintf("SpikeBinWtsCaP%02d:\t%7.4f\n", i, GlobalScalars.Value(int(GvSpikeBinWts+GlobalScalarVars(i)), int(0)))
+	}
+	str += "#### CaD\n"
+	for i := range nix.NSpikeBins {
+		str += fmt.Sprintf("SpikeBinWtsCaD%02d:\t%7.4f\n", i, GlobalScalars.Value(int(GvSpikeBinWts+GlobalScalarVars(nix.NSpikeBins+i)), int(0)))
+	}
 	return str
 }
 
@@ -566,7 +581,7 @@ func (nt *Network) AllGlobalValues(ctrKey string, vals map[string]float32) {
 	nix := nt.NetIxs()
 	md := nix.MaxData
 	for di := uint32(0); di < md; di++ {
-		for vv := GvRew; vv < GlobalScalarVarsN; vv++ {
+		for vv := GvRew; vv < GvSpikeBinWts; vv++ {
 			key := fmt.Sprintf("%s  Di: %d\t%s", ctrKey, di, vv.String())
 			vals[key] = GlobalScalars.Value(int(vv), int(di))
 		}
@@ -705,9 +720,15 @@ func (nt *Network) LateralConnectLayerPath(lay *Layer, pat paths.Pattern, pt *Pa
 }
 
 // Build constructs the layer and pathway state based on the layer shapes
-// and patterns of interconnectivity.
+// and patterns of interconnectivity. Everything in the network must have been
+// configured by this point, including key values in Context such as ThetaCycles
+// and SpikeBinCycles which drive allocation of number of [SpikeBins] neuron
+// variables and corresponding [GvSpikeBinWts] global scalar variables.
 func (nt *Network) Build() error { //types:add
 	nix := nt.NetIxs()
+	ctx := nt.Context()
+	maxBins := ctx.NSpikeBins()
+	nix.NSpikeBins = maxBins
 	nt.UpdateLayerMaps()
 	if nt.Rubicon.NPosUSs == 0 {
 		nt.Rubicon.SetNUSs(1, 1)
@@ -748,11 +769,11 @@ func (nt *Network) Build() error { //types:add
 	nt.Pools.SetShapeSizes(totPools, maxData, int(PoolVarsN))
 	nt.PoolIxs.SetShapeSizes(totPools, int(PoolIndexVarsN))
 	nt.PoolsInt.SetShapeSizes(totPools, maxData, int(PoolIntVarsTot))
-	nt.Neurons.SetShapeSizes(totNeurons, maxData, int(NeuronVarsN))
+	nt.Neurons.SetShapeSizes(totNeurons, maxData, int(NeuronVarsN)+int(maxBins))
 	nt.NeuronAvgs.SetShapeSizes(totNeurons, int(NeuronAvgVarsN))
 	nt.NeuronIxs.SetShapeSizes(totNeurons, int(NeuronIndexVarsN))
 	nt.Exts.SetShapeSizes(totExts, maxData)
-	nt.GlobalScalars.SetShapeSizes(int(GlobalScalarVarsN), maxData)
+	nt.GlobalScalars.SetShapeSizes(int(GlobalScalarVarsN)+int(2*maxBins), maxData)
 	nt.GlobalVectors.SetShapeSizes(int(GlobalVectorVarsN), int(MaxGlobalVecN), maxData)
 
 	nt.SetAsCurrent()
@@ -911,9 +932,26 @@ func (nt *Network) Build() error { //types:add
 		}
 	}
 	nix.NSyns = uint32(syIndex)
+	nt.SetSpikeBinWts()
 	nt.LayoutLayers()
 	nt.SetAsCurrent()
 	return errors.Join(errs...)
+}
+
+// SetSpikeBinWts sets the [GvSpikeBinWts] global spike bin weights for kinase
+// trace learning rule integration of [SpikeBins] neuron-level spike values.
+func (nt *Network) SetSpikeBinWts() {
+	ctx := nt.Context()
+	nix := nt.NetIxs()
+	nBins := int(nix.NSpikeBins)
+	nPlusBins := int(ctx.PlusCycles / ctx.SpikeBinCycles)
+	cp := make([]float32, nBins)
+	cd := make([]float32, nBins)
+	kinase.SpikeBinWts(nPlusBins, cp, cd)
+	for i := range nBins {
+		nt.GlobalScalars.Set(cp[i], int(GvSpikeBinWts+GlobalScalarVars(i)), int(0))
+		nt.GlobalScalars.Set(cd[i], int(GvSpikeBinWts+GlobalScalarVars(nBins+i)), int(0))
+	}
 }
 
 // ToGPUParams copies LayerParams and PathParams to the GPU.
@@ -1183,7 +1221,7 @@ func (nt *Network) SizeReport(detail bool) string {
 	synVarBytes := 4
 	nix := nt.NetIxs()
 	maxData := int(nix.MaxData)
-	memNeuron := int(NeuronVarsN)*maxData*varBytes + int(NeuronAvgVarsN)*varBytes + int(NeuronIndexVarsN)*varBytes
+	memNeuron := (int(NeuronVarsN)+int(nix.NSpikeBins))*maxData*varBytes + int(NeuronAvgVarsN)*varBytes + int(NeuronIndexVarsN)*varBytes
 	memSynapse := int(SynapseVarsN)*varBytes + int(SynapseTraceVarsN)*maxData*varBytes + int(SynapseIndexVarsN)*varBytes
 
 	globalProjIndexes := 0

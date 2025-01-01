@@ -8,7 +8,7 @@ import (
 	"github.com/emer/emergent/v2/paths"
 )
 
-// AddVBG adds Ventral Basal Ganglia layers, using the PCore Pallidal Core
+// AddVentralBG adds Ventral Basal Ganglia layers, using the PCore Pallidal Core
 // framework where GPe plays a central role.
 // Returns VMtxGo, VMtxNo, VGPePr, VGPeAk, VSTN, VGPi layers,
 // with given optional prefix.
@@ -17,7 +17,7 @@ import (
 // All GP / STN layers have gpNeur neurons.
 // Appropriate connections are made between layers, using standard styles.
 // space is the spacing between layers (2 typical).
-func (net *Network) AddVBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpePr, gpeAk, stn, gpi *Layer) {
+func (net *Network) AddVentralBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpePr, gpeAk, stn, gpi *Layer) {
 	bglay := "VBG"
 	gpi = net.AddGPiLayer2D(prefix+"VGPi", bglay, gpNeurY, gpNeurX)
 	gpePr = net.AddGPeLayer2D(prefix+"VGPePr", bglay, gpNeurY, gpNeurX)
@@ -75,7 +75,7 @@ func (net *Network) AddVBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 	return
 }
 
-// AddDBG adds Dorsal Basal Ganglia layers, using the PCore Pallidal Core
+// AddDorsalBG adds Dorsal Basal Ganglia layers, using the PCore Pallidal Core
 // framework where GPe plays a central role.
 // Returns DMtxGo, DMtxNo, DGPePr, DGPeAk, DSTN, DGPi, PF layers, with given optional prefix.
 // Makes 4D pools throughout the GP layers, with Pools representing separable
@@ -83,7 +83,7 @@ func (net *Network) AddVBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 // All GP / STN layers have gpNeur neurons.
 // Appropriate PoolOneToOne connections are made between layers, using standard styles.
 // space is the spacing between layers (2 typical)
-func (net *Network) AddDBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpePr, gpeAk, stn, gpi, pf *Layer) {
+func (net *Network) AddDorsalBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpePr, gpeAk, stn, gpi, pf *Layer) {
 	bglay := "DBG"
 	gpi = net.AddGPiLayer4D(prefix+"DGPi", bglay, nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpePr = net.AddGPeLayer4D(prefix+"DGPePr", bglay, nPoolsY, nPoolsX, gpNeurY, gpNeurX)

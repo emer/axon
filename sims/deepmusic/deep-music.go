@@ -275,7 +275,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetNThreads(ss.Config.Run.NThreads)
 	ss.ApplyParams()
 	net.InitWeights()
-	fmt.Println(axon.GPUSystem.Vars().StringDoc())
+	// fmt.Println(axon.GPUSystem.Vars().StringDoc())
 }
 
 func (ss *Sim) ApplyParams() {

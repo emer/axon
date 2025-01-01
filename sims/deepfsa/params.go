@@ -34,7 +34,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.NMDA.Voff = 0
 				ly.Acts.NMDA.Gbar = 0.006
 				ly.Acts.GabaB.Gbar = 0.015 // 0.015 def -- makes no diff down to 0.008
-				ly.Learn.LrnNMDA.Gbar = 0.006
+				ly.Learn.LearnNMDA.Gbar = 0.006
 				ly.Acts.Sahp.Gbar = 0.1   //
 				ly.Acts.Sahp.Off = 0.8    //
 				ly.Acts.Sahp.Slope = 0.02 //
@@ -93,12 +93,11 @@ var PathParams = axon.PathSheets{
 	"Base": {
 		{Sel: "Path", Doc: "std",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.Trace.SubMean = 0     // 0 > 1 -- even with CTCtxt = 0
-				pt.Learn.LRate.Base = 0.03     // .03 > others -- same as CtCtxt
-				pt.SWts.Adapt.LRate = 0.01     // 0.01 or 0.0001 music
-				pt.SWts.Init.SPct = 1.0        // 1 works fine here -- .5 also ok
-				pt.Learn.Trace.Tau = 1         // 1 >> 2 v0.0.9
-				pt.Learn.KinaseCa.CaGain = 1.0 // 1 > higher, lower
+				pt.Learn.Trace.SubMean = 0 // 0 > 1 -- even with CTCtxt = 0
+				pt.Learn.LRate.Base = 0.03 // .03 > others -- same as CtCtxt
+				pt.SWts.Adapt.LRate = 0.01 // 0.01 or 0.0001 music
+				pt.SWts.Init.SPct = 1.0    // 1 works fine here -- .5 also ok
+				pt.Learn.Trace.Tau = 1     // 1 >> 2 v0.0.9
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {

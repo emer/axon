@@ -87,10 +87,8 @@ func (pt *Path) Defaults() {
 	if pt.Params == nil {
 		return
 	}
-	ctx := pt.Recv.Network.Context()
 	pt.Params.Type = pt.Type
 	pt.Params.Defaults()
-	pt.Params.Learn.KinaseCa.WtsForNCycles(int(ctx.ThetaCycles))
 	switch pt.Type {
 	case InhibPath:
 		pt.Params.SWts.Adapt.On.SetBool(false)

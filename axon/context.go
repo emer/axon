@@ -19,7 +19,7 @@ import (
 // It contains timing, Testing vs. Training mode, random number context, etc.
 // There is one canonical instance on the network as Ctx, always get it from
 // the network.Context() method.
-type Context struct {
+type Context struct { //types:add -setters
 
 	// number of data parallel items to process currently.
 	NData uint32 `min:"1"`
@@ -51,6 +51,13 @@ type Context struct {
 	// theta cycle (e.g., CTCtxtPath).
 	ThetaCycles int32 `default:"200"`
 
+	// PlusCycles is the number of cycles in the plus phase.
+	PlusCycles int32
+
+	// SpikeBinCycles is the number of cycles per SpikeBin used in computing synaptic
+	// calcium values. Total number of bins = ThetaCycles / SpikeBinCycles.
+	SpikeBinCycles int32
+
 	// CyclesTotal is the accumulated cycle count, which increments continuously
 	// from whenever it was last reset. Typically this is the number of milliseconds
 	// in simulation time.
@@ -80,8 +87,6 @@ type Context struct {
 	// This is incremented by NData to maintain consistency across different values of this parameter.
 	SlowCounter int32 `edit:"-"`
 
-	pad, pad1 int32
-
 	// RandCounter is the random counter, incremented by maximum number of
 	// possible random numbers generated per cycle, regardless of how
 	// many are actually used. This is shared across all layers so must
@@ -94,6 +99,8 @@ func (ctx *Context) Defaults() {
 	ctx.NData = 1
 	ctx.TimePerCycle = 0.001
 	ctx.ThetaCycles = 200
+	ctx.PlusCycles = 50
+	ctx.SpikeBinCycles = 25
 	ctx.SlowInterval = 100
 }
 
@@ -132,6 +139,11 @@ func (ctx *Context) SlowInc() bool {
 func (ctx *Context) PlusPhaseStart() {
 	ctx.PhaseCycle = 0
 	ctx.PlusPhase.SetBool(true)
+}
+
+// NSpikeBins returns ThetaCycles / SpikeBinCycles
+func (ctx *Context) NSpikeBins() int32 {
+	return ctx.ThetaCycles / ctx.SpikeBinCycles
 }
 
 //gosl:end

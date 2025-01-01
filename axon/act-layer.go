@@ -7,6 +7,7 @@
 package axon
 
 import (
+	// "fmt"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/tensor"
 	"github.com/emer/axon/v2/fsfffb"
@@ -541,11 +542,30 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, lpi, ni, di uint32) {
 		}
 	}
 	spk := Neurons.Value(int(ni), int(di), int(Spike))
-	if spk > 0 {
-		spksper := ctx.ThetaCycles / 8
-		bin := min(ctx.Cycle/spksper, 7)
-		Neurons.SetAdd(spk, int(ni), int(di), int(SpikeBin0+NeuronVars(bin)))
-	}
+	mx := NetworkIxs[0].NSpikeBins
+	bin := min(ctx.Cycle/ctx.SpikeBinCycles, mx)
+	//	if ly.Learn.GateSync.On.IsTrue() && ly.Learn.GateSync.GateLayIndex >= 0 {
+	//		rt := int32(LayerStates[ly.Learn.GateSync.GateLayIndex, di, GatedRT])
+	//		if rt > 0 {
+	//			gcyc := rt + ly.Learn.GateSync.Offset
+	//			if ctx.Cycle >= gcyc {
+	//				minus := ctx.ThetaCycles - ctx.PlusCycles
+	//				minusBins := minus / spksper
+	//				plusBins := ctx.PlusCycles / spksper
+	//				delta := (gcyc - minus) / spksper
+	//				if gcyc == ctx.Cycle && delta != 0 {
+	//					ly.Learn.GateSync.ShiftBins(delta, minusBins, plusBins, ni, di)
+	//				}
+	//				bin = min((ctx.Cycle / spksper) - delta, 7)
+	//				// if ly.Index == 13 && ni == ly.Indexes.NeurSt {
+	//				// 	fmt.Println(ctx.Cycle, rt, gcyc, delta, bin)
+	//				// }
+	//			}
+	//		}
+	//		Neurons[ni, di, SpikeBin0 + NeuronVars(bin)] += spk
+	//	} else {
+	Neurons.SetAdd(spk, int(ni), int(di), int(SpikeBins+NeuronVars(bin)))
+	// }
 }
 
 // SendSpike sends spike to receivers for all neurons that spiked
@@ -936,8 +956,9 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32) {
 	ly.Acts.DecayState(ctx, ni, di, ly.Acts.Decay.Act, ly.Acts.Decay.Glong, ly.Acts.Decay.AHP)
 	// Note: synapse-level Ca decay happens in DWt
 	ly.Acts.KNaNewState(ctx, ni, di)
-	for i := range 8 {
-		Neurons.Set(0.0, int(ni), int(di), int(SpikeBin0+NeuronVars(i)))
+	mx := NetworkIxs[0].NSpikeBins
+	for i := range mx {
+		Neurons.Set(0.0, int(ni), int(di), int(SpikeBins+NeuronVars(i)))
 	}
 }
 

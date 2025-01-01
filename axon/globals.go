@@ -12,7 +12,7 @@ package axon
 type GlobalScalarVars int32 //enums:enum
 
 const (
-	///////////////// Reward
+	//////// Reward
 
 	// Rew is the external reward value.  Must also set HasRew flag when Rew is set,
 	// otherwise it is ignored. This is computed by the Rubicon algorithm from US
@@ -35,7 +35,7 @@ const (
 	// Used for updating Effort, Urgency at start of new trial.
 	GvHadRew
 
-	//////////////// NeuroMod neuromodulators
+	//////// NeuroMod neuromodulators
 
 	// DA is phasic dopamine that drives learning moreso than performance,
 	// representing reward prediction error, signaled as phasic
@@ -68,7 +68,7 @@ const (
 	// Drives top-down inhibition of LDT layer / ACh activity.
 	GvGoalMaint
 
-	/////////////////// VSMatrix gating and Rubicon Rew flags
+	//////// VSMatrix gating and Rubicon Rew flags
 
 	// VSMatrixJustGated is VSMatrix just gated (to engage goal maintenance
 	// in PFC areas), set at end of plus phase.  This excludes any gating
@@ -84,7 +84,7 @@ const (
 	// giving up Effort.Max parameter.
 	GvCuriosityPoolGated
 
-	////////////////// Time, Effort & Urgency
+	//////// Time, Effort & Urgency
 
 	// Time is the raw time counter, incrementing upward during goal engaged window.
 	// This is also copied directly into NegUS[0] which tracks time, but we maintain
@@ -106,7 +106,7 @@ const (
 	// activity to increasingly bias Go firing.
 	GvUrgency
 
-	/////////////////// US / PV
+	//////// US / PV
 
 	// HasPosUS indicates has positive US on this trial,
 	// drives goal accomplishment logic and gating.
@@ -202,7 +202,7 @@ const (
 	// GaveUp is copy of GiveUp from previous trial.
 	GvGaveUp
 
-	/////////////////// VSPatch prediction of PVpos net value
+	//////// VSPatch prediction of PVpos net value
 
 	// VSPatchPos is the net shunting input from VSPatch (PosD1, named PVi in original Rubicon)
 	// computed as the Max of US-specific VSPatch saved values, subtracting D1 - D2.
@@ -232,7 +232,7 @@ const (
 	// which determines when the VSPatchPosSum has stabilized
 	GvVSPatchPosVar
 
-	//////////////// LHb lateral habenula in the Rubicon model
+	//////// LHb lateral habenula in the Rubicon model
 
 	// computed LHb activity level that drives dipping / pausing of DA firing,
 	// when VSPatch pos prediction > actual PV reward drive
@@ -247,7 +247,7 @@ const (
 	// reflecting PV and VSPatch (PVi), but not the CS (LV) contributions
 	GvLHbPVDA
 
-	/////////////// Amygdala CS / LV variables
+	//////// Amygdala CS / LV variables
 
 	// CeMpos is positive valence central nucleus of the amygdala (CeM)
 	// LV (learned value) activity, reflecting
@@ -261,10 +261,17 @@ const (
 	// |BLAnegAcqD2 - BLAnegExtD1|_+ positively rectified.  CeM sets Raw directly
 	GvCeMneg
 
-	/////////////// VTA ventral tegmental area dopamine release
+	//////// VTA ventral tegmental area dopamine release
 
-	// VtaDA is overall dopamine value reflecting all of the different inputs
+	// VtaDA is overall dopamine value reflecting all of the different inputs.
 	GvVtaDA
+
+	//////// SpikeBin Weights
+
+	// SpikeBinWts are NSpikeBins starting here, of weights for integrating binned spikes
+	// to compute synaptic calcium values that drive the trace factor in learning.
+	// These are only stored for the first parallel data index di = 0.
+	GvSpikeBinWts
 )
 
 // MaxGlobalVecN is the maximum number of GlobalVectors values
@@ -279,7 +286,7 @@ const MaxGlobalVecN = 16
 type GlobalVectorVars int32 //enums:enum
 
 const (
-	/////////////// Cost is Time, Effort etc costs
+	//////// Cost is Time, Effort etc costs
 
 	// Cost are Time, Effort, etc costs, as normalized version of corresponding raw.
 	// NCosts of them
@@ -289,7 +296,7 @@ const (
 	// this value is also integrated together with all US vals for PVneg
 	GvCostRaw
 
-	//////////////// USneg is negative valence US
+	//////// USneg is negative valence US
 
 	// USneg are negative valence US outcomes, normalized version of raw.
 	// NNegUSs of them
@@ -299,7 +306,7 @@ const (
 	// this value is also integrated together with all US vals for PVneg
 	GvUSnegRaw
 
-	//////////////// USpos, VSPatch
+	//////// USpos, VSPatch
 
 	// Drives are current drive state, updated with optional homeostatic
 	// exponential return to baseline values.

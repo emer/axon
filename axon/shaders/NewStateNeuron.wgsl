@@ -85,8 +85,9 @@ fn LayerParams_NewStateNeuron(ly: ptr<function,LayerParams>, ctx: ptr<function,C
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaPMaxCa))] = 0.0;
 	ActParams_DecayState(&(*ly).Acts, ctx, ni, di, (*ly).Acts.Decay.Act, (*ly).Acts.Decay.Glong, (*ly).Acts.Decay.AHP);
 	ActParams_KNaNewState(&(*ly).Acts, ctx, ni, di);
-	for (var i=0; i<8; i++) {
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SpikeBin0 + NeuronVars(i)))] = 0.0;
+	var mx = NetworkIxs[0].NSpikeBins;
+	for (var i=0; i<mx; i++) {
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SpikeBins + NeuronVars(i)))] = 0.0;
 	}
 }
 
@@ -460,7 +461,7 @@ struct VGCCParams {
 }
 
 //////// import: "context.go"
-struct Context {
+struct Context { //types:add -setters
 	NData: u32,
 	Mode: i32,
 	Testing: i32,
@@ -469,14 +470,14 @@ struct Context {
 	PhaseCycle: i32,
 	Cycle: i32,
 	ThetaCycles: i32,
+	PlusCycles: i32,
+	SpikeBinCycles: i32,
 	CyclesTotal: i32,
 	Time: f32,
 	TrialsTotal: i32,
 	TimePerCycle: f32,
 	SlowInterval: i32,
 	SlowCounter: i32,
-	pad: i32,
-	pad1: i32,
 	RandCounter: RandCounter,
 }
 fn Context_ItemIndex(ctx: ptr<function,Context>, idx: u32) -> u32 {
@@ -510,7 +511,7 @@ struct PulvParams {
 
 //////// import: "enumgen.go"
 const PathGTypesN: PathGTypes = 5;
-const GlobalScalarVarsN: GlobalScalarVars = 57;
+const GlobalScalarVarsN: GlobalScalarVars = 58;
 const GlobalVectorVarsN: GlobalVectorVars = 10;
 const GPUVarsN: GPUVars = 23;
 const LayerTypesN: LayerTypes = 30;
@@ -519,7 +520,7 @@ const ViewTimesN: ViewTimes = 7;
 const DAModTypesN: DAModTypes = 4;
 const ValenceTypesN: ValenceTypes = 3;
 const NeuronFlagsN: NeuronFlags = 9;
-const NeuronVarsN: NeuronVars = 89;
+const NeuronVarsN: NeuronVars = 82;
 const NeuronAvgVarsN: NeuronAvgVars = 7;
 const NeuronIndexVarsN: NeuronIndexVars = 3;
 const PathTypesN: PathTypes = 12;
@@ -634,6 +635,7 @@ const  GvLHbPVDA: GlobalScalarVars = 53;
 const  GvCeMpos: GlobalScalarVars = 54;
 const  GvCeMneg: GlobalScalarVars = 55;
 const  GvVtaDA: GlobalScalarVars = 56;
+const  GvSpikeBinWts: GlobalScalarVars = 57;
 const MaxGlobalVecN = 16;
 alias GlobalVectorVars = i32; //enums:enum
 const  GvCost: GlobalVectorVars = 0;
@@ -695,24 +697,6 @@ struct CaSpikeParams {
 	pad1: i32,
 	pad2: i32,
 	Dt: CaDtParams,
-}
-struct BinWeights { //types:add
-	Bin0: f32,
-	Bin1: f32,
-	Bin2: f32,
-	Bin3: f32,
-	Bin4: f32,
-	Bin5: f32,
-	Bin6: f32,
-	Bin7: f32,
-}
-struct SynCaLinear { //types:add
-	CaP: BinWeights,
-	CaD: BinWeights,
-	CaGain: f32,
-	pad:    f32,
-	pad1: f32,
-	pad2: f32,
 }
 
 //////// import: "layerparams.go"
@@ -825,6 +809,12 @@ struct LearnCaParams {
 	NormInv: f32,
 	pad: i32,
 }
+struct GateSyncParams {
+	On: i32,
+	Offset: i32,
+	GateLayIndex: i32,
+	pad: i32,
+}
 struct TrgAvgActParams {
 	GiBaseInit: f32,
 	RescaleOn: i32,
@@ -850,6 +840,7 @@ struct LearnNeuronParams {
 	CaLearn: LearnCaParams,
 	CaSpike: CaSpikeParams,
 	LearnNMDA: NMDAParams,
+	GateSync: GateSyncParams,
 	TrgAvgAct: TrgAvgActParams,
 	RLRate: RLRateParams,
 	NeuroMod: NeuroModParams,
@@ -879,9 +870,13 @@ struct LRateParams {
 }
 struct TraceParams {
 	Tau: f32,
+	CaGain: f32,
 	SubMean: f32,
 	LearnThr: f32,
 	Dt: f32,
+	pad: f32,
+	pad1: f32,
+	pad2: f32,
 }
 struct LRateMod {
 	On: i32,
@@ -903,7 +898,6 @@ struct LearnSynParams {
 	pad2: i32,
 	LRate: LRateParams,
 	Trace: TraceParams,
-	KinaseCa: SynCaLinear,
 	Hebb: HebbParams,
 }
 
@@ -945,6 +939,7 @@ struct F32 {
 struct NetworkIndexes {
 	MaxData: u32,
 	MaxDelay: u32,
+	NSpikeBins: i32,
 	NLayers: u32,
 	NNeurons: u32,
 	NPools: u32,
@@ -955,6 +950,9 @@ struct NetworkIndexes {
 	RubiconNNegUSs: u32,
 	GPUMaxBuffFloats: u32,
 	GPUSynCaBanks: u32,
+	pad: u32,
+	pad1: u32,
+	pad2: u32,
 }
 
 //////// import: "neuromod.go"
@@ -1052,32 +1050,25 @@ const  Beta1: NeuronVars = 59;
 const  Beta2: NeuronVars = 60;
 const  CaPMax: NeuronVars = 61;
 const  CaPMaxCa: NeuronVars = 62;
-const  SpikeBin0: NeuronVars = 63;
-const  SpikeBin1: NeuronVars = 64;
-const  SpikeBin2: NeuronVars = 65;
-const  SpikeBin3: NeuronVars = 66;
-const  SpikeBin4: NeuronVars = 67;
-const  SpikeBin5: NeuronVars = 68;
-const  SpikeBin6: NeuronVars = 69;
-const  SpikeBin7: NeuronVars = 70;
-const  GeNoise: NeuronVars = 71;
-const  GeNoiseP: NeuronVars = 72;
-const  GiNoise: NeuronVars = 73;
-const  GiNoiseP: NeuronVars = 74;
-const  GeExt: NeuronVars = 75;
-const  GeRaw: NeuronVars = 76;
-const  GeSyn: NeuronVars = 77;
-const  GiRaw: NeuronVars = 78;
-const  GiSyn: NeuronVars = 79;
-const  GeInt: NeuronVars = 80;
-const  GeIntNorm: NeuronVars = 81;
-const  GiInt: NeuronVars = 82;
-const  GModRaw: NeuronVars = 83;
-const  GModSyn: NeuronVars = 84;
-const  SMaintP: NeuronVars = 85;
-const  GMaintRaw: NeuronVars = 86;
-const  GMaintSyn: NeuronVars = 87;
-const  NeurFlags: NeuronVars = 88;
+const  GeNoise: NeuronVars = 63;
+const  GeNoiseP: NeuronVars = 64;
+const  GiNoise: NeuronVars = 65;
+const  GiNoiseP: NeuronVars = 66;
+const  GeExt: NeuronVars = 67;
+const  GeRaw: NeuronVars = 68;
+const  GeSyn: NeuronVars = 69;
+const  GiRaw: NeuronVars = 70;
+const  GiSyn: NeuronVars = 71;
+const  GeInt: NeuronVars = 72;
+const  GeIntNorm: NeuronVars = 73;
+const  GiInt: NeuronVars = 74;
+const  GModRaw: NeuronVars = 75;
+const  GModSyn: NeuronVars = 76;
+const  SMaintP: NeuronVars = 77;
+const  GMaintRaw: NeuronVars = 78;
+const  GMaintSyn: NeuronVars = 79;
+const  NeurFlags: NeuronVars = 80;
+const  SpikeBins: NeuronVars = 81;
 alias NeuronAvgVars = i32; //enums:enum
 const  ActAvg: NeuronAvgVars = 0;
 const  AvgPct: NeuronAvgVars = 1;

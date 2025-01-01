@@ -354,17 +354,6 @@ const (
 	// significant carryover. This is the input to CaPMax.
 	CaPMaxCa
 
-	// SpikeBin has aggregated spikes within 50 msec bins across the theta
-	// cycle, for computing synaptic calcium efficiently.
-	SpikeBin0
-	SpikeBin1
-	SpikeBin2
-	SpikeBin3
-	SpikeBin4
-	SpikeBin5
-	SpikeBin6
-	SpikeBin7
-
 	//////// Noise
 
 	// GeNoise is integrated noise excitatory conductance, added into Ge.
@@ -457,6 +446,11 @@ const (
 	// to / from uint32. These need to be in Vars because they can be
 	// differential per data (for ext inputs) and are writable (indexes are read only).
 	NeurFlags
+
+	// SpikeBins has aggregated spikes in bins across the theta cycle,
+	// for computing synaptic calcium efficiently. There can be a variable number
+	// of bins depending on bin width and total number of cycles.
+	SpikeBins
 )
 
 // NeuronAvgVars are mostly neuron variables involved in longer-term average activity
@@ -524,6 +518,7 @@ var VarCategories = []emer.VarCategory{
 	{"Inhib", "inhibitory channels including GABA inhibition, after hyperpolarization (AHP) and other K channels"},
 	{"Stats", "statistics and aggregate values"},
 	{"Gmisc", "more detailed conductance (G) variables for integration and other computational values"},
+	{"Spikes", "Binned spike counts used for learning"},
 	{"Avg", "longer-term average variables and homeostatic regulation"},
 	{"Wts", "weights and other synaptic-level variables"},
 }
@@ -625,15 +620,6 @@ var NeuronVarProps = map[string]string{
 	"CaPMax":   `cat:"Stats"`,
 	"CaPMaxCa": `cat:"Stats"`,
 
-	"SpikeBin0": `cat:"Stats" min:"0" max:"10"`,
-	"SpikeBin1": `cat:"Stats" min:"0" max:"10"`,
-	"SpikeBin2": `cat:"Stats" min:"0" max:"10"`,
-	"SpikeBin3": `cat:"Stats" min:"0" max:"10"`,
-	"SpikeBin4": `cat:"Stats" min:"0" max:"10"`,
-	"SpikeBin5": `cat:"Stats" min:"0" max:"10"`,
-	"SpikeBin6": `cat:"Stats" min:"0" max:"10"`,
-	"SpikeBin7": `cat:"Stats" min:"0" max:"10"`,
-
 	//////// Noise
 
 	"GeNoise":  `cat:"Gmisc"`,
@@ -658,6 +644,8 @@ var NeuronVarProps = map[string]string{
 	"GMaintSyn": `cat:"Gmisc"`,
 
 	"NeurFlags": `display:"-"`,
+
+	"SpikeBins": `cat:"Spikes" min:"0" max:"10"`,
 
 	//////// Long-term average activation, set point for synaptic scaling
 
@@ -687,27 +675,36 @@ var (
 var (
 	NeuronLayerVars  = []string{"DA", "ACh", "NE", "Ser", "Gated"}
 	NNeuronLayerVars = len(NeuronLayerVars)
+	NNeuronSpikeBins = 20 // generic max for display
 )
 
 func init() {
 	NeuronVarsMap = make(map[string]int, int(NeuronVarsN)+int(NeuronAvgVarsN)+NNeuronLayerVars)
-	for i := Spike; i < NeuronVarsN; i++ {
+	for i := Spike; i < SpikeBins; i++ {
 		vnm := i.String()
 		NeuronVarNames = append(NeuronVarNames, vnm)
 		NeuronVarsMap[vnm] = int(i)
 		tag := NeuronVarProps[vnm]
 		NeuronVarProps[vnm] = tag + ` doc:"` + strings.ReplaceAll(i.Desc(), "\n", " ") + `"`
 	}
+	for i := range NNeuronSpikeBins {
+		vnm := fmt.Sprintf("SpikeBin%02d", i)
+		NeuronVarNames = append(NeuronVarNames, vnm)
+		NeuronVarsMap[vnm] = int(SpikeBins) + i
+		tag := NeuronVarProps[SpikeBins.String()]
+		NeuronVarProps[vnm] = tag + ` doc:"` + strings.ReplaceAll(SpikeBins.Desc(), "\n", " ") + `"`
+	}
+	nVars := int(SpikeBins) + NNeuronSpikeBins
 	for i := ActAvg; i < NeuronAvgVarsN; i++ {
 		vnm := i.String()
 		NeuronVarNames = append(NeuronVarNames, vnm)
-		NeuronVarsMap[vnm] = int(NeuronVarsN) + int(i)
+		NeuronVarsMap[vnm] = nVars + int(i)
 		tag := NeuronVarProps[vnm]
 		NeuronVarProps[vnm] = tag + ` doc:"` + strings.ReplaceAll(i.Desc(), "\n", " ") + `"`
 	}
 	for i, vnm := range NeuronLayerVars {
 		NeuronVarNames = append(NeuronVarNames, vnm)
-		NeuronVarsMap[vnm] = i + int(NeuronVarsN) + int(NeuronAvgVarsN)
+		NeuronVarsMap[vnm] = i + int(nVars) + int(NeuronAvgVarsN)
 	}
 }
 

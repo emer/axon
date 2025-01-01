@@ -15,6 +15,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Noise.On.SetBool(true)
 				ly.Acts.Noise.Ge = 0.0001 // 0.0001 > others; could just be noise ;)
 				ly.Acts.Noise.Gi = 0.0001 // 0.0001 perhaps better than others
+				ly.Learn.GateSync.On.SetBool(false)
+				ly.Learn.GateSync.Offset = 80
 			}},
 		{Sel: ".MatrixLayer", Doc: "all mtx",
 			Set: func(ly *axon.LayerParams) {
@@ -83,10 +85,11 @@ var LayerParams = axon.LayerSheets{
 // Base is always applied, and others can be optionally selected to apply on top of that.
 var PathParams = axon.PathSheets{
 	"Base": {
-		// {Sel: "Path", Doc: "",
-		// 	Set: func(pt *axon.PathParams) {
-		// 		pt.Learn.LRate.Base = 0.02 // 0.04 > 0.02 probably
-		// 	}},
+		{Sel: "Path", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				// pt.Learn.LRate.Base = 0.02  // 0.04 def
+				pt.Learn.Trace.CaGain = 0.7 // 0.7 for 300 cycles
+			}},
 		{Sel: ".CTtoPred", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 2 // 1 def

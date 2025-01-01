@@ -117,7 +117,7 @@ func TestLayerToJson(t *testing.T) {
 	// from net B. TODO: Would be better if we ran a cycle first, to get more variance.
 	net := createNetwork(ctx, shape, t)
 	hiddenLayer := net.LayerByName("Hidden")
-	net.Cycle(1, true) // run one cycle to make the weights more different
+	net.Cycle(true) // run one cycle to make the weights more different
 
 	netC := createNetwork(ctxC, shape, t)
 	hiddenLayerC := netC.LayerByName("Hidden")

@@ -637,7 +637,7 @@ func (nt *Network) AddRubiconOFCus(nYneur, popY, popX, bgY, bgX, ofcY, ofcX int,
 	drives, drivesP, urgency, usPos, usNeg, cost, costFinal, usPosP, usNegP, costP, pvPos, pvNeg, pvPosP, pvNegP := nt.AddRubiconPulvLayers(nYneur, popY, popX, space)
 	_ = urgency
 
-	vSmtxGo, vSmtxNo, vSgpePr, vSgpeAk, vSstn, vSgpi := nt.AddVBG("", 1, nUSpos, bgY, bgX, bgY, bgX, space)
+	vSmtxGo, vSmtxNo, vSgpePr, vSgpeAk, vSstn, vSgpi := nt.AddVentralBG("", 1, nUSpos, bgY, bgX, bgY, bgX, space)
 	_, _ = vSgpeAk, vSgpePr
 	vSgated := nt.AddVSGatedLayer("", nYneur)
 	vSpatchD1, vSpatchD2 = nt.AddVSPatchLayers("", nUSpos, bgY, bgX, space)

@@ -22,7 +22,7 @@ import (
 
 // LearnCaParams parameterizes the neuron-level calcium signals driving learning:
 // LearnCa = NMDA + VGCC Ca sources, where VGCC can be simulated from spiking or
-// use the more complex and dynamic VGCC channel directly.
+// use the more complex and dynamaic VGCC channel directly.
 // LearnCa is then integrated in a cascading manner at multiple time scales:
 // CaM (as in calmodulin), CaP (ltP, CaMKII, plus phase), CaD (ltD, DAPK1, minus phase).
 type LearnCaParams struct {
@@ -92,6 +92,72 @@ func (np *LearnCaParams) LearnCas(ctx *Context, ni, di uint32) {
 	Neurons.SetAdd(np.Dt.DDt*(Neurons.Value(int(ni), int(di), int(LearnCaP))-Neurons.Value(int(ni), int(di), int(LearnCaD))), int(ni), int(di), int(LearnCaD))
 	Neurons.Set(Neurons.Value(int(ni), int(di), int(LearnCaP))-Neurons.Value(int(ni), int(di), int(LearnCaD)), int(ni), int(di), int(CaDiff))
 }
+
+////////  GateSyncParams
+
+// GateSyncParams enable gating timing in another layer to synchronize the synaptic
+// calcium learning signals in this layer.
+type GateSyncParams struct {
+	// On activates this mechanism.
+	On slbool.Bool
+
+	// Offset is time offset from gating signal to effects on spike accumulation.
+	Offset int32
+
+	// GateLayIndex is the index of the Layer to get gating timing from;
+	// set during Build from BuildConfig GateLayName if present: -1 if not used.
+	GateLayIndex int32 `edit:"-"`
+
+	pad int32
+}
+
+func (gs *GateSyncParams) Defaults() {
+	gs.Offset = 50
+}
+
+func (gs *GateSyncParams) Update() {
+}
+
+func (gs *GateSyncParams) ShouldDisplay(field string) bool {
+	switch field {
+	case "On":
+		return true
+	default:
+		return gs.On.IsTrue()
+	}
+}
+
+//
+// func (gs *GateSyncParams) ShiftBins(delta, minusBins, plusBins int32, ni, di uint32) {
+// 	if delta > 0 { // later than typical: shift left
+// 		gs.ShiftToEarlier(delta, minusBins, plusBins, ni, di)
+// 	} else {
+// 		gs.ShiftToLater(delta, minusBins, plusBins, ni, di)
+// 	}
+// 	for i := range plusBins {
+// 		Neurons[ni, di, SpikeBin0 + NeuronVars(minusBins+i)] = 0.0
+// 	}
+// }
+//
+// // todo: linear weighting of neighboring 2 values
+//
+// func (gs *GateSyncParams) ShiftToEarlier(delta, minusBins, plusBins int32, ni, di uint32) {
+// 	del := min(delta, plusBins)
+// 	for i := range minusBins {
+// 		Neurons[ni, di, SpikeBin0 + NeuronVars(i)] = Neurons[ni, di, SpikeBin0 + NeuronVars(i+del)]
+// 	}
+// }
+//
+// func (gs *GateSyncParams) ShiftToLater(delta, minusBins, plusBins int32, ni, di uint32) {
+// 	del := min(-delta, plusBins)
+// 	for i := minusBins-1; i>=del; i-- {
+// 		Neurons[ni, di, SpikeBin0 + NeuronVars(i)] = Neurons[ni, di, SpikeBin0 + NeuronVars(i-del)]
+// 	}
+// 	fill := Neurons[ni, di, SpikeBin0 + NeuronVars(del)]
+// 	for i := range del {
+// 		Neurons[ni, di, SpikeBin0 + NeuronVars(i)] = fill
+// 	}
+// }
 
 ////////  TrgAvgActParams
 
@@ -256,7 +322,7 @@ func (rl *RLRateParams) RLRateDiff(scap, scad float32) float32 {
 	return rl.Min
 }
 
-// axon.LearnNeuronParams manages learning-related parameters at the neuron-level.
+// LearnNeuronParams manages learning-related parameters at the neuron-level.
 // This is mainly the running average activations that drive learning
 type LearnNeuronParams struct {
 
@@ -274,16 +340,28 @@ type LearnNeuronParams struct {
 	// based learning signal.
 	CaSpike kinase.CaSpikeParams `display:"inline"`
 
-	// NMDA channel parameters used for learning, vs. the ones driving activation -- allows exploration of learning parameters independent of their effects on active maintenance contributions of NMDA, and may be supported by different receptor subtypes
+	// NMDA channel parameters used for learning, vs. the ones driving activation.
+	// This allows exploration of learning parameters independent of their effects
+	// on active maintenance contributions of NMDA, and may be supported by different
+	// receptor subtypes.
 	LearnNMDA chans.NMDAParams `display:"inline"`
 
-	// synaptic scaling parameters for regulating overall average activity compared to neuron's own target level
+	// GateSync enables gating timing in another layer to synchronize the synaptic
+	// calcium learning signals in this layer.
+	GateSync GateSyncParams `display:"inline"`
+
+	// TrgAvgAct has the synaptic scaling parameters for regulating overall average
+	// activity compared to neuron's own target level.
 	TrgAvgAct TrgAvgActParams `display:"inline"`
 
-	// recv neuron learning rate modulation params -- an additional error-based modulation of learning for receiver side: RLRate = |CaP - CaD| / Max(CaP, CaD)
+	// RLRate has the recv neuron learning rate modulation params: an additional
+	// error-based modulation of learning for receiver side:
+	// RLRate = |CaP - CaD| / Max(CaP, CaD)
 	RLRate RLRateParams `display:"inline"`
 
-	// neuromodulation effects on learning rate and activity, as a function of layer-level DA and ACh values, which are updated from global Context values, and computed from reinforcement learning algorithms
+	// NeuroMod parameterizes neuromodulation effects on learning rate and activity,
+	// as a function of layer-level DA and ACh values, which are updated from global
+	// Context values, and computed from reinforcement learning algorithms.
 	NeuroMod NeuroModParams `display:"inline"`
 }
 
@@ -291,6 +369,7 @@ func (ln *LearnNeuronParams) Update() {
 	ln.CaLearn.Update()
 	ln.CaSpike.Update()
 	ln.LearnNMDA.Update()
+	ln.GateSync.Update()
 	ln.TrgAvgAct.Update()
 	ln.RLRate.Update()
 	ln.NeuroMod.Update()
@@ -302,6 +381,7 @@ func (ln *LearnNeuronParams) Defaults() {
 	ln.LearnNMDA.Defaults()
 	ln.LearnNMDA.ITau = 1
 	ln.LearnNMDA.Update()
+	ln.GateSync.Defaults()
 	ln.TrgAvgAct.Defaults()
 	ln.RLRate.Defaults()
 	ln.NeuroMod.Defaults()
@@ -658,22 +738,38 @@ func (ls *LRateParams) Init() {
 // TraceParams manages parameters associated with temporal trace learning
 type TraceParams struct {
 
-	// time constant for integrating trace over theta cycle timescales.
-	// governs the decay rate of syanptic trace
+	// Tau is the time constant for integrating the synaptic trace over theta cycle timescales.
+	// This governs the decay rate of syanptic trace.
 	Tau float32 `default:"1,2,4"`
 
-	// amount of the mean dWt to subtract, producing a zero-sum effect -- 1.0 = full zero-sum dWt -- only on non-zero DWts.  typically set to 0 for standard trace learning pathways, although some require it for stability over the long haul.  can use SetSubMean to set to 1 after significant early learning has occurred with 0.  Some special path types (e.g., Hebb) benefit from SubMean = 1 always
+	// CaGain is a multiplier on the total synaptic calcium values, computed from products
+	// of the neuron-level [SpikeBins] values. If [Context.SpikeBinCycles] is lower than
+	// default of 25, then this value may need to be set higher.
+	CaGain float32 `default:"1"`
+
+	// SubMean is the amount of the mean dWt to subtract, producing a zero-sum effect.
+	// 1.0 = full zero-sum dWt. Only applies to non-zero DWts.
+	// Typically set to 0 for standard trace learning pathways, although some require it
+	// for stability over the long haul. Can use SetSubMean to set to 1 after significant
+	// early learning has occurred with 0. Some special path types (e.g., Hebb) benefit
+	// from SubMean = 1 always.
 	SubMean float32 `default:"0,1"`
 
-	// threshold for learning, depending on different algorithms -- in Matrix and VSPatch it applies to normalized GeIntNorm value -- setting this relatively high encourages sparser representations
+	// LearnThr is the threshold for learning, for specialized learning algorithms.
+	// This is not relevant for the standard kinase error-driven cortical learning algorithm.
+	// In Matrix and VSPatch it applies to normalized GeIntNorm value: setting this relatively
+	// high encourages sparser representations.
 	LearnThr float32
 
 	// rate = 1 / tau
 	Dt float32 `display:"-" json:"-" xml:"-" edit:"-"`
+
+	pad, pad1, pad2 float32
 }
 
 func (tp *TraceParams) Defaults() {
 	tp.Tau = 1
+	tp.CaGain = 1
 	tp.SubMean = 0
 	tp.LearnThr = 0
 	tp.Update()
@@ -810,9 +906,6 @@ type LearnSynParams struct {
 	// trace-based learning parameters
 	Trace TraceParams `display:"inline"`
 
-	// kinase calcium Ca integration parameters: using linear regression parameters
-	KinaseCa kinase.SynCaLinear `display:"no-inline"`
-
 	// hebbian learning option, which overrides the default learning rules
 	Hebb HebbParams `display:"inline"`
 }
@@ -820,7 +913,6 @@ type LearnSynParams struct {
 func (ls *LearnSynParams) Update() {
 	ls.LRate.Update()
 	ls.Trace.Update()
-	ls.KinaseCa.Update()
 	ls.Hebb.Update()
 }
 
@@ -828,7 +920,6 @@ func (ls *LearnSynParams) Defaults() {
 	ls.Learn.SetBool(true)
 	ls.LRate.Defaults()
 	ls.Trace.Defaults()
-	ls.KinaseCa.Defaults()
 	ls.Hebb.Defaults()
 }
 

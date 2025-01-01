@@ -148,6 +148,9 @@ type RunConfig struct {
 	// PlusCycles is the total number of plus-phase cycles per trial. For Cycles=300, use 100.
 	PlusCycles int `default:"50"`
 
+	// SpikeBinCycles is the number of cycles per SpikeBin: how fine-grained the synaptic Ca is.
+	SpikeBinCycles int `default:"25"`
+
 	// NZero is how many perfect, zero-error epochs before stopping a Run.
 	NZero int `default:"2"`
 
@@ -345,7 +348,9 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ss.Config.Run.NData)
-	net.Context().ThetaCycles = int32(ss.Config.Run.Cycles)
+	net.Context().SetThetaCycles(int32(ss.Config.Run.Cycles)).
+		SetPlusCycles(int32(ss.Config.Run.PlusCycles)).
+		SetSpikeBinCycles(int32(ss.Config.Run.SpikeBinCycles))
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
 	inp := net.AddLayer2D("Input", axon.InputLayer, 5, 5)

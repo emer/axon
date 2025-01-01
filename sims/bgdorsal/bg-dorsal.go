@@ -209,7 +209,7 @@ func (ss *Sim) ConfigRubicon(trn *MotorSeqEnv) {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ss.Config.Run.NData)
-	net.Context().ThetaCycles = int32(ss.Config.Run.Cycles)
+	net.Context().SetThetaCycles(int32(ss.Config.Run.Cycles)).SetPlusCycles(int32(ss.Config.Run.PlusCycles))
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
 	ev := ss.Envs.ByModeDi(Train, 0).(*MotorSeqEnv)
@@ -233,7 +233,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mtxRandPath.PCon = 0.5
 	_ = mtxRandPath
 
-	mtxGo, mtxNo, gpePr, gpeAk, stn, gpi, pf := net.AddDBG("", 1, nAct, nuY, nuX, nuY, nuX, space)
+	mtxGo, mtxNo, gpePr, gpeAk, stn, gpi, pf := net.AddDorsalBG("", 1, nAct, nuY, nuX, nuY, nuX, space)
 	_, _ = gpePr, gpeAk
 
 	snc := net.AddLayer2D("SNc", axon.InputLayer, 1, 1)
@@ -253,6 +253,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// bool before space is selfmaint or not: selfcons much better (false)
 	m1, m1CT, m1PT, m1PTp, m1VM := net.AddPFC2D("M1", "VM", nuCtxY, nuCtxX, false, false, space)
 	_ = m1PT
+	m1.SetBuildConfig("GateLayName", m1VM.Name)
+	m1CT.SetBuildConfig("GateLayName", m1VM.Name)
+	m1PT.SetBuildConfig("GateLayName", m1VM.Name)
+	m1PTp.SetBuildConfig("GateLayName", m1VM.Name)
+	m1VM.SetBuildConfig("GateLayName", m1VM.Name)
+	motor.SetBuildConfig("GateLayName", m1VM.Name)
+
 	// todo: M1PTp should be VL interconnected, prior to PT, not after it.
 
 	// vl is a predictive thalamus but we don't have direct access to its source
@@ -315,6 +322,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetNThreads(ss.Config.Run.NThreads)
 	ss.ApplyParams()
 	net.InitWeights()
+	fmt.Println("m1:", m1.Index)
 }
 
 func (ss *Sim) ApplyParams() {
