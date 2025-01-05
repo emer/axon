@@ -34,7 +34,8 @@ type SynCaParams struct { //types:add
 	// and affects effective learning rate.
 	CaScale float32 `default:"12"`
 
-	pad, pad1, pad2 int32
+	// LinearScale multiplies computed CaSyn for accumulating into SpikeBins
+	LinearScale float32 `default:"2.5"`
 
 	// time constants for integrating at M, P, and D cascading levels
 	Dt kinase.CaDtParams `display:"inline"`
@@ -43,6 +44,7 @@ type SynCaParams struct { //types:add
 func (kp *SynCaParams) Defaults() {
 	kp.SynTau = 30
 	kp.CaScale = 12
+	kp.LinearScale = 2.5
 	kp.Dt.Defaults()
 	kp.Update()
 }
@@ -59,16 +61,13 @@ func (kp *SynCaParams) FromCa(ca float32, caM, caP, caD *float32) {
 	kp.Dt.FromCa(kp.CaScale*ca, caM, caP, caD)
 }
 
-// NBins is the number of spike bins
-const NBins = 8
-
 // KinaseNeuron has Neuron state
 type KinaseNeuron struct {
 	// Neuron spiking (0,1)
-	Spike float32
+	Spike float32 `edit:"-"`
 
 	// Neuron probability of spiking
-	SpikeP float32
+	SpikeP float32 `edit:"-"`
 
 	// CaSyn is spike-driven calcium trace for synapse-level Ca-driven learning:
 	// exponential integration of SpikeG * Spike at SynTau time constant (typically 30).
@@ -76,15 +75,15 @@ type KinaseNeuron struct {
 	// synaptic trace driving credit assignment in learning. Time constant reflects
 	// binding time of Glu to NMDA and Ca buffering postsynaptically, and determines
 	// time window where pre * post spiking must overlap to drive learning.
-	CaSyn float32
+	CaSyn float32 `edit:"-"`
 
 	// regression variables
-	StartCaSyn float32
+	StartCaSyn float32 `edit:"-"`
 
-	TotalSpikes float32
+	TotalSpikes float32 `edit:"-"`
 
 	// binned count of spikes, for regression learning
-	SpikeBins [NBins]float32
+	SpikeBins []float32
 }
 
 func (kn *KinaseNeuron) Init() {
@@ -92,6 +91,10 @@ func (kn *KinaseNeuron) Init() {
 	kn.SpikeP = 1
 	kn.CaSyn = 0
 	kn.StartTrial()
+}
+
+func (kn *KinaseNeuron) Config(nSpikeBins int) {
+	kn.SpikeBins = make([]float32, nSpikeBins)
 }
 
 func (kn *KinaseNeuron) StartTrial() {
@@ -107,18 +110,17 @@ func (kn *KinaseNeuron) StartTrial() {
 // based on target spiking firing rate.
 func (ss *Sim) Cycle(kn *KinaseNeuron, expInt float32, cyc int) {
 	kn.Spike = 0
-	cycPerBin := ss.Config.Run.Cycles / NBins
-	bin := cyc / cycPerBin
 	if expInt > 0 {
 		kn.SpikeP *= rand.Float32()
 		if kn.SpikeP <= expInt {
 			kn.Spike = 1
 			kn.SpikeP = 1
 			kn.TotalSpikes += 1
-			kn.SpikeBins[bin] += 1
 		}
 	}
 	kn.CaSyn += ss.SynCa.SynDt * (ss.CaSpike.SpikeG*kn.Spike - kn.CaSyn)
+	bin := cyc / ss.Config.Run.SpikeBinCycles
+	kn.SpikeBins[bin] += ss.SynCa.LinearScale * (kn.CaSyn / float32(ss.Config.Run.SpikeBinCycles))
 }
 
 func (kn *KinaseNeuron) SetInput(inputs []float32, off int) {
@@ -132,16 +134,16 @@ func (kn *KinaseNeuron) SetInput(inputs []float32, off int) {
 // KinaseSynapse has Synapse state
 type KinaseSynapse struct {
 	// CaM is first stage running average (mean) Ca calcium level (like CaM = calmodulin), feeds into CaP
-	CaM float32
+	CaM float32 `edit:"-" width:"12"`
 
 	// CaP is shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule
-	CaP float32
+	CaP float32 `edit:"-" width:"12"`
 
 	// CaD is longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule
-	CaD float32
+	CaD float32 `edit:"-" width:"12"`
 
 	// DWt is the CaP - CaD
-	DWt float32
+	DWt float32 `edit:"-" width:"12"`
 }
 
 func (ks *KinaseSynapse) Init() {
@@ -184,11 +186,14 @@ type KinaseState struct {
 	// Standard synapse values
 	StdSyn KinaseSynapse
 
+	// Current spike bin value
+	SpikeBin float32
+
 	// Linear synapse values
 	LinearSyn KinaseSynapse
 
 	// binned integration of send, recv spikes
-	SpikeBins [NBins]float32
+	SpikeBins []float32
 }
 
 func (ks *KinaseState) Init() {
@@ -196,14 +201,33 @@ func (ks *KinaseState) Init() {
 	ks.Recv.Init()
 	ks.StdSyn.Init()
 	ks.LinearSyn.Init()
+	ks.SpikeBin = 0
+}
+
+func (ks *KinaseState) Config(nSpikeBins int) {
+	ks.Send.Config(nSpikeBins)
+	ks.Recv.Config(nSpikeBins)
+	ks.SpikeBins = make([]float32, nSpikeBins)
+	ks.StdSyn.Init()
+	ks.LinearSyn.Init()
 }
 
 func (kn *KinaseState) StartTrial() {
 	kn.Send.StartTrial()
 	kn.Recv.StartTrial()
+	kn.LinearSyn.CaM = 0
+	kn.LinearSyn.CaP = 0
+	kn.LinearSyn.CaD = 0
 }
 
 func (ss *Sim) ConfigKinase() {
+	ss.Config.Run.Update()
+	nbins := ss.Config.Run.NSpikeBins
+	ss.CaPWts = make([]float32, nbins)
+	ss.CaDWts = make([]float32, nbins)
+	nplus := ss.Config.Run.PlusCycles / ss.Config.Run.SpikeBinCycles
+	kinase.SpikeBinWts(nplus, ss.CaPWts, ss.CaDWts)
+	ss.Kinase.Config(nbins)
 }
 
 // Sweep runs a sweep through minus-plus ranges
@@ -228,6 +252,7 @@ func (ss *Sim) Sweep() {
 			condStr := fmt.Sprintf("%03d -> %03d", int(minusHz), int(plusHz))
 			ss.Kinase.Condition = cond
 			ss.Kinase.Cond = condStr
+			ss.StatsStart(Test, Condition)
 			ss.RunImpl(minusHz, plusHz, ss.Config.Run.Trials)
 			cond++
 		}
@@ -272,6 +297,9 @@ func (ss *Sim) TrialImpl(minusHz, plusHz float32) {
 	ks.ErrDWt = (plusHz - minusHz) / 100
 
 	minusCycles := cfg.Run.Cycles - cfg.Run.PlusCycles
+	nbins := ss.Config.Run.NSpikeBins
+	spikeBinCycles := ss.Config.Run.SpikeBinCycles
+	lsint := 1.0 / float32(spikeBinCycles)
 
 	ks.StartTrial()
 	for phs := 0; phs < 2; phs++ {
@@ -303,18 +331,28 @@ func (ss *Sim) TrialImpl(minusHz, plusHz float32) {
 
 			ca := ks.Send.CaSyn * ks.Recv.CaSyn
 			ss.SynCa.FromCa(ca, &ks.StdSyn.CaM, &ks.StdSyn.CaP, &ks.StdSyn.CaD)
+
+			bin := ks.Cycle / spikeBinCycles
+			ks.SpikeBins[bin] = (ks.Recv.SpikeBins[bin] * ks.Send.SpikeBins[bin])
+			ks.SpikeBin = ks.SpikeBins[bin]
+			ks.LinearSyn.CaM = ks.SpikeBin
+			ks.LinearSyn.CaP += lsint * ss.CaPWts[bin] * ks.SpikeBin
+			ks.LinearSyn.CaD += lsint * ss.CaDWts[bin] * ks.SpikeBin
+
 			ss.StatsStep(Test, Cycle)
 			ks.Cycle++
 		}
 	}
 	ks.StdSyn.DWt = ks.StdSyn.CaP - ks.StdSyn.CaD
 
-	for i := range ks.SpikeBins {
-		ks.SpikeBins[i] = 0.1 * (ks.Recv.SpikeBins[i] * ks.Send.SpikeBins[i])
+	var cp, cd float32
+	for i := range nbins {
+		cp += ks.SpikeBins[i] * ss.CaPWts[i]
+		cd += ks.SpikeBins[i] * ss.CaDWts[i]
 	}
-
-	ss.LinearSynCa.FinalCa(ks.SpikeBins[0], ks.SpikeBins[1], ks.SpikeBins[2], ks.SpikeBins[3], ks.SpikeBins[4], ks.SpikeBins[5], ks.SpikeBins[6], ks.SpikeBins[7], &ks.LinearSyn.CaP, &ks.LinearSyn.CaD)
-	ks.LinearSyn.DWt = ks.LinearSyn.CaP - ks.LinearSyn.CaD
+	ks.LinearSyn.DWt = cp - cd
+	ks.LinearSyn.CaP = cp
+	ks.LinearSyn.CaD = cd
 
 	ss.StatsStep(Test, Trial)
 }

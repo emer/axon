@@ -744,7 +744,7 @@ type TraceParams struct {
 
 	// CaGain is a multiplier on the total synaptic calcium values, computed from products
 	// of the neuron-level [SpikeBins] values. If [Context.SpikeBinCycles] is lower than
-	// default of 25, then this value may need to be set higher.
+	// default of 25, then this value needs to be set higher, e.g., 2 for cycles = 10.
 	CaGain float32 `default:"1"`
 
 	// SubMean is the amount of the mean dWt to subtract, producing a zero-sum effect.

@@ -209,7 +209,9 @@ func (ss *Sim) ConfigRubicon(trn *MotorSeqEnv) {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ss.Config.Run.NData)
-	net.Context().SetThetaCycles(int32(ss.Config.Run.Cycles)).SetPlusCycles(int32(ss.Config.Run.PlusCycles))
+	net.Context().SetThetaCycles(int32(ss.Config.Run.Cycles)).
+		SetPlusCycles(int32(ss.Config.Run.PlusCycles)).
+		SetSpikeBinCycles(int32(ss.Config.Run.SpikeBinCycles))
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
 	ev := ss.Envs.ByModeDi(Train, 0).(*MotorSeqEnv)

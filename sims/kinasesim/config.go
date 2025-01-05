@@ -42,6 +42,17 @@ type RunConfig struct {
 
 	// PlusCycles is the total number of plus-phase cycles per trial. For Cycles=300, use 100.
 	PlusCycles int `default:"50"`
+
+	// SpikeBinCycles is the number of cycles per SpikeBin: how fine-grained the synaptic Ca is.
+	SpikeBinCycles int `default:"25"`
+
+	// NSpikeBins is the total number of spike bins in unit variables.
+	// Set to Context.ThetaCycles / SpikeBinCycles in Build.
+	NSpikeBins int `edit:"-"`
+}
+
+func (rc *RunConfig) Update() {
+	rc.NSpikeBins = rc.Cycles / rc.SpikeBinCycles
 }
 
 // LogConfig has config parameters related to logging data.
@@ -69,8 +80,11 @@ type Config struct {
 	// RandomHz generates random firing rates, for testing
 	RandomHz bool
 
-	// firing rate, for testing
-	MinusHz, PlusHz float32 `default:"50"`
+	// minus phase firing rate
+	MinusHz float32 `default:"40"`
+
+	//	plus phase firing rate
+	PlusHz float32 `default:"50"`
 
 	// additive difference in sending firing frequency relative to recv (recv has basic minus, plus)
 	SendDiffHz float32

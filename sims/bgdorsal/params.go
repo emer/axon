@@ -87,7 +87,7 @@ var PathParams = axon.PathSheets{
 	"Base": {
 		{Sel: "Path", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				// pt.Learn.LRate.Base = 0.02  // 0.04 def
+				pt.Learn.LRate.Base = 0.04  // 0.04 def
 				pt.Learn.Trace.CaGain = 0.7 // 0.7 for 300 cycles
 			}},
 		{Sel: ".CTtoPred", Doc: "",

@@ -72,19 +72,22 @@ type Sim struct {
 	Config *Config `new-window:"+"`
 
 	// Kinase CaSpike params
-	CaSpike kinase.CaSpikeParams
+	CaSpike kinase.CaSpikeParams `display:"no-inline" new-window:"+"`
 
 	// Kinase SynCa params
-	SynCa SynCaParams
+	SynCa SynCaParams `display:"no-inline" new-window:"+"`
 
-	// Kinase LinearSynCa params
-	LinearSynCa kinase.SynCaLinear
+	// CaPWts are SpikeBin integration weights for CaP
+	CaPWts []float32 `new-window:"+"`
+
+	// CaDWts are SpikeBin integration weights for CaD
+	CaDWts []float32 `new-window:"+"`
 
 	// Kinase state
-	Kinase KinaseState
+	Kinase KinaseState `new-window:"+"`
 
 	// Training data for least squares solver
-	TrainData tensor.Float64
+	TrainData tensor.Float64 `new-window:"+"`
 
 	// Root is the root tensorfs directory, where all stats and other misc sim data goes.
 	Root *tensorfs.Node `display:"-"`
@@ -126,10 +129,6 @@ func (ss *Sim) New() {
 	ss.InitRandSeed(0)
 	ss.SynCa.Defaults()
 	ss.CaSpike.Defaults()
-	ss.LinearSynCa.Defaults()
-	ss.SynCa.Dt.PDTauForNCycles(ss.Config.Run.Cycles)
-	ss.CaSpike.Dt.PDTauForNCycles(ss.Config.Run.Cycles)
-	ss.LinearSynCa.WtsForNCycles(ss.Config.Run.Cycles)
 	ss.ConfigKinase()
 	ss.ConfigStats()
 	if ss.Config.Params.SaveAll {
@@ -289,7 +288,7 @@ func (ss *Sim) ConfigStats() {
 				continue
 			}
 			switch level {
-			case Cycle:
+			case Cycle, Trial:
 				if isNumber {
 					stat := errors.Log1(reflectx.ToFloat(sv.Value.Interface()))
 					tsr.AppendRowFloat(stat)

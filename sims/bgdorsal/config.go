@@ -96,6 +96,9 @@ type RunConfig struct {
 
 	// PlusCycles is the total number of plus-phase cycles per trial. For Cycles=300, use 100.
 	PlusCycles int `default:"50"`
+
+	// SpikeBinCycles is the number of cycles per SpikeBin: how fine-grained the synaptic Ca is.
+	SpikeBinCycles int `default:"25"`
 }
 
 // LogConfig has config parameters related to logging data.

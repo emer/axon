@@ -594,7 +594,7 @@ func StructValues(obj any, should func(parent reflect.Value, field reflect.Struc
 		func(parent reflect.Value, field reflect.StructField, value reflect.Value) {
 			fkind := field.Type.Kind()
 			fname := field.Name
-			if val.Interface() == parent.Interface() { // top-level
+			if val.Addr().Interface() == parent.Addr().Interface() { // top-level
 				if fkind == reflect.Struct {
 					parName = fname
 					return
