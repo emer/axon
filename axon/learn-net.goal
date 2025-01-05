@@ -85,7 +85,7 @@ func (nt *Network) LRateSched(sched float32) {
 
 // SetSubMean sets the SubMean parameters in all the layers in the network
 // trgAvg is for Learn.TrgAvgAct.SubMean
-// path is for the paths Learn.Trace.SubMean
+// path is for the paths Learn.DWt.SubMean
 // in both cases, it is generally best to have both parameters set to 0
 // at the start of learning
 func (nt *Network) SetSubMean(trgAvg, path float32) {

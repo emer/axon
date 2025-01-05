@@ -170,7 +170,7 @@ func (nt *Network) ConnectToBLAAcq(send, recv *Layer, pat paths.Pattern) *Path {
 	pt := nt.ConnectLayers(send, recv, pat, BLAPath)
 	pt.AddDefaultParams(func(pt *PathParams) {
 		pt.Learn.LRate.Base = 0.02
-		pt.Learn.Trace.Tau = 1      // increase for second order conditioning
+		pt.Learn.DWt.Tau = 1        // increase for second order conditioning
 		pt.BLA.NegDeltaLRate = 0.01 // slow for acq -- could be 0
 	})
 	pt.AddClass("BLAAcqPath")
@@ -186,7 +186,7 @@ func (nt *Network) ConnectToBLAExt(send, recv *Layer, pat paths.Pattern) *Path {
 	pt.AddDefaultParams(func(pt *PathParams) {
 		pt.PathScale.Abs = 4
 		pt.Learn.LRate.Base = 0.05 // 0.02 for pvlv CS 50% balance
-		pt.Learn.Trace.Tau = 1     // increase for second order conditioning
+		pt.Learn.DWt.Tau = 1       // increase for second order conditioning
 		pt.BLA.NegDeltaLRate = 1   // fast for extinction unlearning -- could be slower
 	})
 	pt.AddClass("BLAExtPath")
@@ -201,7 +201,7 @@ func (nt *Network) ConnectCSToBLApos(cs, blaAcq, blaNov *Layer) (toAcq, toNov, n
 	toAcq.AddDefaultParams(func(pt *PathParams) { // stronger
 		pt.PathScale.Abs = 1.5
 		pt.Learn.LRate.Base = 0.1   // faster learning
-		pt.Learn.Trace.Tau = 1      // increase for second order conditioning
+		pt.Learn.DWt.Tau = 1        // increase for second order conditioning
 		pt.BLA.NegDeltaLRate = 0.01 // slow for acq -- could be 0
 	})
 	toAcq.AddClass("CSToBLApos")
@@ -244,7 +244,7 @@ func (nt *Network) ConnectUSToBLA(us, blaAcq, blaExt *Layer) (toAcq, toExt *Path
 		pt.SWts.Init.Mean = 0.75
 		pt.SWts.Init.Var = 0.25
 		pt.Learn.LRate.Base = 0.001 // could be 0
-		pt.Learn.Trace.Tau = 1      // increase for second order conditioning
+		pt.Learn.DWt.Tau = 1        // increase for second order conditioning
 		pt.BLA.NegDeltaLRate = 0.01 // slow for acq -- could be 0
 	})
 	toAcq.AddClass("USToBLAAcq")

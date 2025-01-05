@@ -63,5 +63,5 @@ func (pj *PathParams) MatrixDefaults() {
 	pj.SWts.Init.Mean = 0.5
 	pj.SWts.Init.Var = 0.4
 	pj.Learn.LRate.Base = 0.01
-	pj.Learn.Trace.LearnThr = 0.1 // note: higher values prevent ability to learn to gate again after extinction
+	pj.Learn.DWt.LearnThr = 0.1 // note: higher values prevent ability to learn to gate again after extinction
 }

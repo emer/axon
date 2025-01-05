@@ -94,7 +94,7 @@ var PathParams = axon.PathSheets{
 	"Base": {
 		{Sel: ".VSMatrixPath", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.Trace.LearnThr = 0.1 // prevents learning below this thr: preserves low act
+				pt.Learn.DWt.LearnThr = 0.1 // prevents learning below this thr: preserves low act
 			}},
 		{Sel: ".SuperToThal", Doc: "",
 			Set: func(pt *axon.PathParams) {
@@ -137,7 +137,7 @@ var PathParams = axon.PathSheets{
 		{Sel: ".VSPatchPath", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 3
-				pt.Learn.Trace.LearnThr = 0
+				pt.Learn.DWt.LearnThr = 0
 				pt.Learn.LRate.Base = 0.02 // 0.02 for vspatch -- essential to drive long enough extinction
 			}},
 		// {Sel: ".ToPTp", Doc: "",

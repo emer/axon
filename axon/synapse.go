@@ -17,19 +17,35 @@ import (
 type SynapseVars int32 //enums:enum
 
 const (
-	// Wt is effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron, representing the actual number of effective AMPA receptors in the synapse.  Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1.
+	// Wt is the effective synaptic weight value, determining how much conductance
+	// one presynaptic spike drives into the receiving neuron. Biologically it represents
+	// the number of effective AMPA receptors in the synapse.
+	// Wt = [SWt] * WtSig([LWt]), where WtSig is the sigmoidal constrast enhancement
+	// function that produces values between 0-2 based on LWt, centered on 1.
 	Wt SynapseVars = iota
 
-	// LWt is rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Biologically, this represents the internal biochemical processes that drive the trafficking of AMPA receptors in the synaptic density.  Initially all LWt are .5, which gives 1 from WtSig function.
+	// LWt is the rapid, online learning, linear weight value. It learns on every
+	// trial according	to the learning rate (LRate) parameter. Biologically,
+	// this represents the internal biochemical processes that drive the trafficking
+	// of AMPA receptors in the synaptic density.
 	LWt
 
-	// SWt is slowly adapting structural weight value, which acts as a multiplicative scaling factor on synaptic efficacy: biologically represents the physical size and efficacy of the dendritic spine.  SWt values adapt in an outer loop along with synaptic scaling, with constraints to prevent runaway positive feedback loops and maintain variance and further capacity to learn.  Initial variance is all in SWt, with LWt set to .5, and scaling absorbs some of LWt into SWt.
+	// SWt is a slowly adapting structural weight value, which acts as a
+	// multiplicative scaling factor on net synaptic efficacy [Wt].
+	// Biologically it represents the physical size and efficacy of the dendritic spine.
+	// SWt values adapt in a slower outer loop along with synaptic scaling,
+	// with constraints to prevent runaway positive feedback loops and maintain
+	// variance and further capacity to learn. Initial weight variance is partially or
+	// fully captured in the SWt values, with LWt capturing the remainder.
 	SWt
 
-	// DWt is delta (change in) synaptic weight, from learning -- updates LWt which then updates Wt.
+	// DWt is delta (change in) synaptic weight, from learning. This updates [LWt]
+	// on every trial. It is reset to 0 after it is applied, but the network view
+	// captures this value just prior to application.
 	DWt
 
-	// DSWt is change in SWt slow synaptic weight -- accumulates DWt
+	// DSWt is the accumulated change in the [SWt] slow structural weight, computed
+	// as the accumulation of [DWt] values over the longer slow weight update window.
 	DSWt
 )
 

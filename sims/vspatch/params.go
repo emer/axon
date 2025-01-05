@@ -39,7 +39,7 @@ var PathParams = axon.PathSheets{
 		{Sel: ".VSPatchPath", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 2
-				pt.Learn.Trace.LearnThr = 0
+				pt.Learn.DWt.LearnThr = 0
 				pt.Learn.LRate.Base = 0.02 // 0.02 necc to fit closely; no bene for 0.01
 				pt.SWts.Init.Mean = 0.5
 				pt.SWts.Init.Var = 0.25

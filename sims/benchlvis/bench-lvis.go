@@ -48,7 +48,7 @@ var PathParams = axon.PathSheets{
 		{Sel: "Path", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.005 // 0.005 is lvis default
-				pt.Learn.Trace.SubMean = 0  // 1 is very slow on AMD64 -- good to keep testing
+				pt.Learn.DWt.SubMean = 0    // 1 is very slow on AMD64 -- good to keep testing
 				pt.SWts.Adapt.LRate = 0.1   // .1 >= .2,
 				pt.SWts.Init.SPct = 0.5     // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 			}},

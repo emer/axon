@@ -93,7 +93,7 @@ var pathParams = PathSheets{
 	"SubMean": {
 		{Sel: "Path", Doc: "submean used in some models but not by default",
 			Set: func(pt *PathParams) {
-				pt.Learn.Trace.SubMean = 1
+				pt.Learn.DWt.SubMean = 1
 			}},
 	},
 }

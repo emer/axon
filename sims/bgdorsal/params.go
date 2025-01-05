@@ -87,8 +87,8 @@ var PathParams = axon.PathSheets{
 	"Base": {
 		{Sel: "Path", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.LRate.Base = 0.04  // 0.04 def
-				pt.Learn.Trace.CaGain = 0.7 // 0.7 for 300 cycles
+				pt.Learn.LRate.Base = 0.04 // 0.04 def
+				pt.Learn.DWt.CaGain = 0.7  // 0.7 for 300 cycles
 			}},
 		{Sel: ".CTtoPred", Doc: "",
 			Set: func(pt *axon.PathParams) {
@@ -102,7 +102,7 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 1.8          // 1.8 > others
 				pt.Learn.LRate.Base = 0.02      // rlr sig: .02 > .015 .025
-				pt.Learn.Trace.LearnThr = 0.1   // 0.1 > 0 > 0.2
+				pt.Learn.DWt.LearnThr = 0.1     // 0.1 > 0 > 0.2
 				pt.Matrix.Credit = 0.6          // key param, 0.6 > 0.5, 0.4, 0.7, 1 with pf modulation
 				pt.Matrix.BasePF = 0.005        // 0.005 > 0.01, 0.002 etc
 				pt.Matrix.Delta = 1             // should always be 1 except for testing; adjust lrate to compensate

@@ -205,7 +205,7 @@ There are some weird cases where it seems that doing more overall processing wit
 
 # 1.7.24 Sender-based Synapses
 
-In general, Path.Learn.Trace.SubMean = 1 is *very slow* on AMD64 -- very sensitive to out-of-order processing.  It is now set to 0 for the bench case -- can twiddle and test.  Makes very little difference on the mac.
+In general, Path.Learn.DWt.SubMean = 1 is *very slow* on AMD64 -- very sensitive to out-of-order processing.  It is now set to 0 for the bench case -- can twiddle and test.  Makes very little difference on the mac.
 
 Note: it was critical to do parallel threading for GiFmSpikes at the layer level -- unclear why but this made a huge difference on Linux / AMD64, but not on the Mac (usual story).  
 

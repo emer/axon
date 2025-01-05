@@ -35,7 +35,7 @@ type SynCaParams struct { //types:add
 	CaScale float32 `default:"12"`
 
 	// LinearScale multiplies computed CaSyn for accumulating into SpikeBins
-	LinearScale float32 `default:"2.5"`
+	LinearScale float32 `default:"1.5"`
 
 	// time constants for integrating at M, P, and D cascading levels
 	Dt kinase.CaDtParams `display:"inline"`
@@ -44,7 +44,7 @@ type SynCaParams struct { //types:add
 func (kp *SynCaParams) Defaults() {
 	kp.SynTau = 30
 	kp.CaScale = 12
-	kp.LinearScale = 2.5
+	kp.LinearScale = 1.5
 	kp.Dt.Defaults()
 	kp.Update()
 }

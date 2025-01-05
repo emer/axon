@@ -85,7 +85,7 @@ var PathParams = axon.PathSheets{
 		{Sel: "Path", Doc: "yes extra learning factors",
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.2      // 0.4 for NeuronCa; 0.2 best, 0.1 nominal
-				pt.Learn.Trace.SubMean = 1     // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
+				pt.Learn.DWt.SubMean = 1       // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
 				pt.SWts.Adapt.LRate = 0.0001   // 0.005 == .1 == .01
 				pt.SWts.Init.SPct = 1          // 1 >= lower (trace-v11)
 				pt.Learn.KinaseCa.CaGain = 1.0 // 1 > higher

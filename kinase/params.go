@@ -72,42 +72,67 @@ func (kp *CaDtParams) FromCa(ca float32, caM, caP, caD *float32) {
 }
 
 // CaSpikeParams parameterizes the neuron-level spike-driven calcium
-// signals, starting with CaSyn that is integrated at the neuron level
-// and drives synapse-level, pre * post Ca integration, which provides the Tr
-// trace that multiplies error signals, and drives learning directly for Target layers.
-// CaSpk* values are integrated separately at the Neuron level and used for UpdateThr
-// and RLRate as a proxy for the activation (spiking) based learning signal.
+// signals, including CaM, CaP, CaD for basic activity stats and RLRate, and
+// CaSyn which is integrated at the neuron level and drives synapse-level,
+// pre * post Ca integration, providing the Tr credit assignment trace factor
+// for kinase error-driven cortical learning.
 type CaSpikeParams struct {
 
-	// SpikeG is a gain multiplier on spike impulses for computing CaSpk:
-	// increasing this directly affects the magnitude of the trace values,
-	// learning rate in Target layers, and other factors that depend on CaSpk
-	// values, including RLRate, UpdateThr.
-	// Larger networks require higher gain factors at the neuron level:
-	// 12, vs 8 for smaller.
-	SpikeG float32 `default:"8,12"`
+	// SpikeCaM is the drive factor for updating the neuron-level CaM (calmodulin)
+	// based on a spike impulse, which is then cascaded into updating the
+	// CaP and CaD values. These values are used for stats and RLRate computation,
+	// but do not drive learning directly. Larger values (e.g., 12) may be useful
+	// in some models.
+	SpikeCaM float32 `default:"8,12"`
 
-	pad, pad1, pad2 int32
+	// SpikeCaSyn is the drive factor for updating the neuron-level CaSyn
+	// synaptic calcium trace value based on a spike impulse. CaSyn is integrated
+	// into SpikeBins which are then used to compute synapse-level pre * post
+	// Ca values over the theta cycle, which then drive the Tr credit assignment
+	// trace factor for kinase error-driven cortical learning. Changes in this
+	// value will affect the net learning rate.
+	SpikeCaSyn float32 `default:"18"`
 
-	// time constants for integrating CaSpk across M, P and D cascading levels.
-	// Typically the same as in CaLrn and Path level for synaptic integration.
+	// CaSynTau is the time constant for integrating the spike-driven calcium
+	// trace CaSyn at sender and recv neurons. See SpikeCaSyn for more info.
+	// If this param is changed, then there will be a change in effective
+	// learning rate that can be compensated for by multiplying
+	// CaScale by sqrt(30 / sqrt(SynTau)
+	CaSynTau float32 `default:"30" min:"1"`
+
+	// CaSynDt rate = 1 / tau
+	CaSynDt float32 `display:"-" json:"-" xml:"-" edit:"-"`
+
+	// Dt are time constants for integrating Spike-driven Ca across CaM, CaP and CaD
+	// cascading levels. Typically the same as in LearnCa parameters.
 	Dt CaDtParams `display:"inline"`
 }
 
-func (np *CaSpikeParams) Defaults() {
-	np.SpikeG = 8
-	np.Dt.Defaults()
-	np.Update()
+func (sp *CaSpikeParams) Defaults() {
+	sp.SpikeCaM = 8
+	sp.SpikeCaSyn = 18
+	sp.CaSynTau = 30
+	sp.Dt.Defaults()
+	sp.Update()
 }
 
-func (np *CaSpikeParams) Update() {
-	np.Dt.Update()
+func (sp *CaSpikeParams) Update() {
+	sp.CaSynDt = 1 / sp.CaSynTau
+	sp.Dt.Update()
 }
 
-// CaFromSpike updates Ca variables from spike input which is either 0 or 1
-func (np *CaSpikeParams) CaFromSpike(spike float32, caM, caP, caD *float32) {
-	nsp := np.SpikeG * spike
-	np.Dt.FromCa(nsp, caM, caP, caD)
+// CaMFromSpike updates CaM, CaP, CaD variables from spike input,
+// which is either 0 or 1.
+func (sp *CaSpikeParams) CaMFromSpike(spike float32, caM, caP, caD *float32) {
+	ca := sp.SpikeCaM * spike
+	sp.Dt.FromCa(ca, caM, caP, caD)
+}
+
+// CaSynFromSpike returns new CaSyn value based on spike input,
+// which is either 0 or 1, and current CaSyn value.
+func (sp *CaSpikeParams) CaSynFromSpike(spike float32, caSyn float32) float32 {
+	ca := sp.SpikeCaSyn * spike
+	return caSyn + sp.CaSynDt*(ca-caSyn)
 }
 
 //gosl:end

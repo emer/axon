@@ -134,7 +134,7 @@ var PathParams = axon.PathSheets{
 	"Base": {
 		{Sel: ".PFCPath", Doc: "pfc path params -- more robust to long-term training",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.Trace.SubMean = 1 // 1 > 0 for long-term stability
+				pt.Learn.DWt.SubMean = 1   // 1 > 0 for long-term stability
 				pt.Learn.LRate.Base = 0.01 // 0.04 def; 0.02 more stable; 0.01 even more
 			}},
 		{Sel: ".PTtoPred", Doc: "stronger drive on pt pred",
@@ -171,7 +171,7 @@ var PathParams = axon.PathSheets{
 		{Sel: ".VSMatrixPath", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 1.5 // 3 orig
-				pt.Learn.Trace.LearnThr = 0.1
+				pt.Learn.DWt.LearnThr = 0.1
 				pt.Learn.LRate.Base = 0.02 // 0.05 def
 			}},
 		{Sel: ".ToSC", Doc: "",
@@ -219,7 +219,7 @@ var PathParams = axon.PathSheets{
 		{Sel: ".VSPatchPath", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 4 // 4 > 3 > 2 -- key for rapid learning
-				pt.Learn.Trace.LearnThr = 0
+				pt.Learn.DWt.LearnThr = 0
 				pt.Learn.LRate.Base = 0.02 // 0.02  > 0.01
 			}},
 		{Sel: ".CSToBLANovelInhib", Doc: "learning rate here is critical to bootstrap & then fade",

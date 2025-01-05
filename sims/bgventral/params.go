@@ -65,7 +65,7 @@ var PathParams = axon.PathSheets{
 		{Sel: ".VSMatrixPath", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.01          // 0.01, vs .02 default
-				pt.Learn.Trace.LearnThr = 0.1       // prevents learning below this thr: preserves low act
+				pt.Learn.DWt.LearnThr = 0.1         // prevents learning below this thr: preserves low act
 				pt.Matrix.VSRewLearn.SetBool(false) // significantly cleaner
 				pt.SWts.Adapt.On.SetBool(false)     // not much diff: false >= true
 			}},

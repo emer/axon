@@ -141,6 +141,18 @@ const (
 
 	//////// Calcium for learning
 
+	// CaSyn is the neuron-level integration of spike-driven calcium, used to approximate
+	// synaptic calcium influx as a product of these values that are integrated separately
+	// on the sender and receiver neurons, which is computationally much more efficient.
+	// This value is driven directly by spikes, with an exponential integration time
+	// constant of 30 msec (default), which captures the coincidence window for pre*post
+	// firing on NMDA receptor opening. It is integrated into the neuron [SpikeBins] values
+	// over the course of the Theta Cycle window, and then the pre*post product is integrated
+	// over these bins at the synaptic level, with weights for CaP vs CaD that reflect their
+	// faster vs. slower time constants, respectively. CaD is used for the credit assignment
+	// factor, while CaP - CaD is used directly for error-driven learning at Target layers.
+	CaSyn
+
 	// LearnCa is the receiving neuron calcium signal, which is integrated up to
 	// [LearnCaP] and [LearnCaD], the difference of which is the temporal error
 	// component of the standard axon cortical learning rule.
@@ -148,9 +160,10 @@ const (
 	// sources (vs. CaM which only reflects a simple spiking component).
 	// The NMDA signal reflects both sending and receiving activity, while the
 	// VGCC signal is purely receiver spiking, and a balance of both works best.
-	// The synaptic-level trace factor computed from the SpikeBin variables on both
-	// sender and receiver provides the credit assignment factor, reflecting coincident
-	// activity, which can be integrated over longer multi-trial timescales.
+	// The synaptic-level trace factor computed from [CaSyn] integrated in [SpikeBins]
+	// for sender and receiver neurons provides the credit assignment factor,
+	// reflecting coincident activity, which can also be integrated over longer
+	// multi-trial timescales.
 	LearnCa
 
 	// LearnCaM is the integrated [LearnCa] at the MTau timescale (typically 5),
@@ -518,8 +531,8 @@ var VarCategories = []emer.VarCategory{
 	{"Inhib", "inhibitory channels including GABA inhibition, after hyperpolarization (AHP) and other K channels"},
 	{"Stats", "statistics and aggregate values"},
 	{"Gmisc", "more detailed conductance (G) variables for integration and other computational values"},
-	{"Spikes", "Binned spike counts used for learning"},
 	{"Avg", "longer-term average variables and homeostatic regulation"},
+	{"Spikes", "Binned spike counts used for learning"},
 	{"Wts", "weights and other synaptic-level variables"},
 }
 
@@ -545,10 +558,12 @@ var NeuronVarProps = map[string]string{
 
 	//////// Calcium for learning
 
-	"CaM":      `cat:"Learn"`,
-	"CaP":      `cat:"Learn"`,
-	"CaD":      `cat:"Learn"`,
-	"CaDPrev":  `cat:"Learn"`,
+	"CaM":     `cat:"Learn"`,
+	"CaP":     `cat:"Learn"`,
+	"CaD":     `cat:"Learn"`,
+	"CaDPrev": `cat:"Learn"`,
+
+	"CaSyn":    `cat:"Learn"`,
 	"LearnCa":  `cat:"Learn"`,
 	"LearnCaM": `cat:"Learn"`,
 	"LearnCaP": `cat:"Learn"`,
@@ -645,7 +660,7 @@ var NeuronVarProps = map[string]string{
 
 	"NeurFlags": `display:"-"`,
 
-	"SpikeBins": `cat:"Spikes" min:"0" max:"10"`,
+	"SpikeBins": `cat:"Spikes"`,
 
 	//////// Long-term average activation, set point for synaptic scaling
 

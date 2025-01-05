@@ -48,7 +48,8 @@ func (pt *PathParams) DWtSyn(ctx *Context, rlay *LayerParams, syni, si, ri, di u
 }
 
 // SynCa gets the synaptic calcium P (potentiation) and D (depression)
-// values, using optimized computation.
+// values, using an optimized integration of neuron-level SpikeBins values,
+// and weight factors to capture the different CaP vs. CaD time constants.
 func (pt *PathParams) SynCa(ctx *Context, si, ri, di uint32, syCaP, syCaD *float32) {
 	nbins := NetworkIxs[0].NSpikeBins
 	cadSt := GvSpikeBinWts + GlobalScalarVars(nbins)
@@ -58,13 +59,15 @@ func (pt *PathParams) SynCa(ctx *Context, si, ri, di uint32, syCaP, syCaD *float
 		cp += sp * GlobalScalars.Value(int(GvSpikeBinWts+GlobalScalarVars(i)), int(0))
 		cd += sp * GlobalScalars.Value(int(cadSt+GlobalScalarVars(i)), int(0))
 	}
-	*syCaP = pt.Learn.Trace.CaGain * cp
-	*syCaD = pt.Learn.Trace.CaGain * cd
+	*syCaP = pt.Learn.DWt.CaGain * cp
+	*syCaD = pt.Learn.DWt.CaGain * cd
 }
 
-// DWtSynCortex computes the weight change (learning) at given synapse for cortex.
-// Uses synaptically integrated spiking, computed at the Theta cycle interval.
-// This is the trace version for hidden units, and uses syn CaP - CaD for targets.
+// DWtSynCortex computes the weight change (learning) at given synapse, using the
+// kinase error-driven learning rule for cortical neurons. The error delta is
+// based on the receiving neuron's [LearnCaP] - [LearnCaD], multiplied by a separate
+// credit assignment trace factor computed from synaptic co-product CaD values
+// that can be integrated across multiple theta cycle learning trials.
 func (pt *PathParams) DWtSynCortex(ctx *Context, syni, si, ri, lpi, pi, di uint32, isTarget bool) {
 	var syCaP, syCaD float32
 	pt.SynCa(ctx, si, ri, di, &syCaP, &syCaD)
@@ -76,7 +79,7 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, syni, si, ri, lpi, pi, di uint3
 	// save delta trace for GUI
 	SynapseTraces.Set(dtr, int(syni), int(di), int(DTr))
 	// TrFromCa(prev-multiTrial Integrated Trace, deltaTrace), as a mixing func
-	tr := pt.Learn.Trace.TrFromCa(SynapseTraces.Value(int(syni), int(di), int(Tr)), dtr)
+	tr := pt.Learn.DWt.TrFromCa(SynapseTraces.Value(int(syni), int(di), int(Tr)), dtr)
 	// save new trace, updated w/ credit assignment (dependent on Tau in the TrFromCa function
 	SynapseTraces.Set(tr, int(syni), int(di), int(Tr))
 	// failed con, no learn
@@ -86,7 +89,7 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, syni, si, ri, lpi, pi, di uint3
 
 	// error-driven learning
 	var err float32
-	if isTarget {
+	if isTarget || pt.Learn.DWt.Trace.IsFalse() {
 		err = syCaP - syCaD // for target layers, syn Ca drives error signal directly
 	} else {
 		err = tr * (Neurons.Value(int(ri), int(di), int(LearnCaP)) - Neurons.Value(int(ri), int(di), int(LearnCaD))) // hiddens: recv NMDA Ca drives error signal w/ trace credit
@@ -130,7 +133,7 @@ func (pt *PathParams) DWtSynHip(ctx *Context, syni, si, ri, lpi, pi, di uint32, 
 	// save delta trace for GUI
 	SynapseTraces.Set(dtr, int(syni), int(di), int(DTr))
 	// TrFromCa(prev-multiTrial Integrated Trace, deltaTrace), as a mixing func
-	tr := pt.Learn.Trace.TrFromCa(SynapseTraces.Value(int(syni), int(di), int(Tr)), dtr)
+	tr := pt.Learn.DWt.TrFromCa(SynapseTraces.Value(int(syni), int(di), int(Tr)), dtr)
 	// save new trace, updated w/ credit assignment (dependent on Tau in the TrFromCa function
 	SynapseTraces.Set(tr, int(syni), int(di), int(Tr))
 	// failed con, no learn
@@ -177,7 +180,7 @@ func (pt *PathParams) DWtSynBLA(ctx *Context, syni, si, ri, lpi, pi, di uint32) 
 	ach := GlobalScalars.Value(int(GvACh), int(di))
 	if GlobalScalars.Value(int(GvHasRew), int(di)) > 0 { // learn and reset
 		ract := Neurons.Value(int(ri), int(di), int(CaD))
-		if ract < pt.Learn.Trace.LearnThr {
+		if ract < pt.Learn.DWt.LearnThr {
 			ract = 0
 		}
 		tr := SynapseTraces.Value(int(syni), int(di), int(Tr))
@@ -193,7 +196,7 @@ func (pt *PathParams) DWtSynBLA(ctx *Context, syni, si, ri, lpi, pi, di uint32) 
 		// note: the former NonUSLRate parameter is not used -- Trace update Tau replaces it..  elegant
 		dtr := ach * Neurons.Value(int(si), int(di), int(Burst))
 		SynapseTraces.Set(dtr, int(syni), int(di), int(DTr))
-		tr := pt.Learn.Trace.TrFromCa(SynapseTraces.Value(int(syni), int(di), int(Tr)), dtr)
+		tr := pt.Learn.DWt.TrFromCa(SynapseTraces.Value(int(syni), int(di), int(Tr)), dtr)
 		SynapseTraces.Set(tr, int(syni), int(di), int(Tr))
 	} else {
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DTr))
@@ -283,7 +286,7 @@ func (pt *PathParams) DWtSynVSMatrix(ctx *Context, syni, si, ri, lpi, pi, di uin
 	rminus := Neurons.Value(int(ri), int(di), int(CaD))
 	sact := Neurons.Value(int(si), int(di), int(CaD))
 	dtr := ach * (pt.Matrix.Delta * sact * (rplus - rminus))
-	if rminus > pt.Learn.Trace.LearnThr { // key: prevents learning if < threshold
+	if rminus > pt.Learn.DWt.LearnThr { // key: prevents learning if < threshold
 		dtr += ach * (pt.Matrix.Credit * sact * rminus)
 	}
 	if hasRew {
@@ -320,7 +323,7 @@ func (pt *PathParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, lpi, pi, di uin
 		rminus := Neurons.Value(int(ri), int(di), int(CaD))
 		sact := Neurons.Value(int(si), int(di), int(CaD))
 		dtr := rlr * (pt.Matrix.Delta * sact * (rplus - rminus))
-		if rminus > pt.Learn.Trace.LearnThr { // key: prevents learning if < threshold
+		if rminus > pt.Learn.DWt.LearnThr { // key: prevents learning if < threshold
 			dtr += rlr * (pt.Matrix.Credit * pfmod * sact * rminus)
 		}
 		SynapseTraces.Set(dtr, int(syni), int(di), int(DTr))
@@ -332,7 +335,7 @@ func (pt *PathParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, lpi, pi, di uin
 // for the VSPatchPath type.
 func (pt *PathParams) DWtSynVSPatch(ctx *Context, syni, si, ri, lpi, pi, di uint32) {
 	ract := Neurons.Value(int(ri), int(di), int(CaDPrev)) // t-1
-	if ract < pt.Learn.Trace.LearnThr {
+	if ract < pt.Learn.DWt.LearnThr {
 		ract = 0
 	}
 	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
@@ -360,7 +363,7 @@ func (pt *PathParams) DWtSubMean(ctx *Context, pti, ri, lni uint32) {
 	if pt.Learn.Learn.IsFalse() {
 		return
 	}
-	sm := pt.Learn.Trace.SubMean
+	sm := pt.Learn.DWt.SubMean
 	if sm == 0 { // note default is now 0, so don't exclude Target layers, which should be 0
 		return
 	}

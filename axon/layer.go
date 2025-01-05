@@ -400,11 +400,10 @@ func (ly *Layer) Build() error {
 // PostBuild performs special post-Build() configuration steps for specific algorithms,
 // using configuration data set in BuildConfig during the ConfigNet process.
 func (ly *Layer) PostBuild() {
-	ly.Params.LayInhib.Index1 = ly.BuildConfigFindLayer("LayInhib1Name", false)           // optional
-	ly.Params.LayInhib.Index2 = ly.BuildConfigFindLayer("LayInhib2Name", false)           // optional
-	ly.Params.LayInhib.Index3 = ly.BuildConfigFindLayer("LayInhib3Name", false)           // optional
-	ly.Params.LayInhib.Index4 = ly.BuildConfigFindLayer("LayInhib4Name", false)           // optional
-	ly.Params.Learn.GateSync.GateLayIndex = ly.BuildConfigFindLayer("GateLayName", false) // optional
+	ly.Params.LayInhib.Index1 = ly.BuildConfigFindLayer("LayInhib1Name", false) // optional
+	ly.Params.LayInhib.Index2 = ly.BuildConfigFindLayer("LayInhib2Name", false) // optional
+	ly.Params.LayInhib.Index3 = ly.BuildConfigFindLayer("LayInhib3Name", false) // optional
+	ly.Params.LayInhib.Index4 = ly.BuildConfigFindLayer("LayInhib4Name", false) // optional
 
 	switch ly.Type {
 	case PulvinarLayer:

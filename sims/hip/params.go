@@ -173,7 +173,7 @@ var PathParams = axon.PathSheets{
 				// pt.SWts.Adapt.SigGain = 1
 				// pt.SWts.Init.SPct = 0
 
-				// pt.Learn.Trace.SubMean = 1 // predition: zero-sum at LWt level makes more fixation
+				// pt.Learn.DWt.SubMean = 1 // predition: zero-sum at LWt level makes more fixation
 
 				// pt.PathScale.Abs = 0.1
 				// pt.Hip.SAvgCor = 0.4

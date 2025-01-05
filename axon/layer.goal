@@ -402,7 +402,6 @@ func (ly *Layer) PostBuild() {
 	ly.Params.LayInhib.Index2 = ly.BuildConfigFindLayer("LayInhib2Name", false) // optional
 	ly.Params.LayInhib.Index3 = ly.BuildConfigFindLayer("LayInhib3Name", false) // optional
 	ly.Params.LayInhib.Index4 = ly.BuildConfigFindLayer("LayInhib4Name", false) // optional
-	ly.Params.Learn.GateSync.GateLayIndex = ly.BuildConfigFindLayer("GateLayName", false) // optional
 
 	switch ly.Type {
 	case PulvinarLayer:

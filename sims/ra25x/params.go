@@ -99,12 +99,12 @@ var PathParams = axon.PathSheets{
 	"Base": {
 		{Sel: "Path", Doc: "basic path params",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.LRate.Base = 0.1  // .1 def
-				pt.SWts.Adapt.LRate = 0.1  // .1 >= .2,
-				pt.SWts.Adapt.SubMean = 1  // key for stability
-				pt.SWts.Init.SPct = 0.5    // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-				pt.Learn.Trace.Tau = 1     // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
-				pt.Learn.Trace.SubMean = 1 // 1 > 0 for long-term stability
+				pt.Learn.LRate.Base = 0.1 // .1 def
+				pt.SWts.Adapt.LRate = 0.1 // .1 >= .2,
+				pt.SWts.Adapt.SubMean = 1 // key for stability
+				pt.SWts.Init.SPct = 0.5   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+				pt.Learn.DWt.Tau = 1      // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
+				pt.Learn.DWt.SubMean = 1  // 1 > 0 for long-term stability
 			}},
 		{Sel: "#Hidden2ToOutput", Doc: "",
 			Set: func(pt *axon.PathParams) {
