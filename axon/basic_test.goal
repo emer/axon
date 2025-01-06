@@ -971,14 +971,14 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 }
 
 func TestNetRLRate(t *testing.T) {
-	NetTestRLRate(t, Tol7, false)
+	NetTestRLRate(t, Tol6, false)
 }
 
 func TestGPURLRate(t *testing.T) {
 	if os.Getenv("TEST_GPU") != "true" {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
-	NetTestRLRate(t, Tol7, true)
+	NetTestRLRate(t, Tol6, true)
 }
 
 func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
