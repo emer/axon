@@ -12,55 +12,6 @@ import (
 	"github.com/emer/axon/v2/kinase"
 )
 
-// SynCaParams has rate constants for integrating spike-driven Ca calcium
-// at different time scales, including final CaP = CaMKII and CaD = DAPK1
-// timescales for LTP potentiation vs. LTD depression factors.
-type SynCaParams struct { //types:add
-
-	// time constant for integrating spike-driven calcium trace at sender and recv
-	// neurons, CaSyn, which then drives synapse-level integration of the
-	// joint pre * post synapse-level activity, in cycles (msec).
-	// Note: if this param is changed, then there will be a change in effective
-	// learning rate that can be compensated for by multiplying
-	// PathParams.Learn.KinaseCa.CaScale by sqrt(30 / sqrt(SynTau)
-	SynTau float32 `default:"30" min:"1"`
-
-	// rate = 1 / tau
-	SynDt float32 `display:"-" json:"-" xml:"-" edit:"-"`
-
-	// CaScale is a scaling multiplier on synaptic Ca values,
-	// which due to the multiplication of send * recv are smaller in magnitude.
-	// The default 12 value keeps them in roughly the unit scale,
-	// and affects effective learning rate.
-	CaScale float32 `default:"12"`
-
-	// LinearScale multiplies computed CaSyn for accumulating into SpikeBins
-	LinearScale float32 `default:"1.5"`
-
-	// time constants for integrating at M, P, and D cascading levels
-	Dt kinase.CaDtParams `display:"inline"`
-}
-
-func (kp *SynCaParams) Defaults() {
-	kp.SynTau = 30
-	kp.CaScale = 12
-	kp.LinearScale = 1.5
-	kp.Dt.Defaults()
-	kp.Update()
-}
-
-func (kp *SynCaParams) Update() {
-	kp.SynDt = 1 / kp.SynTau
-	kp.Dt.Update()
-}
-
-// FromCa updates CaM, CaP, CaD from given current synaptic calcium value,
-// which is a faster time-integral of calcium typically.
-// ca is multiplied by CaScale.
-func (kp *SynCaParams) FromCa(ca float32, caM, caP, caD *float32) {
-	kp.Dt.FromCa(kp.CaScale*ca, caM, caP, caD)
-}
-
 // KinaseNeuron has Neuron state
 type KinaseNeuron struct {
 	// Neuron spiking (0,1)
@@ -70,7 +21,7 @@ type KinaseNeuron struct {
 	SpikeP float32 `edit:"-"`
 
 	// CaSyn is spike-driven calcium trace for synapse-level Ca-driven learning:
-	// exponential integration of SpikeG * Spike at SynTau time constant (typically 30).
+	// exponential integration of SpikeCaSyn * Spike at CaSynTau time constant (typically 30).
 	// Synapses integrate send.CaSyn * recv.CaSyn across M, P, D time integrals for the
 	// synaptic trace driving credit assignment in learning. Time constant reflects
 	// binding time of Glu to NMDA and Ca buffering postsynaptically, and determines
@@ -118,9 +69,9 @@ func (ss *Sim) Cycle(kn *KinaseNeuron, expInt float32, cyc int) {
 			kn.TotalSpikes += 1
 		}
 	}
-	kn.CaSyn += ss.SynCa.SynDt * (ss.CaSpike.SpikeG*kn.Spike - kn.CaSyn)
+	kn.CaSyn += ss.CaSpike.CaSynDt * (ss.CaSpike.SpikeCaSyn*kn.Spike - kn.CaSyn)
 	bin := cyc / ss.Config.Run.SpikeBinCycles
-	kn.SpikeBins[bin] += ss.SynCa.LinearScale * (kn.CaSyn / float32(ss.Config.Run.SpikeBinCycles))
+	kn.SpikeBins[bin] += kn.CaSyn / float32(ss.Config.Run.SpikeBinCycles)
 }
 
 func (kn *KinaseNeuron) SetInput(inputs []float32, off int) {
@@ -329,8 +280,8 @@ func (ss *Sim) TrialImpl(minusHz, plusHz float32) {
 			ss.Cycle(&ks.Send, Sint, ks.Cycle)
 			ss.Cycle(&ks.Recv, Rint, ks.Cycle)
 
-			ca := ks.Send.CaSyn * ks.Recv.CaSyn
-			ss.SynCa.FromCa(ca, &ks.StdSyn.CaM, &ks.StdSyn.CaP, &ks.StdSyn.CaD)
+			ca := 8 * ks.Send.CaSyn * ks.Recv.CaSyn // 12 is standard CaGain Factor
+			ss.CaSpike.Dt.FromCa(ca, &ks.StdSyn.CaM, &ks.StdSyn.CaP, &ks.StdSyn.CaD)
 
 			bin := ks.Cycle / spikeBinCycles
 			ks.SpikeBins[bin] = (ks.Recv.SpikeBins[bin] * ks.Send.SpikeBins[bin])
@@ -356,3 +307,48 @@ func (ss *Sim) TrialImpl(minusHz, plusHz float32) {
 
 	ss.StatsStep(Test, Trial)
 }
+
+// Regress runs the linear regression on the data
+// func (ss *Sim) Regress() {
+// 	r := glm.NewGLM()
+// 	mode := Test
+// 	level := Condition
+// 	modeDir := ss.Stats.Dir(mode.String())
+// 	levelDir := modeDir.Dir(level.String())
+//
+// 	dt := tensorfs.DirTable(axon.StatsNode(ss.Stats, Test, Condition))
+// 	err := r.SetTable(&ls.Data, "State", "StdCa", "PredCa", "ErrCa")
+// 	if err != nil {
+// 		slog.Error(err.Error())
+// 		return
+// 	}
+// 	r.DepNames = []string{"CaP", "CaD"}
+// 	r.L1Cost = 0.1
+// 	r.L2Cost = 0.1
+// 	r.StopTolerance = 0.00001
+// 	r.ZeroOffset = true
+//
+// 	// NBins = 4
+// 	// r.Coeff.Values = []float64{
+// 	// 	0.05, 0.25, 0.5, 0.6, 0, // linear progression
+// 	// 	0.25, 0.5, 0.5, 0.25, 0} // hump in the middle
+//
+// 	// NBins = 8, 200+50 cycles
+// 	// r.Coeff.Values = []float64{
+// 	// 	0.3, 0.4, 0.55, 0.65, 0.75, 0.85, 1.0, 1.0, 0, // linear progression
+// 	// 	0.5, 0.65, 0.75, 0.9, 0.9, 0.9, 0.65, 0.55, .0} // hump in the middle
+//
+// 	// NBins = 8, 280+70 cycles
+// 	r.Coeff.Values = []float64{
+// 		0.0, 0.1, 0.23, 0.35, 0.45, 0.55, 0.75, 0.75, 0, // linear progression
+// 		0.2, 0.3, 0.4, 0.5, 0.5, 0.5, 0.4, 0.3, .0} // hump in the middle
+//
+// 	fmt.Println(r.Coeffs())
+//
+// 	r.Run()
+//
+// 	fmt.Println(r.Variance())
+// 	fmt.Println(r.Coeffs())
+//
+// ls.Data.SaveCSV("linear_data.tsv", tensor.Tab, table.Headers)
+// }

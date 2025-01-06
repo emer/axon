@@ -19,22 +19,19 @@ import (
 // Linear performs a linear regression to approximate the synaptic Ca
 // integration between send and recv neurons.
 type Linear struct {
-	// Kinase Neuron params
-	Neuron kinase.NeurCaParams
-
-	// Kinase Synapse params
-	Synapse kinase.SynCaParams
+	// Kinase CaSpike params
+	CaSpike kinase.CaSpikeParams `display:"no-inline" new-window:"+"`
 
 	// total number of cycles (1 MSec) to run per learning trial
-	NCycles int `min:"10" default:"200"`
+	Cycles int `min:"10" default:"200"`
 
 	// number of plus cycles
 	PlusCycles int `default:"50"`
 
-	// NumBins is the number of bins to accumulate spikes over NCycles
+	// NumBins is the number of bins to accumulate spikes over Cycles
 	NumBins int `default:"8"`
 
-	// CyclesPerBin = NCycles / NumBins
+	// CyclesPerBin = Cycles / NumBins
 	CyclesPerBin int `edit:"-"`
 
 	// MaxHz is the maximum firing rate to sample in minus, plus phases
@@ -72,23 +69,21 @@ type Linear struct {
 }
 
 func (ls *Linear) Defaults() {
-	ls.Neuron.Defaults()
-	ls.Synapse.Defaults()
-	ls.Synapse.CaScale = 6 // 12 is too fast relative to prior std learning rates
-	ls.NCycles = 200
+	ls.CaSpike.Defaults()
+	ls.Cycles = 200
 	ls.PlusCycles = 50
-	ls.CyclesPerBin = 50
+	ls.CyclesPerBin = 25
 	ls.MaxHz = 100
-	ls.StepHz = 10 // note: 5 gives same results
-	ls.NTrials = 2 // 20 "
-	ls.NumBins = 8
+	ls.StepHz = 10  // note: 5 gives same results
+	ls.NTrials = 10 // 20 "
+	ls.NumBins = ls.Cycles / ls.CyclesPerBin
 	ls.Update()
 }
 
 func (ls *Linear) Update() {
-	ls.CyclesPerBin = ls.NCycles / ls.NumBins
-	ls.Neuron.Dt.PDTauForNCycles(ls.NCycles)
-	ls.Synapse.Dt.PDTauForNCycles(ls.NCycles)
+	ls.NumBins = ls.Cycles / ls.CyclesPerBin
+	// ls.CaSpike.Dt.PDTauForNCycles(ls.Cycles)
+	// ls.Synapse.Dt.PDTauForNCycles(ls.Cycles)
 	nhz := ls.MaxHz / ls.StepHz
 	ls.TotalTrials = nhz * nhz * nhz * nhz * ls.NTrials
 	ls.SpikeBins = make([]float32, ls.NumBins)
@@ -112,8 +107,8 @@ func (ls *Linear) InitTable() {
 	nneur := ls.NumBins
 	ls.Data.AddIntColumn("Trial")
 	ls.Data.AddFloat64Column("Hz", 4)
-	ls.Data.AddFloat64Column("State", nneur)
-	ls.Data.AddFloat64Column("StdCa", 2)
+	ls.Data.AddFloat64Column("Bins", nneur)
+	ls.Data.AddFloat64Column("SynCa", 2)
 	ls.Data.AddFloat64Column("PredCa", 2)
 	ls.Data.AddFloat64Column("ErrCa", 2)
 	ls.Data.AddFloat64Column("SSE") // total SSE
@@ -142,7 +137,7 @@ type Neuron struct {
 	CaSyn float32
 
 	// neuron-level spike-driven Ca integration
-	CaSpkM, CaP, CaD float32
+	CaM, CaP, CaD float32
 
 	TotalSpikes float32
 
@@ -154,7 +149,7 @@ func (kn *Neuron) Init() {
 	kn.Spike = 0
 	kn.SpikeP = 1
 	kn.CaSyn = 0
-	kn.CaSpkM = 0
+	kn.CaM = 0
 	kn.CaP = 0
 	kn.CaD = 0
 	kn.StartTrial()
@@ -178,10 +173,11 @@ func (ls *Linear) Cycle(nr *Neuron, expInt float32, cyc int) {
 			nr.Spike = 1
 			nr.SpikeP = 1
 			nr.TotalSpikes += 1
-			nr.SpikeBins[bin] += 1
 		}
 	}
-	ls.Neuron.CaFromSpike(nr.Spike, &nr.CaSyn, &nr.CaSpkM, &nr.CaP, &nr.CaD)
+	nr.CaSyn += ls.CaSpike.CaSynDt * (ls.CaSpike.SpikeCaSyn*nr.Spike - nr.CaSyn)
+	nr.SpikeBins[bin] += (nr.CaSyn / float32(ls.CyclesPerBin))
+	ls.CaSpike.CaMFromSpike(nr.Spike, &nr.CaM, &nr.CaP, &nr.CaD)
 }
 
 // Synapse has Synapse state
@@ -239,16 +235,16 @@ func (ls *Linear) Run() {
 }
 
 func (ls *Linear) SetSynState(sy *Synapse, row int) {
-	ls.Data.Column("StdCa").SetFloatRow(float64(sy.CaP), row, 0)
-	ls.Data.Column("StdCa").SetFloatRow(float64(sy.CaD), row, 1)
+	ls.Data.Column("SynCa").SetFloatRow(float64(sy.CaP), row, 0)
+	ls.Data.Column("SynCa").SetFloatRow(float64(sy.CaD), row, 1)
 }
 
 func (ls *Linear) SetBins(sn, rn *Neuron, off, row int) {
 	for i, s := range sn.SpikeBins {
 		r := rn.SpikeBins[i]
-		bs := (r * s) / 10.0
+		bs := (r * s)
 		ls.SpikeBins[i] = bs
-		ls.Data.Column("State").SetFloatRow(float64(bs), row, off+i)
+		ls.Data.Column("Bins").SetFloatRow(float64(bs), row, off+i)
 	}
 }
 
@@ -258,11 +254,11 @@ func (ls *Linear) Trial(sendMinusHz, sendPlusHz, recvMinusHz, recvPlusHz float32
 
 	ls.Data.Column("Trial").SetFloatRow(float64(ti), row, 0)
 	ls.Data.Column("Hz").SetFloatRow(float64(sendMinusHz), row, 0)
-	ls.Data.Column("Hz").SetFloat(float64(sendPlusHz), row, 1)
-	ls.Data.Column("Hz").SetFloat(float64(recvMinusHz), row, 2)
-	ls.Data.Column("Hz").SetFloat(float64(recvPlusHz), row, 3)
+	ls.Data.Column("Hz").SetFloatRow(float64(sendPlusHz), row, 1)
+	ls.Data.Column("Hz").SetFloatRow(float64(recvMinusHz), row, 2)
+	ls.Data.Column("Hz").SetFloatRow(float64(recvPlusHz), row, 3)
 
-	minusCycles := ls.NCycles - ls.PlusCycles
+	minusCycles := ls.Cycles - ls.PlusCycles
 
 	ls.StartTrial()
 	cyc := 0
@@ -285,22 +281,20 @@ func (ls *Linear) Trial(sendMinusHz, sendPlusHz, recvMinusHz, recvPlusHz float32
 			ls.Cycle(&ls.Send, Sint, cyc)
 			ls.Cycle(&ls.Recv, Rint, cyc)
 
-			ls.StdSyn.CaSyn = ls.Send.CaSyn * ls.Recv.CaSyn
-			ls.Synapse.FromCa(ls.StdSyn.CaSyn, &ls.StdSyn.CaM, &ls.StdSyn.CaP, &ls.StdSyn.CaD)
+			ls.StdSyn.CaSyn = 8 * ls.Send.CaSyn * ls.Recv.CaSyn // 12 is standard CaGain factor
+			ls.CaSpike.Dt.FromCa(ls.StdSyn.CaSyn, &ls.StdSyn.CaM, &ls.StdSyn.CaP, &ls.StdSyn.CaD)
 			cyc++
 		}
 	}
 	ls.StdSyn.DWt = ls.StdSyn.CaP - ls.StdSyn.CaD
-
 	ls.SetSynState(&ls.StdSyn, row)
-
 	ls.SetBins(&ls.Send, &ls.Recv, 0, row)
 }
 
 // Regress runs the linear regression on the data
 func (ls *Linear) Regress() {
 	r := glm.NewGLM()
-	err := r.SetTable(&ls.Data, "State", "StdCa", "PredCa", "ErrCa")
+	err := r.SetTable(&ls.Data, "Bins", "SynCa", "PredCa", "ErrCa")
 	if err != nil {
 		slog.Error(err.Error())
 		return
@@ -316,15 +310,20 @@ func (ls *Linear) Regress() {
 	// 	0.05, 0.25, 0.5, 0.6, 0, // linear progression
 	// 	0.25, 0.5, 0.5, 0.25, 0} // hump in the middle
 
-	// NBins = 8, 200+50 cycles
+	// NBins = 8, 200+50 cycles for CaSyn
+	r.Coeff.Values = []float64{
+		0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.6, 2.9, 0, // big at the end; insensitive to start
+		0.5, 0.73, 0.966, 1.2, 1.2, 1.2, 1.05, 0.9, .0} // up and down
+
+	// NBins = 8, 200+50 cycles for discrete spikes
 	// r.Coeff.Values = []float64{
 	// 	0.3, 0.4, 0.55, 0.65, 0.75, 0.85, 1.0, 1.0, 0, // linear progression
 	// 	0.5, 0.65, 0.75, 0.9, 0.9, 0.9, 0.65, 0.55, .0} // hump in the middle
 
-	// NBins = 8, 280+70 cycles
-	r.Coeff.Values = []float64{
-		0.0, 0.1, 0.23, 0.35, 0.45, 0.55, 0.75, 0.75, 0, // linear progression
-		0.2, 0.3, 0.4, 0.5, 0.5, 0.5, 0.4, 0.3, .0} // hump in the middle
+	// NBins = 8, 280+70 cycles for discrete spikes
+	// r.Coeff.Values = []float64{
+	// 	0.0, 0.1, 0.23, 0.35, 0.45, 0.55, 0.75, 0.75, 0, // linear progression
+	// 	0.2, 0.3, 0.4, 0.5, 0.5, 0.5, 0.4, 0.3, .0} // hump in the middle
 
 	fmt.Println(r.Coeffs())
 
@@ -342,8 +341,8 @@ func (ls *Linear) Regress() {
 			}
 
 			for row := 0; row < ls.Data.Rows; row++ {
-				st := ls.Data.Tensor("State", row).(*tensor.Float64)
-				cad := ls.Data.TensorFloat1D("StdCa", row, vi)
+				st := ls.Data.Tensor("Bins", row).(*tensor.Float64)
+				cad := ls.Data.TensorFloat1D("SynCa", row, vi)
 				r.Train(regression.DataPoint(cad, st.Values))
 			}
 			r.Run()

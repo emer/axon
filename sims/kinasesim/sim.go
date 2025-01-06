@@ -74,9 +74,6 @@ type Sim struct {
 	// Kinase CaSpike params
 	CaSpike kinase.CaSpikeParams `display:"no-inline" new-window:"+"`
 
-	// Kinase SynCa params
-	SynCa SynCaParams `display:"no-inline" new-window:"+"`
-
 	// CaPWts are SpikeBin integration weights for CaP
 	CaPWts []float32 `new-window:"+"`
 
@@ -127,7 +124,6 @@ func (ss *Sim) New() {
 	tensorfs.CurRoot = ss.Root
 	ss.RandSeeds.Init(100) // max 100 runs
 	ss.InitRandSeed(0)
-	ss.SynCa.Defaults()
 	ss.CaSpike.Defaults()
 	ss.ConfigKinase()
 	ss.ConfigStats()
@@ -307,6 +303,31 @@ func (ss *Sim) ConfigStats() {
 			}
 		}
 	})
+	// collect regression data
+	// ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+	// 	if level != Trial {
+	// 		return
+	// 	}
+	// 	regressDir := ss.Stats.Dir("Regress")
+	// 	nbins := ss.Config.Run.NSpikeBins
+	// 	vars := []string{"Trial", "Hz", "Bins", "SynCa", "PredCa", "ErrCa", "SSE"}
+	// 	for vi, name := range vars {
+	// 		ndim := 2
+	// 		switch name {
+	// 		case "Hz":
+	// 			ndim = 4
+	// 		case "Bins":
+	// 			ndim = nbins
+	// 		case "SSE":
+	// 			ndim = 1
+	// 		}
+	// 		tsr := regressDir.Float64(name, 0, ndim)
+	// 		if phase == Start {
+	// 			tsr.SetNumRows(0)
+	// 			continue
+	// 		}
+	// 	}
+	// })
 }
 
 //////// GUI

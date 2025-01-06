@@ -543,10 +543,8 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, lpi, ni, di uint32) {
 	}
 	mx := NetworkIxs[0].NSpikeBins
 	bin := min(ctx.Cycle/ctx.SpikeBinCycles, mx)
-	Neurons.SetAdd(Neurons.Value(int(ni), int(di), int(Spike)), int(ni), int(di), int(SpikeBins+NeuronVars(bin)))
-	// caSyn := Neurons[ni, di, CaSyn]
-	//
-	//	Neurons[ni, di, SpikeBins + NeuronVars(bin)] += caSyn / float32(ctx.SpikeBinCycles)
+	// Neurons[ni, di, SpikeBins + NeuronVars(bin)] += Neurons[ni, di, Spike]
+	Neurons.SetAdd(Neurons.Value(int(ni), int(di), int(CaSyn))/float32(ctx.SpikeBinCycles), int(ni), int(di), int(SpikeBins+NeuronVars(bin)))
 }
 
 // SendSpike sends spike to receivers for all neurons that spiked

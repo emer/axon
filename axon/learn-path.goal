@@ -53,7 +53,7 @@ func (pt *PathParams) SynCa(ctx *Context, si, ri, di uint32, syCaP, syCaD *float
 	cadSt := GvSpikeBinWts+GlobalScalarVars(nbins)
 	var cp, cd float32
 	for i := range nbins {
-		sp := 0.1 * Neurons[ri, di, SpikeBins + NeuronVars(i)] * Neurons[si, di, SpikeBins + NeuronVars(i)]
+		sp := Neurons[ri, di, SpikeBins + NeuronVars(i)] * Neurons[si, di, SpikeBins + NeuronVars(i)]
 		cp += sp * GlobalScalars[GvSpikeBinWts + GlobalScalarVars(i), 0]
 		cd += sp * GlobalScalars[cadSt + GlobalScalarVars(i), 0]
 	}

@@ -382,7 +382,7 @@ fn LayerParams_SpikeFromG(ly: ptr<function,LayerParams>, ctx: ptr<function,Conte
 	}
 	var mx = NetworkIxs[0].NSpikeBins;
 	var bin = min((*ctx).Cycle/(*ctx).SpikeBinCycles, mx);
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SpikeBins + NeuronVars(bin)))] += Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Spike))];
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SpikeBins + NeuronVars(bin)))] += Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaSyn))] / f32((*ctx).SpikeBinCycles);
 }
 
 //////// import: "act-net.go"

@@ -751,7 +751,7 @@ fn PathParams_SynCa(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, si
 	var cp: f32;
 	var cd: f32;
 	for (var i=0; i<nbins; i++) {
-		var sp = 0.1 * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(SpikeBins + NeuronVars(i)))] * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(SpikeBins + NeuronVars(i)))];
+		var sp = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(SpikeBins + NeuronVars(i)))] * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(SpikeBins + NeuronVars(i)))];
 		cp += sp * GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvSpikeBinWts + GlobalScalarVars(i)), u32(0))];
 		cd += sp * GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(cadSt + GlobalScalarVars(i)), u32(0))];
 	}
