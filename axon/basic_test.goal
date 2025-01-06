@@ -1014,7 +1014,7 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 	hidDwts := []float32{2.0619032e-07, 1.7971695e-05, 2.5249506e-07, 1.3339283e-05}
 	outDwts := []float32{0.01540925, 0.021186322, 0.02152678, 0.021516494}
 	hidWts := []float32{0.5000011, 0.500108, 0.50000143, 0.5000801}
-	outWts := []float32{0.59144425, 0.62451977, 0.62643707, 0.6263793}
+	outWts := []float32{0.5914442, 0.6245194, 0.62643737, 0.6263791}
 
 	hiddwt := make([]float32, 4*nLearnParams)
 	outdwt := make([]float32, 4*nLearnParams)
