@@ -146,7 +146,7 @@ const (
 	// on the sender and receiver neurons, which is computationally much more efficient.
 	// This value is driven directly by spikes, with an exponential integration time
 	// constant of 30 msec (default), which captures the coincidence window for pre*post
-	// firing on NMDA receptor opening. It is integrated into the neuron [SpikeBins] values
+	// firing on NMDA receptor opening. It is integrated into the neuron [CaBins] values
 	// over the course of the Theta Cycle window, and then the pre*post product is integrated
 	// over these bins at the synaptic level, with weights for CaP vs CaD that reflect their
 	// faster vs. slower time constants, respectively. CaD is used for the credit assignment
@@ -160,7 +160,7 @@ const (
 	// sources (vs. CaM which only reflects a simple spiking component).
 	// The NMDA signal reflects both sending and receiving activity, while the
 	// VGCC signal is purely receiver spiking, and a balance of both works best.
-	// The synaptic-level trace factor computed from [CaSyn] integrated in [SpikeBins]
+	// The synaptic-level trace factor computed from [CaSyn] integrated in [CaBins]
 	// for sender and receiver neurons provides the credit assignment factor,
 	// reflecting coincident activity, which can also be integrated over longer
 	// multi-trial timescales.
@@ -460,10 +460,10 @@ const (
 	// differential per data (for ext inputs) and are writable (indexes are read only).
 	NeurFlags
 
-	// SpikeBins has aggregated spikes in bins across the theta cycle,
+	// CaBins has aggregated spikes in bins across the theta cycle,
 	// for computing synaptic calcium efficiently. There can be a variable number
 	// of bins depending on bin width and total number of cycles.
-	SpikeBins
+	CaBins
 )
 
 // NeuronAvgVars are mostly neuron variables involved in longer-term average activity
@@ -660,7 +660,7 @@ var NeuronVarProps = map[string]string{
 
 	"NeurFlags": `display:"-"`,
 
-	"SpikeBins": `cat:"Spikes"`,
+	"CaBins": `cat:"Spikes"`,
 
 	//////// Long-term average activation, set point for synaptic scaling
 
@@ -690,26 +690,26 @@ var (
 var (
 	NeuronLayerVars  = []string{"DA", "ACh", "NE", "Ser", "Gated"}
 	NNeuronLayerVars = len(NeuronLayerVars)
-	NNeuronSpikeBins = 20 // generic max for display
+	NNeuronCaBins    = 20 // generic max for display
 )
 
 func init() {
 	NeuronVarsMap = make(map[string]int, int(NeuronVarsN)+int(NeuronAvgVarsN)+NNeuronLayerVars)
-	for i := Spike; i < SpikeBins; i++ {
+	for i := Spike; i < CaBins; i++ {
 		vnm := i.String()
 		NeuronVarNames = append(NeuronVarNames, vnm)
 		NeuronVarsMap[vnm] = int(i)
 		tag := NeuronVarProps[vnm]
 		NeuronVarProps[vnm] = tag + ` doc:"` + strings.ReplaceAll(i.Desc(), "\n", " ") + `"`
 	}
-	for i := range NNeuronSpikeBins {
-		vnm := fmt.Sprintf("SpikeBin%02d", i)
+	for i := range NNeuronCaBins {
+		vnm := fmt.Sprintf("CaBin%02d", i)
 		NeuronVarNames = append(NeuronVarNames, vnm)
-		NeuronVarsMap[vnm] = int(SpikeBins) + i
-		tag := NeuronVarProps[SpikeBins.String()]
-		NeuronVarProps[vnm] = tag + ` doc:"` + strings.ReplaceAll(SpikeBins.Desc(), "\n", " ") + `"`
+		NeuronVarsMap[vnm] = int(CaBins) + i
+		tag := NeuronVarProps[CaBins.String()]
+		NeuronVarProps[vnm] = tag + ` doc:"` + strings.ReplaceAll(CaBins.Desc(), "\n", " ") + `"`
 	}
-	nVars := int(SpikeBins) + NNeuronSpikeBins
+	nVars := int(CaBins) + NNeuronCaBins
 	for i := ActAvg; i < NeuronAvgVarsN; i++ {
 		vnm := i.String()
 		NeuronVarNames = append(NeuronVarNames, vnm)

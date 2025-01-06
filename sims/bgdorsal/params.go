@@ -13,8 +13,9 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Clamp.Ge = 1.0 // 1.5 is def, was 0.6 (too low)
 				ly.Acts.Noise.On.SetBool(true)
-				ly.Acts.Noise.Ge = 0.0001 // 0.0001 > others; could just be noise ;)
-				ly.Acts.Noise.Gi = 0.0001 // 0.0001 perhaps better than others
+				ly.Acts.Noise.Ge = 0.0001                    // 0.0001 > others; could just be noise ;)
+				ly.Acts.Noise.Gi = 0.0001                    // 0.0001 perhaps better than others
+				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // ?
 			}},
 		{Sel: ".MatrixLayer", Doc: "all mtx",
 			Set: func(ly *axon.LayerParams) {
@@ -50,13 +51,13 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.Layer.Gi = 0.8 // 0.8 def
 				ly.CT.GeGain = 0.05     // 0.05 def
-				ly.CT.DecayTau = 50     // 50 def
+				ly.CT.DecayTau = 100    // 50 def
 			}},
 		{Sel: ".CTLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.Layer.Gi = 1.4 // 0.8 def
 				ly.CT.GeGain = 5        // 2 def
-				ly.CT.DecayTau = 50     // 50 def
+				ly.CT.DecayTau = 100    // 50 def
 			}},
 		{Sel: "#MotorBS", Doc: "",
 			Set: func(ly *axon.LayerParams) {

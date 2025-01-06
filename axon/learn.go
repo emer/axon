@@ -365,6 +365,7 @@ func (ln *LearnNeuronParams) InitNeurCa(ctx *Context, ni, di uint32) {
 	Neurons.Set(0, int(ni), int(di), int(CaP))
 	Neurons.Set(0, int(ni), int(di), int(CaD))
 
+	Neurons.Set(0, int(ni), int(di), int(CaSyn))
 	Neurons.Set(0, int(ni), int(di), int(LearnCaM))
 	Neurons.Set(0, int(ni), int(di), int(LearnCaP))
 	Neurons.Set(0, int(ni), int(di), int(LearnCaD))
@@ -739,7 +740,7 @@ type DWtParams struct {
 	// Trace uses the default trace-based version of the kinase error-driven cortical
 	// learning algorithm, where the per-trial error delta is computed from
 	// [LearnCaP] - [LearnCaD], and the credit assignment factor is computed from the
-	// synaptic product of [CaSyn], integrated over [SpikeBins] separately on the
+	// synaptic product of [CaSyn], integrated over [CaBins] separately on the
 	// sender and receiver neurons, which are then multiplied at each synapse and
 	// integrated to efficiently compute synaptic CaP and CaD factors.
 	// This synaptic CaD is integrated across theta cycle trials with the Tau
@@ -756,7 +757,7 @@ type DWtParams struct {
 	Tau float32 `default:"1,2,4"`
 
 	// CaGain is a multiplier on the total synaptic calcium values, computed from products
-	// of the neuron-level [SpikeBins] values. If [Context.SpikeBinCycles] is lower than
+	// of the neuron-level [CaBins] values. If [Context.CaBinCycles] is lower than
 	// default of 25, then this value needs to be set higher, e.g., 2 for cycles = 10.
 	CaGain float32 `default:"1"`
 

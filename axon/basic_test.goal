@@ -852,18 +852,18 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 	// if there are differences, they will multiply over patterns and layers..
 	qtr3HidCaP := []float32{0.5485551, 0.5397998, 0.5360895, 0.54144794}
 	qtr3HidCaD := []float32{0.5214811, 0.4950928, 0.49920246, 0.5030252}
-	qtr3OutCaP := []float32{0.58150774, 0.56721854, 0.5771712, 0.57196385}
-	qtr3OutCaD := []float32{0.5047788, 0.46398282, 0.4783627, 0.47417185}
+	qtr3OutCaP := []float32{0.58150774, 0.567215, 0.5771712, 0.57196385}
+	qtr3OutCaD := []float32{0.5047788, 0.4639749, 0.47836265, 0.47417185}
  
 	q3hidCaP := make([]float32, 4*nLearnParams)
 	q3hidCaD := make([]float32, 4*nLearnParams)
 	q3outCaP := make([]float32, 4*nLearnParams)
 	q3outCaD := make([]float32, 4*nLearnParams)
 
-	hidDwts := []float32{0.0034167361, 0.0049937717, 0.00403544, 0.004449356}
-	outDwts := []float32{0.0009000063, 0.005000009, 0.0022999954, 0.0025999974}
-	hidWts := []float32{0.52048916, 0.52992797, 0.5241945, 0.5266715}
-	outWts := []float32{0.5053999, 0.52996504, 0.51379675, 0.51559514}
+	hidDwts := []float32{0.0041238065, 0.006036989, 0.005049901, 0.0053225732}
+	outDwts := []float32{0.01540925, 0.021186322, 0.02152678, 0.021516494}
+	hidWts := []float32{0.5247232, 0.5361605, 0.53026325, 0.5318933}
+	outWts := []float32{0.59144425, 0.62451977, 0.62643707, 0.6263793}
 
 	hiddwt := make([]float32, 4*nLearnParams)
 	outdwt := make([]float32, 4*nLearnParams)
@@ -1003,18 +1003,18 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 
 	qtr3HidCaP := []float32{0.5485551, 0.5397998, 0.5360895, 0.54144794}
 	qtr3HidCaD := []float32{0.5214811, 0.4950928, 0.49920246, 0.5030252}
-	qtr3OutCaP := []float32{0.58150774, 0.56721854, 0.5771712, 0.57196385}
-	qtr3OutCaD := []float32{0.5047788, 0.46398282, 0.4783627, 0.47417185}
+	qtr3OutCaP := []float32{0.58150774, 0.567215, 0.5771712, 0.57196385}
+	qtr3OutCaD := []float32{0.5047788, 0.4639749, 0.47836265, 0.47417185}
  
 	q3hidCaP := make([]float32, 4*nLearnParams)
 	q3hidCaD := make([]float32, 4*nLearnParams)
 	q3outCaP := make([]float32, 4*nLearnParams)
 	q3outCaD := make([]float32, 4*nLearnParams)
 
-	hidDwts := []float32{1.708368e-07, 1.486611e-05, 2.0177201e-07, 1.1150851e-05}	
-	outDwts := []float32{0.0009000063, 0.005000009, 0.0022999954, 0.0025999974}
-	hidWts := []float32{0.5000011, 0.50008905, 0.5000011, 0.5000669}
-	outWts := []float32{0.5053999, 0.52996504, 0.51379675, 0.51559514}
+	hidDwts := []float32{2.0619032e-07, 1.7971695e-05, 2.5249506e-07, 1.3339283e-05}
+	outDwts := []float32{0.01540925, 0.021186322, 0.02152678, 0.021516494}
+	hidWts := []float32{0.5000011, 0.500108, 0.50000143, 0.5000801}
+	outWts := []float32{0.59144425, 0.62451977, 0.62643707, 0.6263793}
 
 	hiddwt := make([]float32, 4*nLearnParams)
 	outdwt := make([]float32, 4*nLearnParams)
@@ -1660,24 +1660,24 @@ func TestRubiconGiveUp(t *testing.T) {
 // 	ni := uint32(0)
 // 	di := uint32(0)
 // 	for i := range 8 {
-// 		Neurons[ni, di, SpikeBin0 + NeuronVars(i)] = float32(i)
+// 		Neurons[ni, di, CaBin0 + NeuronVars(i)] = float32(i)
 // 	}
 // 	ly := &Layers[0]
 // 	ly.Learn.GateSync.ShiftBins(1, minusBins, plusBins, ni, di)
 // 	for i := range minusBins {
-// 		// fmt.Println(i, Neurons[ni, di, SpikeBin0 + NeuronVars(i)])
-// 		assert.Equal(t, float32(i+1), Neurons[ni, di, SpikeBin0 + NeuronVars(i)])
+// 		// fmt.Println(i, Neurons[ni, di, CaBin0 + NeuronVars(i)])
+// 		assert.Equal(t, float32(i+1), Neurons[ni, di, CaBin0 + NeuronVars(i)])
 // 	}
 // 	for i := range plusBins {
-// 		assert.Equal(t, float32(0), Neurons[ni, di, SpikeBin0 + NeuronVars(minusBins+i)])
+// 		assert.Equal(t, float32(0), Neurons[ni, di, CaBin0 + NeuronVars(minusBins+i)])
 // 	}
 // 	ly.Learn.GateSync.ShiftBins(-1, 6, 2, ni, di)
 // 	for i := range minusBins {
-// 		// fmt.Println(i, Neurons[ni, di, SpikeBin0 + NeuronVars(i)])
-// 		assert.Equal(t, float32(max(i,1)), Neurons[ni, di, SpikeBin0 + NeuronVars(i)])
+// 		// fmt.Println(i, Neurons[ni, di, CaBin0 + NeuronVars(i)])
+// 		assert.Equal(t, float32(max(i,1)), Neurons[ni, di, CaBin0 + NeuronVars(i)])
 // 	}
 // 	for i := range plusBins {
-// 		assert.Equal(t, float32(0), Neurons[ni, di, SpikeBin0 + NeuronVars(minusBins+i)])
+// 		assert.Equal(t, float32(0), Neurons[ni, di, CaBin0 + NeuronVars(minusBins+i)])
 // 	}
 // }
 

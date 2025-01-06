@@ -380,9 +380,9 @@ fn LayerParams_SpikeFromG(ly: ptr<function,LayerParams>, ctx: ptr<function,Conte
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaPMax))] = spkmax;
 		}
 	}
-	var mx = NetworkIxs[0].NSpikeBins;
-	var bin = min((*ctx).Cycle/(*ctx).SpikeBinCycles, mx);
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SpikeBins + NeuronVars(bin)))] += Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaSyn))] / f32((*ctx).SpikeBinCycles);
+	var mx = NetworkIxs[0].NCaBins;
+	var bin = min((*ctx).Cycle/(*ctx).CaBinCycles, mx);
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaBins + NeuronVars(bin)))] += Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaSyn))] / f32((*ctx).CaBinCycles);
 }
 
 //////// import: "act-net.go"
@@ -1216,7 +1216,7 @@ struct Context { //types:add -setters
 	Cycle: i32,
 	ThetaCycles: i32,
 	PlusCycles: i32,
-	SpikeBinCycles: i32,
+	CaBinCycles: i32,
 	CyclesTotal: i32,
 	Time: f32,
 	TrialsTotal: i32,
@@ -1386,7 +1386,7 @@ const  GvLHbPVDA: GlobalScalarVars = 53;
 const  GvCeMpos: GlobalScalarVars = 54;
 const  GvCeMneg: GlobalScalarVars = 55;
 const  GvVtaDA: GlobalScalarVars = 56;
-const  GvSpikeBinWts: GlobalScalarVars = 57;
+const  GvCaBinWts: GlobalScalarVars = 57;
 const MaxGlobalVecN = 16;
 alias GlobalVectorVars = i32; //enums:enum
 const  GvCost: GlobalVectorVars = 0;
@@ -1742,7 +1742,7 @@ fn F32_ClampValue(mr: ptr<function,F32>, val: f32) -> f32 {
 struct NetworkIndexes {
 	MaxData: u32,
 	MaxDelay: u32,
-	NSpikeBins: i32,
+	NCaBins: i32,
 	NLayers: u32,
 	NNeurons: u32,
 	NPools: u32,
@@ -1909,7 +1909,7 @@ const  SMaintP: NeuronVars = 78;
 const  GMaintRaw: NeuronVars = 79;
 const  GMaintSyn: NeuronVars = 80;
 const  NeurFlags: NeuronVars = 81;
-const  SpikeBins: NeuronVars = 82;
+const  CaBins: NeuronVars = 82;
 alias NeuronAvgVars = i32; //enums:enum
 const  ActAvg: NeuronAvgVars = 0;
 const  AvgPct: NeuronAvgVars = 1;

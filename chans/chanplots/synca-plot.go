@@ -20,11 +20,11 @@ import (
 type SynCaPlot struct {
 
 	// Ca time constants
-	SynCa kinase.SynCaParams `display:"inline"`
-	CaDt  kinase.CaDtParams  `display:"inline"`
-	Minit float64
-	Pinit float64
-	Dinit float64
+	CaSpike kinase.CaSpikeParams `display:"inline"`
+	CaDt    kinase.CaDtParams    `display:"inline"`
+	Minit   float64
+	Pinit   float64
+	Dinit   float64
 
 	// adjustment to dt to account for discrete time updating
 	MdtAdj float64 `default:"0,0.11"`
@@ -47,7 +47,7 @@ func (pl *SynCaPlot) Config(parent *tensorfs.Node, tabs lab.Tabber) {
 	pl.Dir = parent.Dir("SynCa")
 	pl.Tabs = tabs
 
-	pl.SynCa.Defaults()
+	pl.CaSpike.Defaults()
 	pl.CaDt.Defaults()
 	pl.Minit = 0.7
 	pl.Pinit = 0.5
@@ -101,14 +101,14 @@ func (pl *SynCaPlot) CaAtT(ti int32, caM, caP, caD *float32) {
 // to avoid running out of float32 precision, ctime should be reset periodically
 // along with the Ca values -- in axon this happens during SlowAdapt.
 func (pl *SynCaPlot) CurCa(ctime, utime float32, caM, caP, caD *float32) {
-	kp := &pl.SynCa
+	kp := &pl.CaSpike
 
 	isi := int32(ctime - utime)
 	if isi <= 0 {
 		return
 	}
 	for j := int32(0); j < isi; j++ {
-		kp.FromCa(0, caM, caP, caD) // just decay to 0
+		kp.Dt.FromCa(0, caM, caP, caD) // just decay to 0
 	}
 	return
 }

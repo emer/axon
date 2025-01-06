@@ -23,7 +23,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.NMDA.Voff = 0
 				ly.Acts.NMDA.Gbar = 0.006
 				ly.Acts.GabaB.Gbar = 0.015 // 0.015 def
-				ly.Learn.LrnNMDA.Gbar = 0.006
+				ly.Learn.LearnNMDA.Gbar = 0.006
 				ly.Acts.Mahp.Gbar = 0.04  // 0.04 == 0.05+ > 0.02 -- reduces hidden activity
 				ly.Acts.Sahp.Gbar = 0.1   // 0.1 == 0.02 no real diff
 				ly.Acts.Sahp.Off = 0.8    //

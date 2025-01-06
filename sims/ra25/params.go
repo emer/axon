@@ -48,7 +48,7 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Adapt.LRate = 0.1 // .1 >= .2,
 				pt.SWts.Init.SPct = 0.5   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 				pt.Learn.DWt.SubMean = 0  // 1 > 0 for long run stability
-				pt.Learn.DWt.CaGain = 1   // use 2 for SpikeBinCycles = 10
+				pt.Learn.DWt.CaGain = 1   // use 2 for CaBinCycles = 10
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {

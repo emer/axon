@@ -90,7 +90,7 @@ var (
 	Ctx []Context
 
 	// Neurons are all the neuron state variables.
-	// [Neurons][Data][NeuronVarsN+NSpikeBins]
+	// [Neurons][Data][NeuronVarsN+NCaBins]
 	//gosl:dims 3
 	Neurons *tensor.Float32
 
@@ -107,7 +107,7 @@ var (
 	LayerStates *tensor.Float32
 
 	// GlobalScalars are the global scalar state variables.
-	// [GlobalScalarsN + 2*NSpikeBins][Data]
+	// [GlobalScalarsN + 2*NCaBins][Data]
 	//gosl:dims 2
 	GlobalScalars *tensor.Float32
 

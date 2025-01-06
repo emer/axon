@@ -54,9 +54,9 @@ type Context struct { //types:add -setters
 	// PlusCycles is the number of cycles in the plus phase.
 	PlusCycles int32
 
-	// SpikeBinCycles is the number of cycles per SpikeBin used in computing synaptic
-	// calcium values. Total number of bins = ThetaCycles / SpikeBinCycles.
-	SpikeBinCycles int32
+	// CaBinCycles is the number of cycles per CaBin used in computing synaptic
+	// calcium values. Total number of bins = ThetaCycles / CaBinCycles.
+	CaBinCycles int32
 
 	// CyclesTotal is the accumulated cycle count, which increments continuously
 	// from whenever it was last reset. Typically this is the number of milliseconds
@@ -100,7 +100,7 @@ func (ctx *Context) Defaults() {
 	ctx.TimePerCycle = 0.001
 	ctx.ThetaCycles = 200
 	ctx.PlusCycles = 50
-	ctx.SpikeBinCycles = 25
+	ctx.CaBinCycles = 25
 	ctx.SlowInterval = 100
 }
 
@@ -141,9 +141,9 @@ func (ctx *Context) PlusPhaseStart() {
 	ctx.PlusPhase.SetBool(true)
 }
 
-// NSpikeBins returns ThetaCycles / SpikeBinCycles
-func (ctx *Context) NSpikeBins() int32 {
-	return ctx.ThetaCycles / ctx.SpikeBinCycles
+// NCaBins returns ThetaCycles / CaBinCycles
+func (ctx *Context) NCaBins() int32 {
+	return ctx.ThetaCycles / ctx.CaBinCycles
 }
 
 //gosl:end

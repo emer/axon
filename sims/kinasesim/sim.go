@@ -74,10 +74,10 @@ type Sim struct {
 	// Kinase CaSpike params
 	CaSpike kinase.CaSpikeParams `display:"no-inline" new-window:"+"`
 
-	// CaPWts are SpikeBin integration weights for CaP
+	// CaPWts are CaBin integration weights for CaP
 	CaPWts []float32 `new-window:"+"`
 
-	// CaDWts are SpikeBin integration weights for CaD
+	// CaDWts are CaBin integration weights for CaD
 	CaDWts []float32 `new-window:"+"`
 
 	// Kinase state
@@ -241,7 +241,7 @@ func (ss *Sim) ConfigStats() {
 
 	vals := axon.StructValues(&ss.Kinase,
 		func(parent reflect.Value, field reflect.StructField, value reflect.Value) bool {
-			if field.Name == "SpikeBins" {
+			if field.Name == "CaBins" {
 				return false
 			}
 			return true
@@ -309,7 +309,7 @@ func (ss *Sim) ConfigStats() {
 	// 		return
 	// 	}
 	// 	regressDir := ss.Stats.Dir("Regress")
-	// 	nbins := ss.Config.Run.NSpikeBins
+	// 	nbins := ss.Config.Run.NCaBins
 	// 	vars := []string{"Trial", "Hz", "Bins", "SynCa", "PredCa", "ErrCa", "SSE"}
 	// 	for vi, name := range vars {
 	// 		ndim := 2

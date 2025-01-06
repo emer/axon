@@ -173,7 +173,9 @@ func TrainNet(net *axon.Network, ctx *axon.Context, pats, epcLog *table.Table, e
 
 			for qtr := 0; qtr < 4; qtr++ {
 				for cyc := 0; cyc < cycPerQtr; cyc++ {
-					net.Cycle(cycPerStep, false)
+					for range cycPerStep {
+						net.Cycle(false)
+					}
 					cyc += cycPerStep - 1
 				}
 				if qtr == 2 {

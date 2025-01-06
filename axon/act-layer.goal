@@ -539,9 +539,9 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, lpi, ni, di uint32) {
 			Neurons[ni, di, CaPMax] = spkmax
 		}
 	}
-	mx := NetworkIxs[0].NSpikeBins
-	bin := min(ctx.Cycle / ctx.SpikeBinCycles, mx)
- 	Neurons[ni, di, SpikeBins + NeuronVars(bin)] += Neurons[ni, di, CaSyn] / float32(ctx.SpikeBinCycles)
+	mx := NetworkIxs[0].NCaBins
+	bin := min(ctx.Cycle / ctx.CaBinCycles, mx)
+ 	Neurons[ni, di, CaBins + NeuronVars(bin)] += Neurons[ni, di, CaSyn] / float32(ctx.CaBinCycles)
 }
 
 // SendSpike sends spike to receivers for all neurons that spiked
@@ -933,9 +933,9 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32) {
 	ly.Acts.DecayState(ctx, ni, di, ly.Acts.Decay.Act, ly.Acts.Decay.Glong, ly.Acts.Decay.AHP)
 	// Note: synapse-level Ca decay happens in DWt
 	ly.Acts.KNaNewState(ctx, ni, di)
-	mx := NetworkIxs[0].NSpikeBins
+	mx := NetworkIxs[0].NCaBins
 	for i := range mx {
-		Neurons[ni, di, SpikeBins+NeuronVars(i)] = 0.0
+		Neurons[ni, di, CaBins+NeuronVars(i)] = 0.0
 	}
 }
 

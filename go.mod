@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	cogentcore.org/core v0.3.8-0.20241224074244-8b26e9d6c068
-	cogentcore.org/lab v0.0.0-20241223211031-dc40e74b973c
+	cogentcore.org/lab v0.0.0-20250106082910-c6a5aa45a062
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20241223211126-97d70964931f
 	github.com/emer/v1vision v0.1.1-0.20241223003153-dd6818448b3b

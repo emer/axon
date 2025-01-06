@@ -46,15 +46,15 @@ func (pt *PathParams) DWtSyn(ctx *Context, rlay *LayerParams, syni, si, ri, di u
 }
 
 // SynCa gets the synaptic calcium P (potentiation) and D (depression)
-// values, using an optimized integration of neuron-level SpikeBins values,
+// values, using an optimized integration of neuron-level CaBins values,
 // and weight factors to capture the different CaP vs. CaD time constants.
 func (pt *PathParams) SynCa(ctx *Context, si, ri, di uint32, syCaP, syCaD *float32) {
-	nbins := NetworkIxs[0].NSpikeBins
-	cadSt := GvSpikeBinWts+GlobalScalarVars(nbins)
+	nbins := NetworkIxs[0].NCaBins
+	cadSt := GvCaBinWts+GlobalScalarVars(nbins)
 	var cp, cd float32
 	for i := range nbins {
-		sp := Neurons[ri, di, SpikeBins + NeuronVars(i)] * Neurons[si, di, SpikeBins + NeuronVars(i)]
-		cp += sp * GlobalScalars[GvSpikeBinWts + GlobalScalarVars(i), 0]
+		sp := Neurons[ri, di, CaBins + NeuronVars(i)] * Neurons[si, di, CaBins + NeuronVars(i)]
+		cp += sp * GlobalScalars[GvCaBinWts + GlobalScalarVars(i), 0]
 		cd += sp * GlobalScalars[cadSt + GlobalScalarVars(i), 0]
 	}
 	*syCaP = pt.Learn.DWt.CaGain * cp

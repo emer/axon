@@ -20,7 +20,7 @@ CaP = 	0.0985391 * IV_0 + 	0.393702 * IV_1 + 	0.491684 * IV_2 + 	 0.59146 * IV_3
 CaD = 	    0.35 * IV_0 + 	 0.65702 * IV_1 + 	0.956254 * IV_2 + 	 1.25657 * IV_3 + 	 1.25812 * IV_4 + 	 1.25885 * IV_5 + 	 1.13701 * IV_6 + 	 1.01161 * IV_7 + 	       0
 ```
 
-linear.go has the initial coefficients, which are implemented in the `kinase.SpikeBinWts` function, set to:
+linear.go has the initial coefficients, which are implemented in the `kinase.CaBinWts` function, set to:
 ```Go
 	// NBins = 8, 200+50 cycles for CaSyn
 	r.Coeff.Values = []float64{

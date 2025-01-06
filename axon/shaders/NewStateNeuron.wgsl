@@ -85,9 +85,10 @@ fn LayerParams_NewStateNeuron(ly: ptr<function,LayerParams>, ctx: ptr<function,C
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaPMaxCa))] = 0.0;
 	ActParams_DecayState(&(*ly).Acts, ctx, ni, di, (*ly).Acts.Decay.Act, (*ly).Acts.Decay.Glong, (*ly).Acts.Decay.AHP);
 	ActParams_KNaNewState(&(*ly).Acts, ctx, ni, di);
-	var mx = NetworkIxs[0].NSpikeBins;
+	var mx = NetworkIxs[0].NCaBins;
 	for (var i=0; i<mx; i++) {
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SpikeBins + NeuronVars(i)))] = 0.0;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
+		u32(ni), u32(di), u32(CaBins + NeuronVars(i)))] = 0.0;
 	}
 }
 
@@ -471,7 +472,7 @@ struct Context { //types:add -setters
 	Cycle: i32,
 	ThetaCycles: i32,
 	PlusCycles: i32,
-	SpikeBinCycles: i32,
+	CaBinCycles: i32,
 	CyclesTotal: i32,
 	Time: f32,
 	TrialsTotal: i32,
@@ -635,7 +636,7 @@ const  GvLHbPVDA: GlobalScalarVars = 53;
 const  GvCeMpos: GlobalScalarVars = 54;
 const  GvCeMneg: GlobalScalarVars = 55;
 const  GvVtaDA: GlobalScalarVars = 56;
-const  GvSpikeBinWts: GlobalScalarVars = 57;
+const  GvCaBinWts: GlobalScalarVars = 57;
 const MaxGlobalVecN = 16;
 alias GlobalVectorVars = i32; //enums:enum
 const  GvCost: GlobalVectorVars = 0;
@@ -925,7 +926,7 @@ struct F32 {
 struct NetworkIndexes {
 	MaxData: u32,
 	MaxDelay: u32,
-	NSpikeBins: i32,
+	NCaBins: i32,
 	NLayers: u32,
 	NNeurons: u32,
 	NPools: u32,
@@ -1055,7 +1056,7 @@ const  SMaintP: NeuronVars = 78;
 const  GMaintRaw: NeuronVars = 79;
 const  GMaintSyn: NeuronVars = 80;
 const  NeurFlags: NeuronVars = 81;
-const  SpikeBins: NeuronVars = 82;
+const  CaBins: NeuronVars = 82;
 alias NeuronAvgVars = i32; //enums:enum
 const  ActAvg: NeuronAvgVars = 0;
 const  AvgPct: NeuronAvgVars = 1;

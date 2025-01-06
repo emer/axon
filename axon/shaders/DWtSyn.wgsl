@@ -365,7 +365,7 @@ struct Context { //types:add -setters
 	Cycle: i32,
 	ThetaCycles: i32,
 	PlusCycles: i32,
-	SpikeBinCycles: i32,
+	CaBinCycles: i32,
 	CyclesTotal: i32,
 	Time: f32,
 	TrialsTotal: i32,
@@ -529,7 +529,7 @@ const  GvLHbPVDA: GlobalScalarVars = 53;
 const  GvCeMpos: GlobalScalarVars = 54;
 const  GvCeMneg: GlobalScalarVars = 55;
 const  GvVtaDA: GlobalScalarVars = 56;
-const  GvSpikeBinWts: GlobalScalarVars = 57;
+const  GvCaBinWts: GlobalScalarVars = 57;
 const MaxGlobalVecN = 16;
 alias GlobalVectorVars = i32; //enums:enum
 const  GvCost: GlobalVectorVars = 0;
@@ -746,13 +746,13 @@ fn PathParams_DWtSyn(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, r
 	}
 }
 fn PathParams_SynCa(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, si: u32,ri: u32,di: u32, syCaP: ptr<function,f32>,syCaD: ptr<function,f32>) {
-	var nbins = NetworkIxs[0].NSpikeBins;
-	var cadSt = GvSpikeBinWts + GlobalScalarVars(nbins);
+	var nbins = NetworkIxs[0].NCaBins;
+	var cadSt = GvCaBinWts + GlobalScalarVars(nbins);
 	var cp: f32;
 	var cd: f32;
 	for (var i=0; i<nbins; i++) {
-		var sp = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(SpikeBins + NeuronVars(i)))] * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(SpikeBins + NeuronVars(i)))];
-		cp += sp * GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvSpikeBinWts + GlobalScalarVars(i)), u32(0))];
+		var sp = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaBins + NeuronVars(i)))] * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(CaBins + NeuronVars(i)))];
+		cp += sp * GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvCaBinWts + GlobalScalarVars(i)), u32(0))];
 		cd += sp * GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(cadSt + GlobalScalarVars(i)), u32(0))];
 	}
 	*syCaP = (*pt).Learn.DWt.CaGain * cp;
@@ -1132,7 +1132,7 @@ struct F32 {
 struct NetworkIndexes {
 	MaxData: u32,
 	MaxDelay: u32,
-	NSpikeBins: i32,
+	NCaBins: i32,
 	NLayers: u32,
 	NNeurons: u32,
 	NPools: u32,
@@ -1262,7 +1262,7 @@ const  SMaintP: NeuronVars = 78;
 const  GMaintRaw: NeuronVars = 79;
 const  GMaintSyn: NeuronVars = 80;
 const  NeurFlags: NeuronVars = 81;
-const  SpikeBins: NeuronVars = 82;
+const  CaBins: NeuronVars = 82;
 alias NeuronAvgVars = i32; //enums:enum
 const  ActAvg: NeuronAvgVars = 0;
 const  AvgPct: NeuronAvgVars = 1;

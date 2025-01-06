@@ -62,7 +62,7 @@ type Linear struct {
 	ErrDWt float32
 
 	// binned integration of send, recv spikes
-	SpikeBins []float32
+	CaBins []float32
 
 	// Data to fit the regression
 	Data table.Table
@@ -86,9 +86,9 @@ func (ls *Linear) Update() {
 	// ls.Synapse.Dt.PDTauForNCycles(ls.Cycles)
 	nhz := ls.MaxHz / ls.StepHz
 	ls.TotalTrials = nhz * nhz * nhz * nhz * ls.NTrials
-	ls.SpikeBins = make([]float32, ls.NumBins)
-	ls.Send.SpikeBins = make([]float32, ls.NumBins)
-	ls.Recv.SpikeBins = make([]float32, ls.NumBins)
+	ls.CaBins = make([]float32, ls.NumBins)
+	ls.Send.CaBins = make([]float32, ls.NumBins)
+	ls.Recv.CaBins = make([]float32, ls.NumBins)
 }
 
 func (ls *Linear) Init() {
@@ -142,7 +142,7 @@ type Neuron struct {
 	TotalSpikes float32
 
 	// binned count of spikes, for regression learning
-	SpikeBins []float32
+	CaBins []float32
 }
 
 func (kn *Neuron) Init() {
@@ -157,8 +157,8 @@ func (kn *Neuron) Init() {
 
 func (kn *Neuron) StartTrial() {
 	kn.TotalSpikes = 0
-	for i := range kn.SpikeBins {
-		kn.SpikeBins[i] = 0
+	for i := range kn.CaBins {
+		kn.CaBins[i] = 0
 	}
 }
 
@@ -176,7 +176,7 @@ func (ls *Linear) Cycle(nr *Neuron, expInt float32, cyc int) {
 		}
 	}
 	nr.CaSyn += ls.CaSpike.CaSynDt * (ls.CaSpike.SpikeCaSyn*nr.Spike - nr.CaSyn)
-	nr.SpikeBins[bin] += (nr.CaSyn / float32(ls.CyclesPerBin))
+	nr.CaBins[bin] += (nr.CaSyn / float32(ls.CyclesPerBin))
 	ls.CaSpike.CaMFromSpike(nr.Spike, &nr.CaM, &nr.CaP, &nr.CaD)
 }
 
@@ -240,10 +240,10 @@ func (ls *Linear) SetSynState(sy *Synapse, row int) {
 }
 
 func (ls *Linear) SetBins(sn, rn *Neuron, off, row int) {
-	for i, s := range sn.SpikeBins {
-		r := rn.SpikeBins[i]
+	for i, s := range sn.CaBins {
+		r := rn.CaBins[i]
 		bs := (r * s)
-		ls.SpikeBins[i] = bs
+		ls.CaBins[i] = bs
 		ls.Data.Column("Bins").SetFloatRow(float64(bs), row, off+i)
 	}
 }

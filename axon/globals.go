@@ -266,12 +266,12 @@ const (
 	// VtaDA is overall dopamine value reflecting all of the different inputs.
 	GvVtaDA
 
-	//////// SpikeBin Weights
+	//////// CaBin Weights
 
-	// SpikeBinWts are NSpikeBins starting here, of weights for integrating binned spikes
+	// CaBinWts are NCaBins starting here, of weights for integrating binned spikes
 	// to compute synaptic calcium values that drive the trace factor in learning.
 	// These are only stored for the first parallel data index di = 0.
-	GvSpikeBinWts
+	GvCaBinWts
 )
 
 // MaxGlobalVecN is the maximum number of GlobalVectors values

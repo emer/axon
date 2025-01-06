@@ -14,19 +14,19 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.NMDA.Voff = 0                    // see above
 				ly.Acts.NMDA.Gbar = 0.006                // 0.006 > 7 or higher
 				ly.Acts.GabaB.Gbar = 0.015               // 0.015 > lower; higher not better
-				ly.Learn.CaSpk.SpikeG = 12               // 12 > 8 > 15 (too high) -- 12 makes everything work!
+				ly.Learn.CaSpike.SpikeCaM = 12           // 12 > 8 > 15 (too high) -- 12 makes everything work!
 				ly.Learn.TrgAvgAct.SynScaleRate = 0.0002 // 0.0002 > others -- 0.005 sig worse
-				ly.Learn.LrnNMDA.MgC = 1.4               // 1.4, 5 > 1.2, 0
-				ly.Learn.LrnNMDA.Voff = 0                // see above
-				ly.Learn.LrnNMDA.Tau = 100               // 100 def
-				ly.Learn.LrnNMDA.Gbar = 0.006
+				ly.Learn.LearnNMDA.MgC = 1.4             // 1.4, 5 > 1.2, 0
+				ly.Learn.LearnNMDA.Voff = 0              // see above
+				ly.Learn.LearnNMDA.Tau = 100             // 100 def
+				ly.Learn.LearnNMDA.Gbar = 0.006
 				ly.Learn.RLRate.SigmoidLinear.SetBool(true) // true > false later; more stable
 				ly.Learn.CaLearn.Norm = 80                  // 80 works
-				ly.Learn.CaLearn.SpkVGCC.SetBool(true)      // sig better..
-				ly.Learn.CaLearn.SpkVgccCa = 35             // 70 / 5 or 35 / 10 both work
+				ly.Learn.CaLearn.SpikeVGCC.SetBool(true)    // sig better..
+				ly.Learn.CaLearn.SpikeVgccCa = 35           // 70 / 5 or 35 / 10 both work
 				ly.Learn.CaLearn.VgccTau = 10               // 10 > 5 ?
 				ly.Learn.CaLearn.Dt.MTau = 2                // 2 > 4 even with more ncycles
-				ly.Learn.CaSpk.Dt.MTau = 5                  // 5 > 10 even with more ncycles
+				ly.Learn.CaSpike.Dt.MTau = 5                // 5 > 10 even with more ncycles
 				// now automatic:
 				// ly.Learn.CaLearn.Dt.PTau =        40   // 60 for 300 cyc, 40 for 200 (scales linearly)
 				// ly.Learn.CaLearn.Dt.DTau =        40   // "
@@ -84,11 +84,10 @@ var PathParams = axon.PathSheets{
 	"Base": {
 		{Sel: "Path", Doc: "yes extra learning factors",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.LRate.Base = 0.2      // 0.4 for NeuronCa; 0.2 best, 0.1 nominal
-				pt.Learn.DWt.SubMean = 1       // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
-				pt.SWts.Adapt.LRate = 0.0001   // 0.005 == .1 == .01
-				pt.SWts.Init.SPct = 1          // 1 >= lower (trace-v11)
-				pt.Learn.KinaseCa.CaGain = 1.0 // 1 > higher
+				pt.Learn.LRate.Base = 0.2    // 0.4 for NeuronCa; 0.2 best, 0.1 nominal
+				pt.Learn.DWt.SubMean = 1     // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
+				pt.SWts.Adapt.LRate = 0.0001 // 0.005 == .1 == .01
+				pt.SWts.Init.SPct = 1        // 1 >= lower (trace-v11)
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger",
 			Set: func(pt *axon.PathParams) {

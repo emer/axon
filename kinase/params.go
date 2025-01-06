@@ -87,7 +87,7 @@ type CaSpikeParams struct {
 
 	// SpikeCaSyn is the drive factor for updating the neuron-level CaSyn
 	// synaptic calcium trace value based on a spike impulse. CaSyn is integrated
-	// into SpikeBins which are then used to compute synapse-level pre * post
+	// into CaBins which are then used to compute synapse-level pre * post
 	// Ca values over the theta cycle, which then drive the Tr credit assignment
 	// trace factor for kinase error-driven cortical learning. Changes in this
 	// value will affect the net learning rate.
@@ -146,15 +146,15 @@ func (kp *CaDtParams) PDTauForNCycles(ncycles int) {
 	kp.Update()
 }
 
-// SpikeBinWts generates the weighting factors for integrating [SpikeBins] neuron
+// CaBinWts generates the weighting factors for integrating [CaBins] neuron
 // level spikes that have been multiplied send * recv to generate a synapse-level
 // spike coincidence factor, used for the trace in the kinase learning rule.
 // There are separate weights for two time scales of integration: CaP and CaD.
-// nplus is the number of spike bins associated with the plus phase,
-// which sets the natural timescale of the integration: total spike bins can
+// nplus is the number of ca bins associated with the plus phase,
+// which sets the natural timescale of the integration: total ca bins can
 // be proportional to the plus phase (e.g., 4x for standard 200 / 50 total / plus),
 // or longer if there is a longer minus phase window (which is downweighted).
-func SpikeBinWts(nplus int, cp, cd []float32) {
+func CaBinWts(nplus int, cp, cd []float32) {
 	n := len(cp)
 	nminus := n - nplus
 

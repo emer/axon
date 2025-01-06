@@ -34,7 +34,7 @@ type KinaseNeuron struct {
 	TotalSpikes float32 `edit:"-"`
 
 	// binned count of spikes, for regression learning
-	SpikeBins []float32
+	CaBins []float32
 }
 
 func (kn *KinaseNeuron) Init() {
@@ -44,15 +44,15 @@ func (kn *KinaseNeuron) Init() {
 	kn.StartTrial()
 }
 
-func (kn *KinaseNeuron) Config(nSpikeBins int) {
-	kn.SpikeBins = make([]float32, nSpikeBins)
+func (kn *KinaseNeuron) Config(nCaBins int) {
+	kn.CaBins = make([]float32, nCaBins)
 }
 
 func (kn *KinaseNeuron) StartTrial() {
 	kn.StartCaSyn = kn.CaSyn
 	kn.TotalSpikes = 0
-	for i := range kn.SpikeBins {
-		kn.SpikeBins[i] = 0
+	for i := range kn.CaBins {
+		kn.CaBins[i] = 0
 	}
 	// kn.CaSyn = 0 // note: better fits with carryover
 }
@@ -70,14 +70,14 @@ func (ss *Sim) Cycle(kn *KinaseNeuron, expInt float32, cyc int) {
 		}
 	}
 	kn.CaSyn += ss.CaSpike.CaSynDt * (ss.CaSpike.SpikeCaSyn*kn.Spike - kn.CaSyn)
-	bin := cyc / ss.Config.Run.SpikeBinCycles
-	kn.SpikeBins[bin] += kn.CaSyn / float32(ss.Config.Run.SpikeBinCycles)
+	bin := cyc / ss.Config.Run.CaBinCycles
+	kn.CaBins[bin] += kn.CaSyn / float32(ss.Config.Run.CaBinCycles)
 }
 
 func (kn *KinaseNeuron) SetInput(inputs []float32, off int) {
 	inputs[off] = kn.StartCaSyn
 	inputs[off+1] = kn.TotalSpikes
-	for i, s := range kn.SpikeBins {
+	for i, s := range kn.CaBins {
 		inputs[off+2+i] = s
 	}
 }
@@ -137,14 +137,14 @@ type KinaseState struct {
 	// Standard synapse values
 	StdSyn KinaseSynapse
 
-	// Current spike bin value
-	SpikeBin float32
+	// Current ca bin value
+	CaBin float32
 
 	// Linear synapse values
 	LinearSyn KinaseSynapse
 
 	// binned integration of send, recv spikes
-	SpikeBins []float32
+	CaBins []float32
 }
 
 func (ks *KinaseState) Init() {
@@ -152,13 +152,13 @@ func (ks *KinaseState) Init() {
 	ks.Recv.Init()
 	ks.StdSyn.Init()
 	ks.LinearSyn.Init()
-	ks.SpikeBin = 0
+	ks.CaBin = 0
 }
 
-func (ks *KinaseState) Config(nSpikeBins int) {
-	ks.Send.Config(nSpikeBins)
-	ks.Recv.Config(nSpikeBins)
-	ks.SpikeBins = make([]float32, nSpikeBins)
+func (ks *KinaseState) Config(nCaBins int) {
+	ks.Send.Config(nCaBins)
+	ks.Recv.Config(nCaBins)
+	ks.CaBins = make([]float32, nCaBins)
 	ks.StdSyn.Init()
 	ks.LinearSyn.Init()
 }
@@ -173,11 +173,11 @@ func (kn *KinaseState) StartTrial() {
 
 func (ss *Sim) ConfigKinase() {
 	ss.Config.Run.Update()
-	nbins := ss.Config.Run.NSpikeBins
+	nbins := ss.Config.Run.NCaBins
 	ss.CaPWts = make([]float32, nbins)
 	ss.CaDWts = make([]float32, nbins)
-	nplus := ss.Config.Run.PlusCycles / ss.Config.Run.SpikeBinCycles
-	kinase.SpikeBinWts(nplus, ss.CaPWts, ss.CaDWts)
+	nplus := ss.Config.Run.PlusCycles / ss.Config.Run.CaBinCycles
+	kinase.CaBinWts(nplus, ss.CaPWts, ss.CaDWts)
 	ss.Kinase.Config(nbins)
 }
 
@@ -248,8 +248,8 @@ func (ss *Sim) TrialImpl(minusHz, plusHz float32) {
 	ks.ErrDWt = (plusHz - minusHz) / 100
 
 	minusCycles := cfg.Run.Cycles - cfg.Run.PlusCycles
-	nbins := ss.Config.Run.NSpikeBins
-	spikeBinCycles := ss.Config.Run.SpikeBinCycles
+	nbins := ss.Config.Run.NCaBins
+	spikeBinCycles := ss.Config.Run.CaBinCycles
 	lsint := 1.0 / float32(spikeBinCycles)
 
 	ks.StartTrial()
@@ -284,11 +284,11 @@ func (ss *Sim) TrialImpl(minusHz, plusHz float32) {
 			ss.CaSpike.Dt.FromCa(ca, &ks.StdSyn.CaM, &ks.StdSyn.CaP, &ks.StdSyn.CaD)
 
 			bin := ks.Cycle / spikeBinCycles
-			ks.SpikeBins[bin] = (ks.Recv.SpikeBins[bin] * ks.Send.SpikeBins[bin])
-			ks.SpikeBin = ks.SpikeBins[bin]
-			ks.LinearSyn.CaM = ks.SpikeBin
-			ks.LinearSyn.CaP += lsint * ss.CaPWts[bin] * ks.SpikeBin
-			ks.LinearSyn.CaD += lsint * ss.CaDWts[bin] * ks.SpikeBin
+			ks.CaBins[bin] = (ks.Recv.CaBins[bin] * ks.Send.CaBins[bin])
+			ks.CaBin = ks.CaBins[bin]
+			ks.LinearSyn.CaM = ks.CaBin
+			ks.LinearSyn.CaP += lsint * ss.CaPWts[bin] * ks.CaBin
+			ks.LinearSyn.CaD += lsint * ss.CaDWts[bin] * ks.CaBin
 
 			ss.StatsStep(Test, Cycle)
 			ks.Cycle++
@@ -298,8 +298,8 @@ func (ss *Sim) TrialImpl(minusHz, plusHz float32) {
 
 	var cp, cd float32
 	for i := range nbins {
-		cp += ks.SpikeBins[i] * ss.CaPWts[i]
-		cd += ks.SpikeBins[i] * ss.CaDWts[i]
+		cp += ks.CaBins[i] * ss.CaPWts[i]
+		cd += ks.CaBins[i] * ss.CaDWts[i]
 	}
 	ks.LinearSyn.DWt = cp - cd
 	ks.LinearSyn.CaP = cp

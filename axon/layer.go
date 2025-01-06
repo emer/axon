@@ -466,7 +466,7 @@ func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
 	}
 	ni := ly.NeurStIndex + uint32(idx)
 	nvars := ly.UnitVarNum()
-	neurVars := int(SpikeBins) + NNeuronSpikeBins
+	neurVars := int(CaBins) + NNeuronCaBins
 	layVarSt := nvars - NNeuronLayerVars
 	if varIndex >= layVarSt {
 		lvi := varIndex - layVarSt
@@ -485,11 +485,11 @@ func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
 		}
 	} else if varIndex >= neurVars {
 		return NeuronAvgs.Value(int(ni), int(NeuronVars(varIndex-neurVars)))
-	} else if varIndex < int(SpikeBins) {
+	} else if varIndex < int(CaBins) {
 		return Neurons.Value(int(ni), int(di), int(varIndex))
 	} else {
-		sbin := varIndex - int(SpikeBins)
-		if sbin >= int(NetworkIxs[0].NSpikeBins) {
+		sbin := varIndex - int(CaBins)
+		if sbin >= int(NetworkIxs[0].NCaBins) {
 			return math32.NaN()
 		}
 		return Neurons.Value(int(ni), int(di), int(varIndex))

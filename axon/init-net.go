@@ -15,7 +15,7 @@ import (
 func GlobalsReset() {
 	nix := GetNetworkIxs(0)
 	for di := uint32(0); di < nix.MaxData; di++ {
-		for vg := GvRew; vg < GvSpikeBinWts; vg++ {
+		for vg := GvRew; vg < GvCaBinWts; vg++ {
 			GlobalScalars.Set(0, int(vg), int(di))
 		}
 		for vn := GvCost; vn < GlobalVectorVarsN; vn++ {
