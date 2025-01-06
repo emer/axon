@@ -586,7 +586,7 @@ func (ss *Sim) ConfigStats() {
 				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
 				tsr.AppendRowFloat(stat)
 			case Run:
-				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
+				stat = stats.StatFinal.Call(subDir.Value(name)).Float1D(0)
 				tsr.AppendRowFloat(stat)
 			}
 		}

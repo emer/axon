@@ -91,7 +91,7 @@ type CaSpikeParams struct {
 	// Ca values over the theta cycle, which then drive the Tr credit assignment
 	// trace factor for kinase error-driven cortical learning. Changes in this
 	// value will affect the net learning rate.
-	SpikeCaSyn float32 `default:"10"`
+	SpikeCaSyn float32 `default:"8"`
 
 	// CaSynTau is the time constant for integrating the spike-driven calcium
 	// trace CaSyn at sender and recv neurons. See SpikeCaSyn for more info.
@@ -110,7 +110,7 @@ type CaSpikeParams struct {
 
 func (sp *CaSpikeParams) Defaults() {
 	sp.SpikeCaM = 8
-	sp.SpikeCaSyn = 10
+	sp.SpikeCaSyn = 8
 	sp.CaSynTau = 30
 	sp.Dt.Defaults()
 	sp.Update()
@@ -158,24 +158,25 @@ func SpikeBinWts(nplus int, cp, cd []float32) {
 	n := len(cp)
 	nminus := n - nplus
 
-	// CaP target: [0.3 0.4 0.5 0.6 0.7 0.8 1.8 2.8]
-	// CaP goes way up at end
-	inc := float32(2.0) / float32(nplus)
+	// CaP target: [0.1, 0.4, 0.5, 0.6, 0.7, 0.8, 1.7, 3.0]
+
+	// 0.8 to 3.0 at end
+	inc := float32(2.2) / float32(nplus)
 	cur := float32(0.8) + inc
 	for i := nminus; i < n; i++ {
 		cp[i] = cur
 		cur += inc
 	}
 	// prior two nplus windows ("middle") go up from .5 to .8
-	inc = float32(.4) / float32(2*nplus)
+	inc = float32(.3) / float32(2*nplus-1)
 	mid := n - 3*nplus
 	cur = float32(0.8)
 	for i := nminus - 1; i >= mid; i-- {
 		cp[i] = cur
 		cur -= inc
 	}
-	// then drop off at .1 per plus phase window
-	inc = float32(.2) / float32(nplus)
+	// then drop off at .6 per plus phase window
+	inc = float32(.6) / float32(nplus)
 	for i := mid - 1; i >= 0; i-- {
 		cp[i] = cur
 		cur -= inc
@@ -184,22 +185,23 @@ func SpikeBinWts(nplus int, cp, cd []float32) {
 		}
 	}
 
-	// CaD target: [0.5 0.73 0.966 1.2 1.2 1.2 1.05 0.9]
-	// CaD drops off from 1.2 to .9 in plus
-	inc = float32(.3) / float32(nplus)
-	cur = 1.2 - inc
+	// CaD target: [0.35 0.65 0.95 1.25 1.25 1.25 1.125 1.0]
+
+	// CaD drops off from 1.25 to 1.0 in plus
+	inc = float32(.25) / float32(nplus)
+	cur = 1.25 - inc
 	for i := nminus; i < n; i++ {
 		cd[i] = cur
 		cur -= inc
 	}
-	// is steady at 1.2 in the previous plus chunk
+	// is steady at 1.25 in the previous plus chunk
 	pplus := nminus - nplus
 	for i := nminus - 1; i >= pplus; i-- {
-		cd[i] = 1.2
+		cd[i] = 1.25
 	}
-	// then drops off again symmetrically back to .5
-	inc = float32(.7) / float32(nplus+1)
-	cur = 1.2
+	// then drops off again to .3
+	inc = float32(.9) / float32(nplus+1)
+	cur = 1.25
 	for i := pplus - 1; i >= 0; i-- {
 		cd[i] = cur
 		cur -= inc

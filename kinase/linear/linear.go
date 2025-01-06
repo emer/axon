@@ -305,25 +305,15 @@ func (ls *Linear) Regress() {
 	r.StopTolerance = 0.00001
 	r.ZeroOffset = true
 
-	// NBins = 4
-	// r.Coeff.Values = []float64{
-	// 	0.05, 0.25, 0.5, 0.6, 0, // linear progression
-	// 	0.25, 0.5, 0.5, 0.25, 0} // hump in the middle
-
 	// NBins = 8, 200+50 cycles for CaSyn
 	r.Coeff.Values = []float64{
-		0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.6, 2.9, 0, // big at the end; insensitive to start
-		0.5, 0.73, 0.966, 1.2, 1.2, 1.2, 1.05, 0.9, .0} // up and down
+		0.1, 0.4, 0.5, 0.6, 0.7, 0.8, 1.9, 3.0, 0, // big at the end; insensitive to start
+		0.35, 0.65, 0.95, 1.25, 1.25, 1.25, 1.125, 1.0, .0} // up and down
 
-	// NBins = 8, 200+50 cycles for discrete spikes
+	// NBins = 12, 300+50 cycles for CaSyn
 	// r.Coeff.Values = []float64{
-	// 	0.3, 0.4, 0.55, 0.65, 0.75, 0.85, 1.0, 1.0, 0, // linear progression
-	// 	0.5, 0.65, 0.75, 0.9, 0.9, 0.9, 0.65, 0.55, .0} // hump in the middle
-
-	// NBins = 8, 280+70 cycles for discrete spikes
-	// r.Coeff.Values = []float64{
-	// 	0.0, 0.1, 0.23, 0.35, 0.45, 0.55, 0.75, 0.75, 0, // linear progression
-	// 	0.2, 0.3, 0.4, 0.5, 0.5, 0.5, 0.4, 0.3, .0} // hump in the middle
+	// 	0, 0, 0, 0, 0.1, 0.4, 0.5, 0.6, 0.7, 0.8, 1.9, 3.0, 0, // big at the end; insensitive to start
+	// 	0, 0, 0, 0, 0.35, 0.65, 0.95, 1.25, 1.25, 1.25, 1.125, 1.0, .0} // up and down
 
 	fmt.Println(r.Coeffs())
 
