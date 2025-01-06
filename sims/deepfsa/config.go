@@ -37,6 +37,10 @@ func (cfg *EnvConfig) InitNameMap() {
 // ParamConfig has config parameters related to sim params.
 type ParamConfig struct {
 
+	// Script is an interpreted script that is run to set parameters in Layer and Path
+	// sheets, by default using the "Script" set name.
+	Script string `new-window:"+" width:"100"`
+
 	// Sheet is the extra params sheet name(s) to use (space separated
 	// if multiple). Must be valid name as listed in compiled-in params
 	// or loaded params.

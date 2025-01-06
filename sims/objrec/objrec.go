@@ -12,6 +12,7 @@ package main
 
 import (
 	"fmt"
+	"reflect"
 
 	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/cli"
@@ -86,7 +87,7 @@ type Sim struct {
 	Net *axon.Network `new-window:"+" display:"no-inline"`
 
 	// Params manages network parameter setting.
-	Params axon.Params
+	Params axon.Params `display:"inline"`
 
 	// Loops are the the control loops for running the sim, in different Modes
 	// across stacks of Levels.
@@ -134,7 +135,7 @@ func (ss *Sim) Run() {
 	ss.Root, _ = tensorfs.NewDir("Root")
 	tensorfs.CurRoot = ss.Root
 	ss.Net = axon.NewNetwork(ss.Config.Name)
-	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag)
+	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag, reflect.ValueOf(ss))
 	ss.RandSeeds.Init(100) // max 100 runs
 	ss.InitRandSeed(0)
 	if ss.Config.Run.GPU {
@@ -216,7 +217,9 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ss.Config.Run.NData)
-	net.Context().ThetaCycles = int32(ss.Config.Run.Cycles)
+	net.Context().SetThetaCycles(int32(ss.Config.Run.Cycles)).
+		SetPlusCycles(int32(ss.Config.Run.PlusCycles)).
+		SetCaBinCycles(int32(ss.Config.Run.CaBinCycles))
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
 	v1 := net.AddLayer4D("V1", axon.InputLayer, 10, 10, 5, 4)
@@ -255,6 +258,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 }
 
 func (ss *Sim) ApplyParams() {
+	ss.Params.Script = ss.Config.Params.Script
 	ss.Params.ApplyAll(ss.Net)
 }
 

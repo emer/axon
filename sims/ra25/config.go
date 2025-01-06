@@ -5,40 +5,17 @@
 package main
 
 import (
-	"github.com/emer/axon/v2/axon"
+	"cogentcore.org/core/math32/vecint"
 )
-
-// EnvConfig has config params for environment.
-type EnvConfig struct {
-
-	// Env parameters: can set any field/subfield on Env struct,
-	// using standard TOML formatting.
-	Env map[string]any
-
-	// ECPctAct is percent activation in EC pool, used in patgen for input generation.
-	ECPctAct float64 `default:"0.2"`
-
-	// MinDiffPct is the minimum difference between item random patterns,
-	// as a proportion (0-1) of total active
-	MinDiffPct float64 `default:"0.5"`
-
-	// DriftCtxt means use drifting context representations,
-	// otherwise does bit flips from prototype.
-	DriftCtxt bool
-
-	// CtxtFlipPct is the proportion (0-1) of active bits to flip
-	// for each context pattern, relative to a prototype, for non-drifting.
-	CtxtFlipPct float64 `default:"0.25"`
-
-	// DriftPct is percentage of active bits that drift, per step, for drifting context.
-	DriftPct float64 `default:"0.1"`
-}
 
 // ParamConfig has config parameters related to sim params.
 type ParamConfig struct {
 
-	// InToEc2PCon is percent connectivity from Input to EC2.
-	InToEc2PCon float32 `default:"0.25"`
+	// Hidden1Size is the size of hidden 1 layer.
+	Hidden1Size vecint.Vector2i `default:"{'X':10,'Y':10}" nest:"+"`
+
+	// Hidden2Size is the size of hidden 2 layer.
+	Hidden2Size vecint.Vector2i `default:"{'X':10,'Y':10}" nest:"+"`
 
 	// Script is an interpreted script that is run to set parameters in Layer and Path
 	// sheets, by default using the "Script" set name.
@@ -78,18 +55,11 @@ type RunConfig struct {
 	// NData is the number of data-parallel items to process in parallel per trial.
 	// Is significantly faster for both CPU and GPU.  Results in an effective
 	// mini-batch of learning.
-	NData int `default:"10" min:"1"`
+	NData int `default:"16" min:"1"`
 
 	// NThreads is the number of parallel threads for CPU computation;
 	// 0 = use default.
 	NThreads int `default:"0"`
-
-	// MemThr is the threshold on proportion on / off error to count item as remembered
-	MemThr float64 `default:"0.34"`
-
-	// StopMem is memory pct correct level (proportion) above which training
-	// on current list stops (switch from AB to AC or stop on AC).
-	StopMem float32 `default:"0.9"`
 
 	// Run is the _starting_ run number, which determines the random seed.
 	// NRuns counts up from there. Can do all runs in parallel by launching
@@ -104,7 +74,7 @@ type RunConfig struct {
 
 	// Trials is the total number of trials per epoch.
 	// Should be an even multiple of NData.
-	Trials int `default:"20"`
+	Trials int `default:"32"`
 
 	// Cycles is the total number of cycles per trial: at least 200.
 	Cycles int `default:"200"`
@@ -112,9 +82,22 @@ type RunConfig struct {
 	// PlusCycles is the total number of plus-phase cycles per trial. For Cycles=300, use 100.
 	PlusCycles int `default:"50"`
 
+	// CaBinCycles is the number of cycles per CaBin: how fine-grained the synaptic Ca is.
+	CaBinCycles int `default:"25"`
+
+	// NZero is how many perfect, zero-error epochs before stopping a Run.
+	NZero int `default:"2"`
+
 	// TestInterval is how often (in epochs) to run through all the test patterns,
 	// in terms of training epochs. Can use 0 or -1 for no testing.
 	TestInterval int `default:"5"`
+
+	// PCAInterval is how often (in epochs) to compute PCA on hidden
+	// representations to measure variance.
+	PCAInterval int `default:"10"`
+
+	// StartWeights is the name of weights file to load at start of first run.
+	StartWeights string
 }
 
 // LogConfig has config parameters related to logging data.
@@ -134,16 +117,16 @@ type LogConfig struct {
 type Config struct {
 
 	// Name is the short name of the sim.
-	Name string `display:"-" default:"Hip"`
+	Name string `display:"-" default:"RA25"`
 
 	// Title is the longer title of the sim.
-	Title string `display:"-" default:"Axon hippocampus"`
+	Title string `display:"-" default:"Axon random associator"`
 
 	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/hip/README.md"`
+	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/ra25/README.md"`
 
 	// Doc is brief documentation of the sim.
-	Doc string `display:"-" default:"Simulates the hippocampus on basic AB-AC paired associates task."`
+	Doc string `display:"-" default:"This demonstrates a basic Axon model and provides a template for creating new models. It has a random-associator four-layer axon network that uses the standard supervised learning paradigm to learn mappings between 25 random input / output patterns defined over 5x5 input / output layers."`
 
 	// Includes has a list of additional config files to include.
 	// After configuration, it contains list of include files added.
@@ -156,12 +139,6 @@ type Config struct {
 	// Debug reports debugging information.
 	Debug bool
 
-	// Hip has hippocampus sizing parameters.
-	Hip axon.HipConfig `display:"add-fields"`
-
-	// Env has environment configuration options.
-	Env EnvConfig `display:"add-fields"`
-
 	// Params has parameter related configuration options.
 	Params ParamConfig `display:"add-fields"`
 
@@ -170,10 +147,6 @@ type Config struct {
 
 	// Log has data logging related configuration options.
 	Log LogConfig `display:"add-fields"`
-}
-
-func (cfg *Config) Defaults() {
-	cfg.Hip.Defaults()
 }
 
 func (cfg *Config) IncludesPtr() *[]string { return &cfg.Includes }

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// pcore_vs simulates the inhibitory dynamics in the STN and GPe
+// bgventral simulates the inhibitory dynamics in the STN and GPe
 // leading to integration of Go vs. NoGo signal in the basal
 // ganglia, for the Ventral Striatum (VS) global Go vs. No case.
 package main
@@ -12,6 +12,7 @@ package main
 import (
 	"fmt"
 	"math"
+	"reflect"
 
 	"cogentcore.org/core/base/num"
 	"cogentcore.org/core/base/reflectx"
@@ -82,7 +83,7 @@ type Sim struct {
 	Net *axon.Network `new-window:"+" display:"no-inline"`
 
 	// Params manages network parameter setting.
-	Params axon.Params
+	Params axon.Params `display:"inline"`
 
 	// Loops are the the control loops for running the sim, in different Modes
 	// across stacks of Levels.
@@ -130,7 +131,7 @@ func (ss *Sim) Run() {
 	ss.Root, _ = tensorfs.NewDir("Root")
 	tensorfs.CurRoot = ss.Root
 	ss.Net = axon.NewNetwork(ss.Config.Name)
-	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag)
+	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag, reflect.ValueOf(ss))
 	ss.RandSeeds.Init(100) // max 100 runs
 	ss.InitRandSeed(0)
 	if ss.Config.Run.GPU {
@@ -271,6 +272,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 }
 
 func (ss *Sim) ApplyParams() {
+	ss.Params.Script = ss.Config.Params.Script
 	ss.Params.ApplyAll(ss.Net)
 }
 

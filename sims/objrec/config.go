@@ -21,6 +21,10 @@ type EnvConfig struct { //types:add
 // ParamConfig has config parameters related to sim params.
 type ParamConfig struct {
 
+	// Script is an interpreted script that is run to set parameters in Layer and Path
+	// sheets, by default using the "Script" set name.
+	Script string `new-window:"+" width:"100"`
+
 	// Sheet is the extra params sheet name(s) to use (space separated
 	// if multiple). Must be valid name as listed in compiled-in params
 	// or loaded params.
@@ -96,6 +100,9 @@ type RunConfig struct {
 
 	// PlusCycles is the total number of plus-phase cycles per trial. For Cycles=300, use 100.
 	PlusCycles int `default:"50"`
+
+	// CaBinCycles is the number of cycles per CaBin: how fine-grained the synaptic Ca is.
+	CaBinCycles int `default:"25"`
 
 	// NZero is how many perfect, zero-error epochs before stopping a Run.
 	NZero int `default:"2"`

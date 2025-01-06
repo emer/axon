@@ -27,6 +27,7 @@ type EnvConfig struct {
 
 // ParamConfig has config parameters related to sim params.
 type ParamConfig struct {
+
 	// Tweak means to perform automated parameter tweaking for
 	// parameters marked Hypers Tweak = log,incr, or [vals].
 	Tweak bool
@@ -36,6 +37,10 @@ type ParamConfig struct {
 
 	// DryRun for Tweak, if true, only print what would be done, don't run.
 	DryRun bool
+
+	// Script is an interpreted script that is run to set parameters in Layer and Path
+	// sheets, by default using the "Script" set name.
+	Script string `new-window:"+" width:"100"`
 
 	// Sheet is the extra params sheet name(s) to use (space separated
 	// if multiple). Must be valid name as listed in compiled-in params
@@ -125,10 +130,10 @@ type Config struct {
 	Name string `display:"-" default:"PCoreDS"`
 
 	// Title is the longer title of the sim.
-	Title string `display:"-" default:"Pallidal Core (PGe) Dorsal Striatum"`
+	Title string `display:"-" default:"Pallidal Core (GPe) Dorsal Striatum"`
 
 	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/pcore_ds/README.md"`
+	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/bgdorsal/README.md"`
 
 	// Doc is brief documentation of the sim.
 	Doc string `display:"-" default:"This project simulates the Dorsal Basal Ganglia, starting with the Dorsal Striatum, centered on the Pallidum Core (GPe) areas that drive Go vs. No selection of motor actions."`

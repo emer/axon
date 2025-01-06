@@ -51,12 +51,13 @@ type Context struct { //types:add -setters
 	// theta cycle (e.g., CTCtxtPath).
 	ThetaCycles int32 `default:"200"`
 
-	// PlusCycles is the number of cycles in the plus phase.
-	PlusCycles int32
+	// PlusCycles is the number of cycles in the plus phase. Typically 50,
+	// but may be set longer if ThetaCycles is above default of 200.
+	PlusCycles int32 `default:"50"`
 
-	// CaBinCycles is the number of cycles per CaBin used in computing synaptic
-	// calcium values. Total number of bins = ThetaCycles / CaBinCycles.
-	CaBinCycles int32
+	// CaBinCycles is the number of cycles for neuron [CaBins] values used in
+	// computing synaptic calcium values. Total number of bins = ThetaCycles / CaBinCycles.
+	CaBinCycles int32 `default:"25"`
 
 	// CyclesTotal is the accumulated cycle count, which increments continuously
 	// from whenever it was last reset. Typically this is the number of milliseconds

@@ -58,7 +58,7 @@ func (ly *Layer) InitActAvg(ctx *Context) {
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
 		for di := uint32(0); di < ly.MaxData; di++ {
-			ly.Params.Learn.InitNeurCa(ctx, ni, di)
+			ly.Params.Learn.InitNeuronCa(ctx, ni, di)
 		}
 	}
 	if ly.Params.HasPoolInhib() && ly.Params.Learn.TrgAvgAct.Pool.IsTrue() {

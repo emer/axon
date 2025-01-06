@@ -44,11 +44,12 @@ var PathParams = axon.PathSheets{
 	"Base": {
 		{Sel: "Path", Doc: "basic path params",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.LRate.Base = 0.1 // 0.1 learns fast but dies early, .02 is stable long term
-				pt.SWts.Adapt.LRate = 0.1 // .1 >= .2,
-				pt.SWts.Init.SPct = 0.5   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-				pt.Learn.DWt.SubMean = 0  // 1 > 0 for long run stability
-				pt.Learn.DWt.CaGain = 1   // use 2 for CaBinCycles = 10
+				pt.Learn.LRate.Base = 0.08       // 0.08 for trace, 0.03 for no trace
+				pt.SWts.Adapt.LRate = 0.1        // .1 >= .2,
+				pt.SWts.Init.SPct = 0.5          // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+				pt.Learn.DWt.Trace.SetBool(true) // no trace is faster! requires lrate = 0.03
+				pt.Learn.DWt.SubMean = 0         // 1 > 0 for long run stability
+				pt.Learn.DWt.CaPScale = 1        // no evidence that < 1 is better
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {

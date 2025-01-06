@@ -867,12 +867,12 @@ struct LRateParams {
 struct DWtParams {
 	Trace: i32,
 	Tau: f32,
-	CaGain: f32,
+	CaScale: f32,
+	CaPScale: f32,
 	SubMean: f32,
 	LearnThr: f32,
 	Dt: f32,
 	pad: f32,
-	pad1: f32,
 }
 struct HebbParams {
 	On: i32,

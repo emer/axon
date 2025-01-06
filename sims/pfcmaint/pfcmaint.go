@@ -11,6 +11,7 @@ package pfcmaint
 
 import (
 	"fmt"
+	"reflect"
 
 	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/core"
@@ -71,7 +72,7 @@ type Sim struct {
 	Net *axon.Network `new-window:"+" display:"no-inline"`
 
 	// Params manages network parameter setting.
-	Params axon.Params
+	Params axon.Params `display:"inline"`
 
 	// Loops are the the control loops for running the sim, in different Modes
 	// across stacks of Levels.
@@ -119,7 +120,7 @@ func (ss *Sim) Run() {
 	ss.Root, _ = tensorfs.NewDir("Root")
 	tensorfs.CurRoot = ss.Root
 	ss.Net = axon.NewNetwork(ss.Config.Name)
-	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag)
+	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag, reflect.ValueOf(ss))
 	ss.RandSeeds.Init(100) // max 100 runs
 	ss.InitRandSeed(0)
 	if ss.Config.Run.GPU {
@@ -228,6 +229,7 @@ func (ss *Sim) ConfigRubicon() {
 }
 
 func (ss *Sim) ApplyParams() {
+	ss.Params.Script = ss.Config.Params.Script
 	ss.Params.ApplyAll(ss.Net)
 }
 

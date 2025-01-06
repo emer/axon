@@ -16,6 +16,7 @@ func TestLinear(t *testing.T) {
 	ls.Defaults()
 	ls.Cycles = 200
 	ls.PlusCycles = 50
+	ls.CyclesPerBin = 25
 	ls.Update()
 	ls.Init()
 	ls.Run()

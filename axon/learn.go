@@ -350,9 +350,9 @@ func (ln *LearnNeuronParams) Defaults() {
 	ln.NeuroMod.Defaults()
 }
 
-// InitLearnNeurCa initializes the neuron-level calcium learning and spking variables.
+// InitNeuronCa initializes the neuron-level calcium learning and spking variables.
 // Called by InitWeights (at start of learning).
-func (ln *LearnNeuronParams) InitNeurCa(ctx *Context, ni, di uint32) {
+func (ln *LearnNeuronParams) InitNeuronCa(ctx *Context, ni, di uint32) {
 	Neurons.Set(0, int(ni), int(di), int(GnmdaLrn))
 	Neurons.Set(0, int(ni), int(di), int(NmdaCa))
 
@@ -531,20 +531,6 @@ func (sp *SWtAdaptParams) ShouldDisplay(field string) bool {
 	}
 }
 
-//gosl:end
-
-// RandVar returns the random variance in weight value (zero mean) based on Var param
-func (sp *SWtInitParams) RandVar(rnd randx.Rand) float32 {
-	return sp.Var * 2.0 * (rnd.Float32() - 0.5)
-}
-
-// // RandVar returns the random variance (zero mean) based on DreamVar param
-// func (sp *SWtAdaptParams) RandVar(rnd randx.Rand) float32 {
-// 	return sp.DreamVar * 2.0 * (rnd.Float32(-1) - 0.5)
-// }
-
-//gosl:start
-
 // SWtParams manages structural, slowly adapting weight values [SWt],
 // in terms of initialization and updating over course of learning.
 // SWts impose initial and slowly adapting constraints on neuron connectivity
@@ -659,6 +645,16 @@ func (sp *SWtParams) WtFromDWt(wt, lwt *float32, dwt, swt float32) {
 
 //gosl:end
 
+// RandVar returns the random variance in weight value (zero mean) based on Var param
+func (sp *SWtInitParams) RandVar(rnd randx.Rand) float32 {
+	return sp.Var * 2.0 * (rnd.Float32() - 0.5)
+}
+
+// // RandVar returns the random variance (zero mean) based on DreamVar param
+// func (sp *SWtAdaptParams) RandVar(rnd randx.Rand) float32 {
+// 	return sp.DreamVar * 2.0 * (rnd.Float32(-1) - 0.5)
+// }
+
 // InitWeightsSyn initializes weight values based on WtInit randomness parameters
 // for an individual synapse.
 // It also updates the linear weight value based on the sigmoidal weight value.
@@ -747,7 +743,7 @@ type DWtParams struct {
 	// parameter to produce the final multiplicative credit assignment factor.
 	// If Trace = false, then the synaptic CaP - CaD delta is used directly as
 	// the error-driven learning signal, precluding the longer-timescale trace
-	// integration factor. This rule is also automatically used for Target layers.
+	// integration factor (Trace = false is automatically used for Target layers).
 	Trace slbool.Bool `default:"true"`
 
 	// Tau is the time constant for integrating the synaptic trace [Tr]
@@ -756,10 +752,14 @@ type DWtParams struct {
 	// there is temporal structure to be learned across these longer timescales.
 	Tau float32 `default:"1,2,4"`
 
-	// CaGain is a multiplier on the total synaptic calcium values, computed from products
+	// CaScale is a multiplier on the total synaptic calcium values, computed from products
 	// of the neuron-level [CaBins] values. If [Context.CaBinCycles] is lower than
 	// default of 25, then this value needs to be set higher, e.g., 2 for cycles = 10.
-	CaGain float32 `default:"1"`
+	CaScale float32 `default:"1"`
+
+	// CaPScale is a separate multiplier for the CaP component of synaptic calcium, to
+	// allow separate weighting of potentiation (CaP) vs. depression (CaD) factors.
+	CaPScale float32 `default:"1"`
 
 	// SubMean is the amount of the mean [dWt] to subtract for updating the online
 	// learning [LWt] values, producing a zero-sum effect. 1.0 = full zero-sum dWt.
@@ -779,13 +779,14 @@ type DWtParams struct {
 	// Dt rate = 1 / tau
 	Dt float32 `display:"-" json:"-" xml:"-" edit:"-"`
 
-	pad, pad1 float32
+	pad float32
 }
 
 func (tp *DWtParams) Defaults() {
 	tp.Trace.SetBool(true)
 	tp.Tau = 1
-	tp.CaGain = 1
+	tp.CaScale = 1
+	tp.CaPScale = 1
 	tp.SubMean = 0
 	tp.LearnThr = 0
 	tp.Update()

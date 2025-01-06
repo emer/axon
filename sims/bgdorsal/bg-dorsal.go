@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// pcore_ds simulates the dorsal Basal Ganglia, starting with the
+// bgdorsal simulates the dorsal Basal Ganglia, starting with the
 // Dorsal Striatum, centered on the Pallidum Core (GPe) areas that
 // drive Go vs. No selection of motor actions.
 package main
@@ -11,6 +11,7 @@ package main
 
 import (
 	"fmt"
+	"reflect"
 
 	"cogentcore.org/core/base/num"
 	"cogentcore.org/core/base/reflectx"
@@ -83,7 +84,7 @@ type Sim struct {
 	Net *axon.Network `new-window:"+" display:"no-inline"`
 
 	// Params manages network parameter setting.
-	Params axon.Params
+	Params axon.Params `display:"inline"`
 
 	// Loops are the the control loops for running the sim, in different Modes
 	// across stacks of Levels.
@@ -131,7 +132,7 @@ func (ss *Sim) Run() {
 	ss.Root, _ = tensorfs.NewDir("Root")
 	tensorfs.CurRoot = ss.Root
 	ss.Net = axon.NewNetwork(ss.Config.Name)
-	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag)
+	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag, reflect.ValueOf(ss))
 	ss.RandSeeds.Init(100) // max 100 runs
 	ss.InitRandSeed(0)
 	if ss.Config.Run.GPU {
@@ -328,6 +329,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 }
 
 func (ss *Sim) ApplyParams() {
+	ss.Params.Script = ss.Config.Params.Script
 	ss.Params.ApplyAll(ss.Net)
 
 	// compensate for expected activity levels based on max seq len

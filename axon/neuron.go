@@ -142,15 +142,13 @@ const (
 	//////// Calcium for learning
 
 	// CaSyn is the neuron-level integration of spike-driven calcium, used to approximate
-	// synaptic calcium influx as a product of these values that are integrated separately
-	// on the sender and receiver neurons, which is computationally much more efficient.
+	// synaptic calcium influx as a product of sender and receiver neuron CaSyn values,
+	// which are integrated separately because it is computationally much more efficient.
 	// This value is driven directly by spikes, with an exponential integration time
 	// constant of 30 msec (default), which captures the coincidence window for pre*post
-	// firing on NMDA receptor opening. It is integrated into the neuron [CaBins] values
-	// over the course of the Theta Cycle window, and then the pre*post product is integrated
-	// over these bins at the synaptic level, with weights for CaP vs CaD that reflect their
-	// faster vs. slower time constants, respectively. CaD is used for the credit assignment
-	// factor, while CaP - CaD is used directly for error-driven learning at Target layers.
+	// firing on NMDA receptor opening. The neuron [CaBins] values record the temporal
+	// trajectory of CaSyn over the course of the theta cycle window, and then the
+	// pre*post product is integrated over these bins at the synaptic level.
 	CaSyn
 
 	// LearnCa is the receiving neuron calcium signal, which is integrated up to
@@ -160,10 +158,6 @@ const (
 	// sources (vs. CaM which only reflects a simple spiking component).
 	// The NMDA signal reflects both sending and receiving activity, while the
 	// VGCC signal is purely receiver spiking, and a balance of both works best.
-	// The synaptic-level trace factor computed from [CaSyn] integrated in [CaBins]
-	// for sender and receiver neurons provides the credit assignment factor,
-	// reflecting coincident activity, which can also be integrated over longer
-	// multi-trial timescales.
 	LearnCa
 
 	// LearnCaM is the integrated [LearnCa] at the MTau timescale (typically 5),
@@ -460,9 +454,14 @@ const (
 	// differential per data (for ext inputs) and are writable (indexes are read only).
 	NeurFlags
 
-	// CaBins has aggregated spikes in bins across the theta cycle,
+	// CaBins is a vector of values starting here, with aggregated [CaSyn] values
+	// in time bins of [Context.CaBinCycles] across the theta cycle,
 	// for computing synaptic calcium efficiently. There can be a variable number
 	// of bins depending on bin width and total number of cycles.
+	// Synaptic calcium is integrated from sender * receiver CaBins values,
+	// with weights for CaP vs CaD that reflect their faster vs. slower time constants,
+	// respectively. CaD is used for the credit assignment factor, while CaP - CaD is
+	// used directly for error-driven learning at Target layers.
 	CaBins
 )
 

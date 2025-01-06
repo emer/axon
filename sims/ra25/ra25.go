@@ -14,6 +14,7 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
+	"reflect"
 
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/metadata"
@@ -22,7 +23,6 @@ import (
 	"cogentcore.org/core/enums"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
-	"cogentcore.org/core/math32/vecint"
 	"cogentcore.org/core/tree"
 	"cogentcore.org/lab/base/mpi"
 	"cogentcore.org/lab/base/randx"
@@ -76,146 +76,7 @@ const (
 	Step
 )
 
-// see params.go for params
-
-// ParamConfig has config parameters related to sim params.
-type ParamConfig struct {
-
-	// Hidden1Size is the size of hidden 1 layer.
-	Hidden1Size vecint.Vector2i `default:"{'X':10,'Y':10}" nest:"+"`
-
-	// Hidden2Size is the size of hidden 2 layer.
-	Hidden2Size vecint.Vector2i `default:"{'X':10,'Y':10}" nest:"+"`
-
-	// Sheet is the extra params sheet name(s) to use (space separated
-	// if multiple). Must be valid name as listed in compiled-in params
-	// or loaded params.
-	Sheet string
-
-	// Tag is an extra tag to add to file names and logs saved from this run.
-	Tag string
-
-	// Note is additional info to describe the run params etc,
-	// like a git commit message for the run.
-	Note string
-
-	// SaveAll will save a snapshot of all current param and config settings
-	// in a directory named params_<datestamp> (or _good if Good is true),
-	// then quit. Useful for comparing to later changes and seeing multiple
-	// views of current params.
-	SaveAll bool `nest:"+"`
-
-	// Good is for SaveAll, save to params_good for a known good params state.
-	// This can be done prior to making a new release after all tests are passing.
-	// Add results to git to provide a full diff record of all params over level.
-	Good bool `nest:"+"`
-}
-
-// RunConfig has config parameters related to running the sim.
-type RunConfig struct {
-
-	// GPU uses the GPU for computation, generally faster than CPU even for
-	// small models if NData ~16.
-	GPU bool `default:"true"`
-
-	// NData is the number of data-parallel items to process in parallel per trial.
-	// Is significantly faster for both CPU and GPU.  Results in an effective
-	// mini-batch of learning.
-	NData int `default:"16" min:"1"`
-
-	// NThreads is the number of parallel threads for CPU computation;
-	// 0 = use default.
-	NThreads int `default:"0"`
-
-	// Run is the _starting_ run number, which determines the random seed.
-	// NRuns counts up from there. Can do all runs in parallel by launching
-	// separate jobs with each starting Run, NRuns = 1.
-	Run int `default:"0"`
-
-	// Runs is the total number of runs to do when running Train, starting from Run.
-	Runs int `default:"5" min:"1"`
-
-	// Epochs is the total number of epochs per run.
-	Epochs int `default:"100"`
-
-	// Trials is the total number of trials per epoch.
-	// Should be an even multiple of NData.
-	Trials int `default:"32"`
-
-	// Cycles is the total number of cycles per trial: at least 200.
-	Cycles int `default:"200"`
-
-	// PlusCycles is the total number of plus-phase cycles per trial. For Cycles=300, use 100.
-	PlusCycles int `default:"50"`
-
-	// CaBinCycles is the number of cycles per CaBin: how fine-grained the synaptic Ca is.
-	CaBinCycles int `default:"25"`
-
-	// NZero is how many perfect, zero-error epochs before stopping a Run.
-	NZero int `default:"2"`
-
-	// TestInterval is how often (in epochs) to run through all the test patterns,
-	// in terms of training epochs. Can use 0 or -1 for no testing.
-	TestInterval int `default:"5"`
-
-	// PCAInterval is how often (in epochs) to compute PCA on hidden
-	// representations to measure variance.
-	PCAInterval int `default:"10"`
-
-	// StartWeights is the name of weights file to load at start of first run.
-	StartWeights string
-}
-
-// LogConfig has config parameters related to logging data.
-type LogConfig struct {
-
-	// SaveWeights will save final weights after each run.
-	SaveWeights bool
-
-	// Train has the list of Train mode levels to save log files for.
-	Train []string `default:"['Run', 'Epoch']" nest:"+"`
-
-	// Test has the list of Test mode levels to save log files for.
-	Test []string `nest:"+"`
-}
-
-// Config has the overall Sim configuration options.
-type Config struct {
-
-	// Name is the short name of the sim.
-	Name string `display:"-" default:"RA25"`
-
-	// Title is the longer title of the sim.
-	Title string `display:"-" default:"Axon random associator"`
-
-	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/ra25/README.md"`
-
-	// Doc is brief documentation of the sim.
-	Doc string `display:"-" default:"This demonstrates a basic Axon model and provides a template for creating new models. It has a random-associator four-layer axon network that uses the standard supervised learning paradigm to learn mappings between 25 random input / output patterns defined over 5x5 input / output layers."`
-
-	// Includes has a list of additional config files to include.
-	// After configuration, it contains list of include files added.
-	Includes []string
-
-	// GUI means open the GUI. Otherwise it runs automatically and quits,
-	// saving results to log files.
-	GUI bool `default:"true"`
-
-	// Debug reports debugging information.
-	Debug bool
-
-	// Params has parameter related configuration options.
-	Params ParamConfig `display:"add-fields"`
-
-	// Run has sim running related configuration options.
-	Run RunConfig `display:"add-fields"`
-
-	// Log has data logging related configuration options.
-	Log LogConfig `display:"add-fields"`
-}
-
-func (cfg *Config) IncludesPtr() *[]string { return &cfg.Includes }
+// see params.go for params, config.go for config
 
 // Sim encapsulates the entire simulation model, and we define all the
 // functionality as methods on this struct.  This structure keeps all relevant
@@ -231,7 +92,7 @@ type Sim struct {
 	Net *axon.Network `new-window:"+" display:"no-inline"`
 
 	// Params manages network parameter setting.
-	Params axon.Params
+	Params axon.Params `display:"inline"`
 
 	// Loops are the the control loops for running the sim, in different Modes
 	// across stacks of Levels.
@@ -279,7 +140,7 @@ func (ss *Sim) Run() {
 	ss.Root, _ = tensorfs.NewDir("Root")
 	tensorfs.CurRoot = ss.Root
 	ss.Net = axon.NewNetwork(ss.Config.Name)
-	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag)
+	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag, reflect.ValueOf(ss))
 	ss.RandSeeds.Init(100) // max 100 runs
 	ss.InitRandSeed(0)
 	if ss.Config.Run.GPU {
@@ -384,6 +245,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 }
 
 func (ss *Sim) ApplyParams() {
+	ss.Params.Script = ss.Config.Params.Script
 	ss.Params.ApplyAll(ss.Net)
 }
 

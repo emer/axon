@@ -154,7 +154,7 @@ func (kp *CaDtParams) PDTauForNCycles(ncycles int) {
 // which sets the natural timescale of the integration: total ca bins can
 // be proportional to the plus phase (e.g., 4x for standard 200 / 50 total / plus),
 // or longer if there is a longer minus phase window (which is downweighted).
-func CaBinWts(nplus int, cp, cd []float32) {
+func CaBinWts(nplus, binCycles int, cp, cd []float32) {
 	n := len(cp)
 	nminus := n - nplus
 
@@ -209,7 +209,13 @@ func CaBinWts(nplus int, cp, cd []float32) {
 			cur = 0
 		}
 	}
-	// note: no reason to normalize these
+
+	// rescale for bin size
+	scale := float32(binCycles) / (float32(25))
+	for i := range n {
+		cp[i] *= scale
+		cd[i] *= scale
+	}
 }
 
 // Theta200plus50 sets bin weights for a theta cycle learning trial of 200 cycles

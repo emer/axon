@@ -28,6 +28,10 @@ type ParamConfig struct {
 	// DryRun for Tweak, if true, only print what would be done, don't run.
 	DryRun bool
 
+	// Script is an interpreted script that is run to set parameters in Layer and Path
+	// sheets, by default using the "Script" set name.
+	Script string `new-window:"+" width:"100"`
+
 	// Sheet is the extra params sheet name(s) to use (space separated
 	// if multiple). Must be valid name as listed in compiled-in params
 	// or loaded params.
@@ -109,10 +113,10 @@ type Config struct {
 	Name string `display:"-" default:"PCoreVS"`
 
 	// Title is the longer title of the sim.
-	Title string `display:"-" default:"Pallidal Core (PGe) Ventral Striatum"`
+	Title string `display:"-" default:"Pallidal Core (GPe) Ventral Striatum"`
 
 	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/pcore_vs/README.md"`
+	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/bgventral/README.md"`
 
 	// Doc is brief documentation of the sim.
 	Doc string `display:"-" default:"This project simulates the Ventral Basal Ganglia, starting with the Ventral Striatum, centered on the Pallidum Core (GPe) areas that drive Go vs. No engagement in a goal."`

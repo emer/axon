@@ -55,8 +55,8 @@ type NetworkIndexes struct {
 	// [Network.Build]. This determines the size of the spike sending delay buffers.
 	MaxDelay uint32 `edit:-"-"`
 
-	// NCaBins is the total number of ca bins in neuron variables.
-	// Set to Context.ThetaCycles / CaBinCycles in Build.
+	// NCaBins is the total number of [CaBins] in the neuron state variables.
+	// Set to [Context.ThetaCycles] / [Context.CaBinCycles] in Build.
 	NCaBins int32 `edit:"-"`
 
 	// NLayers is the number of layers in the network.
@@ -944,7 +944,7 @@ func (nt *Network) SetCaBinWts() {
 	nPlusBins := int(ctx.PlusCycles / ctx.CaBinCycles)
 	cp := make([]float32, nBins)
 	cd := make([]float32, nBins)
-	kinase.CaBinWts(nPlusBins, cp, cd)
+	kinase.CaBinWts(nPlusBins, int(ctx.CaBinCycles), cp, cd)
 	for i := range nBins {
 		nt.GlobalScalars[GvCaBinWts+GlobalScalarVars(i), 0] = cp[i]
 		nt.GlobalScalars[GvCaBinWts+GlobalScalarVars(nBins+i), 0] = cd[i]

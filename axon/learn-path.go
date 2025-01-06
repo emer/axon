@@ -48,7 +48,7 @@ func (pt *PathParams) DWtSyn(ctx *Context, rlay *LayerParams, syni, si, ri, di u
 }
 
 // SynCa gets the synaptic calcium P (potentiation) and D (depression)
-// values, using an optimized integration of neuron-level CaBins values,
+// values, using an optimized integration of neuron-level [CaBins] values,
 // and weight factors to capture the different CaP vs. CaD time constants.
 func (pt *PathParams) SynCa(ctx *Context, si, ri, di uint32, syCaP, syCaD *float32) {
 	nbins := NetworkIxs[0].NCaBins
@@ -59,8 +59,8 @@ func (pt *PathParams) SynCa(ctx *Context, si, ri, di uint32, syCaP, syCaD *float
 		cp += sp * GlobalScalars.Value(int(GvCaBinWts+GlobalScalarVars(i)), int(0))
 		cd += sp * GlobalScalars.Value(int(cadSt+GlobalScalarVars(i)), int(0))
 	}
-	*syCaP = pt.Learn.DWt.CaGain * cp
-	*syCaD = pt.Learn.DWt.CaGain * cd
+	*syCaP = pt.Learn.DWt.CaPScale * pt.Learn.DWt.CaScale * cp
+	*syCaD = pt.Learn.DWt.CaScale * cd
 }
 
 // DWtSynCortex computes the weight change (learning) at given synapse, using the

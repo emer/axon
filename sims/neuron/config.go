@@ -12,6 +12,10 @@ type ParamConfig struct {
 	// or loaded params.
 	Sheet string
 
+	// Script is an interpreted script that is run to set parameters in Layer and Path
+	// sheets, by default using the "Script" set name.
+	Script string `new-window:"+" width:"100"`
+
 	// Tag is an extra tag to add to file names and logs saved from this run.
 	Tag string
 

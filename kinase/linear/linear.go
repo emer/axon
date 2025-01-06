@@ -305,22 +305,54 @@ func (ls *Linear) Regress() {
 	r.StopTolerance = 0.00001
 	r.ZeroOffset = true
 
+	// default coefficients are the current ones..
+	cp := make([]float32, ls.NumBins)
+	cd := make([]float32, ls.NumBins)
+	nplus := ls.PlusCycles / ls.CyclesPerBin
+	kinase.CaBinWts(nplus, ls.CyclesPerBin, cp, cd)
+	cp = append(cp, 0)
+	cd = append(cd, 0)
+
+	cp64 := make([]float64, ls.NumBins+1)
+	cd64 := make([]float64, ls.NumBins+1)
+	for i := range ls.NumBins + 1 {
+		cp64[i] = float64(cp[i])
+		cd64[i] = float64(cd[i])
+	}
+
+	r.Coeff.Values = append(cp64, cd64...)
+
 	// NBins = 8, 200+50 cycles for CaSyn
-	r.Coeff.Values = []float64{
-		0.1, 0.4, 0.5, 0.6, 0.7, 0.8, 1.9, 3.0, 0, // big at the end; insensitive to start
-		0.35, 0.65, 0.95, 1.25, 1.25, 1.25, 1.125, 1.0, .0} // up and down
+	// r.Coeff.Values = []float64{
+	// 	0.1, 0.4, 0.5, 0.6, 0.7, 0.8, 1.9, 3.0, 0, // big at the end; insensitive to start
+	// 	0.35, 0.65, 0.95, 1.25, 1.25, 1.25, 1.125, 1.0, .0} // up and down
 
 	// NBins = 12, 300+50 cycles for CaSyn
 	// r.Coeff.Values = []float64{
 	// 	0, 0, 0, 0, 0.1, 0.4, 0.5, 0.6, 0.7, 0.8, 1.9, 3.0, 0, // big at the end; insensitive to start
 	// 	0, 0, 0, 0, 0.35, 0.65, 0.95, 1.25, 1.25, 1.25, 1.125, 1.0, .0} // up and down
 
-	fmt.Println(r.Coeffs())
+	prc := func() string {
+		s := "CaP:\t"
+		for i := range ls.NumBins {
+			s += fmt.Sprintf("%7.4f\t", r.Coeff.Values[i])
+		}
+		s += "\nCaD:\t"
+		for i := range ls.NumBins {
+			s += fmt.Sprintf("%7.4f\t", r.Coeff.Values[i+ls.NumBins+1])
+		}
+		return s
+	}
+
+	start := prc()
 
 	r.Run()
 
 	fmt.Println(r.Variance())
-	fmt.Println(r.Coeffs())
+	fmt.Println("Starting Coeff:")
+	fmt.Println(start)
+	fmt.Println("Final Coeff:")
+	fmt.Println(prc())
 
 	/*
 		for vi := 0; vi < 2; vi++ {

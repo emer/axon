@@ -755,8 +755,8 @@ fn PathParams_SynCa(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, si
 		cp += sp * GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvCaBinWts + GlobalScalarVars(i)), u32(0))];
 		cd += sp * GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(cadSt + GlobalScalarVars(i)), u32(0))];
 	}
-	*syCaP = (*pt).Learn.DWt.CaGain * cp;
-	*syCaD = (*pt).Learn.DWt.CaGain * cd;
+	*syCaP = (*pt).Learn.DWt.CaPScale * (*pt).Learn.DWt.CaScale * cp;
+	*syCaD = (*pt).Learn.DWt.CaScale * cd;
 }
 fn PathParams_DWtSynCortex(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32, isTarget: bool) {
 	var syCaP: f32;
@@ -1068,12 +1068,12 @@ struct LRateParams {
 struct DWtParams {
 	Trace: i32,
 	Tau: f32,
-	CaGain: f32,
+	CaScale: f32,
+	CaPScale: f32,
 	SubMean: f32,
 	LearnThr: f32,
 	Dt: f32,
 	pad: f32,
-	pad1: f32,
 }
 fn DWtParams_TrFromCa(tp: ptr<function,DWtParams>, tr: f32, ca: f32) -> f32 {
 	return tr + (*tp).Dt*(ca-tr);
