@@ -15,8 +15,6 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Noise.On.SetBool(true)
 				ly.Acts.Noise.Ge = 0.0001 // 0.0001 > others; could just be noise ;)
 				ly.Acts.Noise.Gi = 0.0001 // 0.0001 perhaps better than others
-				ly.Learn.GateSync.On.SetBool(false)
-				ly.Learn.GateSync.Offset = 80
 			}},
 		{Sel: ".MatrixLayer", Doc: "all mtx",
 			Set: func(ly *axon.LayerParams) {
