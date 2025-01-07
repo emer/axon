@@ -3,9 +3,10 @@ module github.com/emer/axon/v2
 go 1.22
 
 require (
-	cogentcore.org/core v0.3.8-0.20241225201506-0a17ddfaddf6
+	cogentcore.org/core v0.3.8-0.20250107194326-4f9a237dda21
 	cogentcore.org/lab v0.0.0-20250106082910-c6a5aa45a062
 	github.com/anthonynsimon/bild v0.13.0
+	github.com/cogentcore/yaegi v0.0.0-20240724064145-e32a03faad56
 	github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20241223211126-97d70964931f
 	github.com/emer/v1vision v0.1.1-0.20241223003153-dd6818448b3b
 	github.com/stretchr/testify v1.9.0
@@ -22,7 +23,6 @@ require (
 	github.com/bramvdbogaerde/go-scp v1.4.0 // indirect
 	github.com/chewxy/math32 v1.10.1 // indirect
 	github.com/cogentcore/webgpu v0.0.0-20241212004832-ad7475f3b4dd // indirect
-	github.com/cogentcore/yaegi v0.0.0-20240724064145-e32a03faad56 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dlclark/regexp2 v1.11.0 // indirect
 	github.com/ergochat/readline v0.1.2 // indirect
