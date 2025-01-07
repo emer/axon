@@ -13,9 +13,14 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Clamp.Ge = 1.0 // 1.5 is def, was 0.6 (too low)
 				ly.Acts.Noise.On.SetBool(true)
-				ly.Acts.Noise.Ge = 0.0001                    // 0.0001 > others; could just be noise ;)
-				ly.Acts.Noise.Gi = 0.0001                    // 0.0001 perhaps better than others
-				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // ?
+				ly.Acts.Noise.Ge = 0.0001 // 0.0001 > others; could just be noise ;)
+				ly.Acts.Noise.Gi = 0.0001 // 0.0001 perhaps better than others
+				ly.Learn.RLRate.SigmoidLinear.SetBool(false)
+			}},
+		{Sel: ".PFCLayer", Doc: "pfc",
+			Set: func(ly *axon.LayerParams) {
+				ly.Learn.NeuroMod.DAMod = axon.NoDAMod
+				ly.Learn.NeuroMod.DAModGain = 0.01
 			}},
 		{Sel: ".MatrixLayer", Doc: "all mtx",
 			Set: func(ly *axon.LayerParams) {
@@ -86,9 +91,9 @@ var PathParams = axon.PathSheets{
 	"Base": {
 		{Sel: "Path", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.LRate.Base = 0.04 // 0.04 def
-				pt.Learn.DWt.CaPScale = 0.95
-				pt.Learn.DWt.CaScale = .5 // 0.5 for CaBinCycles = 10
+				pt.Learn.LRate.Base = 0.04   // 0.04 def -- works best
+				pt.Learn.DWt.CaPScale = 0.95 // 0.95 > 1 or .9
+				pt.Learn.DWt.Tau = 1         // 1 > 2
 			}},
 		{Sel: ".CTtoPred", Doc: "",
 			Set: func(pt *axon.PathParams) {

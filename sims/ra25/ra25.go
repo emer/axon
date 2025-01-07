@@ -21,6 +21,7 @@ import (
 	"cogentcore.org/core/cli"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/enums"
+	"cogentcore.org/core/gpu"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/tree"
@@ -43,8 +44,6 @@ import (
 var content embed.FS
 
 func main() {
-	// gpu.Debug = true
-	// gpu.DebugAdapter = true
 	cfg := &Config{}
 	cli.SetFromDefaults(cfg)
 	opts := cli.DefaultOptions(cfg.Name, cfg.Title)
@@ -132,6 +131,10 @@ type Sim struct {
 func RunSim(cfg *Config) error {
 	sim := &Sim{}
 	sim.Config = cfg
+	if cfg.Debug {
+		gpu.Debug = true
+		gpu.DebugAdapter = true
+	}
 	sim.Run()
 	return nil
 }

@@ -127,7 +127,7 @@ type LogConfig struct {
 type Config struct {
 
 	// Name is the short name of the sim.
-	Name string `display:"-" default:"PCoreDS"`
+	Name string `display:"-" default:"BGDorsal"`
 
 	// Title is the longer title of the sim.
 	Title string `display:"-" default:"Pallidal Core (GPe) Dorsal Striatum"`

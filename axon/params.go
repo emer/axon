@@ -15,11 +15,26 @@ import (
 	"github.com/emer/emergent/v2/params"
 )
 
-// LayerSheets are Layer parameter Sheets.
-type LayerSheets = params.Sheets[*LayerParams]
+// type aliases for params generic types that we use:
+type (
+	// LayerSheets contains Layer parameter Sheets.
+	LayerSheets = params.Sheets[*LayerParams]
 
-// PathSheets are Path parameter Sheets.
-type PathSheets = params.Sheets[*PathParams]
+	// LayerSheet is one Layer parameter Sheet.
+	LayerSheet = params.Sheet[*LayerParams]
+
+	// LayerSel is one Layer parameter Selector.
+	LayerSel = params.Sel[*LayerParams]
+
+	// PathSheets contains Path parameter Sheets.
+	PathSheets = params.Sheets[*PathParams]
+
+	// PathSheet is one Path parameter Sheet.
+	PathSheet = params.Sheet[*PathParams]
+
+	// PathSel is one Path parameter Selector.
+	PathSel = params.Sel[*PathParams]
+)
 
 // Params contains the [LayerParams] and [PathParams] parameter setting functions
 // provided by the [emergent] [params] package.
@@ -83,14 +98,14 @@ func (pr *Params) Config(layer LayerSheets, path PathSheets, extraSheets, tag st
 	pr.Interp = interp.New(interp.Options{})
 	pr.Interp.Use(interp.Exports{
 		"github.com/emer/axon/axon": map[string]reflect.Value{
-			"LayerSel":    reflect.ValueOf((*params.Sel[*LayerParams])(nil)),
-			"LayerSheet":  reflect.ValueOf((*params.Sheet[*LayerParams])(nil)),
-			"PathSel":     reflect.ValueOf((*params.Sel[*PathParams])(nil)),
-			"PathSheet":   reflect.ValueOf((*params.Sheet[*PathParams])(nil)),
-			"LayerSheets": reflect.ValueOf((*LayerSheets)(nil)),
-			"PathSheets":  reflect.ValueOf((*PathSheets)(nil)),
 			"LayerParams": reflect.ValueOf((*LayerParams)(nil)),
 			"PathParams":  reflect.ValueOf((*PathParams)(nil)),
+			"LayerSel":    reflect.ValueOf((*LayerSel)(nil)),
+			"LayerSheet":  reflect.ValueOf((*LayerSheet)(nil)),
+			"LayerSheets": reflect.ValueOf((*LayerSheets)(nil)),
+			"PathSel":     reflect.ValueOf((*PathSel)(nil)),
+			"PathSheet":   reflect.ValueOf((*PathSheet)(nil)),
+			"PathSheets":  reflect.ValueOf((*PathSheets)(nil)),
 		},
 		"github.com/emer/axon/sim/sim": map[string]reflect.Value{
 			"Sim": sim,

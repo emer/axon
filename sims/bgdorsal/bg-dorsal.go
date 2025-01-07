@@ -831,7 +831,9 @@ func (ss *Sim) ConfigStats() {
 				tsr.SetNumRows(0)
 				plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
 					s.Range.SetMin(0).SetMax(1)
-					s.On = true
+					if name != "RT" {
+						s.On = true
+					}
 				})
 				continue
 			}
