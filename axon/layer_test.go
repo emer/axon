@@ -33,7 +33,7 @@ func TestLayer(t *testing.T) {
 		// can't have spiked as we haven't run the network yet
 		assert.Equal(t, float32(0.0), tensor.Values[i])
 	}
-	assert.Equal(t, []int{2, 2}, tensor.Shape().Sizes)
+	assert.Equal(t, []int{2, 2}, tensor.ShapeSizes())
 }
 
 /*
