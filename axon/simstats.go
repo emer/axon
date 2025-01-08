@@ -558,7 +558,7 @@ func StatLevelAll(statsDir *tensorfs.Node, srcMode, srcLevel enums.Enum, styleFu
 		for _, cl := range cols {
 			clv := cl.Tensor.(tensor.Values)
 			if start {
-				trg := tensorfs.ValueType(allDir, cl.Name(), clv.DataType(), clv.Shape().Sizes...)
+				trg := tensorfs.ValueType(allDir, cl.Name(), clv.DataType(), clv.ShapeSizes()...)
 				if trg.Len() == 0 {
 					if styleFunc != nil {
 						plot.SetFirstStylerTo(trg, func(s *plot.Style) {

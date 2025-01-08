@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/base/num"
 	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/cli"
@@ -892,6 +893,17 @@ func (ss *Sim) ConfigStats() {
 			stat = stats.StatFinal.Call(subDir.Value(name)).Float1D(0)
 			tsr.AppendRowFloat(stat)
 		}
+	})
+	runAllFunc := axon.StatLevelAll(ss.Stats, Train, Run, func(s *plot.Style, cl tensor.Values) {
+		name := metadata.Name(cl)
+		switch name {
+		case "FirstZero", "LastZero":
+			s.On = true
+			s.Range.SetMin(0)
+		}
+	})
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		runAllFunc(mode, level, phase == Start)
 	})
 }
 

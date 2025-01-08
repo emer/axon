@@ -82,9 +82,9 @@ type RunConfig struct {
 	NThreads int `default:"0"`
 
 	// Run is the _starting_ run number, which determines the random seed.
-	// NRuns counts up from there. Can do all runs in parallel by launching
-	// separate jobs with each starting Run, NRuns = 1.
-	Run int `default:"0"`
+	// Runs counts up from there. Can do all runs in parallel by launching
+	// separate jobs with each starting Run, Runs = 1.
+	Run int `default:"0" flag:"run"`
 
 	// Runs is the total number of runs to do when running Train, starting from Run.
 	Runs int `default:"5" min:"1"`
