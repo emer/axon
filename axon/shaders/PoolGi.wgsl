@@ -196,14 +196,10 @@ struct SpikeNoiseParams {
 	GiExpInt: f32,
 }
 struct ClampParams {
-	IsInput: i32,
-	IsTarget: i32,
 	Ge: f32,
 	Add: i32,
 	ErrThr: f32,
 	pad: f32,
-	pad1: f32,
-	pad2: f32,
 }
 struct SMaintParams {
 	On: i32,

@@ -507,12 +507,6 @@ func (an *SpikeNoiseParams) PGi(ctx *Context, p *float32, ni, di uint32) float32
 // Noise is added in either case.
 type ClampParams struct {
 
-	// is this a clamped input layer?  set automatically based on layer type at initialization
-	IsInput slbool.Bool `edit:"-"`
-
-	// is this a target layer?  set automatically based on layer type at initialization
-	IsTarget slbool.Bool `edit:"-"`
-
 	// amount of Ge driven for clamping -- generally use 0.8 for Target layers, 1.5 for Input layers
 	Ge float32 `default:"0.8,1.5"`
 
@@ -522,7 +516,7 @@ type ClampParams struct {
 	// threshold on neuron Act activity to count as active for computing error relative to target in PctErr method
 	ErrThr float32 `default:"0.5"`
 
-	pad, pad1, pad2 float32
+	pad float32
 }
 
 func (cp *ClampParams) Update() {

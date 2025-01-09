@@ -92,30 +92,18 @@ func SetNeuronExtPosNeg(ctx *Context, ni, di uint32, val float32) {
 
 // IsTarget returns true if this layer is a Target layer.
 // By default, returns true for layers of Type == TargetLayer
-// Other Target layers include the TRCLayer in deep predictive learning.
+// Other Target layers include the PulvinarLayer in deep predictive learning.
 // It is used in SynScale to not apply it to target layers.
 // In both cases, Target layers are purely error-driven.
 func (ly *LayerParams) IsTarget() bool {
-	switch ly.Type {
-	case TargetLayer:
-		return true
-	case PulvinarLayer:
-		return true
-	default:
-		return false
-	}
+	return ly.Type == TargetLayer || ly.Type == PulvinarLayer
 }
 
 // IsInput returns true if this layer is an Input layer.
 // By default, returns true for layers of Type == axon.InputLayer
 // Used to prevent adapting of inhibition or TrgAvg values.
 func (ly *LayerParams) IsInput() bool {
-	switch ly.Type {
-	case InputLayer:
-		return true
-	default:
-		return false
-	}
+	return ly.Type == InputLayer
 }
 
 // IsInputOrTarget returns true if this layer is either an Input
@@ -128,7 +116,7 @@ func (ly *LayerParams) IsInputOrTarget() bool {
 // adjustments based on target average activity levels, and the layer is not an
 // input or target layer.
 func (ly *LayerParams) IsLearnTrgAvg() bool {
-	if ly.Acts.Clamp.IsInput.IsTrue() || ly.Acts.Clamp.IsTarget.IsTrue() || ly.Learn.TrgAvgAct.RescaleOn.IsFalse() {
+	if ly.IsInput() || ly.IsTarget() || ly.Learn.TrgAvgAct.RescaleOn.IsFalse() {
 		return false
 	}
 	return true
@@ -498,7 +486,7 @@ func (ly *LayerParams) GiInteg(ctx *Context, pi, ni, di uint32) {
 		ext := Neurons.Value(int(ni), int(di), int(Ext)) // nonDrivePct
 		Neurons.Set(ext*ly.Acts.Dend.SSGi*ssgi, int(ni), int(di), int(SSGiDend))
 	} else {
-		if !(ly.Acts.Clamp.IsInput.IsTrue() || ly.Acts.Clamp.IsTarget.IsTrue()) {
+		if !ly.IsInputOrTarget() {
 			Neurons.Set(ly.Acts.Dend.SSGi*ssgi, int(ni), int(di), int(SSGiDend))
 		}
 	}
@@ -883,8 +871,6 @@ func (ly *LayerParams) NewStateLayer(ctx *Context) {
 		actMinusAvg += PoolAvgMax(AMAct, AMMinus, Avg, lpi, di)
 		actPlusAvg += PoolAvgMax(AMAct, AMPlus, Avg, lpi, di)
 
-		ly.Acts.Clamp.IsInput.SetBool(ly.IsInput())
-		ly.Acts.Clamp.IsTarget.SetBool(ly.IsTarget())
 		LayerStates.Set(-1.0, int(ly.Index), int(di), int(LayerRT))
 		LayerStates.Set(-1.0, int(ly.Index), int(di), int(GatedRT))
 
@@ -917,7 +903,7 @@ func (ly *LayerParams) NewStateLayerActAvg(ctx *Context, di uint32, actMinusAvg,
 
 func (ly *LayerParams) NewStatePool(ctx *Context, pi, di uint32) {
 	PoolsInt.Set(0, int(pi), int(di), int(Clamped))
-	if ly.Acts.Clamp.Add.IsFalse() && ly.Acts.Clamp.IsInput.IsTrue() {
+	if ly.Acts.Clamp.Add.IsFalse() && ly.IsInput() {
 		PoolsInt.Set(1, int(pi), int(di), int(Clamped))
 	}
 	PoolInhibDecay(pi, di, ly.Acts.Decay.Act)
@@ -955,7 +941,7 @@ func (ly *LayerParams) Beta2Neuron(ctx *Context, ni, di uint32) {
 func (ly *LayerParams) MinusPhasePool(ctx *Context, pi uint32) {
 	for di := uint32(0); di < ctx.NData; di++ {
 		PoolCycleToMinus(pi, di)
-		if ly.Acts.Clamp.Add.IsFalse() && ly.Acts.Clamp.IsTarget.IsTrue() {
+		if ly.Acts.Clamp.Add.IsFalse() && ly.IsTarget() {
 			PoolsInt.Set(1, int(pi), int(di), int(Clamped))
 		}
 	}

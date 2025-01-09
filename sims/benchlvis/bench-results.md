@@ -14,6 +14,21 @@ Lvis:	 Neurons: 47,872	 NeurMem: 16.8 MB 	 Syns: 31,316,128 	 SynMem: 2.2 GB
 
 and performance is roughly similar.
 
+# V2.0.0-dev0.2.3 webgpu 23.pr441 epochs=1
+
+## MacBook Pro M3
+
+### GPU
+
+* ndata=1: 
+
+
+## HPC2 ccnl-0 AMD EPYC 7502 32-Core Processor + NVIDIA A100 GPU
+
+### GPU
+
+* ndata=1: 
+
 
 # V2.0.0-dev0.2.2 webgpu 23.pr441 epochs=5
 
@@ -53,6 +68,8 @@ In general GPU is much worse due to use of atomic ops (necessary on GPU) that we
 # v2.0.0-dev0.2.1 vgpu final 09/02/24 (linear SynCa approx)
 
 git hash: 13e73bd9
+
+This is all with epochs=1
 
 ## MacBook Pro M3
 
@@ -112,6 +129,19 @@ TimerReport: LVisBench  16 threads
 	WtFromDWtLayer 	  0.001	    0.0
 	        Total 	 35.358
 ```
+
+## HPC2 ccnl-0 AMD EPYC 7502 32-Core Processor + NVIDIA A100 GPU
+
+### GPU
+
+`go test -gpu -verbose=false -ndata=1 -bench=. -run not`   reporting Total Secs
+
+* ndata=1: 6.82  (vs. 2.13 for M3)
+* ndata=2: 11.0  (vs. 2.49 for M3)
+* ndata=4: 24.16
+* ndata=8: 36.0
+
+So basically linearly worse performance as a function of ndata, vs much better scaling (and overall performance) on M3.
 
 # 1.8.2  PoolGi and SynCas access fixes: works for large models (Lvis)
 

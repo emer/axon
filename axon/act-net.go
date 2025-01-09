@@ -66,12 +66,8 @@ func (nt *Network) NewState(mode enums.Enum, testing bool) {
 	ctx := nt.Context()
 	nd := int(nix.NNeurons * ctx.NData)
 	ctx.NewState(mode, testing)
-	for li := range nix.NLayers {
-		NewStateLayer(li)
-	}
-	ToGPULayers()
-	// ToGPUCtxGlobal()
-	// RunNewStateLayer(int(nix.NLayers))
+	ToGPUCtxGlobal()
+	RunNewStateLayer(int(nix.NLayers))
 	RunNewStateNeuron(nd)
 	RunInitGBuffsPath(int(nix.NPaths))
 	// note: not completed until run cycles
@@ -305,7 +301,7 @@ func ApplyExtsNeuron(i uint32) { //gosl:kernel
 
 // NewStateLayer is the kernel over Layers (not Data)
 // which does new state on pools as well.
-func NewStateLayer(li uint32) { // note: not a kernel at this point
+func NewStateLayer(li uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	Layers[li].NewStateLayer(ctx)
 }

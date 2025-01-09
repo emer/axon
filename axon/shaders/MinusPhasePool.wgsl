@@ -78,10 +78,13 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 //////// import: "vars.go"
 
 //////// import: "act-layer.go"
+fn LayerParams_IsTarget(ly: LayerParams) -> bool {
+	return ly.Type == TargetLayer || ly.Type == PulvinarLayer;
+}
 fn LayerParams_MinusPhasePool(ly: LayerParams, ctx: Context, pi: u32) {
 	for (var di = u32(0); di < ctx.NData; di++) {
 		PoolCycleToMinus(pi, di);
-		if (ly.Acts.Clamp.Add == 0 && ly.Acts.Clamp.IsTarget == 1) {
+		if (ly.Acts.Clamp.Add == 0 && LayerParams_IsTarget(ly)) {
 			PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(Clamped))] = 1;
 		}
 	}
@@ -209,14 +212,10 @@ struct SpikeNoiseParams {
 	GiExpInt: f32,
 }
 struct ClampParams {
-	IsInput: i32,
-	IsTarget: i32,
 	Ge: f32,
 	Add: i32,
 	ErrThr: f32,
 	pad: f32,
-	pad1: f32,
-	pad2: f32,
 }
 struct SMaintParams {
 	On: i32,

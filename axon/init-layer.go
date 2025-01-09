@@ -160,8 +160,6 @@ func (ly *Layer) InitActAvgPools(ctx *Context) {
 
 // InitActs fully initializes activation state -- only called automatically during InitWeights
 func (ly *Layer) InitActs(ctx *Context) { //types:add
-	ly.Params.Acts.Clamp.IsInput.SetBool(ly.Params.IsInput())
-	ly.Params.Acts.Clamp.IsTarget.SetBool(ly.Params.IsTarget())
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
@@ -177,7 +175,7 @@ func (ly *Layer) InitActs(ctx *Context) { //types:add
 		for di := uint32(0); di < ly.MaxData; di++ {
 			pi := ly.Params.PoolIndex(spi)
 			PoolInit(pi, di)
-			if ly.Params.Acts.Clamp.Add.IsFalse() && ly.Params.Acts.Clamp.IsInput.IsTrue() {
+			if ly.Params.Acts.Clamp.Add.IsFalse() && ly.Params.IsInput() {
 				PoolsInt.Set(1, int(pi), int(di), int(Clamped))
 			}
 			// Target layers are dynamically updated

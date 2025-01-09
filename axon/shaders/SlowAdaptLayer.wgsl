@@ -79,14 +79,7 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 
 //////// import: "act-layer.go"
 fn LayerParams_IsInput(ly: LayerParams) -> bool {
-	switch (ly.Type) {
-	case InputLayer: {
-		return true;
-	}
-	default: {
-		return false;
-	}
-	}
+	return ly.Type == InputLayer;
 }
 
 //////// import: "act-net.go"
@@ -192,14 +185,10 @@ struct SpikeNoiseParams {
 	GiExpInt: f32,
 }
 struct ClampParams {
-	IsInput: i32,
-	IsTarget: i32,
 	Ge: f32,
 	Add: i32,
 	ErrThr: f32,
 	pad: f32,
-	pad1: f32,
-	pad2: f32,
 }
 struct SMaintParams {
 	On: i32,

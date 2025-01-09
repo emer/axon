@@ -94,6 +94,15 @@ fn SetNeuronExtPosNeg(ctx: Context, ni: u32,di: u32, val: f32) {
 		}
 	}
 }
+fn LayerParams_IsTarget(ly: LayerParams) -> bool {
+	return ly.Type == TargetLayer || ly.Type == PulvinarLayer;
+}
+fn LayerParams_IsInput(ly: LayerParams) -> bool {
+	return ly.Type == InputLayer;
+}
+fn LayerParams_IsInputOrTarget(ly: LayerParams) -> bool {
+	return (LayerParams_IsTarget(ly) || LayerParams_IsInput(ly));
+}
 fn LayerParams_CycleNeuron(ly: LayerParams, ctx: Context, ni: u32,di: u32) {
 	var pi = LayerParams_PoolIndex(ly, NeuronIxs[Index2D(TensorStrides[10], TensorStrides[11], u32(ni), u32(NrnSubPool))]);
 	var lpi = LayerParams_PoolIndex(ly, u32(u32(0)));
@@ -341,7 +350,7 @@ fn LayerParams_GiInteg(ly: LayerParams, ctx: Context, pi: u32,ni: u32,di: u32) {
 		TensorStrides[72], u32(ni), u32(di), u32(Ext))];
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SSGiDend))] = ext * ly.Acts.Dend.SSGi * ssgi;
 	} else {
-		if (!(ly.Acts.Clamp.IsInput == 1 || ly.Acts.Clamp.IsTarget == 1)) {
+		if (!LayerParams_IsInputOrTarget(ly)) {
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SSGiDend))] = ly.Acts.Dend.SSGi * ssgi;
 		}
 	}
@@ -542,14 +551,10 @@ fn SpikeNoiseParams_PGi(an: SpikeNoiseParams, ctx: Context, p: ptr<function,f32>
 0);
 }
 struct ClampParams {
-	IsInput: i32,
-	IsTarget: i32,
 	Ge: f32,
 	Add: i32,
 	ErrThr: f32,
 	pad: f32,
-	pad1: f32,
-	pad2: f32,
 }
 struct SMaintParams {
 	On: i32,

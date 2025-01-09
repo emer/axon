@@ -19,7 +19,7 @@ func (pt *PathParams) DWtSyn(ctx *Context, rlay *LayerParams, syni, si, ri, di u
 	if pt.Learn.Learn == 0 {
 		return
 	}
-	isTarget := rlay.Acts.Clamp.IsTarget > 0
+	isTarget := rlay.IsTarget()
 	spi := NeuronIxs.Value(int(ri), int(NrnSubPool))
 	pi := rlay.PoolIndex(spi)
 	lpi := rlay.PoolIndex(0)

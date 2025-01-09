@@ -78,6 +78,9 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 //////// import: "vars.go"
 
 //////// import: "act-layer.go"
+fn LayerParams_IsTarget(ly: LayerParams) -> bool {
+	return ly.Type == TargetLayer || ly.Type == PulvinarLayer;
+}
 
 //////// import: "act-net.go"
 
@@ -175,14 +178,10 @@ struct SpikeNoiseParams {
 	GiExpInt: f32,
 }
 struct ClampParams {
-	IsInput: i32,
-	IsTarget: i32,
 	Ge: f32,
 	Add: i32,
 	ErrThr: f32,
 	pad: f32,
-	pad1: f32,
-	pad2: f32,
 }
 struct SMaintParams {
 	On: i32,
@@ -709,7 +708,7 @@ fn PathParams_DWtSyn(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32,
 	if (pt.Learn.Learn == 0) {
 		return;
 	}
-	var isTarget = rlay.Acts.Clamp.IsTarget > 0;
+	var isTarget = LayerParams_IsTarget(rlay);
 	var spi = NeuronIxs[Index2D(TensorStrides[10], TensorStrides[11], u32(ri), u32(NrnSubPool))];
 	var pi = LayerParams_PoolIndex(rlay, spi);
 	var lpi = LayerParams_PoolIndex(rlay, u32(u32(0)));
