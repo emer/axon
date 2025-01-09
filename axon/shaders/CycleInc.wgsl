@@ -383,6 +383,7 @@ fn Context_CycleInc(ctx: ptr<function,Context>) {
 	(*ctx).Cycle++;
 	(*ctx).CyclesTotal++;
 	(*ctx).Time += (*ctx).TimePerCycle;
+	(*ctx).RandCounter.Counter = Uint64Add32((*ctx).RandCounter.Counter, u32(RandFunIndexN));
 }
 
 //////// import: "deep-layer.go"

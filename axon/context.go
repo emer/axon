@@ -8,6 +8,7 @@ import (
 	"cogentcore.org/core/enums"
 	"cogentcore.org/lab/gosl/slbool"
 	"cogentcore.org/lab/gosl/slrand"
+	"cogentcore.org/lab/gosl/sltype"
 )
 
 //gosl:start
@@ -116,7 +117,8 @@ func (ctx *Context) DataIndex(idx uint32) uint32 {
 	return idx % ctx.NData
 }
 
-// CycleInc increments at the cycle level
+// CycleInc increments at the cycle level. This is the one time when
+// Context is used on GPU in read-write mode, vs. read-only.
 //
 //gosl:pointer-receiver
 func (ctx *Context) CycleInc() {
@@ -124,7 +126,9 @@ func (ctx *Context) CycleInc() {
 	ctx.Cycle++
 	ctx.CyclesTotal++
 	ctx.Time += ctx.TimePerCycle
-	// ctx.RandCounter.Add(uint32(RandFunIndexN))
+	// ctx.RandCounter.Add(uint32(RandFunIndexN)):
+	ctx.RandCounter.Counter = sltype.Uint64Add32(ctx.RandCounter.Counter, uint32(RandFunIndexN))
+	// note: cannot call writing methods on sub-fields, so have to do it manually.
 }
 
 // SlowInc increments the Slow counter and returns true if time
