@@ -25,7 +25,7 @@ var<storage, read> RecvPathIxs: array<u32>;
 var<storage, read> PathRecvCon: array<u32>;
 @group(1) @binding(4)
 var<storage, read> RecvSynIxs: array<u32>;
-// // Ctx is the current context state (one only). 
+// // Ctx is the current context state (one only). This is read-only except in // specific kernels. 
 @group(2) @binding(0)
 var<storage, read_write> Ctx: array<Context>;
 @group(2) @binding(1)
@@ -680,41 +680,40 @@ const  LayerRewPredPos: LayerVars = 10;
 const  LayerRewPredNeg: LayerVars = 11;
 
 //////// import: "learn-layer.go"
-fn LayerParams_DWtSubMean(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, ri: u32) {
-	var lni = ri - (*ly).Indexes.NeurSt;
-	var rn = (*ly).Indexes.RecvN;
+fn LayerParams_DWtSubMean(ly: LayerParams, ctx: Context, ri: u32) {
+	var lni = ri - ly.Indexes.NeurSt;
+	var rn = ly.Indexes.RecvN;
 	for (var pi = u32(0); pi < rn; pi++) {
-		var pti = RecvPathIxs[Index1D(TensorStrides[40], u32((*ly).Indexes.RecvSt + pi))];
-		var paths=Paths[pti]; PathParams_DWtSubMean(&paths, ctx, pti, ri, lni);
+		var pti = RecvPathIxs[Index1D(TensorStrides[40], u32(ly.Indexes.RecvSt + pi))];
+		let paths=Paths[pti]; PathParams_DWtSubMean(paths, ctx, pti, ri, lni);
 	}
 }
 
 //////// import: "learn-net.go"
 fn DWtSubMeanNeuron(ni: u32) { //gosl:kernel
-	var ctx = Ctx[0];
+	let ctx = Ctx[0];
 	if (ni >= NetworkIxs[0].NNeurons) {
 		return;
 	}
 	var li = NeuronIxs[Index2D(TensorStrides[10], TensorStrides[11], u32(ni), u32(NrnLayIndex))];
-	var layers=Layers[li]; LayerParams_DWtSubMean(&layers, &ctx, ni);
-	Ctx[0] = ctx;
+	let layers=Layers[li]; LayerParams_DWtSubMean(layers, ctx, ni);
 }
 
 //////// import: "learn-path.go"
-fn PathParams_DWtSubMean(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, pti: u32,ri: u32,lni: u32) {
-	if ((*pt).Learn.Learn == 0) {
+fn PathParams_DWtSubMean(pt: PathParams, ctx: Context, pti: u32,ri: u32,lni: u32) {
+	if (pt.Learn.Learn == 0) {
 		return;
 	}
-	var sm = (*pt).Learn.DWt.SubMean;
+	var sm = pt.Learn.DWt.SubMean;
 	if (sm == 0) { // note default is now 0, so don't exclude Target layers, which should be 0
 		return;
 	}
-	var cni = (*pt).Indexes.RecvConSt + lni;
+	var cni = pt.Indexes.RecvConSt + lni;
 	var synn = PathRecvCon[Index2D(TensorStrides[50], TensorStrides[51], u32(cni), u32(Nitems))];
 	if (synn < 1) {
 		return;
 	}
-	var synst = (*pt).Indexes.RecvSynSt + PathRecvCon[Index2D(TensorStrides[50], TensorStrides[51], u32(cni), u32(StartOff))];
+	var synst = pt.Indexes.RecvSynSt + PathRecvCon[Index2D(TensorStrides[50], TensorStrides[51], u32(cni), u32(StartOff))];
 	var sumDWt = f32(0);
 	var nnz = 0; // non-zero
 	for (var ci = u32(0); ci < synn; ci++) {

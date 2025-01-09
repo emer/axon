@@ -25,7 +25,7 @@ var<storage, read> RecvPathIxs: array<u32>;
 var<storage, read> PathRecvCon: array<u32>;
 @group(1) @binding(4)
 var<storage, read> RecvSynIxs: array<u32>;
-// // Ctx is the current context state (one only). 
+// // Ctx is the current context state (one only). This is read-only except in // specific kernels. 
 @group(2) @binding(0)
 var<storage, read_write> Ctx: array<Context>;
 @group(2) @binding(1)
@@ -78,10 +78,10 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 //////// import: "vars.go"
 
 //////// import: "act-layer.go"
-fn LayerParams_MinusPhasePool(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, pi: u32) {
-	for (var di = u32(0); di < (*ctx).NData; di++) {
+fn LayerParams_MinusPhasePool(ly: LayerParams, ctx: Context, pi: u32) {
+	for (var di = u32(0); di < ctx.NData; di++) {
 		PoolCycleToMinus(pi, di);
-		if ((*ly).Acts.Clamp.Add == 0 && (*ly).Acts.Clamp.IsTarget == 1) {
+		if (ly.Acts.Clamp.Add == 0 && ly.Acts.Clamp.IsTarget == 1) {
 			PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(Clamped))] = 1;
 		}
 	}
@@ -90,30 +90,29 @@ fn LayerParams_MinusPhasePool(ly: ptr<function,LayerParams>, ctx: ptr<function,C
 	}
 	var geIntMinusMax = f32(0);
 	var giIntMinusMax = f32(0);
-	for (var di = u32(0); di < (*ctx).NData; di++) {
+	for (var di = u32(0); di < ctx.NData; di++) {
 		geIntMinusMax = max(geIntMinusMax, PoolAvgMax(AMGeInt, AMMinus, Max, pi, di));
 		giIntMinusMax = max(giIntMinusMax, PoolAvgMax(AMGiInt, AMMinus, Max, pi, di));
 	}
-	for (var di = u32(0); di < (*ctx).NData; di++) {
+	for (var di = u32(0); di < ctx.NData; di++) {
 		LayerParams_AvgGeM(ly, ctx, di, geIntMinusMax, giIntMinusMax);
 	}
 }
-fn LayerParams_AvgGeM(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, di: u32, geIntMinusMax: f32,giIntMinusMax: f32) {
-	var gem = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32((*ly).Index), u32(di), u32(LayerAvgMaxGeM))];
-	var gim = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32((*ly).Index), u32(di), u32(LayerAvgMaxGiM))];
-	gem += (*ly).Acts.Dt.LongAvgDt * (geIntMinusMax - gem);
-	gim += (*ly).Acts.Dt.LongAvgDt * (giIntMinusMax - gim);
-	LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32((*ly).Index), u32(di), u32(LayerAvgMaxGeM))] = gem;
+fn LayerParams_AvgGeM(ly: LayerParams, ctx: Context, di: u32, geIntMinusMax: f32,giIntMinusMax: f32) {
+	var gem = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(ly.Index), u32(di), u32(LayerAvgMaxGeM))];
+	var gim = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(ly.Index), u32(di), u32(LayerAvgMaxGiM))];
+	gem += ly.Acts.Dt.LongAvgDt * (geIntMinusMax - gem);
+	gim += ly.Acts.Dt.LongAvgDt * (giIntMinusMax - gim);
+	LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(ly.Index), u32(di), u32(LayerAvgMaxGeM))] = gem;
 	LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92],
-	u32((*ly).Index), u32(di), u32(LayerAvgMaxGiM))] = gim;
+	u32(ly.Index), u32(di), u32(LayerAvgMaxGiM))] = gim;
 }
 
 //////// import: "act-net.go"
 fn MinusPhasePool(pi: u32) { //gosl:kernel
-	var ctx = Ctx[0];
+	let ctx = Ctx[0];
 	var li = PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolLayerIdx))];
-	var layers=Layers[li]; LayerParams_MinusPhasePool(&layers, &ctx, pi);
-	Ctx[0] = ctx;
+	let layers=Layers[li]; LayerParams_MinusPhasePool(layers, ctx, pi);
 }
 
 //////// import: "act-path.go"

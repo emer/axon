@@ -25,7 +25,7 @@ var<storage, read> RecvPathIxs: array<u32>;
 var<storage, read> PathRecvCon: array<u32>;
 @group(1) @binding(4)
 var<storage, read> RecvSynIxs: array<u32>;
-// // Ctx is the current context state (one only). 
+// // Ctx is the current context state (one only). This is read-only except in // specific kernels. 
 @group(2) @binding(0)
 var<storage, read_write> Ctx: array<Context>;
 @group(2) @binding(1)
@@ -683,18 +683,17 @@ const  LayerRewPredNeg: LayerVars = 11;
 
 //////// import: "learn-net.go"
 fn WtFromDWtSyn(syni: u32) { //gosl:kernel
-	var ctx = Ctx[0];
+	let ctx = Ctx[0];
 	if (syni >= NetworkIxs[0].NSyns) {
 		return;
 	}
 	var pti = SynapseIxs[Index2D(TensorStrides[20], TensorStrides[21], u32(syni), u32(SynPathIndex))];
-	var paths=Paths[pti]; PathParams_WtFromDWtSyn(&paths, &ctx, syni);
-	Ctx[0] = ctx;
+	let paths=Paths[pti]; PathParams_WtFromDWtSyn(paths, ctx, syni);
 }
 
 //////// import: "learn-path.go"
-fn PathParams_WtFromDWtSyn(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, syni: u32) {
-	switch ((*pt).Type) {
+fn PathParams_WtFromDWtSyn(pt: PathParams, ctx: Context, syni: u32) {
+	switch (pt.Type) {
 	case RWPath: {
 		PathParams_WtFromDWtSynNoLimits(pt, ctx, syni);
 	}
@@ -712,18 +711,18 @@ fn PathParams_WtFromDWtSyn(pt: ptr<function,PathParams>, ctx: ptr<function,Conte
 	}
 	}
 }
-fn PathParams_WtFromDWtSynCortex(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, syni: u32) {
+fn PathParams_WtFromDWtSynCortex(pt: PathParams, ctx: Context, syni: u32) {
 	var dwt = Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(DWt))];
 	Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(DSWt))] += dwt;
 	var wt = Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(Wt))];
 	var lwt = Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(LWt))];
-	SWtParams_WtFromDWt(&(*pt).SWts, &wt, &lwt, dwt, Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(SWt))]);
+	SWtParams_WtFromDWt(pt.SWts, &wt, &lwt, dwt, Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(SWt))]);
 	Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(DWt))] = 0.0;
 	Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(Wt))] = wt;
 	Synapses[Index2D(TensorStrides[170], TensorStrides[171],
 	u32(syni), u32(LWt))] = lwt;
 }
-fn PathParams_WtFromDWtSynNoLimits(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, syni: u32) {
+fn PathParams_WtFromDWtSynNoLimits(pt: PathParams, ctx: Context, syni: u32) {
 	var dwt = Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(DWt))];
 	if (dwt == 0) {
 		return;
@@ -812,20 +811,20 @@ struct SWtParams {
 	Adapt: SWtAdaptParams,
 	Limit: F32,
 }
-fn SWtParams_WtValue(sp: ptr<function,SWtParams>, swt: f32,lwt: f32) -> f32 {
+fn SWtParams_WtValue(sp: SWtParams, swt: f32,lwt: f32) -> f32 {
 	return swt * SWtParams_SigFromLinWt(sp, lwt);
 }
-fn SWtParams_SigFromLinWt(sp: ptr<function,SWtParams>, lw: f32) -> f32 {
+fn SWtParams_SigFromLinWt(sp: SWtParams, lw: f32) -> f32 {
 	var wt: f32;
-	if ((*sp).Adapt.SigGain == 1) {
+	if (sp.Adapt.SigGain == 1) {
 		wt = lw;
-	} else if ((*sp).Adapt.SigGain == 6) {
+	} else if (sp.Adapt.SigGain == 6) {
 		wt = SigFun61(lw);
 	} else {
-		wt = SigFun(lw, (*sp).Adapt.SigGain, f32(f32(1)));
+		wt = SigFun(lw, sp.Adapt.SigGain, f32(f32(1)));
 	}return 2.0 * wt; // center at 1 instead of .5
 }
-fn SWtParams_WtFromDWt(sp: ptr<function,SWtParams>, wt: ptr<function,f32>,lwt: ptr<function,f32>, dwt: f32,swt: f32) {
+fn SWtParams_WtFromDWt(sp: SWtParams, wt: ptr<function,f32>,lwt: ptr<function,f32>, dwt: f32,swt: f32) {
 	if (dwt == 0) {
 		if (*wt == 0) { // restore failed wts
 			*wt = SWtParams_WtValue(sp, swt, *lwt);

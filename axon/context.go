@@ -117,12 +117,14 @@ func (ctx *Context) DataIndex(idx uint32) uint32 {
 }
 
 // CycleInc increments at the cycle level
+//
+//gosl:pointer-receiver
 func (ctx *Context) CycleInc() {
 	ctx.PhaseCycle++
 	ctx.Cycle++
 	ctx.CyclesTotal++
 	ctx.Time += ctx.TimePerCycle
-	ctx.RandCounter.Add(uint32(RandFunIndexN))
+	// ctx.RandCounter.Add(uint32(RandFunIndexN))
 }
 
 // SlowInc increments the Slow counter and returns true if time

@@ -25,7 +25,7 @@ var<storage, read> RecvPathIxs: array<u32>;
 var<storage, read> PathRecvCon: array<u32>;
 @group(1) @binding(4)
 var<storage, read> RecvSynIxs: array<u32>;
-// // Ctx is the current context state (one only). 
+// // Ctx is the current context state (one only). This is read-only except in // specific kernels. 
 @group(2) @binding(0)
 var<storage, read_write> Ctx: array<Context>;
 @group(2) @binding(1)
@@ -78,37 +78,37 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 //////// import: "vars.go"
 
 //////// import: "act-layer.go"
-fn LayerParams_SendSpike(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, ni: u32,di: u32) {
+fn LayerParams_SendSpike(ly: LayerParams, ctx: Context, ni: u32,di: u32) {
 	var pi = LayerParams_PoolIndex(ly, NeuronIxs[Index2D(TensorStrides[10], TensorStrides[11], u32(ni), u32(NrnSubPool))]);
 	var lpi = LayerParams_PoolIndex(ly, u32(u32(0)));
-	var lni = ni - (*ly).Indexes.NeurSt;
+	var lni = ni - ly.Indexes.NeurSt;
 	LayerParams_PostSpike(ly, ctx, lpi, pi, ni, di);
-	for (var pti = u32(0); pti < (*ly).Indexes.SendN; pti++) {
-		var pt = Paths[(*ly).Indexes.SendSt + pti];
-		PathParams_SendSpike(&pt, ctx, ni, di, lni);
+	for (var pti = u32(0); pti < ly.Indexes.SendN; pti++) {
+		let pt = Paths[ly.Indexes.SendSt + pti];
+		PathParams_SendSpike(pt, ctx, ni, di, lni);
 	}
 }
-fn LayerParams_PostSpikeSpecial(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, lpi: u32,pi: u32,ni: u32,di: u32) {
+fn LayerParams_PostSpikeSpecial(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,di: u32) {
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Burst))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaP))];
-	var li = (*ly).Index;
-	var pil = pi - (*ly).PoolSt; // 0-n pool index
+	var li = ly.Index;
+	var pil = pi - ly.PoolSt; // 0-n pool index
 	var pnn = u32(PoolNNeurons(pi));
 	var pni = NeuronIxs[Index2D(TensorStrides[10], TensorStrides[11], u32(ni), u32(NrnNeurIndex))] - u32(PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolNeurSt))]);
 	var hasRew = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvHasRew), u32(di))] > 0;
-	switch ((*ly).Type) {
+	switch (ly.Type) {
 	case SuperLayer: {
-		if ((*ctx).PlusPhase == 1) {
+		if (ctx.PlusPhase == 1) {
 			var actMax = PoolAvgMax(AMCaP, AMCycle, Max, lpi, di);
 			var actAvg = PoolAvgMax(AMCaP, AMCycle, Avg, lpi, di);
-			var thr = BurstParams_ThrFromAvgMax(&(*ly).Bursts, actAvg, actMax);
+			var thr = BurstParams_ThrFromAvgMax(ly.Bursts, actAvg, actMax);
 			if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaP))] < thr) {
 				Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Burst))] = 0.0;
 			}
 		}
 	}
 	case PTPredLayer, CTLayer: {
-		if ((*ctx).Cycle == (*ctx).ThetaCycles-1) {
-			if ((*ly).CT.DecayTau == 0) {
+		if (ctx.Cycle == ctx.ThetaCycles-1) {
+			if (ly.CT.DecayTau == 0) {
 				Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CtxtGe))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CtxtGeRaw))];
 			} else {
 				Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CtxtGe))] += Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CtxtGeRaw))];
@@ -126,7 +126,7 @@ fn LayerParams_PostSpikeSpecial(ly: ptr<function,LayerParams>, ctx: ptr<function
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Act))] = dr;
 	}
 	case BLALayer: {
-		if ((*ctx).Cycle == (*ctx).ThetaCycles-1) {
+		if (ctx.Cycle == ctx.ThetaCycles-1) {
 			if (hasRew) {
 				Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CtxtGe))] = 0.0;
 				Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CtxtGeOrig))] = 0.0;
@@ -142,13 +142,13 @@ fn LayerParams_PostSpikeSpecial(ly: ptr<function,LayerParams>, ctx: ptr<function
 		} else {
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Act))] = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvLHbBurst), u32(di))];
 		}
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeSyn))] = DtParams_GeSynFromRawSteady(&(*ly).Acts.Dt, Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeRaw))]);
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeSyn))] = DtParams_GeSynFromRawSteady(ly.Acts.Dt, Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeRaw))]);
 	}
 	case DrivesLayer: {
 		var dr = GlobalVectors[Index3D(TensorStrides[110], TensorStrides[111], TensorStrides[112], u32(GvDrives), u32(pil - 1), u32(di))];
 		var act = dr;
 		if (dr > 0) {
-			act = PopCodeParams_EncodeValue(&(*ly).Acts.PopCode, pni, pnn, dr);
+			act = PopCodeParams_EncodeValue(ly.Acts.PopCode, pni, pnn, dr);
 		}
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Act))] = act;
 	}
@@ -156,29 +156,29 @@ fn LayerParams_PostSpikeSpecial(ly: ptr<function,LayerParams>, ctx: ptr<function
 		var ur = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvUrgency), u32(di))];
 		var act = ur;
 		if (ur > 0) {
-			act = PopCodeParams_EncodeValue(&(*ly).Acts.PopCode, pni, pnn, ur);
+			act = PopCodeParams_EncodeValue(ly.Acts.PopCode, pni, pnn, ur);
 		}
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Act))] = act;
 	}
 	case USLayer: {
-		var us = RubiconUSStimValue(di, pil-1, (*ly).Learn.NeuroMod.Valence);
+		var us = RubiconUSStimValue(di, pil-1, ly.Learn.NeuroMod.Valence);
 		var act = us;
 		if (us > 0) {
-			act = PopCodeParams_EncodeValue(&(*ly).Acts.PopCode, pni, pnn, us);
+			act = PopCodeParams_EncodeValue(ly.Acts.PopCode, pni, pnn, us);
 		}
-		if ((*ly).Learn.NeuroMod.DAMod == D1Mod || ((*ly).Learn.NeuroMod.DAMod == D2Mod && hasRew && (*ctx).PlusPhase == 1)) {
+		if (ly.Learn.NeuroMod.DAMod == D1Mod || (ly.Learn.NeuroMod.DAMod == D2Mod && hasRew && ctx.PlusPhase == 1)) {
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Act))] = act;
 		}
 	}
 	case PVLayer: {
 		if (hasRew) {
 			var pv = f32(0);
-			if ((*ly).Learn.NeuroMod.Valence == Positive) {
+			if (ly.Learn.NeuroMod.Valence == Positive) {
 				pv = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvPVpos), u32(di))];
 			} else {
 				pv = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvPVneg), u32(di))];
 			}
-			var act = PopCodeParams_EncodeValue(&(*ly).Acts.PopCode, pni, (*ly).Indexes.NNeurons, pv);
+			var act = PopCodeParams_EncodeValue(ly.Acts.PopCode, pni, ly.Indexes.NNeurons, pv);
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
 			u32(ni), u32(di), u32(Act))] = act;
 		}
@@ -193,7 +193,7 @@ fn LayerParams_PostSpikeSpecial(ly: ptr<function,LayerParams>, ctx: ptr<function
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Act))] = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvRew), u32(di))];
 	}
 	case RWPredLayer: {
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Act))] = F32_ClampValue(&(*ly).RWPred.PredRange, Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Ge))]);
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Act))] = F32_ClampValue(ly.RWPred.PredRange, Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Ge))]);
 		if (pni == 0) {
 			LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(li), u32(di), u32(LayerRewPredPos))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(ActInt))];
 		} else {
@@ -221,12 +221,12 @@ fn LayerParams_PostSpikeSpecial(ly: ptr<function,LayerParams>, ctx: ptr<function
 	}
 	}
 }
-fn LayerParams_PostSpike(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, lpi: u32,pi: u32,ni: u32,di: u32) {
+fn LayerParams_PostSpike(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,di: u32) {
 	LayerParams_PostSpikeSpecial(ly, ctx, lpi, pi, ni, di);
-	var intdt = (*ly).Acts.Dt.IntDt;
+	var intdt = ly.Acts.Dt.IntDt;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeInt))] += intdt * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Ge))] - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeInt))]);
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GiInt))] += intdt * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GiSyn))] - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GiInt))]);
-	if ((*ctx).PlusPhase == 1) {
+	if (ctx.PlusPhase == 1) {
 		intdt *= f32(3.0);
 	}
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(ActInt))] += intdt * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Act))] - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(ActInt))]);
@@ -234,15 +234,14 @@ fn LayerParams_PostSpike(ly: ptr<function,LayerParams>, ctx: ptr<function,Contex
 
 //////// import: "act-net.go"
 fn SendSpike(i: u32) { //gosl:kernel
-	var ctx = Ctx[0];
-	var ni = Context_ItemIndex(&ctx, i);
+	let ctx = Ctx[0];
+	var ni = Context_ItemIndex(ctx, i);
 	if (ni >= NetworkIxs[0].NNeurons) {
 		return;
 	}
-	var di = Context_DataIndex(&ctx, i);
+	var di = Context_DataIndex(ctx, i);
 	var li = NeuronIxs[Index2D(TensorStrides[10], TensorStrides[11], u32(ni), u32(NrnLayIndex))];
-	var layers=Layers[li]; LayerParams_SendSpike(&layers, &ctx, ni, di);
-	Ctx[0] = ctx;
+	let layers=Layers[li]; LayerParams_SendSpike(layers, ctx, ni, di);
 }
 
 //////// import: "act-path.go"
@@ -258,16 +257,16 @@ struct SynComParams {
 	MaxDelay: u32,
 	DelLen: u32,
 }
-fn SynComParams_RingIndex(sc: ptr<function,SynComParams>, i: u32) -> u32 {
+fn SynComParams_RingIndex(sc: SynComParams, i: u32) -> u32 {
 	var ri = i;
-	if (ri >= (*sc).DelLen) {
-		ri -= (*sc).DelLen;
+	if (ri >= sc.DelLen) {
+		ri -= sc.DelLen;
 	}return ri;
 }
-fn SynComParams_WriteOff(sc: ptr<function,SynComParams>, cycTot: i32) -> u32 {
-	return SynComParams_RingIndex(sc, u32(cycTot)%(*sc).DelLen + (*sc).DelLen);
+fn SynComParams_WriteOff(sc: SynComParams, cycTot: i32) -> u32 {
+	return SynComParams_RingIndex(sc, u32(cycTot)%sc.DelLen + sc.DelLen);
 }
-fn SynComParams_FloatToIntFactor(sc: ptr<function,SynComParams>) -> f32 {
+fn SynComParams_FloatToIntFactor(sc: SynComParams) -> f32 {
 	return f32(u32(1) << 24); // leaves 7 bits = 128 to cover any extreme cases
 }
 struct PathScaleParams {
@@ -276,10 +275,10 @@ struct PathScaleParams {
 	pad: f32,
 	pad1: f32,
 }
-fn PathParams_SendSpike(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, ni: u32,di: u32,lni: u32) {
-	var sendVal = (*pt).GScale.Scale * SynComParams_FloatToIntFactor(&(*pt).Com); // pre-bake in conversion to uint factor
-	if ((*pt).Type == CTCtxtPath) {
-		if (u32((*ctx).Cycle) != u32((*ctx).ThetaCycles)-1-(*pt).Com.DelLen) {
+fn PathParams_SendSpike(pt: PathParams, ctx: Context, ni: u32,di: u32,lni: u32) {
+	var sendVal = pt.GScale.Scale * SynComParams_FloatToIntFactor(pt.Com); // pre-bake in conversion to uint factor
+	if (pt.Type == CTCtxtPath) {
+		if (u32(ctx.Cycle) != u32(ctx.ThetaCycles)-1-pt.Com.DelLen) {
 			return;
 		}
 		sendVal *= Neurons[Index3D(TensorStrides[70], TensorStrides[71], // Burst is regular CaP for all non-SuperLayer neurons
@@ -289,16 +288,16 @@ fn PathParams_SendSpike(pt: ptr<function,PathParams>, ctx: ptr<function,Context>
 			return;
 		}
 	}
-	var recvNeurSt = (*pt).Indexes.RecvNeurSt;
-	var npst = (*pt).Indexes.NPathNeurSt;
-	var cni = (*pt).Indexes.SendConSt + lni;
-	var synst = (*pt).Indexes.SynapseSt + PathSendCon[Index2D(TensorStrides[30], TensorStrides[31], u32(cni), u32(StartOff))];
+	var recvNeurSt = pt.Indexes.RecvNeurSt;
+	var npst = pt.Indexes.NPathNeurSt;
+	var cni = pt.Indexes.SendConSt + lni;
+	var synst = pt.Indexes.SynapseSt + PathSendCon[Index2D(TensorStrides[30], TensorStrides[31], u32(cni), u32(StartOff))];
 	var synn = PathSendCon[Index2D(TensorStrides[30], TensorStrides[31], u32(cni), u32(Nitems))];
 	for (var ci = u32(0); ci < synn; ci++) {
 		var syni = synst + ci;
 		var ri = SynapseIxs[Index2D(TensorStrides[20], TensorStrides[21], u32(syni), u32(SynRecvIndex))];
 		var npti = npst + (ri - recvNeurSt);
-		var deli = SynComParams_WriteOff(&(*pt).Com, (*ctx).CyclesTotal);
+		var deli = SynComParams_WriteOff(pt.Com, ctx.CyclesTotal);
 		var sv = i32(sendVal * Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(Wt))]);
 		atomicAdd(&PathGBuf[Index3D(TensorStrides[150], TensorStrides[151], TensorStrides[152],
 		u32(npti), u32(di), u32(deli))], sv);
@@ -368,8 +367,8 @@ struct DtParams {
 	IntDt: f32,
 	LongAvgDt: f32,
 }
-fn DtParams_GeSynFromRawSteady(dp: ptr<function,DtParams>, geRaw: f32) -> f32 {
-	return geRaw * (*dp).GeTau;
+fn DtParams_GeSynFromRawSteady(dp: DtParams, geRaw: f32) -> f32 {
+	return geRaw * dp.GeTau;
 }
 struct SpikeNoiseParams {
 	On: i32,
@@ -408,36 +407,36 @@ struct PopCodeParams {
 	MaxSigma: f32,
 	Clip: i32,
 }
-fn PopCodeParams_ClampValue(pc: ptr<function,PopCodeParams>, val: f32) -> f32 {
+fn PopCodeParams_ClampValue(pc: PopCodeParams, val: f32) -> f32 {
 	var clipVal = val;
-	if (clipVal < (*pc).Min) {
-		clipVal = (*pc).Min;
+	if (clipVal < pc.Min) {
+		clipVal = pc.Min;
 	}
-	if (clipVal > (*pc).Max) {
-		clipVal = (*pc).Max;
+	if (clipVal > pc.Max) {
+		clipVal = pc.Max;
 	}return clipVal;
 }
-fn PopCodeParams_ProjectParam(pc: ptr<function,PopCodeParams>, minParam: f32,maxParam: f32,clipVal: f32) -> f32 {
-	var normVal = (clipVal - (*pc).Min) / ((*pc).Max - (*pc).Min);return minParam + normVal*(maxParam-minParam);
+fn PopCodeParams_ProjectParam(pc: PopCodeParams, minParam: f32,maxParam: f32,clipVal: f32) -> f32 {
+	var normVal = (clipVal - pc.Min) / (pc.Max - pc.Min);return minParam + normVal*(maxParam-minParam);
 }
-fn PopCodeParams_EncodeValue(pc: ptr<function,PopCodeParams>, i: u32,n: u32, val: f32) -> f32 {
+fn PopCodeParams_EncodeValue(pc: PopCodeParams, i: u32,n: u32, val: f32) -> f32 {
 	var eval = val;
 	var clipVal = PopCodeParams_ClampValue(pc, eval);
-	if ((*pc).Clip == 1) {
+	if (pc.Clip == 1) {
 		eval = clipVal;
 	}
-	var rng = (*pc).Max - (*pc).Min;
+	var rng = pc.Max - pc.Min;
 	var act = f32(1);
-	if ((*pc).MinAct < 1) {
-		act = PopCodeParams_ProjectParam(pc, (*pc).MinAct, f32(1.0), clipVal);
+	if (pc.MinAct < 1) {
+		act = PopCodeParams_ProjectParam(pc, pc.MinAct, f32(1.0), clipVal);
 	}
-	var sig = (*pc).MinSigma;
-	if ((*pc).MaxSigma > (*pc).MinSigma) {
-		sig = PopCodeParams_ProjectParam(pc, (*pc).MinSigma, (*pc).MaxSigma, clipVal);
+	var sig = pc.MinSigma;
+	if (pc.MaxSigma > pc.MinSigma) {
+		sig = PopCodeParams_ProjectParam(pc, pc.MinSigma, pc.MaxSigma, clipVal);
 	}
 	var gnrm = 1.0 / (rng * sig);
 	var incr = rng / f32(n-1);
-	var trg = (*pc).Min + incr*f32(i);
+	var trg = pc.Min + incr*f32(i);
 	var dist = gnrm * (trg - eval);return act * FastExp(-(dist * dist));
 }
 struct ActParams {
@@ -613,11 +612,11 @@ struct Context { //types:add -setters
 	SlowCounter: i32,
 	RandCounter: RandCounter,
 }
-fn Context_ItemIndex(ctx: ptr<function,Context>, idx: u32) -> u32 {
-	return idx / (*ctx).NData;
+fn Context_ItemIndex(ctx: Context, idx: u32) -> u32 {
+	return idx / ctx.NData;
 }
-fn Context_DataIndex(ctx: ptr<function,Context>, idx: u32) -> u32 {
-	return idx % (*ctx).NData;
+fn Context_DataIndex(ctx: Context, idx: u32) -> u32 {
+	return idx % ctx.NData;
 }
 
 //////// import: "deep-layer.go"
@@ -627,9 +626,9 @@ struct BurstParams {
 	pad: f32,
 	pad1: f32,
 }
-fn BurstParams_ThrFromAvgMax(bp: ptr<function,BurstParams>, avg: f32,mx: f32) -> f32 {
-	var thr = avg + (*bp).ThrRel*(mx-avg);
-	thr = max(thr, (*bp).ThrAbs);return thr;
+fn BurstParams_ThrFromAvgMax(bp: BurstParams, avg: f32,mx: f32) -> f32 {
+	var thr = avg + bp.ThrRel*(mx-avg);
+	thr = max(thr, bp.ThrAbs);return thr;
 }
 struct CTParams {
 	GeGain: f32,
@@ -879,8 +878,8 @@ struct LayerParams {
 	TDDa: TDDaParams,
 	Indexes: LayerIndexes,
 }
-fn LayerParams_PoolIndex(ly: ptr<function,LayerParams>, pi: u32) -> u32 {
-	return (*ly).PoolSt + pi;
+fn LayerParams_PoolIndex(ly: LayerParams, pi: u32) -> u32 {
+	return ly.PoolSt + pi;
 }
 
 //////// import: "layertypes.go"
@@ -1068,12 +1067,12 @@ struct F32 {
 	pad: i32,
 	pad1: i32, // for gpu use
 }
-fn F32_ClampValue(mr: ptr<function,F32>, val: f32) -> f32 {
-	if (val < (*mr).Min) {
-		return (*mr).Min;
+fn F32_ClampValue(mr: F32, val: f32) -> f32 {
+	if (val < mr.Min) {
+		return mr.Min;
 	}
-	if (val > (*mr).Max) {
-		return (*mr).Max;
+	if (val > mr.Max) {
+		return mr.Max;
 	}return val;
 }
 
@@ -1432,7 +1431,7 @@ struct BLAPathParams {
 
 //////// import: "rubicon.go"
 fn RubiconUSStimValue(di: u32, usIndex: u32, valence: ValenceTypes) -> f32 {
-	var nix = NetworkIxs[0];
+	let nix = NetworkIxs[0];
 	var us = f32(0);
 	switch (valence) {
 	case Positive: {

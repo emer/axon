@@ -25,7 +25,7 @@ var<storage, read> RecvPathIxs: array<u32>;
 var<storage, read> PathRecvCon: array<u32>;
 @group(1) @binding(4)
 var<storage, read> RecvSynIxs: array<u32>;
-// // Ctx is the current context state (one only). 
+// // Ctx is the current context state (one only). This is read-only except in // specific kernels. 
 @group(2) @binding(0)
 var<storage, read_write> Ctx: array<Context>;
 @group(2) @binding(1)
@@ -78,9 +78,9 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 //////// import: "vars.go"
 
 //////// import: "act-layer.go"
-fn LayerParams_SubPoolGiFromSpikes(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, lpi: u32,pi: u32,di: u32, lyInhib: bool, giMult: f32) {
+fn LayerParams_SubPoolGiFromSpikes(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,di: u32, lyInhib: bool, giMult: f32) {
 	PoolInhibSpikesFromRaw(pi, di);
-	PoolInhib(&(*ly).Inhib.Pool, pi, di, giMult);
+	PoolInhib(ly.Inhib.Pool, pi, di, giMult);
 	if (lyInhib) {
 		PoolInhibLayerMax(pi, di, Pools[Index3D(TensorStrides[130], TensorStrides[131], // note: this requires lpl inhib to have been computed before!
 		TensorStrides[132], u32(lpi), u32(di), u32(TotalGi))]);
@@ -93,14 +93,13 @@ fn LayerParams_SubPoolGiFromSpikes(ly: ptr<function,LayerParams>, ctx: ptr<funct
 
 //////// import: "act-net.go"
 fn PoolGi(i: u32) { //gosl:kernel
-	var ctx = Ctx[0];
-	var pi = Context_ItemIndex(&ctx, i);
+	let ctx = Ctx[0];
+	var pi = Context_ItemIndex(ctx, i);
 	if (pi >= NetworkIxs[0].NPools) {
 		return;
 	}
-	var di = Context_DataIndex(&ctx, i);
-	PoolPoolGi(&ctx, pi, di);
-	Ctx[0] = ctx;
+	var di = Context_DataIndex(ctx, i);
+	PoolPoolGi(ctx, pi, di);
 }
 
 //////// import: "act-path.go"
@@ -396,11 +395,11 @@ struct Context { //types:add -setters
 	SlowCounter: i32,
 	RandCounter: RandCounter,
 }
-fn Context_ItemIndex(ctx: ptr<function,Context>, idx: u32) -> u32 {
-	return idx / (*ctx).NData;
+fn Context_ItemIndex(ctx: Context, idx: u32) -> u32 {
+	return idx / ctx.NData;
 }
-fn Context_DataIndex(ctx: ptr<function,Context>, idx: u32) -> u32 {
-	return idx % (*ctx).NData;
+fn Context_DataIndex(ctx: Context, idx: u32) -> u32 {
+	return idx % ctx.NData;
 }
 
 //////// import: "deep-layer.go"
@@ -472,20 +471,20 @@ struct GiParams {
 	FFAvgDt: f32,
 	pad: f32,
 }
-fn GiParams_FSiFromFFs(fb: ptr<function,GiParams>, fsi: f32,ffs: f32,fbs: f32) -> f32 {
-	return fsi + (ffs + (*fb).FB*fbs) - (*fb).FSDt*fsi; // immediate up, slow down
+fn GiParams_FSiFromFFs(fb: GiParams, fsi: f32,ffs: f32,fbs: f32) -> f32 {
+	return fsi + (ffs + fb.FB*fbs) - fb.FSDt*fsi; // immediate up, slow down
 }
-fn GiParams_FS0Thr(fb: ptr<function,GiParams>, val: f32) -> f32 {
-	return max(val-(*fb).FS0, 0.0);
+fn GiParams_FS0Thr(fb: GiParams, val: f32) -> f32 {
+	return max(val-fb.FS0, 0.0);
 }
-fn GiParams_FS(fb: ptr<function,GiParams>, fsi: f32,gext: f32, clamped: bool) -> f32 {
-	if (clamped && gext > (*fb).ClampExtMin) {
+fn GiParams_FS(fb: GiParams, fsi: f32,gext: f32, clamped: bool) -> f32 {
+	if (clamped && gext > fb.ClampExtMin) {
 		return gext;
 	}return GiParams_FS0Thr(fb, fsi) + gext;
 }
-fn GiParams_SSFromFBs(fb: ptr<function,GiParams>, ssf: ptr<function,f32>,ssi: ptr<function,f32>, fbs: f32) {
-	*ssi += (*fb).SSiDt * (*ssf*fbs - *ssi);
-	*ssf += fbs*(1-*ssf) - (*fb).SSfDt**ssf;
+fn GiParams_SSFromFBs(fb: GiParams, ssf: ptr<function,f32>,ssi: ptr<function,f32>, fbs: f32) {
+	*ssi += fb.SSiDt * (*ssf*fbs - *ssi);
+	*ssf += fbs*(1-*ssf) - fb.SSfDt**ssf;
 }
 
 //////// import: "fsfffb-inhib.go"
@@ -608,23 +607,23 @@ struct InhibParams {
 	Layer: GiParams,
 	Pool: GiParams,
 }
-fn PoolInhib(fb: ptr<function,GiParams>, pi: u32,di: u32, gimult: f32) {
-	if ((*fb).On == 0) {
+fn PoolInhib(fb: GiParams, pi: u32,di: u32, gimult: f32) {
+	if (fb.On == 0) {
 		PoolInhibZero(pi, di);return;
 	}
-	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FFAvg))] += (*fb).FFAvgDt * (Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FFs))] - Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FFAvg))]);
+	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FFAvg))] += fb.FFAvgDt * (Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FFs))] - Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FFAvg))]);
 	var fsi = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FSi))];
 	fsi = GiParams_FSiFromFFs(fb, fsi, Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FFs))], Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FBs))]);
 	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FSi))] = fsi;
 	var clamped = PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(Clamped))] > 0;
-	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FSGi))] = (*fb).Gi * GiParams_FS(fb, fsi, Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(GeExts))], clamped);
+	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FSGi))] = fb.Gi * GiParams_FS(fb, fsi, Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(GeExts))], clamped);
 	var ssf = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(SSf))];
 	var ssi = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(SSi))];
 	GiParams_SSFromFBs(fb, &ssf, &ssi, Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FBs))]);
-	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(SSGi))] = (*fb).Gi * (*fb).SS * ssi;
+	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(SSGi))] = fb.Gi * fb.SS * ssi;
 	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(SSf))] = ssf;
 	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(SSi))] = ssi;
-	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(TotalGi))] = PoolInhibGiFromFSSS(pi, di) + (*fb).FFPrv*Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FFAvgPrv))];
+	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(TotalGi))] = PoolInhibGiFromFSSS(pi, di) + fb.FFPrv*Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FFAvgPrv))];
 	PoolInhibSaveOrig(pi, di);
 }
 fn PoolInhibInitRaw(pi: u32,di: u32) {
@@ -748,8 +747,8 @@ struct LayerParams {
 	TDDa: TDDaParams,
 	Indexes: LayerIndexes,
 }
-fn LayerParams_PoolIndex(ly: ptr<function,LayerParams>, pi: u32) -> u32 {
-	return (*ly).PoolSt + pi;
+fn LayerParams_PoolIndex(ly: LayerParams, pi: u32) -> u32 {
+	return ly.PoolSt + pi;
 }
 
 //////// import: "layertypes.go"
@@ -1239,18 +1238,18 @@ fn PoolAvgMaxCalc(pi: u32,di: u32) {
 		PoolAvgMaxCalcVar(vr, pi, di);
 	}
 }
-fn PoolPoolGi(ctx: ptr<function,Context>, pi: u32,di: u32) {
+fn PoolPoolGi(ctx: Context, pi: u32,di: u32) {
 	if (PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolIsLayer))] > 0) {
 		return;
 	}
 	var li = PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolLayerIdx))];
 	PoolAvgMaxCalc(pi, di);
 	PoolInhibIntToRaw(pi, di);
-	var ly = Layers[u32(li)];
+	let ly = Layers[u32(li)];
 	var giMult = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(li), u32(di), u32(LayerGiMult))];
 	var lyIsOn = (ly.Inhib.Layer.On == 1);
-	var lpi = LayerParams_PoolIndex(&ly, u32(0));
-	LayerParams_SubPoolGiFromSpikes(&ly, ctx, lpi, pi, di, lyIsOn, giMult);
+	var lpi = LayerParams_PoolIndex(ly, u32(0));
+	LayerParams_SubPoolGiFromSpikes(ly, ctx, lpi, pi, di, lyIsOn, giMult);
 }
 
 //////// import: "rand.go"

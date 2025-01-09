@@ -25,7 +25,7 @@ var<storage, read> RecvPathIxs: array<u32>;
 var<storage, read> PathRecvCon: array<u32>;
 @group(1) @binding(4)
 var<storage, read> RecvSynIxs: array<u32>;
-// // Ctx is the current context state (one only). 
+// // Ctx is the current context state (one only). This is read-only except in // specific kernels. 
 @group(2) @binding(0)
 var<storage, read_write> Ctx: array<Context>;
 @group(2) @binding(1)
@@ -81,9 +81,8 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 
 //////// import: "act-net.go"
 fn InitGBuffsPath(pti: u32) { //gosl:kernel
-	var ctx = Ctx[0];
-	var paths=Paths[pti]; PathParams_InitGBuffs(&paths, &ctx);
-	Ctx[0] = ctx;
+	let ctx = Ctx[0];
+	let paths=Paths[pti]; PathParams_InitGBuffs(paths, ctx);
 }
 
 //////// import: "act-path.go"
@@ -105,12 +104,12 @@ struct PathScaleParams {
 	pad: f32,
 	pad1: f32,
 }
-fn PathParams_InitGBuffs(pt: ptr<function,PathParams>, ctx: ptr<function,Context>) {
-	var nix = NetworkIxs[0];
+fn PathParams_InitGBuffs(pt: PathParams, ctx: Context) {
+	let nix = NetworkIxs[0];
 	var maxd = nix.MaxData;
 	var mdel = nix.MaxDelay + 1;
-	var rnn = (*pt).Indexes.RecvNeurN;
-	var npst = (*pt).Indexes.NPathNeurSt;
+	var rnn = pt.Indexes.RecvNeurN;
+	var npst = pt.Indexes.NPathNeurSt;
 	for (var ri = u32(0); ri < rnn; ri++) {
 		for (var di = u32(0); di < maxd; di++) {
 			for (var dl = u32(0); dl < mdel; dl++) {

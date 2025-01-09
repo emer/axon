@@ -25,7 +25,7 @@ var<storage, read> RecvPathIxs: array<u32>;
 var<storage, read> PathRecvCon: array<u32>;
 @group(1) @binding(4)
 var<storage, read> RecvSynIxs: array<u32>;
-// // Ctx is the current context state (one only). 
+// // Ctx is the current context state (one only). This is read-only except in // specific kernels. 
 @group(2) @binding(0)
 var<storage, read_write> Ctx: array<Context>;
 @group(2) @binding(1)
@@ -78,17 +78,17 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 //////// import: "vars.go"
 
 //////// import: "act-layer.go"
-fn LayerParams_GatherSpikes(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, ni: u32,di: u32) {
-	var lni = ni - (*ly).Indexes.NeurSt;
+fn LayerParams_GatherSpikes(ly: LayerParams, ctx: Context, ni: u32,di: u32) {
+	var lni = ni - ly.Indexes.NeurSt;
 	LayerParams_GatherSpikesInit(ly, ctx, ni, di);
-	for (var pti = u32(0); pti < (*ly).Indexes.RecvN; pti++) {
-		var npti = RecvPathIxs[Index1D(TensorStrides[40], u32((*ly).Indexes.RecvSt + pti))];
-		var pt = Paths[npti];
-		PathParams_GatherSpikes(&pt, ctx, ly, ni, di, lni);
+	for (var pti = u32(0); pti < ly.Indexes.RecvN; pti++) {
+		var npti = RecvPathIxs[Index1D(TensorStrides[40], u32(ly.Indexes.RecvSt + pti))];
+		let pt = Paths[npti];
+		PathParams_GatherSpikes(pt, ctx, ly, ni, di, lni);
 	}
 	LayerParams_GiFromSpikes(ly, ctx, ni, di);
 }
-fn LayerParams_GatherSpikesInit(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, ni: u32,di: u32) {
+fn LayerParams_GatherSpikesInit(ly: LayerParams, ctx: Context, ni: u32,di: u32) {
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeRaw))] = 0.0;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GiRaw))] = 0.0;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GModRaw))] = 0.0;
@@ -98,7 +98,7 @@ fn LayerParams_GatherSpikesInit(ly: ptr<function,LayerParams>, ctx: ptr<function
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeSyn))] = NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81], u32(ni), u32(GeBase))];
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GiSyn))] = NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81], u32(ni), u32(GiBase))];
 }
-fn LayerParams_GiFromSpikes(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, ni: u32,di: u32) {
+fn LayerParams_GiFromSpikes(ly: LayerParams, ctx: Context, ni: u32,di: u32) {
 	var pi = LayerParams_PoolIndex(ly, NeuronIxs[Index2D(TensorStrides[10], TensorStrides[11], u32(ni), u32(NrnSubPool))]);
 	var spk = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Spike))];
 	var geRaw = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeRaw))];
@@ -115,15 +115,14 @@ fn LayerParams_GiFromSpikes(ly: ptr<function,LayerParams>, ctx: ptr<function,Con
 
 //////// import: "act-net.go"
 fn GatherSpikes(i: u32) { //gosl:kernel
-	var ctx = Ctx[0];
-	var ni = Context_ItemIndex(&ctx, i);
+	let ctx = Ctx[0];
+	var ni = Context_ItemIndex(ctx, i);
 	if (ni >= NetworkIxs[0].NNeurons) {
 		return;
 	}
-	var di = Context_DataIndex(&ctx, i);
+	var di = Context_DataIndex(ctx, i);
 	var li = NeuronIxs[Index2D(TensorStrides[10], TensorStrides[11], u32(ni), u32(NrnLayIndex))];
-	var layers=Layers[li]; LayerParams_GatherSpikes(&layers, &ctx, ni, di);
-	Ctx[0] = ctx;
+	let layers=Layers[li]; LayerParams_GatherSpikes(layers, ctx, ni, di);
 }
 
 //////// import: "act-path.go"
@@ -139,19 +138,19 @@ struct SynComParams {
 	MaxDelay: u32,
 	DelLen: u32,
 }
-fn SynComParams_RingIndex(sc: ptr<function,SynComParams>, i: u32) -> u32 {
+fn SynComParams_RingIndex(sc: SynComParams, i: u32) -> u32 {
 	var ri = i;
-	if (ri >= (*sc).DelLen) {
-		ri -= (*sc).DelLen;
+	if (ri >= sc.DelLen) {
+		ri -= sc.DelLen;
 	}return ri;
 }
-fn SynComParams_ReadOff(sc: ptr<function,SynComParams>, cycTot: i32) -> u32 {
-	return SynComParams_RingIndex(sc, u32(cycTot) % (*sc).DelLen);
+fn SynComParams_ReadOff(sc: SynComParams, cycTot: i32) -> u32 {
+	return SynComParams_RingIndex(sc, u32(cycTot) % sc.DelLen);
 }
-fn SynComParams_FloatToIntFactor(sc: ptr<function,SynComParams>) -> f32 {
+fn SynComParams_FloatToIntFactor(sc: SynComParams) -> f32 {
 	return f32(u32(1) << 24); // leaves 7 bits = 128 to cover any extreme cases
 }
-fn SynComParams_FloatFromGBuf(sc: ptr<function,SynComParams>, ival: i32) -> f32 {
+fn SynComParams_FloatFromGBuf(sc: SynComParams, ival: i32) -> f32 {
 	return f32(ival) / SynComParams_FloatToIntFactor(sc);
 }
 struct PathScaleParams {
@@ -160,35 +159,35 @@ struct PathScaleParams {
 	pad: f32,
 	pad1: f32,
 }
-fn PathParams_GatherSpikes(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, ly: ptr<function,LayerParams>, ni: u32,di: u32,lni: u32) {
-	var deli = SynComParams_ReadOff(&(*pt).Com, (*ctx).CyclesTotal);
-	var npti = (*pt).Indexes.NPathNeurSt + lni;
-	var gRaw = SynComParams_FloatFromGBuf(&(*pt).Com, PathGBuf[Index3D(TensorStrides[150], TensorStrides[151], TensorStrides[152], u32(npti), u32(di), u32(deli))]);
+fn PathParams_GatherSpikes(pt: PathParams, ctx: Context, ly: LayerParams, ni: u32,di: u32,lni: u32) {
+	var deli = SynComParams_ReadOff(pt.Com, ctx.CyclesTotal);
+	var npti = pt.Indexes.NPathNeurSt + lni;
+	var gRaw = SynComParams_FloatFromGBuf(pt.Com, PathGBuf[Index3D(TensorStrides[150], TensorStrides[151], TensorStrides[152], u32(npti), u32(di), u32(deli))]);
 	PathGBuf[Index3D(TensorStrides[150], TensorStrides[151], TensorStrides[152], u32(npti), u32(di), u32(deli))] = 0;
 	var gsyn = PathGSyns[Index2D(TensorStrides[160], TensorStrides[161], u32(npti), u32(di))];
 	PathParams_GatherSpikesGSyn(pt, ctx, ly, ni, di, gRaw, &gsyn);
 	PathGSyns[Index2D(TensorStrides[160], TensorStrides[161],
 	u32(npti), u32(di))] = gsyn;
 }
-fn PathParams_GatherSpikesGSyn(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, ly: ptr<function,LayerParams>, ni: u32,di: u32, gRaw: f32, gSyn: ptr<function,f32>) {
-	switch ((*pt).Com.GType) {
+fn PathParams_GatherSpikesGSyn(pt: PathParams, ctx: Context, ly: LayerParams, ni: u32,di: u32, gRaw: f32, gSyn: ptr<function,f32>) {
+	switch (pt.Com.GType) {
 	case ExcitatoryG: {
-		*gSyn = DtParams_GeSynFromRaw(&(*ly).Acts.Dt, *gSyn, gRaw);
+		*gSyn = DtParams_GeSynFromRaw(ly.Acts.Dt, *gSyn, gRaw);
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeRaw))] += gRaw;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeSyn))] += *gSyn;
 	}
 	case InhibitoryG: {
-		*gSyn = DtParams_GiSynFromRaw(&(*ly).Acts.Dt, *gSyn, gRaw);
+		*gSyn = DtParams_GiSynFromRaw(ly.Acts.Dt, *gSyn, gRaw);
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GiRaw))] += gRaw;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GiSyn))] += *gSyn;
 	}
 	case ModulatoryG: {
-		*gSyn = DtParams_GeSynFromRaw(&(*ly).Acts.Dt, *gSyn, gRaw);
+		*gSyn = DtParams_GeSynFromRaw(ly.Acts.Dt, *gSyn, gRaw);
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GModRaw))] += gRaw;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GModSyn))] += *gSyn;
 	}
 	case MaintG: {
-		*gSyn = DtParams_GeSynFromRaw(&(*ly).Acts.Dt, *gSyn, gRaw);
+		*gSyn = DtParams_GeSynFromRaw(ly.Acts.Dt, *gSyn, gRaw);
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
 		u32(ni), u32(di), u32(GMaintRaw))] += gRaw;
 	}
@@ -263,11 +262,11 @@ struct DtParams {
 	IntDt: f32,
 	LongAvgDt: f32,
 }
-fn DtParams_GeSynFromRaw(dp: ptr<function,DtParams>, geSyn: f32,geRaw: f32) -> f32 {
-	return geSyn + geRaw - (*dp).GeDt*geSyn;
+fn DtParams_GeSynFromRaw(dp: DtParams, geSyn: f32,geRaw: f32) -> f32 {
+	return geSyn + geRaw - dp.GeDt*geSyn;
 }
-fn DtParams_GiSynFromRaw(dp: ptr<function,DtParams>, giSyn: f32,giRaw: f32) -> f32 {
-	return giSyn + giRaw - (*dp).GiDt*giSyn;
+fn DtParams_GiSynFromRaw(dp: DtParams, giSyn: f32,giRaw: f32) -> f32 {
+	return giSyn + giRaw - dp.GiDt*giSyn;
 }
 struct SpikeNoiseParams {
 	On: i32,
@@ -479,11 +478,11 @@ struct Context { //types:add -setters
 	SlowCounter: i32,
 	RandCounter: RandCounter,
 }
-fn Context_ItemIndex(ctx: ptr<function,Context>, idx: u32) -> u32 {
-	return idx / (*ctx).NData;
+fn Context_ItemIndex(ctx: Context, idx: u32) -> u32 {
+	return idx / ctx.NData;
 }
-fn Context_DataIndex(ctx: ptr<function,Context>, idx: u32) -> u32 {
-	return idx % (*ctx).NData;
+fn Context_DataIndex(ctx: Context, idx: u32) -> u32 {
+	return idx % ctx.NData;
 }
 
 //////// import: "deep-layer.go"
@@ -748,8 +747,8 @@ struct LayerParams {
 	TDDa: TDDaParams,
 	Indexes: LayerIndexes,
 }
-fn LayerParams_PoolIndex(ly: ptr<function,LayerParams>, pi: u32) -> u32 {
-	return (*ly).PoolSt + pi;
+fn LayerParams_PoolIndex(ly: LayerParams, pi: u32) -> u32 {
+	return ly.PoolSt + pi;
 }
 
 //////// import: "layertypes.go"

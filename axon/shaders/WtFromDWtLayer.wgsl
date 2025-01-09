@@ -25,7 +25,7 @@ var<storage, read> RecvPathIxs: array<u32>;
 var<storage, read> PathRecvCon: array<u32>;
 @group(1) @binding(4)
 var<storage, read> RecvSynIxs: array<u32>;
-// // Ctx is the current context state (one only). 
+// // Ctx is the current context state (one only). This is read-only except in // specific kernels. 
 @group(2) @binding(0)
 var<storage, read_write> Ctx: array<Context>;
 @group(2) @binding(1)
@@ -78,15 +78,15 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 //////// import: "vars.go"
 
 //////// import: "act-layer.go"
-fn LayerParams_IsLearnTrgAvg(ly: ptr<function,LayerParams>) -> bool {
-	if ((*ly).Acts.Clamp.IsInput == 1 || (*ly).Acts.Clamp.IsTarget == 1 || (*ly).Learn.TrgAvgAct.RescaleOn == 0) {
+fn LayerParams_IsLearnTrgAvg(ly: LayerParams) -> bool {
+	if (ly.Acts.Clamp.IsInput == 1 || ly.Acts.Clamp.IsTarget == 1 || ly.Learn.TrgAvgAct.RescaleOn == 0) {
 		return false;
 	}return true;
 }
-fn LayerParams_LearnTrgAvgErrLRate(ly: ptr<function,LayerParams>) -> f32 {
+fn LayerParams_LearnTrgAvgErrLRate(ly: LayerParams) -> f32 {
 	if (!LayerParams_IsLearnTrgAvg(ly)) {
 		return f32(0);
-	}return (*ly).Learn.TrgAvgAct.ErrLRate;
+	}return ly.Learn.TrgAvgAct.ErrLRate;
 }
 
 //////// import: "act-net.go"
@@ -647,11 +647,11 @@ struct LayerParams {
 	TDDa: TDDaParams,
 	Indexes: LayerIndexes,
 }
-fn LayerParams_PoolIndex(ly: ptr<function,LayerParams>, pi: u32) -> u32 {
-	return (*ly).PoolSt + pi;
+fn LayerParams_PoolIndex(ly: LayerParams, pi: u32) -> u32 {
+	return ly.PoolSt + pi;
 }
-fn LayerParams_HasPoolInhib(ly: ptr<function,LayerParams>) -> bool {
-	return (*ly).Inhib.Pool.On == 1;
+fn LayerParams_HasPoolInhib(ly: LayerParams) -> bool {
+	return ly.Inhib.Pool.On == 1;
 }
 
 //////// import: "layertypes.go"
@@ -703,13 +703,13 @@ const  LayerRewPredPos: LayerVars = 10;
 const  LayerRewPredNeg: LayerVars = 11;
 
 //////// import: "learn-layer.go"
-fn LayerParams_DTrgSubMean(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>) {
-	var submean = (*ly).Learn.TrgAvgAct.SubMean;
+fn LayerParams_DTrgSubMean(ly: LayerParams, ctx: Context) {
+	var submean = ly.Learn.TrgAvgAct.SubMean;
 	if (submean == 0) {
 		return;
 	}
-	if (LayerParams_HasPoolInhib(ly) && (*ly).Learn.TrgAvgAct.Pool == 1) {
-		var np = (*ly).Indexes.NPools;
+	if (LayerParams_HasPoolInhib(ly) && ly.Learn.TrgAvgAct.Pool == 1) {
+		var np = ly.Indexes.NPools;
 		for (var spi = u32(1); spi < np; spi++) {
 			var pi = LayerParams_PoolIndex(ly, spi);
 			var nsi = PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolNeurSt))];
@@ -717,7 +717,7 @@ fn LayerParams_DTrgSubMean(ly: ptr<function,LayerParams>, ctx: ptr<function,Cont
 			var nn = 0;
 			var avg = f32(0);
 			for (var lni = nsi; lni < nei; lni++) {
-				var ni = (*ly).Indexes.NeurSt + u32(lni);
+				var ni = ly.Indexes.NeurSt + u32(lni);
 				if (NeuronIsOff(ni)) {
 					continue;
 				}
@@ -730,7 +730,7 @@ fn LayerParams_DTrgSubMean(ly: ptr<function,LayerParams>, ctx: ptr<function,Cont
 			avg /= f32(nn);
 			avg *= submean;
 			for (var lni = nsi; lni < nei; lni++) {
-				var ni = (*ly).Indexes.NeurSt + u32(lni);
+				var ni = ly.Indexes.NeurSt + u32(lni);
 				if (NeuronIsOff(ni)) {
 					continue;
 				}
@@ -740,9 +740,9 @@ fn LayerParams_DTrgSubMean(ly: ptr<function,LayerParams>, ctx: ptr<function,Cont
 	} else {
 		var nn = 0;
 		var avg = f32(0);
-		var tn = (*ly).Indexes.NNeurons;
+		var tn = ly.Indexes.NNeurons;
 		for (var lni = u32(0); lni < tn; lni++) {
-			var ni = (*ly).Indexes.NeurSt + lni;
+			var ni = ly.Indexes.NeurSt + lni;
 			if (NeuronIsOff(ni)) {
 				continue;
 			}
@@ -755,7 +755,7 @@ fn LayerParams_DTrgSubMean(ly: ptr<function,LayerParams>, ctx: ptr<function,Cont
 		avg /= f32(nn);
 		avg *= submean;
 		for (var lni = u32(0); lni < tn; lni++) {
-			var ni = (*ly).Indexes.NeurSt + lni;
+			var ni = ly.Indexes.NeurSt + lni;
 			if (NeuronIsOff(ni)) {
 				continue;
 			}
@@ -763,37 +763,36 @@ fn LayerParams_DTrgSubMean(ly: ptr<function,LayerParams>, ctx: ptr<function,Cont
 		}
 	}
 }
-fn LayerParams_TrgAvgFromD(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>) {
+fn LayerParams_TrgAvgFromD(ly: LayerParams, ctx: Context) {
 	var lr = LayerParams_LearnTrgAvgErrLRate(ly);
 	if (lr == 0) {
 		return;
 	}
 	LayerParams_DTrgSubMean(ly, ctx);
-	var nn = (*ly).Indexes.NNeurons;
+	var nn = ly.Indexes.NNeurons;
 	for (var lni = u32(0); lni < nn; lni++) {
-		var ni = (*ly).Indexes.NeurSt + lni;
+		var ni = ly.Indexes.NeurSt + lni;
 		if (NeuronIsOff(ni)) {
 			continue;
 		}
 		var ntrg = NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81], u32(ni), u32(TrgAvg))] + NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81], u32(ni), u32(DTrgAvg))];
-		ntrg = F32_ClampValue(&(*ly).Learn.TrgAvgAct.TrgRange, ntrg);
+		ntrg = F32_ClampValue(ly.Learn.TrgAvgAct.TrgRange, ntrg);
 		NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81], u32(ni), u32(TrgAvg))] = ntrg;
 		NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81],
 		u32(ni), u32(DTrgAvg))] = 0.0;
 	}
 }
-fn LayerParams_WtFromDWtLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>) {
+fn LayerParams_WtFromDWtLayer(ly: LayerParams, ctx: Context) {
 	LayerParams_TrgAvgFromD(ly, ctx);
 }
 
 //////// import: "learn-net.go"
 fn WtFromDWtLayer(li: u32) { //gosl:kernel
-	var ctx = Ctx[0];
+	let ctx = Ctx[0];
 	if (li >= NetworkIxs[0].NLayers) {
 		return;
 	}
-	var layers=Layers[li]; LayerParams_WtFromDWtLayer(&layers, &ctx);
-	Ctx[0] = ctx;
+	let layers=Layers[li]; LayerParams_WtFromDWtLayer(layers, ctx);
 }
 
 //////// import: "learn-path.go"
@@ -921,12 +920,12 @@ struct F32 {
 	pad: i32,
 	pad1: i32, // for gpu use
 }
-fn F32_ClampValue(mr: ptr<function,F32>, val: f32) -> f32 {
-	if (val < (*mr).Min) {
-		return (*mr).Min;
+fn F32_ClampValue(mr: F32, val: f32) -> f32 {
+	if (val < mr.Min) {
+		return mr.Min;
 	}
-	if (val > (*mr).Max) {
-		return (*mr).Max;
+	if (val > mr.Max) {
+		return mr.Max;
 	}return val;
 }
 

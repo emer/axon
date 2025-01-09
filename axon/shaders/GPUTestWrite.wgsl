@@ -25,7 +25,7 @@ var<storage, read> RecvPathIxs: array<u32>;
 var<storage, read> PathRecvCon: array<u32>;
 @group(1) @binding(4)
 var<storage, read> RecvSynIxs: array<u32>;
-// // Ctx is the current context state (one only). 
+// // Ctx is the current context state (one only). This is read-only except in // specific kernels. 
 @group(2) @binding(0)
 var<storage, read_write> Ctx: array<Context>;
 @group(2) @binding(1)
@@ -81,16 +81,15 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 
 //////// import: "act-net.go"
 fn GPUTestWrite(i: u32) { //gosl:kernel
-	var ctx = Ctx[0];
-	var ni = Context_ItemIndex(&ctx, i);
+	let ctx = Ctx[0];
+	var ni = Context_ItemIndex(ctx, i);
 	if (ni >= NetworkIxs[0].NNeurons) {
 		return;
 	}
-	var di = Context_DataIndex(&ctx, i);
+	var di = Context_DataIndex(ctx, i);
 	for (var vi = Spike; vi < NeuronVarsN; vi++) {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(vi))] = f32(ni*1000 + u32(vi));
 	}
-	Ctx[0] = ctx;
 }
 
 //////// import: "act-path.go"
@@ -386,11 +385,11 @@ struct Context { //types:add -setters
 	SlowCounter: i32,
 	RandCounter: RandCounter,
 }
-fn Context_ItemIndex(ctx: ptr<function,Context>, idx: u32) -> u32 {
-	return idx / (*ctx).NData;
+fn Context_ItemIndex(ctx: Context, idx: u32) -> u32 {
+	return idx / ctx.NData;
 }
-fn Context_DataIndex(ctx: ptr<function,Context>, idx: u32) -> u32 {
-	return idx % (*ctx).NData;
+fn Context_DataIndex(ctx: Context, idx: u32) -> u32 {
+	return idx % ctx.NData;
 }
 
 //////// import: "deep-layer.go"

@@ -25,7 +25,7 @@ var<storage, read> RecvPathIxs: array<u32>;
 var<storage, read> PathRecvCon: array<u32>;
 @group(1) @binding(4)
 var<storage, read> RecvSynIxs: array<u32>;
-// // Ctx is the current context state (one only). 
+// // Ctx is the current context state (one only). This is read-only except in // specific kernels. 
 @group(2) @binding(0)
 var<storage, read_write> Ctx: array<Context>;
 @group(2) @binding(1)
@@ -78,10 +78,10 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 //////// import: "vars.go"
 
 //////// import: "act-layer.go"
-fn LayerParams_ApplyExtFlags(ly: ptr<function,LayerParams>, clearMask: ptr<function,NeuronFlags>,setMask: ptr<function,NeuronFlags>, toTarg: ptr<function,bool>) {
+fn LayerParams_ApplyExtFlags(ly: LayerParams, clearMask: ptr<function,NeuronFlags>,setMask: ptr<function,NeuronFlags>, toTarg: ptr<function,bool>) {
 	*clearMask = NeuronHasExt | NeuronHasTarg | NeuronHasCmpr;
 	*toTarg = false;
-	switch ((*ly).Type) {
+	switch (ly.Type) {
 	case TargetLayer: {
 		*setMask = NeuronHasTarg;
 		*toTarg = true;
@@ -95,12 +95,12 @@ fn LayerParams_ApplyExtFlags(ly: ptr<function,LayerParams>, clearMask: ptr<funct
 	}
 	}return;
 }
-fn LayerParams_InitExt(ly: ptr<function,LayerParams>, ni: u32,di: u32) {
+fn LayerParams_InitExt(ly: LayerParams, ni: u32,di: u32) {
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Ext))] = 0.0;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Target))] = 0.0;
 	NeuronClearFlag(NeuronHasExt|NeuronHasTarg|NeuronHasCmpr, ni, di);
 }
-fn LayerParams_ApplyExtValue(ly: ptr<function,LayerParams>, ni: u32,di: u32, val: f32) {
+fn LayerParams_ApplyExtValue(ly: LayerParams, ni: u32,di: u32, val: f32) {
 	if (val < 0) {
 		return;
 	}
@@ -116,11 +116,11 @@ fn LayerParams_ApplyExtValue(ly: ptr<function,LayerParams>, ni: u32,di: u32, val
 	NeuronClearFlag(clearMask, ni, di);
 	NeuronSetFlag(setMask, ni, di);
 }
-fn LayerParams_ApplyExtsNeuron(ly: ptr<function,LayerParams>, ni: u32,di: u32) {
-	var lni = ni - (*ly).Indexes.NeurSt; // layer-based
+fn LayerParams_ApplyExtsNeuron(ly: LayerParams, ni: u32,di: u32) {
+	var lni = ni - ly.Indexes.NeurSt; // layer-based
 	LayerParams_InitExt(ly, ni, di);
-	if (IsExtLayerType((*ly).Type)) {
-		var ei = (*ly).Indexes.ExtsSt + lni;
+	if (IsExtLayerType(ly.Type)) {
+		var ei = ly.Indexes.ExtsSt + lni;
 		LayerParams_ApplyExtValue(ly, ni, di, Exts[Index2D(TensorStrides[120], TensorStrides[121],
 		u32(ei), u32(di))]);
 	}
@@ -128,15 +128,14 @@ fn LayerParams_ApplyExtsNeuron(ly: ptr<function,LayerParams>, ni: u32,di: u32) {
 
 //////// import: "act-net.go"
 fn ApplyExtsNeuron(i: u32) { //gosl:kernel
-	var ctx = Ctx[0];
-	var ni = Context_ItemIndex(&ctx, i);
+	let ctx = Ctx[0];
+	var ni = Context_ItemIndex(ctx, i);
 	if (ni >= NetworkIxs[0].NNeurons) {
 		return;
 	}
-	var di = Context_DataIndex(&ctx, i);
+	var di = Context_DataIndex(ctx, i);
 	var li = NeuronIxs[Index2D(TensorStrides[10], TensorStrides[11], u32(ni), u32(NrnLayIndex))];
-	var layers=Layers[li]; LayerParams_ApplyExtsNeuron(&layers, ni, di);
-	Ctx[0] = ctx;
+	let layers=Layers[li]; LayerParams_ApplyExtsNeuron(layers, ni, di);
 }
 
 //////// import: "act-path.go"
@@ -438,11 +437,11 @@ struct Context { //types:add -setters
 	SlowCounter: i32,
 	RandCounter: RandCounter,
 }
-fn Context_ItemIndex(ctx: ptr<function,Context>, idx: u32) -> u32 {
-	return idx / (*ctx).NData;
+fn Context_ItemIndex(ctx: Context, idx: u32) -> u32 {
+	return idx / ctx.NData;
 }
-fn Context_DataIndex(ctx: ptr<function,Context>, idx: u32) -> u32 {
-	return idx % (*ctx).NData;
+fn Context_DataIndex(ctx: Context, idx: u32) -> u32 {
+	return idx % ctx.NData;
 }
 
 //////// import: "deep-layer.go"

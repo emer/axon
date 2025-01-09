@@ -25,7 +25,7 @@ var<storage, read> RecvPathIxs: array<u32>;
 var<storage, read> PathRecvCon: array<u32>;
 @group(1) @binding(4)
 var<storage, read> RecvSynIxs: array<u32>;
-// // Ctx is the current context state (one only). 
+// // Ctx is the current context state (one only). This is read-only except in // specific kernels. 
 @group(2) @binding(0)
 var<storage, read_write> Ctx: array<Context>;
 @group(2) @binding(1)
@@ -78,10 +78,10 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 //////// import: "vars.go"
 
 //////// import: "act-layer.go"
-fn LayerParams_CyclePost(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, di: u32) {
+fn LayerParams_CyclePost(ly: LayerParams, ctx: Context, di: u32) {
 	var lpi = LayerParams_PoolIndex(ly, u32(u32(0)));
 	LayerParams_CyclePostLayer(ly, ctx, lpi, di);
-	switch ((*ly).Type) {
+	switch (ly.Type) {
 	case MatrixLayer, BGThalLayer: {
 		LayerParams_GatedFromCaPMax(ly, ctx, di);
 	}
@@ -89,16 +89,16 @@ fn LayerParams_CyclePost(ly: ptr<function,LayerParams>, ctx: ptr<function,Contex
 		LayerParams_CyclePostCeMLayer(ly, ctx, lpi, di);
 	}
 	case VSPatchLayer: {
-		for (var spi = u32(1); spi < (*ly).Indexes.NPools; spi++) {
+		for (var spi = u32(1); spi < ly.Indexes.NPools; spi++) {
 			var pi = LayerParams_PoolIndex(ly, spi);
 			LayerParams_CyclePostVSPatchLayer(ly, ctx, pi, di, i32(spi));
 		}
 	}
 	case LDTLayer: {
-		var srcLay1Act = LayerParams_LDTSrcLayAct(ly, (*ly).LDT.SrcLay1Index, di);
-		var srcLay2Act = LayerParams_LDTSrcLayAct(ly, (*ly).LDT.SrcLay2Index, di);
-		var srcLay3Act = LayerParams_LDTSrcLayAct(ly, (*ly).LDT.SrcLay3Index, di);
-		var srcLay4Act = LayerParams_LDTSrcLayAct(ly, (*ly).LDT.SrcLay4Index, di);
+		var srcLay1Act = LayerParams_LDTSrcLayAct(ly, ly.LDT.SrcLay1Index, di);
+		var srcLay2Act = LayerParams_LDTSrcLayAct(ly, ly.LDT.SrcLay2Index, di);
+		var srcLay3Act = LayerParams_LDTSrcLayAct(ly, ly.LDT.SrcLay3Index, di);
+		var srcLay4Act = LayerParams_LDTSrcLayAct(ly, ly.LDT.SrcLay4Index, di);
 		LayerParams_CyclePostLDTLayer(ly, ctx, di, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act);
 	}
 	case VTALayer: {
@@ -120,36 +120,36 @@ fn LayerParams_CyclePost(ly: ptr<function,LayerParams>, ctx: ptr<function,Contex
 	}
 	}
 }
-fn LayerParams_CyclePostLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, lpi: u32,di: u32) {
+fn LayerParams_CyclePostLayer(ly: LayerParams, ctx: Context, lpi: u32,di: u32) {
 	var casp = PoolAvgMax(AMCaP, AMCycle, Max, lpi, di);
-	if ((*ctx).Cycle >= (*ly).Acts.Dt.MaxCycStart) {
-		if (casp > (*ly).Inhib.ActAvg.RTThr && LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32((*ly).Index), u32(di), u32(LayerRT))] <= 0) {
-			LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32((*ly).Index), u32(di), u32(LayerRT))] = f32((*ctx).Cycle);
+	if (ctx.Cycle >= ly.Acts.Dt.MaxCycStart) {
+		if (casp > ly.Inhib.ActAvg.RTThr && LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(ly.Index), u32(di), u32(LayerRT))] <= 0) {
+			LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(ly.Index), u32(di), u32(LayerRT))] = f32(ctx.Cycle);
 		}
-		if (PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(lpi), u32(di), u32(PoolGated))] > 0 && LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32((*ly).Index), u32(di), u32(GatedRT))] <= 0) {
-			LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32((*ly).Index), u32(di), u32(GatedRT))] = f32((*ctx).Cycle);
+		if (PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(lpi), u32(di), u32(PoolGated))] > 0 && LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(ly.Index), u32(di), u32(GatedRT))] <= 0) {
+			LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(ly.Index), u32(di), u32(GatedRT))] = f32(ctx.Cycle);
 		}
 	}
 }
-fn LayerParams_LDTSrcLayAct(ly: ptr<function,LayerParams>, layIndex: i32, di: u32) -> f32 {
+fn LayerParams_LDTSrcLayAct(ly: LayerParams, layIndex: i32, di: u32) -> f32 {
 	if (layIndex < 0) {
 		return f32(0);
 	}
-	var oly = Layers[u32(layIndex)];
-	var opi = LayerParams_PoolIndex(&oly, u32(u32(0)));return PoolAvgMax(AMCaP, AMCycle, Avg, opi, di);
+	let oly = Layers[u32(layIndex)];
+	var opi = LayerParams_PoolIndex(oly, u32(u32(0)));return PoolAvgMax(AMCaP, AMCycle, Avg, opi, di);
 }
-fn LayerParams_CyclePostLDTLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, di: u32, srcLay1Act: f32,srcLay2Act: f32,srcLay3Act: f32,srcLay4Act: f32) {
-	var ach = LDTParams_ACh(&(*ly).LDT, ctx, di, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act);
+fn LayerParams_CyclePostLDTLayer(ly: LayerParams, ctx: Context, di: u32, srcLay1Act: f32,srcLay2Act: f32,srcLay3Act: f32,srcLay4Act: f32) {
+	var ach = LDTParams_ACh(ly.LDT, ctx, di, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act);
 	GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvAChRaw), u32(di))] = ach;
 	if (ach > GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], // instant up
 	u32(GvACh), u32(di))]) {
 		GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvACh), u32(di))] = ach;
 	} else {
-		GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvACh), u32(di))] += (*ly).Acts.Dt.IntDt * (ach - GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvACh), u32(di))]);
+		GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvACh), u32(di))] += ly.Acts.Dt.IntDt * (ach - GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvACh), u32(di))]);
 	}
 }
-fn LayerParams_CyclePostRWDaLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, di: u32) {
-	var pli = u32((*ly).RWDa.RWPredLayIndex);
+fn LayerParams_CyclePostRWDaLayer(ly: LayerParams, ctx: Context, di: u32) {
+	var pli = u32(ly.RWDa.RWPredLayIndex);
 	var pred = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(pli), u32(di), u32(LayerRewPredPos))] - LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(pli), u32(di), u32(LayerRewPredNeg))];
 	GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], // record
 	u32(GvRewPred), u32(di))] = pred;
@@ -160,57 +160,57 @@ fn LayerParams_CyclePostRWDaLayer(ly: ptr<function,LayerParams>, ctx: ptr<functi
 	GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], // updates global value that will be copied to layers next cycle.
 	u32(GvDA), u32(di))] = da;
 }
-fn LayerParams_CyclePostTDPredLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, di: u32) {
-	if ((*ctx).PlusPhase == 0) {
+fn LayerParams_CyclePostTDPredLayer(ly: LayerParams, ctx: Context, di: u32) {
+	if (ctx.PlusPhase == 0) {
 		return;
 	}
-	var pred = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32((*ly).Index), u32(di), u32(LayerRewPredPos))] - LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32((*ly).Index), u32(di), u32(LayerRewPredNeg))];
+	var pred = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(ly.Index), u32(di), u32(LayerRewPredPos))] - LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(ly.Index), u32(di), u32(LayerRewPredNeg))];
 	GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvPrevPred), u32(di))] = pred;
 }
-fn LayerParams_CyclePostTDIntegLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, di: u32) {
+fn LayerParams_CyclePostTDIntegLayer(ly: LayerParams, ctx: Context, di: u32) {
 	var rew = f32(0);
 	if (GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvHasRew), u32(di))] > 0) {
 		rew = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvRew), u32(di))];
 	}
 	var rpval = f32(0);
-	if ((*ctx).PlusPhase == 1) {
-		var pli = u32((*ly).TDInteg.TDPredLayIndex);
+	if (ctx.PlusPhase == 1) {
+		var pli = u32(ly.TDInteg.TDPredLayIndex);
 		var pred = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(pli), u32(di), u32(LayerRewPredPos))] - LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(pli), u32(di), u32(LayerRewPredNeg))];
-		rpval = rew + (*ly).TDInteg.Discount*(*ly).TDInteg.PredGain*pred;
+		rpval = rew + ly.TDInteg.Discount*ly.TDInteg.PredGain*pred;
 		LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], // our plus phase = new integrated value
-		u32((*ly).Index), u32(di), u32(LayerRewPredPos))] = rpval;
+		u32(ly.Index), u32(di), u32(LayerRewPredPos))] = rpval;
 	} else {
-		rpval = (*ly).TDInteg.PredGain * GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvPrevPred), u32(di))];
+		rpval = ly.TDInteg.PredGain * GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvPrevPred), u32(di))];
 		LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], // our minus phase = prior integrated value
-		u32((*ly).Index), u32(di), u32(LayerRewPredNeg))] = rpval;
+		u32(ly.Index), u32(di), u32(LayerRewPredNeg))] = rpval;
 	}
 	GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], // global value will be copied to layers next cycle
 	u32(GvRewPred), u32(di))] = rpval;
 }
-fn LayerParams_CyclePostTDDaLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, di: u32) {
-	var ili = u32((*ly).TDDa.TDIntegLayIndex);
+fn LayerParams_CyclePostTDDaLayer(ly: LayerParams, ctx: Context, di: u32) {
+	var ili = u32(ly.TDDa.TDIntegLayIndex);
 	var da = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(ili), u32(di), u32(LayerRewPredPos))] - LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(ili), u32(di), u32(LayerRewPredNeg))];
-	if ((*ctx).PlusPhase == 0) {
+	if (ctx.PlusPhase == 0) {
 		da = f32(0);
 	}
 	GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], // updates global value that will be copied to layers next cycle.
 	u32(GvDA), u32(di))] = da;
 }
-fn LayerParams_CyclePostCeMLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, lpi: u32,di: u32) {
+fn LayerParams_CyclePostCeMLayer(ly: LayerParams, ctx: Context, lpi: u32,di: u32) {
 	var casd = PoolAvgMax(AMCaD, AMCycle, Max, lpi, di);
-	if ((*ly).Learn.NeuroMod.Valence == Positive) {
+	if (ly.Learn.NeuroMod.Valence == Positive) {
 		GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvCeMpos), u32(di))] = casd;
 	} else {
 		GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvCeMneg), u32(di))] = casd;
 	}
 }
-fn LayerParams_CyclePostVTALayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, di: u32) {
-	VTAParams_VTADA(&(*ly).VTA, ctx, di, GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvACh), u32(di))], (GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101],
+fn LayerParams_CyclePostVTALayer(ly: LayerParams, ctx: Context, di: u32) {
+	VTAParams_VTADA(ly.VTA, ctx, di, GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvACh), u32(di))], (GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101],
 	u32(GvHasRew), u32(di))] > 0));
 }
-fn LayerParams_CyclePostVSPatchLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, pi: u32,di: u32, spi: i32) {
+fn LayerParams_CyclePostVSPatchLayer(ly: LayerParams, ctx: Context, pi: u32,di: u32, spi: i32) {
 	var casd = PoolAvgMax(AMCaD, AMCycle, Avg, pi, di);
-	if ((*ly).Learn.NeuroMod.DAMod == D1Mod) {
+	if (ly.Learn.NeuroMod.DAMod == D1Mod) {
 		GlobalVectors[Index3D(TensorStrides[110], TensorStrides[111], TensorStrides[112], u32(GvVSPatchD1), u32(u32(spi - 1)), u32(di))] = casd;
 	} else {
 		GlobalVectors[Index3D(TensorStrides[110], TensorStrides[111], TensorStrides[112],
@@ -220,14 +220,13 @@ fn LayerParams_CyclePostVSPatchLayer(ly: ptr<function,LayerParams>, ctx: ptr<fun
 
 //////// import: "act-net.go"
 fn CyclePost(i: u32) { //gosl:kernel
-	var ctx = Ctx[0];
-	var li = Context_ItemIndex(&ctx, i);
+	let ctx = Ctx[0];
+	var li = Context_ItemIndex(ctx, i);
 	if (li >= NetworkIxs[0].NLayers) {
 		return;
 	}
-	var di = Context_DataIndex(&ctx, i);
-	var layers=Layers[li]; LayerParams_CyclePost(&layers, &ctx, di);
-	Ctx[0] = ctx;
+	var di = Context_DataIndex(ctx, i);
+	let layers=Layers[li]; LayerParams_CyclePost(layers, ctx, di);
 }
 
 //////// import: "act-path.go"
@@ -523,11 +522,11 @@ struct Context { //types:add -setters
 	SlowCounter: i32,
 	RandCounter: RandCounter,
 }
-fn Context_ItemIndex(ctx: ptr<function,Context>, idx: u32) -> u32 {
-	return idx / (*ctx).NData;
+fn Context_ItemIndex(ctx: Context, idx: u32) -> u32 {
+	return idx / ctx.NData;
 }
-fn Context_DataIndex(ctx: ptr<function,Context>, idx: u32) -> u32 {
-	return idx % (*ctx).NData;
+fn Context_DataIndex(ctx: Context, idx: u32) -> u32 {
+	return idx % ctx.NData;
 }
 
 //////// import: "deep-layer.go"
@@ -785,8 +784,8 @@ struct LayerParams {
 	TDDa: TDDaParams,
 	Indexes: LayerIndexes,
 }
-fn LayerParams_PoolIndex(ly: ptr<function,LayerParams>, pi: u32) -> u32 {
-	return (*ly).PoolSt + pi;
+fn LayerParams_PoolIndex(ly: LayerParams, pi: u32) -> u32 {
+	return ly.PoolSt + pi;
 }
 
 //////// import: "layertypes.go"
@@ -1202,12 +1201,12 @@ struct GPParams {
 	pad1: u32,
 	pad2: u32,
 }
-fn LayerParams_GatedFromCaPMax(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, di: u32) {
+fn LayerParams_GatedFromCaPMax(ly: LayerParams, ctx: Context, di: u32) {
 	var anyGated = false;
 	var lpi = LayerParams_PoolIndex(ly, u32(u32(0)));
-	var thr = (*ly).Matrix.GateThr;
-	if ((*ly).Indexes.NPools > 1) {
-		for (var spi = u32(1); spi < (*ly).Indexes.NPools; spi++) {
+	var thr = ly.Matrix.GateThr;
+	if (ly.Indexes.NPools > 1) {
+		for (var spi = u32(1); spi < ly.Indexes.NPools; spi++) {
 			var pi = LayerParams_PoolIndex(ly, spi);
 			var spkavg = PoolAvgMax(AMCaPMax, AMCycle, Avg, pi, di);
 			var gthr = spkavg > thr;
@@ -1330,26 +1329,26 @@ struct LDTParams {
 	SrcLay4Index: i32,
 	pad: f32,
 }
-fn LDTParams_Thr(lp: ptr<function,LDTParams>, val: f32) -> f32 {
+fn LDTParams_Thr(lp: LDTParams, val: f32) -> f32 {
 	var vl = abs(val); // only abs makes sense -- typically positive anyway
-	if ((*lp).SrcThr <= 0) {
+	if (lp.SrcThr <= 0) {
 		return vl;
 	}
-	if (vl < (*lp).SrcThr) {
+	if (vl < lp.SrcThr) {
 		return f32(0);
 	}return f32(
 1);
 }
-fn LDTParams_MaxSrcAct(lp: ptr<function,LDTParams>, maxSrcAct: f32,srcLayAct: f32) -> f32 {
+fn LDTParams_MaxSrcAct(lp: LDTParams, maxSrcAct: f32,srcLayAct: f32) -> f32 {
 	var act = LDTParams_Thr(lp, srcLayAct);return max(act, maxSrcAct);
 }
-fn LDTParams_ACh(lp: ptr<function,LDTParams>, ctx: ptr<function,Context>, di: u32, srcLay1Act: f32,srcLay2Act: f32,srcLay3Act: f32,srcLay4Act: f32) -> f32 {
+fn LDTParams_ACh(lp: LDTParams, ctx: Context, di: u32, srcLay1Act: f32,srcLay2Act: f32,srcLay3Act: f32,srcLay4Act: f32) -> f32 {
 	var maxSrcAct = f32(0);
 	maxSrcAct = LDTParams_MaxSrcAct(lp, maxSrcAct, srcLay1Act);
 	maxSrcAct = LDTParams_MaxSrcAct(lp, maxSrcAct, srcLay2Act);
 	maxSrcAct = LDTParams_MaxSrcAct(lp, maxSrcAct, srcLay3Act);
 	maxSrcAct = LDTParams_MaxSrcAct(lp, maxSrcAct, srcLay4Act);
-	var maintInh = (*lp).MaintInhib * GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvGoalMaint), u32(di))];
+	var maintInh = lp.MaintInhib * GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvGoalMaint), u32(di))];
 	maintInh = min(1.0, maintInh);
 	maxSrcAct *= (1.0 - maintInh);
 	var ach = maxSrcAct;
@@ -1365,11 +1364,11 @@ struct VTAParams {
 	AChThr: f32,
 	pad: f32,
 }
-fn VTAParams_VTADA(vt: ptr<function,VTAParams>, ctx: ptr<function,Context>, di: u32, ach: f32, hasRew: bool) {
-	var pvDA = (*vt).LHbGain * GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvLHbPVDA), u32(di))];
+fn VTAParams_VTADA(vt: VTAParams, ctx: Context, di: u32, ach: f32, hasRew: bool) {
+	var pvDA = vt.LHbGain * GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvLHbPVDA), u32(di))];
 	var csNet = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvCeMpos), u32(di))] - GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvCeMneg), u32(di))];
 	var achMod = f32(0);
-	if (ach >= (*vt).AChThr) {
+	if (ach >= vt.AChThr) {
 		achMod = ach;
 	}
 	var vsPatch = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], // note: critical to use thresholded version
@@ -1377,7 +1376,7 @@ fn VTAParams_VTADA(vt: ptr<function,VTAParams>, ctx: ptr<function,Context>, di: 
 	if (csNet > 0) {
 		csNet = max(0.0, csNet-vsPatch); // vspatch can shunt positive CS DA, but no dipping!  that is lhb
 	}
-	var csDA = achMod * (*vt).CeMGain * csNet;
+	var csDA = achMod * vt.CeMGain * csNet;
 	var netDA = f32(0);
 	if (hasRew) {
 		netDA = pvDA;

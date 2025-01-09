@@ -25,7 +25,7 @@ var<storage, read> RecvPathIxs: array<u32>;
 var<storage, read> PathRecvCon: array<u32>;
 @group(1) @binding(4)
 var<storage, read> RecvSynIxs: array<u32>;
-// // Ctx is the current context state (one only). 
+// // Ctx is the current context state (one only). This is read-only except in // specific kernels. 
 @group(2) @binding(0)
 var<storage, read_write> Ctx: array<Context>;
 @group(2) @binding(1)
@@ -78,8 +78,8 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 //////// import: "vars.go"
 
 //////// import: "act-layer.go"
-fn LayerParams_IsInput(ly: ptr<function,LayerParams>) -> bool {
-	switch ((*ly).Type) {
+fn LayerParams_IsInput(ly: LayerParams) -> bool {
+	switch (ly.Type) {
 	case InputLayer: {
 		return true;
 	}
@@ -577,11 +577,11 @@ struct ActAvgParams {
 	AdaptRate: f32,
 	pad: f32,
 }
-fn ActAvgParams_Adapt(aa: ptr<function,ActAvgParams>, gimult: ptr<function,f32>, act: f32) -> bool {
-	var trg = (*aa).Nominal + (*aa).Offset;
+fn ActAvgParams_Adapt(aa: ActAvgParams, gimult: ptr<function,f32>, act: f32) -> bool {
+	var trg = aa.Nominal + aa.Offset;
 	var del = (act - trg) / trg;
-	if (del < -(*aa).LoTol || del > (*aa).HiTol) {
-		*gimult += (*aa).AdaptRate * del;return true;
+	if (del < -aa.LoTol || del > aa.HiTol) {
+		*gimult += aa.AdaptRate * del;return true;
 	}return false;
 }
 struct InhibParams {
@@ -654,8 +654,8 @@ struct LayerParams {
 	TDDa: TDDaParams,
 	Indexes: LayerIndexes,
 }
-fn LayerParams_PoolIndex(ly: ptr<function,LayerParams>, pi: u32) -> u32 {
-	return (*ly).PoolSt + pi;
+fn LayerParams_PoolIndex(ly: LayerParams, pi: u32) -> u32 {
+	return ly.PoolSt + pi;
 }
 
 //////// import: "layertypes.go"
@@ -707,28 +707,28 @@ const  LayerRewPredPos: LayerVars = 10;
 const  LayerRewPredNeg: LayerVars = 11;
 
 //////// import: "learn-layer.go"
-fn LayerParams_SlowAdaptLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>) {
+fn LayerParams_SlowAdaptLayer(ly: LayerParams, ctx: Context) {
 	LayerParams_AdaptInhib(ly, ctx);
 	LayerParams_AvgDifFromTrgAvg(ly, ctx);
 }
-fn LayerParams_AdaptInhib(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>) {
-	if ((*ly).Inhib.ActAvg.AdaptGi == 0 || LayerParams_IsInput(ly)) {
+fn LayerParams_AdaptInhib(ly: LayerParams, ctx: Context) {
+	if (ly.Inhib.ActAvg.AdaptGi == 0 || LayerParams_IsInput(ly)) {
 		return;
 	}
-	for (var di = u32(0); di < (*ctx).NData; di++) {
-		var giMult = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32((*ly).Index), u32(di), u32(LayerGiMult))];
-		var avg = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32((*ly).Index), u32(di), u32(LayerActMAvg))];
-		ActAvgParams_Adapt(&(*ly).Inhib.ActAvg, &giMult, avg);
+	for (var di = u32(0); di < ctx.NData; di++) {
+		var giMult = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(ly.Index), u32(di), u32(LayerGiMult))];
+		var avg = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(ly.Index), u32(di), u32(LayerActMAvg))];
+		ActAvgParams_Adapt(ly.Inhib.ActAvg, &giMult, avg);
 		LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92],
-		u32((*ly).Index), u32(di), u32(LayerGiMult))] = giMult;
+		u32(ly.Index), u32(di), u32(LayerGiMult))] = giMult;
 	}
 }
-fn LayerParams_AvgDifFromTrgAvg(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>) {
+fn LayerParams_AvgDifFromTrgAvg(ly: LayerParams, ctx: Context) {
 	var sp = u32(0);
-	if ((*ly).Indexes.NPools > 1) {
+	if (ly.Indexes.NPools > 1) {
 		sp = u32(1);
 	}
-	var np = (*ly).Indexes.NPools;
+	var np = ly.Indexes.NPools;
 	for (var spi = sp; spi < np; spi++) {
 		var pi = LayerParams_PoolIndex(ly, spi);
 		var nsi = PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolNeurSt))];
@@ -736,7 +736,7 @@ fn LayerParams_AvgDifFromTrgAvg(ly: ptr<function,LayerParams>, ctx: ptr<function
 		var plavg = f32(0);
 		var nn = 0;
 		for (var lni = nsi; lni < nei; lni++) {
-			var ni = (*ly).Indexes.NeurSt + u32(lni);
+			var ni = ly.Indexes.NeurSt + u32(lni);
 			if (NeuronIsOff(ni)) {
 				continue;
 			}
@@ -752,7 +752,7 @@ fn LayerParams_AvgDifFromTrgAvg(ly: ptr<function,LayerParams>, ctx: ptr<function
 		}
 		PoolAvgDifInit(pi, u32(u32(0)));
 		for (var lni = nsi; lni < nei; lni++) {
-			var ni = (*ly).Indexes.NeurSt + u32(lni);
+			var ni = ly.Indexes.NeurSt + u32(lni);
 			if (NeuronIsOff(ni)) {
 				continue;
 			}
@@ -763,7 +763,7 @@ fn LayerParams_AvgDifFromTrgAvg(ly: ptr<function,LayerParams>, ctx: ptr<function
 			PoolAvgDifUpdate(pi, u32(u32(0)), abs(adif));
 		}
 		PoolAvgDifCalc(pi, u32(u32(0)));
-		for (var di = u32(1); di < (*ctx).NData; di++) { // copy to other datas
+		for (var di = u32(1); di < ctx.NData; di++) { // copy to other datas
 			Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Avg)))] = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(0), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Avg)))];
 			Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Max)))] = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(0), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Max)))];
 		}
@@ -774,14 +774,14 @@ fn LayerParams_AvgDifFromTrgAvg(ly: ptr<function,LayerParams>, ctx: ptr<function
 		var nsi = PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(lpi), u32(PoolNeurSt))];
 		var nei = PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(lpi), u32(PoolNeurEd))];
 		for (var lni = nsi; lni < nei; lni++) {
-			var ni = (*ly).Indexes.NeurSt + u32(lni);
+			var ni = ly.Indexes.NeurSt + u32(lni);
 			if (NeuronIsOff(ni)) {
 				continue;
 			}
 			PoolAvgDifUpdate(lpi, u32(u32(0)), abs(NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81], u32(ni), u32(AvgDif))]));
 		}
 		PoolAvgDifCalc(lpi, u32(u32(0)));
-		for (var di = u32(1); di < (*ctx).NData; di++) { // copy to other datas
+		for (var di = u32(1); di < ctx.NData; di++) { // copy to other datas
 			Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(lpi), u32(di), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Avg)))] = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(lpi), u32(0), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Avg)))];
 			Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(lpi), u32(di), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Max)))] = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(lpi), u32(0), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Max)))];
 		}
@@ -790,12 +790,11 @@ fn LayerParams_AvgDifFromTrgAvg(ly: ptr<function,LayerParams>, ctx: ptr<function
 
 //////// import: "learn-net.go"
 fn SlowAdaptLayer(li: u32) { //gosl:kernel
-	var ctx = Ctx[0];
+	let ctx = Ctx[0];
 	if (li >= NetworkIxs[0].NLayers) {
 		return;
 	}
-	var layers=Layers[li]; LayerParams_SlowAdaptLayer(&layers, &ctx);
-	Ctx[0] = ctx;
+	let layers=Layers[li]; LayerParams_SlowAdaptLayer(layers, ctx);
 }
 
 //////// import: "learn-path.go"

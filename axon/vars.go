@@ -85,8 +85,10 @@ var (
 
 	//////// Neuron+ State
 
-	// Ctx is the current context state (one only).
+	// Ctx is the current context state (one only). This is read-only except in
+	// specific kernels.
 	//gosl:group Neurons
+	//gosl:read-or-write
 	Ctx []Context
 
 	// Neurons are all the neuron state variables.

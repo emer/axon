@@ -25,7 +25,7 @@ var<storage, read> RecvPathIxs: array<u32>;
 var<storage, read> PathRecvCon: array<u32>;
 @group(1) @binding(4)
 var<storage, read> RecvSynIxs: array<u32>;
-// // Ctx is the current context state (one only). 
+// // Ctx is the current context state (one only). This is read-only except in // specific kernels. 
 @group(2) @binding(0)
 var<storage, read_write> Ctx: array<Context>;
 @group(2) @binding(1)
@@ -80,7 +80,7 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 //////// import: "act-layer.go"
 
 //////// import: "act-net.go"
-fn PlusPhaseStartContext(i: u32) { //gosl:kernel
+fn PlusPhaseStartContext(i: u32) { //gosl:kernel read-write:Ctx
 	if (i != 0) {
 		return;
 	}

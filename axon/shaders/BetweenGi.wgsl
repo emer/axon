@@ -25,7 +25,7 @@ var<storage, read> RecvPathIxs: array<u32>;
 var<storage, read> PathRecvCon: array<u32>;
 @group(1) @binding(4)
 var<storage, read> RecvSynIxs: array<u32>;
-// // Ctx is the current context state (one only). 
+// // Ctx is the current context state (one only). This is read-only except in // specific kernels. 
 @group(2) @binding(0)
 var<storage, read_write> Ctx: array<Context>;
 @group(2) @binding(1)
@@ -78,22 +78,22 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 //////// import: "vars.go"
 
 //////// import: "act-layer.go"
-fn LayerParams_BetweenGi(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, di: u32) {
+fn LayerParams_BetweenGi(ly: LayerParams, ctx: Context, di: u32) {
 	var lpi = LayerParams_PoolIndex(ly, u32(u32(0)));
 	var maxGi = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(lpi), u32(di), u32(TotalGi))];
-	maxGi = LayerParams_BetweenLayerGiMax(ly, di, maxGi, (*ly).LayInhib.Index1);
-	maxGi = LayerParams_BetweenLayerGiMax(ly, di, maxGi, (*ly).LayInhib.Index2);
-	maxGi = LayerParams_BetweenLayerGiMax(ly, di, maxGi, (*ly).LayInhib.Index3);
-	maxGi = LayerParams_BetweenLayerGiMax(ly, di, maxGi, (*ly).LayInhib.Index4);
+	maxGi = LayerParams_BetweenLayerGiMax(ly, di, maxGi, ly.LayInhib.Index1);
+	maxGi = LayerParams_BetweenLayerGiMax(ly, di, maxGi, ly.LayInhib.Index2);
+	maxGi = LayerParams_BetweenLayerGiMax(ly, di, maxGi, ly.LayInhib.Index3);
+	maxGi = LayerParams_BetweenLayerGiMax(ly, di, maxGi, ly.LayInhib.Index4);
 	Pools[Index3D(TensorStrides[130], TensorStrides[131], // our inhib is max of us and everyone in the layer pool
 	TensorStrides[132], u32(lpi), u32(di), u32(TotalGi))] = maxGi;
 }
-fn LayerParams_BetweenLayerGiMax(ly: ptr<function,LayerParams>, di: u32, maxGi: f32, layIndex: i32) -> f32 {
+fn LayerParams_BetweenLayerGiMax(ly: LayerParams, di: u32, maxGi: f32, layIndex: i32) -> f32 {
 	if (layIndex < 0) {
 		return maxGi;
 	}
-	var oly = Layers[u32(layIndex)];
-	var opi = LayerParams_PoolIndex(&oly, u32(u32(0)));
+	let oly = Layers[u32(layIndex)];
+	var opi = LayerParams_PoolIndex(oly, u32(u32(0)));
 	var ogi = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(opi), u32(di), u32(TotalGi))];
 	if (ogi > maxGi) {
 		return ogi;
@@ -102,14 +102,13 @@ fn LayerParams_BetweenLayerGiMax(ly: ptr<function,LayerParams>, di: u32, maxGi: 
 
 //////// import: "act-net.go"
 fn BetweenGi(i: u32) { //gosl:kernel
-	var ctx = Ctx[0];
-	var li = Context_ItemIndex(&ctx, i);
+	let ctx = Ctx[0];
+	var li = Context_ItemIndex(ctx, i);
 	if (li >= NetworkIxs[0].NLayers) {
 		return;
 	}
-	var di = Context_DataIndex(&ctx, i);
-	var layers=Layers[li]; LayerParams_BetweenGi(&layers, &ctx, di);
-	Ctx[0] = ctx;
+	var di = Context_DataIndex(ctx, i);
+	let layers=Layers[li]; LayerParams_BetweenGi(layers, ctx, di);
 }
 
 //////// import: "act-path.go"
@@ -405,11 +404,11 @@ struct Context { //types:add -setters
 	SlowCounter: i32,
 	RandCounter: RandCounter,
 }
-fn Context_ItemIndex(ctx: ptr<function,Context>, idx: u32) -> u32 {
-	return idx / (*ctx).NData;
+fn Context_ItemIndex(ctx: Context, idx: u32) -> u32 {
+	return idx / ctx.NData;
 }
-fn Context_DataIndex(ctx: ptr<function,Context>, idx: u32) -> u32 {
-	return idx % (*ctx).NData;
+fn Context_DataIndex(ctx: Context, idx: u32) -> u32 {
+	return idx % ctx.NData;
 }
 
 //////// import: "deep-layer.go"
@@ -667,8 +666,8 @@ struct LayerParams {
 	TDDa: TDDaParams,
 	Indexes: LayerIndexes,
 }
-fn LayerParams_PoolIndex(ly: ptr<function,LayerParams>, pi: u32) -> u32 {
-	return (*ly).PoolSt + pi;
+fn LayerParams_PoolIndex(ly: LayerParams, pi: u32) -> u32 {
+	return ly.PoolSt + pi;
 }
 
 //////// import: "layertypes.go"

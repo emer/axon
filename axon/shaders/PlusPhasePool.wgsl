@@ -25,7 +25,7 @@ var<storage, read> RecvPathIxs: array<u32>;
 var<storage, read> PathRecvCon: array<u32>;
 @group(1) @binding(4)
 var<storage, read> RecvSynIxs: array<u32>;
-// // Ctx is the current context state (one only). 
+// // Ctx is the current context state (one only). This is read-only except in // specific kernels. 
 @group(2) @binding(0)
 var<storage, read_write> Ctx: array<Context>;
 @group(2) @binding(1)
@@ -78,21 +78,20 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 //////// import: "vars.go"
 
 //////// import: "act-layer.go"
-fn LayerParams_PlusPhasePool(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, pi: u32,di: u32) {
+fn LayerParams_PlusPhasePool(ly: LayerParams, ctx: Context, pi: u32,di: u32) {
 	PoolCycleToPlus(pi, di);
 }
 
 //////// import: "act-net.go"
 fn PlusPhasePool(i: u32) { //gosl:kernel
-	var ctx = Ctx[0];
-	var pi = Context_ItemIndex(&ctx, i);
+	let ctx = Ctx[0];
+	var pi = Context_ItemIndex(ctx, i);
 	if (pi >= NetworkIxs[0].NPools) {
 		return;
 	}
-	var di = Context_DataIndex(&ctx, i);
+	var di = Context_DataIndex(ctx, i);
 	var li = PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolLayerIdx))];
-	var layers=Layers[li]; LayerParams_PlusPhasePool(&layers, &ctx, pi, di);
-	Ctx[0] = ctx;
+	let layers=Layers[li]; LayerParams_PlusPhasePool(layers, ctx, pi, di);
 }
 
 //////// import: "act-path.go"
@@ -388,11 +387,11 @@ struct Context { //types:add -setters
 	SlowCounter: i32,
 	RandCounter: RandCounter,
 }
-fn Context_ItemIndex(ctx: ptr<function,Context>, idx: u32) -> u32 {
-	return idx / (*ctx).NData;
+fn Context_ItemIndex(ctx: Context, idx: u32) -> u32 {
+	return idx / ctx.NData;
 }
-fn Context_DataIndex(ctx: ptr<function,Context>, idx: u32) -> u32 {
-	return idx % (*ctx).NData;
+fn Context_DataIndex(ctx: Context, idx: u32) -> u32 {
+	return idx % ctx.NData;
 }
 
 //////// import: "deep-layer.go"

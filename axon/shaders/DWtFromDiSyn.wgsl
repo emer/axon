@@ -25,7 +25,7 @@ var<storage, read> RecvPathIxs: array<u32>;
 var<storage, read> PathRecvCon: array<u32>;
 @group(1) @binding(4)
 var<storage, read> RecvSynIxs: array<u32>;
-// // Ctx is the current context state (one only). 
+// // Ctx is the current context state (one only). This is read-only except in // specific kernels. 
 @group(2) @binding(0)
 var<storage, read_write> Ctx: array<Context>;
 @group(2) @binding(1)
@@ -683,19 +683,18 @@ const  LayerRewPredNeg: LayerVars = 11;
 
 //////// import: "learn-net.go"
 fn DWtFromDiSyn(syni: u32) { //gosl:kernel
-	var ctx = Ctx[0];
+	let ctx = Ctx[0];
 	if (syni >= NetworkIxs[0].NSyns) {
 		return;
 	}
 	var pti = SynapseIxs[Index2D(TensorStrides[20], TensorStrides[21], u32(syni), u32(SynPathIndex))];
-	var paths=Paths[pti]; PathParams_DWtFromDi(&paths, &ctx, syni);
-	Ctx[0] = ctx;
+	let paths=Paths[pti]; PathParams_DWtFromDi(paths, ctx, syni);
 }
 
 //////// import: "learn-path.go"
-fn PathParams_DWtFromDi(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, syni: u32) {
+fn PathParams_DWtFromDi(pt: PathParams, ctx: Context, syni: u32) {
 	var dwt = f32(0);
-	for (var di = u32(0); di < (*ctx).NData; di++) {
+	for (var di = u32(0); di < ctx.NData; di++) {
 		dwt += SynapseTraces[Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt))];
 	}
 	Synapses[Index2D(TensorStrides[170], TensorStrides[171],

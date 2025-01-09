@@ -25,7 +25,7 @@ var<storage, read> RecvPathIxs: array<u32>;
 var<storage, read> PathRecvCon: array<u32>;
 @group(1) @binding(4)
 var<storage, read> RecvSynIxs: array<u32>;
-// // Ctx is the current context state (one only). 
+// // Ctx is the current context state (one only). This is read-only except in // specific kernels. 
 @group(2) @binding(0)
 var<storage, read_write> Ctx: array<Context>;
 @group(2) @binding(1)
@@ -78,8 +78,8 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 //////// import: "vars.go"
 
 //////// import: "act-layer.go"
-fn LayerParams_IsTarget(ly: ptr<function,LayerParams>) -> bool {
-	switch ((*ly).Type) {
+fn LayerParams_IsTarget(ly: LayerParams) -> bool {
+	switch (ly.Type) {
 	case TargetLayer: {
 		return true;
 	}
@@ -91,8 +91,8 @@ fn LayerParams_IsTarget(ly: ptr<function,LayerParams>) -> bool {
 	}
 	}
 }
-fn LayerParams_IsLearnTrgAvg(ly: ptr<function,LayerParams>) -> bool {
-	if ((*ly).Acts.Clamp.IsInput == 1 || (*ly).Acts.Clamp.IsTarget == 1 || (*ly).Learn.TrgAvgAct.RescaleOn == 0) {
+fn LayerParams_IsLearnTrgAvg(ly: LayerParams) -> bool {
+	if (ly.Acts.Clamp.IsInput == 1 || ly.Acts.Clamp.IsTarget == 1 || ly.Learn.TrgAvgAct.RescaleOn == 0) {
 		return false;
 	}return true;
 }
@@ -698,44 +698,43 @@ const  LayerRewPredPos: LayerVars = 10;
 const  LayerRewPredNeg: LayerVars = 11;
 
 //////// import: "learn-layer.go"
-fn LayerParams_SlowAdaptNeuron(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, ri: u32) {
-	var lni = ri - (*ly).Indexes.NeurSt;
-	var rn = (*ly).Indexes.RecvN;
+fn LayerParams_SlowAdaptNeuron(ly: LayerParams, ctx: Context, ri: u32) {
+	var lni = ri - ly.Indexes.NeurSt;
+	var rn = ly.Indexes.RecvN;
 	for (var pi = u32(0); pi < rn; pi++) {
-		var pti = RecvPathIxs[Index1D(TensorStrides[40], u32((*ly).Indexes.RecvSt + pi))];
-		var paths=Paths[pti]; PathParams_SlowAdapt(&paths, ctx, ly, pti, ri, lni);
+		var pti = RecvPathIxs[Index1D(TensorStrides[40], u32(ly.Indexes.RecvSt + pi))];
+		let paths=Paths[pti]; PathParams_SlowAdapt(paths, ctx, ly, pti, ri, lni);
 	}
 }
 
 //////// import: "learn-net.go"
 fn SlowAdaptNeuron(ni: u32) { //gosl:kernel
-	var ctx = Ctx[0];
+	let ctx = Ctx[0];
 	if (ni >= NetworkIxs[0].NNeurons) {
 		return;
 	}
 	var li = NeuronIxs[Index2D(TensorStrides[10], TensorStrides[11], u32(ni), u32(NrnLayIndex))];
-	var layers=Layers[li]; LayerParams_SlowAdaptNeuron(&layers, &ctx, ni);
-	Ctx[0] = ctx;
+	let layers=Layers[li]; LayerParams_SlowAdaptNeuron(layers, ctx, ni);
 }
 
 //////// import: "learn-path.go"
-fn PathParams_SlowAdapt(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, rlay: ptr<function,LayerParams>, pti: u32,ri: u32,lni: u32) {
+fn PathParams_SlowAdapt(pt: PathParams, ctx: Context, rlay: LayerParams, pti: u32,ri: u32,lni: u32) {
 	PathParams_SWtFromWt(pt, ctx, rlay, pti, ri, lni);
 	PathParams_SynScale(pt, ctx, rlay, pti, ri, lni);
 }
-fn PathParams_SWtFromWt(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, rlay: ptr<function,LayerParams>, pti: u32,ri: u32,lni: u32) {
-	if ((*pt).Learn.Learn == 0 || (*pt).SWts.Adapt.On == 0) {
+fn PathParams_SWtFromWt(pt: PathParams, ctx: Context, rlay: LayerParams, pti: u32,ri: u32,lni: u32) {
+	if (pt.Learn.Learn == 0 || pt.SWts.Adapt.On == 0) {
 		return;
 	}
 	if (LayerParams_IsTarget(rlay)) {
 		return;
 	}
-	var mx = (*pt).SWts.Limit.Max;
-	var mn = (*pt).SWts.Limit.Min;
-	var lr = (*pt).SWts.Adapt.LRate;
-	var cni = (*pt).Indexes.RecvConSt + lni;
+	var mx = pt.SWts.Limit.Max;
+	var mn = pt.SWts.Limit.Min;
+	var lr = pt.SWts.Adapt.LRate;
+	var cni = pt.Indexes.RecvConSt + lni;
 	var synn = PathRecvCon[Index2D(TensorStrides[50], TensorStrides[51], u32(cni), u32(Nitems))];
-	var synst = (*pt).Indexes.RecvSynSt + PathRecvCon[Index2D(TensorStrides[50], TensorStrides[51], u32(cni), u32(StartOff))];
+	var synst = pt.Indexes.RecvSynSt + PathRecvCon[Index2D(TensorStrides[50], TensorStrides[51], u32(cni), u32(StartOff))];
 	var avgDWt = f32(0);
 	for (var ci = u32(0); ci < synn; ci++) {
 		var syni = RecvSynIxs[Index1D(TensorStrides[60], u32(synst + ci))];
@@ -749,27 +748,27 @@ fn PathParams_SWtFromWt(pt: ptr<function,PathParams>, ctx: ptr<function,Context>
 		avgDWt += Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(DSWt))];
 	}
 	avgDWt /= f32(synn);
-	avgDWt *= (*pt).SWts.Adapt.SubMean;
+	avgDWt *= pt.SWts.Adapt.SubMean;
 	for (var ci = u32(0); ci < synn; ci++) {
 		var syni = RecvSynIxs[Index1D(TensorStrides[60], u32(synst + ci))];
 		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(SWt))] += lr * (Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(DSWt))] - avgDWt);
 		var swt = Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(SWt))];
 		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(DSWt))] = 0.0;
-		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(LWt))] = SWtParams_LWtFromWts(&(*pt).SWts, Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(Wt))], swt);
-		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(Wt))] = SWtParams_WtValue(&(*pt).SWts, swt, Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(LWt))]);
+		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(LWt))] = SWtParams_LWtFromWts(pt.SWts, Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(Wt))], swt);
+		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(Wt))] = SWtParams_WtValue(pt.SWts, swt, Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(LWt))]);
 	}
 }
-fn PathParams_SynScale(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, rlay: ptr<function,LayerParams>, pti: u32,ri: u32,lni: u32) {
-	if ((*pt).Learn.Learn == 0 || PathParams_IsInhib(pt)) {
+fn PathParams_SynScale(pt: PathParams, ctx: Context, rlay: LayerParams, pti: u32,ri: u32,lni: u32) {
+	if (pt.Learn.Learn == 0 || PathParams_IsInhib(pt)) {
 		return;
 	}
 	if (!LayerParams_IsLearnTrgAvg(rlay)) {
 		return;
 	}
-	var lr = (*rlay).Learn.TrgAvgAct.SynScaleRate;
-	var cni = (*pt).Indexes.RecvConSt + lni;
+	var lr = rlay.Learn.TrgAvgAct.SynScaleRate;
+	var cni = pt.Indexes.RecvConSt + lni;
 	var synn = PathRecvCon[Index2D(TensorStrides[50], TensorStrides[51], u32(cni), u32(Nitems))];
-	var synst = (*pt).Indexes.RecvSynSt + PathRecvCon[Index2D(TensorStrides[50], TensorStrides[51], u32(cni), u32(StartOff))];
+	var synst = pt.Indexes.RecvSynSt + PathRecvCon[Index2D(TensorStrides[50], TensorStrides[51], u32(cni), u32(StartOff))];
 	var adif = -lr * NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81], u32(ri), u32(AvgDif))];
 	for (var ci = u32(0); ci < synn; ci++) {
 		var syni = RecvSynIxs[Index1D(TensorStrides[60], u32(synst + ci))];
@@ -781,7 +780,7 @@ fn PathParams_SynScale(pt: ptr<function,PathParams>, ctx: ptr<function,Context>,
 		} else {
 			Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(LWt))] += lwt * adif * swt;
 		}
-		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(Wt))] = SWtParams_WtValue(&(*pt).SWts, swt, Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(LWt))]);
+		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(Wt))] = SWtParams_WtValue(pt.SWts, swt, Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(LWt))]);
 	}
 }
 
@@ -877,34 +876,34 @@ struct SWtParams {
 	Adapt: SWtAdaptParams,
 	Limit: F32,
 }
-fn SWtParams_WtValue(sp: ptr<function,SWtParams>, swt: f32,lwt: f32) -> f32 {
+fn SWtParams_WtValue(sp: SWtParams, swt: f32,lwt: f32) -> f32 {
 	return swt * SWtParams_SigFromLinWt(sp, lwt);
 }
-fn SWtParams_SigFromLinWt(sp: ptr<function,SWtParams>, lw: f32) -> f32 {
+fn SWtParams_SigFromLinWt(sp: SWtParams, lw: f32) -> f32 {
 	var wt: f32;
-	if ((*sp).Adapt.SigGain == 1) {
+	if (sp.Adapt.SigGain == 1) {
 		wt = lw;
-	} else if ((*sp).Adapt.SigGain == 6) {
+	} else if (sp.Adapt.SigGain == 6) {
 		wt = SigFun61(lw);
 	} else {
-		wt = SigFun(lw, (*sp).Adapt.SigGain, f32(f32(1)));
+		wt = SigFun(lw, sp.Adapt.SigGain, f32(f32(1)));
 	}return 2.0 * wt; // center at 1 instead of .5
 }
-fn SWtParams_LinFromSigWt(sp: ptr<function,SWtParams>, wt: f32) -> f32 {
+fn SWtParams_LinFromSigWt(sp: SWtParams, wt: f32) -> f32 {
 	var wte = wt * 0.5;
 	if (wte < 0) {
 		wte = f32(0);
 	} else if (wte > 1) {
 		wte = f32(1);
 	}
-	if ((*sp).Adapt.SigGain == 1) {
+	if (sp.Adapt.SigGain == 1) {
 		return wte;
 	}
-	if ((*sp).Adapt.SigGain == 6) {
+	if (sp.Adapt.SigGain == 6) {
 		return SigInvFun61(wte);
-	}return SigInvFun(wte, (*sp).Adapt.SigGain, f32(f32(1)));
+	}return SigInvFun(wte, sp.Adapt.SigGain, f32(f32(1)));
 }
-fn SWtParams_LWtFromWts(sp: ptr<function,SWtParams>, wt: f32,swt: f32) -> f32 {
+fn SWtParams_LWtFromWts(sp: SWtParams, wt: f32,swt: f32) -> f32 {
 	var rwt = wt / swt;return SWtParams_LinFromSigWt(sp, rwt);
 }
 struct LRateParams {
@@ -1167,8 +1166,8 @@ struct PathParams {
 	BLA: BLAPathParams,
 	Hip: HipPathParams,
 }
-fn PathParams_IsInhib(pt: ptr<function,PathParams>) -> bool {
-	return (*pt).Com.GType == InhibitoryG;
+fn PathParams_IsInhib(pt: PathParams) -> bool {
+	return pt.Com.GType == InhibitoryG;
 }
 
 //////// import: "pathtypes.go"

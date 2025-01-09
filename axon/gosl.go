@@ -83,7 +83,6 @@ func GPUInit() {
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/MinusPhaseNeuron.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/MinusPhasePool.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/MinusPhasePost.wgsl", sy)
-		gpu.NewComputePipelineShaderFS(shaders, "shaders/NewStateLayer.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/NewStateNeuron.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/PlusPhaseNeuron.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/PlusPhasePool.wgsl", sy)
@@ -886,48 +885,6 @@ func RunOneMinusPhasePost(n int, syncVars ...GPUVars) {
 		RunDone(syncVars...)
 	} else {
 		RunMinusPhasePostCPU(n)
-	}
-}
-// RunNewStateLayer runs the NewStateLayer kernel with given number of elements,
-// on either the CPU or GPU depending on the UseGPU variable.
-// Can call multiple Run* kernels in a row, which are then all launched
-// in the same command submission on the GPU, which is by far the most efficient.
-// MUST call RunDone (with optional vars to sync) after all Run calls.
-// Alternatively, a single-shot RunOneNewStateLayer call does Run and Done for a
-// single run-and-sync case.
-func RunNewStateLayer(n int) {
-	if UseGPU {
-		RunNewStateLayerGPU(n)
-	} else {
-		RunNewStateLayerCPU(n)
-	}
-}
-
-// RunNewStateLayerGPU runs the NewStateLayer kernel on the GPU. See [RunNewStateLayer] for more info.
-func RunNewStateLayerGPU(n int) {
-	sy := GPUSystem
-	pl := sy.ComputePipelines["NewStateLayer"]
-	ce, _ := sy.BeginComputePass()
-	pl.Dispatch1D(ce, n, 64)
-}
-
-// RunNewStateLayerCPU runs the NewStateLayer kernel on the CPU.
-func RunNewStateLayerCPU(n int) {
-	gpu.VectorizeFunc(0, n, NewStateLayer)
-}
-
-// RunOneNewStateLayer runs the NewStateLayer kernel with given number of elements,
-// on either the CPU or GPU depending on the UseGPU variable.
-// This version then calls RunDone with the given variables to sync
-// after the Run, for a single-shot Run-and-Done call. If multiple kernels
-// can be run in sequence, it is much more efficient to do multiple Run*
-// calls followed by a RunDone call.
-func RunOneNewStateLayer(n int, syncVars ...GPUVars) {
-	if UseGPU {
-		RunNewStateLayerGPU(n)
-		RunDone(syncVars...)
-	} else {
-		RunNewStateLayerCPU(n)
 	}
 }
 // RunNewStateNeuron runs the NewStateNeuron kernel with given number of elements,
@@ -1779,33 +1736,29 @@ func SyncFromGPU(vars ...GPUVars) {
 }
 
 // GetLayers returns a pointer to the given global variable: 
-// [Layers] []LayerParams at given index.
-// To ensure that values are updated on the GPU, you must call [SetLayers].
-// after all changes have been made.
+// [Layers] []LayerParams at given index. This directly processed in the GPU code,
+// so this function call is an equivalent for the CPU.
 func GetLayers(idx uint32) *LayerParams {
 	return &Layers[idx]
 }
 
 // GetPaths returns a pointer to the given global variable: 
-// [Paths] []PathParams at given index.
-// To ensure that values are updated on the GPU, you must call [SetPaths].
-// after all changes have been made.
+// [Paths] []PathParams at given index. This directly processed in the GPU code,
+// so this function call is an equivalent for the CPU.
 func GetPaths(idx uint32) *PathParams {
 	return &Paths[idx]
 }
 
 // GetNetworkIxs returns a pointer to the given global variable: 
-// [NetworkIxs] []NetworkIndexes at given index.
-// To ensure that values are updated on the GPU, you must call [SetNetworkIxs].
-// after all changes have been made.
+// [NetworkIxs] []NetworkIndexes at given index. This directly processed in the GPU code,
+// so this function call is an equivalent for the CPU.
 func GetNetworkIxs(idx uint32) *NetworkIndexes {
 	return &NetworkIxs[idx]
 }
 
 // GetCtx returns a pointer to the given global variable: 
-// [Ctx] []Context at given index.
-// To ensure that values are updated on the GPU, you must call [SetCtx].
-// after all changes have been made.
+// [Ctx] []Context at given index. This directly processed in the GPU code,
+// so this function call is an equivalent for the CPU.
 func GetCtx(idx uint32) *Context {
 	return &Ctx[idx]
 }

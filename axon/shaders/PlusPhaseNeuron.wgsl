@@ -25,7 +25,7 @@ var<storage, read> RecvPathIxs: array<u32>;
 var<storage, read> PathRecvCon: array<u32>;
 @group(1) @binding(4)
 var<storage, read> RecvSynIxs: array<u32>;
-// // Ctx is the current context state (one only). 
+// // Ctx is the current context state (one only). This is read-only except in // specific kernels. 
 @group(2) @binding(0)
 var<storage, read_write> Ctx: array<Context>;
 @group(2) @binding(1)
@@ -78,7 +78,7 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 //////// import: "vars.go"
 
 //////// import: "act-layer.go"
-fn LayerParams_PlusPhaseNeuron(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, ni: u32,di: u32) {
+fn LayerParams_PlusPhaseNeuron(ly: LayerParams, ctx: Context, ni: u32,di: u32) {
 	var pi = LayerParams_PoolIndex(ly, NeuronIxs[Index2D(TensorStrides[10], TensorStrides[11], u32(ni), u32(NrnSubPool))]);
 	var lpi = LayerParams_PoolIndex(ly, u32(u32(0)));
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(ActP))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(ActInt))];
@@ -86,23 +86,23 @@ fn LayerParams_PlusPhaseNeuron(ly: ptr<function,LayerParams>, ctx: ptr<function,
 	var nrnCaD = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaD))];
 	var da = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvDA), u32(di))];
 	var ach = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvACh), u32(di))];
-	var mlr = RLRateParams_RLRateSigDeriv(&(*ly).Learn.RLRate, nrnCaD, PoolAvgMax(AMCaD, AMCycle, Max, lpi, di));
-	var modlr = NeuroModParams_LRMod(&(*ly).Learn.NeuroMod, da, ach);
+	var mlr = RLRateParams_RLRateSigDeriv(ly.Learn.RLRate, nrnCaD, PoolAvgMax(AMCaD, AMCycle, Max, lpi, di));
+	var modlr = NeuroModParams_LRMod(ly.Learn.NeuroMod, da, ach);
 	var dlr = f32(1);
 	var hasRew = (GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvHasRew), u32(di))]) > 0;
-	switch ((*ly).Type) {
+	switch (ly.Type) {
 	case BLALayer: {
-		dlr = RLRateParams_RLRateDiff(&(*ly).Learn.RLRate, nrnCaP, Neurons[Index3D(TensorStrides[70], TensorStrides[71], // delta on previous trial
+		dlr = RLRateParams_RLRateDiff(ly.Learn.RLRate, nrnCaP, Neurons[Index3D(TensorStrides[70], TensorStrides[71], // delta on previous trial
 		TensorStrides[72], u32(ni), u32(di), u32(CaDPrev))]);
-		if (!NeuroModParams_IsBLAExt(&(*ly).Learn.NeuroMod) && PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolNeurSt))] == 0) { // first pool
+		if (!NeuroModParams_IsBLAExt(ly.Learn.NeuroMod) && PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolNeurSt))] == 0) { // first pool
 			dlr = f32(0); // first pool is novelty / curiosity -- no learn
 		}
 	}
 	case VSPatchLayer: {
 		da = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], // our own personal
 		u32(GvVSPatchPosRPE), u32(di))];
-		modlr = NeuroModParams_LRMod(&(*ly).Learn.NeuroMod, da, ach);
-		mlr = RLRateParams_RLRateSigDeriv(&(*ly).Learn.RLRate, Neurons[Index3D(TensorStrides[70], TensorStrides[71], // note: don't have proper max here
+		modlr = NeuroModParams_LRMod(ly.Learn.NeuroMod, da, ach);
+		mlr = RLRateParams_RLRateSigDeriv(ly.Learn.RLRate, Neurons[Index3D(TensorStrides[70], TensorStrides[71], // note: don't have proper max here
 		TensorStrides[72], u32(ni), u32(di), u32(CaDPrev))], f32(f32(1)));
 	}
 	case MatrixLayer: {
@@ -113,31 +113,30 @@ fn LayerParams_PlusPhaseNeuron(ly: ptr<function,LayerParams>, ctx: ptr<function,
 		}
 	}
 	default: {
-		dlr = RLRateParams_RLRateDiff(&(*ly).Learn.RLRate, nrnCaP, nrnCaD);
+		dlr = RLRateParams_RLRateDiff(ly.Learn.RLRate, nrnCaP, nrnCaD);
 	}
 	}
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(RLRate))] = mlr * dlr * modlr;
 	var tau: f32;
 	var sahpN = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SahpN))];
 	var nrnSaphCa = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SahpCa))];
-	SahpParams_NinfTauFromCa(&(*ly).Acts.Sahp, nrnSaphCa, &sahpN, &tau);
-	nrnSaphCa = SahpParams_CaInt(&(*ly).Acts.Sahp, nrnSaphCa, nrnCaD);
+	SahpParams_NinfTauFromCa(ly.Acts.Sahp, nrnSaphCa, &sahpN, &tau);
+	nrnSaphCa = SahpParams_CaInt(ly.Acts.Sahp, nrnSaphCa, nrnCaD);
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SahpN))] = sahpN;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SahpCa))] = nrnSaphCa;
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Gsahp))] = SahpParams_GsAHP(&(*ly).Acts.Sahp, sahpN);
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Gsahp))] = SahpParams_GsAHP(ly.Acts.Sahp, sahpN);
 }
 
 //////// import: "act-net.go"
 fn PlusPhaseNeuron(i: u32) { //gosl:kernel
-	var ctx = Ctx[0];
-	var ni = Context_ItemIndex(&ctx, i);
+	let ctx = Ctx[0];
+	var ni = Context_ItemIndex(ctx, i);
 	if (ni >= NetworkIxs[0].NNeurons) {
 		return;
 	}
-	var di = Context_DataIndex(&ctx, i);
+	var di = Context_DataIndex(ctx, i);
 	var li = NeuronIxs[Index2D(TensorStrides[10], TensorStrides[11], u32(ni), u32(NrnLayIndex))];
-	var layers=Layers[li]; LayerParams_PlusPhaseNeuron(&layers, &ctx, ni, di);
-	Ctx[0] = ctx;
+	let layers=Layers[li]; LayerParams_PlusPhaseNeuron(layers, ctx, ni, di);
 }
 
 //////// import: "act-path.go"
@@ -388,24 +387,24 @@ struct SahpParams {
 	DtMax: f32,
 	pad: i32,
 }
-fn SahpParams_EFun(mp: ptr<function,SahpParams>, z: f32) -> f32 {
+fn SahpParams_EFun(mp: SahpParams, z: f32) -> f32 {
 	if (abs(z) < 1.0e-4) {
 		return 1.0 - 0.5*z;
 	}return z / (FastExp(z) - 1.0);
 }
-fn SahpParams_NinfTauFromCa(mp: ptr<function,SahpParams>, ca: f32, ninf: ptr<function,f32>,tau: ptr<function,f32>) {
-	var co = ca - (*mp).Off;
-	var a = (*mp).DtMax * (*mp).Slope * SahpParams_EFun(mp, -co/(*mp).Slope);
-	var b = (*mp).DtMax * (*mp).Slope * SahpParams_EFun(mp, co/(*mp).Slope);
+fn SahpParams_NinfTauFromCa(mp: SahpParams, ca: f32, ninf: ptr<function,f32>,tau: ptr<function,f32>) {
+	var co = ca - mp.Off;
+	var a = mp.DtMax * mp.Slope * SahpParams_EFun(mp, -co/mp.Slope);
+	var b = mp.DtMax * mp.Slope * SahpParams_EFun(mp, co/mp.Slope);
 	*tau = 1.0 / (a + b);
 	*ninf = a * *tau; // a / (a+b)
 return;
 }
-fn SahpParams_CaInt(mp: ptr<function,SahpParams>, caInt: f32,ca: f32) -> f32 {
-	return caInt + (*mp).CaDt*(ca-caInt);
+fn SahpParams_CaInt(mp: SahpParams, caInt: f32,ca: f32) -> f32 {
+	return caInt + mp.CaDt*(ca-caInt);
 }
-fn SahpParams_GsAHP(mp: ptr<function,SahpParams>, n: f32) -> f32 {
-	return (*mp).Gbar * n;
+fn SahpParams_GsAHP(mp: SahpParams, n: f32) -> f32 {
+	return mp.Gbar * n;
 }
 
 //////// import: "chans-skca.go"
@@ -452,11 +451,11 @@ struct Context { //types:add -setters
 	SlowCounter: i32,
 	RandCounter: RandCounter,
 }
-fn Context_ItemIndex(ctx: ptr<function,Context>, idx: u32) -> u32 {
-	return idx / (*ctx).NData;
+fn Context_ItemIndex(ctx: Context, idx: u32) -> u32 {
+	return idx / ctx.NData;
 }
-fn Context_DataIndex(ctx: ptr<function,Context>, idx: u32) -> u32 {
-	return idx % (*ctx).NData;
+fn Context_DataIndex(ctx: Context, idx: u32) -> u32 {
+	return idx % ctx.NData;
 }
 
 //////// import: "deep-layer.go"
@@ -714,8 +713,8 @@ struct LayerParams {
 	TDDa: TDDaParams,
 	Indexes: LayerIndexes,
 }
-fn LayerParams_PoolIndex(ly: ptr<function,LayerParams>, pi: u32) -> u32 {
-	return (*ly).PoolSt + pi;
+fn LayerParams_PoolIndex(ly: LayerParams, pi: u32) -> u32 {
+	return ly.PoolSt + pi;
 }
 
 //////// import: "layertypes.go"
@@ -805,13 +804,13 @@ struct RLRateParams {
 	Min: f32,
 	pad: i32,
 }
-fn RLRateParams_RLRateSigDeriv(rl: ptr<function,RLRateParams>, act: f32, laymax: f32) -> f32 {
-	if ((*rl).On == 0 || laymax == 0) {
+fn RLRateParams_RLRateSigDeriv(rl: RLRateParams, act: f32, laymax: f32) -> f32 {
+	if (rl.On == 0 || laymax == 0) {
 		return f32(1.0);
 	}
 	var ca = min(act/laymax, 1.0);
 	var lr: f32;
-	if ((*rl).SigmoidLinear == 1) {
+	if (rl.SigmoidLinear == 1) {
 		if (ca < 0.5) {
 			lr = 2 * ca;
 		} else {
@@ -820,21 +819,21 @@ fn RLRateParams_RLRateSigDeriv(rl: ptr<function,RLRateParams>, act: f32, laymax:
 	} else {
 		lr = 4.0 * ca * (1 - ca); // .5 * .5 = .25 = peak
 	}
-	if (lr < (*rl).SigmoidMin) {
-		lr = (*rl).SigmoidMin;
+	if (lr < rl.SigmoidMin) {
+		lr = rl.SigmoidMin;
 	}return lr;
 }
-fn RLRateParams_RLRateDiff(rl: ptr<function,RLRateParams>, scap: f32,scad: f32) -> f32 {
-	if ((*rl).On == 0 || (*rl).Diff == 0) {
+fn RLRateParams_RLRateDiff(rl: RLRateParams, scap: f32,scad: f32) -> f32 {
+	if (rl.On == 0 || rl.Diff == 0) {
 		return f32(1.0);
 	}
 	var smax = max(scap, scad);
-	if (smax > (*rl).SpikeThr) { // avoid div by 0
+	if (smax > rl.SpikeThr) { // avoid div by 0
 		var dif = abs(scap - scad);
-		if (dif < (*rl).DiffThr) {
-			return (*rl).Min;
+		if (dif < rl.DiffThr) {
+			return rl.Min;
 		}return (dif / smax);
-	}return (*rl).Min;
+	}return rl.Min;
 }
 struct LearnNeuronParams {
 	CaLearn: LearnCaParams,
@@ -979,32 +978,32 @@ struct NeuroModParams {
 	pad1: f32,
 	pad2: f32,
 }
-fn NeuroModParams_IsBLAExt(nm: ptr<function,NeuroModParams>) -> bool {
-	return ((*nm).Valence == Positive && (*nm).DAMod == D2Mod) ||
-		((*nm).Valence == Negative && (*nm).DAMod == D1Mod);
+fn NeuroModParams_IsBLAExt(nm: NeuroModParams) -> bool {
+	return (nm.Valence == Positive && nm.DAMod == D2Mod) ||
+		(nm.Valence == Negative && nm.DAMod == D1Mod);
 }
-fn NeuroModParams_LRModFact(nm: ptr<function,NeuroModParams>, pct: f32,val: f32) -> f32 {
+fn NeuroModParams_LRModFact(nm: NeuroModParams, pct: f32,val: f32) -> f32 {
 	var aval = clamp(abs(val), 0.0, 1.0);return 1.0 - pct*(1.0-aval);
 }
-fn NeuroModParams_DAGain(nm: ptr<function,NeuroModParams>, da: f32) -> f32 {
+fn NeuroModParams_DAGain(nm: NeuroModParams, da: f32) -> f32 {
 	var ada = da;
 	if (da > 0) {
-		ada *= (*nm).BurstGain;
+		ada *= nm.BurstGain;
 	} else {
-		ada *= (*nm).DipGain;
+		ada *= nm.DipGain;
 	}return ada;
 }
-fn NeuroModParams_DASign(nm: ptr<function,NeuroModParams>) -> f32 {
-	if ((*nm).DAMod == D2Mod) {
+fn NeuroModParams_DASign(nm: NeuroModParams) -> f32 {
+	if (nm.DAMod == D2Mod) {
 		return -1.0;
 	}return f32(1.0);
 }
-fn NeuroModParams_LRMod(nm: ptr<function,NeuroModParams>, da: f32,ach: f32) -> f32 {
-	var lmod = NeuroModParams_LRModFact(nm, (*nm).AChLRateMod, ach);
-	if ((*nm).DALRateSign == 1) {
+fn NeuroModParams_LRMod(nm: NeuroModParams, da: f32,ach: f32) -> f32 {
+	var lmod = NeuroModParams_LRModFact(nm, nm.AChLRateMod, ach);
+	if (nm.DALRateSign == 1) {
 		lmod *= NeuroModParams_DAGain(nm, da) * NeuroModParams_DASign(nm);
 	} else {
-		lmod *= NeuroModParams_LRModFact(nm, (*nm).DALRateMod, da);
+		lmod *= NeuroModParams_LRModFact(nm, nm.DALRateMod, da);
 	}return lmod;
 }
 

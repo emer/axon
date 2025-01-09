@@ -60,8 +60,12 @@ func (nt *Network) NewState(mode enums.Enum, testing bool) {
 	ctx := nt.Context()
 	nd := int(nix.NNeurons * ctx.NData)
 	ctx.NewState(mode, testing)
-	ToGPUCtxGlobal()
-	RunNewStateLayer(int(nix.NLayers))
+	for li := range nix.NLayers {
+		NewStateLayer(li)
+	}
+	ToGPULayers()
+	// ToGPUCtxGlobal()
+	// RunNewStateLayer(int(nix.NLayers))
 	RunNewStateNeuron(nd)
 	RunInitGBuffsPath(int(nix.NPaths))
 	// note: not completed until run cycles
@@ -272,7 +276,7 @@ func CyclePost(i uint32) { //gosl:kernel
 }
 
 // CycleInc is the kernel over 1 call to increment the cycle counter.
-func CycleInc(i uint32) { //gosl:kernel
+func CycleInc(i uint32) { //gosl:kernel read-write:Ctx
 	if i != 0 {
 		return
 	}
@@ -295,7 +299,7 @@ func ApplyExtsNeuron(i uint32) { //gosl:kernel
 
 // NewStateLayer is the kernel over Layers (not Data)
 // which does new state on pools as well.
-func NewStateLayer(li uint32) { //gosl:kernel
+func NewStateLayer(li uint32) { // note: not a kernel at this point
 	ctx := GetCtx(0)
 	Layers[li].NewStateLayer(ctx)
 }
@@ -376,7 +380,7 @@ func MinusPhasePost(li uint32) { //gosl:kernel
 }
 
 // PlusPhaseStartContext is the kernel over 1 call to call PlusPhaseStart on context.
-func PlusPhaseStartContext(i uint32) { //gosl:kernel
+func PlusPhaseStartContext(i uint32) { //gosl:kernel read-write:Ctx
 	if i != 0 {
 		return
 	}
