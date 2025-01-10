@@ -16,19 +16,29 @@ and performance is roughly similar.
 
 # V2.0.0-dev0.2.3 webgpu 23.pr441 epochs=1
 
+This removes the use of pointers to fields in GPU code, so it actually works on NVIDIA / linux now!
+
 ## MacBook Pro M3
 
 ### GPU
 
-* ndata=1: 
-
+* ndata=1: 3.28
+* ndata=2: 4.45
+* ndata=4: 5.82
 
 ## HPC2 ccnl-0 AMD EPYC 7502 32-Core Processor + NVIDIA A100 GPU
 
 ### GPU
 
-* ndata=1: 
+* ndata=1: 5.52  vs. 6.82 for dev0.2.1 vgpu final = 20% speedup!
+* ndata=2: 6.84  vs. 11
+* ndata=4: 9.20  vs. 24
 
+## NVIDIA H100 GPU
+
+* ndata=1: 4.3
+* ndata=2: 5.0
+* ndata=4: 6.7
 
 # V2.0.0-dev0.2.2 webgpu 23.pr441 epochs=5
 
