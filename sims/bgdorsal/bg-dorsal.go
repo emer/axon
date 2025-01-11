@@ -19,6 +19,7 @@ import (
 	"cogentcore.org/core/cli"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/enums"
+	"cogentcore.org/core/gpu"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/tree"
@@ -326,7 +327,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetNThreads(ss.Config.Run.NThreads)
 	ss.ApplyParams()
 	net.InitWeights()
-	fmt.Println("m1:", m1.Index)
 }
 
 func (ss *Sim) ApplyParams() {
@@ -889,15 +889,42 @@ func (ss *Sim) ConfigStats() {
 		case Run:
 			stat = float64(ss.Loops.Loop(mode, (level - 1)).Counter.Cur)
 			tsr.AppendRowFloat(stat)
-		default: // in case higher
-			stat = stats.StatFinal.Call(subDir.Value(name)).Float1D(0)
+		default: // expt
+			stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
 			tsr.AppendRowFloat(stat)
 		}
+	})
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		if level < Expt {
+			return
+		}
+		name := "NFail"
+		modeDir := ss.Stats.Dir(mode.String())
+		levelDir := modeDir.Dir(level.String())
+		subDir := modeDir.Dir((level - 1).String())
+		tsr := levelDir.Float64(name)
+		if phase == Start {
+			tsr.SetNumRows(0)
+			plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
+				s.Range.SetMin(0)
+				s.On = true
+			})
+			return
+		}
+		run := subDir.Value("EpochsToCrit")
+		nfail := 0
+		for i := range run.Len() {
+			epc := run.Float1D(i)
+			if int(epc) == ss.Config.Run.Epochs {
+				nfail++
+			}
+		}
+		tsr.AppendRowFloat(float64(nfail))
 	})
 	runAllFunc := axon.StatLevelAll(ss.Stats, Train, Run, func(s *plot.Style, cl tensor.Values) {
 		name := metadata.Name(cl)
 		switch name {
-		case "FirstZero", "LastZero":
+		case "EpochsToCrit", "NCorrect":
 			s.On = true
 			s.Range.SetMin(0)
 		}
@@ -990,6 +1017,7 @@ func (ss *Sim) RunGUI() {
 }
 
 func (ss *Sim) RunNoGUI() {
+	gpu.DebugAdapter = true
 	ss.Init()
 
 	if ss.Config.Params.Note != "" {
