@@ -59,8 +59,8 @@ func (pt *PathParams) SynCa(ctx *Context, si, ri, di uint32, syCaP, syCaD *float
 		cp += sp * GlobalScalars.Value(int(GvCaBinWts+GlobalScalarVars(i)), int(0))
 		cd += sp * GlobalScalars.Value(int(cadSt+GlobalScalarVars(i)), int(0))
 	}
-	*syCaP = pt.Learn.DWt.CaPScale * pt.Learn.DWt.CaScale * cp
-	*syCaD = pt.Learn.DWt.CaScale * cd
+	*syCaP = pt.Learn.DWt.CaPScale * cp
+	*syCaD = cd
 }
 
 // DWtSynCortex computes the weight change (learning) at given synapse, using the

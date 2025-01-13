@@ -752,14 +752,13 @@ type DWtParams struct {
 	// there is temporal structure to be learned across these longer timescales.
 	Tau float32 `default:"1,2,4"`
 
-	// CaScale is a multiplier on the total synaptic calcium values, computed from products
-	// of the neuron-level [CaBins] values. If [Context.CaBinCycles] is lower than
-	// default of 25, then this value needs to be set higher, e.g., 2 for cycles = 10.
-	CaScale float32 `default:"1"`
-
 	// CaPScale is a separate multiplier for the CaP component of synaptic calcium, to
 	// allow separate weighting of potentiation (CaP) vs. depression (CaD) factors.
-	CaPScale float32 `default:"1"`
+	// An increased CaP level results in an overall potentiation bias, which acts
+	// like a hebbian learning factor. This can be bad for long-term synaptic stability
+	// and lead to the hog-unit problem, and the default of 0.95 is set to mitigate
+	// this hogging dynamic.
+	CaPScale float32 `default:"0.95,1"`
 
 	// SubMean is the amount of the mean [dWt] to subtract for updating the online
 	// learning [LWt] values, producing a zero-sum effect. 1.0 = full zero-sum dWt.
@@ -779,14 +778,13 @@ type DWtParams struct {
 	// Dt rate = 1 / tau
 	Dt float32 `display:"-" json:"-" xml:"-" edit:"-"`
 
-	pad float32
+	pad, pad1 float32
 }
 
 func (tp *DWtParams) Defaults() {
 	tp.Trace.SetBool(true)
 	tp.Tau = 1
-	tp.CaScale = 1
-	tp.CaPScale = 1
+	tp.CaPScale = 0.95
 	tp.SubMean = 0
 	tp.LearnThr = 0
 	tp.Update()

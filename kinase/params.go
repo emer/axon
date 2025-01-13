@@ -212,9 +212,17 @@ func CaBinWts(nplus, binCycles int, cp, cd []float32) {
 
 	// rescale for bin size
 	scale := float32(binCycles) / (float32(25))
+	var cpsum, cdsum float32
 	for i := range n {
 		cp[i] *= scale
 		cd[i] *= scale
+		cpsum += cp[i]
+		cdsum += cd[i]
+	}
+	// fmt.Println(cpsum, cdsum, cdsum/cpsum)
+	renorm := cdsum / cpsum // yes renorm: factor is 0.9843 for 25 cyc bins, or 0.96.. for 10 cyc bins
+	for i := range n {
+		cp[i] *= renorm
 	}
 }
 
