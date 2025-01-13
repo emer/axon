@@ -16,6 +16,7 @@ import (
 	"cogentcore.org/core/cli"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/enums"
+	"cogentcore.org/core/gpu"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/vecint"
@@ -136,6 +137,7 @@ func (ss *Sim) Run() {
 	ss.RandSeeds.Init(100) // max 100 runs
 	ss.InitRandSeed(0)
 	if ss.Config.Run.GPU {
+		gpu.SelectAdapter = ss.Config.Run.GPUDevice
 		axon.GPUInit()
 		axon.UseGPU = true
 	}

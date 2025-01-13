@@ -71,6 +71,9 @@ type RunConfig struct {
 	// small models if NData ~16.
 	GPU bool `default:"true"`
 
+	// GPUDevice selects the gpu device to use.
+	GPUDevice int
+
 	// NData is the number of data-parallel items to process in parallel per trial.
 	// Is significantly faster for both CPU and GPU.  Results in an effective
 	// mini-batch of learning.
@@ -102,7 +105,7 @@ type RunConfig struct {
 	PlusCycles int `default:"50"`
 
 	// CaBinCycles is the number of cycles per CaBin: how fine-grained the synaptic Ca is.
-	CaBinCycles int `default:"25"`
+	CaBinCycles int `default:"25"` // no diff for 25 vs. 10
 
 	// NZero is how many perfect, zero-error epochs before stopping a Run.
 	NZero int `default:"2"`

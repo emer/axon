@@ -71,6 +71,9 @@ type RunConfig struct {
 	// GPU uses the GPU for computation: not faster in this case.
 	GPU bool `default:"false"`
 
+	// GPUDevice selects the gpu device to use.
+	GPUDevice int
+
 	// NThreads is the number of parallel threads for CPU computation;
 	// 0 = use default.
 	NThreads int `default:"0"`

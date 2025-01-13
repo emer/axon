@@ -147,6 +147,8 @@ func (ss *Sim) Run() {
 	ss.RandSeeds.Init(100) // max 100 runs
 	ss.InitRandSeed(0)
 	if ss.Config.Run.GPU {
+		// gpu.DebugAdapter = true
+		gpu.SelectAdapter = ss.Config.Run.GPUDevice
 		axon.GPUInit()
 		axon.UseGPU = true
 	}

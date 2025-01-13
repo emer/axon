@@ -88,7 +88,7 @@ var PathParams = axon.PathSheets{
 				pt.Learn.DWt.SubMean = 1     // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
 				pt.SWts.Adapt.LRate = 0.0001 // 0.005 == .1 == .01
 				pt.SWts.Init.SPct = 1        // 1 >= lower (trace-v11)
-				pt.Learn.DWt.CaPScale = 0.95 // trace: 0.95 resists late hogging
+				pt.Learn.DWt.CaPScale = 0.95 // 0.95 essential vs. 1.0
 				// pt.Learn.DWt.Trace.SetBool(false) // no trace is faster!
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger",

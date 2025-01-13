@@ -53,6 +53,9 @@ type RunConfig struct {
 	// GPU uses the GPU for computation, largely for testing purposes here.
 	GPU bool `default:"false"`
 
+	// GPUDevice selects the gpu device to use.
+	GPUDevice int
+
 	// Trials is the total number of trials of different random patterns to generate.
 	Trials int `default:"10"`
 

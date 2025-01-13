@@ -65,6 +65,9 @@ type RunConfig struct {
 	// GPU uses the GPU for computation; only for testing in this model -- not faster.
 	GPU bool `default:"true"`
 
+	// GPUDevice selects the gpu device to use.
+	GPUDevice int
+
 	// NData is the number of data-parallel items to process in parallel per trial.
 	// Is significantly faster for both CPU and GPU.  Results in an effective
 	// mini-batch of learning.

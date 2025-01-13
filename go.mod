@@ -3,7 +3,7 @@ module github.com/emer/axon/v2
 go 1.22
 
 require (
-	cogentcore.org/core v0.3.8-0.20250107202432-e0c4c10448e1
+	cogentcore.org/core v0.3.8-0.20250113105110-b73be80edead
 	cogentcore.org/lab v0.0.0-20250109203708-c742f9552551
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/cogentcore/yaegi v0.0.0-20240724064145-e32a03faad56
