@@ -13,9 +13,9 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Clamp.Ge = 1.0 // 1.5 is def, was 0.6 (too low)
 				ly.Acts.Noise.On.SetBool(true)
-				ly.Acts.Noise.Ge = 0.0001 // 0.0001 > others; could just be noise ;)
-				ly.Acts.Noise.Gi = 0.0001 // 0.0001 perhaps better than others
-				ly.Learn.RLRate.SigmoidLinear.SetBool(false)
+				ly.Acts.Noise.Ge = 0.0001                    // 0.0001 > others; could just be noise ;)
+				ly.Acts.Noise.Gi = 0.0001                    // 0.0001 perhaps better than others
+				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // orig = true
 			}},
 		{Sel: ".PFCLayer", Doc: "pfc",
 			Set: func(ly *axon.LayerParams) {
@@ -37,6 +37,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Init.GeBase = 0.1
 				ly.Acts.Kir.Gbar = 10           // 10 > 5  > 2 -- key for pause
 				ly.Acts.SKCa.Gbar = 2           // 2 > 5 >> 1 (for Kir = 10)
+				ly.Acts.SKCa.CaRDecayTau = 150  // was 80 -- key diff!
 				ly.Inhib.Layer.On.SetBool(true) // actually needs this
 				ly.Inhib.Layer.Gi = 0.5
 				ly.Learn.NeuroMod.AChDisInhib = 0
@@ -58,31 +59,37 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.Layer.Gi = 0.8 // 0.8 def
 				ly.CT.GeGain = 0.05     // 0.05 def
-				ly.CT.DecayTau = 100    // 50 def
+				ly.CT.DecayTau = 50     // was 100 -- 50 in orig -- OFCposPT ??
 			}},
 		{Sel: ".CTLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.Layer.Gi = 1.4 // 0.8 def
 				ly.CT.GeGain = 5        // 2 def
-				ly.CT.DecayTau = 100    // 50 def
+				ly.CT.DecayTau = 50     // was 100 -- 50 in orig -- OFCposPT ??
 			}},
 		{Sel: "#MotorBS", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Learn.NeuroMod.DAMod = axon.D1Mod // definitely beneficial here!
-				ly.Learn.NeuroMod.DAModGain = 0.03   // up to 0.04 good
-				ly.Learn.NeuroMod.DipGain = 0.1      // 0.1 > 0 > 0.2
+				ly.Learn.NeuroMod.DAMod = axon.NoDAMod // D1Mod not beneficial here
+				ly.Learn.NeuroMod.DAModGain = 0.01     // up to 0.04 good
+				ly.Learn.NeuroMod.DipGain = 0.1        // 0.1 > 0 > 0.2
 				ly.Inhib.Layer.On.SetBool(true)
 				ly.Inhib.Pool.On.SetBool(false)
 				ly.Inhib.Layer.Gi = 0.2 // 0.2 def
 				ly.Acts.Clamp.Ge = 2    // 2 > 1.5, >> 1 -- absolutely critical given GPi inhib
 			}},
-		{Sel: "#VL", Doc: "",
-			Set: func(ly *axon.LayerParams) {
-				// not obviously beneficial here
-				// ly.Learn.NeuroMod.DAMod = axon.D1Mod
-				// ly.Learn.NeuroMod.DAModGain = 0.02
-				// ly.Learn.NeuroMod.DipGain = 0 // 0 > higher
-			}},
+		// {Sel: "#M1", Doc: "",
+		// 	Set: func(ly *axon.LayerParams) {
+		// 		ly.Learn.NeuroMod.DAMod = axon.D1Mod // not good here.
+		// 		ly.Learn.NeuroMod.DAModGain = 0.03   // up to 0.04 good
+		// 		ly.Learn.NeuroMod.DipGain = 0.1      // 0.1 > 0 > 0.2
+		// 	}},
+		// {Sel: "#VL", Doc: "",
+		// 	Set: func(ly *axon.LayerParams) {
+		// 		// not obviously beneficial here
+		// 		// ly.Learn.NeuroMod.DAMod = axon.D1Mod
+		// 		// ly.Learn.NeuroMod.DAModGain = 0.02
+		// 		// ly.Learn.NeuroMod.DipGain = 0 // 0 > higher
+		// 	}},
 		{Sel: "#DGPeAk", Doc: "arkypallidal",
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Init.GeBase = 0.2 // 0.2 > 0.3, 0.1
@@ -139,64 +146,59 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".ToM1", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1.5 // now 1.5 > 2 > 1 ..
+				pt.PathScale.Abs = 1.5     // now 1.5 > 2 > 1 ..
+				pt.Learn.LRate.Base = 0.04 // 0.04 > 0.02
+			}},
+		{Sel: ".ToMotor", Doc: "all paths to MotorBS and VL",
+			Set: func(pt *axon.PathParams) {
+				pt.Learn.LRate.Base = 0.02 // 0.02 > 0.04 > 0.01
+			}},
+		{Sel: ".VLM1", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.Learn.LRate.Base = 0.02 // 0.02 > 0.04 > 0.01
 			}},
 		{Sel: "#StateToM1", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 1 // 1 > 1.5, 2, 0.5 etc
 			}},
-		{Sel: "#DGPiToPF", Doc: "",
-			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 0.4 // 0.4 >= 0.5, 0.3, 0.2 >> higher
-			}},
 		{Sel: "#MotorBSToPF", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1 // 1 > 1.1 > 0.9 >> 0.5
+				pt.PathScale.Abs = 1       // 1 > 1.1 > 0.9 >> 0.5
+				pt.Learn.LRate.Base = 0.04 // 0.04 > 0.02
 			}},
-		// {Sel: ".StateToDMtx", Doc: "",
-		// 	Set: func(pt *axon.PathParams) {
-		// 		pt.PathScale.Abs = 1.5 // 1.8 def
-		// 	}},
-		// {Sel: ".CLToDMtx", Doc: "",
-		// 	Set: func(pt *axon.PathParams) {
-		// 		pt.Learn.Learn =   false
-		// 		pt.PathScale.Rel = 0.001
-		// 	}},
 		{Sel: "#DGPiToM1VM", Doc: "final inhibition",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 2 // 2
+				// learn = false by default
 			}},
 		{Sel: "#DGPiToMotorBS", Doc: "final inhibition",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 3        // 3 > 2.5, 3.5
-				pt.Learn.DWt.CaPScale = 1.2 // only relevant here
-				pt.Learn.LRate.Base = 0.02  // 0.02 > 0.03 > 0.01 > 0.04
+				pt.PathScale.Abs = 3       // 3 > 2.5, 3.5
+				pt.Learn.LRate.Base = 0.04 // 0.04 > 0.02 > 0.0005 with STN 150
+			}},
+		{Sel: "#DGPiToPF", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 0.4     // 0.4 >= 0.5, 0.3, 0.2 >> higher
+				pt.Learn.LRate.Base = 0.04 // 0.4 prev default
 			}},
 		{Sel: ".M1ToMotorBS", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 2        // 2 > 1.5, 2.5
-				pt.Learn.DWt.CaPScale = 1.2 // only relevant here
-				pt.Learn.LRate.Base = 0.02
-			}},
-		{Sel: ".VLM1", Doc: "",
-			Set: func(pt *axon.PathParams) {
-				pt.Learn.DWt.CaPScale = 1.2 // only relevant here
-				pt.Learn.LRate.Base = 0.02
-			}},
-		{Sel: ".ToVL", Doc: "",
-			Set: func(pt *axon.PathParams) {
-				pt.Learn.DWt.CaPScale = 1.2 // only relevant here
-				pt.Learn.LRate.Base = 0.02
+				pt.PathScale.Abs = 2 // 2 > 1.5, 2.5
 			}},
 		{Sel: "#M1PTToMotorBS", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 2 // 2
 				pt.PathScale.Rel = 1 // 1
+				// note: lr = 0.04 in orig
 			}},
 		{Sel: "#M1PTToVL", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 1   // 1
 				pt.PathScale.Rel = 0.1 // 0.1 > 0.2, .05, 0
+			}},
+		{Sel: "#M1PTToM1PT", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.Learn.LRate.Base = 0.0001 // 0.0001 in orig
 			}},
 		// {Sel: "#M1PTpToMotorBS", Doc: "",
 		// 	Set: func(pt *axon.PathParams) {
@@ -216,6 +218,15 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 6
 			}},
+		// {Sel: ".StateToDMtx", Doc: "",
+		// 	Set: func(pt *axon.PathParams) {
+		// 		pt.PathScale.Abs = 1.5 // 1.8 def
+		// 	}},
+		// {Sel: ".CLToDMtx", Doc: "",
+		// 	Set: func(pt *axon.PathParams) {
+		// 		pt.Learn.Learn =   false
+		// 		pt.PathScale.Rel = 0.001
+		// 	}},
 	},
 }
 

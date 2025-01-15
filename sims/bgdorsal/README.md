@@ -38,4 +38,22 @@ The learned weights to the BG clearly show that it is disinhibiting the appropri
 
 * Learning in the other parts of the pcore circuit -- might help auto-adjust the parameters.  Need to figure out what logical learning rules would look like.
 
+# Param search notes
+
+## 01/14/2025: Hebbian learning in MotorBS, with STN SKCa = 80 instead of 150, State layer size.
+
+In general performance since switching to linear SynCa approximation has been significantly worse. Is it the Ca or something else that changed??
+
+1. Discovered a critical parameter change is mentioned in rev `0d290fe7` on 4/19/2024, but didn't get baked into the defaults until a few refs later (definitely by 05/02/2024, `546ceada`), which improved pcore_vs and choice (need to revisit that!):
+```Go
+.DSTNLayer: ly.Acts.SKCa.CaRDecayTau = 150  // was 80 -- key diff!  
+```
+
+Previously, the value was 150, then it got changed to 80, which significantly impaired the models of that time -- restoring this parameter to 150 restored the very good performance reported above for 2024-02-09. Need to more systematically run models to detect these breakages!
+
+With the 80 value, there was a regime of parameters that worked pretty well with SeqLen = 3, NActions = 5, but doesn't work _at all_ with Seq3x6, that was focused on the new `CaPScale` parameter changing the balance of CaP vs. CaD, producing a kind of hebbian learning effect. For projections to MotorBS and VLM1, turning this CaPScale up to 1.2, and adding DA1mod to MotorBS itself (0.03, dip gain .1), worked well. Also strangely turning down the learning rate on `#DGPiToMotorBS` (inhibitory gating from BG) to 0.0005 worked best. None of these parameters holds now that the STN, and thus overall BG, is back to functioning again. These params are captured in `b095ae18` 2025-01-13.
+
+With STN SKCa = 150, get 100% success on Seq3x5.
+
+2. The `State` layer `Nominal` act was set as if size = NActions but actual size should be SeqLen which had been fixed. Setting this back to NActions restored prior good performance (along with SKCa fix). But Nominal change alone (normalizing by SeqLen) is not as effective as sizing with NActions.. definitely need to investigate this!
 

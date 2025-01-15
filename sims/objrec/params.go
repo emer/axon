@@ -84,12 +84,12 @@ var PathParams = axon.PathSheets{
 	"Base": {
 		{Sel: "Path", Doc: "yes extra learning factors",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.LRate.Base = 0.2    // 0.4 for NeuronCa; 0.2 best, 0.1 nominal
-				pt.Learn.DWt.SubMean = 1     // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
-				pt.SWts.Adapt.LRate = 0.0001 // 0.005 == .1 == .01
-				pt.SWts.Init.SPct = 1        // 1 >= lower (trace-v11)
-				pt.Learn.DWt.CaPScale = 0.95 // 0.95 essential vs. 1.0
-				// pt.Learn.DWt.Trace.SetBool(false) // no trace is faster!
+				pt.Learn.LRate.Base = 0.02        // 0.2 for trace, 0.02 for notrace
+				pt.Learn.DWt.SubMean = 1          // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
+				pt.SWts.Adapt.LRate = 0.0001      // 0.005 == .1 == .01
+				pt.SWts.Init.SPct = 1             // 1 >= lower (trace-v11)
+				pt.Learn.DWt.CaPScale = 0.95      // 0.95 essential vs. 1.0
+				pt.Learn.DWt.Trace.SetBool(false) // no trace is faster but unstable
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger",
 			Set: func(pt *axon.PathParams) {

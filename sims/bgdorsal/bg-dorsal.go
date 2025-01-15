@@ -224,6 +224,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	nuPer := ev.NUnitsPer
 	nAct := ev.NActions
 	nSeq := ev.SeqLen
+	maxSeqAct := max(nAct, nSeq) // layer size
+
 	nuX := 6
 	nuY := 6
 	nuCtxY := 6
@@ -245,7 +247,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	snc := net.AddLayer2D("SNc", axon.InputLayer, 1, 1)
 	_ = snc
 
-	state := net.AddLayer4D("State", axon.InputLayer, 1, np, nuPer, nSeq)
+	state := net.AddLayer4D("State", axon.InputLayer, 1, np, nuPer, maxSeqAct)
 	s1 := net.AddLayer4D("S1", axon.InputLayer, 1, np, nuPer, nAct+1)
 
 	targ := net.AddLayer2D("Target", axon.InputLayer, nuPer, nAct) // Target: just for vis
@@ -272,17 +274,17 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToPFC(nil, vl, m1, m1CT, m1PT, m1PTp, full, "VLM1") // m1 predicts vl
 
 	// these pathways are *essential* -- must get current state here
-	net.ConnectLayers(m1, vl, full, axon.ForwardPath).AddClass("ToVL")
+	net.ConnectLayers(m1, vl, full, axon.ForwardPath).AddClass("ToVL ToMotor")
 
-	net.ConnectLayers(gpi, motor, p1to1, axon.InhibPath)
-	net.ConnectLayers(m1PT, motor, full, axon.ForwardPath).AddClass("M1ToMotorBS")
+	net.ConnectLayers(gpi, motor, p1to1, axon.InhibPath).AddClass("FmGPI")
+	net.ConnectLayers(m1PT, motor, full, axon.ForwardPath).AddClass("M1ToMotorBS ToMotor")
 	// net.ConnectLayers(m1PTp, motor, full, axon.ForwardPath).AddClass("M1ToMotorBS")
-	net.ConnectLayers(m1, motor, full, axon.ForwardPath).AddClass("M1ToMotorBS")
+	net.ConnectLayers(m1, motor, full, axon.ForwardPath).AddClass("M1ToMotorBS ToMotor")
 
 	net.ConnectLayers(motor, pf, one2one, axon.ForwardPath)
 
-	net.ConnectLayers(state, stn, full, axon.ForwardPath).AddClass("ToDSTN")
-	net.ConnectLayers(state, m1, full, axon.ForwardPath).AddClass("ToM1")
+	net.ConnectLayers(state, stn, full, axon.ForwardPath).AddClass("ToDSTN FmState")
+	net.ConnectLayers(state, m1, full, axon.ForwardPath).AddClass("ToM1 FmState")
 	net.ConnectLayers(s1, stn, full, axon.ForwardPath).AddClass("ToDSTN")
 	net.ConnectLayers(s1, m1, full, axon.ForwardPath).AddClass("ToM1")
 
@@ -293,8 +295,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	toMtx := full
 	// toMtx := mtxRandPath // works, but not as reliably
-	net.ConnectToDSMatrix(state, mtxGo, toMtx).AddClass("StateToMtx")
-	net.ConnectToDSMatrix(state, mtxNo, toMtx).AddClass("StateToMtx")
+	net.ConnectToDSMatrix(state, mtxGo, toMtx).AddClass("StateToMtx FmState")
+	net.ConnectToDSMatrix(state, mtxNo, toMtx).AddClass("StateToMtx FmState")
 	net.ConnectToDSMatrix(s1, mtxNo, toMtx).AddClass("S1ToMtx")
 	net.ConnectToDSMatrix(s1, mtxGo, toMtx).AddClass("S1ToMtx")
 
@@ -340,7 +342,11 @@ func (ss *Sim) ApplyParams() {
 	for _, lnm := range lnms {
 		ly := ss.Net.LayerByName(lnm)
 		// fmt.Println(ly.Params.Inhib.ActAvg.Nominal)
-		ly.Params.Inhib.ActAvg.Nominal = 0.5 / float32(ev.NActions)
+		if lnm == "State" {
+			ly.Params.Inhib.ActAvg.Nominal = 0.5 / float32(max(ev.SeqLen, ev.NActions))
+		} else {
+			ly.Params.Inhib.ActAvg.Nominal = 0.5 / float32(ev.NActions)
+		}
 	}
 }
 
@@ -971,6 +977,7 @@ func (ss *Sim) ConfigGUI() {
 	nv := ss.GUI.AddNetView("Network")
 	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles
 	nv.Options.Raster.Max = ss.Config.Run.Cycles
+	nv.Options.LayerNameSize = 0.03
 	nv.SetNet(ss.Net)
 	ss.TrainUpdate.Config(nv, axon.Theta, ss.StatCounters)
 	ss.TestUpdate.Config(nv, axon.Theta, ss.StatCounters)
