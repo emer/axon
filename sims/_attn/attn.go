@@ -280,10 +280,10 @@ type Sim struct {
 	ToolBar *core.ToolBar `display:"-"`
 
 	// the test-trial plot
-	TstTrlPlot *plotcore.PlotEditor `display:"-"`
+	TstTrlPlot *plotcore.Editor `display:"-"`
 
 	// the test-trial plot
-	TstRunPlot *plotcore.PlotEditor `display:"-"`
+	TstRunPlot *plotcore.Editor `display:"-"`
 
 	// for holding layer values
 	ValuesTsrs map[string]*tensor.Float32 `display:"-"`
@@ -850,7 +850,7 @@ func (ss *Sim) ConfigTstTrlLog(dt *table.Table) {
 	dt.SetNumRows(0)
 }
 
-func (ss *Sim) ConfigTstTrlPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
+func (ss *Sim) ConfigTstTrlPlot(plt *plotcore.Editor, dt *table.Table) *plotcore.Editor {
 	plt.Options.Title = "Attn Test Trial Plot"
 	plt.Options.XAxis = "Trial"
 	plt.SetTable(dt)
@@ -898,7 +898,7 @@ func (ss *Sim) ConfigTstRunLog(dt *table.Table) {
 	dt.SetNumRows(0)
 }
 
-func (ss *Sim) ConfigTstRunPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
+func (ss *Sim) ConfigTstRunPlot(plt *plotcore.Editor, dt *table.Table) *plotcore.Editor {
 	plt.Options.Title = "Attn Test Run Plot"
 	plt.Options.XAxis = "Trial"
 	plt.SetTable(dt)
@@ -957,10 +957,10 @@ func (ss *Sim) ConfigGUI() *core.Window {
 	ss.NetView = nv
 	ss.ConfigNetView(nv)
 
-	plt := tv.AddNewTab(plotcore.KiT_PlotView, "TstTrlPlot").(*plotcore.PlotEditor)
+	plt := tv.AddNewTab(plotcore.KiT_PlotView, "TstTrlPlot").(*plotcore.Editor)
 	ss.TstTrlPlot = ss.ConfigTstTrlPlot(plt, ss.TstTrlLog)
 
-	plt = tv.AddNewTab(plotcore.KiT_PlotView, "TstRunPlot").(*plotcore.PlotEditor)
+	plt = tv.AddNewTab(plotcore.KiT_PlotView, "TstRunPlot").(*plotcore.Editor)
 	ss.TstRunPlot = ss.ConfigTstRunPlot(plt, ss.TstRunLog)
 
 	split.SetSplits(.2, .8)

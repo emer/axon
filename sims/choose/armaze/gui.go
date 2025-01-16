@@ -141,13 +141,13 @@ type GUI struct {
 	DepthImage *core.Image `display:"-"`
 
 	// plot of positive valence drives, active OFC US state, and reward
-	USposPlot *plotcore.PlotEditor
+	USposPlot *plotcore.Editor
 
 	// data for USPlot
 	USposData *table.Table
 
 	// plot of negative valence active OFC US state, and outcomes
-	USnegPlot *plotcore.PlotEditor
+	USnegPlot *plotcore.Editor
 
 	// data for USPlot
 	USnegData *table.Table
@@ -229,7 +229,7 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 
 	wd := float32(200)
 	ht := float32(100)
-	vw.USposPlot = plotcore.NewPlotEditor(svfr)
+	vw.USposPlot = plotcore.NewEditor(svfr)
 	vw.USposPlot.Name = "us-pos"
 	vw.USposPlot.Styler(func(s *styles.Style) {
 		s.Min.X.Px(wd)
@@ -237,7 +237,7 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 		s.Grow.Set(0, 0)
 	})
 
-	vw.USnegPlot = plotcore.NewPlotEditor(svfr)
+	vw.USnegPlot = plotcore.NewEditor(svfr)
 	vw.USnegPlot.Name = "us-neg"
 	vw.USnegPlot.Styler(func(s *styles.Style) {
 		s.Min.X.Px(wd)
@@ -522,7 +522,7 @@ func (vw *GUI) ConfigUSPlots() {
 
 	cols := []string{"Drive", "USin", "OFC"}
 	for _, cl := range cols {
-		plot.SetFirstStylerTo(cl, func(s *plot.Style) {
+		plot.SetFirstStyle(cl, func(s *plot.Style) {
 			s.On = true
 			s.Range.SetMin(0).SetMax(1)
 

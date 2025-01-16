@@ -1,7 +1,7 @@
-cogentcore.org/core v0.3.8-0.20250113105110-b73be80edead h1:aBcVq6+4XbhphORwy1oyZUGbTSkKMkzyxKnM5Oo/O1c=
-cogentcore.org/core v0.3.8-0.20250113105110-b73be80edead/go.mod h1:Ipnb14B+l0qLzjvcvCIhnDucV9H9RyuqS4knZz5kB8A=
-cogentcore.org/lab v0.0.0-20250109203708-c742f9552551 h1:aHaTWuqrsVKnwrcPACwAGy8v0KN5bCxgDqcwfzjtsmA=
-cogentcore.org/lab v0.0.0-20250109203708-c742f9552551/go.mod h1:cFjKEyMK/eCST7x6sGCGjC12iY+/vcgZime7ASFnM/k=
+cogentcore.org/core v0.3.8-0.20250116184504-a8f1ea77c96a h1:xCB5wB7hkL7/y2dLNfXr4Hd8SMwpdmk6NQi9mqhItnI=
+cogentcore.org/core v0.3.8-0.20250116184504-a8f1ea77c96a/go.mod h1:X82rE06Zg1s8KHqm4IlnTzk2kBjNGScRlUHsui5vRj4=
+cogentcore.org/lab v0.0.0-20250116190940-0b99b79306a7 h1:+ZilP89A6Fzz6W/QX/l2OVtfTLFPUr+hEH7z7ZoTWyE=
+cogentcore.org/lab v0.0.0-20250116190940-0b99b79306a7/go.mod h1:Tu7zXJLh01yQrNL9ojRtY54hNL5sDYYzo3Ab37kNqMo=
 github.com/Bios-Marcel/wastebasket v0.0.4-0.20240213135800-f26f1ae0a7c4 h1:6lx9xzJAhdjq0LvVfbITeC3IH9Fzvo1aBahyPu2FuG8=
 github.com/Bios-Marcel/wastebasket v0.0.4-0.20240213135800-f26f1ae0a7c4/go.mod h1:FChzXi1izqzdPb6BiNZmcZLGyTYiT61iGx9Rxx9GNeI=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
@@ -38,8 +38,8 @@ github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dlclark/regexp2 v1.11.0 h1:G/nrcoOa7ZXlpoa/91N3X7mM3r8eIlMBBJZvsz/mxKI=
 github.com/dlclark/regexp2 v1.11.0/go.mod h1:DHkYz0B9wPfa6wondMfaivmHpzrQ3v9q8cnmRbL6yW8=
-github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20241223211126-97d70964931f h1:8BClX4zufSO1UcFqrWaHLOebvEEeZoXAf2cbSJL5tl4=
-github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20241223211126-97d70964931f/go.mod h1:Ty+hS7cpIhBvrtq6TzNClkx5PU/d7ob+YrIpHoURwis=
+github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250116192121-bef0fa284613 h1:zPCKB06yq0CNE2n8uuEZKWChOgRoN4Bhwd1VZJry6bs=
+github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250116192121-bef0fa284613/go.mod h1:kWXpQFYstjmqi2zs25uGmORzIJoWMG6IDaiOYA3FNbw=
 github.com/emer/v1vision v0.1.1-0.20241223003153-dd6818448b3b h1:UBArUDbvn8BWihXRqQldTAao2KmbJmxZwWo9BJB+O1s=
 github.com/emer/v1vision v0.1.1-0.20241223003153-dd6818448b3b/go.mod h1:UxlVgZX0apfnWPXD9XOkaC4TnZkQhgU8D3G2Lj20sTg=
 github.com/ergochat/readline v0.1.2 h1:zxiwQB8DyTLD0HSWthJlnvs5E2X1qnyXZ44RFf1jRlg=
@@ -134,8 +134,8 @@ golang.org/x/image v0.18.0/go.mod h1:4yyo5vMFQjVjUcVk4jEQcU9MGy/rulF5WvUILseCM2E
 golang.org/x/mod v0.20.0 h1:utOm6MM3R3dnawAiJgn0y+xvuYRsm1RKM/4giyfDgV0=
 golang.org/x/mod v0.20.0/go.mod h1:hTbmBsO62+eylJbnUtE2MGJUyE7QWk4xUqPFrRgJ+7c=
 golang.org/x/net v0.0.0-20211216030914-fe4d6282115f/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
-golang.org/x/net v0.28.0 h1:a9JDOJc5GMUJ0+UDqmLT86WiEy7iWyIhz8gz8E4e5hE=
-golang.org/x/net v0.28.0/go.mod h1:yqtgsTWOOnlGLG9GFRrK3++bGOUEkNBoHZc8MEDWPNg=
+golang.org/x/net v0.33.0 h1:74SYHlV8BIgHIFC/LrYkOGIwL19eTYXQ5wc6TBuO36I=
+golang.org/x/net v0.33.0/go.mod h1:HXLR5J+9DxmrqMwG9qjGCxZ+zKXxBru04zlTvWlWuN4=
 golang.org/x/sync v0.10.0 h1:3NQrjDixjgGwUOCaF8w2+VYHv0Ve/vGYSbdkTa98gmQ=
 golang.org/x/sync v0.10.0/go.mod h1:Czt+wKu1gCyEFDUtn0jG5QVvpJ6rzVqr5aXyt9drQfk=
 golang.org/x/sys v0.0.0-20181205085412-a5c9d58dba9a/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=

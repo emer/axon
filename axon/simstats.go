@@ -153,7 +153,7 @@ func StatLoopCounters(statsDir, currentDir *tensorfs.Node, ls *looper.Stacks, ne
 				tsr := levelDir.Int(name)
 				if start {
 					tsr.SetNumRows(0)
-					plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
+					plot.SetFirstStyle(tsr, func(s *plot.Style) {
 						s.Range.SetMin(0)
 					})
 					if level.Int64() == trialLevel.Int64() {
@@ -262,7 +262,7 @@ func StatPerTrialMSec(statsDir *tensorfs.Node, trainMode enums.Enum, trialLevel 
 		tsr := levelDir.Float64(name)
 		if start {
 			tsr.SetNumRows(0)
-			plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
+			plot.SetFirstStyle(tsr, func(s *plot.Style) {
 				s.Range.SetMin(0)
 			})
 			return
@@ -309,7 +309,7 @@ func StatLayerActGe(statsDir *tensorfs.Node, net *Network, trainMode, trialLevel
 				tsr := levelDir.Float64(name)
 				if start {
 					tsr.SetNumRows(0)
-					plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
+					plot.SetFirstStyle(tsr, func(s *plot.Style) {
 						s.Range.SetMin(0)
 					})
 					continue
@@ -453,7 +453,7 @@ func StatPCA(statsDir, currentDir *tensorfs.Node, net *Network, interval int, tr
 				tsr := levelDir.Float64(name)
 				if start {
 					tsr.SetNumRows(0)
-					plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
+					plot.SetFirstStyle(tsr, func(s *plot.Style) {
 						s.Range.SetMin(0)
 					})
 					continue
@@ -502,7 +502,7 @@ func StatPrevCorSim(statsDir, currentDir *tensorfs.Node, net *Network, trialLeve
 				tsr := levelDir.Float64(name)
 				if start {
 					tsr.SetNumRows(0)
-					plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
+					plot.SetFirstStyle(tsr, func(s *plot.Style) {
 						s.Range.SetMin(0).SetMax(1)
 					})
 					continue
@@ -561,7 +561,7 @@ func StatLevelAll(statsDir *tensorfs.Node, srcMode, srcLevel enums.Enum, styleFu
 				trg := tensorfs.ValueType(allDir, cl.Name(), clv.DataType(), clv.ShapeSizes()...)
 				if trg.Len() == 0 {
 					if styleFunc != nil {
-						plot.SetFirstStylerTo(trg, func(s *plot.Style) {
+						plot.SetFirstStyle(trg, func(s *plot.Style) {
 							styleFunc(s, clv)
 						})
 					}

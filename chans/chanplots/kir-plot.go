@@ -92,12 +92,12 @@ func (pl *KirPlot) GVRun() { //types:add
 		dir.Float64("Minf", nv).SetFloat1D(float64(minf), vi)
 		dir.Float64("Mtau", nv).SetFloat1D(float64(mtau), vi)
 	}
-	plot.SetFirstStylerTo(dir.Float64("V"), func(s *plot.Style) {
+	plot.SetFirstStyle(dir.Float64("V"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
 	ons := []string{"GkIR", "M"}
 	for _, on := range ons {
-		plot.SetFirstStylerTo(dir.Float64(on), func(s *plot.Style) {
+		plot.SetFirstStyle(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
 			s.Plot.Title = "kIR G(V)"
 		})
@@ -153,12 +153,12 @@ func (pl *KirPlot) TimeRun() { //types:add
 			}
 		}
 	}
-	plot.SetFirstStylerTo(dir.Float64("Time"), func(s *plot.Style) {
+	plot.SetFirstStyle(dir.Float64("Time"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
 	ons := []string{"V", "GkIR", "M"}
 	for _, on := range ons {
-		plot.SetFirstStylerTo(dir.Float64(on), func(s *plot.Style) {
+		plot.SetFirstStyle(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
 			s.Plot.Title = "GkIR G(t)"
 		})

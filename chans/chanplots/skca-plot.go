@@ -77,12 +77,12 @@ func (pl *SKCaPlot) GCaRun() { //types:add
 		dir.Float64("Mhill", nv).SetFloat1D(float64(mh), vi)
 		dir.Float64("Mgw06", nv).SetFloat1D(float64(mg), vi)
 	}
-	plot.SetFirstStylerTo(dir.Float64("Ca"), func(s *plot.Style) {
+	plot.SetFirstStyle(dir.Float64("Ca"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
 	ons := []string{"Mhill", "Mgw06"}
 	for _, on := range ons {
-		plot.SetFirstStylerTo(dir.Float64(on), func(s *plot.Style) {
+		plot.SetFirstStyle(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
 			s.Plot.Title = "sK Ca G(Ca)"
 		})
@@ -133,12 +133,12 @@ func (pl *SKCaPlot) TimeRun() { //types:add
 		// todo: update
 		// ss.CaParams.FromSpike(spike, &caM, &caP, &caD)
 	}
-	plot.SetFirstStylerTo(dir.Float64("Time"), func(s *plot.Style) {
+	plot.SetFirstStyle(dir.Float64("Time"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
 	ons := []string{"Spike", "CaIn", "CaR", "M"}
 	for _, on := range ons {
-		plot.SetFirstStylerTo(dir.Float64(on), func(s *plot.Style) {
+		plot.SetFirstStyle(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
 			s.Plot.Title = "sK Ca G(t)"
 		})

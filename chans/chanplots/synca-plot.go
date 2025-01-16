@@ -173,12 +173,12 @@ func (pl *SynCaPlot) TimeRun() { //types:add
 		di += float64(pl.CaDt.DDt) * (pi - di)
 
 	}
-	plot.SetFirstStylerTo(dir.Float64("t"), func(s *plot.Style) {
+	plot.SetFirstStyle(dir.Float64("t"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
 	ons := []string{"m", "p", "d"}
 	for _, on := range ons {
-		plot.SetFirstStylerTo(dir.Float64(on), func(s *plot.Style) {
+		plot.SetFirstStyle(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
 			s.Plot.Title = "SynCa"
 		})

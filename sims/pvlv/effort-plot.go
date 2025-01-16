@@ -54,13 +54,13 @@ type DrEffPlot struct {
 	Table *table.Table `display:"no-inline"`
 
 	// the plot
-	Plot *plotcore.PlotEditor `display:"-"`
+	Plot *plotcore.Editor `display:"-"`
 
 	// table for plot
 	TimeTable *table.Table `display:"no-inline"`
 
 	// the plot
-	TimePlot *plotcore.PlotEditor `display:"-"`
+	TimePlot *plotcore.Editor `display:"-"`
 
 	// random number generator
 	Rand randx.SysRand `display:"-"`
@@ -139,7 +139,7 @@ func (ss *DrEffPlot) ConfigTable(dt *table.Table) {
 	dt.SetNumRows(0)
 }
 
-func (ss *DrEffPlot) ConfigPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
+func (ss *DrEffPlot) ConfigPlot(plt *plotcore.Editor, dt *table.Table) *plotcore.Editor {
 	plt.Options.Title = "Effort Discount or Urgency Function Plot"
 	plt.Options.XAxis = "X"
 	plt.SetTable(dt)
@@ -206,7 +206,7 @@ func (ss *DrEffPlot) ConfigTimeTable(dt *table.Table) {
 	dt.SetNumRows(0)
 }
 
-func (ss *DrEffPlot) ConfigTimePlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
+func (ss *DrEffPlot) ConfigTimePlot(plt *plotcore.Editor, dt *table.Table) *plotcore.Editor {
 	plt.Options.Title = "Effort / Drive over Time Plot"
 	plt.Options.XAxis = "T"
 	plt.SetTable(dt)

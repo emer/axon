@@ -113,12 +113,12 @@ func (pl *AKPlot) GVRun() { //types:add
 	}
 	metadata.SetDoc(dir.Float64("Gaks"), "Gaks is the simplified AK conductance, actually used in models")
 	metadata.SetDoc(dir.Float64("Ms"), "Ms is the simplified AK M gate, actually used in models")
-	plot.SetFirstStylerTo(dir.Float64("V"), func(s *plot.Style) {
+	plot.SetFirstStyle(dir.Float64("V"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
 	ons := []string{"Gak", "M", "H", "Gaks"}
 	for _, on := range ons {
-		plot.SetFirstStylerTo(dir.Float64(on), func(s *plot.Style) {
+		plot.SetFirstStyle(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
 			s.Plot.Title = "AK G(V)"
 		})
@@ -185,12 +185,12 @@ func (pl *AKPlot) TimeRun() { //types:add
 			}
 		}
 	}
-	plot.SetFirstStylerTo(dir.Float64("Time"), func(s *plot.Style) {
+	plot.SetFirstStyle(dir.Float64("Time"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
 	ons := []string{"Gak", "M", "H"}
 	for _, on := range ons {
-		plot.SetFirstStylerTo(dir.Float64(on), func(s *plot.Style) {
+		plot.SetFirstStyle(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
 			s.Plot.Title = "AK G(t)"
 		})

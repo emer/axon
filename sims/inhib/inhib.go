@@ -475,7 +475,7 @@ func (ss *Sim) ConfigStats() {
 				ndata := 1
 				if phase == Start {
 					tsr.SetNumRows(0)
-					plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
+					plot.SetFirstStyle(tsr, func(s *plot.Style) {
 						s.Range.SetMin(0).SetMax(1)
 						s.On = false
 						switch stnm {
