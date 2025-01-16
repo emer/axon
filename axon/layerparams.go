@@ -76,7 +76,7 @@ type LayerParams struct {
 	Type LayerTypes
 
 	// Index of this layer in [Layers] list.
-	Index uint32 `display:"-"`
+	Index uint32 `edit:"-"`
 
 	// MaxData is the maximum number of data parallel elements.
 	MaxData uint32 `display:"-"`

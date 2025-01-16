@@ -22,9 +22,6 @@ type MotorSeqEnv struct {
 	// name of environment -- Train or Test
 	Name string
 
-	// training or testing env?
-	Mode Modes
-
 	// trial counter for index into sequence
 	Trial env.Counter
 
@@ -41,7 +38,7 @@ type MotorSeqEnv struct {
 	RewPredLRate float32 `default:"0.01"`
 
 	// additional learning rate factor for going up vs. down -- going up slower is better?
-	RewPredLRateUp float32 `default:"0.5"` // 0.5 > 0.8 > 0.2 > 1
+	RewPredLRateUp float32 `default:"0.5"`
 
 	// minimum rewpred value
 	RewPredMin float32 `default:"0.1"`
@@ -114,8 +111,7 @@ func (ev *MotorSeqEnv) Defaults() {
 }
 
 // Config configures the world
-func (ev *MotorSeqEnv) Config(mode Modes, rndseed int64) {
-	ev.Mode = mode
+func (ev *MotorSeqEnv) Config(rndseed int64) {
 	ev.RandSeed = rndseed
 	ev.Rand.NewRand(ev.RandSeed)
 	ev.States = make(map[string]*tensor.Float32)
@@ -133,8 +129,6 @@ func (ev *MotorSeqEnv) InitSeqMap() {
 	for i := 0; i < ev.SeqLen; i++ {
 		ev.SeqMap[i] = i // no randomness!  otherwise doesn't work on gpu!
 	}
-	// ev.SeqMap[0] = 4 // todo: cheating -- 4 is initial bias; 0 also learns quickly
-	// ev.SeqMap[0] = 3 // 3, 2 good test cases -- can learn but not initial bias -- 3 esp hard
 }
 
 func (ev *MotorSeqEnv) String() string {
@@ -260,26 +254,4 @@ func (ev *MotorSeqEnv) ComputeReward() {
 	}
 	ev.PrevNCorrect = ev.NCorrect
 	ev.NCorrect = 0
-}
-
-func (ev *MotorSeqEnv) DecodeAct(vt *tensor.Float32) int {
-	mxi := ev.DecodeLocalist(vt)
-	return mxi
-}
-
-func (ev *MotorSeqEnv) DecodeLocalist(vt *tensor.Float32) int {
-	dx := vt.DimSize(1)
-	var mx float32
-	var mxi int
-	for i := 0; i < dx; i++ {
-		var sum float32
-		for j := 0; j < ev.NUnitsPer; j++ {
-			sum += vt.Value(j, i)
-		}
-		if sum > mx {
-			mx = sum
-			mxi = i
-		}
-	}
-	return mxi
 }

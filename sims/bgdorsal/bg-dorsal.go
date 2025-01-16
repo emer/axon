@@ -221,15 +221,16 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ev := ss.Envs.ByModeDi(Train, 0).(*MotorSeqEnv)
 
 	np := 1
+	nu := ss.Config.Params.NUnits
 	nuPer := ev.NUnitsPer
 	nAct := ev.NActions
 	nSeq := ev.SeqLen
 	maxSeqAct := max(nAct, nSeq) // layer size
 
-	nuX := 6
-	nuY := 6
-	nuCtxY := 6
-	nuCtxX := 6
+	nuX := nu
+	nuY := nu
+	nuCtxY := nu
+	nuCtxX := nu
 	space := float32(2)
 
 	p1to1 := paths.NewPoolOneToOne()

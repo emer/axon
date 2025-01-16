@@ -118,7 +118,7 @@ type PathParams struct {
 	Type PathTypes
 
 	// Index is the index of the pathway in global path list: [Layer][SendPaths]
-	Index uint32
+	Index uint32 `edit:"-"`
 
 	pad, pad1 int32
 

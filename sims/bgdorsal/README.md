@@ -18,6 +18,8 @@ Once the dust settles, a summary of the biology and implementation in the model 
 
 # Results
 
+Key overall point about performance: it is a very "self organizing" kind of learning and thus susceptible to random effects. Must run large numbers of runs (now 50) and even then there is considerable variation in performance. For example, the original 2024-04-05 can fail 4/25 times vs. 1/25 with same random seed.
+
 As of 2024-02-29, the default parameters with 49 units (7x7) per layer result in:
 
 * 22/25 learn on SeqLen=4, NActions=5, which has 5^4 = 625 total space to be searched
@@ -30,7 +32,8 @@ The learned weights to the BG clearly show that it is disinhibiting the appropri
 
 # TODO:
 
-* Set number of cycles per trial in terms of BG motor gating timing: constant offset from onset of VM gating timing, with a cutoff for "nothing happening" trials. This is likely especially important with new linear approx to SynCa learning, which has degraded learning at 300 cycles, which had been significantly better.
+* Set number of cycles per trial in terms of BG motor gating timing: constant offset from onset of VM gating timing, with a cutoff for "nothing happening" trials.
+    * Attempted an impl but is difficult with CaBins -- tried shifting bins but awk..
 
 * "CL" not beneficial (implemented as direct MotorBS -> Matrix pathways): rel weight of 0.002 is OK but starts to actually impair above that.  Likely that a functional cerebellum is needed to make this useful.  Also, investigate other modulatory inputs to CL that might alter its signal.  Key ref for diffs between CL and PF: LaceyBolamMagill07: C. J. Lacey, J. P. Bolam, P. J. Magill, Novel and distinct operational principles of intralaminar thalamic neurons and their striatal pathways. J. Neurosci. 27, 4374–4384 (2007).
 
@@ -39,6 +42,12 @@ The learned weights to the BG clearly show that it is disinhibiting the appropri
 * Learning in the other parts of the pcore circuit -- might help auto-adjust the parameters.  Need to figure out what logical learning rules would look like.
 
 # Param search notes
+
+## 01/14/2025: after fixes
+
+* PF looks weaker in new vs. old; unclear why. Fixed PF weights not helpful (but not too bad either).
+
+* most runs go up in performance but then often come back down: added an asymmetric learning rate for rewpred to try to deal with this -- works well!  `RewPredLRateUp` = 0.5 > 1.  Went from 11 fail to 3 fail on 3x8.
 
 ## 01/14/2025: Hebbian learning in MotorBS, with STN SKCa = 80 instead of 150, State layer size.
 

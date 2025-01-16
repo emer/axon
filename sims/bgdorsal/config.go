@@ -28,15 +28,8 @@ type EnvConfig struct {
 // ParamConfig has config parameters related to sim params.
 type ParamConfig struct {
 
-	// Tweak means to perform automated parameter tweaking for
-	// parameters marked Hypers Tweak = log,incr, or [vals].
-	Tweak bool
-
-	// Baseline for Tweak, if true, first run a baseline with current default params.
-	Baseline bool
-
-	// DryRun for Tweak, if true, only print what would be done, don't run.
-	DryRun bool
+	// NUnits is the number of units per X,Y dim, for cortex and BG.
+	NUnits int `default:"6"`
 
 	// Script is an interpreted script that is run to set parameters in Layer and Path
 	// sheets, by default using the "Script" set name.
@@ -100,13 +93,13 @@ type RunConfig struct {
 	Sequences int `default:"128"`
 
 	// Cycles is the total number of cycles per trial: at least 200.
-	Cycles int `default:"200"`
+	Cycles int `default:"300"`
 
 	// PlusCycles is the total number of plus-phase cycles per trial. For Cycles=300, use 100.
 	PlusCycles int `default:"50"`
 
 	// CaBinCycles is the number of cycles per CaBin: how fine-grained the synaptic Ca is.
-	CaBinCycles int `default:"25"`
+	CaBinCycles int `default:"10"`
 }
 
 // LogConfig has config parameters related to logging data.
