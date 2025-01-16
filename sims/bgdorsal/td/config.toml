@@ -1,0 +1,16 @@
+Runs = 50
+Epochs = 1000
+
+[Env]
+	SeqLen = 4
+	NActions = 5
+
+[TD.LRate]
+	Init = 0.7
+	Min = 0.5
+	Decay = 0 # unclear if needed -- maybe tiny bit better
+
+[TD.Epsilon]	
+	Decay = 0.5 # .2 - .5 works well
+	Min = 0.01  # very sensitive
+
