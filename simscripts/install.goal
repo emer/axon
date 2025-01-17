@@ -1,0 +1,36 @@
+#!/usr/bin/env goal
+// install.goal makes a new simdata directory, for simulation project 
+// directory specified in the one required argument:
+// install path/to/sim
+
+command install {
+	if len(args) != 1 {
+		fmt.Println("install requires 1 argument: path to simulation project")
+		return
+	}
+	
+	simd := args[0][1:len(args[0])-1] // get rid of [] surrounding args -- todo fixme
+	scdir := $pwd$
+	_, proj := filepath.Split(simd)
+	user := $echo "$USER"$
+	home := $echo "$HOME"$
+	fmt.Println("installing into:", simd, "  \tproject name:", proj, "  \tuser:", user)
+	
+	lpproj := filepath.Join("simdata", proj, user)
+	pproj := filepath.Join(home, lpproj)
+	
+	cd
+	mkdir -p {lpproj}
+	cd {lpproj}
+	// [ln -s {filepath.Join(scdir, "dbformat.csv")} .]
+	mkdir -p labscripts
+
+	cd
+	cd {simd}
+	if !goalib.FileExists("simdata") {
+		ln -s {pproj} simdata
+	}
+}
+
+install {goalrun.Args()}
+
