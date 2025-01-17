@@ -7,11 +7,12 @@ require (
 	cogentcore.org/lab v0.0.0-20250116190940-0b99b79306a7
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/cogentcore/yaegi v0.0.0-20240724064145-e32a03faad56
-	github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250116192121-bef0fa284613
+	github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250117231400-6e0b1c78c9c0
 	github.com/emer/v1vision v0.1.1-0.20241223003153-dd6818448b3b
 	github.com/stretchr/testify v1.9.0
 	gitlab.com/gomidi/midi/v2 v2.0.30
 	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948
+	golang.org/x/image v0.18.0
 )
 
 require (
@@ -47,7 +48,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
-	golang.org/x/image v0.18.0 // indirect
 	golang.org/x/mod v0.20.0 // indirect
 	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
