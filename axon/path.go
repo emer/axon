@@ -175,6 +175,9 @@ func (pt *Path) Validate(logmsg bool) error {
 // RecvSynIxs returns the receiving synapse indexes for given recv unit index
 // within the receiving layer, to be iterated over for recv-based processing.
 func (pt *Path) RecvSynIxs(ri uint32) []uint32 {
+	if int(ri) >= len(pt.RecvCon) {
+		return nil
+	}
 	rcon := pt.RecvCon[ri]
 	return pt.RecvSynIndex[rcon.Start : rcon.Start+rcon.N]
 }

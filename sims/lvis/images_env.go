@@ -5,16 +5,16 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"image"
-	"io/ioutil"
 	"log"
-	"os"
 	"path/filepath"
 	"sort"
 
+	"cogentcore.org/core/base/errors"
+	"cogentcore.org/core/base/fsx"
 	"cogentcore.org/core/base/iox/imagex"
+	"cogentcore.org/core/base/iox/jsonx"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/math32/vecint"
@@ -236,69 +236,21 @@ func (ev *ImagesEnv) Init(run int) {
 	ev.ConfigPats()
 }
 
-// SaveListJSON saves flat string list to a JSON-formatted file.
-func SaveListJSON(list []string, filename string) error {
-	b, err := json.MarshalIndent(list, "", "  ")
-	if err != nil {
-		log.Println(err) // unlikely
-		return err
-	}
-	err = ioutil.WriteFile(string(filename), b, 0644)
-	if err != nil {
-		log.Println(err)
-	}
-	return err
-}
-
-// OpenListJSON opens flat string list from a JSON-formatted file.
-func OpenListJSON(list *[]string, filename string) error {
-	b, err := ioutil.ReadFile(string(filename))
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-	return json.Unmarshal(b, list)
-}
-
-// SaveList2JSON saves double-string list to a JSON-formatted file.
-func SaveList2JSON(list [][]string, filename string) error {
-	b, err := json.MarshalIndent(list, "", "  ")
-	if err != nil {
-		log.Println(err) // unlikely
-		return err
-	}
-	err = ioutil.WriteFile(string(filename), b, 0644)
-	if err != nil {
-		log.Println(err)
-	}
-	return err
-}
-
-// OpenList2JSON opens double-string list from a JSON-formatted file.
-func OpenList2JSON(list *[][]string, filename string) error {
-	b, err := ioutil.ReadFile(string(filename))
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-	return json.Unmarshal(b, list)
-}
-
-// OpenConfig opens saved configuration for current images
-func (ev *ImagesEnv) OpenConfig() bool {
+// OpenConfig opens saved configuration for current images: config files are required,
+// and an error is logged and returned if not present.
+func (ev *ImagesEnv) OpenConfig() error {
 	cfnm := fmt.Sprintf("%s_cats.json", ev.ImageFile)
 	tsfnm := fmt.Sprintf("%s_ntest%d_tst.json", ev.ImageFile, ev.Images.NTestPerCat)
 	trfnm := fmt.Sprintf("%s_ntest%d_trn.json", ev.ImageFile, ev.Images.NTestPerCat)
-	_, err := os.Stat(tsfnm)
-	if !os.IsNotExist(err) {
-		OpenListJSON(&ev.Images.Cats, cfnm)
-		OpenList2JSON(&ev.Images.ImagesTest, tsfnm)
-		OpenList2JSON(&ev.Images.ImagesTrain, trfnm)
+	if errors.Log1(fsx.FileExists(cfnm)) {
+		errors.Log(jsonx.Open(&ev.Images.Cats, cfnm))
+		errors.Log(jsonx.Open(&ev.Images.ImagesTest, tsfnm))
+		errors.Log(jsonx.Open(&ev.Images.ImagesTrain, trfnm))
 		ev.Images.ToTrainAll()
 		ev.Images.Flats()
-		return true
+		return nil
 	}
-	return false
+	return errors.Log(errors.New("ImagesEnv.OpenConfig: Required Cats config file not found: " + cfnm))
 }
 
 // SaveConfig saves configuration for current images
@@ -306,9 +258,9 @@ func (ev *ImagesEnv) SaveConfig() {
 	cfnm := fmt.Sprintf("%s_cats.json", ev.ImageFile)
 	tsfnm := fmt.Sprintf("%s_ntest%d_tst.json", ev.ImageFile, ev.Images.NTestPerCat)
 	trfnm := fmt.Sprintf("%s_ntest%d_trn.json", ev.ImageFile, ev.Images.NTestPerCat)
-	SaveListJSON(ev.Images.Cats, cfnm)
-	SaveList2JSON(ev.Images.ImagesTest, tsfnm)
-	SaveList2JSON(ev.Images.ImagesTrain, trfnm)
+	errors.Log(jsonx.Save(ev.Images.Cats, cfnm))
+	errors.Log(jsonx.Save(ev.Images.ImagesTest, tsfnm))
+	errors.Log(jsonx.Save(ev.Images.ImagesTrain, trfnm))
 }
 
 // ConfigPats configures the output patterns
@@ -357,6 +309,7 @@ func (ev *ImagesEnv) ConfigPatsLocalist2D() {
 	ev.Pats.Init()
 	ev.Pats.AddStringColumn("Name")
 	out := ev.Pats.AddFloat32Column("Output", oshp...)
+	ev.Pats.SetNumRows(ev.MaxOut)
 	for pi := range ev.MaxOut {
 		op := out.SubSpace(pi)
 		si := ev.NOutPer * pi

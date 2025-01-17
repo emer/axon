@@ -4,8 +4,6 @@
 
 package main
 
-import "github.com/emer/emergent/v2/paths"
-
 // EnvConfig has config params for environment
 // note: only adding fields for key Env params that matter for both Network and Env
 // other params are set via the Env map data mechanism.
@@ -13,6 +11,15 @@ type EnvConfig struct { //types:add
 
 	// env parameters -- can set any field/subfield on Env struct, using standard TOML formatting
 	Env map[string]any
+
+	// other option for below: Path = "images/CU3D_100_plus_renders", ImageFile = "cu3d100plus"
+	// works somewhat worse
+
+	// Path is the file path for the images. Create a symbolic link in sim dir for images.
+	Path string `default:"images/CU3D_100_renders_lr20_u30_nb"`
+
+	// ImageFile is the prefix for config files with lists of categories and images.
+	ImageFile string `default:"cu3d100old"`
 
 	// number of units per localist output unit
 	NOutPer int `default:"5"`
@@ -54,21 +61,6 @@ type ParamConfig struct {
 	// This can be done prior to making a new release after all tests are passing.
 	// Add results to git to provide a full diff record of all params over level.
 	Good bool `nest:"+"`
-
-	// pathway from V1 to V4 which is tiled 4x4 skip 2 with topo scale values.
-	V1V4Path *paths.PoolTile `nest:"+"`
-}
-
-func (cfg *ParamConfig) Defaults() {
-	cfg.V1V4Path = paths.NewPoolTile()
-	cfg.V1V4Path.Size.Set(4, 4)
-	cfg.V1V4Path.Skip.Set(2, 2)
-	cfg.V1V4Path.Start.Set(-1, -1)
-	cfg.V1V4Path.TopoRange.Min = 0.8 // note: none of these make a very big diff
-	// but using a symmetric scale range .8 - 1.2 seems like it might be good -- otherwise
-	// weights are systematicaly smaller.
-	// ss.V1V4Path.GaussFull.DefNoWrap()
-	// ss.V1V4Path.GaussInPool.DefNoWrap()
 }
 
 // RunConfig has config parameters related to running the sim.
@@ -93,7 +85,7 @@ type RunConfig struct {
 	// NData is the number of data-parallel items to process in parallel per trial.
 	// Is significantly faster for both CPU and GPU.  Results in an effective
 	// mini-batch of learning.
-	NData int `default:"16" min:"1"`
+	NData int `default:"4" min:"1"`
 
 	// NThreads is the number of parallel threads for CPU computation;
 	// 0 = use default.
@@ -105,14 +97,14 @@ type RunConfig struct {
 	Run int `default:"0" flag:"run"`
 
 	// Runs is the total number of runs to do when running Train, starting from Run.
-	Runs int `default:"5" min:"1"`
+	Runs int `default:"1" min:"1"`
 
 	// Epochs is the total number of epochs per run.
-	Epochs int `default:"200"`
+	Epochs int `default:"500"`
 
 	// Trials is the total number of trials per epoch.
 	// Should be an even multiple of NData.
-	Trials int `default:"128"`
+	Trials int `default:"512"`
 
 	// Cycles is the total number of cycles per trial: at least 200.
 	Cycles int `default:"200"`
@@ -128,7 +120,7 @@ type RunConfig struct {
 
 	// TestInterval is how often (in epochs) to run through all the test patterns,
 	// in terms of training epochs. Can use 0 or -1 for no testing.
-	TestInterval int `default:"5"`
+	TestInterval int `default:"20"`
 
 	// PCAInterval is how often (in epochs) to compute PCA on hidden
 	// representations to measure variance.
@@ -193,8 +185,7 @@ type Config struct {
 	Log LogConfig `display:"add-fields"`
 }
 
-func (cfg *Config) IncludesPtr() *[]string { return &cfg.Includes }
-
 func (cfg *Config) Defaults() {
-	cfg.Params.Defaults()
 }
+
+func (cfg *Config) IncludesPtr() *[]string { return &cfg.Includes }

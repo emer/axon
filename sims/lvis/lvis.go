@@ -178,9 +178,22 @@ func (ss *Sim) ConfigEnv() {
 		tst = ss.Envs.ByMode(Test).(*ImagesEnv)
 	}
 
+	path := ss.Config.Env.Path
+	imgs := ss.Config.Env.ImageFile
+
 	trn.Name = Train.String()
 	trn.Defaults()
+	trn.RndSeed = 73
 	trn.NOutPer = ss.Config.Env.NOutPer
+	trn.High16 = false // not useful -- may need more tuning?
+	trn.ColorDoG = true
+	trn.Images.NTestPerCat = 2
+	trn.Images.SplitByItm = true
+	trn.OutRandom = ss.Config.Env.RndOutPats
+	trn.OutSize.Set(10, 10)
+	trn.ImageFile = imgs
+	trn.Images.SetPath(path, []string{".png"}, "_")
+	trn.OpenConfig()
 	if ss.Config.Env.Env != nil {
 		reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
 	}
@@ -188,10 +201,34 @@ func (ss *Sim) ConfigEnv() {
 
 	tst.Name = Test.String()
 	tst.Defaults()
+	tst.RndSeed = 73
 	tst.NOutPer = ss.Config.Env.NOutPer
-	tst.Trial.Max = 64 // 0 // 1000 is too long!
+	tst.High16 = trn.High16
+	tst.ColorDoG = trn.ColorDoG
+	tst.Images.NTestPerCat = 2
+	tst.Images.SplitByItm = true
+	tst.OutRandom = ss.Config.Env.RndOutPats
+	tst.OutSize.Set(10, 10)
+	tst.Test = true
+	tst.ImageFile = imgs
+	tst.Images.SetPath(path, []string{".png"}, "_")
+	tst.OpenConfig()
 	if ss.Config.Env.Env != nil {
 		reflectx.SetFieldsFromMap(tst, ss.Config.Env.Env)
+	}
+	tst.Trial.Max = ss.Config.Run.Trials
+
+	// remove most confusable items
+	confuse := []string{"blade", "flashlight", "pckeyboard", "scissors", "screwdriver", "submarine"}
+	trn.Images.DeleteCats(confuse)
+	tst.Images.DeleteCats(confuse)
+
+	if ss.Config.Run.MPI {
+		if ss.Config.Debug {
+			mpi.Printf("Did Env MPIAlloc\n")
+		}
+		trn.MPIAlloc()
+		tst.MPIAlloc()
 	}
 
 	trn.Init(0)
@@ -512,7 +549,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.Defaults()
 	net.SetNThreads(ss.Config.Run.NThreads)
 	ss.ApplyParams()
-	// net.InitWeights()
+	net.InitWeights()
 
 	mpi.Println(net.SizeReport(false))
 
@@ -675,7 +712,7 @@ func (ss *Sim) NewRun() {
 	ss.Envs.ByMode(Train).Init(0)
 	ss.Envs.ByMode(Test).Init(0)
 	ctx.Reset()
-	// ss.Net.InitWeights()
+	ss.Net.InitWeights()
 	if ss.Config.Run.StartWeights != "" {
 		ss.Net.OpenWeightsJSON(core.Filename(ss.Config.Run.StartWeights))
 		mpi.Printf("Starting with initial weights from: %s\n", ss.Config.Run.StartWeights)
