@@ -91,6 +91,10 @@ func (ly *Layer) NumRecvPaths() int          { return len(ly.RecvPaths) }
 func (ly *Layer) RecvPath(idx int) emer.Path { return ly.RecvPaths[idx] }
 func (ly *Layer) NumSendPaths() int          { return len(ly.SendPaths) }
 func (ly *Layer) SendPath(idx int) emer.Path { return ly.SendPaths[idx] }
+func (ly *Layer) AddClass(cls ...string) *Layer {
+	ly.LayerBase.AddClass(cls...)
+	return ly
+}
 
 func (ly *Layer) Defaults() { //types:add
 	ctx := ly.Network.Context()

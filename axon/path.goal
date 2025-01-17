@@ -82,6 +82,14 @@ func (pt *Path) RecvLayer() emer.Layer { return pt.Recv }
 func (pt *Path) SendLayer() emer.Layer { return pt.Send }
 func (pt *Path) TypeName() string      { return pt.Type.String() }
 func (pt *Path) TypeNumber() int       { return int(pt.Type) }
+func (pt *Path) AddClass(cls ...string) *Path {
+	pt.PathBase.AddClass(cls...)
+	return pt
+}
+func (pt *Path) SetPattern(pat paths.Pattern) *Path {
+	pt.Pattern = pat
+	return pt
+}
 
 func (pt *Path) Defaults() {
 	if pt.Params == nil {
