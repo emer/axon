@@ -28,6 +28,7 @@ import (
 	"cogentcore.org/lab/stats/stats"
 	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/axon/v2/axon"
+	"github.com/emer/emergent/v2/decoder"
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/env"
@@ -92,6 +93,9 @@ type Sim struct {
 
 	// Paths are all the specialized pathways for the network.
 	Paths Paths `new-window:"+" display:"no-inline"`
+
+	// Decoder is used as a comparison vs. the Output layer.
+	Decoder decoder.SoftMax
 
 	// Loops are the the control loops for running the sim, in different Modes
 	// across stacks of Levels.
@@ -554,13 +558,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mpi.Println(net.SizeReport(false))
 
 	// adding each additional layer type improves decoding..
-	// layers := []emer.Layer{v4f16, v4f8, teo16, teo8, out}
+	layers := []emer.Layer{v4f16, v4f8, teo16, teo8, out}
 	// layers := []emer.Layer{teo16, teo8, out}
 	// layers := []emer.Layer{teo16, teo8}
 	// layers := []emer.Layer{out}
 	// todo: decoder
-	// ss.Decoder.InitLayer(len(trn.Images.Cats), layers)
-	// ss.Decoder.Lrate = 0.05 // 0.05 > 0.1 > 0.2 for larger number of objs!
+	ss.Decoder.InitLayer(len(trn.Images.Cats), layers)
+	ss.Decoder.Lrate = 0.05 // 0.05 > 0.1 > 0.2 for larger number of objs!
 	// if ss.Config.Run.MPI {
 	// 	ss.Decoder.Comm = ss.Comm
 	// }
@@ -831,7 +835,7 @@ func (ss *Sim) ConfigStats() {
 
 	// up to a point, it is good to use loops over stats in one function,
 	// to reduce repetition of boilerplate.
-	statNames := []string{"CorSim", "UnitErr", "Err", "Err2", "Resp", "NZero", "FirstZero", "LastZero"}
+	statNames := []string{"CorSim", "UnitErr", "Err", "Err2", "DecErr", "DecErr2", "Resp", "DecResp"}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		for _, name := range statNames {
 			if name == "NZero" && (mode != Train || level == Trial) {
@@ -850,24 +854,10 @@ func (ss *Sim) ConfigStats() {
 					s.Range.SetMin(0).SetMax(1)
 					s.On = true
 					switch name {
-					case "UnitErr", "Resp", "NZero":
+					case "UnitErr", "Resp":
 						s.On = false
-					case "FirstZero", "LastZero":
-						if level < Run {
-							s.On = false
-						}
 					}
 				})
-				switch name {
-				case "NZero":
-					if level == Epoch {
-						curModeDir.Float64(name, 1).SetFloat1D(0, 0)
-					}
-				case "FirstZero", "LastZero":
-					if level == Epoch {
-						curModeDir.Float64(name, 1).SetFloat1D(-1, 0)
-					}
-				}
 				continue
 			}
 			switch level {
@@ -876,6 +866,7 @@ func (ss *Sim) ConfigStats() {
 				ltsr := curModeDir.Float64(out.Name+"_ActM", out.Shape.Sizes...)
 				ev := ss.Envs.ByMode(ss.CurrentMode()).(*ImagesEnv)
 				for di := range ndata {
+					cat := curModeDir.Int("CatIdx", ndata).Int1D(di)
 					var stat float64
 					switch name {
 					case "CorSim":
@@ -884,7 +875,6 @@ func (ss *Sim) ConfigStats() {
 						stat = out.PctUnitErr(ss.Net.Context())[di]
 					case "Err":
 						out.UnitValuesSampleTensor(ltsr, "ActM", di)
-						cat := curModeDir.Int("CatIdx", ndata).Int1D(di)
 						rsp, trlErr, trlErr2 := ev.OutErr(ltsr, cat)
 						curModeDir.Float64("Resp", ndata).SetInt1D(rsp, di)
 						curModeDir.Float64("Err2", ndata).SetFloat1D(trlErr2, di)
@@ -892,6 +882,30 @@ func (ss *Sim) ConfigStats() {
 					case "Err2":
 						stat = curModeDir.Float64(name, ndata).Float1D(di)
 					case "Resp":
+						stat = curModeDir.Float64(name, ndata).Float1D(di)
+					case "DecErr":
+						decIdx := ss.Decoder.Decode("ActM", di)
+						curModeDir.Float64("DecResp", ndata).SetInt1D(decIdx, di)
+						if mode == Train {
+							if ss.Config.Run.MPI {
+								ss.Decoder.TrainMPI(cat)
+							} else {
+								ss.Decoder.Train(cat)
+							}
+						}
+						decErr := float64(0)
+						if decIdx != cat {
+							decErr = 1
+						}
+						stat = decErr
+						decErr2 := decErr
+						if ss.Decoder.Sorted[1] == cat {
+							decErr2 = 0
+						}
+						curModeDir.Float64("DecErr2", ndata).SetFloat1D(decErr2, di)
+					case "DecErr2":
+						stat = curModeDir.Float64(name, ndata).Float1D(di)
+					case "DecResp":
 						stat = curModeDir.Float64(name, ndata).Float1D(di)
 					}
 					curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
@@ -941,6 +955,11 @@ func (ss *Sim) ConfigStats() {
 	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		actGeFunc(mode, level, phase == Start)
+	})
+
+	giMultFunc := axon.StatLayerGiMult(ss.Stats, net, Train, Epoch, lays...)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		giMultFunc(mode, level, phase == Start)
 	})
 
 	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, lays...)

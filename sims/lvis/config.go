@@ -143,7 +143,7 @@ type LogConfig struct {
 	Train []string `default:"['Run', 'Epoch']" nest:"+"`
 
 	// Test has the list of Test mode levels to save log files for.
-	Test []string `nest:"+"`
+	Test []string `default:"['Epoch']" nest:"+"`
 }
 
 // Config has the overall Sim configuration options.

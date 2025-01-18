@@ -338,6 +338,52 @@ func StatLayerActGe(statsDir *tensorfs.Node, net *Network, trainMode, trialLevel
 	}
 }
 
+// StatLayerGiMult returns a Stats function that records [LayerGiMult] stats,
+// for given layer names. This should be computed at the epoch level or above
+// (not the trial level, because this value is not per-ndata and will not sync
+// with other trial level stats).
+func StatLayerGiMult(statsDir *tensorfs.Node, net *Network, trainMode, epochLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
+	statNames := []string{"GiMult"}
+	levels := make([]enums.Enum, 10) // should be enough
+	return func(mode, level enums.Enum, start bool) {
+		levi := int(level.Int64() - epochLevel.Int64())
+		if mode.Int64() != trainMode.Int64() || levi < 0 {
+			return
+		}
+		levels[levi] = level
+		modeDir := statsDir.Dir(mode.String())
+		levelDir := modeDir.Dir(level.String())
+		for _, lnm := range layerNames {
+			for si, statName := range statNames {
+				ly := net.LayerByName(lnm)
+				li := ly.Params.Index
+				name := lnm + "_" + statName
+				tsr := levelDir.Float64(name)
+				if start {
+					tsr.SetNumRows(0)
+					plot.SetFirstStyle(tsr, func(s *plot.Style) {
+						s.Range.SetMin(0)
+					})
+					continue
+				}
+				switch levi {
+				case 0:
+					var stat float32
+					switch si {
+					case 0:
+						stat = LayerStates.Value(int(li), int(0), int(LayerGiMult))
+					}
+					tsr.AppendRowFloat(float64(stat))
+				default:
+					subd := modeDir.Dir(levels[levi-1].String())
+					stat := stats.StatMean.Call(subd.Value(name))
+					tsr.AppendRow(stat)
+				}
+			}
+		}
+	}
+}
+
 // StatLayerState returns a Stats function that records layer state
 // It runs for given mode and level, recording given variable
 // for given layer names. if isTrialLevel is true, the level is a
