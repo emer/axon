@@ -110,6 +110,7 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Adapt.LRate = 0.0001 // 0.01 == 0.0001 but 0.001 not as good..
 				pt.SWts.Init.SPct = 1.0      // 1 works fine here -- .5 also ok
 				pt.Learn.DWt.Tau = 1         // 1 > 2 v0.0.9
+				pt.Learn.DWt.CaPScale = 0.95 // 0.95 def >> 1
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {

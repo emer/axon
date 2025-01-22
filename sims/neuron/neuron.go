@@ -377,7 +377,7 @@ func (ss *Sim) ConfigStats() {
 		tsr := levelDir.Int(name)
 		if phase == Start {
 			tsr.SetNumRows(0)
-			plot.SetFirstStyle(tsr, func(s *plot.Style) {
+			plot.SetFirstStyler(tsr, func(s *plot.Style) {
 				s.Range.SetMin(0).SetMax(float64(ss.Config.Run.Cycles))
 			})
 			return
@@ -396,7 +396,7 @@ func (ss *Sim) ConfigStats() {
 			tsr := levelDir.Float64(name)
 			if phase == Start {
 				tsr.SetNumRows(0)
-				plot.SetFirstStyle(tsr, func(s *plot.Style) {
+				plot.SetFirstStyler(tsr, func(s *plot.Style) {
 					s.Range.SetMin(0).SetMax(1)
 					s.On = false
 					switch name {

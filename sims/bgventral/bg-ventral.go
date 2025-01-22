@@ -619,7 +619,7 @@ func (ss *Sim) ConfigStats() {
 			var stat float64
 			if phase == Start {
 				tsr.SetNumRows(0)
-				plot.SetFirstStyle(tsr, func(s *plot.Style) {
+				plot.SetFirstStyler(tsr, func(s *plot.Style) {
 					s.Range.SetMin(0).SetMax(1)
 					if si >= 2 && si <= 5 {
 						s.On = true
@@ -664,7 +664,7 @@ func (ss *Sim) ConfigStats() {
 				stats.GroupStats(curModeDir, stats.StatMean, subDir.Value(name))
 				// note: results go under Group name: TrialName
 				gp := curModeDir.Dir("Stats/TrialName/" + name).Value("Mean")
-				plot.SetFirstStyle(gp, func(s *plot.Style) {
+				plot.SetFirstStyler(gp, func(s *plot.Style) {
 					if si >= 2 && si <= 3 {
 						s.On = true
 					}

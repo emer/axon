@@ -280,14 +280,16 @@ func (ss *Sim) TrialImpl(minusHz, plusHz float32) {
 			ss.Cycle(&ks.Send, Sint, ks.Cycle)
 			ss.Cycle(&ks.Recv, Rint, ks.Cycle)
 
-			ca := 8 * ks.Send.CaSyn * ks.Recv.CaSyn // 12 is standard CaGain Factor
+			// original synaptic-level integration into "StdSyn"
+			ca := 8 * ks.Send.CaSyn * ks.Recv.CaSyn // 8 is standard CaGain Factor
 			ss.CaSpike.Dt.FromCa(ca, &ks.StdSyn.CaM, &ks.StdSyn.CaP, &ks.StdSyn.CaD)
 
+			// CaBin linear regression integration.
 			bin := ks.Cycle / spikeBinCycles
 			ks.CaBins[bin] = (ks.Recv.CaBins[bin] * ks.Send.CaBins[bin])
 			ks.CaBin = ks.CaBins[bin]
 			ks.LinearSyn.CaM = ks.CaBin
-			ks.LinearSyn.CaP += lsint * ss.CaPWts[bin] * ks.CaBin
+			ks.LinearSyn.CaP += lsint * ss.CaPWts[bin] * ks.CaBin // slow integ just for visualization
 			ks.LinearSyn.CaD += lsint * ss.CaDWts[bin] * ks.CaBin
 
 			ss.StatsStep(Test, Cycle)

@@ -522,7 +522,7 @@ func (vw *GUI) ConfigUSPlots() {
 
 	cols := []string{"Drive", "USin", "OFC"}
 	for _, cl := range cols {
-		plot.SetFirstStyle(cl, func(s *plot.Style) {
+		plot.SetFirstStyler(cl, func(s *plot.Style) {
 			s.On = true
 			s.Range.SetMin(0).SetMax(1)
 

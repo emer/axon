@@ -91,12 +91,12 @@ func (pl *VGCCPlot) GVRun() { //types:add
 		dir.Float64("dM", nv).SetFloat1D(float64(dm), vi)
 		dir.Float64("dH", nv).SetFloat1D(float64(dh), vi)
 	}
-	plot.SetFirstStyle(dir.Float64("V"), func(s *plot.Style) {
+	plot.SetFirstStyler(dir.Float64("V"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
 	ons := []string{"Gvgcc", "M", "H"}
 	for _, on := range ons {
-		plot.SetFirstStyle(dir.Float64(on), func(s *plot.Style) {
+		plot.SetFirstStyler(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
 			s.Plot.Title = "VGCC G(V)"
 		})
@@ -151,12 +151,12 @@ func (pl *VGCCPlot) TimeRun() { //types:add
 			}
 		}
 	}
-	plot.SetFirstStyle(dir.Float64("Time"), func(s *plot.Style) {
+	plot.SetFirstStyler(dir.Float64("Time"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
 	ons := []string{"Gvgcc", "V", "M", "H"}
 	for _, on := range ons {
-		plot.SetFirstStyle(dir.Float64(on), func(s *plot.Style) {
+		plot.SetFirstStyler(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
 			s.Plot.Title = "VGCC G(t)"
 		})

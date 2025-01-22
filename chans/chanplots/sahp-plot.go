@@ -77,12 +77,12 @@ func (pl *SahpPlot) GCaRun() { //types:add
 		dir.Float64("Ninf", nv).SetFloat1D(float64(ninf), vi)
 		dir.Float64("Tau", nv).SetFloat1D(float64(tau), vi)
 	}
-	plot.SetFirstStyle(dir.Float64("Ca"), func(s *plot.Style) {
+	plot.SetFirstStyler(dir.Float64("Ca"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
 	ons := []string{"Ninf", "Tau"}
 	for _, on := range ons {
-		plot.SetFirstStyle(dir.Float64(on), func(s *plot.Style) {
+		plot.SetFirstStyler(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
 			s.Plot.Title = "sAHP G(Ca)"
 		})
@@ -121,12 +121,12 @@ func (pl *SahpPlot) TimeRun() { //types:add
 		ca = mp.CaInt(ca, pl.TimeCaD)
 		n += dn
 	}
-	plot.SetFirstStyle(dir.Float64("Time"), func(s *plot.Style) {
+	plot.SetFirstStyler(dir.Float64("Time"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
 	ons := []string{"Ca", "GsAHP", "N"}
 	for _, on := range ons {
-		plot.SetFirstStyle(dir.Float64(on), func(s *plot.Style) {
+		plot.SetFirstStyler(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
 			s.Plot.Title = "sAHP G(t)"
 		})

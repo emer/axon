@@ -101,6 +101,9 @@ type RunConfig struct { //types:add
 	// PlusCycles is the total number of plus-phase cycles per trial. For Cycles=300, use 100.
 	PlusCycles int `default:"50"`
 
+	// CaBinCycles is the number of cycles per CaBin: how fine-grained the synaptic Ca is.
+	CaBinCycles int `default:"25"` // 25 > 10
+
 	// TestInterval is how often (in epochs) to run through all the test patterns,
 	// in terms of training epochs. Can use 0 or -1 for no testing.
 	TestInterval int `default:"0"`

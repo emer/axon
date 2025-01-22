@@ -456,8 +456,8 @@ const (
 
 	// CaBins is a vector of values starting here, with aggregated [CaSyn] values
 	// in time bins of [Context.CaBinCycles] across the theta cycle,
-	// for computing synaptic calcium efficiently. There can be a variable number
-	// of bins depending on bin width and total number of cycles.
+	// for computing synaptic calcium efficiently. Each bin = Sum(CaSyn) / CaBinCycles.
+	// Total number of bins = [Context.ThetaCycles] / CaBinCycles.
 	// Synaptic calcium is integrated from sender * receiver CaBins values,
 	// with weights for CaP vs CaD that reflect their faster vs. slower time constants,
 	// respectively. CaD is used for the credit assignment factor, while CaP - CaD is

@@ -754,7 +754,7 @@ func (ss *Sim) ConfigStats() {
 	// 		var stat float64
 	// 		if phase == Start {
 	// 			tsr.SetNumRows(0)
-	// 			plot.SetFirstStyle(tsr, func(s *plot.Style) {
+	// 			plot.SetFirstStyler(tsr, func(s *plot.Style) {
 	// 				s.Range.SetMin(0).SetMax(1)
 	// 				s.On = true
 	// 			})

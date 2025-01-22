@@ -5,21 +5,27 @@
 package kinase
 
 import (
+	"os"
 	"testing"
 
-	"cogentcore.org/lab/table"
-	"cogentcore.org/lab/tensor"
+	"cogentcore.org/core/paint"
+	"github.com/emer/axon/v2/kinase"
 )
+
+func TestMain(m *testing.M) {
+	paint.FontLibrary.InitFontPaths(paint.FontPaths...)
+	os.Exit(m.Run())
+}
 
 func TestLinear(t *testing.T) {
 	var ls Linear
 	ls.Defaults()
+	ls.SynCaBin.Envelope = kinase.Env30
 	ls.Cycles = 200
 	ls.PlusCycles = 50
-	ls.CyclesPerBin = 25
+	ls.CyclesPerBin = 10 // now always 10
 	ls.Update()
 	ls.Init()
 	ls.Run()
-	ls.Data.SaveCSV("linear_data.tsv", tensor.Tab, table.Headers)
 	ls.Regress()
 }

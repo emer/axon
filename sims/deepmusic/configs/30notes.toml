@@ -2,6 +2,6 @@
 	FullSong = false
 
 [Run]
-	NTrials = 128
-	NEpochs = 200
+	Trials = 128
+	Epochs = 200
 

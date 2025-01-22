@@ -257,7 +257,7 @@ func (ss *Sim) ConfigStats() {
 			tsr := tensorfs.ValueType(levelDir, name, kind)
 			if phase == Start {
 				tsr.SetNumRows(0)
-				plot.SetFirstStyle(tsr, func(s *plot.Style) {
+				plot.SetFirstStyler(tsr, func(s *plot.Style) {
 					s.Range.SetMin(0)
 					switch level {
 					case Cycle:

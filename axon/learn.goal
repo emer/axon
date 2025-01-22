@@ -852,6 +852,14 @@ type LearnSynParams struct {
 	// trace-based cortical learning rule and for other specialized learning rules.
 	DWt DWtParams `display:"inline"`
 
+	// SynCaBin computes synaptic calcium values as a product of the
+	// separately-integrated and binned sender and receiver SynCa values.
+	// Binning always happens at 10 msec intervals, but the product term
+	// is more robust if computed on a longer effective timescale, which
+	// is determined by weighting factors for the t-1 and t-2 bins when
+	// computing the neural SynCa for time bin t.
+	SynCaBin kinase.SynCaBin `display:"inline"`
+
 	// hebbian learning option, which overrides the default learning rules
 	Hebb HebbParams `display:"inline"`
 }
@@ -859,6 +867,7 @@ type LearnSynParams struct {
 func (ls *LearnSynParams) Update() {
 	ls.LRate.Update()
 	ls.DWt.Update()
+	ls.SynCaBin.Update()
 	ls.Hebb.Update()
 }
 
@@ -866,6 +875,7 @@ func (ls *LearnSynParams) Defaults() {
 	ls.Learn.SetBool(true)
 	ls.LRate.Defaults()
 	ls.DWt.Defaults()
+	ls.SynCaBin.Defaults()
 	ls.Hebb.Defaults()
 }
 

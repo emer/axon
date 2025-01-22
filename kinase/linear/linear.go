@@ -8,8 +8,13 @@ import (
 	"fmt"
 	"log/slog"
 	"math/rand"
+	"slices"
+	"strings"
 
+	"cogentcore.org/core/base/iox/imagex"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/lab/plot"
+	"cogentcore.org/lab/plot/plots"
 	"cogentcore.org/lab/stats/glm"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
@@ -21,6 +26,9 @@ import (
 type Linear struct {
 	// Kinase CaSpike params
 	CaSpike kinase.CaSpikeParams `display:"no-inline" new-window:"+"`
+
+	// SynCaBin sets the SynCa integration parameters.
+	SynCaBin kinase.SynCaBin
 
 	// total number of cycles (1 MSec) to run per learning trial
 	Cycles int `min:"10" default:"200"`
@@ -72,7 +80,7 @@ func (ls *Linear) Defaults() {
 	ls.CaSpike.Defaults()
 	ls.Cycles = 200
 	ls.PlusCycles = 50
-	ls.CyclesPerBin = 25
+	ls.CyclesPerBin = 10
 	ls.MaxHz = 100
 	ls.StepHz = 10  // note: 5 gives same results
 	ls.NTrials = 10 // 20 "
@@ -81,6 +89,7 @@ func (ls *Linear) Defaults() {
 }
 
 func (ls *Linear) Update() {
+	ls.SynCaBin.Update()
 	ls.NumBins = ls.Cycles / ls.CyclesPerBin
 	// ls.CaSpike.Dt.PDTauForNCycles(ls.Cycles)
 	// ls.Synapse.Dt.PDTauForNCycles(ls.Cycles)
@@ -240,11 +249,11 @@ func (ls *Linear) SetSynState(sy *Synapse, row int) {
 }
 
 func (ls *Linear) SetBins(sn, rn *Neuron, off, row int) {
-	for i, s := range sn.CaBins {
-		r := rn.CaBins[i]
-		bs := (r * s)
-		ls.CaBins[i] = bs
-		ls.Data.Column("Bins").SetFloatRow(float64(bs), row, off+i)
+	ls.CaBins[0] = ls.SynCaBin.SynCaT0(rn.CaBins[0], sn.CaBins[0])
+	ls.CaBins[1] = ls.SynCaBin.SynCaT1(rn.CaBins[0], rn.CaBins[1], sn.CaBins[0], sn.CaBins[1])
+	for i := 2; i < ls.NumBins; i++ {
+		ls.CaBins[i] = ls.SynCaBin.SynCaT(rn.CaBins[i], rn.CaBins[i-1], rn.CaBins[i-2], sn.CaBins[i], sn.CaBins[i-1], sn.CaBins[i-2])
+		ls.Data.Column("Bins").SetFloatRow(float64(ls.CaBins[i]), row, off+i)
 	}
 }
 
@@ -308,8 +317,7 @@ func (ls *Linear) Regress() {
 	// default coefficients are the current ones..
 	cp := make([]float32, ls.NumBins)
 	cd := make([]float32, ls.NumBins)
-	nplus := ls.PlusCycles / ls.CyclesPerBin
-	kinase.CaBinWts(nplus, ls.CyclesPerBin, cp, cd)
+	kinase.CaBinWts(ls.SynCaBin.Envelope, ls.Cycles, ls.PlusCycles, cp, cd)
 	cp = append(cp, 0)
 	cd = append(cd, 0)
 
@@ -345,6 +353,8 @@ func (ls *Linear) Regress() {
 	}
 
 	start := prc()
+	startCaP := slices.Clone(r.Coeff.Values[:ls.NumBins])
+	startCaD := slices.Clone(r.Coeff.Values[ls.NumBins+1 : 2*ls.NumBins+1])
 
 	r.Run()
 
@@ -353,6 +363,38 @@ func (ls *Linear) Regress() {
 	fmt.Println(start)
 	fmt.Println("Final Coeff:")
 	fmt.Println(prc())
+
+	endCaP := slices.Clone(r.Coeff.Values[:ls.NumBins])
+	endCaD := slices.Clone(r.Coeff.Values[ls.NumBins+1 : 2*ls.NumBins+1])
+
+	estr := ls.SynCaBin.Envelope.String()
+	esfn := strings.ToLower(estr)
+
+	plt := plot.New()
+	plots.NewLine(plt, tensor.NewFloat64FromValues(startCaP...)).Styler(func(s *plot.Style) {
+		s.Plot.Scale = 4
+		s.Plot.Title = "CaP Linear Regression Coefficients: " + estr
+		s.Plot.XAxis.Label = "Bins"
+		s.Label = "Starting"
+	})
+	plots.NewLine(plt, tensor.NewFloat64FromValues(endCaP...)).Styler(func(s *plot.Style) {
+		s.Label = "Final"
+	})
+	plt.Draw()
+	imagex.Save(plt.Pixels, "plot-coefficients-cap-"+esfn+".png")
+
+	plt = plot.New()
+	plots.NewLine(plt, tensor.NewFloat64FromValues(startCaD...)).Styler(func(s *plot.Style) {
+		s.Plot.Scale = 4
+		s.Plot.Title = "CaD Linear Regression Coefficients: " + estr
+		s.Plot.XAxis.Label = "Bins"
+		s.Label = "Starting"
+	})
+	plots.NewLine(plt, tensor.NewFloat64FromValues(endCaD...)).Styler(func(s *plot.Style) {
+		s.Label = "Final"
+	})
+	plt.Draw()
+	imagex.Save(plt.Pixels, "plot-coefficients-cad-"+esfn+".png")
 
 	/*
 		for vi := 0; vi < 2; vi++ {
@@ -378,5 +420,5 @@ func (ls *Linear) Regress() {
 			fmt.Println(str + "}")
 		}
 	*/
-	ls.Data.SaveCSV("linear_data.tsv", tensor.Tab, table.Headers)
+	// ls.Data.SaveCSV("linear_data.tsv", tensor.Tab, table.Headers)
 }

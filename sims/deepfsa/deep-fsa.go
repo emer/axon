@@ -198,7 +198,9 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ss.Config.Run.NData)
-	net.Context().ThetaCycles = int32(ss.Config.Run.Cycles)
+	net.Context().SetThetaCycles(int32(ss.Config.Run.Cycles)).
+		SetPlusCycles(int32(ss.Config.Run.PlusCycles)).
+		SetCaBinCycles(int32(ss.Config.Run.CaBinCycles))
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
 	in, inp := net.AddInputPulv4D("Input", 1, 7, ss.Config.Env.UnitsPer, 1, 2)
@@ -535,7 +537,7 @@ func (ss *Sim) ConfigStats() {
 			var stat float64
 			if phase == Start {
 				tsr.SetNumRows(0)
-				plot.SetFirstStyle(tsr, func(s *plot.Style) {
+				plot.SetFirstStyler(tsr, func(s *plot.Style) {
 					s.Range.SetMin(0).SetMax(1)
 					s.On = true
 					switch name {

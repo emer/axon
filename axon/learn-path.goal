@@ -51,9 +51,23 @@ func (pt *PathParams) DWtSyn(ctx *Context, rlay *LayerParams, syni, si, ri, di u
 func (pt *PathParams) SynCa(ctx *Context, si, ri, di uint32, syCaP, syCaD *float32) {
 	nbins := NetworkIxs[0].NCaBins
 	cadSt := GvCaBinWts+GlobalScalarVars(nbins)
-	var cp, cd float32
-	for i := range nbins {
-		sp := Neurons[ri, di, CaBins + NeuronVars(i)] * Neurons[si, di, CaBins + NeuronVars(i)]
+
+	// T0
+	r0 := Neurons[ri, di, CaBins + NeuronVars(0)]
+	s0 := Neurons[si, di, CaBins + NeuronVars(0)]
+	sp := pt.Learn.SynCaBin.SynCaT0(r0, s0)
+	cp := sp * GlobalScalars[GvCaBinWts + GlobalScalarVars(0), 0]
+	cd := sp * GlobalScalars[cadSt + GlobalScalarVars(0), 0]
+	
+	// T1
+	r1 := Neurons[ri, di, CaBins + NeuronVars(1)]
+	s1 := Neurons[si, di, CaBins + NeuronVars(1)]
+	sp = pt.Learn.SynCaBin.SynCaT1(r0, r1, s0, s1)
+	cp += sp * GlobalScalars[GvCaBinWts + GlobalScalarVars(1), 0]
+	cd += sp * GlobalScalars[cadSt + GlobalScalarVars(1), 0]
+	
+	for i := int32(2); i < nbins; i++ {
+		sp := pt.Learn.SynCaBin.SynCaT(Neurons[ri, di, CaBins + NeuronVars(i)], Neurons[ri, di, CaBins + NeuronVars(i-1)], Neurons[ri, di, CaBins + NeuronVars(i-2)], Neurons[si, di, CaBins + NeuronVars(i)], Neurons[si, di, CaBins + NeuronVars(i-1)], Neurons[si, di, CaBins + NeuronVars(i-2)])
 		cp += sp * GlobalScalars[GvCaBinWts + GlobalScalarVars(i), 0]
 		cd += sp * GlobalScalars[cadSt + GlobalScalarVars(i), 0]
 	}

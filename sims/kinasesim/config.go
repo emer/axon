@@ -44,7 +44,7 @@ type RunConfig struct {
 	PlusCycles int `default:"50"`
 
 	// CaBinCycles is the number of cycles per CaBin: how fine-grained the synaptic Ca is.
-	CaBinCycles int `default:"25"`
+	CaBinCycles int `default:"10"`
 
 	// NCaBins is the total number of ca bins in unit variables.
 	// Set to Context.ThetaCycles / CaBinCycles in Build.

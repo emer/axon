@@ -62,6 +62,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.TrgAvgAct.ErrLRate = 0.02         // 0.02 def
 				ly.Learn.RLRate.On.SetBool(true)           // beneficial for trace
 				ly.Learn.RLRate.SigmoidMin = 0.05
+				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // false > true for output stability
 				ly.Learn.RLRate.Diff.SetBool(true)
 				ly.Learn.RLRate.DiffThr = 0.02 // 0.02 def - todo
 				ly.Learn.RLRate.SpikeThr = 0.1 // 0.1 def
@@ -181,6 +182,7 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Adapt.SubMean = 1      // 1 > 0 -- definitely needed
 				pt.Learn.LRate.Base = 0.005    // 0.01 > 0.02 later (trace)
 				pt.Learn.DWt.SubMean = 1       // 1 > 0 for trgavg weaker
+				pt.Learn.DWt.CaPScale = 0.96   // 0.96 best for 25 bin; 0.95 unstable
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger",
 			Set: func(pt *axon.PathParams) {

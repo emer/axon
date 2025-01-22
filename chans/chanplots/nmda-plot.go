@@ -117,12 +117,12 @@ func (pl *NMDAPlot) GVRun() { //types:add
 		dir.Float64("Ca", nv).SetFloat1D(float64(ca), vi)
 	}
 	metadata.SetDoc(dir.Float64("Gnmda_std"), "std is the standard equations actually used in models")
-	plot.SetFirstStyle(dir.Float64("V"), func(s *plot.Style) {
+	plot.SetFirstStyler(dir.Float64("V"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
 	ons := []string{"Gnmda"}
 	for _, on := range ons {
-		plot.SetFirstStyle(dir.Float64(on), func(s *plot.Style) {
+		plot.SetFirstStyler(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
 			s.Plot.Title = "NMDA G(V)"
 		})
@@ -154,12 +154,12 @@ func (pl *NMDAPlot) TimeRun() { //types:add
 		dir.Float64("Gnmda", nv).SetFloat1D(g, ti)
 		dir.Float64("NMDA", nv).SetFloat1D(nmda, ti)
 	}
-	plot.SetFirstStyle(dir.Float64("Time"), func(s *plot.Style) {
+	plot.SetFirstStyler(dir.Float64("Time"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
 	ons := []string{"Gnmda", "NMDA"}
 	for _, on := range ons {
-		plot.SetFirstStyle(dir.Float64(on), func(s *plot.Style) {
+		plot.SetFirstStyler(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
 			s.Plot.Title = "NMDA G(t)"
 		})

@@ -105,6 +105,9 @@ type RunConfig struct {
 	// PlusCycles is the total number of plus-phase cycles per trial. For Cycles=300, use 100.
 	PlusCycles int `default:"50"`
 
+	// CaBinCycles is the number of cycles per CaBin: how fine-grained the synaptic Ca is.
+	CaBinCycles int `default:"25"` // no diff for 25 vs. 10
+
 	// NZero is how many perfect, zero-error epochs before stopping a Run.
 	NZero int `default:"2"`
 

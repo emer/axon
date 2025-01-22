@@ -4,6 +4,8 @@
 
 package kinase
 
+//go:generate core generate -add-types
+
 //gosl:start
 
 // CaDtParams has rate constants for integrating Ca calcium
@@ -145,98 +147,3 @@ func (kp *CaDtParams) PDTauForNCycles(ncycles int) {
 	kp.DTau = tau
 	kp.Update()
 }
-
-// CaBinWts generates the weighting factors for integrating [CaBins] neuron
-// level spikes that have been multiplied send * recv to generate a synapse-level
-// spike coincidence factor, used for the trace in the kinase learning rule.
-// There are separate weights for two time scales of integration: CaP and CaD.
-// nplus is the number of ca bins associated with the plus phase,
-// which sets the natural timescale of the integration: total ca bins can
-// be proportional to the plus phase (e.g., 4x for standard 200 / 50 total / plus),
-// or longer if there is a longer minus phase window (which is downweighted).
-func CaBinWts(nplus, binCycles int, cp, cd []float32) {
-	n := len(cp)
-	nminus := n - nplus
-
-	// CaP target: [0.1, 0.4, 0.5, 0.6, 0.7, 0.8, 1.7, 3.0]
-
-	// 0.8 to 3.0 at end
-	inc := float32(2.2) / float32(nplus)
-	cur := float32(0.8) + inc
-	for i := nminus; i < n; i++ {
-		cp[i] = cur
-		cur += inc
-	}
-	// prior two nplus windows ("middle") go up from .5 to .8
-	inc = float32(.3) / float32(2*nplus-1)
-	mid := n - 3*nplus
-	cur = float32(0.8)
-	for i := nminus - 1; i >= mid; i-- {
-		cp[i] = cur
-		cur -= inc
-	}
-	// then drop off at .6 per plus phase window
-	inc = float32(.6) / float32(nplus)
-	for i := mid - 1; i >= 0; i-- {
-		cp[i] = cur
-		cur -= inc
-		if cur < 0 {
-			cur = 0
-		}
-	}
-
-	// CaD target: [0.35 0.65 0.95 1.25 1.25 1.25 1.125 1.0]
-
-	// CaD drops off from 1.25 to 1.0 in plus
-	inc = float32(.25) / float32(nplus)
-	cur = 1.25 - inc
-	for i := nminus; i < n; i++ {
-		cd[i] = cur
-		cur -= inc
-	}
-	// is steady at 1.25 in the previous plus chunk
-	pplus := nminus - nplus
-	for i := nminus - 1; i >= pplus; i-- {
-		cd[i] = 1.25
-	}
-	// then drops off again to .3
-	inc = float32(.9) / float32(nplus+1)
-	cur = 1.25
-	for i := pplus - 1; i >= 0; i-- {
-		cd[i] = cur
-		cur -= inc
-		if cur < 0 {
-			cur = 0
-		}
-	}
-
-	// rescale for bin size
-	scale := float32(binCycles) / (float32(25))
-	var cpsum, cdsum float32
-	for i := range n {
-		cp[i] *= scale
-		cd[i] *= scale
-		cpsum += cp[i]
-		cdsum += cd[i]
-	}
-	// fmt.Println(cpsum, cdsum, cdsum/cpsum)
-	renorm := cdsum / cpsum // yes renorm: factor is 0.9843 for 25 cyc bins, or 0.96.. for 10 cyc bins
-	for i := range n {
-		cp[i] *= renorm
-	}
-}
-
-// Theta200plus50 sets bin weights for a theta cycle learning trial of 200 cycles
-// and a plus phase of 50
-// func (kp *SynCaLinear) Theta200plus50() {
-// 	// todo: compute these weights into GlobalScalars. Normalize?
-// 	kp.CaP.Init(0.3, 0.4, 0.55, 0.65, 0.75, 0.85, 1.0, 1.0) // linear progression
-// 	kp.CaD.Init(0.5, 0.65, 0.75, 0.9, 0.9, 0.9, 0.65, 0.55) // up and down
-// }
-//
-// // Theta280plus70 sets bin weights for a theta cycle learning trial of 280 cycles
-// // and a plus phase of 70, with PTau & DTau at 56 (PDTauForNCycles)
-// func (kp *SynCaLinear) Theta280plus70() {
-// 	kp.CaP.Init(0.0, 0.1, 0.23, 0.35, 0.45, 0.55, 0.75, 0.75)
-// 	kp.CaD.Init(0.2, 0.3, 0.4, 0.5, 0.5, 0.5, 0.4, 0.3)
-// }

@@ -113,12 +113,12 @@ func (pl *GababPlot) GVRun() { //types:add
 		dir.Float64("GgabaBstd", nv).SetFloat1D(float64(gs), vi)
 	}
 	metadata.SetDoc(dir.Float64("GgabaBstd"), "std is from code actually used in models")
-	plot.SetFirstStyle(dir.Float64("V"), func(s *plot.Style) {
+	plot.SetFirstStyler(dir.Float64("V"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
 	ons := []string{"GgabaB"}
 	for _, on := range ons {
-		plot.SetFirstStyle(dir.Float64(on), func(s *plot.Style) {
+		plot.SetFirstStyler(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
 			s.Plot.Title = "GABA-B G(V)"
 		})
@@ -146,12 +146,12 @@ func (pl *GababPlot) GSRun() { //types:add
 		dir.Float64("GgabaBstd_max", nv).SetFloat1D(float64(gs), si)
 	}
 	metadata.SetDoc(dir.Float64("GgabaBstd_max"), "std is from code actually used in models")
-	plot.SetFirstStyle(dir.Float64("S"), func(s *plot.Style) {
+	plot.SetFirstStyler(dir.Float64("S"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
 	ons := []string{"GgabaB_max"}
 	for _, on := range ons {
-		plot.SetFirstStyle(dir.Float64(on), func(s *plot.Style) {
+		plot.SetFirstStyler(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
 			s.Plot.Title = "GABAB G(spike)"
 		})
@@ -198,12 +198,12 @@ func (pl *GababPlot) TimeRun() { //types:add
 	}
 	metadata.SetDoc(dir.Float64("GabaBstd"), "std is from code actually used in models")
 	metadata.SetDoc(dir.Float64("GabaBXstd"), "std is from code actually used in models")
-	plot.SetFirstStyle(dir.Float64("Time"), func(s *plot.Style) {
+	plot.SetFirstStyler(dir.Float64("Time"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
 	ons := []string{"GabaB", "GabaBX"}
 	for _, on := range ons {
-		plot.SetFirstStyle(dir.Float64(on), func(s *plot.Style) {
+		plot.SetFirstStyler(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
 			s.Plot.Title = "GABAB G(t)"
 		})

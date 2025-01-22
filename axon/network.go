@@ -944,10 +944,9 @@ func (nt *Network) SetCaBinWts() {
 	ctx := nt.Context()
 	nix := nt.NetIxs()
 	nBins := int(nix.NCaBins)
-	nPlusBins := int(ctx.PlusCycles / ctx.CaBinCycles)
 	cp := make([]float32, nBins)
 	cd := make([]float32, nBins)
-	kinase.CaBinWts(nPlusBins, int(ctx.CaBinCycles), cp, cd)
+	kinase.CaBinWts(int(ctx.PlusCycles), cp, cd)
 	for i := range nBins {
 		nt.GlobalScalars.Set(cp[i], int(GvCaBinWts+GlobalScalarVars(i)), int(0))
 		nt.GlobalScalars.Set(cd[i], int(GvCaBinWts+GlobalScalarVars(nBins+i)), int(0))

@@ -2,6 +2,6 @@
 	FullSong = true
 
 [Run]
-	NTrials = 768  # number of rows in song
-	NEpochs = 500
+	Trials = 768  # number of rows in song
+	Epochs = 500
 	

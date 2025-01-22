@@ -592,6 +592,33 @@ struct CaSpikeParams {
 	Dt: CaDtParams,
 }
 
+//////// import: "kinase-syncabin.go"
+alias SynCaBinEnvelopes = i32; //enums:enum
+const  Env30: SynCaBinEnvelopes = 0;
+const  Env25: SynCaBinEnvelopes = 1;
+const  Env20: SynCaBinEnvelopes = 2;
+const  Env10: SynCaBinEnvelopes = 3;
+struct SynCaBin { //types:add
+	Envelope: SynCaBinEnvelopes,
+	Wt1: f32,
+	Wt2: f32,
+	Wt11: f32,
+	Wt10: f32,
+	WtT0: f32,
+	WtT1: f32,
+	WtT2: f32,
+}
+fn SynCaBin_SynCaT0(sb: SynCaBin, r0: f32,s0: f32) -> f32 {
+	return r0 * s0;
+}
+fn SynCaBin_SynCaT1(sb: SynCaBin, r0: f32,r1: f32,s0: f32,s1: f32) -> f32 {
+	return sb.Wt10*r0*s0 + sb.Wt11*r1*s1;
+}
+fn SynCaBin_SynCaT(sb: SynCaBin, rt: f32,r1: f32,r2: f32,st: f32,s1: f32,s2: f32) -> f32 {
+	var ri = rt*sb.WtT0 + r1*sb.WtT1 + r2*sb.WtT2;
+	var si = st*sb.WtT0 + s1*sb.WtT1 + s2*sb.WtT2;return ri * si;
+}
+
 //////// import: "layerparams.go"
 struct LayerIndexes {
 	NPools: u32,
@@ -746,10 +773,18 @@ fn PathParams_DWtSyn(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32,
 fn PathParams_SynCa(pt: PathParams, ctx: Context, si: u32,ri: u32,di: u32, syCaP: ptr<function,f32>,syCaD: ptr<function,f32>) {
 	var nbins = NetworkIxs[0].NCaBins;
 	var cadSt = GvCaBinWts + GlobalScalarVars(nbins);
-	var cp: f32;
-	var cd: f32;
-	for (var i=0; i<nbins; i++) {
-		var sp = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaBins + NeuronVars(i)))] * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(CaBins + NeuronVars(i)))];
+	var r0 = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaBins + NeuronVars(0)))];
+	var s0 = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(CaBins + NeuronVars(0)))];
+	var sp = SynCaBin_SynCaT0(pt.Learn.SynCaBin, r0, s0);
+	var cp = sp * GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvCaBinWts + GlobalScalarVars(0)), u32(0))];
+	var cd = sp * GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(cadSt + GlobalScalarVars(0)), u32(0))];
+	var r1 = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaBins + NeuronVars(1)))];
+	var s1 = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(CaBins + NeuronVars(1)))];
+	sp = SynCaBin_SynCaT1(pt.Learn.SynCaBin, r0, r1, s0, s1);
+	cp += sp * GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvCaBinWts + GlobalScalarVars(1)), u32(0))];
+	cd += sp * GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(cadSt + GlobalScalarVars(1)), u32(0))];
+	for (var i = i32(2); i < nbins; i++) {
+		var sp = SynCaBin_SynCaT(pt.Learn.SynCaBin, Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaBins + NeuronVars(i)))], Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaBins + NeuronVars(i-1)))], Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaBins + NeuronVars(i-2)))], Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(CaBins + NeuronVars(i)))], Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(CaBins + NeuronVars(i-1)))], Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(CaBins + NeuronVars(i-2)))]);
 		cp += sp * GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvCaBinWts + GlobalScalarVars(i)), u32(0))];
 		cd += sp * GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(cadSt + GlobalScalarVars(i)), u32(0))];
 	}
@@ -1089,6 +1124,7 @@ struct LearnSynParams {
 	pad2: i32,
 	LRate: LRateParams,
 	DWt: DWtParams,
+	SynCaBin: SynCaBin,
 	Hebb: HebbParams,
 }
 

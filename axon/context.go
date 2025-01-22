@@ -58,7 +58,8 @@ type Context struct { //types:add -setters
 
 	// CaBinCycles is the number of cycles for neuron [CaBins] values used in
 	// computing synaptic calcium values. Total number of bins = ThetaCycles / CaBinCycles.
-	CaBinCycles int32 `default:"25"`
+	// This is fixed at 10.
+	CaBinCycles int32 `default:"10"`
 
 	// CyclesTotal is the accumulated cycle count, which increments continuously
 	// from whenever it was last reset. Typically this is the number of milliseconds
@@ -102,7 +103,7 @@ func (ctx *Context) Defaults() {
 	ctx.TimePerCycle = 0.001
 	ctx.ThetaCycles = 200
 	ctx.PlusCycles = 50
-	ctx.CaBinCycles = 25
+	ctx.CaBinCycles = 10
 	ctx.SlowInterval = 100
 }
 
