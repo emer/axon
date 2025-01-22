@@ -176,8 +176,7 @@ func (ss *Sim) ConfigKinase() {
 	nbins := ss.Config.Run.NCaBins
 	ss.CaPWts = make([]float32, nbins)
 	ss.CaDWts = make([]float32, nbins)
-	nplus := ss.Config.Run.PlusCycles / ss.Config.Run.CaBinCycles
-	kinase.CaBinWts(nplus, ss.Config.Run.CaBinCycles, ss.CaPWts, ss.CaDWts)
+	kinase.CaBinWts(ss.Config.Run.PlusCycles, ss.CaPWts, ss.CaDWts)
 	ss.Kinase.Config(nbins)
 }
 
@@ -286,11 +285,21 @@ func (ss *Sim) TrialImpl(minusHz, plusHz float32) {
 
 			// CaBin linear regression integration.
 			bin := ks.Cycle / spikeBinCycles
-			ks.CaBins[bin] = (ks.Recv.CaBins[bin] * ks.Send.CaBins[bin])
-			ks.CaBin = ks.CaBins[bin]
-			ks.LinearSyn.CaM = ks.CaBin
-			ks.LinearSyn.CaP += lsint * ss.CaPWts[bin] * ks.CaBin // slow integ just for visualization
-			ks.LinearSyn.CaD += lsint * ss.CaDWts[bin] * ks.CaBin
+
+			sp := float32(0)
+			switch bin {
+			case 0:
+				sp = ss.SynCaBin.SynCaT0(ks.Recv.CaBins[0], ks.Send.CaBins[0])
+			case 1:
+				sp = ss.SynCaBin.SynCaT1(ks.Recv.CaBins[0], ks.Recv.CaBins[1], ks.Send.CaBins[0], ks.Send.CaBins[1])
+			default:
+				sp = ss.SynCaBin.SynCaT(ks.Recv.CaBins[bin], ks.Recv.CaBins[bin-1], ks.Recv.CaBins[bin-2], ks.Send.CaBins[bin], ks.Send.CaBins[bin-1], ks.Send.CaBins[bin-2])
+			}
+			ks.CaBins[bin] = sp
+			ks.CaBin = sp
+			ks.LinearSyn.CaM = sp
+			ks.LinearSyn.CaP += lsint * ss.CaPWts[bin] * sp // slow integ just for visualization
+			ks.LinearSyn.CaD += lsint * ss.CaDWts[bin] * sp
 
 			ss.StatsStep(Test, Cycle)
 			ks.Cycle++

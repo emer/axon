@@ -23,17 +23,16 @@ import (
 	"cogentcore.org/core/tree"
 	"cogentcore.org/lab/base/mpi"
 	"cogentcore.org/lab/base/randx"
+	"cogentcore.org/lab/patterns"
 	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/stats/stats"
 	"cogentcore.org/lab/table"
-	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/axon/v2/fsfffb"
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/looper"
-	"github.com/emer/emergent/v2/patgen"
 	"github.com/emer/emergent/v2/paths"
 )
 
@@ -358,7 +357,7 @@ func (ss *Sim) ConfigInputs() {
 	dt.AddFloat32Column("Input", 10, 10)
 	dt.SetNumRows(25)
 
-	patgen.PermutedBinaryMinDiff(dt.ColumnByIndex(1).Tensor.(*tensor.Float32), int(ss.Config.Params.InputPct), 1, 0, int(ss.Config.Params.InputPct)/2)
+	patterns.PermutedBinaryMinDiff(dt.Columns.Values[1], int(ss.Config.Params.InputPct), 1, 0, int(ss.Config.Params.InputPct)/2)
 
 	tensorfs.DirFromTable(ss.Root.Dir("Inputs/Test"), dt)
 }

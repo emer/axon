@@ -11,10 +11,10 @@ import (
 	"math/rand"
 	"testing"
 
+	"cogentcore.org/lab/patterns"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
 	"github.com/emer/emergent/v2/etime"
-	"github.com/emer/emergent/v2/patgen"
 	"github.com/emer/emergent/v2/paths"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -317,8 +317,8 @@ func generateRandomPatterns(nPats int, seed int64) *table.Table {
 	pats.AddFloat32TensorColumn("Output", shape, "Y", "X")
 	pats.SetNumRows(nPats)
 	numOn := max((shape[0]*shape[1])/4, 1) // ensure min at least 1
-	patgen.PermutedBinaryRows(pats.Columns[1], numOn, 1, 0)
-	patgen.PermutedBinaryRows(pats.Columns[2], numOn, 1, 0)
+	patterns.PermutedBinaryMinDiff(pats.Columns.Values[1], numOn, 1, 0, numOn/2)
+	patterns.PermutedBinaryMinDiff(patst.Columns.Values[2], numOn, 1, 0, numOn/2)
 	// fmt.Printf("%v\n", pats.Columns[1].(*tensor.Float32).Values)
 	return pats
 }

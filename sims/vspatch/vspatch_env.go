@@ -8,11 +8,12 @@ import (
 	"fmt"
 
 	"cogentcore.org/lab/base/randx"
+	"cogentcore.org/lab/patterns"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
+	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/etime"
-	"github.com/emer/emergent/v2/patgen"
 )
 
 // VSPatchEnv implements a simple training environment for VSPatch reward
@@ -70,9 +71,6 @@ type VSPatchEnv struct {
 
 	// condition, time-step patterns
 	Pats *table.Table
-
-	// pattern vocab
-	PatVocab patgen.Vocab
 
 	// pattern similarity matrix
 	// PatSimMat simat.SimMat
@@ -149,14 +147,15 @@ func (ev *VSPatchEnv) Config(mode etime.Modes, di int, rndseed int64) {
 
 // ConfigPats configures patterns -- only done on the first env
 func (ev *VSPatchEnv) ConfigPats() {
-	ev.PatVocab = patgen.Vocab{}
+	dir, _ := tensorfs.NewDir("pats")
 	pctAct := float32(0.2)
 	minDiff := float32(0.5)
 	flipPct := float32(0.2)
 	nUn := ev.NUnitsY * ev.NUnitsX
-	nOn := patgen.NFromPct(pctAct, nUn)
-	flipBits := patgen.NFromPct(flipPct, nOn)
-	patgen.AddVocabPermutedBinary(ev.PatVocab, "Protos", ev.NConds, ev.NUnitsY, ev.NUnitsX, pctAct, minDiff)
+	nOn := patterns.NFromPct(float64(pctAct), nUn)
+	flipBits := patterns.NFromPct(float64(flipPct), nOn)
+	protos := dir.Float32("Protos", ev.NConds, ev.NUnitsY, ev.NUnitsX)
+	patterns.PermutedBinaryMinDiff(protos, nOn, 1, 0, int(float32(nOn)*minDiff))
 
 	npats := ev.NConds * ev.Thetas
 	ev.Pats = table.New()
@@ -167,10 +166,12 @@ func (ev *VSPatchEnv) ConfigPats() {
 	idx := 0
 	for i := 0; i < ev.NConds; i++ {
 		condNm := fmt.Sprintf("cond%d", i)
-		tsr, _ := patgen.AddVocabRepeat(ev.PatVocab, condNm, ev.Thetas, "Protos", i)
-		patgen.FlipBitsRows(tsr, flipBits, flipBits, 1, 0)
+		cond := dir.Float32(condNm)
+		patterns.ReplicateRows(cond, protos.SubSpace(i), ev.Thetas)
+		// tsr, _ := patterns.AddVocabRepeat(ev.PatVocab, condNm, ev.Thetas, "Protos", i)
+		patterns.FlipBitsRows(cond, flipBits, flipBits, 1, 0)
 		for j := 0; j < ev.Thetas; j++ {
-			ev.Pats.Column("Input").SetRowTensor(tsr.SubSpace(j), idx+j)
+			ev.Pats.Column("Input").SetRowTensor(cond.SubSpace(j), idx+j)
 			ev.Pats.Column("Name").SetStringRow(fmt.Sprintf("Cond%d_Theta%d", i, j), idx+j, 0)
 		}
 		idx += ev.Thetas

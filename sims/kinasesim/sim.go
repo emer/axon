@@ -74,6 +74,9 @@ type Sim struct {
 	// Kinase CaSpike params
 	CaSpike kinase.CaSpikeParams `display:"no-inline" new-window:"+"`
 
+	// SynCaBin sets the SynCa integration parameters.
+	SynCaBin kinase.SynCaBin
+
 	// CaPWts are CaBin integration weights for CaP
 	CaPWts []float32 `new-window:"+"`
 
@@ -116,10 +119,13 @@ func RunSim(cfg *Config) error {
 }
 
 func (ss *Sim) Defaults() {
+	ss.CaSpike.Defaults()
+	ss.SynCaBin.Defaults()
 	cli.SetFromDefaults(&ss.Config)
 }
 
 func (ss *Sim) New() {
+	ss.Defaults()
 	ss.Root, _ = tensorfs.NewDir("Root")
 	tensorfs.CurRoot = ss.Root
 	ss.RandSeeds.Init(100) // max 100 runs

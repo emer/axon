@@ -3,11 +3,12 @@ module github.com/emer/axon/v2
 go 1.22
 
 require (
-	cogentcore.org/core v0.3.8-0.20250116184504-a8f1ea77c96a
-	cogentcore.org/lab v0.0.0-20250116190940-0b99b79306a7
+	cogentcore.org/core v0.3.8-0.20250122003714-5b467176b244
+	cogentcore.org/lab v0.0.0-20250122080418-5c5a532aa54c
 	github.com/anthonynsimon/bild v0.13.0
+	github.com/chewxy/math32 v1.10.1
 	github.com/cogentcore/yaegi v0.0.0-20240724064145-e32a03faad56
-	github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250117231400-6e0b1c78c9c0
+	github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250122081349-9e5d03aa5c9f
 	github.com/emer/v1vision v0.1.1-0.20241223003153-dd6818448b3b
 	github.com/stretchr/testify v1.9.0
 	gitlab.com/gomidi/midi/v2 v2.0.30
@@ -22,8 +23,7 @@ require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/bramvdbogaerde/go-scp v1.4.0 // indirect
-	github.com/chewxy/math32 v1.10.1 // indirect
-	github.com/cogentcore/webgpu v0.0.0-20241212004832-ad7475f3b4dd // indirect
+	github.com/cogentcore/webgpu v0.0.0-20250118183535-3dd1436165cf // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dlclark/regexp2 v1.11.0 // indirect
 	github.com/ergochat/readline v0.1.2 // indirect

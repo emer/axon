@@ -317,7 +317,7 @@ func (ls *Linear) Regress() {
 	// default coefficients are the current ones..
 	cp := make([]float32, ls.NumBins)
 	cd := make([]float32, ls.NumBins)
-	kinase.CaBinWts(ls.SynCaBin.Envelope, ls.Cycles, ls.PlusCycles, cp, cd)
+	kinase.CaBinWts(ls.PlusCycles, cp, cd)
 	cp = append(cp, 0)
 	cd = append(cd, 0)
 

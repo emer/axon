@@ -220,8 +220,7 @@ func (ss *Sim) ConfigEnv() {
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ss.Config.Run.NData)
 	net.Context().SetThetaCycles(int32(ss.Config.Run.Cycles)).
-		SetPlusCycles(int32(ss.Config.Run.PlusCycles)).
-		SetCaBinCycles(int32(ss.Config.Run.CaBinCycles))
+		SetPlusCycles(int32(ss.Config.Run.PlusCycles))
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
 	v1 := net.AddLayer4D("V1", axon.InputLayer, 10, 10, 5, 4)

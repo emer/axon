@@ -5,8 +5,6 @@
 package kinase
 
 import (
-	"fmt"
-
 	"github.com/chewxy/math32"
 )
 
@@ -226,12 +224,7 @@ func caBinWts(nplus int, cp, cd []float32) {
 		cpsum += cp[i]
 		cdsum += cd[i]
 	}
-	fmt.Println(cpsum, cdsum, cdsum/cpsum)
-	// no:
-	// renorm := cdsum / cpsum // yes renorm: factor is 0.9843 for 25 cyc bins, or 0.96.. for 10 cyc bins
-	// for i := range n {
-	// 	cp[i] *= renorm
-	// }
+	// fmt.Println(cpsum, cdsum, cdsum/cpsum)
 }
 
 // Theta200plus50 sets bin weights for a theta cycle learning trial of 200 cycles

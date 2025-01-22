@@ -27,6 +27,7 @@ import (
 	"cogentcore.org/core/tree"
 	"cogentcore.org/lab/base/mpi"
 	"cogentcore.org/lab/base/randx"
+	"cogentcore.org/lab/patterns"
 	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/stats/stats"
 	"cogentcore.org/lab/table"
@@ -36,7 +37,6 @@ import (
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/looper"
-	"github.com/emer/emergent/v2/patgen"
 	"github.com/emer/emergent/v2/paths"
 )
 
@@ -413,8 +413,8 @@ func (ss *Sim) ConfigInputs() {
 	dt.AddFloat32Column("Output", 5, 5)
 	dt.SetNumRows(24)
 
-	patgen.PermutedBinaryMinDiff(dt.ColumnByIndex(1).Tensor.(*tensor.Float32), 6, 1, 0, 3)
-	patgen.PermutedBinaryMinDiff(dt.ColumnByIndex(2).Tensor.(*tensor.Float32), 6, 1, 0, 3)
+	patterns.PermutedBinaryMinDiff(dt.Columns.Values[1], 6, 1, 0, 3)
+	patterns.PermutedBinaryMinDiff(dt.Columns.Values[2], 6, 1, 0, 3)
 	dt.SaveCSV("random_5x5_24_gen.tsv", tensor.Tab, table.Headers)
 
 	tensorfs.DirFromTable(ss.Root.Dir("Inputs/Train"), dt)

@@ -16,10 +16,10 @@ import (
 
 	"cogentcore.org/core/base/timer"
 	"cogentcore.org/lab/base/randx"
+	"cogentcore.org/lab/patterns"
 	"cogentcore.org/lab/table"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/etime"
-	"github.com/emer/emergent/v2/patgen"
 	"github.com/emer/emergent/v2/paths"
 )
 
@@ -112,9 +112,10 @@ func ConfigPats(dt *table.Table, pats, units int) {
 
 	// note: actually can learn if activity is .15 instead of .25
 	nOn := units / 8
+	minDiff := nOn / 2
 
-	patgen.PermutedBinaryRows(dt.ColumnByIndex(1), nOn, 1, 0)
-	patgen.PermutedBinaryRows(dt.ColumnByIndex(2), nOn, 1, 0)
+	patterns.PermutedBinaryMinDiff(dt.Columns.Values[1], nOn, 1, 0, minDiff)
+	patterns.PermutedBinaryMinDiff(dt.Columns.Values[2], nOn, 1, 0, minDiff)
 }
 
 func ConfigEpcLog(dt *table.Table) {

@@ -10,14 +10,13 @@ import (
 )
 
 func TestCaBinWts(t *testing.T) {
-	spikeBinCycles := 25
+	caBinCycles := 10
 	thetaCycles := 200
 	plusCycles := 50
-	nbins := thetaCycles / spikeBinCycles
-	nplus := plusCycles / spikeBinCycles
+	nbins := thetaCycles / caBinCycles
 	cp := make([]float32, nbins)
 	cd := make([]float32, nbins)
-	CaBinWts(nplus, spikeBinCycles, cp, cd)
+	CaBinWts(plusCycles, cp, cd)
 	fmt.Println("CaP:", cp)
 	fmt.Println("CaD:", cd)
 	var cpsum, cdsum float32

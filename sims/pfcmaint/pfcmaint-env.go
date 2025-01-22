@@ -9,11 +9,11 @@ import (
 	"log/slog"
 
 	"cogentcore.org/lab/base/randx"
+	"cogentcore.org/lab/patterns"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/etime"
-	"github.com/emer/emergent/v2/patgen"
 )
 
 // PFCMaintEnv implements a simple store-maintain-recall active maintenance task
@@ -115,10 +115,10 @@ func (ev *PFCMaintEnv) ConfigPats() {
 	minPctDiff := float32(0.5)
 
 	nUn := ev.NUnitsY * ev.NUnitsX
-	nOn := patgen.NFromPct(pctAct, nUn)
-	minDiff := patgen.NFromPct(minPctDiff, nOn)
+	nOn := patterns.NFromPct(float64(pctAct), nUn)
+	minDiff := patterns.NFromPct(float64(minPctDiff), nOn)
 
-	patgen.PermutedBinaryMinDiff(ev.Pats.Columns.At("Item").(*tensor.Float32), nOn, 1, 0, minDiff)
+	patterns.PermutedBinaryMinDiff(ev.Pats.Columns.At("Item"), nOn, 1, 0, minDiff)
 }
 
 func (ev *PFCMaintEnv) Init(run int) {
