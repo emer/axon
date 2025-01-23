@@ -183,7 +183,7 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Adapt.SubMean = 1                 // 1 > 0 -- definitely needed
 				pt.Learn.LRate.Base = 0.005               // 0.005 def; 0.01 > 0.02 later (trace)
 				pt.Learn.DWt.SubMean = 1                  // 1 > 0 for trgavg weaker
-				pt.Learn.DWt.CaPScale = 1.03              // Env20: 1.02 > 1
+				pt.Learn.DWt.CaPScale = 1                 // Env20: 1.02 > 1
 				pt.Learn.SynCaBin.Envelope = kinase.Env20 // Env20 > Env25
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger",
