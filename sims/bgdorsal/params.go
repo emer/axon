@@ -3,7 +3,10 @@
 // license that can be found in the LICENSE file.
 package main
 
-import "github.com/emer/axon/v2/axon"
+import (
+	"github.com/emer/axon/v2/axon"
+	"github.com/emer/axon/v2/kinase"
+)
 
 // LayerParams sets the minimal non-default params.
 // Base is always applied, and others can be optionally selected to apply on top of that.
@@ -104,9 +107,15 @@ var PathParams = axon.PathSheets{
 		{Sel: "Path", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.04   // 0.04 > 0.03
-				pt.Learn.DWt.CaPScale = 0.95 // 0.95 > 1 in cur
 				pt.Learn.DWt.Tau = 1         // 1 > 2
+				pt.Learn.DWt.CaPScale = 0.98 // 0.99 > 1 for 10
+				pt.Learn.SynCaBin.Envelope = kinase.Env20
 			}},
+		// {Sel: ".PFCPath", Doc: "",
+		// 	Set: func(pt *axon.PathParams) {
+		// 		pt.Learn.DWt.CaPScale = 1
+		// 		pt.Learn.SynCaBin.Envelope = kinase.Env30
+		// 	}},
 		{Sel: ".CTtoPred", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 2 // 1 def
@@ -119,7 +128,7 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 1.8          // 1.8 > others
 				pt.Learn.LRate.Base = 0.02      // rlr sig: .02 > .015 .025
-				pt.Learn.DWt.LearnThr = 0.1     // 0.1 > 0 > 0.2
+				pt.Learn.DWt.LearnThr = 0.1     // 0.1  > 0.2
 				pt.Matrix.Credit = 0.6          // key param, 0.6 > 0.5, 0.4, 0.7, 1 with pf modulation
 				pt.Matrix.BasePF = 0.005        // 0.005 > 0.01, 0.002 etc
 				pt.Matrix.Delta = 1             // should always be 1 except for testing; adjust lrate to compensate
@@ -146,15 +155,36 @@ var PathParams = axon.PathSheets{
 				pt.PathScale.Abs = 1.5     // now 1.5 > 2 > 1 ..
 				pt.Learn.LRate.Base = 0.04 // 0.04 > 0.02
 			}},
-		{Sel: ".ToMotor", Doc: "all paths to MotorBS and VL",
+		{Sel: ".ToMotor", Doc: "all excitatory paths to MotorBS; see #DGPiToMotorBS too",
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.02 // 0.02 > 0.04 > 0.01 -- still key
 				// note: MotorBS is a target, key for learning; SWts not used.
+				// pt.Learn.SynCaBin.Envelope = kinase.Env10
+				// pt.Learn.DWt.CaPScale = 1 // tbd in Env
 			}},
 		{Sel: ".VLM1", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.02 // 0.02 > 0.04 > 0.01 -- still key
 				// note: VL is a target layer; SWts not used.
+				// pt.Learn.SynCaBin.Envelope = kinase.Env10
+				// pt.Learn.DWt.CaPScale = 1 // tbd in Env
+			}},
+		{Sel: "#DGPiToM1VM", Doc: "final inhibition",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 2 // 2
+				// learn = false by default
+			}},
+		{Sel: "#DGPiToMotorBS", Doc: "final inhibition",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 3       // 3 > 2.5, 3.5
+				pt.Learn.LRate.Base = 0.04 // 0.04 > 0.02 > 0.0005 with STN 150
+				// pt.Learn.SynCaBin.Envelope = kinase.Env10
+				// pt.Learn.DWt.CaPScale = 1 // tbd in Env
+			}},
+		{Sel: "#DGPiToPF", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 0.4     // 0.4 >= 0.5, 0.3, 0.2 >> higher
+				pt.Learn.LRate.Base = 0.04 // 0.4 prev default
 			}},
 		{Sel: "#StateToM1", Doc: "",
 			Set: func(pt *axon.PathParams) {
@@ -169,21 +199,6 @@ var PathParams = axon.PathSheets{
 				// pt.SWts.Init.SPct = 0
 				// pt.SWts.Init.Mean = 0.8
 				// pt.SWts.Init.Var = 0.0
-			}},
-		{Sel: "#DGPiToM1VM", Doc: "final inhibition",
-			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 2 // 2
-				// learn = false by default
-			}},
-		{Sel: "#DGPiToMotorBS", Doc: "final inhibition",
-			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 3       // 3 > 2.5, 3.5
-				pt.Learn.LRate.Base = 0.04 // 0.04 > 0.02 > 0.0005 with STN 150
-			}},
-		{Sel: "#DGPiToPF", Doc: "",
-			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 0.4     // 0.4 >= 0.5, 0.3, 0.2 >> higher
-				pt.Learn.LRate.Base = 0.04 // 0.4 prev default
 			}},
 		{Sel: ".M1ToMotorBS", Doc: "",
 			Set: func(pt *axon.PathParams) {

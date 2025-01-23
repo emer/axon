@@ -274,7 +274,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToPFC(nil, vl, m1, m1CT, m1PT, m1PTp, full, "VLM1") // m1 predicts vl
 
 	// these pathways are *essential* -- must get current state here
-	net.ConnectLayers(m1, vl, full, axon.ForwardPath).AddClass("ToVL ToMotor")
+	net.ConnectLayers(m1, vl, full, axon.ForwardPath).AddClass("VLM1")
 
 	net.ConnectLayers(gpi, motor, p1to1, axon.InhibPath).AddClass("FmGPI")
 	net.ConnectLayers(m1PT, motor, full, axon.ForwardPath).AddClass("M1ToMotorBS ToMotor")

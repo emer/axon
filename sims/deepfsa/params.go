@@ -6,6 +6,7 @@ package main
 
 import (
 	"github.com/emer/axon/v2/axon"
+	"github.com/emer/axon/v2/kinase"
 )
 
 // LayerParams sets the minimal non-default params.
@@ -93,12 +94,13 @@ var PathParams = axon.PathSheets{
 	"Base": {
 		{Sel: "Path", Doc: "std",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.DWt.SubMean = 0     // 0 > 1 -- even with CTCtxt = 0
-				pt.Learn.LRate.Base = 0.03   // .03 > others -- same as CtCtxt
-				pt.SWts.Adapt.LRate = 0.01   // 0.01 or 0.0001 music
-				pt.SWts.Init.SPct = 1.0      // 1 works fine here -- .5 also ok
-				pt.Learn.DWt.Tau = 1         // 1 >> 2 v0.0.9
-				pt.Learn.DWt.CaPScale = 0.95 // 0.95 def; 1 maybe slightly more stable
+				pt.Learn.DWt.SubMean = 0    // 0 > 1 -- even with CTCtxt = 0
+				pt.Learn.LRate.Base = 0.03  // .03 > others -- same as CtCtxt
+				pt.SWts.Adapt.LRate = 0.01  // 0.01 or 0.0001 music
+				pt.SWts.Init.SPct = 1.0     // 1 works fine here -- .5 also ok
+				pt.Learn.DWt.Tau = 1        // 1 >> 2 v0.0.9
+				pt.Learn.DWt.CaPScale = 1.0 // 0.95 def; 1 maybe slightly more stable
+				pt.Learn.SynCaBin.Envelope = kinase.Env25
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {

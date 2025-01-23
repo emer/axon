@@ -85,7 +85,11 @@ type RunConfig struct {
 	// NData is the number of data-parallel items to process in parallel per trial.
 	// Is significantly faster for both CPU and GPU.  Results in an effective
 	// mini-batch of learning.
-	NData int `default:"4" min:"1"`
+	NData int `default:"8" min:"1"`
+
+	// SlowInterval is the interval between slow adaptive processes.
+	// This generally needs to be longer than the default of 100 in larger models.
+	SlowInterval int `default:"400"`
 
 	// NThreads is the number of parallel threads for CPU computation;
 	// 0 = use default.

@@ -330,8 +330,11 @@ func StatLayerActGe(statsDir *tensorfs.Node, net *Network, trainMode, trialLevel
 					}
 				default:
 					subd := modeDir.Dir(levels[levi-1].String())
-					stat := stats.StatMean.Call(subd.Value(name))
-					tsr.AppendRow(stat)
+					if levi == 1 && si == 0 { // use official longer timescale avg stat here
+						tsr.AppendRowFloat(float64(LayerStates.Value(int(ly.Index), 0, int(LayerActMAvg))))
+					} else {
+						tsr.AppendRow(stats.StatMean.Call(subd.Value(name)))
+					}
 				}
 			}
 		}

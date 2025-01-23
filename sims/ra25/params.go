@@ -51,7 +51,7 @@ var PathParams = axon.PathSheets{
 				pt.Learn.DWt.Trace.SetBool(true) // no trace is NOT faster. requires lrate = 0.02
 				pt.Learn.DWt.SubMean = 0         // 1 > 0 for long run stability
 				pt.Learn.DWt.CaPScale = 1        // 0.95 > 0.9 > 1
-				pt.Learn.SynCaBin.Envelope = kinase.Env25
+				pt.Learn.SynCaBin.Envelope = kinase.Env10
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {

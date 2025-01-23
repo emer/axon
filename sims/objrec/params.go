@@ -91,9 +91,9 @@ var PathParams = axon.PathSheets{
 				pt.Learn.DWt.SubMean = 1         // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
 				pt.SWts.Adapt.LRate = 0.0001     // 0.005 == .1 == .01
 				pt.SWts.Init.SPct = 1            // 1 >= lower (trace-v11)
-				pt.Learn.DWt.CaPScale = 1        // 0.95 essential vs. 1.0
-				pt.Learn.DWt.Trace.SetBool(true) // no trace is faster but unstable
-				pt.Learn.SynCaBin.Envelope = kinase.Env25
+				pt.Learn.DWt.CaPScale = 1.0      // 0.95 essential vs. 1.0
+				pt.Learn.DWt.Trace.SetBool(true) // no trace starts faster but is unstable
+				pt.Learn.SynCaBin.Envelope = kinase.Env20
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger",
 			Set: func(pt *axon.PathParams) {

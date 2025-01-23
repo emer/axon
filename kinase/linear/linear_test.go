@@ -20,7 +20,7 @@ func TestMain(m *testing.M) {
 func TestLinear(t *testing.T) {
 	var ls Linear
 	ls.Defaults()
-	ls.SynCaBin.Envelope = kinase.Env30
+	ls.SynCaBin.Envelope = kinase.Env10
 	ls.Cycles = 200
 	ls.PlusCycles = 50
 	ls.CyclesPerBin = 10 // now always 10

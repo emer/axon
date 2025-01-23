@@ -244,7 +244,8 @@ func (ss *Sim) ConfigEnv() {
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ss.Config.Run.NData)
 	net.Context().SetThetaCycles(int32(ss.Config.Run.Cycles)).
-		SetPlusCycles(int32(ss.Config.Run.PlusCycles))
+		SetPlusCycles(int32(ss.Config.Run.PlusCycles)).
+		SetSlowInterval(int32(ss.Config.Run.SlowInterval))
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
 	trn := ss.Envs.ByMode(Train).(*ImagesEnv)
