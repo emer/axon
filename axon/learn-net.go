@@ -20,16 +20,13 @@ func (nt *Network) DWt() {
 
 // WtFromDWt updates the weights from delta-weight changes,
 // after having done DWt previously.
-// Also does ctx.SlowInc() and calls SlowAdapt at SlowInterval
+// Also does SlowUpdate.
 func (nt *Network) WtFromDWt() {
 	nix := nt.NetIxs()
-	ctx := nt.Context()
 	RunWtFromDWtLayer(int(nix.NLayers))
 	RunDWtSubMeanNeuron(int(nix.NNeurons))
 	RunWtFromDWtSyn(int(nix.NSyns))
-	if ctx.SlowInc() {
-		nt.SlowAdapt()
-	}
+	nt.SlowUpdate()
 	RunDoneSynapses()
 }
 
@@ -37,6 +34,7 @@ func (nt *Network) WtFromDWt() {
 // running-average activation values, and then WtFromDWt,
 // without syncing any synapse-level state.
 // This should be used when not viewing the weights.
+// Also does SlowUpdate.
 func (nt *Network) DWtToWt() {
 	nix := nt.NetIxs()
 	ctx := nt.Context()
@@ -46,18 +44,35 @@ func (nt *Network) DWtToWt() {
 	RunWtFromDWtLayer(int(nix.NLayers))
 	RunDWtSubMeanNeuron(int(nix.NNeurons))
 	RunWtFromDWtSyn(int(nix.NSyns))
-	if ctx.SlowInc() {
-		nt.SlowAdapt()
-	}
+	nt.SlowUpdate()
 	RunDone()
 }
 
-// SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
-// and adapting inhibition.
+// SlowUpdate does ctx.SlowInc() and calls SlowAdapt at SlowInterval
+// and AdaptGi at AdaptGiInterval.
+func (nt *Network) SlowUpdate() {
+	ctx := nt.Context()
+	slow, adaptgi := ctx.SlowInc()
+	if slow {
+		nt.SlowAdapt()
+	}
+	if adaptgi {
+		nt.AdaptGi()
+	}
+}
+
+// SlowAdapt runs slow adaptation functions associated with sleep,
+// including synaptic scaling associated with overall neural activity.
 func (nt *Network) SlowAdapt() {
 	nix := nt.NetIxs()
 	RunSlowAdaptLayer(int(nix.NLayers))
 	RunSlowAdaptNeuron(int(nix.NNeurons))
+}
+
+// AdaptGi does adapting inhibition at a slower interval.
+func (nt *Network) AdaptGi() {
+	nix := nt.NetIxs()
+	RunAdaptGiLayer(int(nix.NLayers))
 }
 
 // LRateMod sets the LRate modulation parameter for Paths, which is
@@ -274,7 +289,7 @@ func WtFromDWtSyn(syni uint32) { //gosl:kernel
 
 // SlowAdaptLayer is the kernel over Layers (not * Data) to
 // run slow adaptation functions.
-// Calls AdaptInhib and AvgDifFromTrgAvg for Synaptic Scaling.
+// Calls AvgDifFromTrgAvg for Synaptic Scaling.
 func SlowAdaptLayer(li uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	if li >= NetworkIxs[0].NLayers {
@@ -292,6 +307,16 @@ func SlowAdaptNeuron(ni uint32) { //gosl:kernel
 	}
 	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
 	Layers[li].SlowAdaptNeuron(ctx, ni)
+}
+
+// AdaptGiLayer is the kernel over Layers (not * Data) to
+// run adaptating inhibition function.
+func AdaptGiLayer(li uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	if li >= NetworkIxs[0].NLayers {
+		return
+	}
+	Layers[li].AdaptGi(ctx)
 }
 
 //gosl:end

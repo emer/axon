@@ -220,7 +220,10 @@ func (ss *Sim) ConfigEnv() {
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ss.Config.Run.NData)
 	net.Context().SetThetaCycles(int32(ss.Config.Run.Cycles)).
-		SetPlusCycles(int32(ss.Config.Run.PlusCycles))
+		SetPlusCycles(int32(ss.Config.Run.PlusCycles)).
+		SetSlowInterval(int32(ss.Config.Run.SlowInterval)).
+		SetAdaptGiInterval(int32(ss.Config.Run.AdaptGiInterval))
+
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
 	v1 := net.AddLayer4D("V1", axon.InputLayer, 10, 10, 5, 4)
@@ -632,6 +635,11 @@ func (ss *Sim) ConfigStats() {
 	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		actGeFunc(mode, level, phase == Start)
+	})
+
+	giMultFunc := axon.StatLayerGiMult(ss.Stats, net, Train, Epoch, lays...)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		giMultFunc(mode, level, phase == Start)
 	})
 
 	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, lays...)

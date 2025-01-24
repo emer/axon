@@ -17,19 +17,20 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.NMDA.Voff = 0                    // see above
 				ly.Acts.NMDA.Gbar = 0.006                // 0.006 > 7 or higher
 				ly.Acts.GabaB.Gbar = 0.015               // 0.015 > lower; higher not better
+				ly.Inhib.ActAvg.AdaptRate = 0.1          // 0.1 default
 				ly.Learn.CaSpike.SpikeCaM = 12           // 12 > 8 > 15 (too high) -- 12 makes everything work!
 				ly.Learn.TrgAvgAct.SynScaleRate = 0.0002 // 0.0002 > others -- 0.005 sig worse
 				ly.Learn.LearnNMDA.MgC = 1.4             // 1.4, 5 > 1.2, 0
 				ly.Learn.LearnNMDA.Voff = 0              // see above
 				ly.Learn.LearnNMDA.Tau = 100             // 100 def
 				ly.Learn.LearnNMDA.Gbar = 0.006
-				ly.Learn.RLRate.SigmoidLinear.SetBool(true) // true > false later; more stable
-				ly.Learn.CaLearn.Norm = 80                  // 80 works
-				ly.Learn.CaLearn.SpikeVGCC.SetBool(true)    // sig better..
-				ly.Learn.CaLearn.SpikeVgccCa = 35           // 70 / 5 or 35 / 10 both work
-				ly.Learn.CaLearn.VgccTau = 10               // 10 > 5 ?
-				ly.Learn.CaLearn.Dt.MTau = 2                // 2 > 4 even with more ncycles
-				ly.Learn.CaSpike.Dt.MTau = 5                // 5 > 10 even with more ncycles
+				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // true > false later; more stable
+				ly.Learn.CaLearn.Norm = 80                   // 80 works
+				ly.Learn.CaLearn.SpikeVGCC.SetBool(true)     // sig better..
+				ly.Learn.CaLearn.SpikeVgccCa = 35            // 70 / 5 or 35 / 10 both work
+				ly.Learn.CaLearn.VgccTau = 10                // 10 > 5 ?
+				ly.Learn.CaLearn.Dt.MTau = 2                 // 2 > 4 even with more ncycles
+				ly.Learn.CaSpike.Dt.MTau = 5                 // 5 > 10 even with more ncycles
 				// now automatic:
 				// ly.Learn.CaLearn.Dt.PTau =        40   // 60 for 300 cyc, 40 for 200 (scales linearly)
 				// ly.Learn.CaLearn.Dt.DTau =        40   // "
@@ -51,6 +52,7 @@ var LayerParams = axon.LayerSheets{
 		{Sel: "#V4", Doc: "pool inhib, sparse activity",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.03 // 0.03 > .04 > 0.025
+				ly.Inhib.ActAvg.Offset = 0     // 0.01 not good
 				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
 				ly.Inhib.Layer.FB = 1          // 1.1 FB1 >> 4!
 				ly.Inhib.Pool.FB = 4           // 4
@@ -91,9 +93,9 @@ var PathParams = axon.PathSheets{
 				pt.Learn.DWt.SubMean = 1         // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
 				pt.SWts.Adapt.LRate = 0.0001     // 0.005 == .1 == .01
 				pt.SWts.Init.SPct = 1            // 1 >= lower (trace-v11)
-				pt.Learn.DWt.CaPScale = 1.0      // 0.95 essential vs. 1.0
+				pt.Learn.DWt.CaPScale = 0.95     //
 				pt.Learn.DWt.Trace.SetBool(true) // no trace starts faster but is unstable
-				pt.Learn.SynCaBin.Envelope = kinase.Env20
+				pt.Learn.SynCaBin.Envelope = kinase.Env10
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger",
 			Set: func(pt *axon.PathParams) {

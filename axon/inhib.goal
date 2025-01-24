@@ -72,7 +72,8 @@ type ActAvgParams struct {
 	// be needed for large networks and sparse layers.
 	AdaptRate float32 `default:"0.1"`
 
-	pad float32
+	// AdaptMax is the maximum adaptation step magnitude to take at any point.
+	AdaptMax float32 `default:"0.05"`
 }
 
 func (aa *ActAvgParams) Update() {
@@ -85,6 +86,7 @@ func (aa *ActAvgParams) Defaults() {
 	aa.HiTol = 0
 	aa.LoTol = 0.8
 	aa.AdaptRate = 0.1
+	aa.AdaptMax = 0.05
 	aa.Update()
 }
 
@@ -111,7 +113,7 @@ func (aa *ActAvgParams) Adapt(gimult *float32, act float32) bool {
 	trg := aa.Nominal + aa.Offset
 	del := (act - trg) / trg
 	if del < -aa.LoTol || del > aa.HiTol {
-		*gimult += aa.AdaptRate * del
+		*gimult += math32.Clamp(aa.AdaptRate*del, -aa.AdaptMax, aa.AdaptMax)
 		return true
 	}
 	return false

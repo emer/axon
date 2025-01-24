@@ -78,9 +78,6 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 //////// import: "vars.go"
 
 //////// import: "act-layer.go"
-fn LayerParams_IsInput(ly: LayerParams) -> bool {
-	return ly.Type == InputLayer;
-}
 
 //////// import: "act-net.go"
 
@@ -378,6 +375,10 @@ struct Context { //types:add -setters
 	TimePerCycle: f32,
 	SlowInterval: i32,
 	SlowCounter: i32,
+	AdaptGiInterval: i32,
+	AdaptGiCounter: i32,
+	pad: i32,
+	pad1: i32,
 	RandCounter: RandCounter,
 }
 
@@ -564,14 +565,7 @@ struct ActAvgParams {
 	HiTol: f32,
 	LoTol: f32,
 	AdaptRate: f32,
-	pad: f32,
-}
-fn ActAvgParams_Adapt(aa: ActAvgParams, gimult: ptr<function,f32>, act: f32) -> bool {
-	var trg = aa.Nominal + aa.Offset;
-	var del = (act - trg) / trg;
-	if (del < -aa.LoTol || del > aa.HiTol) {
-		*gimult += aa.AdaptRate * del;return true;
-	}return false;
+	AdaptMax: f32,
 }
 struct InhibParams {
 	ActAvg: ActAvgParams,
@@ -714,20 +708,7 @@ const  LayerRewPredNeg: LayerVars = 11;
 
 //////// import: "learn-layer.go"
 fn LayerParams_SlowAdaptLayer(ly: LayerParams, ctx: Context) {
-	LayerParams_AdaptInhib(ly, ctx);
 	LayerParams_AvgDifFromTrgAvg(ly, ctx);
-}
-fn LayerParams_AdaptInhib(ly: LayerParams, ctx: Context) {
-	if (ly.Inhib.ActAvg.AdaptGi == 0 || LayerParams_IsInput(ly)) {
-		return;
-	}
-	for (var di = u32(0); di < ctx.NData; di++) {
-		var giMult = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(ly.Index), u32(di), u32(LayerGiMult))];
-		var avg = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(ly.Index), u32(di), u32(LayerActMAvg))];
-		ActAvgParams_Adapt(ly.Inhib.ActAvg, &giMult, avg);
-		LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92],
-		u32(ly.Index), u32(di), u32(LayerGiMult))] = giMult;
-	}
 }
 fn LayerParams_AvgDifFromTrgAvg(ly: LayerParams, ctx: Context) {
 	var sp = u32(0);

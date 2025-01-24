@@ -116,16 +116,15 @@ func (ly *LayerParams) DWtSubMean(ctx *Context, ri uint32) {
 // Calls AdaptInhib and AvgDifFromTrgAvg for Synaptic Scaling.
 // Does NOT call pathway-level methods.
 func (ly *LayerParams) SlowAdaptLayer(ctx *Context) {
-	ly.AdaptInhib(ctx)
 	ly.AvgDifFromTrgAvg(ctx)
 }
 
-// AdaptInhib adapts inhibition.
-func (ly *LayerParams) AdaptInhib(ctx *Context) {
+// AdaptGi adapts inhibition if enabled.
+func (ly *LayerParams) AdaptGi(ctx *Context) {
 	if ly.Inhib.ActAvg.AdaptGi.IsFalse() || ly.IsInput() {
 		return
 	}
-	// note: this is happening redundantly across all ndata based on shared LayerActMAvg values
+	// note: this is happening redundantly across all ndata based on shared LayerActMAvg values.
 	for di := uint32(0); di < ctx.NData; di++ {
 		giMult := LayerStates.Value(int(ly.Index), int(di), int(LayerGiMult))
 		avg := LayerStates.Value(int(ly.Index), int(di), int(LayerActMAvg))

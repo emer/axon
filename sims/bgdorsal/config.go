@@ -73,6 +73,10 @@ type RunConfig struct {
 	// mini-batch of learning.
 	NData int `default:"16" min:"1"`
 
+	// SlowInterval is the interval between slow adaptive processes.
+	// This generally needs to be longer than the default of 100 in larger models.
+	SlowInterval int `default:"200"` // 200 >= 100 > 400
+
 	// NThreads is the number of parallel threads for CPU computation;
 	// 0 = use default.
 	NThreads int `default:"0"`

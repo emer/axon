@@ -79,7 +79,7 @@ type Context struct { //types:add -setters
 	TimePerCycle float32 `default:"0.001"`
 
 	// SlowInterval is how frequently in Trials to perform slow adaptive processes
-	// such as synaptic scaling, inhibition adaptation, associated in the brain with sleep,
+	// such as synaptic scaling, associated in the brain with sleep,
 	// via the SlowAdapt method.  This should be long enough for meaningful changes
 	// to accumulate. 100 is default but could easily be longer in larger models.
 	// Because SlowCounter is incremented by NData, high NData cases (e.g. 16) likely need to
@@ -89,6 +89,16 @@ type Context struct { //types:add -setters
 	// SlowCounter increments for each training trial, to trigger SlowAdapt at SlowInterval.
 	// This is incremented by NData to maintain consistency across different values of this parameter.
 	SlowCounter int32 `edit:"-"`
+
+	// AdaptGiInterval is how frequently in Trials to perform inhibition adaptation,
+	// which needs to be even slower than the SlowInterval.
+	AdaptGiInterval int32 `default:"1000"`
+
+	// AdaptGiCounter increments for each training trial, to trigger AdaptGi at AdaptGiInterval.
+	// This is incremented by NData to maintain consistency across different values of this parameter.
+	AdaptGiCounter int32 `edit:"-"`
+
+	pad, pad1 int32
 
 	// RandCounter is the random counter, incremented by maximum number of
 	// possible random numbers generated per cycle, regardless of how
@@ -105,6 +115,7 @@ func (ctx *Context) Defaults() {
 	ctx.PlusCycles = 50
 	ctx.CaBinCycles = 10
 	ctx.SlowInterval = 100
+	ctx.AdaptGiInterval = 1000
 }
 
 // ItemIndex returns the main item index from an overall index over NItems * NData.
@@ -132,15 +143,20 @@ func (ctx *Context) CycleInc() {
 	// note: cannot call writing methods on sub-fields, so have to do it manually.
 }
 
-// SlowInc increments the Slow counter and returns true if time
-// to perform SlowAdapt functions (associated with sleep).
-func (ctx *Context) SlowInc() bool {
+// SlowInc increments the Slow and AdaptGi counters and returns true if it is
+// time to perform SlowAdapt or AdaptGi functions.
+func (ctx *Context) SlowInc() (slow bool, adaptgi bool) {
 	ctx.SlowCounter += int32(ctx.NData)
-	if ctx.SlowCounter < ctx.SlowInterval {
-		return false
+	ctx.AdaptGiCounter += int32(ctx.NData)
+	if ctx.SlowCounter >= ctx.SlowInterval {
+		slow = true
+		ctx.SlowCounter = 0
 	}
-	ctx.SlowCounter = 0
-	return true
+	if ctx.AdaptGiCounter >= ctx.AdaptGiInterval {
+		adaptgi = true
+		ctx.AdaptGiCounter = 0
+	}
+	return
 }
 
 // PlusPhaseStart resets PhaseCycle = 0 and sets the plus phase to true.

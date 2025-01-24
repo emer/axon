@@ -414,6 +414,10 @@ struct Context { //types:add -setters
 	TimePerCycle: f32,
 	SlowInterval: i32,
 	SlowCounter: i32,
+	AdaptGiInterval: i32,
+	AdaptGiCounter: i32,
+	pad: i32,
+	pad1: i32,
 	RandCounter: RandCounter,
 }
 
@@ -600,7 +604,7 @@ struct ActAvgParams {
 	HiTol: f32,
 	LoTol: f32,
 	AdaptRate: f32,
-	pad: f32,
+	AdaptMax: f32,
 }
 fn ActAvgParams_AvgFromAct(aa: ActAvgParams, avg: ptr<function,f32>, act: f32, dt: f32) {
 	if (act < 0.0001) {

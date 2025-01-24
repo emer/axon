@@ -89,7 +89,7 @@ type RunConfig struct {
 
 	// SlowInterval is the interval between slow adaptive processes.
 	// This generally needs to be longer than the default of 100 in larger models.
-	SlowInterval int `default:"400"`
+	SlowInterval int `default:"400"` // 400 best > 800 >> 100
 
 	// NThreads is the number of parallel threads for CPU computation;
 	// 0 = use default.

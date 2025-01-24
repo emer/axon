@@ -44,6 +44,7 @@ var LayerParams = axon.LayerSheets{
 				// ly.Learn.CaLearn.Dt.DTau =        60   // "
 				// ly.Learn.CaSpk.Dt.PTau =          60   // "
 				// ly.Learn.CaSpk.Dt.DTau =          60   // "
+				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // ?
 			}},
 		{Sel: ".SuperLayer", Doc: "super layer params",
 			Set: func(ly *axon.LayerParams) {
@@ -100,7 +101,7 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Init.SPct = 1.0     // 1 works fine here -- .5 also ok
 				pt.Learn.DWt.Tau = 1        // 1 >> 2 v0.0.9
 				pt.Learn.DWt.CaPScale = 1.0 // 0.95 def; 1 maybe slightly more stable
-				pt.Learn.SynCaBin.Envelope = kinase.Env25
+				pt.Learn.SynCaBin.Envelope = kinase.Env10
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {

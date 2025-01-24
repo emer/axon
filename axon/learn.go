@@ -197,7 +197,8 @@ type RLRateParams struct {
 
 	// SigmoidLinear uses a linear sigmoid function: if act > .5: 1-act; else act
 	// otherwise use the actual sigmoid derivative which is squared: a(1-a).
-	SigmoidLinear slbool.Bool `default:"true"`
+	// This can improve learning in some cases but is generally not beneficial.
+	SigmoidLinear slbool.Bool `default:"false"`
 
 	// SigmoidMin is the minimum learning rate multiplier for sigmoidal
 	// act (1-act) factor, which prevents lrate from going too low for extreme values.
@@ -227,7 +228,7 @@ func (rl *RLRateParams) Update() {
 
 func (rl *RLRateParams) Defaults() {
 	rl.On.SetBool(true)
-	rl.SigmoidLinear.SetBool(true)
+	rl.SigmoidLinear.SetBool(false)
 	rl.SigmoidMin = 0.05
 	rl.Diff.SetBool(true)
 	rl.SpikeThr = 0.1

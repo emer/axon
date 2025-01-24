@@ -108,8 +108,8 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.04   // 0.04 > 0.03
 				pt.Learn.DWt.Tau = 1         // 1 > 2
-				pt.Learn.DWt.CaPScale = 0.98 // 0.99 > 1 for 10
-				pt.Learn.SynCaBin.Envelope = kinase.Env20
+				pt.Learn.DWt.CaPScale = 1.05 // 1.05 > 1 > 1.1
+				pt.Learn.SynCaBin.Envelope = kinase.Env10
 			}},
 		// {Sel: ".PFCPath", Doc: "",
 		// 	Set: func(pt *axon.PathParams) {

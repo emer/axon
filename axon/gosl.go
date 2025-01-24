@@ -66,6 +66,7 @@ func GPUInit() {
 	{
 		sy := gpu.NewComputeSystem(gp, "Default")
 		GPUSystem = sy
+		gpu.NewComputePipelineShaderFS(shaders, "shaders/AdaptGiLayer.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/ApplyExtsNeuron.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/Beta1Neuron.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/Beta2Neuron.wgsl", sy)
@@ -174,6 +175,48 @@ func GPURelease() {
 	}
 }
 
+// RunAdaptGiLayer runs the AdaptGiLayer kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOneAdaptGiLayer call does Run and Done for a
+// single run-and-sync case.
+func RunAdaptGiLayer(n int) {
+	if UseGPU {
+		RunAdaptGiLayerGPU(n)
+	} else {
+		RunAdaptGiLayerCPU(n)
+	}
+}
+
+// RunAdaptGiLayerGPU runs the AdaptGiLayer kernel on the GPU. See [RunAdaptGiLayer] for more info.
+func RunAdaptGiLayerGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["AdaptGiLayer"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunAdaptGiLayerCPU runs the AdaptGiLayer kernel on the CPU.
+func RunAdaptGiLayerCPU(n int) {
+	gpu.VectorizeFunc(0, n, AdaptGiLayer)
+}
+
+// RunOneAdaptGiLayer runs the AdaptGiLayer kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOneAdaptGiLayer(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunAdaptGiLayerGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunAdaptGiLayerCPU(n)
+	}
+}
 // RunApplyExtsNeuron runs the ApplyExtsNeuron kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched

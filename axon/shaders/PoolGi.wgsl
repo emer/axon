@@ -389,6 +389,10 @@ struct Context { //types:add -setters
 	TimePerCycle: f32,
 	SlowInterval: i32,
 	SlowCounter: i32,
+	AdaptGiInterval: i32,
+	AdaptGiCounter: i32,
+	pad: i32,
+	pad1: i32,
 	RandCounter: RandCounter,
 }
 fn Context_ItemIndex(ctx: Context, idx: u32) -> u32 {
@@ -596,7 +600,7 @@ struct ActAvgParams {
 	HiTol: f32,
 	LoTol: f32,
 	AdaptRate: f32,
-	pad: f32,
+	AdaptMax: f32,
 }
 struct InhibParams {
 	ActAvg: ActAvgParams,
