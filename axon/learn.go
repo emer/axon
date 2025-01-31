@@ -753,13 +753,19 @@ type DWtParams struct {
 	// there is temporal structure to be learned across these longer timescales.
 	Tau float32 `default:"1,2,4"`
 
+	// SynCa20 uses an effective 20msec time window for synaptic calcium computation
+	// from the [CaBins] values for send and recv neurons in computing the SynCa
+	// synaptic calcium value. The default is 10msec, i.e., 1 bin, which works well
+	// for most cases. This uses 2 bins if set.
+	SynCa20 slbool.Bool
+
 	// CaPScale is a separate multiplier for the CaP component of synaptic calcium, to
 	// allow separate weighting of potentiation (CaP) vs. depression (CaD) factors.
 	// An increased CaP level results in an overall potentiation bias, which acts
-	// like a hebbian learning factor. This can be bad for long-term synaptic stability
-	// and lead to the hog-unit problem, and the default of 0.95 is set to mitigate
-	// this hogging dynamic.
-	CaPScale float32 `default:"0.95,1"`
+	// like a hebbian learning factor, whereas a lower value produces more negatively
+	// biased synaptic weight changes, which may help with an overall hogging dynamic.
+	// The default of 1 works best in most cases.
+	CaPScale float32 `default:"1,0.95,1.05"`
 
 	// SubMean is the amount of the mean [dWt] to subtract for updating the online
 	// learning [LWt] values, producing a zero-sum effect. 1.0 = full zero-sum dWt.
@@ -779,13 +785,14 @@ type DWtParams struct {
 	// Dt rate = 1 / tau
 	Dt float32 `display:"-" json:"-" xml:"-" edit:"-"`
 
-	pad, pad1 float32
+	pad float32
 }
 
 func (tp *DWtParams) Defaults() {
 	tp.Trace.SetBool(true)
 	tp.Tau = 1
-	tp.CaPScale = 0.95
+	tp.SynCa20.SetBool(false)
+	tp.CaPScale = 1
 	tp.SubMean = 0
 	tp.LearnThr = 0
 	tp.Update()
@@ -856,14 +863,6 @@ type LearnSynParams struct {
 	// trace-based cortical learning rule and for other specialized learning rules.
 	DWt DWtParams `display:"inline"`
 
-	// SynCaBin computes synaptic calcium values as a product of the
-	// separately-integrated and binned sender and receiver SynCa values.
-	// Binning always happens at 10 msec intervals, but the product term
-	// is more robust if computed on a longer effective timescale, which
-	// is determined by weighting factors for the t-1 and t-2 bins when
-	// computing the neural SynCa for time bin t.
-	SynCaBin kinase.SynCaBin `display:"inline"`
-
 	// hebbian learning option, which overrides the default learning rules
 	Hebb HebbParams `display:"inline"`
 }
@@ -871,7 +870,6 @@ type LearnSynParams struct {
 func (ls *LearnSynParams) Update() {
 	ls.LRate.Update()
 	ls.DWt.Update()
-	ls.SynCaBin.Update()
 	ls.Hebb.Update()
 }
 
@@ -879,7 +877,6 @@ func (ls *LearnSynParams) Defaults() {
 	ls.Learn.SetBool(true)
 	ls.LRate.Defaults()
 	ls.DWt.Defaults()
-	ls.SynCaBin.Defaults()
 	ls.Hebb.Defaults()
 }
 

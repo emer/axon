@@ -57,19 +57,23 @@ func (pt *PathParams) SynCa(ctx *Context, si, ri, di uint32, syCaP, syCaD *float
 	// T0
 	r0 := Neurons.Value(int(ri), int(di), int(CaBins+NeuronVars(0)))
 	s0 := Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(0)))
-	sp := pt.Learn.SynCaBin.SynCaT0(r0, s0)
+	sp := r0 * s0
 	cp := sp * GlobalScalars.Value(int(GvCaBinWts+GlobalScalarVars(0)), int(0))
 	cd := sp * GlobalScalars.Value(int(cadSt+GlobalScalarVars(0)), int(0))
 
-	// T1
-	r1 := Neurons.Value(int(ri), int(di), int(CaBins+NeuronVars(1)))
-	s1 := Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(1)))
-	sp = pt.Learn.SynCaBin.SynCaT1(r0, r1, s0, s1)
-	cp += sp * GlobalScalars.Value(int(GvCaBinWts+GlobalScalarVars(1)), int(0))
-	cd += sp * GlobalScalars.Value(int(cadSt+GlobalScalarVars(1)), int(0))
+	syn20 := pt.Learn.DWt.SynCa20.IsTrue()
 
-	for i := int32(2); i < nbins; i++ {
-		sp := pt.Learn.SynCaBin.SynCaT(Neurons.Value(int(ri), int(di), int(CaBins+NeuronVars(i))), Neurons.Value(int(ri), int(di), int(CaBins+NeuronVars(i-1))), Neurons.Value(int(ri), int(di), int(CaBins+NeuronVars(i-2))), Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(i))), Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(i-1))), Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(i-2))))
+	for i := int32(1); i < nbins; i++ {
+		rt := Neurons.Value(int(ri), int(di), int(CaBins+NeuronVars(i)))
+		rt1 := Neurons.Value(int(ri), int(di), int(CaBins+NeuronVars(i-1)))
+		st := Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(i)))
+		st1 := Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(i-1)))
+		sp := float32(0)
+		if syn20 {
+			sp = 0.25 * (rt + rt1) * (st + st1)
+		} else {
+			sp = rt * st
+		}
 		cp += sp * GlobalScalars.Value(int(GvCaBinWts+GlobalScalarVars(i)), int(0))
 		cd += sp * GlobalScalars.Value(int(cadSt+GlobalScalarVars(i)), int(0))
 	}

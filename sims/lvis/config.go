@@ -91,6 +91,9 @@ type RunConfig struct {
 	// This generally needs to be longer than the default of 100 in larger models.
 	SlowInterval int `default:"400"` // 400 best > 800 >> 100
 
+	// AdaptGiInterval is the interval between adapting inhibition steps.
+	AdaptGiInterval int `default:"400"` // ?
+
 	// NThreads is the number of parallel threads for CPU computation;
 	// 0 = use default.
 	NThreads int `default:"0"`
@@ -139,6 +142,9 @@ type LogConfig struct {
 
 	// SaveWeights will save final weights after each run.
 	SaveWeights bool
+
+	// SaveWeightsAt is a list of epoch counters at which to save weights.
+	SaveWeightsAt []int `default:"[400, 800]"`
 
 	// Train has the list of Train mode levels to save log files for.
 	Train []string `default:"['Run', 'Epoch']" nest:"+"`

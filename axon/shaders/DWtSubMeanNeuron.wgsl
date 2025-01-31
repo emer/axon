@@ -587,23 +587,6 @@ struct CaSpikeParams {
 	Dt: CaDtParams,
 }
 
-//////// import: "kinase-syncabin.go"
-alias SynCaBinEnvelopes = i32; //enums:enum
-const  Env30: SynCaBinEnvelopes = 0;
-const  Env25: SynCaBinEnvelopes = 1;
-const  Env20: SynCaBinEnvelopes = 2;
-const  Env10: SynCaBinEnvelopes = 3;
-struct SynCaBin { //types:add
-	Envelope: SynCaBinEnvelopes,
-	Wt1: f32,
-	Wt2: f32,
-	Wt11: f32,
-	Wt10: f32,
-	WtT0: f32,
-	WtT1: f32,
-	WtT2: f32,
-}
-
 //////// import: "layerparams.go"
 struct LayerIndexes {
 	NPools: u32,
@@ -820,12 +803,12 @@ struct LRateParams {
 struct DWtParams {
 	Trace: i32,
 	Tau: f32,
+	SynCa20: i32,
 	CaPScale: f32,
 	SubMean: f32,
 	LearnThr: f32,
 	Dt: f32,
 	pad: f32,
-	pad1: f32,
 }
 struct HebbParams {
 	On: i32,
@@ -840,7 +823,6 @@ struct LearnSynParams {
 	pad2: i32,
 	LRate: LRateParams,
 	DWt: DWtParams,
-	SynCaBin: SynCaBin,
 	Hebb: HebbParams,
 }
 

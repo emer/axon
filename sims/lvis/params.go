@@ -23,6 +23,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Layer.ClampExtMin = 0.0 // 0.05 default doesn't activate output!
 				ly.Inhib.Pool.ClampExtMin = 0.0
 				ly.Inhib.ActAvg.AdaptRate = 0.05 // was 0.1 -- got fluctations
+				ly.Inhib.ActAvg.AdaptMax = 0.01  // 0.05 default; 0.01 has effect
 				ly.Inhib.ActAvg.LoTol = 0.8
 				ly.Inhib.ActAvg.HiTol = 0.0
 				ly.Acts.Decay.Act = 0.0    // 0 == .2

@@ -1,15 +1,8 @@
-# Bench Objrec
+# Objrec
 
-bench_objrec is supposed to be an easy-to-understand, easy-to-run network that nevertheless has the same performance characteristics as the big LVis network.
-As compared to examples/bench_lvis, bench_objrec is more difficult to understand (uses Looper, lots of logging code), but actually converges and has a working GUI.
+This network is the axon version of the CCN sims [objrec](https://github.com/CompCogNeuro/sims/tree/main/ch6/objrec) model.
 
-This network is similar to [lvis/sims/objrec](https://github.com/ccnlab/lvis/tree/main/sims/objrec).
-See the [README](https://github.com/ccnlab/lvis/blob/main/sims/objrec/README.md) over there for more detailed explanations.
+# Parameter notes
 
-Changes: 
-- Works with most recent Axon version.
-- Prints a few basic stats to stdout
+* Depends critically on adapting inhibition in the V4 layer (first to kick in), along with later adapting inhib in IT and Output.  Without this, V4 increased activity drives positive feedback dynamic and system becomes unstable. This is similar to what happens in the LVis larger scale model.
 
-TODOs:
-- [ ] Delete lots of the unnecessary code (like everything in logging, except the most basic stats e.g. `PhaseDiff`)
-- [ ] Instead of being `package main`, turn the `main()` into a `BenchmarkObjrec(b *testing.B)` to make it easier to run & profile. Currently, this prohibits the use of a GUI (the window never gets created, just blocks [here](https://github.com/go-gl/glfw/blob/main/v3.3/glfw/window.go#L348) forever).
