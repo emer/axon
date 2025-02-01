@@ -497,7 +497,7 @@ func (pt *PathParams) SWtFromWt(ctx *Context, rlay *LayerParams, pti, ri, lni ui
 	}
 	avgDWt /= float32(synn)
 	avgWt /= float32(synn)
-	hiDk := math32.Clamp(pt.SWts.Adapt.HiAvgDecay * (avgWt - pt.SWts.Init.Mean), 0.0, pt.SWts.Adapt.HiAvgDecay)
+	hiDk := math32.Clamp(pt.SWts.Adapt.HiMeanDecay * (avgWt - pt.SWts.Adapt.HiMeanThr), 0.0, pt.SWts.Adapt.HiMeanDecay)
 	avgDWt *= pt.SWts.Adapt.SubMean
 	for ci := uint32(0); ci < synn; ci++ {
 		syni := RecvSynIxs.Value(int(synst + ci))

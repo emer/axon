@@ -504,13 +504,21 @@ type SWtAdaptParams struct {
 	// Generally best to set to 1. There is a separate SubMean factor for [LWt].
 	SubMean float32 `default:"1"`
 
-	// HiAvgDecay specifies a decay factor applied across all [LWt] weights
+	// HiMeanDecay specifies a decay factor applied across all [LWt] weights
+	// in proportion to the deviation of the average effective weight value [Wt]
+	// above the HiMeanThr threshold. This is applied at the slow learning interval
+	// and should be very slow, for counteracting a gradual accumulation in overall
+	// weights that can occur even with SubMean factors, which only operate on weights
+	// that are actually changing on the current trial.
+	HiMeanDecay float32
+
+	// HiMeanThr specifies a decay factor applied across all [LWt] weights
 	// in proportion to the deviation of the average effective weight value [Wt]
 	// away from SWt.Init.Mean. This is applied at the slow learning interval
 	// and should be very slow, for counteracting a gradual accumulation in overall
 	// weights that can occur even with SubMean factors, which only operate on weights
 	// that are actually changing on the current trial.
-	HiAvgDecay float32
+	HiMeanThr float32 `default:"0.5"`
 
 	// SigGain is the gain of the sigmoidal constrast enhancement function
 	// used to transform learned, linear [LWt] values into [Wt] values.
@@ -519,14 +527,15 @@ type SWtAdaptParams struct {
 	// this linear (1) instead.
 	SigGain float32 `default:"6"`
 
-	pad, pad1, pad2 float32
+	pad, pad1 float32
 }
 
 func (sp *SWtAdaptParams) Defaults() {
 	sp.On.SetBool(true)
 	sp.LRate = 0.1
 	sp.SubMean = 1
-	sp.HiAvgDecay = 0
+	sp.HiMeanDecay = 0
+	sp.HiMeanThr = 0.5
 	sp.SigGain = 6
 	sp.Update()
 }

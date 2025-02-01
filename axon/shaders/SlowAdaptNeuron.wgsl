@@ -744,7 +744,7 @@ fn PathParams_SWtFromWt(pt: PathParams, ctx: Context, rlay: LayerParams, pti: u3
 	}
 	avgDWt /= f32(synn);
 	avgWt /= f32(synn);
-	var hiDk = clamp(pt.SWts.Adapt.HiAvgDecay*(avgWt-pt.SWts.Init.Mean), 0.0, pt.SWts.Adapt.HiAvgDecay);
+	var hiDk = clamp(pt.SWts.Adapt.HiMeanDecay*(avgWt-pt.SWts.Adapt.HiMeanThr), 0.0, pt.SWts.Adapt.HiMeanDecay);
 	avgDWt *= pt.SWts.Adapt.SubMean;
 	for (var ci = u32(0); ci < synn; ci++) {
 		var syni = RecvSynIxs[Index1D(TensorStrides[60], u32(synst + ci))];
@@ -869,11 +869,11 @@ struct SWtAdaptParams {
 	On: i32,
 	LRate: f32,
 	SubMean: f32,
-	HiAvgDecay: f32,
+	HiMeanDecay: f32,
+	HiMeanThr: f32,
 	SigGain: f32,
 	pad: f32,
 	pad1: f32,
-	pad2: f32,
 }
 struct SWtParams {
 	Init: SWtInitParams,
