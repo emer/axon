@@ -945,7 +945,11 @@ struct SWtAdaptParams {
 	On: i32,
 	LRate: f32,
 	SubMean: f32,
+	HiAvgDecay: f32,
 	SigGain: f32,
+	pad: f32,
+	pad1: f32,
+	pad2: f32,
 }
 struct SWtParams {
 	Init: SWtInitParams,

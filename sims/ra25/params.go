@@ -6,7 +6,6 @@ package main
 
 import (
 	"github.com/emer/axon/v2/axon"
-	"github.com/emer/axon/v2/kinase"
 )
 
 // LayerParams sets the minimal non-default params.
@@ -45,13 +44,14 @@ var PathParams = axon.PathSheets{
 	"Base": {
 		{Sel: "Path", Doc: "basic path params",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.LRate.Base = 0.06       // 0.06 for trace, 0.02 for no trace
-				pt.SWts.Adapt.LRate = 0.1        // .1 >= .2,
-				pt.SWts.Init.SPct = 0.5          // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+				pt.Learn.LRate.Base = 0.06 // 0.06 for trace, 0.02 for no trace
+				pt.SWts.Adapt.LRate = 0.1  // .1 >= .2,
+				pt.SWts.Init.SPct = 0.5    // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+				pt.SWts.Adapt.HiAvgDecay = 0
 				pt.Learn.DWt.Trace.SetBool(true) // no trace is NOT faster. requires lrate = 0.02
 				pt.Learn.DWt.SubMean = 0         // 1 > 0 for long run stability
-				pt.Learn.DWt.CaPScale = 1        // 0.95 > 0.9 > 1
-				pt.Learn.SynCaBin.Envelope = kinase.Env10
+				pt.Learn.DWt.CaPScale = 1        // 1
+				pt.Learn.DWt.SynCa20.SetBool(false)
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {

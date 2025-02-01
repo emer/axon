@@ -729,6 +729,7 @@ fn PathParams_SWtFromWt(pt: PathParams, ctx: Context, rlay: LayerParams, pti: u3
 	var synn = PathRecvCon[Index2D(TensorStrides[50], TensorStrides[51], u32(cni), u32(Nitems))];
 	var synst = pt.Indexes.RecvSynSt + PathRecvCon[Index2D(TensorStrides[50], TensorStrides[51], u32(cni), u32(StartOff))];
 	var avgDWt = f32(0);
+	var avgWt = f32(0);
 	for (var ci = u32(0); ci < synn; ci++) {
 		var syni = RecvSynIxs[Index1D(TensorStrides[60], u32(synst + ci))];
 		var swt = Synapses[Index2D(TensorStrides[170], TensorStrides[171],
@@ -739,16 +740,21 @@ fn PathParams_SWtFromWt(pt: PathParams, ctx: Context, rlay: LayerParams, pti: u3
 			Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(DSWt))] *= (swt - mn);
 		}
 		avgDWt += Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(DSWt))];
+		avgWt += Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(Wt))];
 	}
 	avgDWt /= f32(synn);
+	avgWt /= f32(synn);
+	var hiDk = clamp(pt.SWts.Adapt.HiAvgDecay*(avgWt-pt.SWts.Init.Mean), 0.0, pt.SWts.Adapt.HiAvgDecay);
 	avgDWt *= pt.SWts.Adapt.SubMean;
 	for (var ci = u32(0); ci < synn; ci++) {
 		var syni = RecvSynIxs[Index1D(TensorStrides[60], u32(synst + ci))];
 		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(SWt))] += lr * (Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(DSWt))] - avgDWt);
 		var swt = Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(SWt))];
 		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(DSWt))] = 0.0;
-		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(LWt))] = SWtParams_LWtFromWts(pt.SWts, Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(Wt))], swt);
-		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(Wt))] = SWtParams_WtValue(pt.SWts, swt, Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(LWt))]);
+		var wt = Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(Wt))];
+		var lwt = SWtParams_LWtFromWts(pt.SWts, wt, swt);
+		lwt -= hiDk * lwt;
+		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(Wt))] = SWtParams_WtValue(pt.SWts, swt, lwt);
 	}
 }
 fn PathParams_SynScale(pt: PathParams, ctx: Context, rlay: LayerParams, pti: u32,ri: u32,lni: u32) {
@@ -862,7 +868,11 @@ struct SWtAdaptParams {
 	On: i32,
 	LRate: f32,
 	SubMean: f32,
+	HiAvgDecay: f32,
 	SigGain: f32,
+	pad: f32,
+	pad1: f32,
+	pad2: f32,
 }
 struct SWtParams {
 	Init: SWtInitParams,

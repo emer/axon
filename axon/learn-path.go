@@ -484,6 +484,7 @@ func (pt *PathParams) SWtFromWt(ctx *Context, rlay *LayerParams, pti, ri, lni ui
 	synst := pt.Indexes.RecvSynSt + PathRecvCon.Value(int(cni), int(StartOff))
 
 	avgDWt := float32(0)
+	avgWt := float32(0)
 	for ci := uint32(0); ci < synn; ci++ {
 		syni := RecvSynIxs.Value(int(synst + ci))
 		swt := Synapses.Value(int(syni), int(SWt))
@@ -494,16 +495,21 @@ func (pt *PathParams) SWtFromWt(ctx *Context, rlay *LayerParams, pti, ri, lni ui
 			Synapses.SetMul((swt - mn), int(syni), int(DSWt))
 		}
 		avgDWt += Synapses.Value(int(syni), int(DSWt))
+		avgWt += Synapses.Value(int(syni), int(Wt))
 	}
 	avgDWt /= float32(synn)
+	avgWt /= float32(synn)
+	hiDk := math32.Clamp(pt.SWts.Adapt.HiAvgDecay*(avgWt-pt.SWts.Init.Mean), 0.0, pt.SWts.Adapt.HiAvgDecay)
 	avgDWt *= pt.SWts.Adapt.SubMean
 	for ci := uint32(0); ci < synn; ci++ {
 		syni := RecvSynIxs.Value(int(synst + ci))
 		Synapses.SetAdd(lr*(Synapses.Value(int(syni), int(DSWt))-avgDWt), int(syni), int(SWt))
 		swt := Synapses.Value(int(syni), int(SWt))
 		Synapses.Set(0.0, int(syni), int(DSWt))
-		Synapses.Set(pt.SWts.LWtFromWts(Synapses.Value(int(syni), int(Wt)), swt), int(syni), int(LWt))
-		Synapses.Set(pt.SWts.WtValue(swt, Synapses.Value(int(syni), int(LWt))), int(syni), int(Wt))
+		wt := Synapses.Value(int(syni), int(Wt))
+		lwt := pt.SWts.LWtFromWts(wt, swt)
+		lwt -= hiDk * lwt
+		Synapses.Set(pt.SWts.WtValue(swt, lwt), int(syni), int(Wt))
 	}
 }
 
