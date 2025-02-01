@@ -92,7 +92,7 @@ var PathParams = axon.PathSheets{
 				pt.Learn.LRate.Base = 0.1    // 0.1 > 0.2 much better behavior overall; just slower initial learning for trace, 0.02 for notrace
 				pt.Learn.DWt.SubMean = 1     // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
 				pt.SWts.Adapt.LRate = 0.0001 // 0.005 == .1 == .01
-				pt.SWts.Adapt.HiAvgDecay = 0
+				pt.SWts.Adapt.HighAvgDecay = 0
 				pt.SWts.Init.SPct = 1            // 1 >= lower (trace-v11)
 				pt.Learn.DWt.CaPScale = 1        //
 				pt.Learn.DWt.Trace.SetBool(true) // no trace starts faster but is unstable

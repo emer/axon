@@ -509,6 +509,7 @@ func (pt *PathParams) SWtFromWt(ctx *Context, rlay *LayerParams, pti, ri, lni ui
 		wt := Synapses.Value(int(syni), int(Wt))
 		lwt := pt.SWts.LWtFromWts(wt, swt)
 		lwt -= hiDk * lwt
+		Synapses.Set(lwt, int(syni), int(LWt))
 		Synapses.Set(pt.SWts.WtValue(swt, lwt), int(syni), int(Wt))
 	}
 }

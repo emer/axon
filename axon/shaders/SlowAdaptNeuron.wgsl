@@ -754,6 +754,7 @@ fn PathParams_SWtFromWt(pt: PathParams, ctx: Context, rlay: LayerParams, pti: u3
 		var wt = Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(Wt))];
 		var lwt = SWtParams_LWtFromWts(pt.SWts, wt, swt);
 		lwt -= hiDk * lwt;
+		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(LWt))] = lwt;
 		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(Wt))] = SWtParams_WtValue(pt.SWts, swt, lwt);
 	}
 }

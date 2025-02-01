@@ -181,7 +181,7 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Adapt.On.SetBool(true) // true > false, esp in cosdiff
 				pt.SWts.Adapt.LRate = 0.0002   // .0002, .001 > .01 > .1 after 250epc in NStrong
 				pt.SWts.Adapt.SubMean = 1      // 1 > 0 -- definitely needed
-				pt.SWts.Adapt.HiAvgDecay = 0.01
+				pt.SWts.Adapt.HiAvgDecay = 0.1
 				pt.Learn.LRate.Base = 0.005 // 0.005 def; 0.01 > 0.02 later (trace)
 				pt.Learn.DWt.SubMean = 1    // 1 > 0 for trgavg weaker
 				pt.Learn.DWt.CaPScale = 1   // Env10: 1
