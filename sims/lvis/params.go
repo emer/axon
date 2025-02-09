@@ -22,7 +22,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Layer.ClampExtMin = 0.0 // 0.05 default doesn't activate output!
 				ly.Inhib.Pool.ClampExtMin = 0.0
 				ly.Inhib.ActAvg.AdaptRate = 0.05 // was 0.1 -- got fluctations
-				ly.Inhib.ActAvg.AdaptMax = 0.01  // 0.05 default; 0.01 has effect
+				ly.Inhib.ActAvg.AdaptMax = 0.01  // 0.05 default; 0.01 has effect; lower not effective at preventing instability on its own.
 				ly.Inhib.ActAvg.LoTol = 0.8
 				ly.Inhib.ActAvg.HiTol = 0.0
 				ly.Acts.Decay.Act = 0.0    // 0 == .2
@@ -178,14 +178,14 @@ var PathParams = axon.PathSheets{
 	"Base": {
 		{Sel: "Path", Doc: "exploring",
 			Set: func(pt *axon.PathParams) {
-				pt.SWts.Adapt.On.SetBool(true) // true > false, esp in cosdiff
-				pt.SWts.Adapt.LRate = 0.0002   // .0002, .001 > .01 > .1 after 250epc in NStrong
-				pt.SWts.Adapt.SubMean = 1      // 1 > 0 -- definitely needed
-				pt.SWts.Adapt.HiMeanDecay = 0.001
-				pt.SWts.Adapt.HiMeanThr = 0.5
-				pt.Learn.LRate.Base = 0.005 // 0.005 def; 0.01 > 0.02 later (trace)
-				pt.Learn.DWt.SubMean = 1    // 1 > 0 for trgavg weaker
-				pt.Learn.DWt.CaPScale = 1   // Env10: 1
+				pt.SWts.Adapt.On.SetBool(true)     // true > false, esp in cosdiff
+				pt.SWts.Adapt.LRate = 0.0002       // .0002, .001 > .01 > .1 after 250epc in NStrong
+				pt.SWts.Adapt.SubMean = 1          // 1 > 0 -- definitely needed
+				pt.SWts.Adapt.HiMeanDecay = 0.0008 // 0.0008 best
+				pt.SWts.Adapt.HiMeanThr = 0.5      // 0.5, 0.0008 goes the distance
+				pt.Learn.LRate.Base = 0.005        // 0.005 def; 0.01 > 0.02 later (trace)
+				pt.Learn.DWt.SubMean = 1           // 1 > 0 for trgavg weaker
+				pt.Learn.DWt.CaPScale = 1          // Env10: 1
 				pt.Learn.DWt.SynCa20.SetBool(false)
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger",
