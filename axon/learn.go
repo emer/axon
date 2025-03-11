@@ -508,9 +508,9 @@ type SWtAdaptParams struct {
 	// in proportion to the deviation of the average effective weight value [Wt]
 	// above the HiMeanThr threshold. This is applied at the slow learning interval
 	// and should be very slow, for counteracting a gradual accumulation in overall
-	// weights that can occur even with SubMean factors, which only operate on weights
-	// that are actually changing on the current trial.
-	HiMeanDecay float32
+	// weights that can occur even with SubMean factors (which only operate on weights
+	// that are actually changing on the current trial).
+	HiMeanDecay float32 `default:"0.0008"`
 
 	// HiMeanThr specifies a decay factor applied across all [LWt] weights
 	// in proportion to the deviation of the average effective weight value [Wt]
@@ -534,7 +534,7 @@ func (sp *SWtAdaptParams) Defaults() {
 	sp.On.SetBool(true)
 	sp.LRate = 0.1
 	sp.SubMean = 1
-	sp.HiMeanDecay = 0
+	sp.HiMeanDecay = 0.0008
 	sp.HiMeanThr = 0.5
 	sp.SigGain = 6
 	sp.Update()

@@ -74,8 +74,8 @@ type Sim struct {
 	// Kinase CaSpike params
 	CaSpike kinase.CaSpikeParams `display:"no-inline" new-window:"+"`
 
-	// SynCaBin sets the SynCa integration parameters.
-	SynCaBin kinase.SynCaBin
+	// SynCa20 determines whether to use 20 msec SynCa integration.
+	SynCa20 bool
 
 	// CaPWts are CaBin integration weights for CaP
 	CaPWts []float32 `new-window:"+"`
@@ -120,7 +120,7 @@ func RunSim(cfg *Config) error {
 
 func (ss *Sim) Defaults() {
 	ss.CaSpike.Defaults()
-	ss.SynCaBin.Defaults()
+	ss.SynCa20 = false
 	cli.SetFromDefaults(&ss.Config)
 }
 

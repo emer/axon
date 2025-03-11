@@ -75,12 +75,12 @@ type ActAvgParams struct {
 
 	// AdaptRate is the rate of Gi adaptation as function of
 	// AdaptRate * (Target - ActMAvg) / Target. This occurs at spaced intervals
-	// determined by Network.SlowInterval value. Slower values such as 0.01 may
+	// determined by Network.SlowInterval value. Slower values such as 0.05 may
 	// be needed for large networks and sparse layers.
 	AdaptRate float32 `default:"0.1"`
 
 	// AdaptMax is the maximum adaptation step magnitude to take at any point.
-	AdaptMax float32 `default:"0.05"`
+	AdaptMax float32 `default:"0.01"`
 }
 
 func (aa *ActAvgParams) Update() {
@@ -93,7 +93,7 @@ func (aa *ActAvgParams) Defaults() {
 	aa.HiTol = 0
 	aa.LoTol = 0.8
 	aa.AdaptRate = 0.1
-	aa.AdaptMax = 0.05
+	aa.AdaptMax = 0.01
 	aa.Update()
 }
 

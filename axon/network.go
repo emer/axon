@@ -30,7 +30,7 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/gpu"
 	"cogentcore.org/core/icons"
-	"cogentcore.org/core/texteditor"
+	"cogentcore.org/core/text/textcore"
 	"cogentcore.org/core/tree"
 	"cogentcore.org/lab/tensor"
 	"github.com/emer/axon/v2/kinase"
@@ -572,7 +572,7 @@ func (nt *Network) AllGlobals() string {
 // ShowAllGlobals shows a listing of all Global variables and values.
 func (nt *Network) ShowAllGlobals() { //types:add
 	agv := nt.AllGlobals()
-	texteditor.TextDialog(nil, "All Global Vars: "+nt.Name, agv)
+	textcore.TextDialog(nil, "All Global Vars: "+nt.Name, agv)
 }
 
 // AllGlobalValues adds to map of all Global variables and values.

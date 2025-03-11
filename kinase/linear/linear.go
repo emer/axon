@@ -27,8 +27,8 @@ type Linear struct {
 	// Kinase CaSpike params
 	CaSpike kinase.CaSpikeParams `display:"no-inline" new-window:"+"`
 
-	// SynCaBin sets the SynCa integration parameters.
-	SynCaBin kinase.SynCaBin
+	// SynCa20 uses 20 msec time bin integration.
+	SynCa20 bool
 
 	// total number of cycles (1 MSec) to run per learning trial
 	Cycles int `min:"10" default:"200"`
@@ -89,7 +89,6 @@ func (ls *Linear) Defaults() {
 }
 
 func (ls *Linear) Update() {
-	ls.SynCaBin.Update()
 	ls.NumBins = ls.Cycles / ls.CyclesPerBin
 	// ls.CaSpike.Dt.PDTauForNCycles(ls.Cycles)
 	// ls.Synapse.Dt.PDTauForNCycles(ls.Cycles)
@@ -249,10 +248,13 @@ func (ls *Linear) SetSynState(sy *Synapse, row int) {
 }
 
 func (ls *Linear) SetBins(sn, rn *Neuron, off, row int) {
-	ls.CaBins[0] = ls.SynCaBin.SynCaT0(rn.CaBins[0], sn.CaBins[0])
-	ls.CaBins[1] = ls.SynCaBin.SynCaT1(rn.CaBins[0], rn.CaBins[1], sn.CaBins[0], sn.CaBins[1])
+	ls.CaBins[0] = rn.CaBins[0] * sn.CaBins[0]
 	for i := 2; i < ls.NumBins; i++ {
-		ls.CaBins[i] = ls.SynCaBin.SynCaT(rn.CaBins[i], rn.CaBins[i-1], rn.CaBins[i-2], sn.CaBins[i], sn.CaBins[i-1], sn.CaBins[i-2])
+		if ls.SynCa20 {
+			ls.CaBins[i] = 0.25 * (rn.CaBins[i] + rn.CaBins[i-1]) * (sn.CaBins[i] + sn.CaBins[i-1])
+		} else {
+			ls.CaBins[i] = rn.CaBins[i] * sn.CaBins[i]
+		}
 		ls.Data.Column("Bins").SetFloatRow(float64(ls.CaBins[i]), row, off+i)
 	}
 }
@@ -367,10 +369,14 @@ func (ls *Linear) Regress() {
 	endCaP := slices.Clone(r.Coeff.Values[:ls.NumBins])
 	endCaD := slices.Clone(r.Coeff.Values[ls.NumBins+1 : 2*ls.NumBins+1])
 
-	estr := ls.SynCaBin.Envelope.String()
+	estr := "synca10"
+	if ls.SynCa20 {
+		estr = "synca20"
+	}
 	esfn := strings.ToLower(estr)
 
 	plt := plot.New()
+	plt.SetImageRender(1280, 1024)
 	plots.NewLine(plt, tensor.NewFloat64FromValues(startCaP...)).Styler(func(s *plot.Style) {
 		s.Plot.Scale = 4
 		s.Plot.Title = "CaP Linear Regression Coefficients: " + estr
@@ -381,9 +387,10 @@ func (ls *Linear) Regress() {
 		s.Label = "Final"
 	})
 	plt.Draw()
-	imagex.Save(plt.Pixels, "plot-coefficients-cap-"+esfn+".png")
+	imagex.Save(plt.Painter.RenderImage(), "plot-coefficients-cap-"+esfn+".png")
 
 	plt = plot.New()
+	plt.SetImageRender(1280, 1024)
 	plots.NewLine(plt, tensor.NewFloat64FromValues(startCaD...)).Styler(func(s *plot.Style) {
 		s.Plot.Scale = 4
 		s.Plot.Title = "CaD Linear Regression Coefficients: " + estr
@@ -394,7 +401,7 @@ func (ls *Linear) Regress() {
 		s.Label = "Final"
 	})
 	plt.Draw()
-	imagex.Save(plt.Pixels, "plot-coefficients-cad-"+esfn+".png")
+	imagex.Save(plt.Painter.RenderImage(), "plot-coefficients-cad-"+esfn+".png")
 
 	/*
 		for vi := 0; vi < 2; vi++ {

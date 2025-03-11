@@ -287,13 +287,14 @@ func (ss *Sim) TrialImpl(minusHz, plusHz float32) {
 			bin := ks.Cycle / spikeBinCycles
 
 			sp := float32(0)
-			switch bin {
-			case 0:
-				sp = ss.SynCaBin.SynCaT0(ks.Recv.CaBins[0], ks.Send.CaBins[0])
-			case 1:
-				sp = ss.SynCaBin.SynCaT1(ks.Recv.CaBins[0], ks.Recv.CaBins[1], ks.Send.CaBins[0], ks.Send.CaBins[1])
-			default:
-				sp = ss.SynCaBin.SynCaT(ks.Recv.CaBins[bin], ks.Recv.CaBins[bin-1], ks.Recv.CaBins[bin-2], ks.Send.CaBins[bin], ks.Send.CaBins[bin-1], ks.Send.CaBins[bin-2])
+			if bin == 0 {
+				sp = ks.Recv.CaBins[0] * ks.Send.CaBins[0]
+			} else {
+				if ss.SynCa20 {
+					sp = 0.25 * (ks.Recv.CaBins[0] + ks.Recv.CaBins[1]) * (ks.Send.CaBins[0] + ks.Send.CaBins[1])
+				} else {
+					sp = ks.Recv.CaBins[1] * ks.Send.CaBins[1]
+				}
 			}
 			ks.CaBins[bin] = sp
 			ks.CaBin = sp

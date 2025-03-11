@@ -47,7 +47,7 @@ var PathParams = axon.PathSheets{
 				pt.Learn.LRate.Base = 0.06 // 0.06 for trace, 0.02 for no trace
 				pt.SWts.Adapt.LRate = 0.1  // .1 >= .2,
 				pt.SWts.Init.SPct = 0.5    // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-				pt.SWts.Adapt.HiAvgDecay = 0
+				pt.SWts.Adapt.HiMeanDecay = 0
 				pt.Learn.DWt.Trace.SetBool(true) // no trace is NOT faster. requires lrate = 0.02
 				pt.Learn.DWt.SubMean = 0         // 1 > 0 for long run stability
 				pt.Learn.DWt.CaPScale = 1        // 1

@@ -5,7 +5,6 @@ package main
 
 import (
 	"github.com/emer/axon/v2/axon"
-	"github.com/emer/axon/v2/kinase"
 )
 
 // LayerParams sets the minimal non-default params.
@@ -109,7 +108,7 @@ var PathParams = axon.PathSheets{
 				pt.Learn.LRate.Base = 0.04   // 0.04 > 0.03
 				pt.Learn.DWt.Tau = 1         // 1 > 2
 				pt.Learn.DWt.CaPScale = 1.05 // 1.05 > 1 > 1.1
-				pt.Learn.SynCaBin.Envelope = kinase.Env10
+				pt.Learn.DWt.SynCa20.SetBool(false)
 			}},
 		// {Sel: ".PFCPath", Doc: "",
 		// 	Set: func(pt *axon.PathParams) {
