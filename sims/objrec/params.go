@@ -17,7 +17,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.NMDA.Gbar = 0.006                // 0.006 > 7 or higher
 				ly.Acts.GabaB.Gbar = 0.015               // 0.015 > lower; higher not better
 				ly.Inhib.ActAvg.AdaptRate = 0.1          // 0.1 default > 0.05?
-				ly.Inhib.ActAvg.AdaptMax = 0.01          // 0.05 default; 0.01 has effect
+				ly.Inhib.ActAvg.AdaptMax = 0.05          // 0.05 > 0.01
 				ly.Learn.CaSpike.SpikeCaM = 12           // 12 > 8 > 15 (too high) -- 12 makes everything work!
 				ly.Learn.TrgAvgAct.SynScaleRate = 0.0002 // 0.0002 > others -- 0.005 sig worse
 				ly.Learn.LearnNMDA.MgC = 1.4             // 1.4, 5 > 1.2, 0
@@ -89,14 +89,14 @@ var PathParams = axon.PathSheets{
 	"Base": {
 		{Sel: "Path", Doc: "yes extra learning factors",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.LRate.Base = 0.1          // 0.1 > 0.2 much better behavior overall; just slower initial learning for trace, 0.02 for notrace
-				pt.Learn.DWt.SubMean = 1           // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
-				pt.SWts.Adapt.LRate = 0.0001       // 0.005 == .1 == .01
-				pt.SWts.Adapt.HiMeanDecay = 0.0008 // 0.0008 best
-				pt.SWts.Adapt.HiMeanThr = 0.5      // 0.5, 0.0008 goes the distance
-				pt.SWts.Init.SPct = 1              // 1 >= lower (trace-v11)
-				pt.Learn.DWt.CaPScale = 1          //
-				pt.Learn.DWt.Trace.SetBool(true)   // no trace starts faster but is unstable
+				pt.Learn.LRate.Base = 0.1        // 0.1 > 0.2 much better behavior overall; just slower initial learning for trace, 0.02 for notrace
+				pt.Learn.DWt.SubMean = 1         // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
+				pt.SWts.Adapt.LRate = 0.0001     // 0.005 == .1 == .01
+				pt.SWts.Adapt.HiMeanDecay = 0    // 0 > 0.0008 (best in lvis)
+				pt.SWts.Adapt.HiMeanThr = 0.5    // 0.5, 0.0008 goes the distance
+				pt.SWts.Init.SPct = 1            // 1 >= lower (trace-v11)
+				pt.Learn.DWt.CaPScale = 1        //
+				pt.Learn.DWt.Trace.SetBool(true) // no trace starts faster but is unstable
 				pt.Learn.DWt.SynCa20.SetBool(false)
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger",

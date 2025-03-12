@@ -105,10 +105,11 @@ var PathParams = axon.PathSheets{
 	"Base": {
 		{Sel: "Path", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.LRate.Base = 0.04   // 0.04 > 0.03
-				pt.Learn.DWt.Tau = 1         // 1 > 2
-				pt.Learn.DWt.CaPScale = 1.05 // 1.05 > 1 > 1.1
-				pt.Learn.DWt.SynCa20.SetBool(false)
+				pt.Learn.LRate.Base = 0.04         // 0.04 > 0.03
+				pt.Learn.DWt.Tau = 1               // 1 > 2
+				pt.Learn.DWt.CaPScale = 1.05       // 1.05 > 1 > 1.1
+				pt.Learn.DWt.SynCa20.SetBool(true) // 20 > 10
+				pt.SWts.Adapt.HiMeanDecay = 0.002  // 0.0008 best in lvis
 			}},
 		// {Sel: ".PFCPath", Doc: "",
 		// 	Set: func(pt *axon.PathParams) {
