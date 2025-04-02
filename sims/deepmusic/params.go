@@ -108,12 +108,12 @@ var PathParams = axon.PathSheets{
 				pt.Learn.LRate.Base = 0.002        // full song and 30n: 0.002 > 0.005, 0.001 in the end
 				pt.Learn.DWt.SubMean = 0           // 0 > 1 -- doesn't work at all with 1
 				pt.SWts.Adapt.LRate = 0.0001       // 0.01 == 0.0001 but 0.001 not as good..
-				pt.SWts.Adapt.HiMeanDecay = 0      // 0.0008 best
+				pt.SWts.Adapt.HiMeanDecay = 0      // 0 > 0.0008 (lvis best)
 				pt.SWts.Adapt.HiMeanThr = 0.5      // 0.5, 0.0008 goes the distance
 				pt.SWts.Init.SPct = 1.0            // 1 works fine here -- .5 also ok
 				pt.Learn.DWt.Tau = 1               // 1 > 2 v0.0.9
 				pt.Learn.DWt.CaPScale = 0.95       // 0.95 def >> 1
-				pt.Learn.DWt.SynCa20.SetBool(true) // 20 > 10 for errors
+				pt.Learn.DWt.SynCa20.SetBool(true) // 20 > 10; 25 was even better before
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {

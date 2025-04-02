@@ -5,7 +5,7 @@
 // neuron: This simulation demonstrates the basic properties of neural spiking and
 // rate-code activation, reflecting a balance of excitatory and inhibitory
 // influences (including leak and synaptic inhibition).
-package main
+package neuron
 
 //go:generate core generate -add-types -add-funcs
 
@@ -27,14 +27,6 @@ import (
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/paths"
 )
-
-func main() {
-	cfg := &Config{}
-	cli.SetFromDefaults(cfg)
-	opts := cli.DefaultOptions(cfg.Name, cfg.Title)
-	opts.DefaultFiles = append(opts.DefaultFiles, "config.toml")
-	cli.Run(opts, cfg, RunSim)
-}
 
 // Modes are the looping modes (Stacks) for running and statistics.
 type Modes int32 //enums:enum

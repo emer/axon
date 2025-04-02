@@ -109,7 +109,7 @@ var PathParams = axon.PathSheets{
 				pt.Learn.DWt.Tau = 1               // 1 > 2
 				pt.Learn.DWt.CaPScale = 1.05       // 1.05 > 1 > 1.1
 				pt.Learn.DWt.SynCa20.SetBool(true) // 20 > 10
-				pt.SWts.Adapt.HiMeanDecay = 0.002  // 0.0008 best in lvis
+				pt.SWts.Adapt.HiMeanDecay = 0.0008 // 0.0008 for 4x6, 0.005 for 3x10 -- not clear if real..
 			}},
 		// {Sel: ".PFCPath", Doc: "",
 		// 	Set: func(pt *axon.PathParams) {

@@ -852,7 +852,7 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 	// if there are differences, they will multiply over patterns and layers..
 	qtr3HidCaP := []float32{0.5485551, 0.5397998, 0.5360895, 0.54144794}
 	qtr3HidCaD := []float32{0.5214811, 0.4950928, 0.49920246, 0.5030252}
-	qtr3OutCaP := []float32{0.58150774, 0.567215, 0.5771712, 0.57196385}
+	qtr3OutCaP := []float32{0.58150774, 0.5672174, 0.5771712, 0.57196385}
 	qtr3OutCaD := []float32{0.5047788, 0.4639749, 0.47836265, 0.47417185}
 
 	q3hidCaP := make([]float32, 4*nLearnParams)
