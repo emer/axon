@@ -344,7 +344,7 @@ func (im *Images) FlatImpl(images [][]string) []string {
 		cat := im.Cats[ci]
 		for _, fn := range fls {
 			if im.CatSep == "" {
-				fn = cat + "/" + fn
+				fn = cat + " " + fn
 			}
 			flat = append(flat, fn)
 		}

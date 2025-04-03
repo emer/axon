@@ -480,10 +480,10 @@ func (ss *Sim) RunStats(mode Modes, level Levels, phase StatsPhase) {
 		sf(mode, level, phase)
 	}
 	if phase == Step && ss.GUI.Tabs != nil {
-		nm := mode.String() + "/" + level.String() + " Plot"
+		nm := mode.String() + " " + level.String() + " Plot"
 		ss.GUI.Tabs.AsLab().GoUpdatePlot(nm)
 		if level == Run {
-			ss.GUI.Tabs.AsLab().GoUpdatePlot("Train/RunAll Plot")
+			ss.GUI.Tabs.AsLab().GoUpdatePlot("Train RunAll Plot")
 		}
 	}
 }
@@ -707,7 +707,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
-	ss.GUI.MakeBody(ss, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
+	ss.GUI.MakeBody(nil, ss, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
 	ss.GUI.FS = ss.Root
 	ss.GUI.DataRoot = "Root"
 	ss.GUI.CycleUpdateInterval = 10

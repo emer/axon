@@ -534,9 +534,9 @@ func (ss *Sim) RunStats(mode Modes, level Levels, phase StatsPhase) {
 		sf(mode, level, phase)
 	}
 	if phase == Step && ss.GUI.Tabs != nil {
-		nm := mode.String() + "/" + level.String() + " Plot"
+		nm := mode.String() + " " + level.String() + " Plot"
 		ss.GUI.Tabs.AsLab().GoUpdatePlot(nm)
-		ss.GUI.Tabs.AsLab().GoUpdatePlot("Train/TrialAll Plot")
+		ss.GUI.Tabs.AsLab().GoUpdatePlot("Train TrialAll Plot")
 	}
 }
 
