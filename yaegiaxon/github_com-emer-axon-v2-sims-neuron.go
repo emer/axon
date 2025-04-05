@@ -17,6 +17,7 @@ func init() {
 		"LevelsValues":     reflect.ValueOf(neuron.LevelsValues),
 		"ModesN":           reflect.ValueOf(neuron.ModesN),
 		"ModesValues":      reflect.ValueOf(neuron.ModesValues),
+		"NewConfig":        reflect.ValueOf(neuron.NewConfig),
 		"PathParams":       reflect.ValueOf(&neuron.PathParams).Elem(),
 		"RunSim":           reflect.ValueOf(neuron.RunSim),
 		"Start":            reflect.ValueOf(neuron.Start),
