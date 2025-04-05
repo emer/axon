@@ -4,7 +4,11 @@
 
 package main
 
-import "github.com/emer/emergent/v2/paths"
+import (
+	"cogentcore.org/core/base/errors"
+	"cogentcore.org/core/base/reflectx"
+	"github.com/emer/emergent/v2/paths"
+)
 
 // EnvConfig has config params for environment
 // note: only adding fields for key Env params that matter for both Network and Env
@@ -181,5 +185,12 @@ type Config struct {
 func (cfg *Config) IncludesPtr() *[]string { return &cfg.Includes }
 
 func (cfg *Config) Defaults() {
+	errors.Log(reflectx.SetFromDefaultTags(cfg))
 	cfg.Params.Defaults()
+}
+
+func NewConfig() *Config {
+	cfg := &Config{}
+	cfg.Defaults()
+	return cfg
 }

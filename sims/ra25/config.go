@@ -5,6 +5,8 @@
 package main
 
 import (
+	"cogentcore.org/core/base/errors"
+	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/math32/vecint"
 )
 
@@ -150,3 +152,13 @@ type Config struct {
 }
 
 func (cfg *Config) IncludesPtr() *[]string { return &cfg.Includes }
+
+func (cfg *Config) Defaults() {
+	errors.Log(reflectx.SetFromDefaultTags(cfg))
+}
+
+func NewConfig() *Config {
+	cfg := &Config{}
+	cfg.Defaults()
+	return cfg
+}

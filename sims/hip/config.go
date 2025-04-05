@@ -5,6 +5,8 @@
 package main
 
 import (
+	"cogentcore.org/core/base/errors"
+	"cogentcore.org/core/base/reflectx"
 	"github.com/emer/axon/v2/axon"
 )
 
@@ -180,3 +182,13 @@ func (cfg *Config) Defaults() {
 }
 
 func (cfg *Config) IncludesPtr() *[]string { return &cfg.Includes }
+
+func (cfg *Config) Defaults() {
+	errors.Log(reflectx.SetFromDefaultTags(cfg))
+}
+
+func NewConfig() *Config {
+	cfg := &Config{}
+	cfg.Defaults()
+	return cfg
+}

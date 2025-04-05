@@ -10,8 +10,7 @@ import (
 )
 
 func main() {
-	cfg := &neuron.Config{}
-	cli.SetFromDefaults(cfg)
+	cfg := neuron.NewConfig()
 	opts := cli.DefaultOptions(cfg.Name, cfg.Title)
 	opts.DefaultFiles = append(opts.DefaultFiles, "config.toml")
 	cli.Run(opts, cfg, neuron.RunSim)

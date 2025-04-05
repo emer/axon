@@ -4,7 +4,11 @@
 
 package main
 
-import "cogentcore.org/lab/base/mpi"
+import (
+	"cogentcore.org/core/base/errors"
+	"cogentcore.org/core/base/reflectx"
+	"cogentcore.org/lab/base/mpi"
+)
 
 // EnvConfig has config params for environment.
 type EnvConfig struct {
@@ -177,3 +181,13 @@ type Config struct {
 }
 
 func (cfg *Config) IncludesPtr() *[]string { return &cfg.Includes }
+
+func (cfg *Config) Defaults() {
+	errors.Log(reflectx.SetFromDefaultTags(cfg))
+}
+
+func NewConfig() *Config {
+	cfg := &Config{}
+	cfg.Defaults()
+	return cfg
+}

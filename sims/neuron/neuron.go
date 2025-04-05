@@ -13,7 +13,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"cogentcore.org/core/cli"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/enums"
 	"cogentcore.org/core/icons"
@@ -120,9 +119,8 @@ type Sim struct {
 // RunSim runs the simulation as a standalone app
 // with given configuration.
 func RunSim(cfg *Config) error {
-	ss := &Sim{}
-	ss.Config = cfg
-	ss.Run()
+	ss := &Sim{Config: cfg}
+	ss.ConfigSim()
 	if ss.Config.GUI {
 		ss.RunGUI()
 	} else {
@@ -134,23 +132,21 @@ func RunSim(cfg *Config) error {
 // EmbedSim runs the simulation with default configuration
 // embedded within given body element.
 func EmbedSim(b tree.Node) *Sim {
-	cfg := &Config{}
-	cli.SetFromDefaults(cfg)
+	cfg := NewConfig()
 	cfg.GUI = true
-	ss := &Sim{}
-	ss.Config = cfg
-	ss.Run()
+	ss := &Sim{Config: cfg}
+	ss.ConfigSim()
 	ss.Init()
 	ss.ConfigGUI(b)
 	return ss
 }
 
 func (ss *Sim) Defaults() {
-	cli.SetFromDefaults(&ss.Config)
+	ss.Config.Defaults()
 	ss.ApplyParams()
 }
 
-func (ss *Sim) Run() {
+func (ss *Sim) ConfigSim() {
 	ss.Root, _ = tensorfs.NewDir("Root")
 	tensorfs.CurRoot = ss.Root
 	ss.Net = axon.NewNetwork(ss.Config.Name)
