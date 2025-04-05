@@ -18,7 +18,7 @@ func main() {
 	root, _ := tensorfs.NewDir("Root")
 	pl := &Plots{}
 
-	pl.GUI.MakeBody(pl, "Equations", "Axon Equations", "Equations used in Axon")
+	pl.GUI.MakeBody(nil, pl, "Equations", "Axon Equations", "Equations used in Axon")
 	pl.GUI.FS = root
 	pl.GUI.DataRoot = "Root"
 	pl.GUI.FinalizeGUI(false)
