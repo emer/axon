@@ -1,6 +1,6 @@
 //go:build not
 
-package main
+package bgventral
 
 import (
 	"os"

@@ -2,7 +2,12 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package main
+package deepfsa
+
+import (
+	"cogentcore.org/core/base/errors"
+	"cogentcore.org/core/base/reflectx"
+)
 
 // EnvConfig has config params for environment
 // note: only adding fields for key Env params that matter for both Network and Env
@@ -173,3 +178,13 @@ type Config struct {
 }
 
 func (cfg *Config) IncludesPtr() *[]string { return &cfg.Includes }
+
+func (cfg *Config) Defaults() {
+	errors.Log(reflectx.SetFromDefaultTags(cfg))
+}
+
+func NewConfig() *Config {
+	cfg := &Config{}
+	cfg.Defaults()
+	return cfg
+}

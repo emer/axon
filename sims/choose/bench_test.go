@@ -1,6 +1,6 @@
 //go:build !race && not
 
-package main
+package choose
 
 import (
 	"fmt"

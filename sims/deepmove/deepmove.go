@@ -2,26 +2,23 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// bgventral simulates the inhibitory dynamics in the STN and GPe
-// leading to integration of Go vs. NoGo signal in the basal
-// ganglia, for the Ventral Striatum (VS) global Go vs. No case.
-package main
+// deep_move runs a DeepAxon network predicting the effects of movement
+// on visual inputs.
+package deepmove
 
 //go:generate core generate -add-types -add-funcs
 
 import (
 	"fmt"
-	"math"
 	"reflect"
 
-	"cogentcore.org/core/base/num"
 	"cogentcore.org/core/base/reflectx"
-	"cogentcore.org/core/cli"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/enums"
 	"cogentcore.org/core/gpu"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/math32/vecint"
 	"cogentcore.org/core/tree"
 	"cogentcore.org/lab/base/mpi"
 	"cogentcore.org/lab/base/randx"
@@ -32,16 +29,9 @@ import (
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/looper"
+	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/paths"
 )
-
-func main() {
-	cfg := &Config{}
-	cli.SetFromDefaults(cfg)
-	opts := cli.DefaultOptions(cfg.Name, cfg.Title)
-	opts.DefaultFiles = append(opts.DefaultFiles, "config.toml")
-	cli.Run(opts, cfg, RunSim)
-}
 
 // Modes are the looping modes (Stacks) for running and statistics.
 type Modes int32 //enums:enum
@@ -54,7 +44,6 @@ const (
 type Levels int32 //enums:enum
 const (
 	Cycle Levels = iota
-	Theta
 	Trial
 	Epoch
 	Run
@@ -68,7 +57,7 @@ const (
 	Step
 )
 
-// see params.go for params
+// see params.go for params, config.go for Config
 
 // Sim encapsulates the entire simulation model, and we define all the
 // functionality as methods on this struct.  This structure keeps all relevant
@@ -120,19 +109,39 @@ type Sim struct {
 	RandSeeds randx.Seeds `display:"-"`
 }
 
-// RunSim runs the simulation with given configuration.
+// RunSim runs the simulation as a standalone app
+// with given configuration.
 func RunSim(cfg *Config) error {
-	sim := &Sim{}
-	sim.Config = cfg
-	sim.Run()
+	ss := &Sim{Config: cfg}
+	ss.ConfigSim()
+	if ss.Config.GUI {
+		ss.RunGUI()
+	} else {
+		ss.RunNoGUI()
+	}
 	return nil
 }
 
-func (ss *Sim) Run() {
+// EmbedSim runs the simulation with default configuration
+// embedded within given body element.
+func EmbedSim(b tree.Node) *Sim {
+	cfg := NewConfig()
+	cfg.GUI = true
+	ss := &Sim{Config: cfg}
+	ss.ConfigSim()
+	ss.Init()
+	ss.ConfigGUI(b)
+	return ss
+}
+
+func (ss *Sim) ConfigSim() {
 	ss.Root, _ = tensorfs.NewDir("Root")
 	tensorfs.CurRoot = ss.Root
 	ss.Net = axon.NewNetwork(ss.Config.Name)
 	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag, reflect.ValueOf(ss))
+	if ss.Config.Params.Hid2 {
+		ss.Params.ExtraSheets = "Hid2"
+	}
 	ss.RandSeeds.Init(100) // max 100 runs
 	ss.InitRandSeed(0)
 	if ss.Config.Run.GPU {
@@ -144,18 +153,10 @@ func (ss *Sim) Run() {
 	ss.ConfigNet(ss.Net)
 	ss.ConfigLoops()
 	ss.ConfigStats()
-	// if ss.Config.Run.GPU {
-	// 	fmt.Println(axon.GPUSystem.Vars().StringDoc())
-	// }
 	if ss.Config.Params.SaveAll {
 		ss.Config.Params.SaveAll = false
 		ss.Net.SaveParamsSnapshot(&ss.Config, ss.Config.Params.Good)
 		return
-	}
-	if ss.Config.GUI {
-		ss.RunGUI()
-	} else {
-		ss.RunNoGUI()
 	}
 }
 
@@ -164,45 +165,41 @@ func (ss *Sim) ConfigEnv() {
 	newEnv := (len(ss.Envs) == 0)
 
 	for di := 0; di < ss.Config.Run.NData; di++ {
-		var trn, tst *GoNoEnv
+		var trn, tst *MoveEnv
 		if newEnv {
-			trn = &GoNoEnv{}
-			tst = &GoNoEnv{}
+			trn = &MoveEnv{}
+			tst = &MoveEnv{}
 		} else {
-			trn = ss.Envs.ByModeDi(Train, di).(*GoNoEnv)
-			tst = ss.Envs.ByModeDi(Test, di).(*GoNoEnv)
+			trn = ss.Envs.ByModeDi(Train, di).(*MoveEnv)
+			tst = ss.Envs.ByModeDi(Test, di).(*MoveEnv)
 		}
 
 		// note: names must be standard here!
-		trn.Name = env.ModeDi(Train, di)
 		trn.Defaults()
+		trn.Name = env.ModeDi(Train, di)
+		trn.Debug = false
+		trn.RandSeed = 73 + int64(di)*73
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
 		}
-		trn.Config(Train, 73+int64(di)*73)
+		trn.Config(ss.Config.Env.UnitsPer)
+		trn.Validate()
 
-		tst.Name = env.ModeDi(Test, di)
 		tst.Defaults()
+		tst.Name = env.ModeDi(Test, di)
+		tst.RandSeed = 181 + int64(di)*181
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(tst, ss.Config.Env.Env)
 		}
-		tst.Config(Test, 181+int64(di)*181)
+		tst.Config(ss.Config.Env.UnitsPer)
+		tst.Validate()
 
 		trn.Init(0)
 		tst.Init(0)
 
 		// note: names must be in place when adding
 		ss.Envs.Add(trn, tst)
-		if di == 0 {
-			ss.ConfigRubicon(trn)
-		}
 	}
-}
-
-func (ss *Sim) ConfigRubicon(trn *GoNoEnv) {
-	rp := &ss.Net.Rubicon
-	rp.SetNUSs(2, 1)
-	rp.Urgency.U50 = 20 // 20 def
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
@@ -210,61 +207,91 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.Context().ThetaCycles = int32(ss.Config.Run.Cycles)
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
-	ev := ss.Envs.ByModeDi(Train, 0).(*GoNoEnv)
+	ev := ss.Envs.ByModeDi(Train, 0).(*MoveEnv)
 
-	np := 1
-	nuY := ev.NUnitsY
-	nuX := ev.NUnitsX
-	space := float32(2)
-
-	one2one := paths.NewOneToOne()
 	full := paths.NewFull()
-	_ = full
-	mtxRandPath := paths.NewPoolUniformRand()
-	mtxRandPath.PCon = 0.5
-	_ = mtxRandPath
+	full.SelfCon = true // unclear if this makes a diff for self cons at all
+	one2one := paths.NewOneToOne()
+	_ = one2one
 
-	mtxGo, mtxNo, gpePr, gpeAk, stn, gpi := net.AddVentralBG("", 1, np, nuY, nuX, nuY, nuX, space)
-	_, _ = gpePr, gpeAk
+	nPerAng := 5 // 30 total > 20 -- small improvement
+	nPerDepth := 2
+	rfDepth := 6
+	rfWidth := 3
 
-	snc := net.AddLayer2D("SNc", axon.InputLayer, 1, 1)
-	_ = snc
+	rect := paths.NewRect()
+	rect.Size.Set(rfWidth, rfDepth) // 6 > 8 > smaller
+	rect.Scale.Set(1.0/float32(nPerAng), 1.0/float32(nPerDepth))
+	_ = rect
 
-	urge := net.AddUrgencyLayer(5, 4)
-	_ = urge
+	rectRecip := paths.NewRectRecip(rect)
+	_ = rectRecip
 
-	accPos := net.AddLayer4D("ACCPos", axon.InputLayer, 1, np, nuY, nuX)
-	accNeg := net.AddLayer4D("ACCNeg", axon.InputLayer, 1, np, nuY, nuX)
-	accPos.AddClass("ACC")
-	accNeg.AddClass("ACC")
+	space := float32(5)
 
-	accPosPT, accPosVM := net.AddPTMaintThalForSuper(accPos, nil, "VM", "PFCPath", one2one, full, one2one, true, space)
-	_ = accPosPT
+	dpIn, dpInp := net.AddInputPulv4D("Depth", 1, ev.NFOVRays, ev.DepthSize, 1, 2*space)
+	hd, hdp := net.AddInputPulv2D("HeadDir", 1, ev.DepthSize, space)
+	act := net.AddLayer2D("Action", axon.InputLayer, ev.UnitsPer, len(ev.Acts))
 
-	net.ConnectLayers(accPos, stn, full, axon.ForwardPath).AddClass("CortexToSTN")
-	net.ConnectLayers(accNeg, stn, full, axon.ForwardPath).AddClass("CortexToSTN")
+	dpHidSz := vecint.Vector2i{X: (ev.NFOVRays - (rfWidth - 1)) * nPerAng, Y: (ev.DepthSize - (rfDepth - 1)) * nPerDepth}
+	dpHid, dpHidct := net.AddSuperCT2D("DepthHid", "", dpHidSz.Y, dpHidSz.X, 2*space, one2one) // one2one learn > full
+	// net.ConnectCTSelf(dpHidct, full, "") // self definitely doesn't make sense -- no need for 2-back ct
+	// net.LateralConnectLayer(dpHidct, full).AddClass("CTSelfMaint") // no diff
+	net.ConnectToPulv(dpHid, dpHidct, dpInp, full, rect, "") // fmPulv: rect == full
+	net.ConnectLayers(act, dpHid, full, axon.ForwardPath)
+	net.ConnectLayers(dpIn, dpHid, rect, axon.ForwardPath)
+	// net.ConnectCtxtToCT(act, dpHidct, full) // ct gets direct action copy
 
-	net.ConnectLayers(gpi, accPosVM, full, axon.InhibPath).AddClass("BgFixed")
+	// net.ConnectLayers(dpHidct, dpHid, full, BackPath)
 
-	mtxGo.SetBuildConfig("ThalLay1Name", accPosVM.Name)
-	mtxNo.SetBuildConfig("ThalLay1Name", accPosVM.Name)
+	var dpHid2, dpHid2ct *axon.Layer
+	if ss.Config.Params.Hid2 {
+		// attempt at topo in 2nd hidden -- didn't work -- needs pools basically
+		// rfWidth2 := rfWidth * nPerAng
+		// rfDepth2 := rfDepth * nPerDepth
+		// rect2 := paths.NewRect()
+		// rect2.Size.Set(rfWidth2, rfDepth2)
+		// rect2.Scale.Set(0.5*float32(rfWidth2), 0.5*float32(rfDepth2))
+		// _ = rect2
+		// rect2Recip := paths.NewRectRecip(rect2)
+		// _ = rect2Recip
 
-	net.ConnectToVSMatrix(accPos, mtxGo, full).AddClass("ACCToVMtx")
-	net.ConnectToVSMatrix(accNeg, mtxNo, full).AddClass("ACCToVMtx")
-	// cross connections:
-	net.ConnectToVSMatrix(accPos, mtxNo, full).AddClass("ACCToVMtx")
-	net.ConnectToVSMatrix(accNeg, mtxGo, full).AddClass("ACCToVMtx")
+		// dpHid2, dpHid2ct = net.AddSuperCT2D("DepthHid2", (2*dpHidSz.Y)/rfDepth2*nPerDepth, (2*dpHidSz.X)/rfWidth2*nPerAng, 2*space, one2one) // one2one learn > full
+		dpHid2, dpHid2ct = net.AddSuperCT2D("DepthHid2", "", 10, 20, 2*space, one2one) // one2one learn > full
 
-	net.ConnectToVSMatrix(urge, mtxGo, full)
+		net.ConnectCTSelf(dpHid2ct, full, "")
+		net.ConnectToPulv(dpHid2, dpHid2ct, dpInp, full, full, "")
+		net.ConnectLayers(act, dpHid2, full, axon.ForwardPath)
 
-	accPosVM.PlaceRightOf(gpi, space)
-	snc.PlaceRightOf(accPosVM, space)
-	urge.PlaceRightOf(snc, space)
-	gpeAk.PlaceAbove(gpi)
-	stn.PlaceRightOf(gpePr, space)
-	mtxGo.PlaceAbove(gpeAk)
-	accPos.PlaceAbove(mtxGo)
-	accNeg.PlaceRightOf(accPos, space)
+		// net.ConnectLayers(dpHid, dpHid2, rect2, axon.ForwardPath)
+		// net.ConnectLayers(dpHid2, dpHid, rect2Recip, BackPath)
+
+		net.BidirConnectLayers(dpHid, dpHid2, full)
+		net.ConnectLayers(dpHid2ct, dpHidct, full, axon.BackPath)
+	}
+
+	hdHid, hdHidct := net.AddSuperCT2D("HeadDirHid", "", 10, 10, 2*space, one2one)
+	// net.ConnectCTSelf(hdHidct, full)
+	net.ConnectToPulv(hdHid, hdHidct, hdp, full, full, "") // shortcut top-down
+	net.ConnectLayers(act, hdHid, full, axon.ForwardPath)
+	net.ConnectLayers(hd, hdHid, full, axon.ForwardPath)
+
+	dpIn.AddClass("DepthIn")
+	dpInp.AddClass("DepthIn")
+	hd.AddClass("HeadDirIn")
+	hdp.AddClass("HeadDirIn")
+
+	// no benefit from these:
+	// net.ConnectLayers(hdHid, dpHid, full, BackPath)
+	// net.ConnectLayers(hdHidct, dpHidct, full, BackPath)
+
+	hd.PlaceBehind(act, space)
+	act.PlaceRightOf(dpIn, space)
+	dpHid.PlaceAbove(dpIn)
+	hdHid.PlaceRightOf(dpHid, space)
+	if ss.Config.Params.Hid2 {
+		dpHid2.PlaceBehind(hdHidct, 2*space)
+	}
 
 	net.Build()
 	net.Defaults()
@@ -286,7 +313,7 @@ func (ss *Sim) Init() {
 	ss.Loops.ResetCounters()
 	ss.SetRunName()
 	ss.InitRandSeed(0)
-	ss.ConfigEnv() // always do -- otherwise env params not reset after run
+	// ss.ConfigEnv() // re-config env just in case a different set of patterns was
 	// selected or patterns have been modified etc
 	ss.GUI.StopNow = false
 	ss.ApplyParams()
@@ -322,7 +349,6 @@ func (ss *Sim) NetViewUpdater(mode enums.Enum) *axon.NetViewUpdate {
 func (ss *Sim) ConfigLoops() {
 	ls := looper.NewStacks()
 
-	ev := ss.Envs.ByModeDi(Test, 0).(*GoNoEnv)
 	trials := int(math32.IntMultipleGE(float32(ss.Config.Run.Trials), float32(ss.Config.Run.NData)))
 	cycles := ss.Config.Run.Cycles
 	plusPhase := ss.Config.Run.PlusCycles
@@ -331,37 +357,29 @@ func (ss *Sim) ConfigLoops() {
 		AddLevel(Run, ss.Config.Run.Runs).
 		AddLevel(Epoch, ss.Config.Run.Epochs).
 		AddLevelIncr(Trial, trials, ss.Config.Run.NData).
-		AddLevel(Theta, 3).
 		AddLevel(Cycle, cycles)
-
-	nTestInc := int(1.0/ev.TestInc) + 1
-	totTstTrls := ev.TestReps * nTestInc * nTestInc
-	testTrials := int(math32.IntMultipleGE(float32(totTstTrls), float32(ss.Config.Run.NData)))
 
 	ls.AddStack(Test, Trial).
 		AddLevel(Epoch, 1).
-		AddLevelIncr(Trial, testTrials, ss.Config.Run.NData).
-		AddLevel(Theta, 3).
+		AddLevelIncr(Trial, trials, ss.Config.Run.NData).
 		AddLevel(Cycle, cycles)
 
-	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, cycles-plusPhase, cycles-1, Cycle, Theta, Train) // note: Theta
+	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, cycles-plusPhase, cycles-1, Cycle, Trial, Train)
 
 	ls.Stacks[Train].OnInit.Add("Init", func() { ss.Init() })
 
-	ls.AddOnStartToLoop(Theta, "ApplyInputs", func(mode enums.Enum) {
-		trial := ls.Stacks[mode].Loops[Trial].Counter.Cur
-		theta := ls.Stacks[mode].Loops[Theta].Counter.Cur
-		ss.ApplyInputs(mode.(Modes), trial, theta)
-	})
-
-	ls.AddOnEndToLoop(Theta, "GatedAction", func(mode enums.Enum) {
-		theta := ls.Stacks[mode].Loops[Theta].Counter.Cur
-		if theta == 1 {
-			ss.GatedAction(mode.(Modes))
-		}
+	ls.AddOnStartToLoop(Trial, "ApplyInputs", func(mode enums.Enum) {
+		ss.ApplyInputs(mode.(Modes))
 	})
 
 	ls.Loop(Train, Run).OnStart.Add("NewRun", ss.NewRun)
+
+	trainEpoch := ls.Loop(Train, Epoch)
+	trainEpoch.OnStart.Add("TestAtInterval", func() {
+		if (ss.Config.Run.TestInterval > 0) && ((trainEpoch.Counter.Cur+1)%ss.Config.Run.TestInterval == 0) {
+			ss.TestAll()
+		}
+	})
 
 	ls.AddOnStartToAll("StatsStart", ss.StatsStart)
 	ls.AddOnEndToAll("StatsStep", ss.StatsStep)
@@ -372,7 +390,7 @@ func (ss *Sim) ConfigLoops() {
 	})
 
 	if ss.Config.GUI {
-		axon.LooperUpdateNetView(ls, Cycle, Theta, ss.NetViewUpdater)
+		axon.LooperUpdateNetView(ls, Cycle, Trial, ss.NetViewUpdater)
 
 		ls.Stacks[Train].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })
 		ls.Stacks[Test].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })
@@ -386,103 +404,27 @@ func (ss *Sim) ConfigLoops() {
 
 // ApplyInputs applies input patterns from given environment for given mode.
 // Any other start-of-trial logic can also be put here.
-func (ss *Sim) ApplyInputs(mode Modes, trial, theta int) {
+func (ss *Sim) ApplyInputs(mode Modes) {
 	net := ss.Net
-	ndata := int(net.Context().NData)
+	ctx := ss.Net.Context()
+	ndata := int(ctx.NData)
+	lays := net.LayersByClass("InputLayer", "TargetLayer")
 	curModeDir := ss.Current.Dir(mode.String())
-	lays := []string{"ACCPos", "ACCNeg"}
+
 	net.InitExt()
-	for di := range ndata {
-		idx := trial + di
-		ev := ss.Envs.ByModeDi(mode, di).(*GoNoEnv)
-		ev.Trial.Set(idx)
-		if theta == 0 {
-			ev.Step()
-		} else {
-			for _, lnm := range lays {
-				ly := ss.Net.LayerByName(lnm)
-				st := ev.State(ly.Name)
-				if st != nil {
-					ly.ApplyExt(uint32(di), st)
-				}
+	for di := uint32(0); di < ctx.NData; di++ {
+		ev := ss.Envs.ByModeDi(mode, int(di)).(*MoveEnv)
+		ev.Step()
+		for _, lnm := range lays {
+			ly := ss.Net.LayerByName(lnm)
+			pats := ev.State(lnm)
+			if pats != nil {
+				ly.ApplyExt(di, pats)
 			}
 		}
-		curModeDir.StringValue("TrialName", ndata).SetString1D(ev.String(), di)
-		ss.ApplyRubicon(ev, mode, theta, uint32(di))
+		curModeDir.StringValue("TrialName", ndata).SetString1D(ev.String(), int(di))
 	}
-	net.ApplyExts()
-}
-
-// ApplyRubicon applies Rubicon reward inputs
-func (ss *Sim) ApplyRubicon(ev *GoNoEnv, mode Modes, trial int, di uint32) {
-	rp := &ss.Net.Rubicon
-	rp.EffortUrgencyUpdate(di, 1)
-	if mode == Test {
-		rp.Urgency.Reset(di)
-	}
-
-	switch trial {
-	case 0:
-		axon.GlobalSetRew(di, 0, false) // no rew
-		axon.GlobalScalars.Set(0, int(axon.GvACh), int(di))
-	case 1:
-		axon.GlobalSetRew(di, 0, false) // no rew
-		axon.GlobalScalars.Set(1, int(axon.GvACh), int(di))
-	case 2:
-		axon.GlobalScalars.Set(1, int(axon.GvACh), int(di))
-		ss.GatedRew(ev, di)
-	}
-}
-
-// GatedRew applies reward input based on gating action and input
-func (ss *Sim) GatedRew(ev *GoNoEnv, di uint32) {
-	// note: not using RPE here at this point
-	rew := ev.Rew
-	ss.SetRew(rew, di)
-}
-
-func (ss *Sim) SetRew(rew float32, di uint32) {
-	rp := &ss.Net.Rubicon
-	axon.GlobalSetRew(di, rew, true)
-	axon.GlobalScalars.Set(rew, int(axon.GvDA), int(di)) // no reward prediction error
-	if rew > 0 {
-		rp.SetUS(di, axon.Positive, 0, 1)
-	} else if rew < 0 {
-		rp.SetUS(di, axon.Negative, 0, 1)
-	}
-}
-
-// GatedAction records gating action and generates reward
-// this happens at the end of Trial == 1 (2nd trial)
-// so that the reward is present during the final trial when learning occurs.
-func (ss *Sim) GatedAction(mode Modes) {
-	ctx := ss.Net.Context()
-	curModeDir := ss.Current.Dir(mode.String())
-	mtxly := ss.Net.LayerByName("VMtxGo")
-	vmly := ss.Net.LayerByName("ACCPosVM")
-	vmlpi := vmly.Params.PoolIndex(0)
-	mtxlpi := mtxly.Params.PoolIndex(0)
-	nan := math.NaN()
-	ndata := int(ctx.NData)
-	for di := 0; di < ndata; di++ {
-		ev := ss.Envs.ByModeDi(mode, di).(*GoNoEnv)
-		didGate := mtxly.Params.AnyGated(uint32(di))
-		action := "Gated"
-		if !didGate {
-			action = "NoGate"
-		}
-		ev.Action(action, nil)
-		rt := axon.LayerStates.Value(vmly.Index, di, int(axon.LayerRT))
-		if rt > 0 {
-			curModeDir.Float32("ACCPosVM_RT", ndata).SetFloat1D(float64(rt/200), di)
-		} else {
-			curModeDir.Float32("ACCPosVM_RT", ndata).SetFloat1D(nan, di)
-		}
-		cycavg := float64(axon.PoolAvgMax(axon.AMCaPMax, axon.AMCycle, axon.Avg, vmlpi, uint32(di)))
-		curModeDir.Float32("ACCPosVM_ActAvg", ndata).SetFloat1D(cycavg, di)
-		cycavg = float64(axon.PoolAvgMax(axon.AMCaPMax, axon.AMCycle, axon.Avg, mtxlpi, uint32(di)))
-		curModeDir.Float32("VMtxGo_ActAvg", ndata).SetFloat1D(cycavg, di)
-	}
+	ss.Net.ApplyExts()
 }
 
 // NewRun intializes a new Run level of the model.
@@ -495,6 +437,20 @@ func (ss *Sim) NewRun() {
 	}
 	ctx.Reset()
 	ss.Net.InitWeights()
+	if ss.Config.Run.StartWeights != "" { // this is just for testing -- not usually needed
+		ss.Net.OpenWeightsJSON(core.Filename(ss.Config.Run.StartWeights))
+		mpi.Printf("Starting with initial weights from: %s\n", ss.Config.Run.StartWeights)
+	}
+}
+
+// TestAll runs through the full set of testing items
+func (ss *Sim) TestAll() {
+	ctx := ss.Net.Context()
+	for di := 0; di < int(ctx.NData); di++ {
+		ss.Envs.ByModeDi(Test, di).Init(0)
+	}
+	ss.Loops.ResetAndRun(Test)
+	ss.Loops.Mode = Train // important because this is called from Train Run: go back.
 }
 
 //////// Stats
@@ -536,7 +492,6 @@ func (ss *Sim) RunStats(mode Modes, level Levels, phase StatsPhase) {
 	if phase == Step && ss.GUI.Tabs != nil {
 		nm := mode.String() + " " + level.String() + " Plot"
 		ss.GUI.Tabs.AsLab().GoUpdatePlot(nm)
-		ss.GUI.Tabs.AsLab().GoUpdatePlot("Train TrialAll Plot")
 	}
 }
 
@@ -569,11 +524,9 @@ func (ss *Sim) StatsInit() {
 	if ss.GUI.Tabs != nil {
 		tbs := ss.GUI.Tabs.AsLab()
 		_, idx := tbs.CurrentTab()
-		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Trial))
 		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Epoch))
 		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Run))
 		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Test, Trial))
-		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Test, Epoch))
 		tbs.SelectTabIndex(idx)
 	}
 }
@@ -607,81 +560,70 @@ func (ss *Sim) ConfigStats() {
 
 	// up to a point, it is good to use loops over stats in one function,
 	// to reduce repetition of boilerplate.
-	statNames := []string{"ACCPos", "ACCNeg", "Gated", "Should", "Match", "Rew", "ACCPosVM_RT", "ACCPosVM_ActAvg", "VMtxGo_ActAvg"}
+	statNames := []string{"DepthP_CorSim", "HeadDirP_CorSim"}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		for si, name := range statNames {
+		for _, name := range statNames {
 			modeDir := ss.Stats.Dir(mode.String())
 			curModeDir := ss.Current.Dir(mode.String())
 			levelDir := modeDir.Dir(level.String())
 			subDir := modeDir.Dir((level - 1).String()) // note: will fail for Cycle
 			tsr := levelDir.Float64(name)
-			ndata := int(ss.Net.Context().NData)
+			ctx := ss.Net.Context()
+			ndata := int(ctx.NData)
 			var stat float64
 			if phase == Start {
 				tsr.SetNumRows(0)
 				plot.SetFirstStyler(tsr, func(s *plot.Style) {
 					s.Range.SetMin(0).SetMax(1)
-					if si >= 2 && si <= 5 {
-						s.On = true
-					}
+					s.On = true
 				})
 				continue
 			}
 			switch level {
 			case Trial:
+				depth := ss.Net.LayerByName("DepthP")
+				headDir := ss.Net.LayerByName("HeadDirP")
 				for di := range ndata {
-					ev := ss.Envs.ByModeDi(mode, di).(*GoNoEnv)
-					var stat float32
+					var stat float64
 					switch name {
-					case "ACCPos":
-						stat = ev.ACCPos
-					case "ACCNeg":
-						stat = ev.ACCNeg
-					case "Gated":
-						stat = num.FromBool[float32](ev.Gated)
-					case "Should":
-						stat = num.FromBool[float32](ev.Should)
-					case "Match":
-						stat = num.FromBool[float32](ev.Match)
-					case "Rew":
-						stat = ev.Rew
-					case "ACCPosVM_RT", "ACCPosVM_ActAvg", "VMtxGo_ActAvg":
-						stat = float32(curModeDir.Float32(name, ndata).Float1D(di))
+					case "DepthP_CorSim":
+						stat = 1.0 - float64(axon.LayerStates.Value(int(depth.Index), int(di), int(axon.LayerPhaseDiff)))
+					case "HeadDirP_CorSim":
+						stat = 1.0 - float64(axon.LayerStates.Value(int(headDir.Index), int(di), int(axon.LayerPhaseDiff)))
 					}
-					curModeDir.Float32(name, ndata).SetFloat1D(float64(stat), di)
-					tsr.AppendRowFloat(float64(stat))
+					curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
+					tsr.AppendRowFloat(stat)
 				}
 			case Epoch:
 				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
 				tsr.AppendRowFloat(stat)
-				if mode == Train {
-					break
-				}
-				if si == 0 {
-					stats.Groups(curModeDir, subDir.Value("TrialName"))
-					break
-				}
-				stats.GroupStats(curModeDir, stats.StatMean, subDir.Value(name))
-				// note: results go under Group name: TrialName
-				gp := curModeDir.Dir("Stats/TrialName/" + name).Value("Mean")
-				plot.SetFirstStyler(gp, func(s *plot.Style) {
-					if si >= 2 && si <= 3 {
-						s.On = true
-					}
-				})
-				if si == len(statNames)-1 {
-					nrows := gp.DimSize(0)
-					row := curModeDir.Dir("Stats").Int("Row", nrows)
-					for i := range nrows {
-						row.Set(i, i)
-					}
-					ss.GUI.Tabs.AsLab().PlotTensorFS(curModeDir.Dir("Stats"))
-				}
 			case Run:
-				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
+				stat = stats.StatFinal.Call(subDir.Value(name)).Float1D(0)
 				tsr.AppendRowFloat(stat)
 			}
 		}
+	})
+
+	prevCorFunc := axon.StatPrevCorSim(ss.Stats, ss.Current, net, Trial, "DepthP", "HeadDirP")
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		prevCorFunc(mode, level, phase == Start)
+	})
+
+	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
+	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, lays...)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		actGeFunc(mode, level, phase == Start)
+	})
+
+	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, lays...)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		trnEpc := ss.Loops.Loop(Train, Epoch).Counter.Cur
+		pcaFunc(mode, level, phase == Start, trnEpc)
+	})
+
+	stateFunc := axon.StatLayerState(ss.Stats, net, Test, Trial, true, "ActM", "Depth", "DepthP", "HeadDir", "HeadDirP")
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		stateFunc(mode, level, phase == Start)
 	})
 }
 
@@ -699,21 +641,27 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 		return counters
 	}
 	counters += fmt.Sprintf(" TrialName: %s", curModeDir.StringValue("TrialName").String1D(di))
-	statNames := []string{"Gated"}
+	statNames := []string{"DepthP_CorSim", "HeadDirP_CorSim"}
 	if level == Cycle || curModeDir.Node(statNames[0]) == nil {
 		return counters
 	}
 	for _, name := range statNames {
-		counters += fmt.Sprintf(" %s: %.4g", name, curModeDir.Float32(name).Float1D(di))
+		counters += fmt.Sprintf(" %s: %.4g", name, curModeDir.Float64(name).Float1D(di))
 	}
 	return counters
 }
 
 //////// GUI
 
+func (ss *Sim) ConfigNetView(nv *netview.NetView) {
+	// nv.ViewDefaults()
+	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 2.1, 2.0)
+	nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
+}
+
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
-func (ss *Sim) ConfigGUI() {
-	ss.GUI.MakeBody(ss, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
+func (ss *Sim) ConfigGUI(b tree.Node) {
+	ss.GUI.MakeBody(b, ss, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
 	ss.GUI.FS = ss.Root
 	ss.GUI.DataRoot = "Root"
 	ss.GUI.CycleUpdateInterval = 10
@@ -728,9 +676,7 @@ func (ss *Sim) ConfigGUI() {
 		vu := ss.NetViewUpdater(mode)
 		vu.UpdateWhenStopped(mode, level)
 	}
-
-	// nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1, 2.75) // more "head on" than default which is more "top down"
-	// nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
+	ss.ConfigNetView(nv)
 
 	ss.GUI.UpdateFiles()
 	ss.StatsInit()
@@ -742,7 +688,7 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 
 	tree.Add(p, func(w *core.Separator) {})
 	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{
-		Label:   "New seed",
+		Label:   "New Seed",
 		Icon:    icons.Add,
 		Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
 		Active:  egui.ActiveAlways,
@@ -763,7 +709,7 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 
 func (ss *Sim) RunGUI() {
 	ss.Init()
-	ss.ConfigGUI()
+	ss.ConfigGUI(nil)
 	ss.GUI.Body.RunMainWindow()
 }
 

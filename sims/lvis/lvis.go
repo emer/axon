@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// objrec explores how a hierarchy of areas in the ventral stream
+// lvis explores how a hierarchy of areas in the ventral stream
 // of visual processing (up to inferotemporal (IT) cortex) can produce
 // robust object recognition that is invariant to changes in position,
 // size, etc of retinal input images.
-package main
+package lvis
 
 //go:generate core generate -add-types -add-funcs
 
@@ -15,7 +15,6 @@ import (
 	"reflect"
 
 	"cogentcore.org/core/base/reflectx"
-	"cogentcore.org/core/cli"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/enums"
 	"cogentcore.org/core/gpu"
@@ -38,15 +37,6 @@ import (
 
 // go:embed random_5x5_25.tsv
 // var content embed.FS
-
-func main() {
-	cfg := &Config{}
-	cfg.Defaults()
-	cli.SetFromDefaults(cfg)
-	opts := cli.DefaultOptions(cfg.Name, cfg.Title)
-	opts.DefaultFiles = append(opts.DefaultFiles, "config.toml")
-	cli.Run(opts, cfg, RunSim)
-}
 
 // Modes are the looping modes (Stacks) for running and statistics.
 type Modes int32 //enums:enum
@@ -131,15 +121,32 @@ type Sim struct {
 	RandSeeds randx.Seeds `display:"-"`
 }
 
-// RunSim runs the simulation with given configuration.
+// RunSim runs the simulation as a standalone app
+// with given configuration.
 func RunSim(cfg *Config) error {
-	sim := &Sim{}
-	sim.Config = cfg
-	sim.Run()
+	ss := &Sim{Config: cfg}
+	ss.ConfigSim()
+	if ss.Config.GUI {
+		ss.RunGUI()
+	} else {
+		ss.RunNoGUI()
+	}
 	return nil
 }
 
-func (ss *Sim) Run() {
+// EmbedSim runs the simulation with default configuration
+// embedded within given body element.
+func EmbedSim(b tree.Node) *Sim {
+	cfg := NewConfig()
+	cfg.GUI = true
+	ss := &Sim{Config: cfg}
+	ss.ConfigSim()
+	ss.Init()
+	ss.ConfigGUI(b)
+	return ss
+}
+
+func (ss *Sim) ConfigSim() {
 	ss.Root, _ = tensorfs.NewDir("Root")
 	tensorfs.CurRoot = ss.Root
 	ss.Paths.Defaults()
@@ -163,11 +170,6 @@ func (ss *Sim) Run() {
 		ss.Config.Params.SaveAll = false
 		ss.Net.SaveParamsSnapshot(&ss.Config, ss.Config.Params.Good)
 		return
-	}
-	if ss.Config.GUI {
-		ss.RunGUI()
-	} else {
-		ss.RunNoGUI()
 	}
 }
 
@@ -1013,8 +1015,8 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 //////// GUI
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
-func (ss *Sim) ConfigGUI() {
-	ss.GUI.MakeBody(ss, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
+func (ss *Sim) ConfigGUI(b tree.Node) {
+	ss.GUI.MakeBody(b, ss, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
 	ss.GUI.FS = ss.Root
 	ss.GUI.DataRoot = "Root"
 	ss.GUI.CycleUpdateInterval = 10
@@ -1065,7 +1067,7 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 
 func (ss *Sim) RunGUI() {
 	ss.Init()
-	ss.ConfigGUI()
+	ss.ConfigGUI(nil)
 	ss.GUI.Body.RunMainWindow()
 }
 

@@ -10,8 +10,7 @@ import (
 )
 
 func main() {
-	cfg := &pfcmaint.Config{}
-	cli.SetFromDefaults(cfg)
+	cfg := pfcmaint.NewConfig()
 	opts := cli.DefaultOptions(cfg.Name, cfg.Title)
 	opts.DefaultFiles = append(opts.DefaultFiles, "config.toml")
 	cli.Run(opts, cfg, pfcmaint.RunSim)

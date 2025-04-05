@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package main
+package lvis
 
 import (
 	"cogentcore.org/core/base/errors"
@@ -195,9 +195,6 @@ type Config struct {
 
 	// Log has data logging related configuration options.
 	Log LogConfig `display:"add-fields"`
-}
-
-func (cfg *Config) Defaults() {
 }
 
 func (cfg *Config) IncludesPtr() *[]string { return &cfg.Includes }

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package main
+package hip
 
 import (
 	"cogentcore.org/core/base/errors"
@@ -177,14 +177,11 @@ type Config struct {
 	Log LogConfig `display:"add-fields"`
 }
 
-func (cfg *Config) Defaults() {
-	cfg.Hip.Defaults()
-}
-
 func (cfg *Config) IncludesPtr() *[]string { return &cfg.Includes }
 
 func (cfg *Config) Defaults() {
 	errors.Log(reflectx.SetFromDefaultTags(cfg))
+	cfg.Hip.Defaults()
 }
 
 func NewConfig() *Config {

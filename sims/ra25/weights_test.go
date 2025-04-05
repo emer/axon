@@ -1,6 +1,6 @@
 //go:build not
 
-package main
+package ra25
 
 import (
 	"fmt"

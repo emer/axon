@@ -5,7 +5,7 @@
 //go:build not
 
 // effort_plot plots the Rubicon effort cost equations.
-package main
+package pvlv
 
 import (
 	"math/rand"

@@ -1,4 +1,4 @@
-package main
+package objrec
 
 import (
 	"github.com/emer/axon/v2/axon"

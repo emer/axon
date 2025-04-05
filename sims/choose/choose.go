@@ -4,7 +4,7 @@
 
 // choose: This project tests the Rubicon framework
 // making cost-benefit based choices.
-package main
+package choose
 
 //go:generate core generate -add-types -add-funcs
 
@@ -15,7 +15,6 @@ import (
 
 	"cogentcore.org/core/base/num"
 	"cogentcore.org/core/base/reflectx"
-	"cogentcore.org/core/cli"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/enums"
 	"cogentcore.org/core/gpu"
@@ -32,14 +31,6 @@ import (
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/paths"
 )
-
-func main() {
-	cfg := &Config{}
-	cli.SetFromDefaults(cfg)
-	opts := cli.DefaultOptions(cfg.Name, cfg.Title)
-	opts.DefaultFiles = append(opts.DefaultFiles, "config.toml")
-	cli.Run(opts, cfg, RunSim)
-}
 
 // Modes are the looping modes (Stacks) for running and statistics.
 type Modes int32 //enums:enum
@@ -123,15 +114,32 @@ type Sim struct {
 	RandSeeds randx.Seeds `display:"-"`
 }
 
-// RunSim runs the simulation with given configuration.
+// RunSim runs the simulation as a standalone app
+// with given configuration.
 func RunSim(cfg *Config) error {
-	sim := &Sim{}
-	sim.Config = cfg
-	sim.Run()
+	ss := &Sim{Config: cfg}
+	ss.ConfigSim()
+	if ss.Config.GUI {
+		ss.RunGUI()
+	} else {
+		ss.RunNoGUI()
+	}
 	return nil
 }
 
-func (ss *Sim) Run() {
+// EmbedSim runs the simulation with default configuration
+// embedded within given body element.
+func EmbedSim(b tree.Node) *Sim {
+	cfg := NewConfig()
+	cfg.GUI = true
+	ss := &Sim{Config: cfg}
+	ss.ConfigSim()
+	ss.Init()
+	ss.ConfigGUI(b)
+	return ss
+}
+
+func (ss *Sim) ConfigSim() {
 	ss.Root, _ = tensorfs.NewDir("Root")
 	tensorfs.CurRoot = ss.Root
 	ss.Net = axon.NewNetwork(ss.Config.Name)
@@ -798,8 +806,8 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 //////// GUI
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
-func (ss *Sim) ConfigGUI() {
-	ss.GUI.MakeBody(ss, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
+func (ss *Sim) ConfigGUI(b tree.Node) {
+	ss.GUI.MakeBody(b, ss, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
 	ss.GUI.FS = ss.Root
 	ss.GUI.DataRoot = "Root"
 	ss.GUI.CycleUpdateInterval = 10
@@ -849,7 +857,7 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 
 func (ss *Sim) RunGUI() {
 	ss.Init()
-	ss.ConfigGUI()
+	ss.ConfigGUI(nil)
 	ss.GUI.Body.RunMainWindow()
 }
 
