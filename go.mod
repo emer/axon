@@ -1,19 +1,19 @@
 module github.com/emer/axon/v2
 
-go 1.22	
+go 1.23.0
 
 require (
-	cogentcore.org/core v0.3.9-0.20250402182034-99b63fc362e0
-	cogentcore.org/lab v0.1.1-0.20250402183515-f23e1a9f4b34
+	cogentcore.org/core v0.3.9-0.20250406033103-abf571a3ef6c
+	cogentcore.org/lab v0.1.1-0.20250406034000-173465805348
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/chewxy/math32 v1.10.1
 	github.com/cogentcore/yaegi v0.0.0-20240724064145-e32a03faad56
-	github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250402192849-9edadf2bd7be
+	github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250406034731-f3d3ebb44a9d
 	github.com/emer/v1vision v0.1.1-0.20241223003153-dd6818448b3b
 	github.com/stretchr/testify v1.10.0
 	gitlab.com/gomidi/midi/v2 v2.0.30
 	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948
-	golang.org/x/image v0.23.0
+	golang.org/x/image v0.25.0
 )
 
 require (
@@ -60,5 +60,7 @@ require (
 	golang.org/x/tools v0.24.0 // indirect
 	gonum.org/v1/gonum v0.15.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	star-tex.org/x/tex v0.5.0 // indirect
+	modernc.org/knuth v0.5.4 // indirect
+	modernc.org/token v1.1.0 // indirect
+	star-tex.org/x/tex v0.6.0 // indirect
 )
