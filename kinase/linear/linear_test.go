@@ -8,19 +8,16 @@ import (
 	"os"
 	"testing"
 
-	"cogentcore.org/core/paint"
-	"github.com/emer/axon/v2/kinase"
+	_ "cogentcore.org/core/paint/renderers"
 )
 
 func TestMain(m *testing.M) {
-	paint.FontLibrary.InitFontPaths(paint.FontPaths...)
 	os.Exit(m.Run())
 }
 
 func TestLinear(t *testing.T) {
 	var ls Linear
 	ls.Defaults()
-	ls.SynCaBin.Envelope = kinase.Env10
 	ls.Cycles = 200
 	ls.PlusCycles = 50
 	ls.CyclesPerBin = 10 // now always 10
