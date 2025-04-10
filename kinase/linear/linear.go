@@ -378,7 +378,7 @@ func (ls *Linear) Regress() {
 	plt := plot.New()
 	plt.SetImageRender(1280, 1024)
 	plots.NewLine(plt, tensor.NewFloat64FromValues(startCaP...)).Styler(func(s *plot.Style) {
-		s.Plot.Scale = 4
+		s.Plot.Scale = 2
 		s.Plot.Title = "CaP Linear Regression Coefficients: " + estr
 		s.Plot.XAxis.Label = "Bins"
 		s.Label = "Starting"
@@ -392,7 +392,7 @@ func (ls *Linear) Regress() {
 	plt = plot.New()
 	plt.SetImageRender(1280, 1024)
 	plots.NewLine(plt, tensor.NewFloat64FromValues(startCaD...)).Styler(func(s *plot.Style) {
-		s.Plot.Scale = 4
+		s.Plot.Scale = 2
 		s.Plot.Title = "CaD Linear Regression Coefficients: " + estr
 		s.Plot.XAxis.Label = "Bins"
 		s.Label = "Starting"

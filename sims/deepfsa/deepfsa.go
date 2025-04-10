@@ -698,10 +698,7 @@ func (ss *Sim) ConfigNetView(nv *netview.NetView) {
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI(b tree.Node) {
-	ss.GUI.MakeBody(b, ss, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
-	ss.GUI.FS = ss.Root
-	ss.GUI.DataRoot = "Root"
-	ss.GUI.CycleUpdateInterval = 10
+	ss.GUI.MakeBody(b, ss, ss.Root, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
 
 	nv := ss.GUI.AddNetView("Network")
 	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles
@@ -715,7 +712,6 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	}
 	ss.ConfigNetView(nv)
 
-	ss.GUI.UpdateFiles()
 	ss.StatsInit()
 	ss.GUI.FinalizeGUI(false)
 }

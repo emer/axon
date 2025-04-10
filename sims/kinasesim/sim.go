@@ -344,12 +344,9 @@ func (ss *Sim) ConfigStats() {
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI(b tree.Node) {
-	ss.GUI.MakeBody(b, ss, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
-	ss.GUI.FS = ss.Root
-	ss.GUI.DataRoot = "Root"
+	ss.GUI.MakeBody(b, ss, ss.Root, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
 	ss.GUI.CycleUpdateInterval = 10
 
-	ss.GUI.UpdateFiles()
 	ss.StatsInit()
 	ss.GUI.FinalizeGUI(false)
 }

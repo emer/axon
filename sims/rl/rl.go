@@ -550,10 +550,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI(b tree.Node) {
-	ss.GUI.MakeBody(b, ss, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
-	ss.GUI.FS = ss.Root
-	ss.GUI.DataRoot = "Root"
-	ss.GUI.CycleUpdateInterval = 10
+	ss.GUI.MakeBody(b, ss, ss.Root, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
 
 	nv := ss.GUI.AddNetView("Network")
 	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles
@@ -568,7 +565,6 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	// nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1, 2.75) // more "head on" than default which is more "top down"
 	// nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
 
-	ss.GUI.UpdateFiles()
 	ss.StatsInit()
 	ss.GUI.FinalizeGUI(false)
 }

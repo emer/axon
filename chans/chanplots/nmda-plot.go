@@ -34,9 +34,6 @@ type NMDAPlot struct {
 	// NMDA reversal / driving potential
 	NMDAerev float64 `default:"0"`
 
-	// for old buggy NMDA: voff value to use
-	BugVoff float64
-
 	// starting voltage
 	Vstart float64 `default:"-90"`
 
@@ -69,14 +66,13 @@ func (pl *NMDAPlot) Config(parent *tensorfs.Node, tabs lab.Tabber) {
 
 	pl.NMDAStd.Defaults()
 	pl.NMDAStd.Voff = 0
-	pl.BugVoff = 5
 	pl.NMDAv = 0.062
 	pl.MgC = 1
 	pl.NMDAd = 3.57
 	pl.NMDAerev = 0
-	pl.Vstart = -1 // -90 // -90 -- use -1 1 to test val around 0
-	pl.Vend = 1    // 2     // 50
-	pl.Vstep = .01 // use 0.001 instead for testing around 0
+	pl.Vstart = -90 // -90 -- use -1 1 to test val around 0
+	pl.Vend = 10
+	pl.Vstep = 1
 	pl.Tau = 100
 	pl.TimeSteps = 1000
 	pl.TimeV = -50

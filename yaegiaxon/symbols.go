@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package yaegiaxon contains yaegi symbols for axon use in yaegi interpreter
 package yaegiaxon
 
 //go:generate ./make

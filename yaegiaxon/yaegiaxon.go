@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package yaegiaxon provides functions connecting
-// https://github.com/cogentcore/yaegi to Cogent Lab.
+// Package yaegiaxon exports axon packages to the yaegi interpreter
+// and provides functions for connecting with Cogent Lab.
 package yaegiaxon
 
 import (
@@ -15,6 +15,7 @@ import (
 	"cogentcore.org/lab/yaegilab/labsymbols"
 	"cogentcore.org/lab/yaegilab/tensorsymbols"
 	"github.com/cogentcore/yaegi/interp"
+	"github.com/emer/emergent/v2/yaegiemergent"
 )
 
 func init() {
@@ -40,6 +41,7 @@ func (in *Interpreter) Use(values interp.Exports) error {
 func (in *Interpreter) ImportUsed() {
 	errors.Log(in.Use(tensorsymbols.Symbols))
 	errors.Log(in.Use(labsymbols.Symbols))
+	errors.Log(in.Use(yaegiemergent.Symbols))
 	errors.Log(in.Use(Symbols))
 	in.Config()
 }
