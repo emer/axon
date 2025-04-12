@@ -20,19 +20,16 @@ import (
 type NMDAPlot struct {
 
 	// standard NMDA implementation in chans
-	NMDAStd chans.NMDAParams
+	NMDA chans.NMDAParams `display:"add-fields"`
 
 	// multiplier on NMDA as function of voltage
-	NMDAv float64 `default:"0.062"`
-
-	// magnesium ion concentration -- somewhere between 1 and 1.5
-	MgC float64
+	Vgain float64 `default:"0.062"`
 
 	// denominator of NMDA function
-	NMDAd float64 `default:"3.57"`
+	Norm float64 `default:"3.57"`
 
-	// NMDA reversal / driving potential
-	NMDAerev float64 `default:"0"`
+	// reversal / driving potential
+	Erev float64 `default:"0"`
 
 	// starting voltage
 	Vstart float64 `default:"-90"`
@@ -43,16 +40,19 @@ type NMDAPlot struct {
 	// voltage increment
 	Vstep float64 `default:"1"`
 
-	// decay time constant for NMDA current -- rise time is 2 msec and not worth extra effort for biexponential
-	Tau float64 `default:"100"`
-
-	// number of time steps
+	// number of 1msec time steps for time run
 	TimeSteps int
 
-	// voltage for TimeRun
+	// clamped voltage for TimeRun
 	TimeV float64
 
-	// NMDA Gsyn current input at every time step
+	// time in msec for inputs to remain on in TimeRun
+	TimeIn int
+
+	// frequency of spiking inputs at start of TimeRun
+	TimeHz float64
+
+	// proportion activation of NMDA channels per spike
 	TimeGin float64
 
 	Dir  *tensorfs.Node `display:"-"`
@@ -64,18 +64,18 @@ func (pl *NMDAPlot) Config(parent *tensorfs.Node, tabs lab.Tabber) {
 	pl.Dir = parent.Dir("NMDA")
 	pl.Tabs = tabs
 
-	pl.NMDAStd.Defaults()
-	pl.NMDAStd.Voff = 0
-	pl.NMDAv = 0.062
-	pl.MgC = 1
-	pl.NMDAd = 3.57
-	pl.NMDAerev = 0
+	pl.NMDA.Defaults()
+	pl.NMDA.Voff = 0
+	pl.Vgain = 0.062
+	pl.Norm = 3.57
+	pl.Erev = 0
 	pl.Vstart = -90 // -90 -- use -1 1 to test val around 0
 	pl.Vend = 10
 	pl.Vstep = 1
-	pl.Tau = 100
-	pl.TimeSteps = 1000
+	pl.TimeSteps = 500
 	pl.TimeV = -50
+	pl.TimeIn = 100
+	pl.TimeHz = 50
 	pl.TimeGin = .5
 	pl.Update()
 }
@@ -92,7 +92,7 @@ func (pl *NMDAPlot) GVRun() { //types:add
 	pl.Update()
 	dir := pl.Dir.Dir("G_V")
 
-	mgf := pl.MgC / pl.NMDAd
+	mgf := float64(pl.NMDA.MgC) / pl.Norm
 	nv := int((pl.Vend - pl.Vstart) / pl.Vstep)
 	v := 0.0
 	g := 0.0
@@ -101,11 +101,11 @@ func (pl *NMDAPlot) GVRun() { //types:add
 		if v >= 0 {
 			g = 0
 		} else {
-			g = float64(pl.NMDAStd.Gbar) * (pl.NMDAerev - v) / (1 + mgf*math.Exp(-pl.NMDAv*v))
+			g = float64(pl.NMDA.Gbar) * (pl.Erev - v) / (1 + mgf*math.Exp(-pl.Vgain*v))
 		}
 
-		gs := pl.NMDAStd.Gnmda(1, chans.VFromBio(float32(v)))
-		ca := pl.NMDAStd.CaFromVbio(float32(v))
+		gs := pl.NMDA.Gnmda(1, chans.VFromBio(float32(v)))
+		ca := pl.NMDA.CaFromVbio(float32(v))
 
 		dir.Float64("V", nv).SetFloat1D(v, vi)
 		dir.Float64("Gnmda", nv).SetFloat1D(g, vi)
@@ -123,6 +123,8 @@ func (pl *NMDAPlot) GVRun() { //types:add
 			s.Plot.Title = "NMDA G(V)"
 		})
 	}
+	metadata.SetDoc(dir.Float64("Gnmda_std"), "standard compute function used in axon sims")
+
 	if pl.Tabs != nil && pl.Tabs.AsLab().IsVisible() {
 		pl.Tabs.AsLab().PlotTensorFS(dir)
 	}
@@ -137,14 +139,15 @@ func (pl *NMDAPlot) TimeRun() { //types:add
 	v := pl.TimeV
 	g := 0.0
 	nmda := 0.0
+	spikeInt := int(1000 / pl.TimeHz)
 	for ti := range nv {
 		t := float64(ti) * .001
-		gin := pl.TimeGin
-		if ti < 10 || ti > pl.TimeSteps/2 {
-			gin = 0
+		gin := 0.0
+		if ti >= 10 && ti < (10+pl.TimeIn) && (ti-10)%spikeInt == 0 {
+			gin = pl.TimeGin
 		}
-		nmda += gin*(1-nmda) - (nmda / pl.Tau)
-		g = nmda / (1 + math.Exp(-pl.NMDAv*v)/pl.NMDAd)
+		nmda += gin*(1-nmda) - (nmda / float64(pl.NMDA.Tau))
+		g = nmda / (1 + math.Exp(-pl.Vgain*v)/pl.Norm)
 
 		dir.Float64("Time", nv).SetFloat1D(t, ti)
 		dir.Float64("Gnmda", nv).SetFloat1D(g, ti)

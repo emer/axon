@@ -6,6 +6,79 @@ package chans
 
 import "cogentcore.org/core/math32"
 
+//////// Simplified AK
+
+//gosl:start
+
+// AKsParams provides a highly simplified stateless A-type K channel
+// that only has the voltage-gated activation (M) dynamic with a cutoff
+// that ends up capturing a close approximation to the much more complex AK function.
+// This is voltage gated with maximal activation around -37 mV.
+// It is particularly important for counteracting the excitatory effects of
+// voltage gated calcium channels which can otherwise drive runaway excitatory currents.
+type AKsParams struct {
+
+	// strength of AK current
+	Gbar float32 `default:"2,0.1,0.01"`
+
+	// H factor as a constant multiplier on overall M factor result -- rescales M to level consistent with H being present at full strength
+	Hf float32 `default:"0.076"`
+
+	// multiplier for M -- determines slope of function
+	Mf float32 `default:"0.075"`
+
+	// voltage offset in biological units for M function
+	Voff float32 `default:"2"`
+
+	//
+	Vmax float32 `default:-37" desc:"voltage level of maximum channel opening -- stays flat above that"`
+
+	pad, pad1, pad2 int32
+}
+
+// Defaults sets the parameters for distal dendrites
+func (ap *AKsParams) Defaults() {
+	ap.Gbar = 0.1
+	ap.Hf = 0.076
+	ap.Mf = 0.075
+	ap.Voff = 2
+	ap.Vmax = -37
+}
+
+func (ap *AKsParams) Update() {
+}
+
+func (ap *AKsParams) ShouldDisplay(field string) bool {
+	switch field {
+	case "Gbar":
+		return true
+	default:
+		return ap.Gbar > 0
+	}
+}
+
+// MFromV returns the M gate function from vbio
+func (ap *AKsParams) MFromV(vbio float32) float32 {
+	av := vbio
+	if vbio > ap.Vmax {
+		av = ap.Vmax
+	}
+	return ap.Hf / (1.0 + math32.FastExp(-ap.Mf*(av+ap.Voff)))
+}
+
+// MFromVnorm returns the M gate function from vnorm
+func (ap *AKsParams) MFromVnorm(v float32) float32 {
+	return ap.MFromV(VToBio(v))
+}
+
+// Gak returns the conductance as a function of normalized Vm
+// GBar * MFromVnorm(v)
+func (ap *AKsParams) Gak(v float32) float32 {
+	return ap.Gbar * ap.MFromVnorm(v)
+}
+
+//gosl:end
+
 // AKParams control an A-type K channel, which is voltage gated with maximal
 // activation around -37 mV.  It has two state variables, M (v-gated opening)
 // and H (v-gated closing), which integrate with fast and slow time constants,
@@ -134,77 +207,3 @@ func (ap *AKParams) DMHFromV(v, m, h float32) (float32, float32) {
 func (ap *AKParams) Gak(m, h float32) float32 {
 	return ap.Gbar * m * h
 }
-
-//////////////////////////////////////////////////////////////////////
-//  Simplified AK
-
-//gosl:start chans
-
-// AKsParams provides a highly simplified stateless A-type K channel
-// that only has the voltage-gated activation (M) dynamic with a cutoff
-// that ends up capturing a close approximation to the much more complex AK function.
-// This is voltage gated with maximal activation around -37 mV.
-// It is particularly important for counteracting the excitatory effects of
-// voltage gated calcium channels which can otherwise drive runaway excitatory currents.
-type AKsParams struct {
-
-	// strength of AK current
-	Gbar float32 `default:"2,0.1,0.01"`
-
-	// H factor as a constant multiplier on overall M factor result -- rescales M to level consistent with H being present at full strength
-	Hf float32 `default:"0.076"`
-
-	// multiplier for M -- determines slope of function
-	Mf float32 `default:"0.075"`
-
-	// voltage offset in biological units for M function
-	Voff float32 `default:"2"`
-
-	//
-	Vmax float32 `default:-37" desc:"voltage level of maximum channel opening -- stays flat above that"`
-
-	pad, pad1, pad2 int32
-}
-
-// Defaults sets the parameters for distal dendrites
-func (ap *AKsParams) Defaults() {
-	ap.Gbar = 0.1
-	ap.Hf = 0.076
-	ap.Mf = 0.075
-	ap.Voff = 2
-	ap.Vmax = -37
-}
-
-func (ap *AKsParams) Update() {
-}
-
-func (ap *AKsParams) ShouldDisplay(field string) bool {
-	switch field {
-	case "Gbar":
-		return true
-	default:
-		return ap.Gbar > 0
-	}
-}
-
-// MFromV returns the M gate function from vbio
-func (ap *AKsParams) MFromV(vbio float32) float32 {
-	av := vbio
-	if vbio > ap.Vmax {
-		av = ap.Vmax
-	}
-	return ap.Hf / (1.0 + math32.FastExp(-ap.Mf*(av+ap.Voff)))
-}
-
-// MFromVnorm returns the M gate function from vnorm
-func (ap *AKsParams) MFromVnorm(v float32) float32 {
-	return ap.MFromV(VToBio(v))
-}
-
-// Gak returns the conductance as a function of normalized Vm
-// GBar * MFromVnorm(v)
-func (ap *AKsParams) Gak(v float32) float32 {
-	return ap.Gbar * ap.MFromVnorm(v)
-}
-
-//gosl:end chans
