@@ -94,29 +94,24 @@ func (pl *NMDAPlot) GVRun() { //types:add
 
 	mgf := float64(pl.NMDA.MgC) / pl.Norm
 	nv := int((pl.Vend - pl.Vstart) / pl.Vstep)
-	v := 0.0
-	g := 0.0
 	for vi := range nv {
-		v = pl.Vstart + float64(vi)*pl.Vstep
-		if v >= 0 {
-			g = 0
-		} else {
-			g = float64(pl.NMDA.Gbar) * (pl.Erev - v) / (1 + mgf*math.Exp(-pl.Vgain*v))
+		v := pl.Vstart + float64(vi)*pl.Vstep
+		g := float64(pl.NMDA.Gbar) / (1 + mgf*math.Exp(-pl.Vgain*v))
+		i := (pl.Erev - v) * g
+		if v >= pl.Erev {
+			i = 0
 		}
-
-		gs := pl.NMDA.Gnmda(1, chans.VFromBio(float32(v)))
 		ca := pl.NMDA.CaFromVbio(float32(v))
 
 		dir.Float64("V", nv).SetFloat1D(v, vi)
 		dir.Float64("Gnmda", nv).SetFloat1D(g, vi)
-		dir.Float64("Gnmda_std", nv).SetFloat1D(float64(gs), vi)
+		dir.Float64("Inmda", nv).SetFloat1D(i, vi)
 		dir.Float64("Ca", nv).SetFloat1D(float64(ca), vi)
 	}
-	metadata.SetDoc(dir.Float64("Gnmda_std"), "std is the standard equations actually used in models")
 	plot.SetFirstStyler(dir.Float64("V"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
-	ons := []string{"Gnmda"}
+	ons := []string{"Gnmda", "Inmda"}
 	for _, on := range ons {
 		plot.SetFirstStyler(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
