@@ -8,7 +8,7 @@ import (
 	"cogentcore.org/core/math32"
 )
 
-//gosl:start chans
+//gosl:start
 
 // VGCCParams control the standard L-type Ca channel
 // All functions based on Urakubo et al (2008).
@@ -44,8 +44,7 @@ func (np *VGCCParams) ShouldDisplay(field string) bool {
 
 // GFromV returns the VGCC conductance as a function of normalized membrane potential
 // Based on Urakubo's calculation of `max` in CaL.g in the section commented 'i gate'.
-func (np *VGCCParams) GFromV(v float32) float32 {
-	vbio := VToBio(v)
+func (np *VGCCParams) GFromV(vbio float32) float32 {
 	if vbio > -0.5 && vbio < 0.5 { // this avoids divide by 0, and numerical instability around 0
 		return 1.0 / (0.0756 * (1 + 0.0378*vbio))
 	}
@@ -78,27 +77,33 @@ func (np *VGCCParams) HFromV(vbio float32) float32 {
 	return 1.0 / (1.0 + math32.FastExp((vbio+41)*2))
 }
 
-// DMHFromV returns the change at msec update scale in M, H factors
-// as a function of V normalized (0-1)
-func (np *VGCCParams) DMHFromV(v, m, h float32, dm, dh *float32) {
-	vbio := VToBio(v)
+// DeltaMFromV returns the change at msec update scale in M factor
+// as a function of Vbio
+func (np *VGCCParams) DeltaMFromV(vbio, m float32) float32 {
 	if vbio > 0 {
 		vbio = 0
 	}
-	*dm = (np.MFromV(vbio) - m) / 3.6
-	*dh = (np.HFromV(vbio) - h) / 29.0
+	return (np.MFromV(vbio) - m) / 3.6
 }
 
-// Gvgcc returns the VGCC net conductance from m, h activation and vm
-func (np *VGCCParams) Gvgcc(vm, m, h float32) float32 {
-	return np.Gbar * np.GFromV(vm) * m * m * m * h
+// DeltaHFromV returns the change at msec update scale in H factor
+// as a function of Vbio
+func (np *VGCCParams) DeltaHFromV(vbio, h float32) float32 {
+	if vbio > 0 {
+		vbio = 0
+	}
+	return (np.HFromV(vbio) - h) / 29.0
+}
+
+// Gvgcc returns the VGCC net conductance from m, h activation and vbio.
+func (np *VGCCParams) Gvgcc(vbio, m, h float32) float32 {
+	return np.Gbar * np.GFromV(vbio) * m * m * m * h
 }
 
 // CaFromG returns the Ca from Gvgcc conductance, current Ca level,
-// and normalized membrane potential.
-func (np *VGCCParams) CaFromG(v, g, ca float32) float32 {
-	vbio := VToBio(v)
+// and vbio
+func (np *VGCCParams) CaFromG(vbio, g, ca float32) float32 {
 	return -vbio * np.Ca * g
 }
 
-//gosl:end chans
+//gosl:end

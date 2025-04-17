@@ -1102,13 +1102,14 @@ func (ac *ActParams) GvgccFromVm(ctx *Context, ni, di uint32) {
 	if ac.VGCC.Gbar == 0 {
 		return
 	}
-	Neurons.Set(ac.VGCC.Gvgcc(Neurons.Value(int(ni), int(di), int(VmDend)), Neurons.Value(int(ni), int(di), int(VgccM)), Neurons.Value(int(ni), int(di), int(VgccH))), int(ni), int(di), int(Gvgcc))
-	var dm, dh float32
-	ac.VGCC.DMHFromV(Neurons.Value(int(ni), int(di), int(VmDend)), Neurons.Value(int(ni), int(di), int(VgccM)), Neurons.Value(int(ni), int(di), int(VgccH)), &dm, &dh)
+	vbio := chans.VToBio(Neurons.Value(int(ni), int(di), int(VmDend)))
+	Neurons.Set(ac.VGCC.Gvgcc(vbio, Neurons.Value(int(ni), int(di), int(VgccM)), Neurons.Value(int(ni), int(di), int(VgccH))), int(ni), int(di), int(Gvgcc))
+	dm := ac.VGCC.DeltaMFromV(vbio, Neurons.Value(int(ni), int(di), int(VgccM)))
+	dh := ac.VGCC.DeltaHFromV(vbio, Neurons.Value(int(ni), int(di), int(VgccH)))
 	Neurons.SetAdd(dm, int(ni), int(di), int(VgccM))
 	Neurons.SetAdd(dh, int(ni), int(di), int(VgccH))
 	// note: may be overwritten!
-	Neurons.Set(ac.VGCC.CaFromG(Neurons.Value(int(ni), int(di), int(VmDend)), Neurons.Value(int(ni), int(di), int(Gvgcc)), Neurons.Value(int(ni), int(di), int(VgccCa))), int(ni), int(di), int(VgccCa))
+	Neurons.Set(ac.VGCC.CaFromG(vbio, Neurons.Value(int(ni), int(di), int(Gvgcc)), Neurons.Value(int(ni), int(di), int(VgccCa))), int(ni), int(di), int(VgccCa))
 }
 
 // GkFromVm updates all the Gk-based conductances: Mahp, KNa, Gak

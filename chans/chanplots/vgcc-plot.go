@@ -17,13 +17,13 @@ import (
 type VGCCPlot struct {
 
 	// VGCC function
-	VGCC chans.VGCCParams
+	VGCC chans.VGCCParams `display:"add-fields"`
 
 	// starting voltage
 	Vstart float32 `default:"-90"`
 
 	// ending voltage
-	Vend float32 `default:"0"`
+	Vend float32 `default:"10"`
 
 	// voltage increment
 	Vstep float32 `default:"1"`
@@ -31,11 +31,8 @@ type VGCCPlot struct {
 	// number of time steps
 	TimeSteps int
 
-	// do spiking instead of voltage ramp
-	TimeSpike bool
-
-	// spiking frequency
-	SpikeFreq float32
+	// frequency of spiking inputs during TimeRun
+	TimeHz float32
 
 	// time-run starting membrane potential
 	TimeVstart float32
@@ -55,11 +52,10 @@ func (pl *VGCCPlot) Config(parent *tensorfs.Node, tabs lab.Tabber) {
 	pl.VGCC.Defaults()
 	pl.VGCC.Gbar = 1
 	pl.Vstart = -90
-	pl.Vend = 2
-	pl.Vstep = 0.01
+	pl.Vend = 10
+	pl.Vstep = 1
 	pl.TimeSteps = 200
-	pl.TimeSpike = true
-	pl.SpikeFreq = 50
+	pl.TimeHz = 50
 	pl.TimeVstart = -70
 	pl.TimeVend = -20
 	pl.Update()
@@ -76,15 +72,14 @@ func (pl *VGCCPlot) GVRun() { //types:add
 
 	nv := int((pl.Vend - pl.Vstart) / pl.Vstep)
 	for vi := range nv {
-		v := pl.Vstart + float32(vi)*pl.Vstep
-		vnorm := chans.VFromBio(v)
-		g := pl.VGCC.GFromV(vnorm)
-		m := pl.VGCC.MFromV(v)
-		h := pl.VGCC.HFromV(v)
-		var dm, dh float32
-		pl.VGCC.DMHFromV(vnorm, m, h, &dm, &dh)
+		vbio := pl.Vstart + float32(vi)*pl.Vstep
+		g := pl.VGCC.GFromV(vbio)
+		m := pl.VGCC.MFromV(vbio)
+		h := pl.VGCC.HFromV(vbio)
+		dm := pl.VGCC.DeltaMFromV(vbio, m)
+		dh := pl.VGCC.DeltaHFromV(vbio, h)
 
-		dir.Float64("V", nv).SetFloat1D(float64(v), vi)
+		dir.Float64("V", nv).SetFloat1D(float64(vbio), vi)
 		dir.Float64("Gvgcc", nv).SetFloat1D(float64(g), vi)
 		dir.Float64("M", nv).SetFloat1D(float64(m), vi)
 		dir.Float64("H", nv).SetFloat1D(float64(h), vi)
@@ -116,17 +111,15 @@ func (pl *VGCCPlot) TimeRun() { //types:add
 	h := float32(1)
 	msdt := float32(0.001)
 	v := pl.TimeVstart
-	vinc := float32(2) * (pl.TimeVend - pl.TimeVstart) / float32(pl.TimeSteps)
 
-	isi := int(1000 / pl.SpikeFreq)
+	isi := int(1000 / pl.TimeHz)
 	var g float32
 
 	for ti := range nv {
-		vnorm := chans.VFromBio(v)
 		t := float32(ti) * msdt
-		g = pl.VGCC.Gvgcc(vnorm, m, h)
-		var dm, dh float32
-		pl.VGCC.DMHFromV(vnorm, m, h, &dm, &dh)
+		g = pl.VGCC.Gvgcc(v, m, h)
+		dm := pl.VGCC.DeltaMFromV(v, m)
+		dh := pl.VGCC.DeltaHFromV(v, h)
 		m += dm
 		h += dh
 
@@ -138,17 +131,10 @@ func (pl *VGCCPlot) TimeRun() { //types:add
 		dir.Float64("dM", nv).SetFloat1D(float64(dm), ti)
 		dir.Float64("dH", nv).SetFloat1D(float64(dh), ti)
 
-		if pl.TimeSpike {
-			if ti%isi < 3 {
-				v = pl.TimeVend
-			} else {
-				v = pl.TimeVstart
-			}
+		if ti%isi < 3 {
+			v = pl.TimeVend
 		} else {
-			v += vinc
-			if v > pl.TimeVend {
-				v = pl.TimeVend
-			}
+			v = pl.TimeVstart
 		}
 	}
 	plot.SetFirstStyler(dir.Float64("Time"), func(s *plot.Style) {

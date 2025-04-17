@@ -1100,13 +1100,14 @@ func (ac *ActParams) GvgccFromVm(ctx *Context, ni, di uint32) {
 	if ac.VGCC.Gbar == 0 {
 		return
 	}
-	Neurons[ni, di, Gvgcc] = ac.VGCC.Gvgcc(Neurons[ni, di, VmDend], Neurons[ni, di, VgccM], Neurons[ni, di, VgccH])
-	var dm, dh float32
-	ac.VGCC.DMHFromV(Neurons[ni, di, VmDend], Neurons[ni, di, VgccM], Neurons[ni, di, VgccH], &dm, &dh)
+	vbio := chans.VToBio(Neurons[ni, di, VmDend])
+	Neurons[ni, di, Gvgcc] = ac.VGCC.Gvgcc(vbio, Neurons[ni, di, VgccM], Neurons[ni, di, VgccH])
+	dm := ac.VGCC.DeltaMFromV(vbio, Neurons[ni, di, VgccM])
+	dh := ac.VGCC.DeltaHFromV(vbio, Neurons[ni, di, VgccH])
 	Neurons[ni, di, VgccM] += dm
 	Neurons[ni, di, VgccH] += dh
 	// note: may be overwritten!
-	Neurons[ni, di, VgccCa] = ac.VGCC.CaFromG(Neurons[ni, di, VmDend], Neurons[ni, di, Gvgcc], Neurons[ni, di, VgccCa])
+	Neurons[ni, di, VgccCa] = ac.VGCC.CaFromG(vbio, Neurons[ni, di, Gvgcc], Neurons[ni, di, VgccCa])
 }
 
 // GkFromVm updates all the Gk-based conductances: Mahp, KNa, Gak

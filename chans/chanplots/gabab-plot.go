@@ -7,7 +7,6 @@ package chanplots
 import (
 	"math"
 
-	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/tree"
@@ -151,11 +150,10 @@ func (pl *GABABPlot) TimeRun() { //types:add
 	time := 0.0
 	gs := 0.0
 	x := 0.0
-	spikeInt := int(1000 / pl.TimeHz)
 	for ti := range nv {
 		sin := 0.0
-		if ti >= 10 && ti < (10+pl.TimeIn) && (ti-10)%spikeInt == 0 {
-			sin = 1
+		if ti >= 10 && ti < (10+pl.TimeIn) {
+			sin = float64(pl.TimeHz)
 		}
 
 		// record starting state first, then update
@@ -175,8 +173,6 @@ func (pl *GABABPlot) TimeRun() { //types:add
 
 		time += pl.TimeInc
 	}
-	metadata.SetDoc(dir.Float64("GabaBstd"), "std is from code actually used in models")
-	metadata.SetDoc(dir.Float64("GabaBXstd"), "std is from code actually used in models")
 	plot.SetFirstStyler(dir.Float64("Time"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
