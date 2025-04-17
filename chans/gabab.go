@@ -8,7 +8,7 @@ import (
 	"cogentcore.org/core/math32"
 )
 
-//gosl:start chans
+//gosl:start
 
 // GABA-B is an inhibitory channel activated by the usual GABA inhibitory neurotransmitter,
 // which is coupled to the GIRK G-protein coupled inwardly rectifying potassium (K) channel.
@@ -92,19 +92,17 @@ func (gp *GABABParams) GFromS(s float32) float32 {
 	return 1.0 / (1.0 + math32.FastExp(-(ss-7.1)/1.4))
 }
 
-// BiExp computes bi-exponential update, returns dG and dX deltas to add to g and x
-func (gp *GABABParams) BiExp(g, x float32, dG, dX *float32) {
-	*dG = (gp.TauFact*x - g) * gp.RiseDt
-	*dX = -x * gp.DecayDt
-	return
+// DeltaG computes the change in conductance based on the current
+// conductance g and the spike integration factor x.
+func (gp *GABABParams) DeltaG(g, x float32) float32 {
+	return (gp.TauFact*x - g) * gp.RiseDt
 }
 
 // GABAB returns the updated GABA-B / GIRK activation and underlying x value
 // based on current values and gi inhibitory conductance (proxy for GABA spikes)
 func (gp *GABABParams) GABAB(gi float32, gabaB, gabaBx *float32) {
-	var dG, dX float32
-	gp.BiExp(*gabaB, *gabaBx, &dG, &dX)
-	*gabaBx += gp.GFromS(gi) + dX // gets new input
+	dG := gp.DeltaG(*gabaB, *gabaBx)
+	*gabaBx += gp.GFromS(gi) - (*gabaBx)*gp.DecayDt
 	*gabaB += dG
 	return
 }
@@ -115,4 +113,4 @@ func (gp *GABABParams) GgabaB(gabaB, vm float32) float32 {
 	return gp.Gbar * gp.GFromV(vm) * (gabaB + gp.Gbase)
 }
 
-//gosl:end chans
+//gosl:end

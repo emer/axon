@@ -87,8 +87,10 @@ var LayerParams = axon.LayerSheets{
 // Base is always applied, and others can be optionally selected to apply on top of that.
 var PathParams = axon.PathSheets{
 	"Base": {
-		{Sel: "Path", Doc: "yes extra learning factors",
+		{Sel: "Path", Doc: "",
 			Set: func(pt *axon.PathParams) {
+				// pt.Com.MaxDelay = 10 // not much effect
+				// pt.Com.Delay = 10
 				pt.Learn.LRate.Base = 0.1        // 0.1 > 0.2 much better behavior overall; just slower initial learning for trace, 0.02 for notrace
 				pt.Learn.DWt.SubMean = 1         // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
 				pt.SWts.Adapt.LRate = 0.0001     // 0.005 == .1 == .01

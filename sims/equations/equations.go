@@ -45,7 +45,7 @@ type Plots struct {
 	// The inward rectification is caused by a Mg+ ion block *from the inside* of the neuron,
 	// which means that these channels are most open when the neuron is hyperpolarized (inactive),
 	// and thus it serves to keep inactive neurons inactive. Based on Thomson & Destexhe (1999).
-	GABAB chanplots.GababPlot `new-window:"+" display:"no-inline"`
+	GABAB chanplots.GABABPlot `new-window:"+" display:"no-inline"`
 
 	// Kir is the kIR potassium inwardly rectifying current,
 	// based on the equations from Lindroos et al (2018).

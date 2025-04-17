@@ -17,45 +17,30 @@ import (
 	"github.com/emer/axon/v2/chans"
 )
 
-type GababPlot struct {
+type GABABPlot struct {
 	// standard chans version of GABAB
-	GABAstd chans.GABABParams
+	GABAB chans.GABABParams `display:"add-fields"`
 
-	// multiplier on GABAb as function of voltage
-	GABAbv float64 `default:"0.1"`
+	// multiplier on GABA-B as function of voltage
+	Vgain float64 `default:"0.1"`
 
-	// offset of GABAb function
-	GABAbo float64 `default:"10"`
+	// voltage offset for GABA-B exponential function
+	Voff float64 `default:"10"`
 
 	// GABAb reversal / driving potential
-	GABAberev float64 `default:"-90"`
+	Erev float64 `default:"-90"`
 
 	// starting voltage
 	Vstart float64 `default:"-90"`
 
 	// ending voltage
-	Vend float64 `default:"0"`
+	Vend float64 `default:"10"`
 
 	// voltage increment
 	Vstep float64 `default:"1"`
 
 	// max number of spikes
-	Smax int `default:"15"`
-
-	// rise time constant
-	RiseTau float64
-
-	// decay time constant -- must NOT be same as RiseTau
-	DecayTau float64
-
-	// initial value of GsX driving variable at point of synaptic input onset -- decays expoentially from this start
-	GsXInit float64
-
-	// time when peak conductance occurs, in TimeInc units
-	MaxTime float64 `edit:"-"`
-
-	// time constant factor used in integration: (Decay / Rise) ^ (Rise / (Decay - Rise))
-	TauFact float64 `edit:"-"`
+	Smax int `default:"30"`
 
 	// total number of time steps to take
 	TimeSteps int
@@ -63,60 +48,61 @@ type GababPlot struct {
 	// time increment per step
 	TimeInc float64
 
+	// time in msec for inputs to remain on in TimeRun
+	TimeIn int
+
+	// frequency of spiking inputs at start of TimeRun
+	TimeHz float64
+
 	Dir  *tensorfs.Node `display:"-"`
 	Tabs lab.Tabber     `display:"-"`
 }
 
 // Config configures all the elements using the standard functions
-func (pl *GababPlot) Config(parent *tensorfs.Node, tabs lab.Tabber) {
+func (pl *GABABPlot) Config(parent *tensorfs.Node, tabs lab.Tabber) {
 	pl.Dir = parent.Dir("GabaB")
 	pl.Tabs = tabs
 
-	pl.GABAstd.Defaults()
-	pl.GABAstd.GiSpike = 1
-	pl.GABAbv = 0.1
-	pl.GABAbo = 10
-	pl.GABAberev = -90
+	pl.GABAB.Defaults()
+	pl.GABAB.GiSpike = 1
+	pl.Vgain = 0.1
+	pl.Voff = 10
+	pl.Erev = -90
 	pl.Vstart = -90
-	pl.Vend = 0
-	pl.Vstep = .01
+	pl.Vend = 10
+	pl.Vstep = 1
 	pl.Smax = 30
-	pl.RiseTau = 45
-	pl.DecayTau = 50
-	pl.GsXInit = 1
-	pl.TimeSteps = 200
+	pl.TimeSteps = 500
 	pl.TimeInc = .001
+	pl.TimeIn = 100
+	pl.TimeHz = 50
 	pl.Update()
 }
 
 // Update updates computed values
-func (pl *GababPlot) Update() {
-	pl.TauFact = math.Pow(pl.DecayTau/pl.RiseTau, pl.RiseTau/(pl.DecayTau-pl.RiseTau))
-	pl.MaxTime = ((pl.RiseTau * pl.DecayTau) / (pl.DecayTau - pl.RiseTau)) * math.Log(pl.DecayTau/pl.RiseTau)
+func (pl *GABABPlot) Update() {
+	pl.GABAB.Update()
 }
 
 // GVRun plots the conductance G (and other variables) as a function of V.
-func (pl *GababPlot) GVRun() { //types:add
+func (pl *GABABPlot) GVRun() { //types:add
 	pl.Update()
 	dir := pl.Dir.Dir("G_V")
 
 	nv := int((pl.Vend - pl.Vstart) / pl.Vstep)
-	v := 0.0
-	g := 0.0
 	for vi := range nv {
-		v = pl.Vstart + float64(vi)*pl.Vstep
-		g = float64(pl.GABAstd.Gbar) * (v - pl.GABAberev) / (1 + math.Exp(pl.GABAbv*((v-pl.GABAberev)+pl.GABAbo)))
-		gs := pl.GABAstd.Gbar * pl.GABAstd.GFromV(chans.VFromBio(float32(v)))
+		v := pl.Vstart + float64(vi)*pl.Vstep
+		g := float64(pl.GABAB.Gbar) / (1 + math.Exp(pl.Vgain*((v-pl.Erev)+pl.Voff)))
+		i := (v - pl.Erev) * g
 
 		dir.Float64("V", nv).SetFloat1D(v, vi)
-		dir.Float64("GgabaB", nv).SetFloat1D(g, vi)
-		dir.Float64("GgabaBstd", nv).SetFloat1D(float64(gs), vi)
+		dir.Float64("Ggaba_b", nv).SetFloat1D(g, vi)
+		dir.Float64("Igaba_b", nv).SetFloat1D(i, vi)
 	}
-	metadata.SetDoc(dir.Float64("GgabaBstd"), "std is from code actually used in models")
 	plot.SetFirstStyler(dir.Float64("V"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
-	ons := []string{"GgabaB"}
+	ons := []string{"Ggaba_b", "Igaba_b"}
 	for _, on := range ons {
 		plot.SetFirstStyler(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
@@ -128,24 +114,19 @@ func (pl *GababPlot) GVRun() { //types:add
 	}
 }
 
-// GSRun plots conductance over spiking.
-func (pl *GababPlot) GSRun() { //types:add
+// GSRun plots conductance as function of spiking rate.
+func (pl *GABABPlot) GSRun() { //types:add
 	pl.Update()
 	dir := pl.Dir.Dir("G_Spike")
 
 	nv := int(float64(pl.Smax) / pl.Vstep)
-	s := 0.0
-	g := 0.0
 	for si := range nv {
-		s = float64(si) * pl.Vstep
-		g = 1.0 / (1.0 + math.Exp(-(s-7.1)/1.4))
-		gs := pl.GABAstd.GFromS(float32(s))
+		s := float64(si) * pl.Vstep
+		g := 1.0 / (1.0 + math.Exp(-(s-7.1)/1.4))
 
 		dir.Float64("S", nv).SetFloat1D(s, si)
 		dir.Float64("GgabaB_max", nv).SetFloat1D(g, si)
-		dir.Float64("GgabaBstd_max", nv).SetFloat1D(float64(gs), si)
 	}
-	metadata.SetDoc(dir.Float64("GgabaBstd_max"), "std is from code actually used in models")
 	plot.SetFirstStyler(dir.Float64("S"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
@@ -162,37 +143,35 @@ func (pl *GababPlot) GSRun() { //types:add
 }
 
 // TimeRun runs the equations over time.
-func (pl *GababPlot) TimeRun() { //types:add
+func (pl *GABABPlot) TimeRun() { //types:add
 	pl.Update()
 	dir := pl.Dir.Dir("G_Time")
 	nv := pl.TimeSteps
 
 	time := 0.0
 	gs := 0.0
-	x := pl.GsXInit
-	gabaBx := float32(pl.GsXInit)
-	gabaB := float32(0.0)
-	gi := 0.0 // just goes down
-	for t := range nv {
-		// record starting state first, then update
-		dir.Float64("Time", nv).SetFloat1D(float64(time), t)
-		dir.Float64("GabaB", nv).SetFloat1D(float64(gs), t)
-		dir.Float64("GabaBX", nv).SetFloat1D(float64(x), t)
-		dir.Float64("GabaBstd", nv).SetFloat1D(float64(gabaB), t)
-		dir.Float64("GabaBXstd", nv).SetFloat1D(float64(gabaBx), t)
+	x := 0.0
+	spikeInt := int(1000 / pl.TimeHz)
+	for ti := range nv {
+		sin := 0.0
+		if ti >= 10 && ti < (10+pl.TimeIn) && (ti-10)%spikeInt == 0 {
+			sin = 1
+		}
 
-		gis := 1.0 / (1.0 + math.Exp(-(gi-7.1)/1.4))
-		dGs := (pl.TauFact*x - gs) / pl.RiseTau
-		dXo := -x / pl.DecayTau
+		// record starting state first, then update
+		dir.Float64("Time", nv).SetFloat1D(time, ti)
+		dir.Float64("GabaB", nv).SetFloat1D(gs, ti)
+		dir.Float64("GabaBX", nv).SetFloat1D(x, ti)
+
+		gis := 1.0 / (1.0 + math.Exp(-(sin-7.1)/1.4))
+		dGs := (float64(pl.GABAB.TauFact)*x - gs) / float64(pl.GABAB.RiseTau)
+		dXo := -x / float64(pl.GABAB.DecayTau)
 		gs += dGs
 		x += gis + dXo
 
-		var dG, dX float32
-		pl.GABAstd.BiExp(gabaB, gabaBx, &dG, &dX)
-		dir.Float64("dG", nv).SetFloat1D(float64(dG), t)
-		dir.Float64("dX", nv).SetFloat1D(float64(dX), t)
-
-		pl.GABAstd.GABAB(float32(gi), &gabaB, &gabaBx)
+		dir.Float64("dG", nv).SetFloat1D(dGs, ti)
+		dir.Float64("dX", nv).SetFloat1D(dXo, ti)
+		dir.Float64("Xmax", nv).SetFloat1D(gis, ti)
 
 		time += pl.TimeInc
 	}
@@ -213,7 +192,7 @@ func (pl *GababPlot) TimeRun() { //types:add
 	}
 }
 
-func (pl *GababPlot) MakeToolbar(p *tree.Plan) {
+func (pl *GABABPlot) MakeToolbar(p *tree.Plan) {
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(pl.GVRun).SetIcon(icons.PlayArrow)
 	})

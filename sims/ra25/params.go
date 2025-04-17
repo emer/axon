@@ -44,6 +44,8 @@ var PathParams = axon.PathSheets{
 	"Base": {
 		{Sel: "Path", Doc: "basic path params",
 			Set: func(pt *axon.PathParams) {
+				// pt.Com.MaxDelay = 10 // robust to this
+				// pt.Com.Delay = 10
 				pt.Learn.LRate.Base = 0.06 // 0.06 for trace, 0.02 for no trace
 				pt.SWts.Adapt.LRate = 0.1  // .1 >= .2,
 				pt.SWts.Init.SPct = 0.5    // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..

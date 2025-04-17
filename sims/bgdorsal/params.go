@@ -18,6 +18,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Noise.Ge = 0.0001                    // 0.0001 > others; could just be noise ;)
 				ly.Acts.Noise.Gi = 0.0001                    // 0.0001 perhaps better than others
 				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // false >> true; orig = true
+				// ly.Acts.NMDA.Tau = 100                       // 100 def >> 200
+				// ly.Learn.LearnNMDA.Tau = 100                 // 100 def >> 200
 			}},
 		{Sel: ".PFCLayer", Doc: "pfc",
 			Set: func(ly *axon.LayerParams) {
