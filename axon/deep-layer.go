@@ -125,7 +125,7 @@ func (ly *LayerParams) CTDefaults() {
 	ly.Inhib.Layer.Gi = 2.2 // higher inhib for more NMDA, recurrents.
 	ly.Inhib.Pool.Gi = 2.2
 	// these are for longer temporal integration:
-	// ly.Acts.NMDA.Gbar = 0.003
+	// ly.Acts.NMDA.Ge = 0.003
 	// ly.Acts.NMDA.Tau = 300
 	// ly.Acts.GABAB.Gbar = 0.008
 }
@@ -144,12 +144,12 @@ func (ly *Layer) CTDefaultParamsFast() {
 		ly.CT.DecayTau = 0
 		ly.Inhib.Layer.Gi = 2.0
 		ly.Inhib.Pool.Gi = 2.0
-		ly.Acts.GabaB.Gbar = 0.006
-		ly.Acts.NMDA.Gbar = 0.004
+		ly.Acts.GabaB.Gk = 0.006
+		ly.Acts.NMDA.Ge = 0.004
 		ly.Acts.NMDA.Tau = 100
 		ly.Acts.Decay.Act = 0.0
 		ly.Acts.Decay.Glong = 0.0
-		ly.Acts.Sahp.Gbar = 1.0
+		ly.Acts.Sahp.Gk = 1.0
 	})
 }
 
@@ -161,12 +161,12 @@ func (ly *Layer) CTDefaultParamsMedium() {
 		ly.CT.GeGain = 2
 		ly.Inhib.Layer.Gi = 2.2
 		ly.Inhib.Pool.Gi = 2.2
-		ly.Acts.GabaB.Gbar = 0.009
-		ly.Acts.NMDA.Gbar = 0.008
+		ly.Acts.GabaB.Gk = 0.009
+		ly.Acts.NMDA.Ge = 0.008
 		ly.Acts.NMDA.Tau = 200
 		ly.Acts.Decay.Act = 0.0
 		ly.Acts.Decay.Glong = 0.0
-		ly.Acts.Sahp.Gbar = 1.0
+		ly.Acts.Sahp.Gk = 1.0
 	})
 }
 
@@ -178,13 +178,13 @@ func (ly *Layer) CTDefaultParamsLong() {
 		ly.CT.GeGain = 1.0
 		ly.Inhib.Layer.Gi = 2.8
 		ly.Inhib.Pool.Gi = 2.8
-		ly.Acts.GabaB.Gbar = 0.01
-		ly.Acts.NMDA.Gbar = 0.01
+		ly.Acts.GabaB.Gk = 0.01
+		ly.Acts.NMDA.Ge = 0.01
 		ly.Acts.NMDA.Tau = 300
 		ly.Acts.Decay.Act = 0.0
 		ly.Acts.Decay.Glong = 0.0
 		ly.Acts.Dend.SSGi = 0 // else kills nmda
-		ly.Acts.Sahp.Gbar = 1.0
+		ly.Acts.Sahp.Gk = 1.0
 	})
 }
 
@@ -193,8 +193,8 @@ func (ly *Layer) PTMaintDefaults() {
 	ly.Params.Acts.Decay.Glong = 0
 	ly.Params.Acts.Decay.AHP = 0
 	ly.Params.Acts.Decay.OnRew.SetBool(true)
-	ly.Params.Acts.Sahp.Gbar = 0.01  // not much pressure -- long maint
-	ly.Params.Acts.GabaB.Gbar = 0.01 // needed for cons, good for smaint
+	ly.Params.Acts.Sahp.Gk = 0.01  // not much pressure -- long maint
+	ly.Params.Acts.GabaB.Gk = 0.01 // needed for cons, good for smaint
 	ly.Params.Acts.Dend.ModGain = 1.5
 	// ly.Params.Inhib.ActAvg.Nominal = 0.1 // normal
 	if ly.Is4D() {
@@ -218,7 +218,7 @@ func (ly *LayerParams) PTPredDefaults() {
 	ly.Acts.Decay.Glong = 0.6
 	ly.Acts.Decay.AHP = 0
 	ly.Acts.Decay.OnRew.SetBool(true)
-	ly.Acts.Sahp.Gbar = 0.1    // more
+	ly.Acts.Sahp.Gk = 0.1      // more
 	ly.Acts.KNa.Slow.Max = 0.2 // todo: more?
 	ly.Inhib.Layer.Gi = 0.8
 	ly.Inhib.Pool.Gi = 0.8
@@ -226,8 +226,8 @@ func (ly *LayerParams) PTPredDefaults() {
 	ly.CT.DecayTau = 50
 
 	// regular:
-	// ly.Acts.GabaB.Gbar = 0.006
-	// ly.Acts.NMDA.Gbar = 0.004
+	// ly.Acts.GabaB.Gk = 0.006
+	// ly.Acts.NMDA.Ge = 0.004
 	// ly.Acts.NMDA.Tau = 100
 }
 

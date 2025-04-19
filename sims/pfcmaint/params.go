@@ -22,7 +22,7 @@ var LayerParams = axon.LayerSheets{
 		{Sel: ".PTMaintLayer", Doc: "time integration params",
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Dend.ModGain = 1.5
-				ly.Acts.GabaB.Gbar = 0.01 // too strong and it depresses firing for a long time
+				ly.Acts.GabaB.Gk = 0.01 // too strong and it depresses firing for a long time
 				ly.Acts.SMaint.On.SetBool(true)
 				ly.Acts.SMaint.NNeurons = 10 // higher = more activity
 				ly.Acts.SMaint.ISI.Min = 1   // 1 sig better than 3
@@ -122,7 +122,7 @@ var LayerParamsCons = axon.LayerSheets{
 		{Sel: ".PTMaintLayer", Doc: "time integration params",
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Dend.ModGain = 1.5
-				ly.Acts.GabaB.Gbar = 0.01 // too strong and it depresses firing for a long time
+				ly.Acts.GabaB.Gk = 0.01 // too strong and it depresses firing for a long time
 				ly.Acts.SMaint.On.SetBool(false)
 				ly.Inhib.Layer.Gi = 2.6 // 3 is too strong
 				ly.Inhib.Pool.Gi = 3    // not active

@@ -40,7 +40,7 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Init.GeBase = 0.1
 				ly.Acts.Kir.Gbar = 10           // 10 > 5  > 2 -- key for pause
-				ly.Acts.SKCa.Gbar = 2           // 2 > 5 >> 1 (for Kir = 10)
+				ly.Acts.SKCa.Gk = 2             // 2 > 5 >> 1 (for Kir = 10)
 				ly.Acts.SKCa.CaRDecayTau = 150  // 150 > 180 > 200 > 130 >> 80 def -- key param!
 				ly.Inhib.Layer.On.SetBool(true) // actually needs this
 				ly.Inhib.Layer.Gi = 0.5
@@ -57,7 +57,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Decay.OnRew.SetBool(true) // true def -- seems better?
 				ly.Acts.Dend.ModGain = 1.0        // 1.5 def
 				ly.Acts.Kir.Gbar = 0              // no real diff here over range 0-10
-				ly.Acts.MaintNMDA.Gbar = 0.007    // 0.007 default
+				ly.Acts.MaintNMDA.Ge = 0.007      // 0.007 default
 			}},
 		{Sel: ".PTPredLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
@@ -267,8 +267,8 @@ var ParamSetsDefs = params.Sets{
 				ly.Inhib.Pool.Gi =              "0.5",  // 0.5 > others
 				ly.Matrix.GateThr =             "0.05", // .05 default
 				ly.Acts.Kir.Gbar =              "10",   // 10 > 5 > 20
-				ly.Acts.GabaB.Gbar =            "0",
-				ly.Acts.NMDA.Gbar =             "0.006", // 0.006 default, necessary (0 very bad)
+				ly.Acts.GabaB.Gk =            "0",
+				ly.Acts.NMDA.Ge =             "0.006", // 0.006 default, necessary (0 very bad)
 				ly.Acts.Dend.ModBase =          "1",
 				ly.Acts.Dend.ModGain =          "0",   // has no effect
 				ly.Learn.NeuroMod.AChLRateMod = "0",   // dorsal should not use
@@ -279,7 +279,7 @@ var ParamSetsDefs = params.Sets{
 			Params: params.Params{
 				ly.Acts.Init.GeBase =           "0.1",
 				ly.Acts.Kir.Gbar =              "10",   // 10 > 5  > 2 -- key for pause
-				ly.Acts.SKCa.Gbar =             "2",    // 2 > 5 >> 1 (for Kir = 10)
+				ly.Acts.SKCa.Gk =             "2",    // 2 > 5 >> 1 (for Kir = 10)
 				ly.Inhib.Layer.On =             "true", // actually needs this
 				ly.Inhib.Layer.Gi =             "0.5",
 				ly.Inhib.Layer.FB =             "0",

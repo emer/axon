@@ -55,8 +55,8 @@ var poolLayerParams = LayerSheets{
 				ly.Inhib.Layer.Gi = 1
 				ly.Inhib.Pool.On.SetBool(true)
 				ly.Inhib.Pool.Gi = .7
-				ly.Acts.NMDA.Gbar = 0 // <- avoid larger numerical issues by turning these off
-				ly.Acts.GabaB.Gbar = 0
+				ly.Acts.NMDA.Ge = 0 // <- avoid larger numerical issues by turning these off
+				ly.Acts.GabaB.Gk = 0
 			}},
 	},
 	"PoolOnly": {

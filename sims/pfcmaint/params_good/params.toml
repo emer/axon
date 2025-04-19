@@ -27,7 +27,7 @@
   Desc = "time integration params"
   [Base.Params]
     "Layer.Acts.Dend.ModGain" = "1.5"
-    "Layer.Acts.GabaB.Gbar" = "0.01"
+    "Layer.Acts.GabaB.Gk" = "0.01"
     "Layer.Acts.SMaint.Gbar" = "0.2"
     "Layer.Acts.SMaint.ISI.Max" = "20"
     "Layer.Acts.SMaint.ISI.Min" = "1"

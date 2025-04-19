@@ -14,40 +14,30 @@ package chans
 
 //gosl:start
 
-// Chans are ion channels used in computing point-neuron activation function
+// Chans are ion channels used in computing point-neuron activation function.
 type Chans struct {
 
-	// excitatory sodium (Na) AMPA channels activated by synaptic glutamate
+	// excitatory sodium (Na) AMPA channels activated by synaptic glutamate.
 	E float32
 
-	// constant leak (potassium, K+) channels -- determines resting potential (typically higher than resting potential of K)
+	// constant leak (potassium, K+) channels. determines resting potential
+	// (typically higher than resting potential of K).
 	L float32
 
-	// inhibitory chloride (Cl-) channels activated by synaptic GABA
+	// inhibitory chloride (Cl-) channels activated by synaptic GABA.
 	I float32
 
-	// gated / active potassium channels -- typically hyperpolarizing relative to leak / rest
+	// gated / active potassium channels. Typically hyperpolarizing
+	// relative to leak / rest.
 	K float32
 }
 
-// SetAll sets all the values
+// SetAll sets all the values.
 func (ch *Chans) SetAll(e, l, i, k float32) {
 	ch.E = e
 	ch.L = l
 	ch.I = i
 	ch.K = k
-}
-
-// VToBio returns biological mV voltage from normalized 0-1 voltage
-// where 0 = -100mV and 1 = 0mV
-func VToBio(vm float32) float32 {
-	return vm*100 - 100
-}
-
-// VFromBio returns normalized 0-1 voltage from biological mV voltage
-// where 0 = -100mV and 1 = 0mV
-func VFromBio(vm float32) float32 {
-	return (vm + 100) / 100
 }
 
 //gosl:end

@@ -224,9 +224,9 @@ func (ly *LayerParams) AnyGated(di uint32) bool {
 func (ly *Layer) MatrixDefaults() {
 	ly.Params.Acts.Decay.Act = 1
 	ly.Params.Acts.Decay.Glong = 1 // prevent carryover of NMDA
-	ly.Params.Acts.Kir.Gbar = 10
-	ly.Params.Acts.GabaB.Gbar = 0 // Kir replaces GabaB
-	// ly.Params.Acts.NMDA.Gbar = 0    // Matrix needs nmda, default is fine
+	ly.Params.Acts.Kir.Gk = 10
+	ly.Params.Acts.GabaB.Gk = 0 // Kir replaces GabaB
+	// ly.Params.Acts.NMDA.Ge = 0    // Matrix needs nmda, default is fine
 	ly.Params.Inhib.Layer.FB = 0 // pure FF
 	ly.Params.Inhib.Layer.Gi = 0.5
 	ly.Params.Inhib.Pool.On.SetBool(true) // needs both pool and layer if has pools
@@ -309,8 +309,8 @@ func (ly *Layer) GPDefaults() {
 	ly.Params.Acts.Init.GiVar = 0.1
 	ly.Params.Acts.Decay.Act = 0
 	ly.Params.Acts.Decay.Glong = 1
-	ly.Params.Acts.NMDA.Gbar = 0 // carryover of NMDA was causing issues!
-	ly.Params.Acts.GabaB.Gbar = 0
+	ly.Params.Acts.NMDA.Ge = 0 // carryover of NMDA was causing issues!
+	ly.Params.Acts.GabaB.Gk = 0
 	ly.Params.Inhib.ActAvg.Nominal = 1 // very active!
 	ly.Params.Inhib.Layer.On.SetBool(false)
 	ly.Params.Inhib.Pool.On.SetBool(false)
@@ -393,15 +393,15 @@ func (ly *Layer) STNDefaults() {
 	ly.Params.Acts.Init.GeBase = 0.1 // was 0.3
 	ly.Params.Acts.Init.GeVar = 0.1
 	ly.Params.Acts.Init.GiVar = 0.1
-	ly.Params.Acts.SKCa.Gbar = 2
+	ly.Params.Acts.SKCa.Gk = 2
 	ly.Params.Acts.SKCa.CaRDecayTau = 80 // 80 > 150 for longer theta windows
-	ly.Params.Acts.Kir.Gbar = 10         // 10 > 5 -- key for pause
+	ly.Params.Acts.Kir.Gk = 10           // 10 > 5 -- key for pause
 	ly.Params.Acts.Decay.Act = 0
 	ly.Params.Acts.Decay.Glong = 0
 	ly.Params.Acts.Decay.LearnCa = 1 // key for non-spaced trials, to refresh immediately
 	ly.Params.Acts.Dend.SSGi = 0
-	ly.Params.Acts.NMDA.Gbar = 0 // fine with 0
-	ly.Params.Acts.GabaB.Gbar = 0
+	ly.Params.Acts.NMDA.Ge = 0 // fine with 0
+	ly.Params.Acts.GabaB.Gk = 0
 	ly.Params.Inhib.Layer.On.SetBool(true)
 	ly.Params.Inhib.Layer.Gi = 0.5
 	ly.Params.Inhib.Layer.FB = 0
@@ -434,7 +434,7 @@ func (ly *Layer) STNDefaults() {
 
 func (ly *Layer) BGThalDefaults() {
 	// note: not tonically active
-	// ly.Params.Acts.NMDA.Gbar = 0 // needs NMDA
+	// ly.Params.Acts.NMDA.Ge = 0 // needs NMDA
 	ly.Params.Acts.Decay.Act = 1
 	ly.Params.Acts.Decay.Glong = 0.6
 	ly.Params.Acts.Dend.SSGi = 0

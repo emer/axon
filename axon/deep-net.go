@@ -250,7 +250,7 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, pathCla
 	if selfMaint {
 		ptMaint.AddDefaultParams(func(ly *LayerParams) {
 			ly.Acts.SMaint.On.SetBool(true)
-			ly.Acts.GabaB.Gbar = 0.015
+			ly.Acts.GabaB.Gk = 0.015
 			ly.Inhib.Layer.Gi = 0.5
 			ly.Inhib.Pool.Gi = 0.5
 		})

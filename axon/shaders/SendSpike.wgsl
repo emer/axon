@@ -320,8 +320,8 @@ struct SpikeParams {
 	pad: i32,
 }
 struct DendParams {
-	GbarExp: f32,
-	GbarR: f32,
+	GExp: f32,
+	GR: f32,
 	SSGi: f32,
 	HasMod: i32,
 	ModGain: f32,
@@ -351,8 +351,8 @@ struct DecayParams {
 }
 struct DtParams {
 	Integ: f32,
-	VmTau: f32,
-	VmDendTau: f32,
+	VmC: f32,
+	VmDendC: f32,
 	VmSteps: i32,
 	GeTau: f32,
 	GiTau: f32,
@@ -366,6 +366,10 @@ struct DtParams {
 	GiDt: f32,
 	IntDt: f32,
 	LongAvgDt: f32,
+	MaxI: f32,
+	pad: f32,
+	pad1: f32,
+	pad2: f32,
 }
 fn DtParams_GeSynFromRawSteady(dp: DtParams, geRaw: f32) -> f32 {
 	return geRaw * dp.GeTau;
@@ -389,7 +393,7 @@ struct ClampParams {
 struct SMaintParams {
 	On: i32,
 	NNeurons: f32,
-	Gbar: f32,
+	Ge: f32,
 	Inhib: f32,
 	ISI: F32,
 }
@@ -462,7 +466,7 @@ struct ActParams {
 
 //////// import: "chans-ak.go"
 struct AKsParams {
-	Gbar: f32,
+	Gk: f32,
 	Hf: f32,
 	Mf: f32,
 	Voff: f32,
@@ -482,7 +486,7 @@ struct Chans {
 
 //////// import: "chans-gabab.go"
 struct GABABParams {
-	Gbar: f32,
+	Gk: f32,
 	RiseTau: f32,
 	DecayTau: f32,
 	Gbase: f32,
@@ -498,7 +502,7 @@ struct GABABParams {
 
 //////// import: "chans-kir.go"
 struct KirParams {
-	Gbar: f32,
+	Gk: f32,
 	MinfOff: f32,
 	MinfTau: f32,
 	RiseOff: f32,
@@ -530,7 +534,7 @@ struct KNaMedSlow {
 
 //////// import: "chans-mahp.go"
 struct MahpParams {
-	Gbar: f32,
+	Gk: f32,
 	Voff: f32,
 	Vslope: f32,
 	TauMax: f32,
@@ -542,7 +546,7 @@ struct MahpParams {
 
 //////// import: "chans-nmda.go"
 struct NMDAParams {
-	Gbar: f32,
+	Ge: f32,
 	Tau: f32,
 	ITau: f32,
 	MgC: f32,
@@ -554,7 +558,7 @@ struct NMDAParams {
 
 //////// import: "chans-sahp.go"
 struct SahpParams {
-	Gbar: f32,
+	Gk: f32,
 	CaTau: f32,
 	Off: f32,
 	Slope: f32,
@@ -566,7 +570,7 @@ struct SahpParams {
 
 //////// import: "chans-skca.go"
 struct SKCaParams {
-	Gbar: f32,
+	Gk: f32,
 	C50: f32,
 	ActTau: f32,
 	DeTau: f32,
@@ -582,7 +586,7 @@ struct SKCaParams {
 
 //////// import: "chans-vgcc.go"
 struct VGCCParams {
-	Gbar: f32,
+	Ge: f32,
 	Ca: f32,
 	pad: i32,
 	pad1: i32,

@@ -112,29 +112,29 @@ var ParamSetsDefs = params.Sets{
 				ly.Inhib.Layer.FB =             "0",
 				ly.Matrix.GateThr =             "0.05", // .05 default
 				ly.Acts.Kir.Gbar =              "10",   // 10 > 5 > 20
-				ly.Acts.GabaB.Gbar =            "0",
-				ly.Acts.NMDA.Gbar =             "0.006", // 0.006 default, necessary (0 very bad)
+				ly.Acts.GabaB.Gk =            "0",
+				ly.Acts.NMDA.Ge =             "0.006", // 0.006 default, necessary (0 very bad)
 				ly.Learn.NeuroMod.AChLRateMod = "0",     // no diff here -- always ACh
 				ly.Learn.NeuroMod.BurstGain =   "0.1",   // 0.1 == 0.2 > 0.05 > 0.5; only for weird rew case here; 1 def
 			},
 			Hypers: params.Hypers{
 				ly.Learn.NeuroMod.BurstGain = {"Tweak = "-"},
 				ly.Acts.Kir.Gbar =            {"Tweak = "-"},
-				ly.Acts.NMDA.Gbar =           {"Tweak = "-"},
+				ly.Acts.NMDA.Ge =           {"Tweak = "-"},
 				ly.Inhib.Layer.Gi =           {"Tweak = "-"},
 			}},
 		{Sel: ".VSTNLayer", Doc: "all VSTN",
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Init.GeBase =           "0.1",
 				ly.Acts.Kir.Gbar =              "10",   // 10 > 5  > 2 -- key for pause
-				ly.Acts.SKCa.Gbar =             "2",    // 2 > 5 >> 1 (for Kir = 10)
+				ly.Acts.SKCa.Gk =             "2",    // 2 > 5 >> 1 (for Kir = 10)
 				ly.Inhib.Layer.On =             "true", // really no inhib neurons here.  all VGPePr
 				ly.Learn.NeuroMod.AChDisInhib = "0",
 			},
 			Hypers: params.Hypers{
 				ly.Acts.Init.GeBase = {"Tweak = "-"},
 				ly.Acts.Kir.Gbar =    {"Tweak = "-"},
-				ly.Acts.SKCa.Gbar =   {"Tweak = "-"},
+				ly.Acts.SKCa.Gk =   {"Tweak = "-"},
 			}},
 		{Sel: "#VGPePr", Doc: "prototypical",
 			Set: func(ly *axon.LayerParams) {

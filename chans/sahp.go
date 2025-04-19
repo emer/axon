@@ -6,9 +6,9 @@ package chans
 
 import "cogentcore.org/core/math32"
 
-//gosl:start chans
+//gosl:start
 
-// SahpParams implements a slow afterhyperpolarizing (sAHP) channel,
+// SahpParams implements a slow afterhyperpolarizing (sAHP) K+ channel,
 // It has a slowly accumulating calcium value, aggregated at the
 // theta cycle level, that then drives the logistic gating function,
 // so that it only activates after a significant accumulation.
@@ -18,19 +18,23 @@ import "cogentcore.org/core/math32"
 // of the n gating value, but tau is computed in any case.
 type SahpParams struct {
 
-	// strength of sAHP current
-	Gbar float32 `default:"0.05,0.1"`
+	// Gk is the strength of sAHP conductance as contribution to Gk(t) factor
+	// (which is then multiplied by Gbar.K that provides pA unit scaling).
+	Gk float32 `default:"0.05,0.1"`
 
-	// time constant for integrating Ca across theta cycles
+	// time constant for integrating Ca across theta cycles.
 	CaTau float32 `default:"5,10"`
 
-	// integrated Ca offset (threshold) for infinite time N gating function -- where the gate is at 50% strength
+	// integrated Ca offset (threshold) for infinite time N gating function,
+	// where the gate is at 50% strength.
 	Off float32 `default:"0.8"`
 
-	// slope of the infinite time logistic gating function
+	// slope of the infinite time logistic gating function.
 	Slope float32 `default:"0.02"`
 
-	// maximum slow rate time constant in msec for activation / deactivation.  The effective Tau is much slower -- 1/20th in original temp, and 1/60th in standard 37 C temp
+	// maximum slow rate time constant in msec for activation / deactivation.
+	// The effective Tau is much slower: 1/20th in original temp,
+	// and 1/60th in standard 37 C temp.
 	TauMax float32 `default:"1"`
 
 	// 1/Tau
@@ -44,7 +48,7 @@ type SahpParams struct {
 
 // Defaults sets the parameters
 func (mp *SahpParams) Defaults() {
-	mp.Gbar = 0.05
+	mp.Gk = 0.05
 	mp.CaTau = 5
 	mp.Off = 0.8
 	mp.Slope = 0.02
@@ -59,10 +63,10 @@ func (mp *SahpParams) Update() {
 
 func (mp *SahpParams) ShouldDisplay(field string) bool {
 	switch field {
-	case "Gbar":
+	case "Gk":
 		return true
 	default:
-		return mp.Gbar > 0
+		return mp.Gk > 0
 	}
 }
 
@@ -106,7 +110,7 @@ func (mp *SahpParams) DNFromV(ca, n float32) float32 {
 
 // GsAHP returns the conductance as a function of n
 func (mp *SahpParams) GsAHP(n float32) float32 {
-	return mp.Gbar * n
+	return mp.Gk * n
 }
 
-//gosl:end chans
+//gosl:end

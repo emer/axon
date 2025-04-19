@@ -10,46 +10,54 @@ import (
 
 //gosl:start
 
-// GABA-B is an inhibitory channel activated by the usual GABA inhibitory neurotransmitter,
-// which is coupled to the GIRK G-protein coupled inwardly rectifying potassium (K) channel.
-// It is ubiquitous in the brain, and critical for stability of spiking patterns over time in axon.
-// The inward rectification is caused by a Mg+ ion block *from the inside* of the neuron,
-// which means that these channels are most open when the neuron is hyperpolarized (inactive),
-// and thus it serves to keep inactive neurons inactive. Based on Thomson & Destexhe (1999).
+// GABA-B is an inhibitory channel activated by the usual GABA inhibitory
+// neurotransmitter, which is coupled to the GIRK G-protein coupled inwardly
+// rectifying potassium (K) channel. It is ubiquitous in the brain, and critical
+// for stability of spiking patterns over time in axon. The inward rectification
+// is caused by a Mg+ ion block *from the inside* of the neuron,
+// which means that these channels are most open when the neuron is hyperpolarized
+// (inactive), and thus it serves to keep inactive neurons inactive.
+// Based on Thomson & Destexhe (1999).
 type GABABParams struct {
 
-	// overall strength multiplier of GABA-B current. The 0.015 default is a high value that works well in smaller networks -- larger networks may benefit from lower levels (e.g., 0.012).
-	Gbar float32 `default:"0,0.012,0.015"`
+	// Gk is the strength of GABA-B conductance as contribution to Gk(t) factor
+	// (which is then multiplied by Gbar.K that provides pA unit scaling).
+	// The 0.015 default is a high value that works well in smaller networks.
+	// Larger networks may benefit from lower levels (e.g., 0.012).
+	Gk float32 `default:"0.015,0.012,0"`
 
-	// rise time for bi-exponential time dynamics of GABA-B
+	// RiseTau is the rise time for bi-exponential time dynamics of GABA-B.
 	RiseTau float32 `default:"45"`
 
-	// decay time for bi-exponential time dynamics of GABA-B
+	// DecayTau is the decay time for bi-exponential time dynamics of GABA-B.
 	DecayTau float32 `default:"50"`
 
-	// baseline level of GABA-B channels open independent of inhibitory input (is added to spiking-produced conductance)
+	// Gbase is the baseline level of GABA-B channels open independent of
+	// inhibitory input (is added to spiking-produced conductance).
 	Gbase float32 `default:"0.2"`
 
-	// multiplier for converting Gi to equivalent GABA spikes
+	// GiSpike is the multiplier for converting Gi to equivalent GABA spikes.
 	GiSpike float32 `default:"10"`
 
-	// time offset when peak conductance occurs, in msec, computed from RiseTau and DecayTau
+	// MaxTime is the time offset when peak conductance occurs, in msec, computed
+	// from RiseTau and DecayTau.
 	MaxTime float32 `edit:"-"`
 
-	// time constant factor used in integration: (Decay / Rise) ^ (Rise / (Decay - Rise))
+	// TauFact is the time constant factor used in integration:
+	// (Decay / Rise) ^ (Rise / (Decay - Rise))
 	TauFact float32 `display:"-"`
 
-	// 1/Tau
+	// RiseDt = 1/Tau
 	RiseDt float32 `display:"-" edit:"-"`
 
-	// 1/Tau
+	// DecayDt = 1/Tau
 	DecayDt float32 `display:"-" edit:"-"`
 
 	pad, pad1, pad2 float32
 }
 
 func (gp *GABABParams) Defaults() {
-	gp.Gbar = 0.015
+	gp.Gk = 0.015
 	gp.RiseTau = 45
 	gp.DecayTau = 50
 	gp.Gbase = 0.2
@@ -66,20 +74,17 @@ func (gp *GABABParams) Update() {
 
 func (gp *GABABParams) ShouldDisplay(field string) bool {
 	switch field {
-	case "Gbar":
+	case "Gk":
 		return true
 	default:
-		return gp.Gbar > 0
+		return gp.Gk > 0
 	}
 }
 
-// GFromV returns the GABA-B conductance as a function of normalized membrane potential
+// GFromV returns the GABA-B conductance as a function of v potential.
 func (gp *GABABParams) GFromV(v float32) float32 {
-	vbio := VToBio(v)
-	if vbio < -90 {
-		vbio = -90
-	}
-	return (vbio + 90.0) / (1.0 + math32.FastExp(0.1*((vbio+90.0)+10.0)))
+	ve := max(v, -90.0)
+	return (ve + 90.0) / (1.0 + math32.FastExp(0.1*((ve+90.0)+10.0)))
 }
 
 // GFromS returns the GABA-B conductance as a function of GABA spiking rate,
@@ -108,9 +113,9 @@ func (gp *GABABParams) GABAB(gi float32, gabaB, gabaBx *float32) {
 }
 
 // GgabaB returns the overall net GABAB / GIRK conductance including
-// Gbar, Gbase, and voltage-gating
-func (gp *GABABParams) GgabaB(gabaB, vm float32) float32 {
-	return gp.Gbar * gp.GFromV(vm) * (gabaB + gp.Gbase)
+// Gk, Gbase, and voltage-gating
+func (gp *GABABParams) GgabaB(gabaB, v float32) float32 {
+	return gp.Gk * gp.GFromV(v) * (gabaB + gp.Gbase)
 }
 
 //gosl:end

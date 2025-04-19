@@ -6,33 +6,39 @@ package chans
 
 import "cogentcore.org/core/math32"
 
-//gosl:start chans
+//gosl:start
 
-// MahpParams implements an M-type medium afterhyperpolarizing (mAHP) channel,
+// MahpParams implements an M-type medium afterhyperpolarizing (mAHP) K+ channel,
 // where m also stands for muscarinic due to the ACh inactivation of this channel.
 // It has a slow activation and deactivation time constant, and opens at a lowish
 // membrane potential.
-// There is one gating variable n updated over time with a tau that is also voltage dependent.
-// The infinite-time value of n is voltage dependent according to a logistic function
+// There is one gating variable N updated over time with a tau that is also
+// voltage dependent.
+// The infinite-time value of N is voltage dependent according to a logistic function
 // of the membrane potential, centered at Voff with slope Vslope.
 type MahpParams struct {
 
-	// strength of mAHP current
-	Gbar float32
+	// Gk is the strength of mAHP conductance as contribution to Gk(t) factor
+	// (which is then multiplied by Gbar.K that provides pA unit scaling).
+	Gk float32 `default:"0.02"`
 
-	// voltage offset (threshold) in biological units for infinite time N gating function -- where the gate is at 50% strength
+	// Voff is the voltage offset (threshold) in biological units for infinite time
+	// N gating function: where the gate is at 50% strength.
 	Voff float32 `default:"-30"`
 
-	// slope of the arget (infinite time) gating function
+	// Vslope is the slope of the arget (infinite time) gating function.
 	Vslope float32 `default:"9"`
 
-	// maximum slow rate time constant in msec for activation / deactivation.  The effective Tau is much slower -- 1/20th in original temp, and 1/60th in standard 37 C temp
+	// TauMax is the maximum slow rate time constant in msec for activation
+	// / deactivation. The effective Tau is much slower: 1/20th in original temp,
+	// and 1/60th in standard 37 C temp.
 	TauMax float32 `default:"1000"`
 
-	// temperature adjustment factor: assume temp = 37 C, whereas original units were at 23 C
+	// Tadj is a temperature adjustment factor: assume temp = 37 C,
+	// whereas original units were at 23 C.
 	Tadj float32 `display:"-" edit:"-"`
 
-	// 1/Tau
+	// DtMax = 1/Tau
 	DtMax float32 `display:"-" edit:"-"`
 
 	pad, pad2 int32
@@ -40,7 +46,7 @@ type MahpParams struct {
 
 // Defaults sets the parameters
 func (mp *MahpParams) Defaults() {
-	mp.Gbar = 0.02
+	mp.Gk = 0.02
 	mp.Voff = -30
 	mp.Vslope = 9
 	mp.TauMax = 1000
@@ -54,10 +60,10 @@ func (mp *MahpParams) Update() {
 
 func (mp *MahpParams) ShouldDisplay(field string) bool {
 	switch field {
-	case "Gbar":
+	case "Gk":
 		return true
 	default:
-		return mp.Gbar > 0
+		return mp.Gk > 0
 	}
 }
 
@@ -70,9 +76,9 @@ func (mp *MahpParams) EFun(z float32) float32 {
 }
 
 // NinfTauFromV returns the target infinite-time N gate value and
-// voltage-dependent time constant tau, from vbio
-func (mp *MahpParams) NinfTauFromV(vbio float32, ninf, tau *float32) {
-	vo := vbio - mp.Voff
+// voltage-dependent time constant tau, from v
+func (mp *MahpParams) NinfTauFromV(v float32, ninf, tau *float32) {
+	vo := v - mp.Voff
 
 	// logical functions, but have signularity at Voff (vo = 0)
 	// a := mp.DtMax * vo / (1.0 - math32.FastExp(-vo/mp.Vslope))
@@ -87,27 +93,21 @@ func (mp *MahpParams) NinfTauFromV(vbio float32, ninf, tau *float32) {
 	return
 }
 
-// NinfTauFromV returns the target infinite-time N gate value and
-// voltage-dependent time constant tau, from normalized vm
-func (mp *MahpParams) NinfTauFromVnorm(v float32, ninf, tau *float32) {
-	mp.NinfTauFromV(VToBio(v), ninf, tau)
-}
-
-// DNFromV returns the change in gating factor N based on normalized Vm
+// DNFromV returns the change in gating factor N based on voltage potential.
 func (mp *MahpParams) DNFromV(v, n float32) float32 {
 	var ninf, tau float32
-	mp.NinfTauFromVnorm(v, &ninf, &tau)
+	mp.NinfTauFromV(v, &ninf, &tau)
 	// dt := 1.0 - math32.FastExp(-mp.Tadj/tau) // Mainen comments out this form; Poirazi uses
 	// dt := mp.Tadj / tau // simple linear fix
 	dn := (ninf - n) / tau
 	return dn
 }
 
-// GmAHP returns the conductance as a function of n
+// GmAHP returns the conductance as a function of n.
 func (mp *MahpParams) GmAHP(v float32, n *float32) float32 {
 	dn := mp.DNFromV(v, *n)
 	*n += dn
-	g := mp.Tadj * mp.Gbar * *n
+	g := mp.Tadj * mp.Gk * *n
 	return g
 }
 

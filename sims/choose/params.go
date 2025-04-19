@@ -29,7 +29,7 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Init.GeBase = 0.1
 				ly.Acts.Kir.Gbar = 10         // 10 > 5  > 2 -- key for pause
-				ly.Acts.SKCa.Gbar = 2         // 2 > 5 >> 1 (for Kir = 10)
+				ly.Acts.SKCa.Gk = 2           // 2 > 5 >> 1 (for Kir = 10)
 				ly.Acts.SKCa.CaRDecayTau = 80 // 80 > 150
 				// ly.Inhib.Layer.On.SetBool(true) // really no inhib neurons here.  all VGPePr
 				ly.Learn.NeuroMod.AChDisInhib = 0

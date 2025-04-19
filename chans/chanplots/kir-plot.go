@@ -53,7 +53,7 @@ func (pl *KirPlot) Config(parent *tensorfs.Node, tabs lab.Tabber) {
 	pl.Tabs = tabs
 
 	pl.Kir.Defaults()
-	pl.Kir.Gbar = 1
+	pl.Kir.Gk = 1
 	pl.Vstart = -100
 	pl.Vend = 0
 	pl.Vstep = 1
@@ -78,15 +78,14 @@ func (pl *KirPlot) GVRun() { //types:add
 	nv := int((pl.Vend - pl.Vstart) / pl.Vstep)
 	m := mp.MinfRest()
 	for vi := 0; vi < nv; vi++ {
-		vbio := pl.Vstart + float32(vi)*pl.Vstep
-		v := chans.VFromBio(vbio)
+		v := pl.Vstart + float32(vi)*pl.Vstep
 		g := mp.Gkir(v, m)
-		dm := mp.DM(vbio, m)
+		dm := mp.DM(v, m)
 		m += dm
-		minf := mp.Minf(vbio)
-		mtau := mp.MTau(vbio)
+		minf := mp.Minf(v)
+		mtau := mp.MTau(v)
 
-		dir.Float64("V", nv).SetFloat1D(float64(vbio), vi)
+		dir.Float64("V", nv).SetFloat1D(float64(v), vi)
 		dir.Float64("GkIR", nv).SetFloat1D(float64(g), vi)
 		dir.Float64("M", nv).SetFloat1D(float64(m), vi)
 		dir.Float64("Minf", nv).SetFloat1D(float64(minf), vi)
@@ -123,10 +122,9 @@ func (pl *KirPlot) TimeRun() { //types:add
 	isi := int(1000 / pl.SpikeFreq)
 
 	for ti := range nv {
-		vnorm := chans.VFromBio(v)
 		t := float32(ti+1) * msdt
 
-		g := mp.Gkir(vnorm, m)
+		g := mp.Gkir(v, m)
 		dm := mp.DM(v, m)
 		m += dm
 		minf := mp.Minf(v)

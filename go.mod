@@ -4,7 +4,7 @@ go 1.23.4
 
 require (
 	cogentcore.org/core v0.3.10-0.20250411061709-1b6548f8878f
-	cogentcore.org/lab v0.1.1-0.20250409042104-35852a6a2965
+	cogentcore.org/lab v0.1.1-0.20250417215607-52af09a8ee8f
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/chewxy/math32 v1.10.1
 	github.com/cogentcore/yaegi v0.0.0-20240724064145-e32a03faad56

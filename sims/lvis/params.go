@@ -25,18 +25,18 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.ActAvg.AdaptMax = 0.01  // 0.05 default; 0.01 has effect; lower not effective at preventing instability on its own.
 				ly.Inhib.ActAvg.LoTol = 0.8
 				ly.Inhib.ActAvg.HiTol = 0.0
-				ly.Acts.Decay.Act = 0.0    // 0 == .2
-				ly.Acts.Decay.Glong = 0.6  // 0.6 def
-				ly.Acts.Dend.SSGi = 2      // 2 new default
-				ly.Acts.Dend.GbarExp = 0.2 // 0.2 > 0.1 > 0
-				ly.Acts.Dend.GbarR = 3     // 2 good for 0.2
-				ly.Acts.Dt.VmDendTau = 5   // 5 much better in fsa!
-				ly.Acts.GabaB.Gbar = 0.012 // 0.012 > 0.015
-				ly.Acts.NMDA.Gbar = 0.006  // 0.006 def
-				ly.Acts.NMDA.MgC = 1.4     // mg1, voff0, gbarexp.2, gbarr3 = better
-				ly.Acts.NMDA.Voff = 0      // mg1, voff0 = mg1.4, voff5 w best params
+				ly.Acts.Decay.Act = 0.0   // 0 == .2
+				ly.Acts.Decay.Glong = 0.6 // 0.6 def
+				ly.Acts.Dend.SSGi = 2     // 2 new default
+				ly.Acts.Dend.GExp = 0.2   // 0.2 > 0.1 > 0
+				ly.Acts.Dend.GR = 3       // 2 good for 0.2
+				ly.Acts.Dt.VmDendC = 5    // 5 much better in fsa!
+				ly.Acts.GabaB.Gk = 0.012  // 0.012 > 0.015
+				ly.Acts.NMDA.Ge = 0.006   // 0.006 def
+				ly.Acts.NMDA.MgC = 1.4    // mg1, voff0, gbarexp.2, gbarr3 = better
+				ly.Acts.NMDA.Voff = 0     // mg1, voff0 = mg1.4, voff5 w best params
 				ly.Acts.AK.Gbar = 0.1
-				ly.Acts.VGCC.Gbar = 0.02                 // non nmda: 0.15 good, 0.3 blows up, nmda: .02 best
+				ly.Acts.VGCC.Ge = 0.02                   // non nmda: 0.15 good, 0.3 blows up, nmda: .02 best
 				ly.Acts.VGCC.Ca = 25                     // 25 / 10tau same as SpkVGCC
 				ly.Acts.Mahp.Gbar = 0.01                 // 0.01 > 0.02 > higher -- long run
 				ly.Acts.Sahp.Gbar = 0.05                 // was 0.1, 0.05 def
@@ -53,7 +53,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.CaSpike.SpikeCaSyn = 12           // 12 > 8 -- TODO revisit!
 				ly.Learn.CaSpike.CaSynTau = 30             // 30 > 20, 40
 				ly.Learn.CaSpike.Dt.MTau = 5               // 5 > 10?
-				ly.Learn.LearnNMDA.Gbar = 0.006            // 0.006 def
+				ly.Learn.LearnNMDA.Ge = 0.006              // 0.006 def
 				ly.Learn.LearnNMDA.MgC = 1.4               // 1.2 for unified Act params, else 1.4
 				ly.Learn.LearnNMDA.Voff = 0                // 0 for unified Act params, else 5
 				ly.Learn.LearnNMDA.Tau = 100               // 100 def

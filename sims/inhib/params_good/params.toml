@@ -22,11 +22,11 @@
   Desc = "generic params for all layers: lower gain, slower, soft clamp"
   [Base.Params]
     "Layer.Acts.Erev.L" = "0.4"
-    "Layer.Acts.GabaB.Gbar" = "0"
+    "Layer.Acts.GabaB.Gk" = "0"
     "Layer.Acts.Gbar.L" = "0.2"
     "Layer.Acts.Init.Vm" = "0.4"
     "Layer.Acts.KNa.On" = "false"
-    "Layer.Acts.NMDA.Gbar" = "0"
+    "Layer.Acts.NMDA.Ge" = "0"
     "Layer.Acts.Noise.Ge" = "0.01"
     "Layer.Acts.Noise.Gi" = "0.0"
     "Layer.Acts.Noise.On" = "false"

@@ -37,8 +37,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Erev.L = 0.4     // more excitable
 				ly.Acts.Gbar.L = 0.2     // smaller, less leaky..
 				ly.Acts.KNa.On.SetBool(false)
-				ly.Acts.GabaB.Gbar = 0 // no gabab
-				ly.Acts.NMDA.Gbar = 0  // no nmda
+				ly.Acts.GabaB.Gk = 0 // no gabab
+				ly.Acts.NMDA.Ge = 0  // no nmda
 				ly.Acts.Noise.On.SetBool(false)
 				ly.Acts.Noise.Ge = 0.01 // 0.001 min
 				ly.Acts.Noise.Gi = 0.0  //

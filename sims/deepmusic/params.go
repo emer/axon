@@ -22,13 +22,13 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Decay.Glong = 0.0
 				ly.Acts.NMDA.MgC = 1.4 // 1.4, 5 > 1.2, 0 ?
 				ly.Acts.NMDA.Voff = 0
-				ly.Acts.NMDA.Gbar = 0.006
-				ly.Acts.GabaB.Gbar = 0.015 // 0.015 > 0.012 lower
-				ly.Acts.Mahp.Gbar = 0.04   // 0.04 == 0.05+ > 0.02 -- reduces hidden activity
-				ly.Acts.Sahp.Gbar = 0.1    // 0.1 == 0.02 no real diff
-				ly.Acts.Sahp.Off = 0.8     //
-				ly.Acts.Sahp.Slope = 0.02  //
-				ly.Acts.Sahp.CaTau = 5     // 5 > 10
+				ly.Acts.NMDA.Ge = 0.006
+				ly.Acts.GabaB.Gk = 0.015  // 0.015 > 0.012 lower
+				ly.Acts.Mahp.Gbar = 0.04  // 0.04 == 0.05+ > 0.02 -- reduces hidden activity
+				ly.Acts.Sahp.Gbar = 0.1   // 0.1 == 0.02 no real diff
+				ly.Acts.Sahp.Off = 0.8    //
+				ly.Acts.Sahp.Slope = 0.02 //
+				ly.Acts.Sahp.CaTau = 5    // 5 > 10
 			}},
 		{Sel: ".SuperLayer", Doc: "super layer params",
 			Set: func(ly *axon.LayerParams) {
@@ -49,11 +49,11 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Dend.SSGi = 0          // 0 > higher -- kills nmda maint!
 				ly.Acts.Decay.Act = 0.0
 				ly.Acts.Decay.Glong = 0.0
-				ly.Acts.MaintNMDA.Gbar = 0.007  // 0.007 > 0.008 -- same w/ reg better than not
+				ly.Acts.MaintNMDA.Ge = 0.007    // 0.007 > 0.008 -- same w/ reg better than not
 				ly.Acts.MaintNMDA.Tau = 300     // 300 > 200
-				ly.Acts.NMDA.Gbar = 0.007       // 0.007?
+				ly.Acts.NMDA.Ge = 0.007         // 0.007?
 				ly.Acts.NMDA.Tau = 300          // 300 > 200
-				ly.Acts.GabaB.Gbar = 0.015      // 0.015 def
+				ly.Acts.GabaB.Gk = 0.015        // 0.015 def
 				ly.Acts.Noise.On.SetBool(false) // todo?
 				ly.Acts.Noise.Ge = 0.005
 				ly.Acts.Noise.Gi = 0.005
@@ -72,8 +72,8 @@ var LayerParams = axon.LayerSheets{
 		{Sel: "#Hidden2CT", Doc: "CT NMDA gbar factor is key",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.12 // 2 even more active -- maybe try higher inhib
-				ly.Acts.GabaB.Gbar = 0.3
-				ly.Acts.NMDA.Gbar = 0.3 // higher layer has more nmda..
+				ly.Acts.GabaB.Gk = 0.3
+				ly.Acts.NMDA.Ge = 0.3   // higher layer has more nmda..
 				ly.Acts.NMDA.Tau = 300  // 300 > 200
 				ly.Acts.Sahp.CaTau = 10 // todo
 			}},
@@ -81,7 +81,7 @@ var LayerParams = axon.LayerSheets{
 		// 	Set: func(ly *axon.LayerParams) {
 		// 		ly.Inhib.Layer.Gi =  0.9  // 0.9 > 0.8 > 1
 		// 		ly.Pulv.DriveScale = 0.05 // 0.05 > .1
-		// 		ly.Acts.NMDA.Gbar =  0.1
+		// 		ly.Acts.NMDA.Ge =  0.1
 		// 	}},
 	},
 	"30Notes": {

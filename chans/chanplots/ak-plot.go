@@ -32,7 +32,7 @@ type AKPlot struct {
 	Vend float32 `default:"100"`
 
 	// voltage increment
-	Vstep float32 `default:"0.01"`
+	Vstep float32 `default:"1"`
 
 	// number of time steps
 	TimeSteps int
@@ -59,12 +59,12 @@ func (pl *AKPlot) Config(parent *tensorfs.Node, tabs lab.Tabber) {
 	pl.Tabs = tabs
 
 	pl.AK.Defaults()
-	pl.AK.Gbar = 1
+	pl.AK.Gk = 1
 	pl.AKs.Defaults()
-	pl.AKs.Gbar = 1
+	pl.AKs.Gk = 1
 	pl.Vstart = -100
 	pl.Vend = 100
-	pl.Vstep = .01
+	pl.Vstep = 1
 	pl.TimeSteps = 200
 	pl.TimeSpike = true
 	pl.SpikeFreq = 50
@@ -85,21 +85,20 @@ func (pl *AKPlot) GVRun() { //types:add
 	ap := &pl.AK
 	nv := int((pl.Vend - pl.Vstart) / pl.Vstep)
 	for vi := range nv {
-		vbio := pl.Vstart + float32(vi)*pl.Vstep
-		vnorm := chans.VFromBio(vbio)
-		k := ap.KFromV(vbio)
-		a := ap.AlphaFromVK(vbio, k)
-		b := ap.BetaFromVK(vbio, k)
+		v := pl.Vstart + float32(vi)*pl.Vstep
+		k := ap.KFromV(v)
+		a := ap.AlphaFromVK(v, k)
+		b := ap.BetaFromVK(v, k)
 		mt := ap.MTauFromAlphaBeta(a, b)
-		ht := ap.HTauFromV(vbio)
+		ht := ap.HTauFromV(v)
 		m := ap.MFromAlpha(a)
-		h := ap.HFromV(vbio)
+		h := ap.HFromV(v)
 		g := ap.Gak(m, h)
 
-		ms := pl.AKs.MFromV(vbio)
-		gs := pl.AKs.Gak(vnorm)
+		ms := pl.AKs.MFromV(v)
+		gs := pl.AKs.Gak(v)
 
-		dir.Float64("V", nv).SetFloat1D(float64(vbio), vi)
+		dir.Float64("V", nv).SetFloat1D(float64(v), vi)
 		dir.Float64("Gak", nv).SetFloat1D(float64(g), vi)
 		dir.Float64("M", nv).SetFloat1D(float64(m), vi)
 		dir.Float64("H", nv).SetFloat1D(float64(h), vi)
@@ -144,7 +143,6 @@ func (pl *AKPlot) TimeRun() { //types:add
 	isi := int(1000 / pl.SpikeFreq)
 	var g float32
 	for ti := range nv {
-		vnorm := chans.VFromBio(v)
 		t := float32(ti) * msdt
 
 		k := ap.KFromV(v)
@@ -154,7 +152,7 @@ func (pl *AKPlot) TimeRun() { //types:add
 		ht := ap.HTauFromV(v)
 		g = ap.Gak(m, h)
 
-		dm, dh := pl.AK.DMHFromV(vnorm, m, h)
+		dm, dh := pl.AK.DMHFromV(v, m, h)
 
 		dir.Float64("Time", nv).SetFloat1D(float64(t), ti)
 		dir.Float64("Gak", nv).SetFloat1D(float64(g), ti)

@@ -15,5 +15,5 @@
   Sel = "Layer"
   Desc = ""
   [Testing.Params]
-    "Layer.Acts.GabaB.Gbar" = "0.0"
-    "Layer.Acts.NMDA.Gbar" = "0.0"
+    "Layer.Acts.GabaB.Gk" = "0.0"
+    "Layer.Acts.NMDA.Ge" = "0.0"

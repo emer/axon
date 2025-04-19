@@ -53,7 +53,7 @@ func (pl *MahpPlot) Config(parent *tensorfs.Node, tabs lab.Tabber) {
 	pl.Tabs = tabs
 
 	pl.Mahp.Defaults()
-	pl.Mahp.Gbar = 1
+	pl.Mahp.Gk = 1
 	pl.Vstart = -100
 	pl.Vend = 100
 	pl.Vstep = 1
@@ -117,12 +117,11 @@ func (pl *MahpPlot) TimeRun() { //types:add
 
 	isi := int(1000 / pl.SpikeFreq)
 	for ti := range nv {
-		vnorm := chans.VFromBio(v)
 		t := float32(ti+1) * msdt
 
 		var ninf, tau float32
 		mp.NinfTauFromV(v, &ninf, &tau)
-		g := mp.GmAHP(vnorm, &n)
+		g := mp.GmAHP(v, &n)
 
 		dir.Float64("Time", nv).SetFloat1D(float64(t), ti)
 		dir.Float64("V", nv).SetFloat1D(float64(v), ti)

@@ -87,22 +87,25 @@ type Config struct {
 	// Gi is the raw inhibitory conductance.
 	Gi float32 `min:"0" step:"0.01" default:"0.1"`
 
-	// ErevE is the excitatory reversal (driving) potential; determines where excitation pushes Vm up to.
-	ErevE float32 `min:"0" max:"1" step:"0.01" default:"1"`
+	// ErevE is the excitatory reversal (driving) potential in mV;
+	// determines where excitation pushes Vm up to.
+	ErevE float32 `min:"-90" max:"100" step:"5" default:"0"`
 
-	// ErevI is the leak reversal (driving) potential; determines where excitation pulls Vm down to.
-	ErevI float32 `min:"0" max:"1" step:"0.01" default:"0.3"`
+	// ErevI is the leak reversal (driving) potential; determines
+	// where excitation pulls Vm down to.
+	ErevI float32 `min:"-100" max:"100" step:"5" default:"-70"`
 
-	// Noise is the variance parameter for Gaussian noise added to unit activations on every cycle.
+	// Noise is the variance parameter for Gaussian noise added
+	// to Ge on every cycle.
 	Noise float32 `min:"0" step:"0.01"`
 
 	// KNaAdapt activates sodium-gated potassium adaptation mechanisms
 	// that cause the neuron to reduce spiking over time.
 	KNaAdapt bool `default:"true"`
 
-	// MahpGbar is the strength of mAHP M-type channel, which drives adaptation
+	// MahpGk is the strength of mAHP M-type channel, which drives adaptation
 	// similar to KNa adaptation mechanisms.
-	MahpGbar float32 `default:"0.05"`
+	MahpGk float32 `default:"0.05"`
 
 	// NMDAGbar is the strength of the NMDA excitatory Ca++ current,
 	// which has a long time constant and is essential for establishing
@@ -120,10 +123,10 @@ type Config struct {
 	// to runaway excitatory bursting.
 	VGCCGbar float32 `default:"0.02"`
 
-	// AKGbar is the strength of the A-type potassium channel, which is only active
+	// AKGk is the strength of the A-type potassium channel, which is only active
 	// at high (depolarized) membrane potentials, i.e., during spikes.
 	// It is useful to balance against the excitatiohn from VGCC's.
-	AKGbar float32 `default:"0.1"`
+	AKGk float32 `default:"0.1"`
 
 	// Includes has a list of additional config files to include.
 	// After configuration, it contains list of include files added.

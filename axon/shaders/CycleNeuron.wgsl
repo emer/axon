@@ -466,8 +466,8 @@ fn SpikeParams_AvgFromISI(sk: SpikeParams, avg: f32, isi: f32) -> f32 {
 	}return av;
 }
 struct DendParams {
-	GbarExp: f32,
-	GbarR: f32,
+	GExp: f32,
+	GR: f32,
 	SSGi: f32,
 	HasMod: i32,
 	ModGain: f32,
@@ -497,8 +497,8 @@ struct DecayParams {
 }
 struct DtParams {
 	Integ: f32,
-	VmTau: f32,
-	VmDendTau: f32,
+	VmC: f32,
+	VmDendC: f32,
 	VmSteps: i32,
 	GeTau: f32,
 	GiTau: f32,
@@ -512,6 +512,10 @@ struct DtParams {
 	GiDt: f32,
 	IntDt: f32,
 	LongAvgDt: f32,
+	MaxI: f32,
+	pad: f32,
+	pad1: f32,
+	pad2: f32,
 }
 fn DtParams_GeSynFromRaw(dp: DtParams, geSyn: f32,geRaw: f32) -> f32 {
 	return geSyn + geRaw - dp.GeDt*geSyn;
@@ -559,7 +563,7 @@ struct ClampParams {
 struct SMaintParams {
 	On: i32,
 	NNeurons: f32,
-	Gbar: f32,
+	Ge: f32,
 	Inhib: f32,
 	ISI: F32,
 }
@@ -638,7 +642,7 @@ struct ActParams {
 	PopCode: PopCodeParams,
 }
 fn ActParams_NMDAFromRaw(ac: ActParams, ctx: Context, ni: u32,di: u32, geTot: f32) {
-	if (ac.NMDA.Gbar == 0) {
+	if (ac.NMDA.Ge == 0) {
 		return;
 	}
 	var geT = max(geTot, 0.0);
@@ -646,7 +650,7 @@ fn ActParams_NMDAFromRaw(ac: ActParams, ctx: Context, ni: u32,di: u32, geTot: f3
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Gnmda))] = NMDAParams_Gnmda(ac.NMDA, Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GnmdaSyn))], Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(VmDend))]);
 }
 fn ActParams_MaintNMDAFromRaw(ac: ActParams, ctx: Context, ni: u32,di: u32) {
-	if (ac.MaintNMDA.Gbar == 0) {
+	if (ac.MaintNMDA.Ge == 0) {
 		return;
 	}
 	if (ac.SMaint.On == 1) {
@@ -667,23 +671,23 @@ fn ActParams_SMaintFromISI(ac: ActParams, ctx: Context, ni: u32,di: u32) {
 	var trg = SMaintParams_ExpInt(ac.SMaint, isi);
 	if (smp <= trg) {
 		smp = f32(1);
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GMaintRaw))] += ac.SMaint.Gbar;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GMaintRaw))] += ac.SMaint.Ge;
 	}
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
 	u32(ni), u32(di), u32(SMaintP))] = smp;
 }
 fn ActParams_GvgccFromVm(ac: ActParams, ctx: Context, ni: u32,di: u32) {
-	if (ac.VGCC.Gbar == 0) {
+	if (ac.VGCC.Ge == 0) {
 		return;
 	}
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Gvgcc))] = VGCCParams_Gvgcc(ac.VGCC, Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(VmDend))], Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(VgccM))], Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(VgccH))]);
-	var dm: f32;
-	var dh: f32;
-	VGCCParams_DMHFromV(ac.VGCC, Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(VmDend))], Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(VgccM))], Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(VgccH))], &dm, &dh);
+	var v = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(VmDend))];
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Gvgcc))] = VGCCParams_Gvgcc(ac.VGCC, v, Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(VgccM))], Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(VgccH))]);
+	var dm = VGCCParams_DeltaMFromV(ac.VGCC, v, Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(VgccM))]);
+	var dh = VGCCParams_DeltaHFromV(ac.VGCC, v, Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(VgccH))]);
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(VgccM))] += dm;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71],
 	TensorStrides[72], u32(ni), u32(di), u32(VgccH))] += dh;
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(VgccCa))] = VGCCParams_CaFromG(ac.VGCC, Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(VmDend))], Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Gvgcc))], Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(VgccCa))]);
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(VgccCa))] = VGCCParams_CaFromG(ac.VGCC, v, Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Gvgcc))], Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(VgccCa))]);
 }
 fn ActParams_GkFromVm(ac: ActParams, ctx: Context, ni: u32,di: u32) {
 	var vm = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Vm))];
@@ -698,7 +702,7 @@ fn ActParams_GkFromVm(ac: ActParams, ctx: Context, ni: u32,di: u32) {
 	var nkirM = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(KirM))];
 	var gkir = KirParams_Gkir(ac.Kir, vm, nkirM);
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Gkir))] = gkir;
-	nkirM += KirParams_DM(ac.Kir, VToBio(vm), nkirM);
+	nkirM += KirParams_DM(ac.Kir, vm, nkirM);
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(KirM))] = nkirM;
 	var gktot = gmahp + gsahp + gak + gkir;
 	if (ac.KNa.On == 1) {
@@ -713,7 +717,7 @@ fn ActParams_GkFromVm(ac: ActParams, ctx: Context, ni: u32,di: u32) {
 	TensorStrides[72], u32(ni), u32(di), u32(Gk))] = gktot;
 }
 fn ActParams_GSkCaFromCa(ac: ActParams, ctx: Context, ni: u32,di: u32) {
-	if (ac.SKCa.Gbar == 0) {
+	if (ac.SKCa.Gk == 0) {
 		return;
 	}
 	var skcar = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SKCaR))];
@@ -722,7 +726,7 @@ fn ActParams_GSkCaFromCa(ac: ActParams, ctx: Context, ni: u32,di: u32) {
 	SKCaParams_CaInRFromSpike(ac.SKCa, Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Spike))], Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaD))], &skcain, &skcar);
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SKCaR))] = skcar;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SKCaIn))] = skcain;
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Gsk))] = ac.SKCa.Gbar * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SKCaM))];
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Gsk))] = ac.SKCa.Gk * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SKCaM))];
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Gk))] += Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Gsk))];
 }
 fn ActParams_GeFromSyn(ac: ActParams, ctx: Context, ni: u32,di: u32, geSyn: f32,geExt: f32) {
@@ -772,10 +776,10 @@ fn ActParams_GiFromSyn(ac: ActParams, ctx: Context, ni: u32,di: u32, giSyn: f32)
 }
 fn ActParams_InetFromG(ac: ActParams, vm: f32,ge: f32,gl: f32,gi: f32,gk: f32) -> f32 {
 	var inet = ge*(ac.Erev.E-vm) + gl*ac.Gbar.L*(ac.Erev.L-vm) + gi*(ac.Erev.I-vm) + gk*(ac.Erev.K-vm);
-	if (inet > ac.Dt.VmTau) {
-		inet = ac.Dt.VmTau;
-	} else if (inet < -ac.Dt.VmTau) {
-		inet = -ac.Dt.VmTau;
+	if (inet > ac.Dt.MaxI) {
+		inet = ac.Dt.MaxI;
+	} else if (inet < -ac.Dt.MaxI) {
+		inet = -ac.Dt.MaxI;
 	}return inet;
 }
 fn ActParams_VmFromInet(ac: ActParams, vm: f32,dt: f32,inet: f32) -> f32 {
@@ -809,8 +813,8 @@ fn ActParams_VmFromG(ac: ActParams, ctx: Context, ni: u32,di: u32) {
 			TensorStrides[72], u32(ni), u32(di), u32(Vm))]);
 			expi = ac.Gbar.L * ac.Spikes.ExpSlope *
 				FastExp((exVm-ac.Spikes.Thr)/ac.Spikes.ExpSlope);
-			if (expi > ac.Dt.VmTau) {
-				expi = ac.Dt.VmTau;
+			if (expi > ac.Dt.MaxI) {
+				expi = ac.Dt.MaxI;
 			}
 			inet += expi;
 			nvm = ActParams_VmFromInet(ac, nvm, ac.Dt.VmDt, expi);
@@ -826,17 +830,17 @@ fn ActParams_VmFromG(ac: ActParams, ctx: Context, ni: u32,di: u32) {
 			dvm = ac.Spikes.RDt * (ac.Spikes.VmR - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Vm))]);
 		}
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Vm))] += dvm;
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Inet))] = dvm * ac.Dt.VmTau;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Inet))] = dvm * ac.Dt.VmC;
 	}
 	var glEff = f32(1);
 	if (!updtVm) {
-		glEff += ac.Dend.GbarR;
+		glEff += ac.Dend.GR;
 	}
 	var giEff: f32;
 	giEff = gi + ac.Gbar.I*Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SSGiDend))];
 	ActParams_VmInteg(ac, Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(VmDend))], ac.Dt.VmDendDt, ge, glEff, giEff, gk, &nvm, &inet);
 	if (updtVm) {
-		nvm = ActParams_VmFromInet(ac, nvm, ac.Dt.VmDendDt, ac.Dend.GbarExp*expi);
+		nvm = ActParams_VmFromInet(ac, nvm, ac.Dt.VmDendDt, ac.Dend.GExp*expi);
 	}
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71],
 	TensorStrides[72], u32(ni), u32(di), u32(VmDend))] = nvm;
@@ -879,7 +883,7 @@ fn ActParams_SpikeFromVmVars(ac: ActParams, nrnISI: ptr<function,f32>,nrnISIAvg:
 	if (nwAct > 1) {
 		nwAct = f32(1);
 	}
-	nwAct = *nrnAct + ac.Dt.VmDt*(nwAct-*nrnAct);
+	nwAct = *nrnAct + 100*ac.Dt.VmDt*(nwAct-*nrnAct); // 100 restores to prior behavior
 	*nrnAct = nwAct;
 }
 fn ActParams_SpikeFromVm(ac: ActParams, ctx: Context, ni: u32,di: u32) {
@@ -899,7 +903,7 @@ fn ActParams_SpikeFromVm(ac: ActParams, ctx: Context, ni: u32,di: u32) {
 
 //////// import: "chans-ak.go"
 struct AKsParams {
-	Gbar: f32,
+	Gk: f32,
 	Hf: f32,
 	Mf: f32,
 	Voff: f32,
@@ -908,17 +912,14 @@ struct AKsParams {
 	pad1: i32,
 	pad2: i32,
 }
-fn AKsParams_MFromV(ap: AKsParams, vbio: f32) -> f32 {
-	var av = vbio;
-	if (vbio > ap.Vmax) {
+fn AKsParams_MFromV(ap: AKsParams, v: f32) -> f32 {
+	var av = v;
+	if (v > ap.Vmax) {
 		av = ap.Vmax;
 	}return ap.Hf / (1.0 + FastExp(-ap.Mf*(av+ap.Voff)));
 }
-fn AKsParams_MFromVnorm(ap: AKsParams, v: f32) -> f32 {
-	return AKsParams_MFromV(ap, VToBio(v));
-}
 fn AKsParams_Gak(ap: AKsParams, v: f32) -> f32 {
-	return ap.Gbar * AKsParams_MFromVnorm(ap, v);
+	return ap.Gk * AKsParams_MFromV(ap, v);
 }
 
 //////// import: "chans-chans.go"
@@ -928,13 +929,10 @@ struct Chans {
 	I: f32,
 	K: f32,
 }
-fn VToBio(vm: f32) -> f32 {
-	return vm*100 - 100;
-}
 
 //////// import: "chans-gabab.go"
 struct GABABParams {
-	Gbar: f32,
+	Gk: f32,
 	RiseTau: f32,
 	DecayTau: f32,
 	Gbase: f32,
@@ -948,10 +946,7 @@ struct GABABParams {
 	pad2: f32,
 }
 fn GABABParams_GFromV(gp: GABABParams, v: f32) -> f32 {
-	var vbio = VToBio(v);
-	if (vbio < -90) {
-		vbio = f32(-90);
-	}return (vbio + 90.0) / (1.0 + FastExp(0.1*((vbio+90.0)+10.0)));
+	var ve = max(v, -90.0);return (ve + 90.0) / (1.0 + FastExp(0.1*((ve+90.0)+10.0)));
 }
 fn GABABParams_GFromS(gp: GABABParams, s: f32) -> f32 {
 	var ss = s * gp.GiSpike;
@@ -959,24 +954,21 @@ fn GABABParams_GFromS(gp: GABABParams, s: f32) -> f32 {
 		return f32(1);
 	}return 1.0 / (1.0 + FastExp(-(ss-7.1)/1.4));
 }
-fn GABABParams_BiExp(gp: GABABParams, g: f32,x: f32, dG: ptr<function,f32>,dX: ptr<function,f32>) {
-	*dG = (gp.TauFact*x - g) * gp.RiseDt;
-	*dX = -x * gp.DecayDt;return;
+fn GABABParams_DeltaG(gp: GABABParams, g: f32,x: f32) -> f32 {
+	return (gp.TauFact*x - g) * gp.RiseDt;
 }
 fn GABABParams_GABAB(gp: GABABParams, gi: f32, gabaB: ptr<function,f32>,gabaBx: ptr<function,f32>) {
-	var dG: f32;
-	var dX: f32;
-	GABABParams_BiExp(gp, *gabaB, *gabaBx, &dG, &dX);
-	*gabaBx += GABABParams_GFromS(gp, gi) + dX; // gets new input
+	var dG = GABABParams_DeltaG(gp, *gabaB, *gabaBx);
+	*gabaBx += GABABParams_GFromS(gp, gi) - (*gabaBx)*gp.DecayDt;
 	*gabaB += dG;return;
 }
-fn GABABParams_GgabaB(gp: GABABParams, gabaB: f32,vm: f32) -> f32 {
-	return gp.Gbar * GABABParams_GFromV(gp, vm) * (gabaB + gp.Gbase);
+fn GABABParams_GgabaB(gp: GABABParams, gabaB: f32,v: f32) -> f32 {
+	return gp.Gk * GABABParams_GFromV(gp, v) * (gabaB + gp.Gbase);
 }
 
 //////// import: "chans-kir.go"
 struct KirParams {
-	Gbar: f32,
+	Gk: f32,
 	MinfOff: f32,
 	MinfTau: f32,
 	RiseOff: f32,
@@ -985,22 +977,22 @@ struct KirParams {
 	DecayTau: f32,
 	Mrest: f32,
 }
-fn KirParams_Minf(kp: KirParams, vbio: f32) -> f32 {
-	return 1.0 / (1.0 + FastExp((vbio-(kp.MinfOff))/kp.MinfTau));
+fn KirParams_Minf(kp: KirParams, v: f32) -> f32 {
+	return 1.0 / (1.0 + FastExp((v-(kp.MinfOff))/kp.MinfTau));
 }
-fn KirParams_MTau(kp: KirParams, vbio: f32) -> f32 {
-	var alpha = 0.1 * FastExp((vbio-(kp.RiseOff))/(-kp.RiseTau));
-	var beta = 0.27 / (1.0 + FastExp((vbio-(kp.DecayOff))/(-kp.DecayTau)));
+fn KirParams_MTau(kp: KirParams, v: f32) -> f32 {
+	var alpha = 0.1 * FastExp((v-(kp.RiseOff))/(-kp.RiseTau));
+	var beta = 0.27 / (1.0 + FastExp((v-(kp.DecayOff))/(-kp.DecayTau)));
 	var sum = alpha + beta;return 1.0 / sum;
 }
-fn KirParams_DM(kp: KirParams, vbio: f32,m: f32) -> f32 {
-	var minf = KirParams_Minf(kp, vbio);
-	var mtau = KirParams_MTau(kp, vbio);
+fn KirParams_DM(kp: KirParams, v: f32,m: f32) -> f32 {
+	var minf = KirParams_Minf(kp, v);
+	var mtau = KirParams_MTau(kp, v);
 	var dm = (minf - m) / (mtau * 3); // 3 = Q10
 return dm;
 }
 fn KirParams_Gkir(kp: KirParams, v: f32, m: f32) -> f32 {
-	return kp.Gbar * m;
+	return kp.Gk * m;
 }
 
 //////// import: "chans-kna.go"
@@ -1042,7 +1034,7 @@ fn KNaMedSlow_GcFromSpike(ka: KNaMedSlow, gKNaM: ptr<function,f32>,gKNaS: ptr<fu
 
 //////// import: "chans-mahp.go"
 struct MahpParams {
-	Gbar: f32,
+	Gk: f32,
 	Voff: f32,
 	Vslope: f32,
 	TauMax: f32,
@@ -1056,8 +1048,8 @@ fn MahpParams_EFun(mp: MahpParams, z: f32) -> f32 {
 		return 1.0 - 0.5*z;
 	}return z / (FastExp(z) - 1.0);
 }
-fn MahpParams_NinfTauFromV(mp: MahpParams, vbio: f32, ninf: ptr<function,f32>,tau: ptr<function,f32>) {
-	var vo = vbio - mp.Voff;
+fn MahpParams_NinfTauFromV(mp: MahpParams, v: f32, ninf: ptr<function,f32>,tau: ptr<function,f32>) {
+	var vo = v - mp.Voff;
 	var a = mp.DtMax * mp.Vslope * MahpParams_EFun(mp, -vo/mp.Vslope);
 	var b = mp.DtMax * mp.Vslope * MahpParams_EFun(mp, vo/mp.Vslope);
 	*tau = 1.0 / (a + b);
@@ -1065,24 +1057,21 @@ fn MahpParams_NinfTauFromV(mp: MahpParams, vbio: f32, ninf: ptr<function,f32>,ta
 	*tau /= mp.Tadj;  // correct right away..
 return;
 }
-fn MahpParams_NinfTauFromVnorm(mp: MahpParams, v: f32, ninf: ptr<function,f32>,tau: ptr<function,f32>) {
-	MahpParams_NinfTauFromV(mp, VToBio(v), ninf, tau);
-}
 fn MahpParams_DNFromV(mp: MahpParams, v: f32,n: f32) -> f32 {
 	var ninf: f32;
 	var tau: f32;
-	MahpParams_NinfTauFromVnorm(mp, v, &ninf, &tau);
+	MahpParams_NinfTauFromV(mp, v, &ninf, &tau);
 	var dn = (ninf - n) / tau;return dn;
 }
 fn MahpParams_GmAHP(mp: MahpParams, v: f32, n: ptr<function,f32>) -> f32 {
 	var dn = MahpParams_DNFromV(mp, v, *n);
 	*n += dn;
-	var g = mp.Tadj * mp.Gbar * *n;return g;
+	var g = mp.Tadj * mp.Gk * *n;return g;
 }
 
 //////// import: "chans-nmda.go"
 struct NMDAParams {
-	Gbar: f32,
+	Ge: f32,
 	Tau: f32,
 	ITau: f32,
 	MgC: f32,
@@ -1091,34 +1080,28 @@ struct NMDAParams {
 	IDt: f32,
 	MgFact: f32,
 }
-fn NMDAParams_MgGFromVbio(np: NMDAParams, vbio: f32) -> f32 {
-	var av = vbio + np.Voff;
+fn NMDAParams_MgGFromV(np: NMDAParams, v: f32) -> f32 {
+	var av = v + np.Voff;
 	if (av >= 0) {
 		return f32(0);
 	}return -av / (1.0 + np.MgFact*FastExp(-0.062*av));
 }
-fn NMDAParams_MgGFromV(np: NMDAParams, v: f32) -> f32 {
-	return NMDAParams_MgGFromVbio(np, VToBio(v));
-}
-fn NMDAParams_CaFromVbio(np: NMDAParams, vbio: f32) -> f32 {
-	var av = vbio + np.Voff;
+fn NMDAParams_CaFromV(np: NMDAParams, v: f32) -> f32 {
+	var av = v + np.Voff;
 	if (av > -0.5 && av < 0.5) { // this eliminates div 0 at 0, and numerical "fuzz" around 0
 		return 1.0 / (0.0756 * (1 + 0.0378*av));
 	}return -av / (1.0 - FastExp(0.0756*av));
-}
-fn NMDAParams_CaFromV(np: NMDAParams, v: f32) -> f32 {
-	return NMDAParams_CaFromVbio(np, VToBio(v));
 }
 fn NMDAParams_NMDASyn(np: NMDAParams, nmda: f32,raw: f32) -> f32 {
 	return nmda + raw - np.Dt*nmda;
 }
 fn NMDAParams_Gnmda(np: NMDAParams, nmda: f32,vm: f32) -> f32 {
-	return np.Gbar * NMDAParams_MgGFromV(np, vm) * nmda;
+	return np.Ge * NMDAParams_MgGFromV(np, vm) * nmda;
 }
 
 //////// import: "chans-sahp.go"
 struct SahpParams {
-	Gbar: f32,
+	Gk: f32,
 	CaTau: f32,
 	Off: f32,
 	Slope: f32,
@@ -1130,7 +1113,7 @@ struct SahpParams {
 
 //////// import: "chans-skca.go"
 struct SKCaParams {
-	Gbar: f32,
+	Gk: f32,
 	C50: f32,
 	ActTau: f32,
 	DeTau: f32,
@@ -1167,46 +1150,43 @@ fn SKCaParams_MFromCa(sp: SKCaParams, caR: f32,mcur: f32) -> f32 {
 
 //////// import: "chans-vgcc.go"
 struct VGCCParams {
-	Gbar: f32,
+	Ge: f32,
 	Ca: f32,
 	pad: i32,
 	pad1: i32,
 }
 fn VGCCParams_GFromV(np: VGCCParams, v: f32) -> f32 {
-	var vbio = VToBio(v);
-	if (vbio > -0.5 && vbio < 0.5) { // this avoids divide by 0, and numerical instability around 0
-		return 1.0 / (0.0756 * (1 + 0.0378*vbio));
-	}return -vbio / (1.0 - FastExp(0.0756*vbio));
+	if (v > -0.5 && v < 0.5) { // this avoids divide by 0, and numerical instability around 0
+		return 1.0 / (0.0756 * (1 + 0.0378*v));
+	}return -v / (1.0 - FastExp(0.0756*v));
 }
-fn VGCCParams_MFromV(np: VGCCParams, vbio: f32) -> f32 {
-	if (vbio < -60) {
+fn VGCCParams_MFromV(np: VGCCParams, v: f32) -> f32 {
+	if (v < -60) {
 		return f32(0);
 	}
-	if (vbio > -10) {
+	if (v > -10) {
 		return f32(1);
-	}return 1.0 / (1.0 + FastExp(-(vbio + 37)));
+	}return 1.0 / (1.0 + FastExp(-(v + 37)));
 }
-fn VGCCParams_HFromV(np: VGCCParams, vbio: f32) -> f32 {
-	if (vbio < -50) {
+fn VGCCParams_HFromV(np: VGCCParams, v: f32) -> f32 {
+	if (v < -50) {
 		return f32(1);
 	}
-	if (vbio > -10) {
+	if (v > -10) {
 		return f32(0);
-	}return 1.0 / (1.0 + FastExp((vbio+41)*2));
+	}return 1.0 / (1.0 + FastExp((v+41)*2));
 }
-fn VGCCParams_DMHFromV(np: VGCCParams, v: f32,m: f32,h: f32, dm: ptr<function,f32>,dh: ptr<function,f32>) {
-	var vbio = VToBio(v);
-	if (vbio > 0) {
-		vbio = f32(0);
-	}
-	*dm = (VGCCParams_MFromV(np, vbio) - m) / 3.6;
-	*dh = (VGCCParams_HFromV(np, vbio) - h) / 29.0;
+fn VGCCParams_DeltaMFromV(np: VGCCParams, v: f32,m: f32) -> f32 {
+	var vb = min(v, 0.0);return (VGCCParams_MFromV(np, vb) - m) / 3.6;
 }
-fn VGCCParams_Gvgcc(np: VGCCParams, vm: f32,m: f32,h: f32) -> f32 {
-	return np.Gbar * VGCCParams_GFromV(np, vm) * m * m * m * h;
+fn VGCCParams_DeltaHFromV(np: VGCCParams, v: f32,h: f32) -> f32 {
+	var vb = min(v, 0.0);return (VGCCParams_HFromV(np, vb) - h) / 29.0;
+}
+fn VGCCParams_Gvgcc(np: VGCCParams, v: f32,m: f32,h: f32) -> f32 {
+	return np.Ge * VGCCParams_GFromV(np, v) * m * m * m * h;
 }
 fn VGCCParams_CaFromG(np: VGCCParams, v: f32,g: f32,ca: f32) -> f32 {
-	var vbio = VToBio(v);return -vbio * np.Ca * g;
+	return -v * np.Ca * g;
 }
 
 //////// import: "context.go"

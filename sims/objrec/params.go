@@ -14,8 +14,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Decay.Glong = 0.6                // 0.6 def > 0.5, .7 -- highly sensitive
 				ly.Acts.NMDA.MgC = 1.4                   // 1.4, 5 > 1.2, 0
 				ly.Acts.NMDA.Voff = 0                    // see above
-				ly.Acts.NMDA.Gbar = 0.006                // 0.006 > 7 or higher
-				ly.Acts.GabaB.Gbar = 0.015               // 0.015 > lower; higher not better
+				ly.Acts.NMDA.Ge = 0.006                  // 0.006 > 7 or higher
+				ly.Acts.GabaB.Gk = 0.015                 // 0.015 > lower; higher not better
 				ly.Inhib.ActAvg.AdaptRate = 0.1          // 0.1 default > 0.05?
 				ly.Inhib.ActAvg.AdaptMax = 0.05          // 0.05 > 0.01
 				ly.Learn.CaSpike.SpikeCaM = 12           // 12 > 8 > 15 (too high) -- 12 makes everything work!
@@ -23,7 +23,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.LearnNMDA.MgC = 1.4             // 1.4, 5 > 1.2, 0
 				ly.Learn.LearnNMDA.Voff = 0              // see above
 				ly.Learn.LearnNMDA.Tau = 100             // 100 def
-				ly.Learn.LearnNMDA.Gbar = 0.006
+				ly.Learn.LearnNMDA.Ge = 0.006
 				ly.Learn.RLRate.SigmoidLinear.SetBool(true) // true > false later; more stable
 				ly.Learn.CaLearn.Norm = 80                  // 80 works
 				ly.Learn.CaLearn.SpikeVGCC.SetBool(true)    // sig better..

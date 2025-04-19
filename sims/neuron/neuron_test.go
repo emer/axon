@@ -13,7 +13,7 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-// todo: set params so GabaB.Gbar and NMDA.Gbar are 0
+// todo: set params so GabaB.Gk and NMDA.Ge are 0
 // run basic tests that way too.
 
 // tolerance levels -- different tests pass at different levels

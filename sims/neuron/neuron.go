@@ -57,7 +57,7 @@ var LayerParams = axon.LayerSheets{
 		{Sel: "Layer", Doc: "generic params for all layers: lower gain, slower, soft clamp",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.Layer.On.SetBool(false)
-				ly.Acts.Init.Vm = 0.3
+				ly.Acts.Init.Vm = -70
 			}},
 	},
 }
@@ -183,17 +183,17 @@ func (ss *Sim) ApplyParams() {
 	ss.Params.ApplyAll(ss.Net)
 	ly := ss.Net.LayerByName("Neuron")
 	lyp := ly.Params
-	lyp.Acts.Gbar.E = 1
-	lyp.Acts.Gbar.L = 0.2
+	lyp.Acts.Gbar.E = 100
+	lyp.Acts.Gbar.L = 20
 	lyp.Acts.Erev.E = float32(ss.Config.ErevE)
 	lyp.Acts.Erev.I = float32(ss.Config.ErevI)
 	// lyp.Acts.Noise.Var = float64(ss.Config.Noise)
 	lyp.Acts.KNa.On.SetBool(ss.Config.KNaAdapt)
-	lyp.Acts.Mahp.Gbar = ss.Config.MahpGbar
-	lyp.Acts.NMDA.Gbar = ss.Config.NMDAGbar
-	lyp.Acts.GabaB.Gbar = ss.Config.GABABGbar
-	lyp.Acts.VGCC.Gbar = ss.Config.VGCCGbar
-	lyp.Acts.AK.Gbar = ss.Config.AKGbar
+	lyp.Acts.Mahp.Gk = ss.Config.MahpGk
+	lyp.Acts.NMDA.Ge = ss.Config.NMDAGbar
+	lyp.Acts.GabaB.Gk = ss.Config.GABABGbar
+	lyp.Acts.VGCC.Ge = ss.Config.VGCCGbar
+	lyp.Acts.AK.Gk = ss.Config.AKGk
 	lyp.Acts.Update()
 }
 
@@ -403,8 +403,14 @@ func (ss *Sim) ConfigStats() {
 					s.Range.SetMin(0).SetMax(1)
 					s.On = false
 					switch name {
-					case "Vm", "Act", "Spike":
+					case "Vm":
 						s.On = true
+						s.RightY = true
+						s.Label = "Vm"
+					case "Act", "Spike":
+						s.On = true
+					case "Inet", "VmDend":
+						s.RightY = true
 					}
 				})
 				continue

@@ -48,7 +48,7 @@ func (pl *SKCaPlot) Config(parent *tensorfs.Node, tabs lab.Tabber) {
 	pl.Tabs = tabs
 
 	pl.SKCa.Defaults()
-	pl.SKCa.Gbar = 1
+	pl.SKCa.Gk = 1
 	pl.CaParams.Defaults()
 	pl.CaStep = .05
 	pl.TimeSteps = 200 * 3

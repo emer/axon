@@ -65,6 +65,7 @@ func (pl *NMDAPlot) Config(parent *tensorfs.Node, tabs lab.Tabber) {
 	pl.Tabs = tabs
 
 	pl.NMDA.Defaults()
+	pl.NMDA.Ge = 1
 	pl.NMDA.Voff = 0
 	pl.Vgain = 0.062
 	pl.Norm = 3.57
@@ -96,12 +97,12 @@ func (pl *NMDAPlot) GVRun() { //types:add
 	nv := int((pl.Vend - pl.Vstart) / pl.Vstep)
 	for vi := range nv {
 		v := pl.Vstart + float64(vi)*pl.Vstep
-		g := float64(pl.NMDA.Gbar) / (1 + mgf*math.Exp(-pl.Vgain*v))
+		g := float64(pl.NMDA.Ge) / (1 + mgf*math.Exp(-pl.Vgain*v))
 		i := (pl.Erev - v) * g
 		if v >= pl.Erev {
 			i = 0
 		}
-		ca := pl.NMDA.CaFromVbio(float32(v))
+		ca := pl.NMDA.CaFromV(float32(v))
 
 		dir.Float64("V", nv).SetFloat1D(v, vi)
 		dir.Float64("Gnmda", nv).SetFloat1D(g, vi)

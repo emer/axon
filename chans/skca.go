@@ -8,7 +8,7 @@ import (
 	"cogentcore.org/core/math32"
 )
 
-//gosl:start chans
+//gosl:start
 
 // SKCaParams describes the small-conductance calcium-activated potassium channel,
 // activated by intracellular stores in a way that drives pauses in firing,
@@ -23,45 +23,54 @@ import (
 // (also Muddapu & Chakravarthy, 2021): X^h / (X^h + C50^h) where h ~= 4 (hard coded)
 type SKCaParams struct {
 
-	// overall strength of sKCa current -- inactive if 0
-	Gbar float32 `default:"0,2,3"`
+	// Gk is the strength of the SKCa conductance contribution to Gk(t) factor
+	// (which is then multiplied by Gbar.K that provides pA unit scaling).
+	Gk float32 `default:"0,2,3"`
 
-	// 50% Ca concentration baseline value in Hill equation -- set this to level that activates at reasonable levels of SKCaR
+	// C50 is the 50% Ca concentration baseline value in Hill equation.
+	// Set this to level that activates at reasonable levels of SKCaR.
 	C50 float32 `default:"0.4,0.5"`
 
-	// K channel gating factor activation time constant -- roughly 5-15 msec in literature
+	// ActTau is the K channel gating factor activation time constant,
+	// roughly 5-15 msec in literature.
 	ActTau float32 `default:"15"`
 
-	// K channel gating factor deactivation time constant -- roughly 30-50 msec in literature
+	// DeTau is the K channel gating factor deactivation time constant,
+	// roughly 30-50 ms in literature.
 	DeTau float32 `default:"30"`
 
-	// proportion of CaIn intracellular stores that are released per spike, going into CaR
+	// KCaR is the proportion of CaIn intracellular stores that are released
+	// per spike, going into CaR.
 	KCaR float32 `default:"0.4,0.8"`
 
-	// SKCaR released calcium decay time constant
+	// CaRDecayTau is the SKCaR released calcium decay time constant.
 	CaRDecayTau float32 `default:"150,200"`
 
-	// level of time-integrated spiking activity (CaD) below which CaIn intracelluar stores are replenished -- a low threshold can be used to require minimal activity to recharge -- set to a high value (e.g., 10) for constant recharge.
+	// CaInThr is the level of time-integrated spiking activity (CaD) below which CaIn
+	// intracelluar stores are replenished. A low threshold can be used to
+	// require minimal activity to recharge. Set to a high value (e.g., 10)
+	// for constant recharge.
 	CaInThr float32 `default:"0.01"`
 
-	// time constant in msec for storing CaIn when activity is below CaInThr
+	// CaInTau is the time constant in msec for storing CaIn when activity
+	//  is below CaInThr.
 	CaInTau float32 `default:"50"`
 
-	// rate = 1 / tau
+	// ActDT = 1 / tau
 	ActDt float32 `display:"-" json:"-" xml:"-"`
 
-	// rate = 1 / tau
+	// DeDt = 1 / tau
 	DeDt float32 `display:"-" json:"-" xml:"-"`
 
-	// rate = 1 / tau
+	// CaRDecayDt = 1 / tau
 	CaRDecayDt float32 `display:"-" json:"-" xml:"-"`
 
-	// rate = 1 / tau
+	// CaInDt = 1 / tau
 	CaInDt float32 `display:"-" json:"-" xml:"-"`
 }
 
 func (sp *SKCaParams) Defaults() {
-	sp.Gbar = 0.0
+	sp.Gk = 0.0
 	sp.C50 = 0.5
 	sp.ActTau = 15
 	sp.DeTau = 30
@@ -81,10 +90,10 @@ func (sp *SKCaParams) Update() {
 
 func (sp *SKCaParams) ShouldDisplay(field string) bool {
 	switch field {
-	case "Gbar":
+	case "Gk":
 		return true
 	default:
-		return sp.Gbar > 0
+		return sp.Gk > 0
 	}
 }
 
@@ -127,4 +136,4 @@ func (sp *SKCaParams) MFromCa(caR, mcur float32) float32 {
 	return mcur + sp.DeDt*(mas-mcur)
 }
 
-//gosl:end chans
+//gosl:end

@@ -50,7 +50,7 @@ func (pl *VGCCPlot) Config(parent *tensorfs.Node, tabs lab.Tabber) {
 	pl.Tabs = tabs
 
 	pl.VGCC.Defaults()
-	pl.VGCC.Gbar = 1
+	pl.VGCC.Ge = 1
 	pl.Vstart = -90
 	pl.Vend = 10
 	pl.Vstep = 1
@@ -72,14 +72,14 @@ func (pl *VGCCPlot) GVRun() { //types:add
 
 	nv := int((pl.Vend - pl.Vstart) / pl.Vstep)
 	for vi := range nv {
-		vbio := pl.Vstart + float32(vi)*pl.Vstep
-		g := pl.VGCC.GFromV(vbio)
-		m := pl.VGCC.MFromV(vbio)
-		h := pl.VGCC.HFromV(vbio)
-		dm := pl.VGCC.DeltaMFromV(vbio, m)
-		dh := pl.VGCC.DeltaHFromV(vbio, h)
+		v := pl.Vstart + float32(vi)*pl.Vstep
+		g := pl.VGCC.GFromV(v)
+		m := pl.VGCC.MFromV(v)
+		h := pl.VGCC.HFromV(v)
+		dm := pl.VGCC.DeltaMFromV(v, m)
+		dh := pl.VGCC.DeltaHFromV(v, h)
 
-		dir.Float64("V", nv).SetFloat1D(float64(vbio), vi)
+		dir.Float64("V", nv).SetFloat1D(float64(v), vi)
 		dir.Float64("Gvgcc", nv).SetFloat1D(float64(g), vi)
 		dir.Float64("M", nv).SetFloat1D(float64(m), vi)
 		dir.Float64("H", nv).SetFloat1D(float64(h), vi)
@@ -140,11 +140,15 @@ func (pl *VGCCPlot) TimeRun() { //types:add
 	plot.SetFirstStyler(dir.Float64("Time"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
-	ons := []string{"Gvgcc", "V", "M", "H"}
+	plot.SetFirstStyler(dir.Float64("Gvgcc"), func(s *plot.Style) {
+		s.On = true
+		s.Plot.Title = "VGCC G(t)"
+		s.RightY = true
+	})
+	ons := []string{"V", "M", "H"}
 	for _, on := range ons {
 		plot.SetFirstStyler(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
-			s.Plot.Title = "VGCC G(t)"
 		})
 	}
 	if pl.Tabs != nil && pl.Tabs.AsLab().IsVisible() {

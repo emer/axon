@@ -580,14 +580,14 @@ Importantly, if `GeExt` is weak (less than [fsfffb](fsfffb) `ClampExtMin`), then
 * `Inet = Gbar.E * Ge * (Erev.E - Vm) + Gbar.I * Gi * (Erev.I - Vm) + Gbar.L * (Erev.L - Vm) + Gbar.K * Gk * (Erev.K - Vm)`
     + `// Gbar.E = 1, I = 1, L = 0.2, K = 1; Erev.E = 1, L = 0.3, I = 0.1, K = 0.1`
     + See [google sheet](https://docs.google.com/spreadsheets/d/1jn-NcXY4-y3pOw6inFOgPYlaQodrGIjcsAWkiD9f1FQ/edit?usp=sharing) for conversions from biological values to normalized units used in model.
-* `Vm += (Inet + Gbar.L * ExpSlope * Exp((Vm-Thr) / ExpSlope)) / VmTau`
-    + `// VmTau = 2.81 (capacitance); ExpSlope = 0.02 (2 mV biological)`
+* `Vm += (Inet + Gbar.L * ExpSlope * Exp((Vm-Thr) / ExpSlope)) / VmC`
+    + `// VmC = 2.81 (capacitance); ExpSlope = 0.02 (2 mV biological)`
 
 In the Axon implementation, 2 smaller steps are taken in integrating the `Vm` (i.e., .5 msec resolution), and a midpoint value is used in computing the exponential factor, to avoid numerical instability while maintaining a 1 msec overall update rate.
 
 If the neuron has just spiked within the `Tr` refractory time window (3 msec default), then `Vm` just decays toward a refractory potential `VmR` (0.3 = rest potential) with a time constant of `RTau` (1.6667 msec), with the last step constrained to reach `VmR` exactly.
 
-`VmDend` is updated in the same way as `Vm`, except that the exponential term is muted by an additional factor of `GbarExp` (0.2), and it is still updated by conductances during the refractory period, with an additional leak conductance of `GbarR` (3) added to drive the potential downward toward the resting potential.  Thus, consistent with detailed compartmental models and electrophysiological data, `VmDend` exhibits more sustained depolarization, which keeps the NMDA and GABA-B currents more stabily activated, as shown in the [Appendix: Dendritic Dynamics](#appendix-dendritic-dynamics).
+`VmDend` is updated in the same way as `Vm`, except that the exponential term is muted by an additional factor of `GExp` (0.2), and it is still updated by conductances during the refractory period, with an additional leak conductance of `GR` (3) added to drive the potential downward toward the resting potential.  Thus, consistent with detailed compartmental models and electrophysiological data, `VmDend` exhibits more sustained depolarization, which keeps the NMDA and GABA-B currents more stabily activated, as shown in the [Appendix: Dendritic Dynamics](#appendix-dendritic-dynamics).
 
 `VmDend` also has an additional contribution from the `SSGi` slow-spiking inhibition (`2 * SSGi` by default), reflecting the fact that the SST+ neurons target the distal dendrites.  This is important functionally to counter a positive feedback loop from NMDA channels, as discussed here: [FS-FFFB](fsfffb).
 
@@ -890,7 +890,7 @@ Here are some specific considerations and changes to capture some of these dynam
 
 * The `Kdr` delayed rectifier channel, part of the classical HH model, resets the membrane potential back to resting after a spike -- according to detailed traces from the [Urakubo et al., 2008](https://github.com/ccnlab/kinase/tree/main/sims/urakubo) model with this channel, and the above figures, this is not quite an instantaneous process, with a time constant somewhere between 1-2 msec.  This is not important for overall spiking behavior, but it is important when Vm is used for more realistic Ca-based learning (as in the Urakubo model).  This more realistic `VmR` reset behavior is captured in Axon via the `RTau` time constant, which decays `Vm` back to `VmR` within the `Tr` refractory period of 3 msec, which fits well with the Urakubo traces for isolated spikes.
 
-* The `Dend` params specify a `GbarExp` parameter that applies a fraction of the Exp slope to `VmDend`, and a `GbarR` param that injects a proportional amount of leak current during the spike reset (`Tr`) window to bring the Vm back down a bit, reflecting the weaker amount of `Kdr` out in the dendrites.  This produces traces that resemble the above figure, as shown in the following run of the `examples/neuron` model, comparing `VmDend` with `Vm`.  Preliminary indications suggest this has a significant benefit on model performance overall (on ra25 and fsa so far), presumably by engaging NMDA and GABAB channels better.
+* The `Dend` params specify a `GExp` parameter that applies a fraction of the Exp slope to `VmDend`, and a `GR` param that injects a proportional amount of leak current during the spike reset (`Tr`) window to bring the Vm back down a bit, reflecting the weaker amount of `Kdr` out in the dendrites.  This produces traces that resemble the above figure, as shown in the following run of the `examples/neuron` model, comparing `VmDend` with `Vm`.  Preliminary indications suggest this has a significant benefit on model performance overall (on ra25 and fsa so far), presumably by engaging NMDA and GABAB channels better.
 
 <img src="figs/fig_axon_neuron_vmdend.png" width="800">
 

@@ -24,7 +24,7 @@
     "Layer.Acts.Init.GeBase" = "0.1"
     "Layer.Acts.Kir.Gbar" = "10"
     "Layer.Acts.SKCa.CaRDecayTau" = "80"
-    "Layer.Acts.SKCa.Gbar" = "2"
+    "Layer.Acts.SKCa.Gk" = "2"
     "Layer.Learn.NeuroMod.AChDisInhib" = "0"
 
 [[Base]]

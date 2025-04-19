@@ -33,7 +33,7 @@
   [Base.Params]
     "Layer.Acts.Init.GeBase" = "0.1"
     "Layer.Acts.Kir.Gbar" = "10"
-    "Layer.Acts.SKCa.Gbar" = "2"
+    "Layer.Acts.SKCa.Gk" = "2"
     "Layer.Inhib.Layer.Gi" = "0.5"
     "Layer.Inhib.Layer.On" = "true"
     "Layer.Learn.NeuroMod.AChDisInhib" = "0"
@@ -42,7 +42,7 @@
       Tweak = "-"
     [Base.Hypers."Layer.Acts.Kir.Gbar"]
       Tweak = "-"
-    [Base.Hypers."Layer.Acts.SKCa.Gbar"]
+    [Base.Hypers."Layer.Acts.SKCa.Gk"]
       Tweak = "-"
 
 [[Base]]
@@ -58,7 +58,7 @@
     "Layer.Acts.Decay.OnRew" = "true"
     "Layer.Acts.Dend.ModGain" = "1.0"
     "Layer.Acts.Kir.Gbar" = "0"
-    "Layer.Acts.MaintNMDA.Gbar" = "0.007"
+    "Layer.Acts.MaintNMDA.Ge" = "0.007"
     "Layer.Inhib.ActAvg.Nominal" = "0.3"
     "Layer.Inhib.Layer.Gi" = "2.4"
 

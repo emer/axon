@@ -21,9 +21,9 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Decay.Glong = 0.0
 				ly.Acts.NMDA.MgC = 1.4 // 1.4, 5 > 1.2, 0 ?
 				ly.Acts.NMDA.Voff = 0
-				ly.Acts.NMDA.Gbar = 0.006
-				ly.Acts.GabaB.Gbar = 0.015 // 0.015 def
-				ly.Learn.LearnNMDA.Gbar = 0.006
+				ly.Acts.NMDA.Ge = 0.006
+				ly.Acts.GabaB.Gk = 0.015 // 0.015 def
+				ly.Learn.LearnNMDA.Ge = 0.006
 				ly.Acts.Mahp.Gbar = 0.04  // 0.04 == 0.05+ > 0.02 -- reduces hidden activity
 				ly.Acts.Sahp.Gbar = 0.1   // 0.1 == 0.02 no real diff
 				ly.Acts.Sahp.Off = 0.8    //
@@ -55,10 +55,10 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Dend.SSGi = 0          // 0 > higher -- kills nmda maint!
 				ly.Acts.Decay.Act = 0.0
 				ly.Acts.Decay.Glong = 0.0
-				ly.Acts.GabaB.Gbar = 0.015 // 0.015 standard gaba
-				ly.Acts.NMDA.Gbar = 0.006
+				ly.Acts.GabaB.Gk = 0.015 // 0.015 standard gaba
+				ly.Acts.NMDA.Ge = 0.006
 				ly.Acts.NMDA.Tau = 100
-				ly.Acts.MaintNMDA.Gbar = 0.006 // not relevant -- no CTSelf
+				ly.Acts.MaintNMDA.Ge = 0.006 // not relevant -- no CTSelf
 				ly.Acts.MaintNMDA.Tau = 100
 			}},
 		{Sel: "#DepthHid", Doc: "",
@@ -93,7 +93,7 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.Layer.Gi = 0.9  // 0.9 > 0.8 > 1
 				ly.Pulv.DriveScale = 0.1 // 0.05 > .1
-				ly.Acts.NMDA.Gbar = 0.1
+				ly.Acts.NMDA.Ge = 0.1
 			}},
 		{Sel: "#DepthHid2CT", Doc: "CT NMDA gbar factor is key",
 			Set: func(ly *axon.LayerParams) {
@@ -101,8 +101,8 @@ var LayerParams = axon.LayerSheets{
 				ly.CT.DecayTau = 50            // 50 > 0
 				ly.Inhib.ActAvg.Nominal = 0.12 // 2 even more active -- maybe try higher inhib
 				ly.Inhib.Layer.Gi = 1.4        // todo
-				ly.Acts.GabaB.Gbar = 0.3
-				ly.Acts.NMDA.Gbar = 0.3 // higher layer has more nmda..
+				ly.Acts.GabaB.Gk = 0.3
+				ly.Acts.NMDA.Ge = 0.3   // higher layer has more nmda..
 				ly.Acts.NMDA.Tau = 300  // 300 > 200
 				ly.Acts.Sahp.CaTau = 10 // todo
 			}},

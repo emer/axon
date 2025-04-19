@@ -47,7 +47,7 @@ func (pl *SahpPlot) Config(parent *tensorfs.Node, tabs lab.Tabber) {
 	pl.Tabs = tabs
 
 	pl.Sahp.Defaults()
-	pl.Sahp.Gbar = 1
+	pl.Sahp.Gk = 1
 	pl.CaStart = 0
 	pl.CaEnd = 1.5
 	pl.CaStep = 0.01

@@ -6,7 +6,7 @@ package chans
 
 import "cogentcore.org/lab/gosl/slbool"
 
-//gosl:start chans
+//gosl:start
 
 // KNaParams implements sodium (Na) gated potassium (K) currents
 // that drive adaptation (accommodation) in neural firing.
@@ -15,19 +15,24 @@ import "cogentcore.org/lab/gosl/slbool"
 // potential back down toward rest (or even below).
 type KNaParams struct {
 
-	// if On, use this component of K-Na adaptation
+	// On enables this component of K-Na adaptation.
 	On slbool.Bool
 
-	// Rise rate of fast time-scale adaptation as function of Na concentration due to spiking -- directly multiplies -- 1/rise = tau for rise rate
+	// Rise rate of fast time-scale adaptation as function of Na
+	// concentration due to spiking. Directly multiplies, 1/rise = tau
+	// for rise rate.
 	Rise float32
 
-	// Maximum potential conductance of fast K channels -- divide nA biological value by 10 for the normalized units here
+	// Max is the maximum potential conductance contribution to Gk(t)
+	// (which is then multiplied by Gbar.K that provides pA unit scaling).
 	Max float32
 
-	// time constant in cycles for decay of adaptation, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life)
+	// Tau is the time constant in cycles for decay of adaptation,
+	// in ms (milliseconds) (tau is roughly how long it takes
+	// for value to change significantly -- 1.4x the half-life).
 	Tau float32
 
-	// 1/Tau rate constant
+	// Dt = 1/Tau rate constant.
 	Dt float32 `display:"-"`
 
 	pad, pad1, pad2 int32
@@ -54,7 +59,7 @@ func (ka *KNaParams) ShouldDisplay(field string) bool {
 	}
 }
 
-// GcFromSpike updates the KNa conductance based on spike or not
+// GcFromSpike updates the KNa conductance based on spike or not.
 func (ka *KNaParams) GcFromSpike(gKNa *float32, spike bool) {
 	if ka.On.IsTrue() {
 		if spike {
@@ -115,7 +120,7 @@ func (ka *KNaMedSlow) ShouldDisplay(field string) bool {
 	}
 }
 
-// GcFromSpike updates med, slow time scales of KNa adaptation from spiking
+// GcFromSpike updates med, slow time scales of KNa adaptation from spiking.
 func (ka *KNaMedSlow) GcFromSpike(gKNaM, gKNaS *float32, spike bool) {
 	ka.Med.GcFromSpike(gKNaM, spike)
 	if ka.TrialSlow.IsFalse() {
@@ -123,4 +128,4 @@ func (ka *KNaMedSlow) GcFromSpike(gKNaM, gKNaS *float32, spike bool) {
 	}
 }
 
-//gosl:end chans
+//gosl:end
