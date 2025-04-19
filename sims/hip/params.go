@@ -17,7 +17,7 @@ var LayerParams = axon.LayerSheets{
 				// ly.Inhib.Layer.Gi =       0.2 // weak just to keep it from blowing up
 				// ly.Inhib.Pool.Gi =        1.1
 				// ly.Inhib.Pool.On =        true
-				// ly.Act.Gbar.L =        0.1
+				// ly.Act.Gbar.L =        10
 				ly.Inhib.ActAvg.Nominal = 0.05
 				ly.Inhib.Layer.On.SetBool(false)
 				ly.Inhib.Pool.On.SetBool(true)

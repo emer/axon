@@ -145,7 +145,11 @@ func (pl *VGCCPlot) TimeRun() { //types:add
 		s.Plot.Title = "VGCC G(t)"
 		s.RightY = true
 	})
-	ons := []string{"V", "M", "H"}
+	plot.SetFirstStyler(dir.Float64("V"), func(s *plot.Style) {
+		s.On = true
+		s.RightY = true
+	})
+	ons := []string{"M", "H"}
 	for _, on := range ons {
 		plot.SetFirstStyler(dir.Float64(on), func(s *plot.Style) {
 			s.On = true

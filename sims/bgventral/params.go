@@ -41,7 +41,7 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				// ly.Inhib.Layer.Gi =    3.2 // 3.2 def
 				ly.Acts.Dend.ModGain = 1.5 // 1.5 def
-				ly.Acts.Kir.Gbar = 0       // no real diff here over range 0-10
+				ly.Acts.Kir.Gk = 0         // no real diff here over range 0-10
 				ly.Acts.Dend.ModACh.SetBool(true)
 			}},
 		{Sel: ".ACC", Doc: "manipulate noise to see about integration over time",

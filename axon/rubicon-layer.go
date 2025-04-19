@@ -177,7 +177,7 @@ func (ly *Layer) BLADefaults() {
 		lp.Inhib.Layer.Gi = 2 // acq has more input
 	} else {
 		lp.Inhib.Layer.Gi = 1.8
-		lp.Acts.Gbar.L = 0.25 // needed to not be active at start
+		lp.Acts.Gbar.L = 25 // needed to not be active at start
 	}
 	lp.Inhib.Pool.On.SetBool(true)
 	lp.Inhib.Pool.Gi = 1

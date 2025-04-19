@@ -49,7 +49,7 @@ var layerParams = LayerSheets{
 	"Base": {
 		{Sel: "Layer", Doc: "layer defaults",
 			Set: func(ly *LayerParams) {
-				ly.Acts.Gbar.L = 0.2
+				ly.Acts.Gbar.L = 20
 				ly.Learn.RLRate.On.SetBool(false)
 				ly.Inhib.Layer.FB = 0.5
 			}},
@@ -57,7 +57,7 @@ var layerParams = LayerSheets{
 	"InhibOff": {
 		{Sel: "Layer", Doc: "layer defaults",
 			Set: func(ly *LayerParams) {
-				ly.Acts.Gbar.L = 0.2
+				ly.Acts.Gbar.L = 20
 				ly.Inhib.Layer.On.SetBool(false)
 			}},
 	},
@@ -255,6 +255,8 @@ func TestSpikeProp(t *testing.T) {
 				// fmt.Println("hid recv:", cyc, ge)
 				hidCyc = cyc
 				break
+				//	} else {
+				//		fmt.Println("hid not recv:", cyc, ge)
 			}
 		}
 		if hidCyc-inCyc != del+1 {
@@ -436,7 +438,7 @@ func NetActTest(t *testing.T, tol float32, gpu bool) {
 	qtr0HidGes := []float32{0.35385746, 0, 0, 0}
 	qtr0HidGis := []float32{0.15478331, 0.15478331, 0.15478331, 0.15478331}
 	qtr0OutActs := []float32{0.5638285, 0, 0, 0}
-	qtr0OutGes := []float32{0.38044316, 0, 0, 0}
+	qtr0OutGes := []float32{0.38044354, 0, 0, 0}
 	qtr0OutGis := []float32{0.19012947, 0.19012947, 0.19012947, 0.19012947}
 
 	qtr3HidActs := []float32{0.56933826, 0, 0, 0}
@@ -558,7 +560,7 @@ func NetActTestShort(t *testing.T, tol float32, gpu bool) {
 	qtr0HidGes := []float32{0.7399168, 0, 0, 0}
 	qtr0HidGis := []float32{0.24779803, 0.24779803, 0.24779803, 0.24779803}
 	qtr0OutActs := []float32{0.55272156, 0, 0, 0}
-	qtr0OutGes := []float32{0.4891153, 0, 0, 0}
+	qtr0OutGes := []float32{0.48911548, 0, 0, 0}
 	qtr0OutGis := []float32{0.21460173, 0.21460173, 0.21460173, 0.21460173}
 
 	p1qtr0HidActs := []float32{1.2693764e-08, 0.56647456, 0, 0}

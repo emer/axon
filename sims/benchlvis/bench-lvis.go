@@ -28,7 +28,7 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.08
 				ly.Inhib.Layer.Gi = 1.05
-				ly.Acts.Gbar.L = 0.2
+				ly.Acts.Gbar.L = 20
 			}},
 		{Sel: "#Input", Doc: "",
 			Set: func(ly *axon.LayerParams) {

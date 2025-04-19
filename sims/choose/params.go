@@ -28,7 +28,7 @@ var LayerParams = axon.LayerSheets{
 		{Sel: ".VSTNLayer", Doc: "all VSTN",
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Init.GeBase = 0.1
-				ly.Acts.Kir.Gbar = 10         // 10 > 5  > 2 -- key for pause
+				ly.Acts.Kir.Gk = 10           // 10 > 5  > 2 -- key for pause
 				ly.Acts.SKCa.Gk = 2           // 2 > 5 >> 1 (for Kir = 10)
 				ly.Acts.SKCa.CaRDecayTau = 80 // 80 > 150
 				// ly.Inhib.Layer.On.SetBool(true) // really no inhib neurons here.  all VGPePr
@@ -90,7 +90,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Pool.Gi = 0.5           // go lower, get more inhib from elsewhere?
 				ly.Inhib.Pool.FB = 0
 				ly.Acts.Dend.ModGain = 1 // todo: 2 is default
-				ly.Acts.Kir.Gbar = 2
+				ly.Acts.Kir.Gk = 2
 				ly.Learn.NeuroMod.BurstGain = 1
 				ly.Learn.NeuroMod.DAModGain = 0    // no bias is better!
 				ly.Learn.RLRate.SigmoidMin = 0.001 // 0.01 better than .05

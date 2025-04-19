@@ -91,7 +91,7 @@ func (pl *GABABPlot) GVRun() { //types:add
 	nv := int((pl.Vend - pl.Vstart) / pl.Vstep)
 	for vi := range nv {
 		v := pl.Vstart + float64(vi)*pl.Vstep
-		g := float64(pl.GABAB.Gbar) / (1 + math.Exp(pl.Vgain*((v-pl.Erev)+pl.Voff)))
+		g := float64(pl.GABAB.Gk) / (1 + math.Exp(pl.Vgain*((v-pl.Erev)+pl.Voff)))
 		i := (v - pl.Erev) * g
 
 		dir.Float64("V", nv).SetFloat1D(v, vi)

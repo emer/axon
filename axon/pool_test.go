@@ -16,7 +16,7 @@ var poolLayerParams = LayerSheets{
 	"Base": {
 		{Sel: "Layer", Doc: "layer defaults",
 			Set: func(ly *LayerParams) {
-				ly.Acts.Gbar.L = 0.2
+				ly.Acts.Gbar.L = 20
 				ly.Learn.RLRate.On.SetBool(false)
 				ly.Inhib.Layer.FB = 0.5
 			}},
@@ -36,7 +36,7 @@ var poolLayerParams = LayerSheets{
 	"InhibOff": {
 		{Sel: "Layer", Doc: "layer defaults",
 			Set: func(ly *LayerParams) {
-				ly.Acts.Gbar.L = 0.2
+				ly.Acts.Gbar.L = 20
 				ly.Inhib.Layer.On.SetBool(false)
 			}},
 	},

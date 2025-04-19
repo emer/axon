@@ -17,8 +17,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.ActAvg.Nominal = 0.1
 				ly.Acts.Dt.GeTau = 5
 				ly.Acts.Dt.GiTau = 7
-				ly.Acts.Gbar.I = 1.0
-				ly.Acts.Gbar.L = 0.2
+				ly.Acts.Gbar.I = 100
+				ly.Acts.Gbar.L = 20
 				ly.Acts.Decay.Act = 0.0   // 0.2 def
 				ly.Acts.Decay.Glong = 0.0 // 0.6 def
 				ly.Acts.Noise.On.SetBool(false)
@@ -32,10 +32,10 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.ActAvg.Nominal = 0.5
 				ly.Acts.Spikes.Thr = 0.5
 				ly.Acts.Spikes.Tr = 1    // 3 def
-				ly.Acts.Spikes.VmR = 0.4 // key for firing early, plus noise
-				ly.Acts.Init.Vm = 0.4    // key for firing early, plus noise
-				ly.Acts.Erev.L = 0.4     // more excitable
-				ly.Acts.Gbar.L = 0.2     // smaller, less leaky..
+				ly.Acts.Spikes.VmR = -60 // key for firing early, plus noise
+				ly.Acts.Init.Vm = -60    // key for firing early, plus noise
+				ly.Acts.Erev.L = -60     // more excitable
+				ly.Acts.Gbar.L = 20
 				ly.Acts.KNa.On.SetBool(false)
 				ly.Acts.GabaB.Gk = 0 // no gabab
 				ly.Acts.NMDA.Ge = 0  // no nmda

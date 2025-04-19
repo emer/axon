@@ -40,7 +40,7 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".MatrixLayer", Doc: "all mtx",
 			Set: func(ly *axon.LayerParams) {
-				ly.Acts.Kir.Gbar = 2             // 10 > 5  > 2 -- key for pause
+				ly.Acts.Kir.Gk = 2               // 10 > 5  > 2 -- key for pause
 				ly.Learn.RLRate.On.SetBool(true) // only used for non-rew trials -- key
 				ly.Learn.RLRate.Diff.SetBool(false)
 			}},
@@ -58,7 +58,7 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: "#OFCposPT", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Acts.SMaint.Gbar = 0.4
+				ly.Acts.SMaint.Ge = 0.4
 			}},
 		{Sel: ".PTPredLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {

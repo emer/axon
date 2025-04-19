@@ -27,7 +27,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.SMaint.NNeurons = 10 // higher = more activity
 				ly.Acts.SMaint.ISI.Min = 1   // 1 sig better than 3
 				ly.Acts.SMaint.ISI.Max = 20  // not much effect
-				ly.Acts.SMaint.Gbar = 0.2
+				ly.Acts.SMaint.Ge = 0.2
 				ly.Acts.SMaint.Inhib = 1
 				ly.Inhib.ActAvg.Nominal = 0.1
 				ly.Inhib.Layer.Gi = 0.5

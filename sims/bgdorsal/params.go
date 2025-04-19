@@ -39,7 +39,7 @@ var LayerParams = axon.LayerSheets{
 		{Sel: ".DSTNLayer", Doc: "all STN",
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Init.GeBase = 0.1
-				ly.Acts.Kir.Gbar = 10           // 10 > 5  > 2 -- key for pause
+				ly.Acts.Kir.Gk = 10             // 10 > 5  > 2 -- key for pause
 				ly.Acts.SKCa.Gk = 2             // 2 > 5 >> 1 (for Kir = 10)
 				ly.Acts.SKCa.CaRDecayTau = 150  // 150 > 180 > 200 > 130 >> 80 def -- key param!
 				ly.Inhib.Layer.On.SetBool(true) // actually needs this
@@ -56,7 +56,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.ActAvg.Nominal = 0.3     // 0.3 def -- key but wrong!
 				ly.Acts.Decay.OnRew.SetBool(true) // true def -- seems better?
 				ly.Acts.Dend.ModGain = 1.0        // 1.5 def
-				ly.Acts.Kir.Gbar = 0              // no real diff here over range 0-10
+				ly.Acts.Kir.Gk = 0                // no real diff here over range 0-10
 				ly.Acts.MaintNMDA.Ge = 0.007      // 0.007 default
 			}},
 		{Sel: ".PTPredLayer", Doc: "",

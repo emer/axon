@@ -17,15 +17,15 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.TrgAvgAct.SynScaleRate = 0.005 // 0.005 best
 				ly.Learn.TrgAvgAct.SubMean = 1          // 1 > 0
 				ly.Acts.Dend.SSGi = 2
-				ly.Acts.Gbar.L = 0.2    // std
+				ly.Acts.Gbar.L = 20     // std
 				ly.Acts.Decay.Act = 0.0 // 0 == 0.2
 				ly.Acts.Decay.Glong = 0.0
 				ly.Acts.NMDA.MgC = 1.4 // 1.4, 5 > 1.2, 0 ?
 				ly.Acts.NMDA.Voff = 0
 				ly.Acts.NMDA.Ge = 0.006
 				ly.Acts.GabaB.Gk = 0.015  // 0.015 > 0.012 lower
-				ly.Acts.Mahp.Gbar = 0.04  // 0.04 == 0.05+ > 0.02 -- reduces hidden activity
-				ly.Acts.Sahp.Gbar = 0.1   // 0.1 == 0.02 no real diff
+				ly.Acts.Mahp.Gk = 0.04    // 0.04 == 0.05+ > 0.02 -- reduces hidden activity
+				ly.Acts.Sahp.Gk = 0.1     // 0.1 == 0.02 no real diff
 				ly.Acts.Sahp.Off = 0.8    //
 				ly.Acts.Sahp.Slope = 0.02 //
 				ly.Acts.Sahp.CaTau = 5    // 5 > 10

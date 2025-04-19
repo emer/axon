@@ -35,11 +35,11 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.NMDA.Ge = 0.006   // 0.006 def
 				ly.Acts.NMDA.MgC = 1.4    // mg1, voff0, gbarexp.2, gbarr3 = better
 				ly.Acts.NMDA.Voff = 0     // mg1, voff0 = mg1.4, voff5 w best params
-				ly.Acts.AK.Gbar = 0.1
+				ly.Acts.AK.Gk = 0.1
 				ly.Acts.VGCC.Ge = 0.02                   // non nmda: 0.15 good, 0.3 blows up, nmda: .02 best
 				ly.Acts.VGCC.Ca = 25                     // 25 / 10tau same as SpkVGCC
-				ly.Acts.Mahp.Gbar = 0.01                 // 0.01 > 0.02 > higher -- long run
-				ly.Acts.Sahp.Gbar = 0.05                 // was 0.1, 0.05 def
+				ly.Acts.Mahp.Gk = 0.01                   // 0.01 > 0.02 > higher -- long run
+				ly.Acts.Sahp.Gk = 0.05                   // was 0.1, 0.05 def
 				ly.Acts.Sahp.Off = 0.8                   //
 				ly.Acts.Sahp.Slope = 0.02                //
 				ly.Acts.Sahp.CaTau = 5                   // 5 ok -- not tested

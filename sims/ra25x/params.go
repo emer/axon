@@ -30,13 +30,13 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.NMDA.MgC = 1.2                   // 1.2 > 1.4 here
 				ly.Acts.NMDA.Voff = 0                    // 5 == 0 for trace
 				ly.Acts.NMDA.Tau = 100                   // 100 def -- 50 is sig worse
-				ly.Acts.Mahp.Gbar = 0.02                 // 0.05 works..
-				ly.Acts.Sahp.Gbar = 0.05                 //
+				ly.Acts.Mahp.Gk = 0.02                   // 0.05 works..
+				ly.Acts.Sahp.Gk = 0.05                   //
 				ly.Acts.Sahp.Off = 0.8                   //
 				ly.Acts.Sahp.Slope = 0.02                //
 				ly.Acts.Sahp.CaTau = 5                   //
 				ly.Acts.GabaB.Gk = 0.015                 // 0.015 > lower
-				ly.Acts.AK.Gbar = 0.1                    // 0.05 to 0.1 likely good per urakubo, but 1.0 needed to prevent vgcc blowup
+				ly.Acts.AK.Gk = 0.1                      // 0.05 to 0.1 likely good per urakubo, but 1.0 needed to prevent vgcc blowup
 				ly.Acts.VGCC.Ge = 0.02                   // 0.12 per urakubo / etc models, but produces too much high-burst plateau -- even 0.05 with AK = .1 blows up
 				ly.Acts.VGCC.Ca = 25                     // 25 / 10tau default
 				ly.Learn.CaLearn.Norm = 80               // 80 works
