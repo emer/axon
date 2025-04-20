@@ -5,7 +5,9 @@
 package axon
 
 import (
-	"encoding/json"
+	"reflect"
+
+	"github.com/emer/emergent/v2/params"
 )
 
 //gosl:start
@@ -254,54 +256,35 @@ func (ly *LayerParams) ShouldDisplay(field string) bool {
 
 // AllParams returns a listing of all parameters in the Layer
 func (ly *LayerParams) AllParams() string {
-	str := ""
-	// todo: replace with a custom reflection crawler that generates
-	// the right output directly and filters based on Type etc.
-
-	b, _ := json.MarshalIndent(&ly.Acts, "", " ")
-	str += "Act: {\n " + JsonToParams(b)
-	b, _ = json.MarshalIndent(&ly.Inhib, "", " ")
-	str += "Inhib: {\n " + JsonToParams(b)
-	b, _ = json.MarshalIndent(&ly.Learn, "", " ")
-	str += "Learn: {\n " + JsonToParams(b)
-
-	switch ly.Type {
-	case SuperLayer:
-		b, _ = json.MarshalIndent(&ly.Bursts, "", " ")
-		str += "Burst:   {\n " + JsonToParams(b)
-	case CTLayer, PTPredLayer, BLALayer:
-		b, _ = json.MarshalIndent(&ly.CT, "", " ")
-		str += "CT:      {\n " + JsonToParams(b)
-	case PulvinarLayer:
-		b, _ = json.MarshalIndent(&ly.Pulv, "", " ")
-		str += "Pulv:    {\n " + JsonToParams(b)
-
-	case MatrixLayer, BGThalLayer:
-		b, _ = json.MarshalIndent(&ly.Matrix, "", " ")
-		str += "Matrix:  {\n " + JsonToParams(b)
-	case GPLayer:
-		b, _ = json.MarshalIndent(&ly.GP, "", " ")
-		str += "GP:      {\n " + JsonToParams(b)
-
-	case LDTLayer:
-		b, _ = json.MarshalIndent(&ly.LDT, "", " ")
-		str += "LDT: {\n " + JsonToParams(b)
-	case VTALayer:
-		b, _ = json.MarshalIndent(&ly.VTA, "", " ")
-		str += "VTA: {\n " + JsonToParams(b)
-
-	case RWPredLayer:
-		b, _ = json.MarshalIndent(&ly.RWPred, "", " ")
-		str += "RWPred:  {\n " + JsonToParams(b)
-	case RWDaLayer:
-		b, _ = json.MarshalIndent(&ly.RWDa, "", " ")
-		str += "RWDa:    {\n " + JsonToParams(b)
-	case TDIntegLayer:
-		b, _ = json.MarshalIndent(&ly.TDInteg, "", " ")
-		str += "TDInteg: {\n " + JsonToParams(b)
-	case TDDaLayer:
-		b, _ = json.MarshalIndent(&ly.TDDa, "", " ")
-		str += "TDDa:    {\n " + JsonToParams(b)
-	}
-	return str
+	ltyp := ly.Type
+	return params.PrintStruct(ly, func(path string, ft reflect.StructField, fv any) bool {
+		if ft.Tag.Get("display") == "-" {
+			return false
+		}
+		switch path {
+		case "Bursts":
+			return ltyp == SuperLayer
+		case "CT":
+			return ltyp == CTLayer || ltyp == PTPredLayer || ltyp == BLALayer
+		case "Pulv":
+			return ltyp == PulvinarLayer
+		case "Matrix":
+			return ltyp == MatrixLayer || ltyp == BGThalLayer
+		case "GP":
+			return ltyp == GPLayer
+		case "LDT":
+			return ltyp == LDTLayer
+		case "VTA":
+			return ltyp == VTALayer
+		case "RWPred":
+			return ltyp == RWPredLayer
+		case "RWDa":
+			return ltyp == RWDaLayer
+		case "TDInteg":
+			return ltyp == TDIntegLayer
+		case "TDDa":
+			return ltyp == TDDaLayer
+		}
+		return true
+	}, nil)
 }
