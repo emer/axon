@@ -7,6 +7,7 @@ package axon
 import (
 	"reflect"
 
+	"cogentcore.org/core/base/reflectx"
 	"github.com/emer/emergent/v2/params"
 )
 
@@ -162,7 +163,7 @@ func (ly *LayerParams) HasPoolInhib() bool {
 	return ly.Inhib.Pool.On.IsTrue()
 }
 
-//gosl: end
+//gosl:end
 
 // StyleClass implements the [params.Styler] interface for parameter setting,
 // and must only be called after the network has been built, and is current,
@@ -254,12 +255,25 @@ func (ly *LayerParams) ShouldDisplay(field string) bool {
 	}
 }
 
-// AllParams returns a listing of all parameters in the Layer
-func (ly *LayerParams) AllParams() string {
+// ParamsString returns a listing of all parameters in the Layer and
+// pathways within the layer. If nonDefault is true, only report those
+// not at their default values.
+func (ly *LayerParams) ParamsString(nonDefault bool) string {
 	ltyp := ly.Type
-	return params.PrintStruct(ly, func(path string, ft reflect.StructField, fv any) bool {
+	return params.PrintStruct(ly, 1, func(path string, ft reflect.StructField, fv any) bool {
 		if ft.Tag.Get("display") == "-" {
 			return false
+		}
+		if nonDefault {
+			if def := ft.Tag.Get("default"); def != "" {
+				if reflectx.ValueIsDefault(reflect.ValueOf(fv), def) {
+					return false
+				}
+			} else {
+				if reflectx.NonPointerType(ft.Type).Kind() != reflect.Struct {
+					return false
+				}
+			}
 		}
 		switch path {
 		case "Bursts":
@@ -286,5 +300,13 @@ func (ly *LayerParams) AllParams() string {
 			return ltyp == TDDaLayer
 		}
 		return true
-	}, nil)
+	},
+		func(path string, ft reflect.StructField, fv any) string {
+			if nonDefault {
+				if def := ft.Tag.Get("default"); def != "" {
+					return reflectx.ToString(fv) + " [" + def + "]"
+				}
+			}
+			return ""
+		})
 }

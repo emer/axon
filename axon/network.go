@@ -496,8 +496,8 @@ func (nt *Network) SaveParamsSnapshot(cfg any, good bool) error {
 		log.Println(err) // notify but OK if it exists
 	}
 	tomlx.Save(cfg, filepath.Join(dir, "config.toml"))
-	nt.SaveAllParams(core.Filename(filepath.Join(dir, "params_all.txt")))
-	nt.SaveNonDefaultParams(core.Filename(filepath.Join(dir, "params_nondef.txt")))
+	nt.SaveParams(emer.AllParams, core.Filename(filepath.Join(dir, "params_all.txt")))
+	nt.SaveParams(emer.NonDefault, core.Filename(filepath.Join(dir, "params_nondef.txt")))
 	nt.SaveAllLayerInhibs(core.Filename(filepath.Join(dir, "params_layers.txt")))
 	nt.SaveAllPathScales(core.Filename(filepath.Join(dir, "params_paths.txt")))
 	return nil

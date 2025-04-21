@@ -24,7 +24,7 @@ type VGCCParams struct {
 	Ge float32 `default:"0.02,0.12"`
 
 	// calcium from conductance factor. Important for learning contribution of VGCC.
-	Ca float32 `default:"25"`
+	Ca float32 `default:"0.25"`
 
 	pad, pad1 int32
 }

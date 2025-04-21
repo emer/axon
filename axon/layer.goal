@@ -269,13 +269,17 @@ func (ly *Layer) applyDefaultParams() {
 	}
 }
 
-// AllParams returns a listing of all parameters in the Layer
-func (ly *Layer) AllParams() string {
-	str := "/////////////////////////////////////////////////\nLayer: " + ly.Name + "\n" + ly.Params.AllParams()
+// ParamsString returns a listing of all parameters in the Layer and
+// pathways within the layer. If nonDefault is true, only report those
+// not at their default values.
+func (ly *Layer) ParamsString(nonDefault bool) string {
+	var b strings.Builder
+	b.WriteString("////////  Layer: " + ly.Name + "\n")
+	b.WriteString(ly.Params.ParamsString(nonDefault))
 	for _, pt := range ly.RecvPaths {
-		str += pt.AllParams()
+		b.WriteString(pt.ParamsString(nonDefault))
 	}
-	return str
+	return b.String()
 }
 
 ////////  Build

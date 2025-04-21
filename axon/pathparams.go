@@ -5,8 +5,10 @@
 package axon
 
 import (
-	"encoding/json"
-	"strings"
+	"reflect"
+
+	"cogentcore.org/core/base/reflectx"
+	"github.com/emer/emergent/v2/params"
 )
 
 //gosl:start
@@ -244,30 +246,43 @@ func (pt *PathParams) ShouldDisplay(field string) bool {
 	}
 }
 
-func (pt *PathParams) AllParams() string {
-	str := ""
-	b, _ := json.MarshalIndent(&pt.Com, "", " ")
-	str += "Com: {\n " + JsonToParams(b)
-	b, _ = json.MarshalIndent(&pt.PathScale, "", " ")
-	str += "PathScale: {\n " + JsonToParams(b)
-	b, _ = json.MarshalIndent(&pt.SWts, "", " ")
-	str += "SWt: {\n " + JsonToParams(b)
-	b, _ = json.MarshalIndent(&pt.Learn, "", " ")
-	str += "Learn: {\n " + strings.Replace(JsonToParams(b), " LRate: {", "\n  LRate: {", -1)
-
-	switch pt.Type {
-	case RWPath, TDPredPath:
-		b, _ = json.MarshalIndent(&pt.RLPred, "", " ")
-		str += "RLPred: {\n " + JsonToParams(b)
-	case VSMatrixPath, DSMatrixPath:
-		b, _ = json.MarshalIndent(&pt.Matrix, "", " ")
-		str += "Matrix: {\n " + JsonToParams(b)
-	case BLAPath:
-		b, _ = json.MarshalIndent(&pt.BLA, "", " ")
-		str += "BLA: {\n " + JsonToParams(b)
-	case HipPath:
-		b, _ = json.MarshalIndent(&pt.BLA, "", " ")
-		str += "Hip: {\n " + JsonToParams(b)
-	}
-	return str
+// ParamsString returns a listing of all parameters in the Pathway.
+// If nonDefault is true, only report those not at their default values.
+func (pt *PathParams) ParamsString(nonDefault bool) string {
+	ptyp := pt.Type
+	return params.PrintStruct(pt, 2, func(path string, ft reflect.StructField, fv any) bool {
+		if ft.Tag.Get("display") == "-" {
+			return false
+		}
+		if nonDefault {
+			if def := ft.Tag.Get("default"); def != "" {
+				if reflectx.ValueIsDefault(reflect.ValueOf(fv), def) {
+					return false
+				}
+			} else {
+				if reflectx.NonPointerType(ft.Type).Kind() != reflect.Struct {
+					return false
+				}
+			}
+		}
+		switch path {
+		case "RLPred":
+			return ptyp == RWPath || ptyp == TDPredPath
+		case "Matrix":
+			return ptyp == VSMatrixPath || ptyp == DSMatrixPath
+		case "BLA":
+			return ptyp == BLAPath
+		case "Hip":
+			return ptyp == HipPath
+		}
+		return true
+	},
+		func(path string, ft reflect.StructField, fv any) string {
+			if nonDefault {
+				if def := ft.Tag.Get("default"); def != "" {
+					return reflectx.ToString(fv) + " [" + def + "]"
+				}
+			}
+			return ""
+		})
 }

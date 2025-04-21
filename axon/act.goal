@@ -694,8 +694,9 @@ type PopCodeParams struct {
 	On slbool.Bool
 
 	// Ge multiplier for driving excitatory conductance based on PopCode.
-	// Multiplies normalized activation values.
-	Ge float32 `default:"10"`
+	// Multiplies normalized activation values and adds to total Ge(t)
+	// which is later multiplied by Gbar.E for pA unit scaling.
+	Ge float32 `default:"0.1"`
 
 	// Min is the minimum value representable. For GaussBump, typically include
 	// extra to allow mean with activity on either side to represent

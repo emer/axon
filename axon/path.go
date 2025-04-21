@@ -12,6 +12,7 @@ import (
 	"io"
 	"log"
 	"strconv"
+	"strings"
 
 	"cogentcore.org/core/base/indent"
 	"cogentcore.org/core/math32"
@@ -551,10 +552,14 @@ func (pt *Path) SetWeights(pw *weights.Path) error {
 	return err
 }
 
-// AllParams returns a listing of all parameters in the Layer
-func (pt *Path) AllParams() string {
-	str := "///////////////////////////////////////////////////\nPath: " + pt.Name + "\n" + pt.Params.AllParams()
-	return str
+// ParamsString returns a listing of all parameters in the Layer and
+// pathways within the layer. If nonDefault is true, only report those
+// not at their default values.
+func (pt *Path) ParamsString(nonDefault bool) string {
+	var b strings.Builder
+	b.WriteString("  ////////  Path: " + pt.Name + "\n")
+	b.WriteString(pt.Params.ParamsString(nonDefault))
+	return b.String()
 }
 
 // SetSynVal sets value of given variable name on the synapse
