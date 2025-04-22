@@ -2,14 +2,12 @@
 Layer: Input
 
 Layer: Hidden1
-	          Input	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.19	Rel:  0.77
-	        Hidden2	       BackPath	Abs:	  1.00	Rel:	  0.30	GScale:	  0.04	Rel:  0.23
-								    Rel Params: .BackPath: 0.3
+          Input     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.19	Rel:	  0.77	LRate:	  0.10
+        Hidden2        Back  Abs:	  1.00	Rel:	  0.30	GScale:	  0.04	Rel:	  0.23	LRate:	  0.10
 
 Layer: Hidden2
-	        Hidden1	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.13	Rel:  0.77
-	         Output	       BackPath	Abs:	  1.00	Rel:	  0.30	GScale:	  0.04	Rel:  0.23
-								    Rel Params: .BackPath: 0.3
+        Hidden1     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.13	Rel:	  0.77	LRate:	  0.10
+         Output        Back  Abs:	  1.00	Rel:	  0.30	GScale:	  0.04	Rel:	  0.23	LRate:	  0.10
 
 Layer: Output
-	        Hidden2	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.17	Rel:  1.00
+        Hidden2     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.17	Rel:	  1.00	LRate:	  0.10

@@ -1,10 +1,5 @@
-         Layer0		Nominal:	  0.10	Params: Layer: 0.1
-
-         Layer1		Nominal:	  0.10	Params: Layer: 0.1
-
-         Inhib1		Nominal:	  0.50	Params: .InhibLay: 0.5 | Layer: 0.1
-
-         Layer2		Nominal:	  0.10	Params: Layer: 0.1
-
-         Inhib2		Nominal:	  0.50	Params: .InhibLay: 0.5 | Layer: 0.1
-
+         Layer0	          Input	Nominal:   0.10	Layer.Gi:     1.00
+         Layer1	          Super	Nominal:   0.10	Layer.Gi:     1.00
+         Inhib1	          Super	Nominal:   0.50	Layer.Gi:     1.00
+         Layer2	          Super	Nominal:   0.10	Layer.Gi:     1.00
+         Inhib2	          Super	Nominal:   0.50	Layer.Gi:     1.00

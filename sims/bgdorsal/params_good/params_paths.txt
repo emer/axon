@@ -1,52 +1,42 @@
 
 Layer: DGPi
-	         DGPePr	      InhibPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.01	Rel:  0.50
-	         DMtxGo	      InhibPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:  0.50
-	           DSTN	    ForwardPath	Abs:	  0.20	Rel:	  1.00	GScale:	  0.04	Rel:  1.00
+         DGPePr       Inhib  Abs:	  1.00	Rel:	  1.00	GScale:	  0.01	Rel:	  0.50	LRate:	  0.04
+         DMtxGo       Inhib  Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:	  0.50	LRate:	  0.04
+           DSTN     Forward  Abs:	  0.20	Rel:	  1.00	GScale:	  0.04	Rel:	  1.00	LRate:	  0.04
 
 Layer: DGPePr
-	         DMtxNo	      InhibPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:  0.50
-	         DGPePr	      InhibPath	Abs:	  4.00	Rel:	  1.00	GScale:	  0.01	Rel:  0.50
-	           DSTN	    ForwardPath	Abs:	  0.50	Rel:	  1.00	GScale:	  0.10	Rel:  1.00
+         DMtxNo       Inhib  Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:	  0.50	LRate:	  0.04
+         DGPePr       Inhib  Abs:	  4.00	Rel:	  1.00	GScale:	  0.01	Rel:	  0.50	LRate:	  0.04
+           DSTN     Forward  Abs:	  0.50	Rel:	  1.00	GScale:	  0.10	Rel:	  1.00	LRate:	  0.04
 
 Layer: DGPeAk
-	         DGPePr	      InhibPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.01	Rel:  0.50
-	         DMtxGo	      InhibPath	Abs:	  0.50	Rel:	  1.00	GScale:	  0.02	Rel:  0.50
-	           DSTN	    ForwardPath	Abs:	  0.10	Rel:	  1.00	GScale:	  0.02	Rel:  1.00
+         DGPePr       Inhib  Abs:	  1.00	Rel:	  1.00	GScale:	  0.01	Rel:	  0.50	LRate:	  0.04
+         DMtxGo       Inhib  Abs:	  0.50	Rel:	  1.00	GScale:	  0.02	Rel:	  0.50	LRate:	  0.04
+           DSTN     Forward  Abs:	  0.10	Rel:	  1.00	GScale:	  0.02	Rel:	  1.00	LRate:	  0.04
 
 Layer: DSTN
-	         DGPePr	      InhibPath	Abs:	  0.50	Rel:	  1.00	GScale:	  0.00	Rel:  1.00
-	          State	    ForwardPath	Abs:	  2.00	Rel:	  1.00	GScale:	  0.33	Rel:  0.50
-	             S1	    ForwardPath	Abs:	  2.00	Rel:	  1.00	GScale:	  0.33	Rel:  0.50
+         DGPePr       Inhib  Abs:	  0.50	Rel:	  1.00	GScale:	  0.00	Rel:	  1.00	LRate:	  0.04
+          State     Forward  Abs:	  2.00	Rel:	  1.00	GScale:	  0.33	Rel:	  0.50	LRate:	  0.04
+             S1     Forward  Abs:	  2.00	Rel:	  1.00	GScale:	  0.33	Rel:	  0.50	LRate:	  0.04
 
 Layer: DMtxGo
-	         DMtxNo	      InhibPath	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.09
-								    Rel Params: Base:#DMtxNoToDMtxGo: 0.1
-	         DGPeAk	      InhibPath	Abs:	  3.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.91
-	             PF	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  1.00
-	          State	   DSMatrixPath	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
-								    Abs Params: .DSMatrixPath: 1.8
-	             S1	   DSMatrixPath	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
-								    Abs Params: .DSMatrixPath: 1.8
-	             M1	   DSMatrixPath	Abs:	  1.80	Rel:	  1.00	GScale:	  0.15	Rel:  0.33
-								    Abs Params: .DSMatrixPath: 1.8
+         DMtxNo       Inhib  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.09	LRate:	  0.04
+         DGPeAk       Inhib  Abs:	  3.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.91	LRate:	  0.04
+             PF     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:	  1.00	LRate:	  0.04
+          State    DSMatrix  Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:	  0.33	LRate:	  0.02
+             S1    DSMatrix  Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:	  0.33	LRate:	  0.02
+             M1    DSMatrix  Abs:	  1.80	Rel:	  1.00	GScale:	  0.15	Rel:	  0.33	LRate:	  0.02
 
 Layer: DMtxNo
-	         DGPeAk	      InhibPath	Abs:	  6.00	Rel:	  1.00	GScale:	  0.17	Rel:  1.00
-								    Abs Params: Base:#DGPeAkToDMtxNo: 6
-	             PF	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  1.00
-	          State	   DSMatrixPath	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
-								    Abs Params: .DSMatrixPath: 1.8
-	             S1	   DSMatrixPath	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
-								    Abs Params: .DSMatrixPath: 1.8
-	             M1	   DSMatrixPath	Abs:	  1.80	Rel:	  1.00	GScale:	  0.15	Rel:  0.33
-								    Abs Params: .DSMatrixPath: 1.8
+         DGPeAk       Inhib  Abs:	  6.00	Rel:	  1.00	GScale:	  0.17	Rel:	  1.00	LRate:	  0.04
+             PF     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:	  1.00	LRate:	  0.04
+          State    DSMatrix  Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:	  0.33	LRate:	  0.02
+             S1    DSMatrix  Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:	  0.33	LRate:	  0.02
+             M1    DSMatrix  Abs:	  1.80	Rel:	  1.00	GScale:	  0.15	Rel:	  0.33	LRate:	  0.02
 
 Layer: PF
-	           DGPi	      InhibPath	Abs:	  0.40	Rel:	  1.00	GScale:	  0.01	Rel:  1.00
-								    Abs Params: Base:#DGPiToPF: 0.4
-	        MotorBS	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
-								    Abs Params: Base:#MotorBSToPF: 1
+           DGPi       Inhib  Abs:	  0.40	Rel:	  1.00	GScale:	  0.01	Rel:	  1.00	LRate:	  0.04
+        MotorBS     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:	  1.00	LRate:	  0.04
 
 Layer: SNc
 
@@ -57,51 +47,37 @@ Layer: S1
 Layer: Target
 
 Layer: MotorBS
-	           DGPi	      InhibPath	Abs:	  3.00	Rel:	  1.00	GScale:	  0.08	Rel:  1.00
-								    Abs Params: Base:#DGPiToMotorBS: 3
-	           M1PT	    ForwardPath	Abs:	  2.00	Rel:	  1.00	GScale:	  0.09	Rel:  0.50
-								    Abs Params: #M1PTToMotorBS: 2 | Base:.M1ToMotorBS: 2
-								    Rel Params: #M1PTToMotorBS: 1
-	             M1	    ForwardPath	Abs:	  1.50	Rel:	  1.00	GScale:	  0.19	Rel:  0.50
-								    Abs Params: #M1ToMotorBS: 1.5 | Base:.M1ToMotorBS: 2
+           DGPi       Inhib  Abs:	  3.00	Rel:	  1.00	GScale:	  0.08	Rel:	  1.00	LRate:	  0.04
+           M1PT     Forward  Abs:	  2.00	Rel:	  1.00	GScale:	  0.09	Rel:	  0.50	LRate:	  0.02
+             M1     Forward  Abs:	  1.50	Rel:	  1.00	GScale:	  0.19	Rel:	  0.50	LRate:	  0.02
 
 Layer: VL
-	           M1CT	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.32
-	           M1PT	    ForwardPath	Abs:	  1.00	Rel:	  0.10	GScale:	  0.00	Rel:  0.03
-								    Abs Params: Base:#M1PTToVL: 1
-								    Rel Params: #M1PTToVL: 0.1
-	          M1PTp	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.32
-	             M1	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.32
+           M1CT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.32	LRate:	  0.02
+           M1PT     Forward  Abs:	  1.00	Rel:	  0.10	GScale:	  0.00	Rel:	  0.03	LRate:	  0.02
+          M1PTp     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.32	LRate:	  0.02
+             M1     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.32	LRate:	  0.02
 
 Layer: M1
-	             VL	       BackPath	Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.05
-	          State	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.16	Rel:  0.48
-								    Abs Params: #StateToM1: 1 | Base:.ToM1: 1.5
-	             S1	    ForwardPath	Abs:	  1.50	Rel:	  1.00	GScale:	  0.24	Rel:  0.48
-								    Abs Params: Base:.ToM1: 1.5
+             VL        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.05	LRate:	  0.02
+          State     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.16	Rel:	  0.48	LRate:	  0.04
+             S1     Forward  Abs:	  1.50	Rel:	  1.00	GScale:	  0.24	Rel:	  0.48	LRate:	  0.04
 
 Layer: M1CT
-	             M1	     CTCtxtPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.48	Rel:  0.48
-	           M1PT	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.48
-	             VL	       BackPath	Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.05
+             M1      CTCtxt  Abs:	  1.00	Rel:	  1.00	GScale:	  0.48	Rel:	  0.48	LRate:	  0.04
+           M1PT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:	  0.48	LRate:	  0.04
+             VL        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.05	LRate:	  0.02
 
 Layer: M1PT
-	           M1VM	       BackPath	Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
-	             M1	    ForwardPath	Abs:	  0.50	Rel:	  1.00	GScale:	  0.50	Rel:  1.00
-								    Abs Params: Base:.SuperToPT: 0.5
-	           M1PT	    LateralPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.09	Rel:  1.00
-								    Abs Params: Base:.PTSelfMaint: 1
+           M1VM        Back  Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:	  1.00	LRate:	  0.04
+             M1     Forward  Abs:	  0.50	Rel:	  1.00	GScale:	  0.50	Rel:	  1.00	LRate:	  0.04
+           M1PT     Lateral  Abs:	  1.00	Rel:	  1.00	GScale:	  0.09	Rel:	  1.00	LRate:	  0.00
 
 Layer: M1VM
-	           M1PT	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  0.50
-	             M1	    ForwardPath	Abs:	  3.00	Rel:	  1.00	GScale:	  1.50	Rel:  0.50
-								    Abs Params: Base:.SuperToThal: 3.0
-	           DGPi	      InhibPath	Abs:	  2.00	Rel:	  1.00	GScale:	  0.01	Rel:  1.00
-								    Abs Params: Base:#DGPiToM1VM: 2
+           M1PT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:	  0.50	LRate:	  0.04
+             M1     Forward  Abs:	  3.00	Rel:	  1.00	GScale:	  1.50	Rel:	  0.50	LRate:	  0.04
+           DGPi       Inhib  Abs:	  2.00	Rel:	  1.00	GScale:	  0.01	Rel:	  1.00	LRate:	  0.04
 
 Layer: M1PTp
-	           M1PT	     CTCtxtPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.48
-								    Abs Params: Base:.PTtoPred: 1
-	           M1CT	    ForwardPath	Abs:	  2.00	Rel:	  1.00	GScale:	  0.24	Rel:  0.48
-								    Abs Params: Base:.CTtoPred: 2
-	             VL	       BackPath	Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.05
+           M1PT      CTCtxt  Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:	  0.48	LRate:	  0.04
+           M1CT     Forward  Abs:	  2.00	Rel:	  1.00	GScale:	  0.24	Rel:	  0.48	LRate:	  0.04
+             VL        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.05	LRate:	  0.02

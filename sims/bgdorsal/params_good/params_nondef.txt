@@ -1,176 +1,359 @@
-DGPi.Acts.Init.GeBase: 0.3 // (Default: 0)<br>
-DGPi.Acts.Init.GeVar: 0.1 // (Default: 0)<br>
-DGPi.Acts.Init.GiVar: 0.1 // (Default: 0)<br>
-DGPi.Acts.Decay.Glong: 1 // (Default: 0,0.6)<br>
-DGPi.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
-DGPi.DGPePrToDGPi.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
-DGPi.DGPePrToDGPi.SWts.Init.Sym: false // (Default: true)<br>
-DGPi.DGPePrToDGPi.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
-DGPi.DMtxGoToDGPi.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
-DGPi.DMtxGoToDGPi.SWts.Init.Sym: false // (Default: true)<br>
-DGPi.DMtxGoToDGPi.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
-DGPi.DSTNToDGPi.PathScale.Abs: 0.2 // (Default: 1)<br>
-DGPi.DSTNToDGPi.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
-DGPi.DSTNToDGPi.SWts.Init.Sym: false // (Default: true)<br>
-DGPi.DSTNToDGPi.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
-DGPePr.Acts.Init.GeBase: 0.4 // (Default: 0)<br>
-DGPePr.Acts.Init.GeVar: 0.2 // (Default: 0)<br>
-DGPePr.Acts.Init.GiVar: 0.1 // (Default: 0)<br>
-DGPePr.Acts.Decay.Glong: 1 // (Default: 0,0.6)<br>
-DGPePr.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
-DGPePr.DMtxNoToDGPePr.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
-DGPePr.DMtxNoToDGPePr.SWts.Init.Sym: false // (Default: true)<br>
-DGPePr.DMtxNoToDGPePr.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
-DGPePr.DGPePrToDGPePr.PathScale.Abs: 4 // (Default: 1)<br>
-DGPePr.DGPePrToDGPePr.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
-DGPePr.DGPePrToDGPePr.SWts.Init.Sym: false // (Default: true)<br>
-DGPePr.DGPePrToDGPePr.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
-DGPePr.DSTNToDGPePr.PathScale.Abs: 0.5 // (Default: 1)<br>
-DGPePr.DSTNToDGPePr.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
-DGPePr.DSTNToDGPePr.SWts.Init.Sym: false // (Default: true)<br>
-DGPePr.DSTNToDGPePr.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
-DGPeAk.Acts.Init.GeBase: 0.2 // (Default: 0)<br>
-DGPeAk.Acts.Init.GeVar: 0.1 // (Default: 0)<br>
-DGPeAk.Acts.Init.GiVar: 0.1 // (Default: 0)<br>
-DGPeAk.Acts.Decay.Glong: 1 // (Default: 0,0.6)<br>
-DGPeAk.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
-DGPeAk.DGPePrToDGPeAk.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
-DGPeAk.DGPePrToDGPeAk.SWts.Init.Sym: false // (Default: true)<br>
-DGPeAk.DGPePrToDGPeAk.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
-DGPeAk.DMtxGoToDGPeAk.PathScale.Abs: 0.5 // (Default: 1)<br>
-DGPeAk.DMtxGoToDGPeAk.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
-DGPeAk.DMtxGoToDGPeAk.SWts.Init.Sym: false // (Default: true)<br>
-DGPeAk.DMtxGoToDGPeAk.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
-DGPeAk.DSTNToDGPeAk.PathScale.Abs: 0.1 // (Default: 1)<br>
-DGPeAk.DSTNToDGPeAk.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
-DGPeAk.DSTNToDGPeAk.SWts.Init.Sym: false // (Default: true)<br>
-DGPeAk.DSTNToDGPeAk.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
-DSTN.Acts.Init.GeBase: 0.1 // (Default: 0)<br>
-DSTN.Acts.Init.GeVar: 0.1 // (Default: 0)<br>
-DSTN.Acts.Init.GiVar: 0.1 // (Default: 0)<br>
-DSTN.Acts.Decay.LearnCa: 1 // (Default: 0)<br>
-DSTN.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
-DSTN.Acts.Kir.Gbar: 10 // (Default: 0,0.012,0.015)<br>
-DSTN.Acts.SKCa.CaRDecayTau: 80 // (Default: 150,200)<br>
-DSTN.Inhib.Layer.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
-DSTN.Inhib.Layer.FB: 0 // (Default: 0.5,1,4)<br>
-DSTN.Inhib.Pool.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
-DSTN.Inhib.Pool.FB: 0 // (Default: 0.5,1,4)<br>
-DSTN.DGPePrToDSTN.PathScale.Abs: 0.5 // (Default: 1)<br>
-DSTN.DGPePrToDSTN.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
-DSTN.DGPePrToDSTN.SWts.Init.Sym: false // (Default: true)<br>
-DSTN.DGPePrToDSTN.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
-DSTN.StateToDSTN.PathScale.Abs: 2 // (Default: 1)<br>
-DSTN.StateToDSTN.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
-DSTN.StateToDSTN.SWts.Init.Sym: false // (Default: true)<br>
-DSTN.StateToDSTN.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
-DSTN.S1ToDSTN.PathScale.Abs: 2 // (Default: 1)<br>
-DSTN.S1ToDSTN.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
-DSTN.S1ToDSTN.SWts.Init.Sym: false // (Default: true)<br>
-DSTN.S1ToDSTN.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
-DMtxGo.Acts.Decay.Glong: 1 // (Default: 0,0.6)<br>
-DMtxGo.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
-DMtxGo.Acts.Kir.Gbar: 10 // (Default: 0,0.012,0.015)<br>
-DMtxGo.Inhib.Layer.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
-DMtxGo.Inhib.Layer.FB: 0 // (Default: 0.5,1,4)<br>
-DMtxGo.Inhib.Pool.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
-DMtxGo.Inhib.Pool.FB: 0 // (Default: 0.5,1,4)<br>
-DMtxGo.Learn.RLRate.SigmoidMin: 0.001 // (Default: 0.05,1)<br>
-DMtxGo.Learn.NeuroMod.BurstGain: 0.1 // (Default: 1)<br>
-DMtxGo.DGPeAkToDMtxGo.PathScale.Abs: 3 // (Default: 1)<br>
-DMtxGo.DGPeAkToDMtxGo.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
-DMtxGo.DGPeAkToDMtxGo.SWts.Init.Var: 0 // (Default: 0.25)<br>
-DMtxGo.DGPeAkToDMtxGo.SWts.Init.Sym: false // (Default: true)<br>
-DMtxGo.DGPeAkToDMtxGo.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
-DMtxGo.StateToDMtxGo.PathScale.Abs: 1.8 // (Default: 1)<br>
-DMtxGo.StateToDMtxGo.SWts.Init.Var: 0.4 // (Default: 0.25)<br>
-DMtxGo.StateToDMtxGo.SWts.Init.Sym: false // (Default: true)<br>
-DMtxGo.StateToDMtxGo.Learn.LRate.Base: 0.02 // (Default: 0.04,0.1,0.2)<br>
-DMtxGo.S1ToDMtxGo.PathScale.Abs: 1.8 // (Default: 1)<br>
-DMtxGo.S1ToDMtxGo.SWts.Init.Var: 0.4 // (Default: 0.25)<br>
-DMtxGo.S1ToDMtxGo.SWts.Init.Sym: false // (Default: true)<br>
-DMtxGo.S1ToDMtxGo.Learn.LRate.Base: 0.02 // (Default: 0.04,0.1,0.2)<br>
-DMtxGo.M1ToDMtxGo.PathScale.Abs: 1.8 // (Default: 1)<br>
-DMtxGo.M1ToDMtxGo.SWts.Init.Var: 0.4 // (Default: 0.25)<br>
-DMtxGo.M1ToDMtxGo.SWts.Init.Sym: false // (Default: true)<br>
-DMtxGo.M1ToDMtxGo.Learn.LRate.Base: 0.02 // (Default: 0.04,0.1,0.2)<br>
-DMtxNo.Acts.Decay.Glong: 1 // (Default: 0,0.6)<br>
-DMtxNo.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
-DMtxNo.Acts.Kir.Gbar: 10 // (Default: 0,0.012,0.015)<br>
-DMtxNo.Inhib.Layer.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
-DMtxNo.Inhib.Layer.FB: 0 // (Default: 0.5,1,4)<br>
-DMtxNo.Inhib.Pool.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
-DMtxNo.Inhib.Pool.FB: 0 // (Default: 0.5,1,4)<br>
-DMtxNo.Learn.RLRate.SigmoidMin: 0.001 // (Default: 0.05,1)<br>
-DMtxNo.Learn.NeuroMod.BurstGain: 0.1 // (Default: 1)<br>
-DMtxNo.DGPeAkToDMtxNo.PathScale.Abs: 6 // (Default: 1)<br>
-DMtxNo.DGPeAkToDMtxNo.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
-DMtxNo.DGPeAkToDMtxNo.SWts.Init.Var: 0 // (Default: 0.25)<br>
-DMtxNo.DGPeAkToDMtxNo.SWts.Init.Sym: false // (Default: true)<br>
-DMtxNo.DGPeAkToDMtxNo.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
-DMtxNo.StateToDMtxNo.PathScale.Abs: 1.8 // (Default: 1)<br>
-DMtxNo.StateToDMtxNo.SWts.Init.Var: 0.4 // (Default: 0.25)<br>
-DMtxNo.StateToDMtxNo.SWts.Init.Sym: false // (Default: true)<br>
-DMtxNo.StateToDMtxNo.Learn.LRate.Base: 0.02 // (Default: 0.04,0.1,0.2)<br>
-DMtxNo.S1ToDMtxNo.PathScale.Abs: 1.8 // (Default: 1)<br>
-DMtxNo.S1ToDMtxNo.SWts.Init.Var: 0.4 // (Default: 0.25)<br>
-DMtxNo.S1ToDMtxNo.SWts.Init.Sym: false // (Default: true)<br>
-DMtxNo.S1ToDMtxNo.Learn.LRate.Base: 0.02 // (Default: 0.04,0.1,0.2)<br>
-DMtxNo.M1ToDMtxNo.PathScale.Abs: 1.8 // (Default: 1)<br>
-DMtxNo.M1ToDMtxNo.SWts.Init.Var: 0.4 // (Default: 0.25)<br>
-DMtxNo.M1ToDMtxNo.SWts.Init.Sym: false // (Default: true)<br>
-DMtxNo.M1ToDMtxNo.Learn.LRate.Base: 0.02 // (Default: 0.04,0.1,0.2)<br>
-PF.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
-PF.DGPiToPF.PathScale.Abs: 0.4 // (Default: 1)<br>
-SNc.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
-State.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
-S1.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
-Target.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
-MotorBS.Acts.Clamp.Ge: 2 // (Default: 0.8,1.5)<br>
-MotorBS.Inhib.Layer.Gi: 0.2 // (Default: 1,1.1,0.75,0.9)<br>
-MotorBS.DGPiToMotorBS.PathScale.Abs: 3 // (Default: 1)<br>
-MotorBS.M1PTToMotorBS.PathScale.Abs: 2 // (Default: 1)<br>
-MotorBS.M1ToMotorBS.PathScale.Abs: 1.5 // (Default: 1)<br>
-VL.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
-M1.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
-M1.S1ToM1.PathScale.Abs: 1.5 // (Default: 1)<br>
-M1CT.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
-M1CT.Acts.Sahp.Gbar: 1 // (Default: 0.05,0.1)<br>
-M1CT.Acts.NMDA.Gbar: 0.008 // (Default: 0,0.006,0.007)<br>
-M1CT.Acts.GabaB.Gbar: 0.009 // (Default: 0,0.012,0.015)<br>
-M1CT.Inhib.Layer.Gi: 1.4 // (Default: 1,1.1,0.75,0.9)<br>
-M1CT.Inhib.Pool.Gi: 2.2 // (Default: 1,1.1,0.75,0.9)<br>
-M1CT.CT.GeGain: 5 // (Default: 0.05,0.1,1,2)<br>
-M1PT.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
-M1PT.Acts.Sahp.Gbar: 0.01 // (Default: 0.05,0.1)<br>
-M1PT.Acts.GabaB.Gbar: 0.01 // (Default: 0,0.012,0.015)<br>
-M1PT.Inhib.Layer.Gi: 2.4 // (Default: 1,1.1,0.75,0.9)<br>
-M1PT.Inhib.Pool.Gi: 2.4 // (Default: 1,1.1,0.75,0.9)<br>
-M1PT.M1VMToM1PT.SWts.Init.Mean: 0.8 // (Default: 0.5,0.4)<br>
-M1PT.M1VMToM1PT.SWts.Init.Var: 0 // (Default: 0.25)<br>
-M1PT.M1ToM1PT.PathScale.Abs: 0.5 // (Default: 1)<br>
-M1PT.M1ToM1PT.SWts.Init.Mean: 0.8 // (Default: 0.5,0.4)<br>
-M1PT.M1ToM1PT.SWts.Init.Var: 0 // (Default: 0.25)<br>
-M1PT.M1PTToM1PT.SWts.Init.Var: 0.5 // (Default: 0.25)<br>
-M1PT.M1PTToM1PT.Learn.LRate.Base: 0.0001 // (Default: 0.04,0.1,0.2)<br>
-M1VM.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
-M1VM.Inhib.Layer.Gi: 0.6 // (Default: 1,1.1,0.75,0.9)<br>
-M1VM.Inhib.Pool.Gi: 0.6 // (Default: 1,1.1,0.75,0.9)<br>
-M1VM.M1PTToM1VM.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
-M1VM.M1PTToM1VM.SWts.Init.Var: 0 // (Default: 0.25)<br>
-M1VM.M1PTToM1VM.SWts.Init.Sym: false // (Default: true)<br>
-M1VM.M1PTToM1VM.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
-M1VM.M1ToM1VM.PathScale.Abs: 3 // (Default: 1)<br>
-M1VM.M1ToM1VM.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
-M1VM.M1ToM1VM.SWts.Init.Var: 0 // (Default: 0.25)<br>
-M1VM.M1ToM1VM.SWts.Init.Sym: false // (Default: true)<br>
-M1VM.M1ToM1VM.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
-M1VM.DGPiToM1VM.PathScale.Abs: 2 // (Default: 1)<br>
-M1VM.DGPiToM1VM.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
-M1VM.DGPiToM1VM.SWts.Init.Var: 0 // (Default: 0.25)<br>
-M1VM.DGPiToM1VM.SWts.Init.Sym: false // (Default: true)<br>
-M1VM.DGPiToM1VM.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
-M1PTp.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
-M1PTp.Inhib.Layer.Gi: 0.8 // (Default: 1,1.1,0.75,0.9)<br>
-M1PTp.Inhib.Pool.Gi: 0.8 // (Default: 1,1.1,0.75,0.9)<br>
-M1PTp.M1CTToM1PTp.PathScale.Abs: 2 // (Default: 1)<br>
+////////  Layer: DGPi
+  Acts     {
+    Init      { GeBase: 0.3 [0], GeVar: 0.1 [0], GiVar: 0.1 [0] }
+    Decay     { Glong: 1 [0,0.6] }
+    Clamp     { Ge: 1 [0.8,1.5] }
+  }
+  ////////  Path: DGPePrToDGPi
+    SWts      {
+      Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
+      Adapt { SigGain: 1 [6] }
+    }
+  ////////  Path: DMtxGoToDGPi
+    SWts      {
+      Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
+      Adapt { SigGain: 1 [6] }
+    }
+  ////////  Path: DSTNToDGPi
+    PathScale { Abs: 0.2 [1] }
+    SWts      {
+      Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
+      Adapt { SigGain: 1 [6] }
+    }
+////////  Layer: DGPePr
+  Acts     {
+    Init      { GeBase: 0.4 [0], GeVar: 0.2 [0], GiVar: 0.1 [0] }
+    Decay     { Glong: 1 [0,0.6] }
+    Clamp     { Ge: 1 [0.8,1.5] }
+  }
+  ////////  Path: DMtxNoToDGPePr
+    SWts      {
+      Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
+      Adapt { SigGain: 1 [6] }
+    }
+  ////////  Path: DGPePrToDGPePr
+    PathScale { Abs: 4 [1] }
+    SWts      {
+      Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
+      Adapt { SigGain: 1 [6] }
+    }
+  ////////  Path: DSTNToDGPePr
+    PathScale { Abs: 0.5 [1] }
+    SWts      {
+      Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
+      Adapt { SigGain: 1 [6] }
+    }
+////////  Layer: DGPeAk
+  Acts     {
+    Init      { GeBase: 0.2 [0], GeVar: 0.1 [0], GiVar: 0.1 [0] }
+    Decay     { Glong: 1 [0,0.6] }
+    Clamp     { Ge: 1 [0.8,1.5] }
+  }
+  ////////  Path: DGPePrToDGPeAk
+    SWts      {
+      Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
+      Adapt { SigGain: 1 [6] }
+    }
+  ////////  Path: DMtxGoToDGPeAk
+    PathScale { Abs: 0.5 [1] }
+    SWts      {
+      Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
+      Adapt { SigGain: 1 [6] }
+    }
+  ////////  Path: DSTNToDGPeAk
+    PathScale { Abs: 0.1 [1] }
+    SWts      {
+      Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
+      Adapt { SigGain: 1 [6] }
+    }
+////////  Layer: DSTN
+  Acts     {
+    Init      { GeBase: 0.1 [0], GeVar: 0.1 [0], GiVar: 0.1 [0] }
+    Decay     { LearnCa: 1 [0] }
+    Clamp     { Ge: 1 [0.8,1.5] }
+    Kir       { Gk: 10 [0.012,0.015,0] }
+  }
+  Inhib    {
+    Layer  { Gi: 0.5 [1,1.1,0.75,0.9], FB: 0 [0.5,1,4] }
+    Pool   { Gi: 0.5 [1,1.1,0.75,0.9], FB: 0 [0.5,1,4] }
+  }
+  ////////  Path: DGPePrToDSTN
+    PathScale { Abs: 0.5 [1] }
+    SWts      {
+      Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
+      Adapt { SigGain: 1 [6] }
+    }
+  ////////  Path: StateToDSTN
+    PathScale { Abs: 2 [1] }
+    SWts      {
+      Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
+      Adapt { SigGain: 1 [6] }
+    }
+  ////////  Path: S1ToDSTN
+    PathScale { Abs: 2 [1] }
+    SWts      {
+      Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
+      Adapt { SigGain: 1 [6] }
+    }
+////////  Layer: DMtxGo
+  Acts     {
+    Decay     { Glong: 1 [0,0.6] }
+    Clamp     { Ge: 1 [0.8,1.5] }
+    Kir       { Gk: 10 [0.012,0.015,0] }
+  }
+  Inhib    {
+    Layer  { Gi: 0.5 [1,1.1,0.75,0.9], FB: 0 [0.5,1,4] }
+    Pool   { Gi: 0.5 [1,1.1,0.75,0.9], FB: 0 [0.5,1,4] }
+  }
+  Learn    {
+    RLRate    { SigmoidMin: 0.001 [0.05,1] }
+    NeuroMod  { BurstGain: 0.1 [1] }
+  }
+  ////////  Path: DMtxNoToDMtxGo
+  ////////  Path: DGPeAkToDMtxGo
+    PathScale { Abs: 3 [1] }
+    SWts      {
+      Init  { Mean: 0.75 [0.5,0.4], Var: 0 [0.25], Sym: false [true] }
+      Adapt { SigGain: 1 [6] }
+    }
+  ////////  Path: PFToDMtxGo
+  ////////  Path: StateToDMtxGo
+    PathScale { Abs: 1.8 [1] }
+    SWts      {
+      Init  { Var: 0.4 [0.25], Sym: false [true] }
+    }
+    Learn     {
+      LRate { Base: 0.02 [0.04,0.1,0.2] }
+    }
+  ////////  Path: S1ToDMtxGo
+    PathScale { Abs: 1.8 [1] }
+    SWts      {
+      Init  { Var: 0.4 [0.25], Sym: false [true] }
+    }
+    Learn     {
+      LRate { Base: 0.02 [0.04,0.1,0.2] }
+    }
+  ////////  Path: M1ToDMtxGo
+    PathScale { Abs: 1.8 [1] }
+    SWts      {
+      Init  { Var: 0.4 [0.25], Sym: false [true] }
+    }
+    Learn     {
+      LRate { Base: 0.02 [0.04,0.1,0.2] }
+    }
+////////  Layer: DMtxNo
+  Acts     {
+    Decay     { Glong: 1 [0,0.6] }
+    Clamp     { Ge: 1 [0.8,1.5] }
+    Kir       { Gk: 10 [0.012,0.015,0] }
+  }
+  Inhib    {
+    Layer  { Gi: 0.5 [1,1.1,0.75,0.9], FB: 0 [0.5,1,4] }
+    Pool   { Gi: 0.5 [1,1.1,0.75,0.9], FB: 0 [0.5,1,4] }
+  }
+  Learn    {
+    RLRate    { SigmoidMin: 0.001 [0.05,1] }
+    NeuroMod  { BurstGain: 0.1 [1] }
+  }
+  ////////  Path: DGPeAkToDMtxNo
+    PathScale { Abs: 6 [1] }
+    SWts      {
+      Init  { Mean: 0.75 [0.5,0.4], Var: 0 [0.25], Sym: false [true] }
+      Adapt { SigGain: 1 [6] }
+    }
+  ////////  Path: PFToDMtxNo
+  ////////  Path: StateToDMtxNo
+    PathScale { Abs: 1.8 [1] }
+    SWts      {
+      Init  { Var: 0.4 [0.25], Sym: false [true] }
+    }
+    Learn     {
+      LRate { Base: 0.02 [0.04,0.1,0.2] }
+    }
+  ////////  Path: S1ToDMtxNo
+    PathScale { Abs: 1.8 [1] }
+    SWts      {
+      Init  { Var: 0.4 [0.25], Sym: false [true] }
+    }
+    Learn     {
+      LRate { Base: 0.02 [0.04,0.1,0.2] }
+    }
+  ////////  Path: M1ToDMtxNo
+    PathScale { Abs: 1.8 [1] }
+    SWts      {
+      Init  { Var: 0.4 [0.25], Sym: false [true] }
+    }
+    Learn     {
+      LRate { Base: 0.02 [0.04,0.1,0.2] }
+    }
+////////  Layer: PF
+  Acts     {
+    Clamp     { Ge: 1 [0.8,1.5] }
+  }
+  ////////  Path: DGPiToPF
+    PathScale { Abs: 0.4 [1] }
+  ////////  Path: MotorBSToPF
+////////  Layer: SNc
+  Acts     {
+    Clamp     { Ge: 1 [0.8,1.5] }
+  }
+////////  Layer: State
+  Acts     {
+    Clamp     { Ge: 1 [0.8,1.5] }
+  }
+////////  Layer: S1
+  Acts     {
+    Clamp     { Ge: 1 [0.8,1.5] }
+  }
+////////  Layer: Target
+  Acts     {
+    Clamp     { Ge: 1 [0.8,1.5] }
+  }
+////////  Layer: MotorBS
+  Acts     {
+    Clamp     { Ge: 2 [0.8,1.5] }
+  }
+  Inhib    {
+    Layer  { Gi: 0.2 [1,1.1,0.75,0.9] }
+  }
+  ////////  Path: DGPiToMotorBS
+    PathScale { Abs: 3 [1] }
+  ////////  Path: M1PTToMotorBS
+    PathScale { Abs: 2 [1] }
+    Learn     {
+      LRate { Base: 0.02 [0.04,0.1,0.2] }
+    }
+  ////////  Path: M1ToMotorBS
+    PathScale { Abs: 1.5 [1] }
+    Learn     {
+      LRate { Base: 0.02 [0.04,0.1,0.2] }
+    }
+////////  Layer: VL
+  Acts     {
+    Clamp     { Ge: 1 [0.8,1.5] }
+  }
+  ////////  Path: M1CTToVL
+    Learn     {
+      LRate { Base: 0.02 [0.04,0.1,0.2] }
+    }
+  ////////  Path: M1PTToVL
+    Learn     {
+      LRate { Base: 0.02 [0.04,0.1,0.2] }
+    }
+  ////////  Path: M1PTpToVL
+    Learn     {
+      LRate { Base: 0.02 [0.04,0.1,0.2] }
+    }
+  ////////  Path: M1ToVL
+    Learn     {
+      LRate { Base: 0.02 [0.04,0.1,0.2] }
+    }
+////////  Layer: M1
+  Acts     {
+    Clamp     { Ge: 1 [0.8,1.5] }
+  }
+  Learn    {
+    NeuroMod  { DipGain: 0 [1] }
+  }
+  ////////  Path: VLToM1
+    Learn     {
+      LRate { Base: 0.02 [0.04,0.1,0.2] }
+    }
+  ////////  Path: StateToM1
+  ////////  Path: S1ToM1
+    PathScale { Abs: 1.5 [1] }
+////////  Layer: M1CT
+  Acts     {
+    Clamp     { Ge: 1 [0.8,1.5] }
+    Sahp      { Gk: 1 [0.05,0.1] }
+    NMDA      { Ge: 0.008 [0.006,0.007,0] }
+    GabaB     { Gk: 0.009 [0.015,0.012,0] }
+  }
+  Inhib    {
+    Layer  { Gi: 1.4 [1,1.1,0.75,0.9] }
+    Pool   { Gi: 2.2 [1,1.1,0.75,0.9] }
+  }
+  Learn    {
+    NeuroMod  { DipGain: 0 [1] }
+  }
+  CT       { GeGain: 5 [0.05,0.1,1,2], DecayTau: 100 [0,50,70] }
+  ////////  Path: M1ToM1CT
+  ////////  Path: M1PTToM1CT
+  ////////  Path: VLToM1CT
+    Learn     {
+      LRate { Base: 0.02 [0.04,0.1,0.2] }
+    }
+////////  Layer: M1PT
+  Acts     {
+    Clamp     { Ge: 1 [0.8,1.5] }
+    Sahp      { Gk: 0.01 [0.05,0.1] }
+    GabaB     { Gk: 0.01 [0.015,0.012,0] }
+  }
+  Inhib    {
+    Layer  { Gi: 2.4 [1,1.1,0.75,0.9] }
+    Pool   { Gi: 2.4 [1,1.1,0.75,0.9] }
+  }
+  Learn    {
+    TrgAvgAct { RescaleOn: false [true] }
+    NeuroMod  { DipGain: 0 [1] }
+  }
+  ////////  Path: M1VMToM1PT
+    SWts      {
+      Init  { Mean: 0.8 [0.5,0.4], Var: 0 [0.25] }
+    }
+  ////////  Path: M1ToM1PT
+    PathScale { Abs: 0.5 [1] }
+    SWts      {
+      Init  { Mean: 0.8 [0.5,0.4], Var: 0 [0.25] }
+    }
+  ////////  Path: M1PTToM1PT
+    SWts      {
+      Init  { Var: 0.5 [0.25] }
+    }
+    Learn     {
+      LRate { Base: 0.0001 [0.04,0.1,0.2] }
+    }
+////////  Layer: M1VM
+  Acts     {
+    Clamp     { Ge: 1 [0.8,1.5] }
+  }
+  Inhib    {
+    Layer  { Gi: 0.6 [1,1.1,0.75,0.9] }
+    Pool   { Gi: 0.6 [1,1.1,0.75,0.9] }
+  }
+  ////////  Path: M1PTToM1VM
+    SWts      {
+      Init  { Mean: 0.75 [0.5,0.4], Var: 0 [0.25], Sym: false [true] }
+      Adapt { SigGain: 1 [6] }
+    }
+  ////////  Path: M1ToM1VM
+    PathScale { Abs: 3 [1] }
+    SWts      {
+      Init  { Mean: 0.75 [0.5,0.4], Var: 0 [0.25], Sym: false [true] }
+      Adapt { SigGain: 1 [6] }
+    }
+  ////////  Path: DGPiToM1VM
+    PathScale { Abs: 2 [1] }
+    SWts      {
+      Init  { Mean: 0.75 [0.5,0.4], Var: 0 [0.25], Sym: false [true] }
+      Adapt { SigGain: 1 [6] }
+    }
+////////  Layer: M1PTp
+  Acts     {
+    Clamp     { Ge: 1 [0.8,1.5] }
+  }
+  Inhib    {
+    Layer  { Gi: 0.8 [1,1.1,0.75,0.9] }
+    Pool   { Gi: 0.8 [1,1.1,0.75,0.9] }
+  }
+  Learn    {
+    NeuroMod  { DipGain: 0 [1] }
+  }
+  CT       { DecayTau: 100 [0,50,70] }
+  ////////  Path: M1PTToM1PTp
+  ////////  Path: M1CTToM1PTp
+    PathScale { Abs: 2 [1] }
+  ////////  Path: VLToM1PTp
+    Learn     {
+      LRate { Base: 0.02 [0.04,0.1,0.2] }
+    }

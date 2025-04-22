@@ -1,34 +1,37 @@
+Name = 'PVLV'
+Title = 'Primary Value'
+URL = 'https'
+Doc = 'Simulates the primary value'
 Includes = []
 GUI = false
 Debug = false
 
 [Env]
-  RunName = 'PosAcq_A100B50'
+  RunName = 'PosAcq_A100'
   SetNBlocks = false
   NBlocks = 0
 
 [Params]
+  Script = ''
   Sheet = ''
   Tag = ''
   Note = ''
-  File = ''
   SaveAll = false
   Good = true
 
 [Run]
   GPU = false
+  GPUDevice = 0
   NThreads = 0
-  ThetaCycles = 300
   Run = 0
-  NRuns = 1
+  Runs = 25
+  Cycles = 200
+  PlusCycles = 50
 
 [Log]
-  AggStats = [
-    'DA',
-    'RewPred'
+  SaveWeights = false
+  Train = [
+    'Run',
+    'Epoch'
   ]
-  SaveWts = false
-  Block = true
-  Cond = true
-  Trial = false
-  NetData = false
+  Testing = false

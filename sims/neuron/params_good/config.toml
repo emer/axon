@@ -1,40 +1,36 @@
+Name = 'Neuron'
+Title = 'Axon single neuron'
+URL = 'https'
+Doc = 'This simulation demonstrates the basic properties of neural spiking and rate-code activation'
 GeClamp = true
 SpikeHz = 50.0
 Ge = 0.1
 Gi = 0.1
-ErevE = 1.0
-ErevI = 0.3
+ErevE = 0.0
+ErevI = -70.0
 Noise = 0.0
 KNaAdapt = true
-MahpGbar = 0.05
+MahpGk = 0.05
 NMDAGbar = 0.006
 GABABGbar = 0.015
 VGCCGbar = 0.02
-AKGbar = 0.1
-NCycles = 200
-OnCycle = 10
-OffCycle = 160
-UpdateInterval = 10
+AKGk = 0.1
 Includes = []
 GUI = false
 Debug = false
 
 [Params]
   Sheet = ''
+  Script = ''
   Tag = ''
   Note = ''
-  File = ''
   SaveAll = false
   Good = true
 
 [Run]
-  GPU = false
-  NThreads = 2
-  Run = 0
-  NRuns = 1
-  NEpochs = 1
+  Cycles = 200
+  OnCycle = 10
+  OffCycle = 160
 
 [Log]
-  SaveWts = false
-  Cycle = true
-  NetData = false
+  Save = false

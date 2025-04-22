@@ -1,3 +1,7 @@
+Name = 'Objrec'
+Title = 'Object Recognition'
+URL = 'https'
+Doc = 'This simulation explores how a hierarchy of areas in the ventral stream of visual processing (up to inferotemporal (IT) cortex) can produce robust object recognition that is invariant to changes in position'
 Includes = []
 GUI = false
 Debug = false
@@ -6,10 +10,10 @@ Debug = false
   NOutPer = 5
 
 [Params]
+  Script = ''
   Sheet = ''
   Tag = ''
   Note = ''
-  File = ''
   SaveAll = false
   Good = true
 
@@ -57,20 +61,26 @@ Debug = false
 
 [Run]
   GPU = true
-  NData = 16
+  GPUDevice = 0
+  NData = 32
+  SlowInterval = 200
+  AdaptGiInterval = 200
   NThreads = 0
   Run = 0
-  NRuns = 1
-  NEpochs = 200
-  NTrials = 128
-  PCAInterval = 5
-  TestInterval = -1
+  Runs = 5
+  Epochs = 200
+  Trials = 128
+  Cycles = 200
+  PlusCycles = 50
+  NZero = 2
+  TestInterval = 5
+  PCAInterval = 10
+  StartWeights = ''
 
 [Log]
-  SaveWts = false
-  Epoch = true
-  Run = true
-  Trial = false
-  TestEpoch = false
-  TestTrial = false
-  NetData = false
+  SaveWeights = false
+  Train = [
+    'Run',
+    'Epoch'
+  ]
+  Test = []

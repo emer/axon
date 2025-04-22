@@ -1,20 +1,102 @@
-DepthP.Inhib.Layer.Gi: 0.8 // (Default: 1,1.1,0.75,0.9)<br>
-DepthP.DepthHidCTToDepthP.Learn.LRate.Base: 0.02 // (Default: 0.04,0.1,0.2)<br>
-HeadDirP.Inhib.Layer.Gi: 0.8 // (Default: 1,1.1,0.75,0.9)<br>
-HeadDirP.HeadDirHidCTToHeadDirP.Learn.LRate.Base: 0.02 // (Default: 0.04,0.1,0.2)<br>
-DepthHid.Inhib.Layer.Gi: 1.2 // (Default: 1,1.1,0.75,0.9)<br>
-DepthHid.DepthPToDepthHid.Learn.LRate.Base: 0.02 // (Default: 0.04,0.1,0.2)<br>
-DepthHid.ActionToDepthHid.Learn.LRate.Base: 0.02 // (Default: 0.04,0.1,0.2)<br>
-DepthHid.DepthToDepthHid.Learn.LRate.Base: 0.02 // (Default: 0.04,0.1,0.2)<br>
-DepthHidCT.Inhib.Layer.Gi: 2.6 // (Default: 1,1.1,0.75,0.9)<br>
-DepthHidCT.Inhib.Pool.Gi: 2.2 // (Default: 1,1.1,0.75,0.9)<br>
-DepthHidCT.CT.GeGain: 0.5 // (Default: 0.05,0.1,1,2)<br>
-DepthHidCT.DepthHidToDepthHidCT.Learn.LRate.Base: 0.002 // (Default: 0.04,0.1,0.2)<br>
-DepthHidCT.DepthPToDepthHidCT.Learn.LRate.Base: 0.02 // (Default: 0.04,0.1,0.2)<br>
-HeadDirHid.HeadDirPToHeadDirHid.Learn.LRate.Base: 0.02 // (Default: 0.04,0.1,0.2)<br>
-HeadDirHid.ActionToHeadDirHid.Learn.LRate.Base: 0.02 // (Default: 0.04,0.1,0.2)<br>
-HeadDirHid.HeadDirToHeadDirHid.Learn.LRate.Base: 0.02 // (Default: 0.04,0.1,0.2)<br>
-HeadDirHidCT.Inhib.Layer.Gi: 2 // (Default: 1,1.1,0.75,0.9)<br>
-HeadDirHidCT.Inhib.Pool.Gi: 2.2 // (Default: 1,1.1,0.75,0.9)<br>
-HeadDirHidCT.HeadDirHidToHeadDirHidCT.Learn.LRate.Base: 0.002 // (Default: 0.04,0.1,0.2)<br>
-HeadDirHidCT.HeadDirPToHeadDirHidCT.Learn.LRate.Base: 0.02 // (Default: 0.04,0.1,0.2)<br>
+////////  Layer: Depth
+  Acts     {
+    Mahp      { Gk: 0.04 [0.02] }
+  }
+////////  Layer: DepthP
+  Acts     {
+    Mahp      { Gk: 0.04 [0.02] }
+  }
+  Inhib    {
+    Layer  { Gi: 0.8 [1,1.1,0.75,0.9] }
+  }
+  ////////  Path: DepthHidCTToDepthP
+    Learn     {
+      LRate { Base: 0.02 [0.04,0.1,0.2] }
+    }
+////////  Layer: HeadDir
+  Acts     {
+    Mahp      { Gk: 0.04 [0.02] }
+  }
+////////  Layer: HeadDirP
+  Acts     {
+    Mahp      { Gk: 0.04 [0.02] }
+  }
+  Inhib    {
+    Layer  { Gi: 0.8 [1,1.1,0.75,0.9] }
+  }
+  ////////  Path: HeadDirHidCTToHeadDirP
+    Learn     {
+      LRate { Base: 0.02 [0.04,0.1,0.2] }
+    }
+////////  Layer: Action
+  Acts     {
+    Mahp      { Gk: 0.04 [0.02] }
+  }
+////////  Layer: DepthHid
+  Acts     {
+    Mahp      { Gk: 0.04 [0.02] }
+  }
+  Inhib    {
+    Layer  { Gi: 1.2 [1,1.1,0.75,0.9] }
+  }
+  ////////  Path: DepthPToDepthHid
+    Learn     {
+      LRate { Base: 0.02 [0.04,0.1,0.2] }
+    }
+  ////////  Path: ActionToDepthHid
+    Learn     {
+      LRate { Base: 0.02 [0.04,0.1,0.2] }
+    }
+  ////////  Path: DepthToDepthHid
+    Learn     {
+      LRate { Base: 0.02 [0.04,0.1,0.2] }
+    }
+////////  Layer: DepthHidCT
+  Acts     {
+    Mahp      { Gk: 0.04 [0.02] }
+  }
+  Inhib    {
+    Layer  { Gi: 2.6 [1,1.1,0.75,0.9] }
+    Pool   { Gi: 2.2 [1,1.1,0.75,0.9] }
+  }
+  CT       { GeGain: 0.5 [0.05,0.1,1,2] }
+  ////////  Path: DepthHidToDepthHidCT
+    Learn     {
+      LRate { Base: 0.002 [0.04,0.1,0.2] }
+    }
+  ////////  Path: DepthPToDepthHidCT
+    Learn     {
+      LRate { Base: 0.02 [0.04,0.1,0.2] }
+    }
+////////  Layer: HeadDirHid
+  Acts     {
+    Mahp      { Gk: 0.04 [0.02] }
+  }
+  ////////  Path: HeadDirPToHeadDirHid
+    Learn     {
+      LRate { Base: 0.02 [0.04,0.1,0.2] }
+    }
+  ////////  Path: ActionToHeadDirHid
+    Learn     {
+      LRate { Base: 0.02 [0.04,0.1,0.2] }
+    }
+  ////////  Path: HeadDirToHeadDirHid
+    Learn     {
+      LRate { Base: 0.02 [0.04,0.1,0.2] }
+    }
+////////  Layer: HeadDirHidCT
+  Acts     {
+    Mahp      { Gk: 0.04 [0.02] }
+  }
+  Inhib    {
+    Layer  { Gi: 2 [1,1.1,0.75,0.9] }
+    Pool   { Gi: 2.2 [1,1.1,0.75,0.9] }
+  }
+  ////////  Path: HeadDirHidToHeadDirHidCT
+    Learn     {
+      LRate { Base: 0.002 [0.04,0.1,0.2] }
+    }
+  ////////  Path: HeadDirPToHeadDirHidCT
+    Learn     {
+      LRate { Base: 0.02 [0.04,0.1,0.2] }
+    }

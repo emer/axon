@@ -1,11 +1,12 @@
-Includes = []
+Name = 'Hip'
+Title = 'Axon hippocampus'
+URL = 'https'
+Doc = 'Simulates the hippocampus on basic AB-AC paired associates task.'
+Includes = [
+  'medhip.toml'
+]
 GUI = false
 Debug = false
-
-[Mod]
-  InToEc2PCon = 0.25
-  ECPctAct = 0.2
-  MemThr = 0.34
 
 [Hip]
   DGRatio = 2.236
@@ -22,7 +23,7 @@ Debug = false
   ThetaHigh = 1.0
   EC5Clamp = true
   EC5ClampSrc = 'EC3'
-  EC5ClampTest = false
+  EC5ClampTest = true
   EC5ClampThr = 0.1
 
   [Hip.EC2Size]
@@ -38,43 +39,48 @@ Debug = false
     Y = 7
 
   [Hip.CA1NNrn]
-    X = 10
-    Y = 10
+    X = 15
+    Y = 15
 
   [Hip.CA3Size]
-    X = 20
-    Y = 20
+    X = 30
+    Y = 30
 
-[Pat]
+[Env]
+  ECPctAct = 0.2
   MinDiffPct = 0.5
   DriftCtxt = false
   CtxtFlipPct = 0.25
-  DriftPct = 0.0
+  DriftPct = 0.1
 
 [Params]
+  InToEc2PCon = 0.25
+  Script = ''
   Sheet = ''
   Tag = ''
   Note = ''
-  File = ''
   SaveAll = false
   Good = true
 
 [Run]
-  StopMem = 0.9
   GPU = true
+  GPUDevice = 0
+  NData = 10
   NThreads = 0
+  MemThr = 0.34
+  StopMem = 0.9
   Run = 0
   Runs = 5
   Epochs = 100
-  NTrials = 20
-  NData = 10
-  TestInterval = 1
+  Trials = 10
+  Cycles = 200
+  PlusCycles = 50
+  TestInterval = 5
 
 [Log]
-  SaveWts = false
-  Epoch = true
-  Run = true
-  Trial = false
-  TestEpoch = false
-  TestTrial = false
-  NetData = false
+  SaveWeights = false
+  Train = [
+    'Run',
+    'Epoch'
+  ]
+  Test = []

@@ -1,44 +1,35 @@
 
 Layer: VGPi
-	         VGPePr	      InhibPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.50
-	         VMtxGo	      InhibPath	Abs:	  0.20	Rel:	  1.00	GScale:	  0.02	Rel:  0.50
-	           VSTN	    ForwardPath	Abs:	  0.20	Rel:	  1.00	GScale:	  0.05	Rel:  1.00
-								    Abs Params: Base:#VSTNToVGPi: .2
+         VGPePr       Inhib  Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:	  0.50	LRate:	  0.04
+         VMtxGo       Inhib  Abs:	  0.20	Rel:	  1.00	GScale:	  0.02	Rel:	  0.50	LRate:	  0.04
+           VSTN     Forward  Abs:	  0.20	Rel:	  1.00	GScale:	  0.05	Rel:	  1.00	LRate:	  0.04
 
 Layer: VGPePr
-	         VMtxNo	      InhibPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.50
-	         VGPePr	      InhibPath	Abs:	  4.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.50
-	           VSTN	    ForwardPath	Abs:	  0.50	Rel:	  1.00	GScale:	  0.12	Rel:  1.00
+         VMtxNo       Inhib  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.50	LRate:	  0.04
+         VGPePr       Inhib  Abs:	  4.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.50	LRate:	  0.04
+           VSTN     Forward  Abs:	  0.50	Rel:	  1.00	GScale:	  0.12	Rel:	  1.00	LRate:	  0.04
 
 Layer: VGPeAk
-	         VGPePr	      InhibPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.50
-	         VMtxGo	      InhibPath	Abs:	  0.50	Rel:	  1.00	GScale:	  0.04	Rel:  0.50
-	           VSTN	    ForwardPath	Abs:	  0.10	Rel:	  1.00	GScale:	  0.03	Rel:  1.00
+         VGPePr       Inhib  Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:	  0.50	LRate:	  0.04
+         VMtxGo       Inhib  Abs:	  0.50	Rel:	  1.00	GScale:	  0.04	Rel:	  0.50	LRate:	  0.04
+           VSTN     Forward  Abs:	  0.10	Rel:	  1.00	GScale:	  0.03	Rel:	  1.00	LRate:	  0.04
 
 Layer: VSTN
-	         VGPePr	      InhibPath	Abs:	  0.50	Rel:	  1.00	GScale:	  0.02	Rel:  1.00
-	         ACCPos	    ForwardPath	Abs:	  2.00	Rel:	  1.00	GScale:	  0.33	Rel:  0.50
-	         ACCNeg	    ForwardPath	Abs:	  2.00	Rel:	  1.00	GScale:	  0.33	Rel:  0.50
+         VGPePr       Inhib  Abs:	  0.50	Rel:	  1.00	GScale:	  0.02	Rel:	  1.00	LRate:	  0.04
+         ACCPos     Forward  Abs:	  2.00	Rel:	  1.00	GScale:	  0.33	Rel:	  0.50	LRate:	  0.04
+         ACCNeg     Forward  Abs:	  2.00	Rel:	  1.00	GScale:	  0.33	Rel:	  0.50	LRate:	  0.04
 
 Layer: VMtxGo
-	         VMtxNo	      InhibPath	Abs:	  1.00	Rel:	  0.05	GScale:	  0.01	Rel:  0.05
-								    Abs Params: #VMtxNoToVMtxGo: 1
-								    Rel Params: Base:#VMtxNoToVMtxGo: 0.05
-	         VGPeAk	      InhibPath	Abs:	  3.00	Rel:	  1.00	GScale:	  0.11	Rel:  0.95
-	         ACCPos	   VSMatrixPath	Abs:	  1.50	Rel:	  1.00	GScale:	  0.24	Rel:  0.48
-								    Abs Params: .ACCToVMtx: 1.5
-	         ACCNeg	   VSMatrixPath	Abs:	  1.50	Rel:	  1.00	GScale:	  0.24	Rel:  0.48
-								    Abs Params: .ACCToVMtx: 1.5
-	        Urgency	   VSMatrixPath	Abs:	  0.00	Rel:	  0.10	GScale:	  0.00	Rel:  0.05
-								    Abs Params: #UrgencyToVMtxGo: 0
-								    Rel Params: #UrgencyToVMtxGo: 0.1
+         VMtxNo       Inhib  Abs:	  1.00	Rel:	  0.05	GScale:	  0.01	Rel:	  0.05	LRate:	  0.04
+         VGPeAk       Inhib  Abs:	  3.00	Rel:	  1.00	GScale:	  0.11	Rel:	  0.95	LRate:	  0.04
+         ACCPos    VSMatrix  Abs:	  1.50	Rel:	  1.00	GScale:	  0.24	Rel:	  0.48	LRate:	  0.01
+         ACCNeg    VSMatrix  Abs:	  1.50	Rel:	  1.00	GScale:	  0.24	Rel:	  0.48	LRate:	  0.01
+        Urgency    VSMatrix  Abs:	  0.00	Rel:	  0.10	GScale:	  0.00	Rel:	  0.05	LRate:	  0.01
 
 Layer: VMtxNo
-	         VGPeAk	      InhibPath	Abs:	  3.00	Rel:	  1.00	GScale:	  0.12	Rel:  1.00
-	         ACCNeg	   VSMatrixPath	Abs:	  1.50	Rel:	  1.00	GScale:	  0.25	Rel:  0.50
-								    Abs Params: .ACCToVMtx: 1.5
-	         ACCPos	   VSMatrixPath	Abs:	  1.50	Rel:	  1.00	GScale:	  0.25	Rel:  0.50
-								    Abs Params: .ACCToVMtx: 1.5
+         VGPeAk       Inhib  Abs:	  3.00	Rel:	  1.00	GScale:	  0.12	Rel:	  1.00	LRate:	  0.04
+         ACCNeg    VSMatrix  Abs:	  1.50	Rel:	  1.00	GScale:	  0.25	Rel:	  0.50	LRate:	  0.01
+         ACCPos    VSMatrix  Abs:	  1.50	Rel:	  1.00	GScale:	  0.25	Rel:	  0.50	LRate:	  0.01
 
 Layer: SNc
 
@@ -49,12 +40,10 @@ Layer: ACCPos
 Layer: ACCNeg
 
 Layer: ACCPosPT
-	       ACCPosVM	       BackPath	Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
-	         ACCPos	    ForwardPath	Abs:	  0.50	Rel:	  1.00	GScale:	  0.50	Rel:  1.00
-								    Abs Params: Base:.SuperToPT: 0.5
+       ACCPosVM        Back  Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:	  1.00	LRate:	  0.04
+         ACCPos     Forward  Abs:	  0.50	Rel:	  1.00	GScale:	  0.50	Rel:	  1.00	LRate:	  0.04
 
 Layer: ACCPosVM
-	       ACCPosPT	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  0.50
-	         ACCPos	    ForwardPath	Abs:	  3.00	Rel:	  1.00	GScale:	  1.50	Rel:  0.50
-								    Abs Params: Base:.SuperToThal: 3.0
-	           VGPi	      InhibPath	Abs:	  5.00	Rel:	  1.00	GScale:	  0.20	Rel:  1.00
+       ACCPosPT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:	  0.50	LRate:	  0.04
+         ACCPos     Forward  Abs:	  3.00	Rel:	  1.00	GScale:	  1.50	Rel:	  0.50	LRate:	  0.04
+           VGPi       Inhib  Abs:	  5.00	Rel:	  1.00	GScale:	  0.20	Rel:	  1.00	LRate:	  0.04

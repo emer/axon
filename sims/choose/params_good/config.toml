@@ -1,10 +1,13 @@
+Name = 'Choose'
+Title = 'Choose Maze Arms'
+URL = 'https'
+Doc = 'This project tests the Rubicon framework making cost-benefit based choices.'
 Includes = []
-GUI = true
+GUI = false
 Debug = false
-OpenWts = ''
 
 [Env]
-  Config = '01_us_magnitude.toml'
+  Config = '02_us_probability.toml'
   NDrives = 4
   PctCortexStEpc = 50
   PctCortexNEpc = 1
@@ -12,28 +15,29 @@ OpenWts = ''
   SameSeed = false
 
 [Params]
+  Script = ''
   Sheet = ''
   Tag = ''
   Note = ''
-  File = ''
   SaveAll = false
   Good = true
 
 [Run]
-  GPU = false
-  NData = 1
+  GPU = true
+  GPUDevice = 0
+  NData = 8
   NThreads = 0
   Run = 0
-  NRuns = 5
-  NEpochs = 50
-  NTrials = 128
-  NCycles = 300
+  Runs = 5
+  Epochs = 100
+  Trials = 128
+  Cycles = 200
+  PlusCycles = 50
   PCAInterval = 10
 
 [Log]
-  SaveWts = false
-  Epoch = true
-  Run = true
-  Trial = false
-  NetData = false
-  Testing = false
+  SaveWeights = false
+  Train = [
+    'Run',
+    'Epoch'
+  ]

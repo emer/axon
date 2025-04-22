@@ -1,14 +1,4 @@
-             V1		Nominal:	  0.08	Params: #V1: 0.08
-						Layer.Gi:	  0.90	Params: #V1: 0.9
-						Pool.Gi: 	  0.90	Params: #V1: 0.9
-
-             V4		Nominal:	  0.03	Params: #V4: 0.03
-						Layer.Gi:	  1.00	Params: #V4: 1.0
-						Pool.Gi: 	  0.90	Params: #V4: 0.9
-
-             IT		Nominal:	  0.04	Params: #IT: 0.04
-						Layer.Gi:	  1.10	Params: #IT: 1.1
-
-         Output		Nominal:	  0.05	Params: #Output: 0.05
-						Layer.Gi:	  1.20	Params: #Output: 1.2
-
+             V1	          Input	Nominal:   0.08	Layer.Gi:     0.90	Pool.Gi:      0.90
+             V4	          Super	Nominal:   0.03	Layer.Gi:     1.00	Pool.Gi:      0.90
+             IT	          Super	Nominal:   0.04	Layer.Gi:     1.10
+         Output	         Target	Nominal:   0.05	Layer.Gi:     1.20

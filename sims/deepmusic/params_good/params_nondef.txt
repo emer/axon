@@ -1,17 +1,70 @@
-InputP.HiddenCTToInputP.SWts.Adapt.LRate: 0.0001 // (Default: 0.1,0.01,0.001,0.0002)<br>
-InputP.HiddenCTToInputP.Learn.LRate.Base: 0.005 // (Default: 0.04,0.1,0.2)<br>
-Hidden.InputPToHidden.SWts.Adapt.LRate: 0.0001 // (Default: 0.1,0.01,0.001,0.0002)<br>
-Hidden.InputPToHidden.Learn.LRate.Base: 0.005 // (Default: 0.04,0.1,0.2)<br>
-Hidden.InputToHidden.SWts.Adapt.LRate: 0.0001 // (Default: 0.1,0.01,0.001,0.0002)<br>
-Hidden.InputToHidden.Learn.LRate.Base: 0.005 // (Default: 0.04,0.1,0.2)<br>
-HiddenCT.Inhib.Layer.Gi: 2.2 // (Default: 1,1.1,0.75,0.9)<br>
-HiddenCT.Inhib.Pool.Gi: 2.2 // (Default: 1,1.1,0.75,0.9)<br>
-HiddenCT.HiddenToHiddenCT.SWts.Adapt.LRate: 0.0001 // (Default: 0.1,0.01,0.001,0.0002)<br>
-HiddenCT.HiddenToHiddenCT.Learn.LRate.Base: 0.001 // (Default: 0.04,0.1,0.2)<br>
-HiddenCT.HiddenCTToHiddenCT.SWts.Adapt.LRate: 0.0001 // (Default: 0.1,0.01,0.001,0.0002)<br>
-HiddenCT.HiddenCTToHiddenCT.Learn.LRate.Base: 0.001 // (Default: 0.04,0.1,0.2)<br>
-HiddenCT.HiddenCTToHiddenCT.PathScale.Abs: 0.2 // (Default: 1)<br>
-HiddenCT.HiddenCTToHiddenCT.SWts.Adapt.LRate: 0.0001 // (Default: 0.1,0.01,0.001,0.0002)<br>
-HiddenCT.HiddenCTToHiddenCT.Learn.LRate.Base: 0.005 // (Default: 0.04,0.1,0.2)<br>
-HiddenCT.InputPToHiddenCT.SWts.Adapt.LRate: 0.0001 // (Default: 0.1,0.01,0.001,0.0002)<br>
-HiddenCT.InputPToHiddenCT.Learn.LRate.Base: 0.005 // (Default: 0.04,0.1,0.2)<br>
+////////  Layer: Input
+  Acts     {
+    Mahp      { Gk: 0.04 [0.02] }
+  }
+////////  Layer: InputP
+  Acts     {
+    Mahp      { Gk: 0.04 [0.02] }
+  }
+  ////////  Path: HiddenCTToInputP
+    SWts      {
+      Adapt { LRate: 0.0001 [0.1,0.01,0.001,0.0002], HiMeanDecay: 0 [0.0008] }
+    }
+    Learn     {
+      LRate { Base: 0.002 [0.04,0.1,0.2] }
+    }
+////////  Layer: Hidden
+  Acts     {
+    Mahp      { Gk: 0.04 [0.02] }
+  }
+  ////////  Path: InputPToHidden
+    SWts      {
+      Adapt { LRate: 0.0001 [0.1,0.01,0.001,0.0002], HiMeanDecay: 0 [0.0008] }
+    }
+    Learn     {
+      LRate { Base: 0.002 [0.04,0.1,0.2] }
+    }
+  ////////  Path: InputToHidden
+    SWts      {
+      Adapt { LRate: 0.0001 [0.1,0.01,0.001,0.0002], HiMeanDecay: 0 [0.0008] }
+    }
+    Learn     {
+      LRate { Base: 0.002 [0.04,0.1,0.2] }
+    }
+////////  Layer: HiddenCT
+  Acts     {
+    Mahp      { Gk: 0.04 [0.02] }
+  }
+  Inhib    {
+    Layer  { Gi: 2.2 [1,1.1,0.75,0.9] }
+    Pool   { Gi: 2.2 [1,1.1,0.75,0.9] }
+  }
+  ////////  Path: HiddenToHiddenCT
+    SWts      {
+      Adapt { LRate: 0.0001 [0.1,0.01,0.001,0.0002], HiMeanDecay: 0 [0.0008] }
+    }
+    Learn     {
+      LRate { Base: 0.001 [0.04,0.1,0.2] }
+    }
+  ////////  Path: HiddenCTToHiddenCT
+    SWts      {
+      Adapt { LRate: 0.0001 [0.1,0.01,0.001,0.0002], HiMeanDecay: 0 [0.0008] }
+    }
+    Learn     {
+      LRate { Base: 0.001 [0.04,0.1,0.2] }
+    }
+  ////////  Path: HiddenCTToHiddenCT
+    PathScale { Abs: 0.2 [1] }
+    SWts      {
+      Adapt { LRate: 0.0001 [0.1,0.01,0.001,0.0002], HiMeanDecay: 0 [0.0008] }
+    }
+    Learn     {
+      LRate { Base: 0.002 [0.04,0.1,0.2] }
+    }
+  ////////  Path: InputPToHiddenCT
+    SWts      {
+      Adapt { LRate: 0.0001 [0.1,0.01,0.001,0.0002], HiMeanDecay: 0 [0.0008] }
+    }
+    Learn     {
+      LRate { Base: 0.002 [0.04,0.1,0.2] }
+    }

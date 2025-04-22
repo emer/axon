@@ -2,19 +2,14 @@
 Layer: Input
 
 Layer: InputP
-	       HiddenCT	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  1.00
-								    Rel Params: #HiddenCTToInputP: 1.0
+       HiddenCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:	  1.00	LRate:	  0.00
 
 Layer: Hidden
-	         InputP	       BackPath	Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.09
-								    Rel Params: .FromPulv: 0.1 | .BackPath: 0.1
-	          Input	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.23	Rel:  0.91
+         InputP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.09	LRate:	  0.00
+          Input     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.23	Rel:	  0.91	LRate:	  0.00
 
 Layer: HiddenCT
-	         Hidden	     CTCtxtPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.62	Rel:  0.62
-	       HiddenCT	     CTCtxtPath	Abs:	  1.00	Rel:	  0.50	GScale:	  0.01	Rel:  0.31
-								    Rel Params: .CTSelfCtxt: 0.5
-	       HiddenCT	    LateralPath	Abs:	  0.20	Rel:	  1.00	GScale:	  0.01	Rel:  1.00
-								    Abs Params: .CTSelfMaint: 0.2
-	         InputP	       BackPath	Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.06
-								    Rel Params: .FromPulv: 0.1 | .BackPath: 0.1
+         Hidden      CTCtxt  Abs:	  1.00	Rel:	  1.00	GScale:	  0.62	Rel:	  0.62	LRate:	  0.00
+       HiddenCT      CTCtxt  Abs:	  1.00	Rel:	  0.50	GScale:	  0.01	Rel:	  0.31	LRate:	  0.00
+       HiddenCT     Lateral  Abs:	  0.20	Rel:	  1.00	GScale:	  0.00	Rel:	  1.00	LRate:	  0.00
+         InputP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.06	LRate:	  0.00

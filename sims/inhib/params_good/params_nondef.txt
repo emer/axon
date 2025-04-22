@@ -1,28 +1,66 @@
-Layer0.Acts.Clamp.Ge: 0.6 // (Default: 0.8,1.5)<br>
-Layer1.Inhib1ToLayer1.Com.Delay: 0 // (Default: 2)<br>
-Layer1.Inhib1ToLayer1.PathScale.Abs: 6 // (Default: 1)<br>
-Layer1.Inhib1ToLayer1.SWts.Init.Var: 0 // (Default: 0.25)<br>
-Layer1.Inhib1ToLayer1.SWts.Init.Sym: false // (Default: true)<br>
-Inhib1.Acts.Spikes.VmR: 0.4 // (Default: 0.3)<br>
-Inhib1.Acts.Spikes.Tr: 1 // (Default: 3)<br>
-Inhib1.Acts.Init.Vm: 0.4 // (Default: 0.3)<br>
-Inhib1.Layer0ToInhib1.Com.Delay: 1 // (Default: 2)<br>
-Inhib1.Layer1ToInhib1.Com.Delay: 1 // (Default: 2)<br>
-Inhib1.Inhib1ToInhib1.Com.Delay: 0 // (Default: 2)<br>
-Inhib1.Inhib1ToInhib1.PathScale.Abs: 6 // (Default: 1)<br>
-Inhib1.Inhib1ToInhib1.SWts.Init.Var: 0 // (Default: 0.25)<br>
-Inhib1.Inhib1ToInhib1.SWts.Init.Sym: false // (Default: true)<br>
-Inhib1.Layer2ToInhib1.Com.Delay: 1 // (Default: 2)<br>
-Layer2.Inhib2ToLayer2.Com.Delay: 0 // (Default: 2)<br>
-Layer2.Inhib2ToLayer2.PathScale.Abs: 6 // (Default: 1)<br>
-Layer2.Inhib2ToLayer2.SWts.Init.Var: 0 // (Default: 0.25)<br>
-Layer2.Inhib2ToLayer2.SWts.Init.Sym: false // (Default: true)<br>
-Inhib2.Acts.Spikes.VmR: 0.4 // (Default: 0.3)<br>
-Inhib2.Acts.Spikes.Tr: 1 // (Default: 3)<br>
-Inhib2.Acts.Init.Vm: 0.4 // (Default: 0.3)<br>
-Inhib2.Layer1ToInhib2.Com.Delay: 1 // (Default: 2)<br>
-Inhib2.Layer2ToInhib2.Com.Delay: 1 // (Default: 2)<br>
-Inhib2.Inhib2ToInhib2.Com.Delay: 0 // (Default: 2)<br>
-Inhib2.Inhib2ToInhib2.PathScale.Abs: 6 // (Default: 1)<br>
-Inhib2.Inhib2ToInhib2.SWts.Init.Var: 0 // (Default: 0.25)<br>
-Inhib2.Inhib2ToInhib2.SWts.Init.Sym: false // (Default: true)<br>
+////////  Layer: Layer0
+  Acts     {
+    Clamp     { Ge: 0.6 [0.8,1.5] }
+  }
+////////  Layer: Layer1
+  ////////  Path: Layer0ToLayer1
+    SWts      {
+      Init  { Var: 0.8 [0.25] }
+    }
+  ////////  Path: Inhib1ToLayer1
+    Com       { Delay: 0 [2] }
+    PathScale { Abs: 0 [1] }
+    SWts      {
+      Init  { Var: 0 [0.25], Sym: false [true] }
+    }
+  ////////  Path: Layer2ToLayer1
+    SWts      {
+      Init  { Var: 0.8 [0.25] }
+    }
+////////  Layer: Inhib1
+  Acts     {
+    Spikes    { Thr: 0.5 [-50], VmR: -60 [-70], Tr: 1 [3] }
+    Init      { Vm: -60 [-70] }
+  }
+  ////////  Path: Layer0ToInhib1
+    Com       { Delay: 1 [2] }
+  ////////  Path: Layer1ToInhib1
+    Com       { Delay: 1 [2] }
+  ////////  Path: Inhib1ToInhib1
+    Com       { Delay: 0 [2] }
+    PathScale { Abs: 0 [1] }
+    SWts      {
+      Init  { Var: 0 [0.25], Sym: false [true] }
+    }
+  ////////  Path: Layer2ToInhib1
+    Com       { Delay: 1 [2] }
+////////  Layer: Layer2
+  ////////  Path: Layer1ToLayer2
+    SWts      {
+      Init  { Var: 0.8 [0.25] }
+    }
+  ////////  Path: Layer1ToLayer2
+    SWts      {
+      Init  { Var: 0.8 [0.25] }
+    }
+  ////////  Path: Inhib2ToLayer2
+    Com       { Delay: 0 [2] }
+    PathScale { Abs: 0 [1] }
+    SWts      {
+      Init  { Var: 0 [0.25], Sym: false [true] }
+    }
+////////  Layer: Inhib2
+  Acts     {
+    Spikes    { Thr: 0.5 [-50], VmR: -60 [-70], Tr: 1 [3] }
+    Init      { Vm: -60 [-70] }
+  }
+  ////////  Path: Layer1ToInhib2
+    Com       { Delay: 1 [2] }
+  ////////  Path: Layer2ToInhib2
+    Com       { Delay: 1 [2] }
+  ////////  Path: Inhib2ToInhib2
+    Com       { Delay: 0 [2] }
+    PathScale { Abs: 0 [1] }
+    SWts      {
+      Init  { Var: 0 [0.25], Sym: false [true] }
+    }

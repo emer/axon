@@ -439,22 +439,25 @@ func (nt *Network) KeyPathParams() string {
 
 // AllLayerInhibs returns a listing of all Layer Inhibition parameters in the Network
 func (nt *Network) AllLayerInhibs() string {
-	str := ""
+	var b strings.Builder
 	for _, ly := range nt.Layers {
 		if ly.Off {
 			continue
 		}
 		lp := ly.Params
-		str += fmt.Sprintf("%15s\t\tNominal:\t%6.2f\n", ly.Name, lp.Inhib.ActAvg.Nominal)
+		b.WriteString(fmt.Sprintf("%15s\t%15s\tNominal: %6.2f", ly.Name, strings.TrimSuffix(ly.Type.String(), "Layer"), lp.Inhib.ActAvg.Nominal))
 		if lp.Inhib.Layer.On.IsTrue() {
-			str += fmt.Sprintf("\t\t\t\t\t\tLayer.Gi:\t%6.2f\n", lp.Inhib.Layer.Gi)
+			b.WriteString(fmt.Sprintf("\tLayer.Gi:   %6.2f", lp.Inhib.Layer.Gi))
 		}
 		if lp.Inhib.Pool.On.IsTrue() {
-			str += fmt.Sprintf("\t\t\t\t\t\tPool.Gi: \t%6.2f\n", lp.Inhib.Pool.Gi)
+			b.WriteString(fmt.Sprintf("\tPool.Gi:    %6.2f", lp.Inhib.Pool.Gi))
 		}
-		str += fmt.Sprintf("\n")
+		if lp.Learn.NeuroMod.DAMod != NoDAMod {
+			b.WriteString(fmt.Sprintf("\t%7s\t%7s", lp.Learn.NeuroMod.DAMod.String(), lp.Learn.NeuroMod.Valence.String()))
+		}
+		b.WriteString("\n")
 	}
-	return str
+	return b.String()
 }
 
 // AllPathScales returns a listing of all PathScale parameters in the Network
@@ -474,7 +477,7 @@ func (nt *Network) AllPathScales() string {
 				continue
 			}
 			sn := pt.Send.Name
-			str += fmt.Sprintf("\t%15s\t%15s\tAbs:\t%6.2f\tRel:\t%6.2f\tGScale:\t%6.2f\tRel:%6.2f\n", sn, pt.Type.String(), pt.Params.PathScale.Abs, pt.Params.PathScale.Rel, pt.Params.GScale.Scale, pt.Params.GScale.Rel)
+			str += fmt.Sprintf("%15s  %10s  Abs:\t%6.2f\tRel:\t%6.2f\tGScale:\t%6.2f\tRel:\t%6.2f\tLRate:\t%6.2f\n", sn, strings.TrimSuffix(pt.Type.String(), "Path"), pt.Params.PathScale.Abs, pt.Params.PathScale.Rel, pt.Params.GScale.Scale, pt.Params.GScale.Rel, pt.Params.Learn.LRate.Base)
 		}
 	}
 	return str
@@ -495,6 +498,7 @@ func (nt *Network) SaveParamsSnapshot(cfg any, good bool) error {
 	if err != nil {
 		log.Println(err) // notify but OK if it exists
 	}
+	fmt.Println("Saving params to:", dir)
 	tomlx.Save(cfg, filepath.Join(dir, "config.toml"))
 	nt.SaveParams(emer.AllParams, core.Filename(filepath.Join(dir, "params_all.txt")))
 	nt.SaveParams(emer.NonDefault, core.Filename(filepath.Join(dir, "params_nondef.txt")))

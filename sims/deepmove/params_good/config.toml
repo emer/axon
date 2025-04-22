@@ -1,3 +1,7 @@
+Name = 'DeepMove'
+Title = 'DeepAxon Move Prediction'
+URL = 'https'
+Doc = 'This demonstrates a basic deep predictive learning Axon model that learns to predict the effects of movement on visual inputs.'
 Includes = []
 GUI = false
 Debug = false
@@ -5,31 +9,37 @@ Debug = false
 [Env]
   UnitsPer = 4
 
+  [Env.Env]
+    PctBlank = 0.0
+
 [Params]
   Hid2 = false
+  Script = ''
   Sheet = ''
   Tag = ''
   Note = ''
-  File = ''
   SaveAll = false
   Good = true
 
 [Run]
   GPU = true
+  GPUDevice = 0
   NData = 16
   NThreads = 0
   Run = 0
-  NRuns = 5
-  NEpochs = 100
-  NTrials = 196
-  PCAInterval = 5
-  TestInterval = -1
+  Runs = 5
+  Epochs = 100
+  Trials = 196
+  Cycles = 200
+  PlusCycles = 50
+  TestInterval = 0
+  PCAInterval = 10
+  StartWeights = ''
 
 [Log]
-  SaveWts = false
-  Epoch = true
-  Run = true
-  Trial = false
-  TestEpoch = false
-  TestTrial = false
-  NetData = false
+  SaveWeights = false
+  Train = [
+    'Run',
+    'Epoch'
+  ]
+  Test = []

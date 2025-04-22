@@ -1,12 +1,16 @@
+Name = 'RA25'
+Title = 'Axon random associator'
+URL = 'https'
+Doc = 'This demonstrates a basic Axon model and provides a template for creating new models. It has a random-associator four-layer axon network that uses the standard supervised learning paradigm to learn mappings between 25 random input / output patterns defined over 5x5 input / output layers.'
 Includes = []
 GUI = false
 Debug = false
 
 [Params]
+  Script = "sim.Sim.Params.Layer[\"Script\"] = &axon.LayerSheet{\n\t&axon.LayerSel{Sel:\"Layer\", Set: func(ly *axon.LayerParams) {\n\t\tly.Acts.NMDA.MgC = 1.4\n\t}},\n}\n\nsim.Sim.Params.Path[\"Script\"] = &axon.PathSheet{\n\t&axon.PathSel{Sel:\"Path\", Set: func(pt *axon.PathParams) {\n\t\tpt.Learn.DWt.CaPScale = 0.95\n\t\tpt.Learn.LRate.Base = 0.08 // 0.03 for \n\t\tpt.Learn.DWt.Trace.SetBool(false)\n\t}},\n}\n"
   Sheet = ''
   Tag = ''
   Note = ''
-  File = ''
   SaveAll = false
   Good = true
 
@@ -20,22 +24,24 @@ Debug = false
 
 [Run]
   GPU = true
+  GPUDevice = 0
   NData = 16
   NThreads = 0
   Run = 0
-  NRuns = 5
-  NEpochs = 100
+  Runs = 5
+  Epochs = 100
+  Trials = 32
+  Cycles = 200
+  PlusCycles = 50
   NZero = 2
-  NTrials = 32
   TestInterval = 5
-  PCAInterval = 5
-  StartWts = ''
+  PCAInterval = 10
+  StartWeights = ''
 
 [Log]
-  SaveWts = false
-  Epoch = true
-  Run = true
-  Trial = false
-  TestEpoch = false
-  TestTrial = false
-  NetData = false
+  SaveWeights = false
+  Train = [
+    'Run',
+    'Epoch'
+  ]
+  Test = []

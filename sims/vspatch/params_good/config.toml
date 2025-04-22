@@ -1,3 +1,7 @@
+Name = 'VSPatch'
+Title = 'Ventral Striatum Patch'
+URL = 'https'
+Doc = 'This project simulates the Ventral Striatum (VS) Patch (striosome) neurons that predict reward to generate an RPE (reward prediction error). It is a testbed for learning the quantitative value representations needed for this.'
 Includes = []
 GUI = false
 Debug = false
@@ -8,22 +12,25 @@ Debug = false
   Tweak = false
   Baseline = false
   DryRun = false
+  Script = ''
   Sheet = ''
   Tag = ''
   Note = ''
-  File = ''
   SaveAll = false
   Good = true
 
 [Run]
   GPU = true
+  GPUDevice = 0
   NData = 16
   NThreads = 0
   Run = 0
-  NRuns = 1
+  Runs = 1
   CondEpochs = 20
-  NEpochs = 100
-  NTrials = 256
+  Epochs = 100
+  Trials = 256
+  Cycles = 200
+  PlusCycles = 50
 
 [Log]
   AggStats = [
@@ -33,11 +40,9 @@ Debug = false
     'RewPred_NR',
     'DA_NR'
   ]
-  SaveWts = false
-  Epoch = true
-  Run = true
-  Trial = false
-  TestEpoch = false
-  TestTrial = false
-  NetData = false
-  Testing = false
+  SaveWeights = false
+  Train = [
+    'Run',
+    'Epoch'
+  ]
+  Test = []

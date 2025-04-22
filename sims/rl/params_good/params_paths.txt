@@ -2,7 +2,7 @@
 Layer: Rew
 
 Layer: RewPred
-	          Input	     TDPredPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  1.00
+          Input      TDPred  Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:	  1.00	LRate:	  0.04
 
 Layer: RewInteg
 

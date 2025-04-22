@@ -1,11 +1,15 @@
+Name = 'PFCMaintS'
+Title = 'Prefrontal Cortex Maintenance'
+URL = 'https'
+Doc = 'This project tests prefrontal cortex (PFC) active maintenance mechanisms supported by the pyramidal tract (PT) neurons'
 Includes = []
 GUI = false
 Debug = false
 
 [Env]
   [Env.Env]
-    NItems = 10
-    NTrials = 10
+    NItems = 8
+    NTrials = 8
 
 [Params]
   MaintCons = false
@@ -13,28 +17,29 @@ Debug = false
   Tweak = false
   Baseline = false
   DryRun = false
+  Script = ''
   Sheet = ''
   Tag = ''
   Note = ''
-  File = ''
   SaveAll = false
   Good = true
 
 [Run]
-  GPU = false
-  NData = 1
+  GPU = true
+  GPUDevice = 0
+  NData = 8
   NThreads = 0
   Run = 0
-  NRuns = 1
-  NEpochs = 10
-  NTrials = 64
+  Runs = 1
+  Epochs = 50
+  Trials = 128
+  Cycles = 200
+  PlusCycles = 50
 
 [Log]
-  SaveWts = false
-  Epoch = true
-  Run = true
-  Trial = false
-  TestEpoch = false
-  TestTrial = false
-  NetData = false
-  Testing = false
+  SaveWeights = false
+  Train = [
+    'Run',
+    'Epoch'
+  ]
+  Test = []

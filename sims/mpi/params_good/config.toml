@@ -1,12 +1,16 @@
+Name = 'RA25'
+Title = 'Axon random associator'
+URL = 'https'
+Doc = 'This demonstrates a basic Axon model and provides a template for creating new models. It has a random-associator four-layer axon network that uses the standard supervised learning paradigm to learn mappings between 25 random input / output patterns defined over 5x5 input / output layers.'
 Includes = []
 GUI = false
 Debug = false
 
 [Params]
+  Script = ''
   Sheet = ''
   Tag = ''
   Note = ''
-  File = ''
   SaveAll = false
   Good = true
 
@@ -19,23 +23,25 @@ Debug = false
     Y = 10
 
 [Run]
-  MPI = false
-  GPU = false
+  GPU = true
+  GPUDevice = 0
   NData = 16
   NThreads = 0
   Run = 0
-  NRuns = 5
-  NEpochs = 100
+  Runs = 5
+  Epochs = 100
+  Trials = 32
+  Cycles = 200
+  PlusCycles = 50
   NZero = 2
-  NTrials = 32
   TestInterval = 5
   PCAInterval = 5
+  StartWeights = ''
 
 [Log]
-  SaveWts = false
-  Epoch = true
-  Run = true
-  Trial = false
-  TestEpoch = false
-  TestTrial = false
-  NetData = false
+  SaveWeights = false
+  Train = [
+    'Run',
+    'Epoch'
+  ]
+  Test = []

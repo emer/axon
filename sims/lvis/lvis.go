@@ -12,6 +12,7 @@ package lvis
 
 import (
 	"fmt"
+	"os"
 	"reflect"
 
 	"cogentcore.org/core/base/reflectx"
@@ -169,7 +170,7 @@ func (ss *Sim) ConfigSim() {
 	if ss.Config.Params.SaveAll {
 		ss.Config.Params.SaveAll = false
 		ss.Net.SaveParamsSnapshot(&ss.Config, ss.Config.Params.Good)
-		return
+		os.Exit(0)
 	}
 }
 

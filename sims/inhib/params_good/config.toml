@@ -1,27 +1,34 @@
+Name = 'Inhib'
+Title = 'Axon inhibition test'
+URL = 'https'
+Doc = 'This explores how inhibitory interneurons can dynamically control overall activity levels within the network'
 Includes = []
 GUI = false
 Debug = false
 
-[Env]
-  InputPct = 15.0
-
 [Params]
+  InputPct = 15.0
   NLayers = 2
-  Sheet = ''
+  Script = ''
+  Sheet = 'FSFFFB Trained'
   Tag = ''
   Note = ''
-  File = ''
   SaveAll = false
   Good = true
 
-  [Params.HidSize]
+  [Params.HiddenSize]
     X = 10
     Y = 10
 
 [Run]
-  GPU = true
+  GPU = false
+  GPUDevice = 0
+  Trials = 10
+  Cycles = 200
+  PlusCycles = 50
 
 [Log]
-  Epoch = true
-  Trial = false
-  NetData = false
+  Save = [
+    'Trial',
+    'Cycle'
+  ]

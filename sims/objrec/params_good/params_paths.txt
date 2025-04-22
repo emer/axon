@@ -2,14 +2,12 @@
 Layer: V1
 
 Layer: V4
-	             V1	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.83
-	             IT	       BackPath	Abs:	  1.00	Rel:	  0.20	GScale:	  0.02	Rel:  0.17
-								    Rel Params: .BackPath: 0.2
+             V1     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:	  0.83	LRate:	  0.10
+             IT        Back  Abs:	  1.00	Rel:	  0.20	GScale:	  0.02	Rel:	  0.17	LRate:	  0.10
 
 Layer: IT
-	             V4	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.01	Rel:  0.83
-	         Output	       BackPath	Abs:	  1.00	Rel:	  0.20	GScale:	  0.03	Rel:  0.17
-								    Rel Params: .BackPath: 0.2
+             V4     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.01	Rel:	  0.83	LRate:	  0.10
+         Output        Back  Abs:	  1.00	Rel:	  0.20	GScale:	  0.03	Rel:	  0.17	LRate:	  0.10
 
 Layer: Output
-	             IT	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.10	Rel:  1.00
+             IT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.10	Rel:	  1.00	LRate:	  0.10

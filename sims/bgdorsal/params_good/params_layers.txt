@@ -1,50 +1,18 @@
-           DGPi		Nominal:	  1.00	
-
-         DGPePr		Nominal:	  1.00	
-
-         DGPeAk		Nominal:	  1.00	
-
-           DSTN		Nominal:	  0.15	
-						Layer.Gi:	  0.50	Params: .DSTNLayer: 0.5
-
-         DMtxGo		Nominal:	  0.25	
-						Pool.Gi: 	  0.50	Params: .MatrixLayer: 0.5
-
-         DMtxNo		Nominal:	  0.25	
-						Pool.Gi: 	  0.50	Params: .MatrixLayer: 0.5
-
-             PF		Nominal:	  0.10	
-
-            SNc		Nominal:	  0.10	
-						Layer.Gi:	  0.90	
-
-          State		Nominal:	  0.12	
-						Layer.Gi:	  0.90	
-
-             S1		Nominal:	  0.12	
-						Layer.Gi:	  0.90	
-
-         Target		Nominal:	  0.10	
-						Layer.Gi:	  0.90	
-
-        MotorBS		Nominal:	  0.12	
-						Layer.Gi:	  0.20	Params: #MotorBS: 0.2
-
-             VL		Nominal:	  0.12	
-						Layer.Gi:	  1.00	
-
-             M1		Nominal:	  0.10	
-						Layer.Gi:	  0.90	
-
-           M1CT		Nominal:	  0.10	
-						Layer.Gi:	  1.40	Params: .CTLayer: 1.4
-
-           M1PT		Nominal:	  0.30	Params: .PTMaintLayer: 0.3
-						Layer.Gi:	  2.40	Params: .PTMaintLayer: 2.4
-
-           M1VM		Nominal:	  0.10	
-						Layer.Gi:	  0.60	
-
-          M1PTp		Nominal:	  0.10	
-						Layer.Gi:	  0.80	Params: .PTPredLayer: 0.8
-
+           DGPi	             GP	Nominal:   1.00
+         DGPePr	             GP	Nominal:   1.00
+         DGPeAk	             GP	Nominal:   1.00
+           DSTN	            STN	Nominal:   0.15	Layer.Gi:     0.50
+         DMtxGo	         Matrix	Nominal:   0.25	Pool.Gi:      0.50	  D1Mod	Positive
+         DMtxNo	         Matrix	Nominal:   0.25	Pool.Gi:      0.50	  D2Mod	Positive
+             PF	          Super	Nominal:   0.10
+            SNc	          Input	Nominal:   0.10	Layer.Gi:     0.90
+          State	          Input	Nominal:   0.10	Layer.Gi:     0.90
+             S1	          Input	Nominal:   0.10	Layer.Gi:     0.90
+         Target	          Input	Nominal:   0.10	Layer.Gi:     0.90
+        MotorBS	         Target	Nominal:   0.10	Layer.Gi:     0.20
+             VL	       Pulvinar	Nominal:   0.10	Layer.Gi:     1.00
+             M1	          Super	Nominal:   0.10	Layer.Gi:     0.90
+           M1CT	             CT	Nominal:   0.10	Layer.Gi:     1.40
+           M1PT	        PTMaint	Nominal:   0.30	Layer.Gi:     2.40
+           M1VM	         BGThal	Nominal:   0.10	Layer.Gi:     0.60
+          M1PTp	         PTPred	Nominal:   0.10	Layer.Gi:     0.80

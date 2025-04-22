@@ -1,210 +1,64 @@
-            VTA		Nominal:	  0.10	
-						Layer.Gi:	  1.00	
-
-            LHb		Nominal:	  0.10	
-						Layer.Gi:	  1.00	
-
-            LDT		Nominal:	  0.10	
-						Layer.Gi:	  1.00	
-
-          USpos		Nominal:	  0.05	
-						Pool.Gi: 	  0.50	
-
-          USneg		Nominal:	  0.05	
-						Pool.Gi: 	  0.50	
-
-           Cost		Nominal:	  0.05	
-						Pool.Gi: 	  0.50	
-
-        CostFin		Nominal:	  0.05	
-						Pool.Gi: 	  1.00	
-
-         USposP		Nominal:	  0.05	
-						Pool.Gi: 	  0.50	
-
-         USnegP		Nominal:	  0.05	
-						Pool.Gi: 	  0.50	
-
-          CostP		Nominal:	  0.05	
-						Pool.Gi: 	  0.50	
-
-          PVpos		Nominal:	  0.20	
-						Layer.Gi:	  1.00	
-
-          PVneg		Nominal:	  0.20	
-						Layer.Gi:	  1.00	
-
-         PVposP		Nominal:	  0.20	
-						Layer.Gi:	  0.50	
-
-         PVnegP		Nominal:	  0.20	
-						Layer.Gi:	  0.50	
-
-         Drives		Nominal:	  0.01	
-						Pool.Gi: 	  0.50	
-
-        DrivesP		Nominal:	  0.01	
-						Pool.Gi: 	  0.50	
-
-        Urgency		Nominal:	  0.20	
-						Layer.Gi:	  0.50	
-
-           VGPi		Nominal:	  1.00	
-
-         VGPePr		Nominal:	  1.00	
-
-         VGPeAk		Nominal:	  1.00	
-
-           VSTN		Nominal:	  0.15	
-						Layer.Gi:	  0.50	
-
-         VMtxGo		Nominal:	  0.02	
-						Layer.Gi:	  0.50	
-						Pool.Gi: 	  0.50	
-
-         VMtxNo		Nominal:	  0.02	
-						Layer.Gi:	  0.50	
-						Pool.Gi: 	  0.50	
-
-        VSGated		Nominal:	  0.50	
-						Layer.Gi:	  1.00	
-
-      VsPatchD1		Nominal:	  0.20	
-						Layer.Gi:	  0.50	Params: .VSPatchLayer: 0.5
-						Pool.Gi: 	  0.50	Params: Base:.VSPatchLayer: 0.5
-
-      VsPatchD2		Nominal:	  0.20	
-						Layer.Gi:	  0.50	Params: .VSPatchLayer: 0.5
-						Pool.Gi: 	  0.50	Params: .VSPatchLayer: 0.5
-
-             SC		Nominal:	  0.10	
-						Layer.Gi:	  1.20	
-
-    BLAposAcqD1		Nominal:	  0.03	
-						Layer.Gi:	  2.00	
-						Pool.Gi: 	  1.00	
-
-    BLAposExtD2		Nominal:	  0.03	
-						Layer.Gi:	  1.80	Params: #BLAposExtD2: 1.8
-						Pool.Gi: 	  1.00	Params: #BLAposExtD2: 1.0
-
-    BLAnegExtD1		Nominal:	  0.03	
-						Layer.Gi:	  1.80	
-						Pool.Gi: 	  1.00	
-
-    BLAnegAcqD2		Nominal:	  0.03	
-						Layer.Gi:	  1.20	
-						Pool.Gi: 	  1.00	
-
-         CeMPos		Nominal:	  0.15	
-						Layer.Gi:	  0.50	
-						Pool.Gi: 	  0.30	
-
-         CeMNeg		Nominal:	  0.15	
-						Layer.Gi:	  0.50	
-						Pool.Gi: 	  0.30	
-
-     BLANovelCS		Nominal:	  0.05	
-						Layer.Gi:	  0.80	
-
-         OFCpos		Nominal:	  0.03	
-						Layer.Gi:	  2.20	
-						Pool.Gi: 	  1.00	
-
-       OFCposCT		Nominal:	  0.03	
-						Layer.Gi:	  4.00	
-						Pool.Gi: 	  1.20	
-
-       OFCposPT		Nominal:	  0.02	
-						Layer.Gi:	  0.50	
-						Pool.Gi: 	  0.50	
-
-       OFCposMD		Nominal:	  0.03	
-						Layer.Gi:	  2.00	
-						Pool.Gi: 	  0.60	
-
-      OFCposPTp		Nominal:	  0.03	Params: #OFCposPTp: 0.025
-						Layer.Gi:	  1.20	
-						Pool.Gi: 	  1.00	Params: #OFCposPTp: 1
-
-         OFCneg		Nominal:	  0.10	
-						Layer.Gi:	  1.20	
-						Pool.Gi: 	  1.00	
-
-       OFCnegCT		Nominal:	  0.03	
-						Layer.Gi:	  4.00	
-						Pool.Gi: 	  1.20	
-
-       OFCnegPT		Nominal:	  0.02	
-						Layer.Gi:	  0.50	
-						Pool.Gi: 	  0.50	
-
-       OFCnegMD		Nominal:	  0.03	
-						Layer.Gi:	  2.00	
-						Pool.Gi: 	  0.60	
-
-      OFCnegPTp		Nominal:	  0.10	
-						Layer.Gi:	  1.20	
-						Pool.Gi: 	  1.40	
-
-          ILpos		Nominal:	  0.10	
-						Layer.Gi:	  0.90	
-
-        ILposCT		Nominal:	  0.10	
-						Layer.Gi:	  1.40	
-
-        ILposPT		Nominal:	  0.10	
-						Layer.Gi:	  0.50	
-
-        ILposMD		Nominal:	  0.10	
-						Layer.Gi:	  0.60	
-
-       ILposPTp		Nominal:	  0.10	
-						Layer.Gi:	  0.80	
-
-          ILneg		Nominal:	  0.10	
-						Layer.Gi:	  0.90	
-
-        ILnegCT		Nominal:	  0.10	
-						Layer.Gi:	  1.40	
-
-        ILnegPT		Nominal:	  0.10	
-						Layer.Gi:	  0.50	
-
-        ILnegMD		Nominal:	  0.10	
-						Layer.Gi:	  0.60	
-
-       ILnegPTp		Nominal:	  0.10	
-						Layer.Gi:	  0.80	
-
-        ACCcost		Nominal:	  0.10	
-						Pool.Gi: 	  1.00	
-
-      ACCcostCT		Nominal:	  0.03	
-						Pool.Gi: 	  1.80	
-
-      ACCcostPT		Nominal:	  0.02	
-						Pool.Gi: 	  0.50	
-
-      ACCcostMD		Nominal:	  0.03	
-						Layer.Gi:	  2.00	
-						Pool.Gi: 	  0.60	
-
-     ACCcostPTp		Nominal:	  0.10	
-						Pool.Gi: 	  1.20	
-
-           Time		Nominal:	  0.10	
-						Layer.Gi:	  0.90	
-
-          TimeP		Nominal:	  0.10	
-						Layer.Gi:	  1.00	
-
-             CS		Nominal:	  0.05	Params: #CS: 0.05
-						Layer.Gi:	  0.90	
-
-            CSP		Nominal:	  0.10	
-						Layer.Gi:	  1.00	
-
-      ContextIn		Nominal:	  0.03	Params: #ContextIn: 0.025
-						Layer.Gi:	  0.90	
-
+            VTA	            VTA	Nominal:   0.10	Layer.Gi:     1.00
+            LHb	            LHb	Nominal:   0.10	Layer.Gi:     1.00
+            LDT	            LDT	Nominal:   0.10	Layer.Gi:     1.00
+          USpos	             US	Nominal:   0.05	Pool.Gi:      0.50	  D1Mod	Positive
+          USneg	             US	Nominal:   0.05	Pool.Gi:      0.50	  D2Mod	Negative
+           Cost	             US	Nominal:   0.05	Pool.Gi:      0.50	  D1Mod	   Cost
+        CostFin	             US	Nominal:   0.05	Pool.Gi:      1.00	  D2Mod	   Cost
+         USposP	       Pulvinar	Nominal:   0.05	Pool.Gi:      0.50
+         USnegP	       Pulvinar	Nominal:   0.05	Pool.Gi:      0.50
+          CostP	       Pulvinar	Nominal:   0.05	Pool.Gi:      0.50
+          PVpos	             PV	Nominal:   0.20	Layer.Gi:     1.00	  D1Mod	Positive
+          PVneg	             PV	Nominal:   0.20	Layer.Gi:     1.00	  D2Mod	Negative
+         PVposP	       Pulvinar	Nominal:   0.20	Layer.Gi:     0.50
+         PVnegP	       Pulvinar	Nominal:   0.20	Layer.Gi:     0.50
+         Drives	         Drives	Nominal:   0.01	Pool.Gi:      0.50
+        DrivesP	       Pulvinar	Nominal:   0.01	Pool.Gi:      0.50
+        Urgency	        Urgency	Nominal:   0.20	Layer.Gi:     0.50
+           VGPi	             GP	Nominal:   1.00
+         VGPePr	             GP	Nominal:   1.00
+         VGPeAk	             GP	Nominal:   1.00
+           VSTN	            STN	Nominal:   0.15	Layer.Gi:     0.50
+         VMtxGo	         Matrix	Nominal:   0.02	Layer.Gi:     0.50	Pool.Gi:      0.50	  D1Mod	Positive
+         VMtxNo	         Matrix	Nominal:   0.02	Layer.Gi:     0.50	Pool.Gi:      0.50	  D2Mod	Positive
+        VSGated	        VSGated	Nominal:   0.50	Layer.Gi:     1.00
+      VsPatchD1	        VSPatch	Nominal:   0.20	Layer.Gi:     0.50	Pool.Gi:      0.50	  D1Mod	Positive
+      VsPatchD2	        VSPatch	Nominal:   0.20	Layer.Gi:     0.50	Pool.Gi:      0.50	  D2Mod	Positive
+             SC	          Super	Nominal:   0.10	Layer.Gi:     1.20
+    BLAposAcqD1	            BLA	Nominal:   0.03	Layer.Gi:     2.00	Pool.Gi:      1.00	  D1Mod	Positive
+    BLAposExtD2	            BLA	Nominal:   0.03	Layer.Gi:     1.80	Pool.Gi:      1.00	  D2Mod	Positive
+    BLAnegExtD1	            BLA	Nominal:   0.03	Layer.Gi:     1.80	Pool.Gi:      1.00	  D1Mod	Negative
+    BLAnegAcqD2	            BLA	Nominal:   0.03	Layer.Gi:     1.20	Pool.Gi:      1.00	  D2Mod	Negative
+         CeMPos	            CeM	Nominal:   0.15	Layer.Gi:     0.50	Pool.Gi:      0.30	  D1Mod	Positive
+         CeMNeg	            CeM	Nominal:   0.15	Layer.Gi:     0.50	Pool.Gi:      0.30	  D2Mod	Negative
+     BLANovelCS	            BLA	Nominal:   0.05	Layer.Gi:     0.80	  D1Mod	Positive
+         OFCpos	          Super	Nominal:   0.03	Layer.Gi:     2.20	Pool.Gi:      1.00
+       OFCposCT	             CT	Nominal:   0.03	Layer.Gi:     4.00	Pool.Gi:      1.20
+       OFCposPT	        PTMaint	Nominal:   0.02	Layer.Gi:     0.50	Pool.Gi:      0.50
+       OFCposMD	         BGThal	Nominal:   0.03	Layer.Gi:     2.00	Pool.Gi:      0.60
+      OFCposPTp	         PTPred	Nominal:   0.03	Layer.Gi:     1.20	Pool.Gi:      1.00
+         OFCneg	          Super	Nominal:   0.10	Layer.Gi:     1.20	Pool.Gi:      1.00
+       OFCnegCT	             CT	Nominal:   0.03	Layer.Gi:     4.00	Pool.Gi:      1.20
+       OFCnegPT	        PTMaint	Nominal:   0.02	Layer.Gi:     0.50	Pool.Gi:      0.50
+       OFCnegMD	         BGThal	Nominal:   0.03	Layer.Gi:     2.00	Pool.Gi:      0.60
+      OFCnegPTp	         PTPred	Nominal:   0.10	Layer.Gi:     1.20	Pool.Gi:      1.40
+          ILpos	          Super	Nominal:   0.10	Layer.Gi:     0.90
+        ILposCT	             CT	Nominal:   0.10	Layer.Gi:     1.40
+        ILposPT	        PTMaint	Nominal:   0.10	Layer.Gi:     0.50
+        ILposMD	         BGThal	Nominal:   0.10	Layer.Gi:     0.60
+       ILposPTp	         PTPred	Nominal:   0.10	Layer.Gi:     0.80
+          ILneg	          Super	Nominal:   0.10	Layer.Gi:     0.90
+        ILnegCT	             CT	Nominal:   0.10	Layer.Gi:     1.40
+        ILnegPT	        PTMaint	Nominal:   0.10	Layer.Gi:     0.50
+        ILnegMD	         BGThal	Nominal:   0.10	Layer.Gi:     0.60
+       ILnegPTp	         PTPred	Nominal:   0.10	Layer.Gi:     0.80
+        ACCcost	          Super	Nominal:   0.10	Pool.Gi:      1.00
+      ACCcostCT	             CT	Nominal:   0.03	Pool.Gi:      1.80
+      ACCcostPT	        PTMaint	Nominal:   0.02	Pool.Gi:      0.50
+      ACCcostMD	         BGThal	Nominal:   0.03	Layer.Gi:     2.00	Pool.Gi:      0.60
+     ACCcostPTp	         PTPred	Nominal:   0.10	Pool.Gi:      1.20
+           Time	          Input	Nominal:   0.10	Layer.Gi:     0.90
+          TimeP	       Pulvinar	Nominal:   0.10	Layer.Gi:     1.00
+             CS	          Input	Nominal:   0.05	Layer.Gi:     0.90
+            CSP	       Pulvinar	Nominal:   0.10	Layer.Gi:     1.00
+      ContextIn	          Input	Nominal:   0.03	Layer.Gi:     0.90

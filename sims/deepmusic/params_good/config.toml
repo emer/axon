@@ -1,38 +1,47 @@
-Includes = []
+Name = 'DeepMusic'
+Title = 'DeepAxon Music Prediction'
+URL = 'https'
+Doc = 'This demonstrates a basic deep predictive learning Axon model that learns to predict the next note in a song.'
+Includes = [
+  'fullsong.toml'
+]
 GUI = false
 Debug = false
 
 [Env]
   UnitsPer = 4
-  FullSong = false
+  FullSong = true
   PlayTarg = false
   TestClamp = true
 
 [Params]
   Hid2 = false
+  Script = ''
   Sheet = ''
   Tag = ''
   Note = ''
-  File = ''
   SaveAll = false
   Good = true
 
 [Run]
   GPU = true
-  NData = 4
+  GPUDevice = 0
+  NData = 16
   NThreads = 0
   Run = 0
-  NRuns = 5
-  NEpochs = 100
-  NTrials = 128
-  PCAInterval = 5
-  TestInterval = -1
+  Runs = 5
+  Epochs = 500
+  Trials = 768
+  Cycles = 200
+  PlusCycles = 50
+  TestInterval = 0
+  PCAInterval = 10
+  StartWeights = ''
 
 [Log]
-  SaveWts = false
-  Epoch = true
-  Run = true
-  Trial = false
-  TestEpoch = false
-  TestTrial = false
-  NetData = false
+  SaveWeights = false
+  Train = [
+    'Run',
+    'Epoch'
+  ]
+  Test = []

@@ -1,9 +1,3 @@
-          State		Nominal:	  0.20	Params: #State: 0.2
-						Layer.Gi:	  0.90	
-
-      VsPatchD1		Nominal:	  0.20	
-						Layer.Gi:	  0.50	Params: .VSPatchLayer: 0.5
-
-      VsPatchD2		Nominal:	  0.20	
-						Layer.Gi:	  0.50	Params: .VSPatchLayer: 0.5
-
+          State	          Input	Nominal:   0.20	Layer.Gi:     0.90
+      VsPatchD1	        VSPatch	Nominal:   0.20	Layer.Gi:     0.50	  D1Mod	Positive
+      VsPatchD2	        VSPatch	Nominal:   0.20	Layer.Gi:     0.50	  D2Mod	Positive

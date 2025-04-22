@@ -1,3 +1,7 @@
+Name = 'RL'
+Title = 'Reinforcement learning'
+URL = 'https'
+Doc = 'rl explores the temporal differences (TD) reinforcement learning algorithm under some basic Pavlovian conditioning environments.'
 Includes = []
 RW = false
 GUI = false
@@ -6,28 +10,29 @@ Debug = false
 [Env]
 
 [Params]
+  Script = ''
   Sheet = ''
   Tag = ''
   Note = ''
-  File = ''
   SaveAll = false
   Good = true
 
 [Run]
   GPU = false
-  NThreads = 2
+  GPUDevice = 0
+  NData = 1
+  NThreads = 0
   Run = 0
-  NRuns = 1
-  NEpochs = 100
-  NTrials = 20
+  Runs = 1
+  Epochs = 100
+  Trials = 20
+  Cycles = 200
+  PlusCycles = 50
 
 [Log]
-  AggStats = [
-    'DA',
-    'VSPatch'
+  SaveWeights = false
+  Train = [
+    'Run',
+    'Epoch'
   ]
-  SaveWts = false
-  Epoch = true
-  Run = true
-  Trial = false
-  NetData = false
+  Test = []

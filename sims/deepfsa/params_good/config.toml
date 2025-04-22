@@ -1,3 +1,7 @@
+Name = 'DeepFSA'
+Title = 'DeepAxon Finite State Automaton'
+URL = 'https'
+Doc = 'This demonstrates a basic deep predictive learning Axon model on the Finite State Automaton problem (e.g.'
 Includes = []
 GUI = false
 Debug = false
@@ -24,29 +28,33 @@ Debug = false
     X = 3
 
 [Params]
+  Script = ''
   Sheet = ''
   Tag = ''
   Note = ''
-  File = ''
   SaveAll = false
   Good = true
 
 [Run]
   GPU = true
+  GPUDevice = 0
   NData = 16
   NThreads = 0
   Run = 0
-  NRuns = 5
-  NEpochs = 100
-  NTrials = 196
-  PCAInterval = 5
-  TestInterval = -1
+  Runs = 5
+  Epochs = 200
+  Trials = 196
+  Cycles = 200
+  PlusCycles = 50
+  NZero = 2
+  TestInterval = 0
+  PCAInterval = 10
+  StartWeights = ''
 
 [Log]
-  SaveWts = false
-  Epoch = true
-  Run = true
-  Trial = false
-  TestEpoch = false
-  TestTrial = false
-  NetData = false
+  SaveWeights = false
+  Train = [
+    'Run',
+    'Epoch'
+  ]
+  Test = []

@@ -1,4 +1,2 @@
-          Input		Nominal:	  0.10	
-
-         Neuron		Nominal:	  0.10	
-
+          Input	          Input	Nominal:   0.10
+         Neuron	          Super	Nominal:   0.10

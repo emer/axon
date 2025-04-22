@@ -1,0 +1,6 @@
+////////  Layer: Input
+////////  Layer: Neuron
+  Acts     {
+    Mahp      { Gk: 0.05 [0.02] }
+  }
+  ////////  Path: InputToNeuron
