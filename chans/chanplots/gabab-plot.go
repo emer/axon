@@ -108,7 +108,7 @@ func (pl *GABABPlot) GVRun() { //types:add
 			s.Plot.Title = "GABA-B G(V)"
 		})
 	}
-	if pl.Tabs != nil && pl.Tabs.AsLab().IsVisible() {
+	if pl.Tabs != nil {
 		pl.Tabs.AsLab().PlotTensorFS(dir)
 	}
 }
@@ -136,7 +136,7 @@ func (pl *GABABPlot) GSRun() { //types:add
 			s.Plot.Title = "GABAB G(spike)"
 		})
 	}
-	if pl.Tabs != nil && pl.Tabs.AsLab().IsVisible() {
+	if pl.Tabs != nil {
 		pl.Tabs.AsLab().PlotTensorFS(dir)
 	}
 }
@@ -183,7 +183,7 @@ func (pl *GABABPlot) TimeRun() { //types:add
 			s.Plot.Title = "GABAB G(t)"
 		})
 	}
-	if pl.Tabs != nil && pl.Tabs.AsLab().IsVisible() {
+	if pl.Tabs != nil {
 		pl.Tabs.AsLab().PlotTensorFS(dir)
 	}
 }

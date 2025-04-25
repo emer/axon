@@ -122,7 +122,7 @@ func (pl *AKPlot) GVRun() { //types:add
 			s.Plot.Title = "AK G(V)"
 		})
 	}
-	if pl.Tabs != nil && pl.Tabs.AsLab().IsVisible() {
+	if pl.Tabs != nil {
 		pl.Tabs.AsLab().PlotTensorFS(dir)
 	}
 }
@@ -193,7 +193,7 @@ func (pl *AKPlot) TimeRun() { //types:add
 			s.Plot.Title = "AK G(t)"
 		})
 	}
-	if pl.Tabs != nil && pl.Tabs.AsLab().IsVisible() {
+	if pl.Tabs != nil {
 		pl.Tabs.AsLab().PlotTensorFS(dir)
 	}
 }

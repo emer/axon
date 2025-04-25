@@ -121,7 +121,7 @@ func (pl *NMDAPlot) GVRun() { //types:add
 	}
 	metadata.SetDoc(dir.Float64("Gnmda_std"), "standard compute function used in axon sims")
 
-	if pl.Tabs != nil && pl.Tabs.AsLab().IsVisible() {
+	if pl.Tabs != nil {
 		pl.Tabs.AsLab().PlotTensorFS(dir)
 	}
 }
@@ -159,7 +159,7 @@ func (pl *NMDAPlot) TimeRun() { //types:add
 			s.Plot.Title = "NMDA G(t)"
 		})
 	}
-	if pl.Tabs != nil && pl.Tabs.AsLab().IsVisible() {
+	if pl.Tabs != nil {
 		pl.Tabs.AsLab().PlotTensorFS(dir)
 	}
 }

@@ -87,7 +87,7 @@ func (pl *SKCaPlot) GCaRun() { //types:add
 			s.Plot.Title = "sK Ca G(Ca)"
 		})
 	}
-	if pl.Tabs != nil && pl.Tabs.AsLab().IsVisible() {
+	if pl.Tabs != nil {
 		pl.Tabs.AsLab().PlotTensorFS(dir)
 	}
 }
@@ -143,7 +143,7 @@ func (pl *SKCaPlot) TimeRun() { //types:add
 			s.Plot.Title = "sK Ca G(t)"
 		})
 	}
-	if pl.Tabs != nil && pl.Tabs.AsLab().IsVisible() {
+	if pl.Tabs != nil {
 		pl.Tabs.AsLab().PlotTensorFS(dir)
 	}
 }

@@ -96,7 +96,7 @@ func (pl *VGCCPlot) GVRun() { //types:add
 			s.Plot.Title = "VGCC G(V)"
 		})
 	}
-	if pl.Tabs != nil && pl.Tabs.AsLab().IsVisible() {
+	if pl.Tabs != nil {
 		pl.Tabs.AsLab().PlotTensorFS(dir)
 	}
 }
@@ -155,7 +155,7 @@ func (pl *VGCCPlot) TimeRun() { //types:add
 			s.On = true
 		})
 	}
-	if pl.Tabs != nil && pl.Tabs.AsLab().IsVisible() {
+	if pl.Tabs != nil {
 		pl.Tabs.AsLab().PlotTensorFS(dir)
 	}
 }

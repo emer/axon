@@ -183,7 +183,7 @@ func (pl *SynCaPlot) TimeRun() { //types:add
 			s.Plot.Title = "SynCa"
 		})
 	}
-	if pl.Tabs != nil && pl.Tabs.AsLab().IsVisible() {
+	if pl.Tabs != nil {
 		pl.Tabs.AsLab().PlotTensorFS(dir)
 	}
 }
