@@ -1065,8 +1065,8 @@ func (ac *ActParams) DecayState(ctx *Context, ni, di uint32, decay, glong, ahp f
 		ac.DecayAHP(ctx, ni, di, ahp)
 	}
 	Neurons[ni, di, GgabaB] -= glong * Neurons[ni, di, GgabaB]
-	Neurons[ni, di, GABAB] -= glong * Neurons[ni, di, GABAB]
-	Neurons[ni, di, GABABx] -= glong * Neurons[ni, di, GABABx]
+	Neurons[ni, di, GababM] -= glong * Neurons[ni, di, GababM]
+	Neurons[ni, di, GababX] -= glong * Neurons[ni, di, GababX]
 
 	Neurons[ni, di, GnmdaSyn] -= glong * Neurons[ni, di, GnmdaSyn]
 	Neurons[ni, di, Gnmda] -= glong * Neurons[ni, di, Gnmda]
@@ -1148,8 +1148,8 @@ func (ac *ActParams) InitActs(ctx *Context, ni, di uint32) {
 	Neurons[ni, di, NmdaCa] = 0
 
 	Neurons[ni, di, GgabaB] = 0
-	Neurons[ni, di, GABAB] = 0
-	Neurons[ni, di, GABABx] = 0
+	Neurons[ni, di, GababM] = 0
+	Neurons[ni, di, GababX] = 0
 
 	Neurons[ni, di, Gvgcc] = 0
 	Neurons[ni, di, VgccM] = 0

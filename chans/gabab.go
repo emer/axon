@@ -97,25 +97,25 @@ func (gp *GABABParams) GFromS(s float32) float32 {
 	return 1.0 / (1.0 + math32.FastExp(-(ss-7.1)/1.4))
 }
 
-// DeltaG computes the change in conductance based on the current
-// conductance g and the spike integration factor x.
-func (gp *GABABParams) DeltaG(g, x float32) float32 {
-	return (gp.TauFact*x - g) * gp.RiseDt
+// DeltaM computes the change in activation M based on the current
+// activation m and the spike integration factor x.
+func (gp *GABABParams) DeltaM(m, x float32) float32 {
+	return (gp.TauFact*x - m) * gp.RiseDt
 }
 
-// GABAB returns the updated GABA-B / GIRK activation and underlying x value
+// MX updates the GABA-B / GIRK activation M and underlying X integration value
 // based on current values and gi inhibitory conductance (proxy for GABA spikes)
-func (gp *GABABParams) GABAB(gi float32, gabaB, gabaBx *float32) {
-	dG := gp.DeltaG(*gabaB, *gabaBx)
-	*gabaBx += gp.GFromS(gi) - (*gabaBx)*gp.DecayDt
-	*gabaB += dG
+func (gp *GABABParams) MX(gi float32, m, x *float32) {
+	dM := gp.DeltaM(*m, *x)
+	*x += gp.GFromS(gi) - (*x)*gp.DecayDt
+	*m += dM
 	return
 }
 
 // GgabaB returns the overall net GABAB / GIRK conductance including
-// Gk, Gbase, and voltage-gating
-func (gp *GABABParams) GgabaB(gabaB, v float32) float32 {
-	return gp.Gk * gp.GFromV(v) * (gabaB + gp.Gbase)
+// Gk, Gbase, and voltage-gating, as a function of activation value M.
+func (gp *GABABParams) GgabaB(m, v float32) float32 {
+	return gp.Gk * gp.GFromV(v) * (m + gp.Gbase)
 }
 
 //gosl:end

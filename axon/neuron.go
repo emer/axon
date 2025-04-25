@@ -247,20 +247,19 @@ const (
 	// Updates at end of plus phase.
 	CtxtGeOrig
 
-	/////////////////////////////////////////
-	// GABA channels
+	//////// GABA-B channels
 
-	// GgabaB is net GABA-B conductance, after Vm gating and Gbar + Gbase.
+	// GgabaB is net GABA-B conductance, after Vm gating and Gk + Gbase.
 	// Applies to Gk, not Gi, for GIRK, with .1 reversal potential.
 	GgabaB
 
-	// GABAB is GABA-B / GIRK activation, which is a time-integrated value
+	// GababM is the GABA-B / GIRK activation, which is a time-integrated value
 	// with rise and decay time constants.
-	GABAB
+	GababM
 
-	// GABABx is GABA-B / GIRK internal drive variable. This gets the raw
+	// GababX is GABA-B / GIRK internal drive variable. This gets the raw
 	// activation and decays.
-	GABABx
+	GababX
 
 	//////// SST somatostatin inhibition factors
 
@@ -597,8 +596,8 @@ var NeuronVarProps = map[string]string{
 	//////// GABA channels
 
 	"GgabaB": `cat:"Inhib" auto-scale:"+"`,
-	"GABAB":  `cat:"Inhib" auto-scale:"+"`,
-	"GABABx": `cat:"Inhib" auto-scale:"+"`,
+	"GababM": `cat:"Inhib" auto-scale:"+"`,
+	"GababX": `cat:"Inhib" auto-scale:"+"`,
 
 	//////// SST somatostatin inhibition factors
 

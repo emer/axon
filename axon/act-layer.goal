@@ -489,12 +489,12 @@ func (ly *LayerParams) GiInteg(ctx *Context, pi, ni, di uint32) {
 		}
 	}
 	vm := Neurons[ni, di, VmDend]
-	nrnGABAB := Neurons[ni, di, GABAB]
-	nrnGABABx := Neurons[ni, di, GABABx]
-	ly.Acts.GabaB.GABAB(gi, &nrnGABAB, &nrnGABABx)
-	Neurons[ni, di, GABAB] = nrnGABAB
-	Neurons[ni, di, GABABx] = nrnGABABx
-	nrnGgabaB := ly.Acts.GabaB.GgabaB(nrnGABAB, vm)
+	nrnGababM := Neurons[ni, di, GababM]
+	nrnGababX := Neurons[ni, di, GababX]
+	ly.Acts.GabaB.MX(gi, &nrnGababM, &nrnGababX)
+	Neurons[ni, di, GababM] = nrnGababM
+	Neurons[ni, di, GababX] = nrnGababX
+	nrnGgabaB := ly.Acts.GabaB.GgabaB(nrnGababM, vm)
 	Neurons[ni, di, GgabaB] = nrnGgabaB
 	// Gk was already init
 	Neurons[ni, di, Gk] += nrnGgabaB

@@ -81,7 +81,45 @@ var PathParams = axon.PathSheets{
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
 
-	// simulation configuration parameters -- set by .toml config file and / or args
+	// Ge is the synaptic excitatory conductance per time step (ms), when getting input.
+	Ge float32 `min:"0" step:"0.01" default:"0.15"`
+
+	// Gi is the raw inhibitory conductance per time step (ms).
+	Gi float32 `min:"0" step:"0.01" default:"0.1"`
+
+	// ErevE is the excitatory reversal (driving) potential in mV.
+	// This determines where excitation pushes Vm up to.
+	ErevE float32 `min:"-90" max:"100" step:"5" default:"0"`
+
+	// ErevI is the inhibition reversal (driving) potential in mV.
+	// This determines where inhibition pulls Vm down to.
+	ErevI float32 `min:"-100" max:"100" step:"5" default:"-90"`
+
+	// NoiseG is the strength of the noise conductance.
+	Noise float32 `min:"0" step:"0.01"`
+
+	// KNaAdapt activates sodium-gated potassium adaptation mechanisms
+	// that cause the neuron to reduce spiking over time.
+	KNaAdapt bool `default:"true"`
+
+	// MahpGk is the strength of mAHP M-type K channel, which drives adaptation
+	// similar to KNa adaptation mechanisms.
+	MahpGk float32 `default:"0.05"`
+
+	// NMDAGe is the strength of contribution of the NMDA excitatory Ca++ current,
+	// to the overall Ge(t) excitatory conductance value. This channel
+	// has a long time constant and is essential for establishing
+	// a more stable neural representation over time by keeping active neurons active.
+	NMDAGe float32 `default:"0.006"`
+
+	// GABABGi is the strength of contribution of the GABAB inhibitory Cl- current,
+	// to the overall Gi(t) inhibitory conductance value. This channel
+	// also has a long time constant like NMDA, and works in opposition to it,
+	// by keeping inactive neurons inactive, synergistically helping to establish
+	// stable neural representations.
+	GABABGi float32 `default:"0.015"`
+
+	// Config has simulation configuration parameters, set by .toml config file and / or args.
 	Config *Config `new-window:"+"`
 
 	// Net is the network: click to view / edit parameters for layers, paths, etc.
@@ -144,10 +182,19 @@ func EmbedSim(b tree.Node) *Sim {
 
 func (ss *Sim) Defaults() {
 	ss.Config.Defaults()
-	ss.ApplyParams()
+	ss.Ge = 0.15
+	ss.Gi = 0.1
+	ss.ErevE = 0
+	ss.ErevI = -90
+	ss.Noise = 0
+	ss.KNaAdapt = true
+	ss.MahpGk = 0.05
+	ss.NMDAGe = 0.006
+	ss.GABABGi = 0.015
 }
 
 func (ss *Sim) ConfigSim() {
+	ss.Defaults()
 	ss.Root, _ = tensorfs.NewDir("Root")
 	tensorfs.CurRoot = ss.Root
 	ss.Net = axon.NewNetwork(ss.Config.Name)
@@ -186,14 +233,20 @@ func (ss *Sim) ApplyParams() {
 	lyp := ly.Params
 	lyp.Acts.Gbar.E = 100
 	lyp.Acts.Gbar.L = 20
-	lyp.Acts.Erev.E = float32(ss.Config.ErevE)
-	lyp.Acts.Erev.I = float32(ss.Config.ErevI)
-	// lyp.Acts.Noise.Var = float64(ss.Config.Noise)
-	lyp.Acts.KNa.On.SetBool(ss.Config.KNaAdapt)
-	lyp.Acts.Mahp.Gk = ss.Config.MahpGk
-	lyp.Acts.NMDA.Ge = ss.Config.NMDAGbar
-	lyp.Acts.GabaB.Gk = ss.Config.GABABGbar
-	lyp.Acts.VGCC.Ge = ss.Config.VGCCGbar
+	lyp.Acts.Erev.E = ss.ErevE
+	lyp.Acts.Erev.I = ss.ErevI
+	if ss.Noise > 0 {
+		lyp.Acts.Noise.On.SetBool(true)
+		lyp.Acts.Noise.Ge = ss.Noise
+		lyp.Acts.Noise.Gi = ss.Noise
+	} else {
+		lyp.Acts.Noise.On.SetBool(false)
+	}
+	lyp.Acts.KNa.On.SetBool(ss.KNaAdapt)
+	lyp.Acts.Mahp.Gk = ss.MahpGk
+	lyp.Acts.NMDA.Ge = ss.NMDAGe
+	lyp.Acts.GabaB.Gk = ss.GABABGi
+	lyp.Acts.VGCC.Ge = ss.Config.VGCCGe
 	lyp.Acts.AK.Gk = ss.Config.AKGk
 	lyp.Acts.Update()
 }
@@ -264,14 +317,14 @@ func (ss *Sim) NeuronUpdate(nt *axon.Network, inputOn bool) {
 	// nrn.Gi = 0
 	if inputOn {
 		if ss.Config.GeClamp {
-			geSyn := ac.Dt.GeSynFromRawSteady(ss.Config.Ge)
-			axon.Neurons.Set(ss.Config.Ge, ni, di, int(axon.GeRaw))
+			geSyn := ac.Dt.GeSynFromRawSteady(ss.Ge)
+			axon.Neurons.Set(ss.Ge, ni, di, int(axon.GeRaw))
 			axon.Neurons.Set(geSyn, ni, di, int(axon.GeSyn))
 		} else {
 			ss.InputISI += 1
 			ge := float32(0)
 			if ss.InputISI > 1000.0/ss.Config.SpikeHz {
-				ge = ss.Config.Ge
+				ge = ss.Ge
 				ss.InputISI = 0
 			}
 			geSyn := ac.Dt.GeSynFromRawSteady(ge)
@@ -282,8 +335,8 @@ func (ss *Sim) NeuronUpdate(nt *axon.Network, inputOn bool) {
 		axon.Neurons.Set(0, ni, di, int(axon.GeRaw))
 		axon.Neurons.Set(0, ni, di, int(axon.GeSyn))
 	}
-	giSyn := ac.Dt.GiSynFromRawSteady(ss.Config.Gi)
-	axon.Neurons.Set(ss.Config.Gi, ni, di, int(axon.GiRaw))
+	giSyn := ac.Dt.GiSynFromRawSteady(ss.Gi)
+	axon.Neurons.Set(ss.Gi, ni, di, int(axon.GiRaw))
 	axon.Neurons.Set(giSyn, ni, di, int(axon.GiSyn))
 
 	axon.RunCycleNeuron(2)
@@ -410,7 +463,7 @@ func (ss *Sim) ConfigStats() {
 						s.Label = "Vm"
 					case "Act", "Spike":
 						s.On = true
-					case "Inet", "VmDend":
+					case "Inet", "ISI", "ISIAvg", "VmDend", "GABAB", "VgccCa":
 						s.RightY = true
 					}
 				})

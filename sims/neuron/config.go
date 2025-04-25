@@ -81,47 +81,11 @@ type Config struct {
 	// SpikeHz is the frequency of input spiking for !GeClamp mode.
 	SpikeHz float32 `default:"50"`
 
-	// Ge is the raw synaptic excitatory conductance.
-	Ge float32 `min:"0" step:"0.01" default:"0.1"`
-
-	// Gi is the raw inhibitory conductance.
-	Gi float32 `min:"0" step:"0.01" default:"0.1"`
-
-	// ErevE is the excitatory reversal (driving) potential in mV;
-	// determines where excitation pushes Vm up to.
-	ErevE float32 `min:"-90" max:"100" step:"5" default:"0"`
-
-	// ErevI is the leak reversal (driving) potential; determines
-	// where excitation pulls Vm down to.
-	ErevI float32 `min:"-100" max:"100" step:"5" default:"-70"`
-
-	// Noise is the variance parameter for Gaussian noise added
-	// to Ge on every cycle.
-	Noise float32 `min:"0" step:"0.01"`
-
-	// KNaAdapt activates sodium-gated potassium adaptation mechanisms
-	// that cause the neuron to reduce spiking over time.
-	KNaAdapt bool `default:"true"`
-
-	// MahpGk is the strength of mAHP M-type channel, which drives adaptation
-	// similar to KNa adaptation mechanisms.
-	MahpGk float32 `default:"0.05"`
-
-	// NMDAGbar is the strength of the NMDA excitatory Ca++ current,
-	// which has a long time constant and is essential for establishing
-	// a more stable neural representation over time.
-	NMDAGbar float32 `default:"0.006"`
-
-	// GABABGbar is the strength of the GABAB inhibitory Cl- current,
-	// which also has a long time constant like NMDA, and works in opposition to it,
-	// synergistically helping to establish stable neural representations.
-	GABABGbar float32 `default:"0.015"`
-
-	// VGCCCGBar is the strength of the VGCC voltage gated calcium current.
-	// This is only activated during spikes, and is an essential part of the Ca-driven
-	// learning to reflect recv spiking in the Ca signal. If too strong it can leads
-	// to runaway excitatory bursting.
-	VGCCGbar float32 `default:"0.02"`
+	// VGCCGe is the strength of the VGCC contribution to Ge(t) excitary
+	// conductance. This is only activated during spikes, and is an essential part of
+	// the Ca-driven learning to reflect recv spiking in the Ca signal.
+	// If too strong it can leads to runaway excitatory bursting.
+	VGCCGe float32 `default:"0.02"`
 
 	// AKGk is the strength of the A-type potassium channel, which is only active
 	// at high (depolarized) membrane potentials, i.e., during spikes.

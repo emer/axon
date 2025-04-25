@@ -148,7 +148,7 @@ func (pl *GABABPlot) TimeRun() { //types:add
 	nv := pl.TimeSteps
 
 	time := 0.0
-	gs := 0.0
+	m := 0.0
 	x := 0.0
 	for ti := range nv {
 		sin := 0.0
@@ -158,17 +158,17 @@ func (pl *GABABPlot) TimeRun() { //types:add
 
 		// record starting state first, then update
 		dir.Float64("Time", nv).SetFloat1D(time, ti)
-		dir.Float64("GabaB", nv).SetFloat1D(gs, ti)
-		dir.Float64("GabaBX", nv).SetFloat1D(x, ti)
+		dir.Float64("GababM", nv).SetFloat1D(m, ti)
+		dir.Float64("GababX", nv).SetFloat1D(x, ti)
 
 		gis := 1.0 / (1.0 + math.Exp(-(sin-7.1)/1.4))
-		dGs := (float64(pl.GABAB.TauFact)*x - gs) / float64(pl.GABAB.RiseTau)
-		dXo := -x / float64(pl.GABAB.DecayTau)
-		gs += dGs
-		x += gis + dXo
+		dM := (float64(pl.GABAB.TauFact)*x - m) / float64(pl.GABAB.RiseTau)
+		dX := -x / float64(pl.GABAB.DecayTau)
+		m += dM
+		x += gis + dX
 
-		dir.Float64("dG", nv).SetFloat1D(dGs, ti)
-		dir.Float64("dX", nv).SetFloat1D(dXo, ti)
+		dir.Float64("dM", nv).SetFloat1D(dM, ti)
+		dir.Float64("dX", nv).SetFloat1D(dX, ti)
 		dir.Float64("Xmax", nv).SetFloat1D(gis, ti)
 
 		time += pl.TimeInc
@@ -176,7 +176,7 @@ func (pl *GABABPlot) TimeRun() { //types:add
 	plot.SetFirstStyler(dir.Float64("Time"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
-	ons := []string{"GabaB", "GabaBX"}
+	ons := []string{"GababM", "GababX"}
 	for _, on := range ons {
 		plot.SetFirstStyler(dir.Float64(on), func(s *plot.Style) {
 			s.On = true

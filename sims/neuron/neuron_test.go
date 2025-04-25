@@ -70,8 +70,8 @@ func RunNeuron(t *testing.T, gpu bool) map[string]float32 {
 	sim.Config.Log.Cycle = false
 
 	sim.Config.Params.Sheet = "Testing"
-	sim.Config.GABABGbar = 0
-	sim.Config.NMDAGbar = 0
+	sim.GababGk = 0
+	sim.NmdaGe = 0
 
 	sim.ConfigAll()
 	sim.RunNoGUI()

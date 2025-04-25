@@ -355,12 +355,12 @@ fn LayerParams_GiInteg(ly: LayerParams, ctx: Context, pi: u32,ni: u32,di: u32) {
 		}
 	}
 	var vm = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(VmDend))];
-	var nrnGABAB = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GABAB))];
-	var nrnGABABx = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GABABx))];
-	GABABParams_GABAB(ly.Acts.GabaB, gi, &nrnGABAB, &nrnGABABx);
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GABAB))] = nrnGABAB;
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GABABx))] = nrnGABABx;
-	var nrnGgabaB = GABABParams_GgabaB(ly.Acts.GabaB, nrnGABAB, vm);
+	var nrnGababM = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GababM))];
+	var nrnGababX = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GababX))];
+	GABABParams_MX(ly.Acts.GabaB, gi, &nrnGababM, &nrnGababX);
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GababM))] = nrnGababM;
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GababX))] = nrnGababX;
+	var nrnGgabaB = GABABParams_GgabaB(ly.Acts.GabaB, nrnGababM, vm);
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
 	u32(ni), u32(di), u32(GgabaB))] = nrnGgabaB;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
@@ -954,16 +954,16 @@ fn GABABParams_GFromS(gp: GABABParams, s: f32) -> f32 {
 		return f32(1);
 	}return 1.0 / (1.0 + FastExp(-(ss-7.1)/1.4));
 }
-fn GABABParams_DeltaG(gp: GABABParams, g: f32,x: f32) -> f32 {
-	return (gp.TauFact*x - g) * gp.RiseDt;
+fn GABABParams_DeltaM(gp: GABABParams, m: f32,x: f32) -> f32 {
+	return (gp.TauFact*x - m) * gp.RiseDt;
 }
-fn GABABParams_GABAB(gp: GABABParams, gi: f32, gabaB: ptr<function,f32>,gabaBx: ptr<function,f32>) {
-	var dG = GABABParams_DeltaG(gp, *gabaB, *gabaBx);
-	*gabaBx += GABABParams_GFromS(gp, gi) - (*gabaBx)*gp.DecayDt;
-	*gabaB += dG;return;
+fn GABABParams_MX(gp: GABABParams, gi: f32, m: ptr<function,f32>,x: ptr<function,f32>) {
+	var dM = GABABParams_DeltaM(gp, *m, *x);
+	*x += GABABParams_GFromS(gp, gi) - (*x)*gp.DecayDt;
+	*m += dM;return;
 }
-fn GABABParams_GgabaB(gp: GABABParams, gabaB: f32,v: f32) -> f32 {
-	return gp.Gk * GABABParams_GFromV(gp, v) * (gabaB + gp.Gbase);
+fn GABABParams_GgabaB(gp: GABABParams, m: f32,v: f32) -> f32 {
+	return gp.Gk * GABABParams_GFromV(gp, v) * (m + gp.Gbase);
 }
 
 //////// import: "chans-kir.go"
@@ -1860,8 +1860,8 @@ const  CtxtGe: NeuronVars = 37;
 const  CtxtGeRaw: NeuronVars = 38;
 const  CtxtGeOrig: NeuronVars = 39;
 const  GgabaB: NeuronVars = 40;
-const  GABAB: NeuronVars = 41;
-const  GABABx: NeuronVars = 42;
+const  GababM: NeuronVars = 41;
+const  GababX: NeuronVars = 42;
 const  Gak: NeuronVars = 43;
 const  SSGiDend: NeuronVars = 44;
 const  GknaMed: NeuronVars = 45;

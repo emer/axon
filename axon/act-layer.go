@@ -491,12 +491,12 @@ func (ly *LayerParams) GiInteg(ctx *Context, pi, ni, di uint32) {
 		}
 	}
 	vm := Neurons.Value(int(ni), int(di), int(VmDend))
-	nrnGABAB := Neurons.Value(int(ni), int(di), int(GABAB))
-	nrnGABABx := Neurons.Value(int(ni), int(di), int(GABABx))
-	ly.Acts.GabaB.GABAB(gi, &nrnGABAB, &nrnGABABx)
-	Neurons.Set(nrnGABAB, int(ni), int(di), int(GABAB))
-	Neurons.Set(nrnGABABx, int(ni), int(di), int(GABABx))
-	nrnGgabaB := ly.Acts.GabaB.GgabaB(nrnGABAB, vm)
+	nrnGababM := Neurons.Value(int(ni), int(di), int(GababM))
+	nrnGababX := Neurons.Value(int(ni), int(di), int(GababX))
+	ly.Acts.GabaB.MX(gi, &nrnGababM, &nrnGababX)
+	Neurons.Set(nrnGababM, int(ni), int(di), int(GababM))
+	Neurons.Set(nrnGababX, int(ni), int(di), int(GababX))
+	nrnGgabaB := ly.Acts.GabaB.GgabaB(nrnGababM, vm)
 	Neurons.Set(nrnGgabaB, int(ni), int(di), int(GgabaB))
 	// Gk was already init
 	Neurons.SetAdd(nrnGgabaB, int(ni), int(di), int(Gk))

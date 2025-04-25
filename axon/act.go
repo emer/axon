@@ -1067,8 +1067,8 @@ func (ac *ActParams) DecayState(ctx *Context, ni, di uint32, decay, glong, ahp f
 		ac.DecayAHP(ctx, ni, di, ahp)
 	}
 	Neurons.SetSub(glong*Neurons.Value(int(ni), int(di), int(GgabaB)), int(ni), int(di), int(GgabaB))
-	Neurons.SetSub(glong*Neurons.Value(int(ni), int(di), int(GABAB)), int(ni), int(di), int(GABAB))
-	Neurons.SetSub(glong*Neurons.Value(int(ni), int(di), int(GABABx)), int(ni), int(di), int(GABABx))
+	Neurons.SetSub(glong*Neurons.Value(int(ni), int(di), int(GababM)), int(ni), int(di), int(GababM))
+	Neurons.SetSub(glong*Neurons.Value(int(ni), int(di), int(GababX)), int(ni), int(di), int(GababX))
 
 	Neurons.SetSub(glong*Neurons.Value(int(ni), int(di), int(GnmdaSyn)), int(ni), int(di), int(GnmdaSyn))
 	Neurons.SetSub(glong*Neurons.Value(int(ni), int(di), int(Gnmda)), int(ni), int(di), int(Gnmda))
@@ -1150,8 +1150,8 @@ func (ac *ActParams) InitActs(ctx *Context, ni, di uint32) {
 	Neurons.Set(0, int(ni), int(di), int(NmdaCa))
 
 	Neurons.Set(0, int(ni), int(di), int(GgabaB))
-	Neurons.Set(0, int(ni), int(di), int(GABAB))
-	Neurons.Set(0, int(ni), int(di), int(GABABx))
+	Neurons.Set(0, int(ni), int(di), int(GababM))
+	Neurons.Set(0, int(ni), int(di), int(GababX))
 
 	Neurons.Set(0, int(ni), int(di), int(Gvgcc))
 	Neurons.Set(0, int(ni), int(di), int(VgccM))

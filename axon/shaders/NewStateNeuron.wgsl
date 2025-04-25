@@ -302,8 +302,8 @@ fn ActParams_DecayState(ac: ActParams, ctx: Context, ni: u32,di: u32, decay: f32
 		ActParams_DecayAHP(ac, ctx, ni, di, ahp);
 	}
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GgabaB))] -= glong * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GgabaB))];
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GABAB))] -= glong * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GABAB))];
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GABABx))] -= glong * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GABABx))];
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GababM))] -= glong * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GababM))];
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GababX))] -= glong * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GababX))];
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GnmdaSyn))] -= glong * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GnmdaSyn))];
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Gnmda))] -= glong * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Gnmda))];
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GMaintSyn))] -= glong * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GMaintSyn))];
@@ -1022,8 +1022,8 @@ const  CtxtGe: NeuronVars = 37;
 const  CtxtGeRaw: NeuronVars = 38;
 const  CtxtGeOrig: NeuronVars = 39;
 const  GgabaB: NeuronVars = 40;
-const  GABAB: NeuronVars = 41;
-const  GABABx: NeuronVars = 42;
+const  GababM: NeuronVars = 41;
+const  GababX: NeuronVars = 42;
 const  Gak: NeuronVars = 43;
 const  SSGiDend: NeuronVars = 44;
 const  GknaMed: NeuronVars = 45;
