@@ -112,7 +112,7 @@ func (pl *SahpPlot) TimeRun() { //types:add
 
 		dir.Float64("Time", nv).SetFloat1D(float64(t), ti)
 		dir.Float64("Ca", nv).SetFloat1D(float64(ca), ti)
-		dir.Float64("GsAHP", nv).SetFloat1D(float64(g), ti)
+		dir.Float64("Gsahp", nv).SetFloat1D(float64(g), ti)
 		dir.Float64("N", nv).SetFloat1D(float64(n), ti)
 		dir.Float64("dN", nv).SetFloat1D(float64(dn), ti)
 		dir.Float64("Ninf", nv).SetFloat1D(float64(ninf), ti)
@@ -124,7 +124,7 @@ func (pl *SahpPlot) TimeRun() { //types:add
 	plot.SetFirstStyler(dir.Float64("Time"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
-	ons := []string{"Ca", "GsAHP", "N"}
+	ons := []string{"Ca", "Gsahp", "N"}
 	for _, on := range ons {
 		plot.SetFirstStyler(dir.Float64(on), func(s *plot.Style) {
 			s.On = true

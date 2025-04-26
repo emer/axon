@@ -22,12 +22,12 @@ type MahpParams struct {
 	// (which is then multiplied by Gbar.K that provides pA unit scaling).
 	Gk float32 `default:"0.02"`
 
-	// Voff is the voltage offset (threshold) in biological units for infinite time
+	// Off is the voltage offset (threshold) in biological units for infinite time
 	// N gating function: where the gate is at 50% strength.
-	Voff float32 `default:"-30"`
+	Off float32 `default:"-30"`
 
-	// Vslope is the slope of the arget (infinite time) gating function.
-	Vslope float32 `default:"9"`
+	// Slope is the slope of the arget (infinite time) gating function.
+	Slope float32 `default:"9"`
 
 	// TauMax is the maximum slow rate time constant in msec for activation
 	// / deactivation. The effective Tau is much slower: 1/20th in original temp,
@@ -47,8 +47,8 @@ type MahpParams struct {
 // Defaults sets the parameters
 func (mp *MahpParams) Defaults() {
 	mp.Gk = 0.02
-	mp.Voff = -30
-	mp.Vslope = 9
+	mp.Off = -30
+	mp.Slope = 9
 	mp.TauMax = 1000
 	mp.Tadj = math32.Pow(2.3, (37.0-23.0)/10.0) // 3.2 basically
 	mp.Update()
@@ -78,14 +78,14 @@ func (mp *MahpParams) EFun(z float32) float32 {
 // NinfTauFromV returns the target infinite-time N gate value and
 // voltage-dependent time constant tau, from v
 func (mp *MahpParams) NinfTauFromV(v float32, ninf, tau *float32) {
-	vo := v - mp.Voff
+	vo := v - mp.Off
 
-	// logical functions, but have signularity at Voff (vo = 0)
-	// a := mp.DtMax * vo / (1.0 - math32.FastExp(-vo/mp.Vslope))
-	// b := -mp.DtMax * vo / (1.0 - math32.FastExp(vo/mp.Vslope))
+	// logical functions, but have signularity at Off (vo = 0)
+	// a := mp.DtMax * vo / (1.0 - math32.FastExp(-vo/mp.Slope))
+	// b := -mp.DtMax * vo / (1.0 - math32.FastExp(vo/mp.Slope))
 
-	a := mp.DtMax * mp.Vslope * mp.EFun(-vo/mp.Vslope)
-	b := mp.DtMax * mp.Vslope * mp.EFun(vo/mp.Vslope)
+	a := mp.DtMax * mp.Slope * mp.EFun(-vo/mp.Slope)
+	b := mp.DtMax * mp.Slope * mp.EFun(vo/mp.Slope)
 	*tau = 1.0 / (a + b)
 	*ninf = a * *tau // a / (a+b)
 	*tau /= mp.Tadj  // correct right away..
@@ -111,4 +111,4 @@ func (mp *MahpParams) GmAHP(v float32, n *float32) float32 {
 	return g
 }
 
-//gosl:end chans
+//gosl:end

@@ -73,7 +73,7 @@ type Config struct {
 	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/neuron/README.md"`
 
 	// Doc is brief documentation of the sim.
-	Doc string `display:"-" default:"This simulation demonstrates the basic properties of neural spiking and rate-code activation, reflecting a balance of excitatory and inhibitory influences (including leak and synaptic inhibition)."`
+	Doc string `display:"-" default:"This simulation gives an in-depth view inside the processing within an individual neuron, including the various channels that shape its dynamics in important ways."`
 
 	// GeClamp clamps a constant Ge value; otherwise there is a discrete spiking input.
 	GeClamp bool `default:"true"`
@@ -81,11 +81,11 @@ type Config struct {
 	// SpikeHz is the frequency of input spiking for !GeClamp mode.
 	SpikeHz float32 `default:"50"`
 
-	// VGCCGe is the strength of the VGCC contribution to Ge(t) excitary
+	// VgccGe is the strength of the VGCC contribution to Ge(t) excitatory
 	// conductance. This is only activated during spikes, and is an essential part of
 	// the Ca-driven learning to reflect recv spiking in the Ca signal.
 	// If too strong it can leads to runaway excitatory bursting.
-	VGCCGe float32 `default:"0.02"`
+	VgccGe float32 `default:"0.02"`
 
 	// AKGk is the strength of the A-type potassium channel, which is only active
 	// at high (depolarized) membrane potentials, i.e., during spikes.

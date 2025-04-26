@@ -10,7 +10,6 @@ import (
 func init() {
 	Symbols["github.com/emer/axon/v2/chans/chans"] = map[string]reflect.Value{
 		// type definitions
-		"AKParams":    reflect.ValueOf((*chans.AKParams)(nil)),
 		"AKsParams":   reflect.ValueOf((*chans.AKsParams)(nil)),
 		"Chans":       reflect.ValueOf((*chans.Chans)(nil)),
 		"GABABParams": reflect.ValueOf((*chans.GABABParams)(nil)),

@@ -15,8 +15,9 @@ import "cogentcore.org/core/math32"
 // increments
 type NMDAParams struct {
 
-	// Ge is the strength of the NMDA contribution to Ge(t) excitatory conductance.
+	// Ge is the multiplier for the NMDA contribution to Ge(t) excitatory conductance.
 	// Multiplies GnmdaSyn to get net conductance including presynaptic.
+	// GnmdaSyn can be relatively large, such that overall Gnmda conductance = ~50 nS max.
 	// Ge(t) is later multiplied by Gbar.E for pA unit scaling.
 	Ge float32 `default:"0.006,0.007,0"`
 

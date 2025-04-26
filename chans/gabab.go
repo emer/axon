@@ -24,6 +24,7 @@ type GABABParams struct {
 	// (which is then multiplied by Gbar.K that provides pA unit scaling).
 	// The 0.015 default is a high value that works well in smaller networks.
 	// Larger networks may benefit from lower levels (e.g., 0.012).
+	// GababM activation factor can become large, so that overall GgabaB = ~50 nS.
 	Gk float32 `default:"0.015,0.012,0"`
 
 	// RiseTau is the rise time for bi-exponential time dynamics of GABA-B.

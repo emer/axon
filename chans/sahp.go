@@ -22,18 +22,18 @@ type SahpParams struct {
 	// (which is then multiplied by Gbar.K that provides pA unit scaling).
 	Gk float32 `default:"0.05,0.1"`
 
-	// time constant for integrating Ca across theta cycles.
+	// CaTau is the time constant for integrating Ca across theta cycles.
 	CaTau float32 `default:"5,10"`
 
-	// integrated Ca offset (threshold) for infinite time N gating function,
-	// where the gate is at 50% strength.
+	// Off is the integrated Ca offset (threshold) for infinite time N
+	// gating function, where the gate is at 50% strength.
 	Off float32 `default:"0.8"`
 
-	// slope of the infinite time logistic gating function.
+	// Slope of the infinite time logistic gating function.
 	Slope float32 `default:"0.02"`
 
-	// maximum slow rate time constant in msec for activation / deactivation.
-	// The effective Tau is much slower: 1/20th in original temp,
+	// TauMax is the maximum slow rate time constant in msec for activation
+	// / deactivation. The effective Tau is much slower: 1/20th in original temp,
 	// and 1/60th in standard 37 C temp.
 	TauMax float32 `default:"1"`
 

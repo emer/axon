@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// neuron: This simulation demonstrates the basic properties of neural spiking and
-// rate-code activation, reflecting a balance of excitatory and inhibitory
-// influences (including leak and synaptic inhibition).
+// neuron: This simulation gives an in-depth view inside the processing within
+// an individual neuron, including the various channels that shape its dynamics
+// in important ways.
 package neuron
 
 //go:generate core generate -add-types -add-funcs
@@ -25,7 +25,6 @@ import (
 	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/egui"
-	"github.com/emer/emergent/v2/paths"
 )
 
 // Modes are the looping modes (Stacks) for running and statistics.
@@ -98,6 +97,19 @@ type Sim struct {
 	// NoiseG is the strength of the noise conductance.
 	Noise float32 `min:"0" step:"0.01"`
 
+	// NmdaGe is the strength of contribution of the NMDA excitatory Ca++ current,
+	// to the overall Ge(t) excitatory conductance value. This channel
+	// has a long time constant and is essential for establishing
+	// a more stable neural representation over time by keeping active neurons active.
+	NmdaGe float32 `default:"0.006"`
+
+	// GababGk is the strength of contribution of the GABA-B inhibitory K current,
+	// to the overall Gk(t) inhibitory potassium (K) conductance value. This channel
+	// also has a long time constant like NMDA, and works in opposition to it,
+	// by keeping inactive neurons inactive, synergistically helping to establish
+	// stable neural representations.
+	GababGk float32 `default:"0.015"`
+
 	// KNaAdapt activates sodium-gated potassium adaptation mechanisms
 	// that cause the neuron to reduce spiking over time.
 	KNaAdapt bool `default:"true"`
@@ -105,19 +117,6 @@ type Sim struct {
 	// MahpGk is the strength of mAHP M-type K channel, which drives adaptation
 	// similar to KNa adaptation mechanisms.
 	MahpGk float32 `default:"0.05"`
-
-	// NMDAGe is the strength of contribution of the NMDA excitatory Ca++ current,
-	// to the overall Ge(t) excitatory conductance value. This channel
-	// has a long time constant and is essential for establishing
-	// a more stable neural representation over time by keeping active neurons active.
-	NMDAGe float32 `default:"0.006"`
-
-	// GABABGi is the strength of contribution of the GABAB inhibitory Cl- current,
-	// to the overall Gi(t) inhibitory conductance value. This channel
-	// also has a long time constant like NMDA, and works in opposition to it,
-	// by keeping inactive neurons inactive, synergistically helping to establish
-	// stable neural representations.
-	GABABGi float32 `default:"0.015"`
 
 	// Config has simulation configuration parameters, set by .toml config file and / or args.
 	Config *Config `new-window:"+"`
@@ -189,8 +188,8 @@ func (ss *Sim) Defaults() {
 	ss.Noise = 0
 	ss.KNaAdapt = true
 	ss.MahpGk = 0.05
-	ss.NMDAGe = 0.006
-	ss.GABABGi = 0.015
+	ss.NmdaGe = 0.006
+	ss.GababGk = 0.015
 }
 
 func (ss *Sim) ConfigSim() {
@@ -215,10 +214,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.Context().ThetaCycles = int32(ss.Config.Run.Cycles)
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
-	in := net.AddLayer2D("Input", axon.InputLayer, 1, 1)
-	hid := net.AddLayer2D("Neuron", axon.SuperLayer, 1, 1)
-
-	net.ConnectLayers(in, hid, paths.NewFull(), axon.ForwardPath)
+	net.AddLayer2D("Neuron", axon.SuperLayer, 1, 1)
 
 	net.Build()
 	net.Defaults()
@@ -244,9 +240,9 @@ func (ss *Sim) ApplyParams() {
 	}
 	lyp.Acts.KNa.On.SetBool(ss.KNaAdapt)
 	lyp.Acts.Mahp.Gk = ss.MahpGk
-	lyp.Acts.NMDA.Ge = ss.NMDAGe
-	lyp.Acts.GabaB.Gk = ss.GABABGi
-	lyp.Acts.VGCC.Ge = ss.Config.VGCCGe
+	lyp.Acts.NMDA.Ge = ss.NmdaGe
+	lyp.Acts.GabaB.Gk = ss.GababGk
+	lyp.Acts.VGCC.Ge = ss.Config.VgccGe
 	lyp.Acts.AK.Gk = ss.Config.AKGk
 	lyp.Acts.Update()
 }
@@ -444,7 +440,7 @@ func (ss *Sim) ConfigStats() {
 		tsr.AppendRowInt(stat)
 	})
 
-	vars := []string{"GeSyn", "Ge", "Gi", "Inet", "Vm", "Act", "Spike", "Gk", "ISI", "ISIAvg", "VmDend", "GnmdaSyn", "Gnmda", "GABAB", "GgabaB", "Gvgcc", "VgccM", "VgccH", "Gak", "MahpN", "GknaMed", "GknaSlow", "GiSyn", "GnmdaLrn", "VgccCa", "LearnCa"}
+	vars := []string{"GeSyn", "Ge", "Gi", "Inet", "Vm", "Act", "Spike", "Gk", "ISI", "ISIAvg", "VmDend", "Gnmda", "GgabaB", "Gvgcc", "Gak", "GknaMed", "GknaSlow", "GnmdaSyn", "GababM", "VgccM", "VgccH", "MahpN", "GiSyn", "GnmdaLrn", "VgccCa", "LearnCa"}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		for _, name := range vars {
 			modeDir := ss.Stats.Dir(mode.String())
@@ -463,7 +459,7 @@ func (ss *Sim) ConfigStats() {
 						s.Label = "Vm"
 					case "Act", "Spike":
 						s.On = true
-					case "Inet", "ISI", "ISIAvg", "VmDend", "GABAB", "VgccCa":
+					case "Inet", "ISI", "ISIAvg", "VmDend", "GababM", "VgccCa":
 						s.RightY = true
 					}
 				})
