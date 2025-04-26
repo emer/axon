@@ -18,7 +18,7 @@ import (
 type SKCaPlot struct {
 
 	// SKCa params
-	SKCa chans.SKCaParams
+	SKCa chans.SKCaParams `display:"add-fields"`
 
 	// time constants for integrating Ca from spiking across M, P and D cascading levels
 	CaParams kinase.CaSpikeParams

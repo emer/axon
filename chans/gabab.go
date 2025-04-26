@@ -27,11 +27,11 @@ type GABABParams struct {
 	// GababM activation factor can become large, so that overall GgabaB = ~50 nS.
 	Gk float32 `default:"0.015,0.012,0"`
 
-	// RiseTau is the rise time for bi-exponential time dynamics of GABA-B.
-	RiseTau float32 `default:"45"`
+	// Rise is the rise time for bi-exponential time dynamics of GABA-B, in ms.
+	Rise float32 `default:"45"`
 
-	// DecayTau is the decay time for bi-exponential time dynamics of GABA-B.
-	DecayTau float32 `default:"50"`
+	// Decay is the decay time for bi-exponential time dynamics of GABA-B, in ms.
+	Decay float32 `default:"50"`
 
 	// Gbase is the baseline level of GABA-B channels open independent of
 	// inhibitory input (is added to spiking-produced conductance).
@@ -41,7 +41,7 @@ type GABABParams struct {
 	GiSpike float32 `default:"10"`
 
 	// MaxTime is the time offset when peak conductance occurs, in msec, computed
-	// from RiseTau and DecayTau.
+	// from Rise and Decay.
 	MaxTime float32 `edit:"-"`
 
 	// TauFact is the time constant factor used in integration:
@@ -59,18 +59,18 @@ type GABABParams struct {
 
 func (gp *GABABParams) Defaults() {
 	gp.Gk = 0.015
-	gp.RiseTau = 45
-	gp.DecayTau = 50
+	gp.Rise = 45
+	gp.Decay = 50
 	gp.Gbase = 0.2
 	gp.GiSpike = 10
 	gp.Update()
 }
 
 func (gp *GABABParams) Update() {
-	gp.TauFact = math32.Pow(gp.DecayTau/gp.RiseTau, gp.RiseTau/(gp.DecayTau-gp.RiseTau))
-	gp.MaxTime = ((gp.RiseTau * gp.DecayTau) / (gp.DecayTau - gp.RiseTau)) * math32.Log(gp.DecayTau/gp.RiseTau)
-	gp.RiseDt = 1.0 / gp.RiseTau
-	gp.DecayDt = 1.0 / gp.DecayTau
+	gp.TauFact = math32.Pow(gp.Decay/gp.Rise, gp.Rise/(gp.Decay-gp.Rise))
+	gp.MaxTime = ((gp.Rise * gp.Decay) / (gp.Decay - gp.Rise)) * math32.Log(gp.Decay/gp.Rise)
+	gp.RiseDt = 1.0 / gp.Rise
+	gp.DecayDt = 1.0 / gp.Decay
 }
 
 func (gp *GABABParams) ShouldDisplay(field string) bool {

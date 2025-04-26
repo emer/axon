@@ -16,19 +16,19 @@ import (
 
 type KirPlot struct {
 
-	// kIR function
-	Kir chans.KirParams
+	// Kir function
+	Kir chans.KirParams `display:"add-fields"`
 
-	// starting voltage
+	// Vstart is starting voltage
 	Vstart float32 `default:"-100"`
 
-	// ending voltage
+	// Vend is ending voltage
 	Vend float32 `default:"100"`
 
-	// voltage increment
+	// Vstep is voltage increment
 	Vstep float32 `default:"1"`
 
-	// number of time steps
+	// TimeSteps is number of time steps
 	TimeSteps int
 
 	// do spiking instead of voltage ramp
@@ -86,7 +86,7 @@ func (pl *KirPlot) GVRun() { //types:add
 		mtau := mp.MTau(v)
 
 		dir.Float64("V", nv).SetFloat1D(float64(v), vi)
-		dir.Float64("GkIR", nv).SetFloat1D(float64(g), vi)
+		dir.Float64("Gkir", nv).SetFloat1D(float64(g), vi)
 		dir.Float64("M", nv).SetFloat1D(float64(m), vi)
 		dir.Float64("Minf", nv).SetFloat1D(float64(minf), vi)
 		dir.Float64("Mtau", nv).SetFloat1D(float64(mtau), vi)
@@ -94,7 +94,7 @@ func (pl *KirPlot) GVRun() { //types:add
 	plot.SetFirstStyler(dir.Float64("V"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
-	ons := []string{"GkIR", "M"}
+	ons := []string{"Gkir", "M"}
 	for _, on := range ons {
 		plot.SetFirstStyler(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
@@ -132,7 +132,7 @@ func (pl *KirPlot) TimeRun() { //types:add
 
 		dir.Float64("Time", nv).SetFloat1D(float64(t), ti)
 		dir.Float64("V", nv).SetFloat1D(float64(v), ti)
-		dir.Float64("GkIR", nv).SetFloat1D(float64(g), ti)
+		dir.Float64("Gkir", nv).SetFloat1D(float64(g), ti)
 		dir.Float64("M", nv).SetFloat1D(float64(m), ti)
 		dir.Float64("Minf", nv).SetFloat1D(float64(minf), ti)
 		dir.Float64("Mtau", nv).SetFloat1D(float64(mtau), ti)
@@ -154,11 +154,15 @@ func (pl *KirPlot) TimeRun() { //types:add
 	plot.SetFirstStyler(dir.Float64("Time"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
-	ons := []string{"V", "GkIR", "M"}
+	plot.SetFirstStyler(dir.Float64("V"), func(s *plot.Style) {
+		s.On = true
+		s.Plot.Title = "Gkir G(t)"
+		s.RightY = true
+	})
+	ons := []string{"Gkir", "M"}
 	for _, on := range ons {
 		plot.SetFirstStyler(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
-			s.Plot.Title = "GkIR G(t)"
 		})
 	}
 	if pl.Tabs != nil {

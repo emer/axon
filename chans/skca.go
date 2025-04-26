@@ -31,13 +31,13 @@ type SKCaParams struct {
 	// Set this to level that activates at reasonable levels of SKCaR.
 	C50 float32 `default:"0.4,0.5"`
 
-	// ActTau is the K channel gating factor activation time constant,
+	// Rise is the K channel gating factor activation time constant,
 	// roughly 5-15 msec in literature.
-	ActTau float32 `default:"15"`
+	Rise float32 `default:"15"`
 
-	// DeTau is the K channel gating factor deactivation time constant,
+	// Decay is the K channel gating factor deactivation time constant,
 	// roughly 30-50 ms in literature.
-	DeTau float32 `default:"30"`
+	Decay float32 `default:"30"`
 
 	// KCaR is the proportion of CaIn intracellular stores that are released
 	// per spike, going into CaR.
@@ -57,10 +57,10 @@ type SKCaParams struct {
 	CaInTau float32 `default:"50"`
 
 	// ActDT = 1 / tau
-	ActDt float32 `display:"-" json:"-" xml:"-"`
+	RiseDt float32 `display:"-" json:"-" xml:"-"`
 
-	// DeDt = 1 / tau
-	DeDt float32 `display:"-" json:"-" xml:"-"`
+	// DecayDt = 1 / tau
+	DecayDt float32 `display:"-" json:"-" xml:"-"`
 
 	// CaRDecayDt = 1 / tau
 	CaRDecayDt float32 `display:"-" json:"-" xml:"-"`
@@ -72,8 +72,8 @@ type SKCaParams struct {
 func (sp *SKCaParams) Defaults() {
 	sp.Gk = 0.0
 	sp.C50 = 0.5
-	sp.ActTau = 15
-	sp.DeTau = 30
+	sp.Rise = 15
+	sp.Decay = 30
 	sp.KCaR = 0.8
 	sp.CaRDecayTau = 150
 	sp.CaInThr = 0.01
@@ -82,8 +82,8 @@ func (sp *SKCaParams) Defaults() {
 }
 
 func (sp *SKCaParams) Update() {
-	sp.ActDt = 1.0 / sp.ActTau
-	sp.DeDt = 1.0 / sp.DeTau
+	sp.RiseDt = 1.0 / sp.Rise
+	sp.DecayDt = 1.0 / sp.Decay
 	sp.CaRDecayDt = 1.0 / sp.CaRDecayTau
 	sp.CaInDt = 1.0 / sp.CaInTau
 }
@@ -131,9 +131,9 @@ func (sp *SKCaParams) CaInRFromSpike(spike, caD float32, caIn, caR *float32) {
 func (sp *SKCaParams) MFromCa(caR, mcur float32) float32 {
 	mas := sp.MAsympHill(caR)
 	if mas > mcur {
-		return mcur + sp.ActDt*(mas-mcur)
+		return mcur + sp.RiseDt*(mas-mcur)
 	}
-	return mcur + sp.DeDt*(mas-mcur)
+	return mcur + sp.DecayDt*(mas-mcur)
 }
 
 //gosl:end

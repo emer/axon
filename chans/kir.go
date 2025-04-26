@@ -65,9 +65,9 @@ func (kp *KirParams) ShouldDisplay(field string) bool {
 	}
 }
 
-// MRates returns Minf as a function of voltage potential.
+// Minf returns Minf as a function of voltage potential.
 func (kp *KirParams) Minf(v float32) float32 {
-	return 1.0 / (1.0 + math32.FastExp((v-(kp.MinfOff))/kp.MinfTau))
+	return 1.0 / (1.0 + math32.FastExp((v-kp.MinfOff)/kp.MinfTau))
 }
 
 // MinfRest returns Minf at nominal resting membrane potential of -70mV
@@ -78,10 +78,9 @@ func (kp *KirParams) MinfRest() float32 {
 
 // MTau returns mtau as a function of voltage.
 func (kp *KirParams) MTau(v float32) float32 {
-	alpha := 0.1 * math32.FastExp((v-(kp.RiseOff))/(-kp.RiseTau))
-	beta := 0.27 / (1.0 + math32.FastExp((v-(kp.DecayOff))/(-kp.DecayTau)))
-	sum := alpha + beta
-	return 1.0 / sum
+	alpha := 0.1 * math32.FastExp(-(v-kp.RiseOff)/kp.RiseTau)
+	beta := 0.27 / (1.0 + math32.FastExp(-(v-kp.DecayOff)/kp.DecayTau))
+	return 1.0 / (alpha + beta)
 }
 
 // DM computes the change in M gating parameter.

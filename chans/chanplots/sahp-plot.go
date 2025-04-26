@@ -17,7 +17,7 @@ import (
 type SahpPlot struct {
 
 	// sAHP function
-	Sahp chans.SahpParams `display:"inline"`
+	Sahp chans.SahpParams `display:"add-fields"`
 
 	// starting calcium
 	CaStart float32 `default:"0"`

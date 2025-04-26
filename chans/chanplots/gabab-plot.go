@@ -162,8 +162,8 @@ func (pl *GABABPlot) TimeRun() { //types:add
 		dir.Float64("GababX", nv).SetFloat1D(x, ti)
 
 		gis := 1.0 / (1.0 + math.Exp(-(sin-7.1)/1.4))
-		dM := (float64(pl.GABAB.TauFact)*x - m) / float64(pl.GABAB.RiseTau)
-		dX := -x / float64(pl.GABAB.DecayTau)
+		dM := (float64(pl.GABAB.TauFact)*x - m) / float64(pl.GABAB.Rise)
+		dX := -x / float64(pl.GABAB.Decay)
 		m += dM
 		x += gis + dX
 

@@ -17,18 +17,18 @@ import (
 type MahpPlot struct {
 
 	// mAHP function
-	Mahp chans.MahpParams `display:"inline"`
+	Mahp chans.MahpParams `display:"add-fields"`
 
-	// starting voltage
+	// Vstart is starting voltage
 	Vstart float32 `default:"-100"`
 
-	// ending voltage
+	// Vend is ending voltage
 	Vend float32 `default:"100"`
 
-	// voltage increment
+	// Vstep is voltage increment
 	Vstep float32 `default:"1"`
 
-	// number of time steps
+	// TimeSteps is number of time steps
 	TimeSteps int
 
 	// do spiking instead of voltage ramp
