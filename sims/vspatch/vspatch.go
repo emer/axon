@@ -79,7 +79,7 @@ type Sim struct {
 	// Params manages network parameter setting.
 	Params axon.Params `display:"inline"`
 
-	// Loops are the the control loops for running the sim, in different Modes
+	// Loops are the control loops for running the sim, in different Modes
 	// across stacks of Levels.
 	Loops *looper.Stacks `new-window:"+" display:"no-inline"`
 

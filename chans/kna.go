@@ -15,39 +15,40 @@ import "cogentcore.org/lab/gosl/slbool"
 // potential back down toward rest (or even below).
 type KNaParams struct {
 
-	// On enables this component of K-Na adaptation.
+	// On enables this component of KNa adaptation.
 	On slbool.Bool
 
-	// Rise rate of fast time-scale adaptation as function of Na
-	// concentration due to spiking. Directly multiplies, 1/rise = tau
-	// for rise rate.
+	// Rise is the time constant in ms for increase in conductance based on Na
+	// concentration due to spiking.
 	Rise float32
+
+	// Decay is the time constant in ms for decay of conductance.
+	Decay float32
 
 	// Max is the maximum potential conductance contribution to Gk(t)
 	// (which is then multiplied by Gbar.K that provides pA unit scaling).
 	Max float32
 
-	// Tau is the time constant in cycles for decay of adaptation,
-	// in ms (milliseconds) (tau is roughly how long it takes
-	// for value to change significantly -- 1.4x the half-life).
-	Tau float32
+	// Dt = 1/Tau rate constant.
+	DtRise float32 `display:"-"`
 
 	// Dt = 1/Tau rate constant.
-	Dt float32 `display:"-"`
+	DtDecay float32 `display:"-"`
 
-	pad, pad1, pad2 int32
+	pad, pad1 int32
 }
 
 func (ka *KNaParams) Defaults() {
 	ka.On.SetBool(true)
-	ka.Rise = 0.01
-	ka.Max = 0.1
-	ka.Tau = 100
+	ka.Rise = 50
+	ka.Decay = 100
+	ka.Max = 0.2
 	ka.Update()
 }
 
 func (ka *KNaParams) Update() {
-	ka.Dt = 1 / ka.Tau
+	ka.DtRise = 1 / ka.Rise
+	ka.DtDecay = 1 / ka.Decay
 }
 
 func (ka *KNaParams) ShouldDisplay(field string) bool {
@@ -63,9 +64,9 @@ func (ka *KNaParams) ShouldDisplay(field string) bool {
 func (ka *KNaParams) GcFromSpike(gKNa *float32, spike bool) {
 	if ka.On.IsTrue() {
 		if spike {
-			*gKNa += ka.Rise * (ka.Max - *gKNa)
+			*gKNa += ka.DtRise * (ka.Max - *gKNa)
 		} else {
-			*gKNa -= ka.Dt * *gKNa
+			*gKNa -= ka.DtDecay * *gKNa
 		}
 	} else {
 		*gKNa = 0
@@ -97,11 +98,11 @@ type KNaMedSlow struct {
 func (ka *KNaMedSlow) Defaults() {
 	ka.Med.Defaults()
 	ka.Slow.Defaults()
-	ka.Med.Tau = 200
-	ka.Med.Rise = 0.02
+	ka.Med.Rise = 50
+	ka.Med.Decay = 200
 	ka.Med.Max = 0.2
-	ka.Slow.Tau = 1000
-	ka.Slow.Rise = 0.001
+	ka.Slow.Rise = 1000
+	ka.Slow.Decay = 1000
 	ka.Slow.Max = 0.2
 	ka.Update()
 }

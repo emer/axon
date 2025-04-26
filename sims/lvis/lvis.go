@@ -88,7 +88,7 @@ type Sim struct {
 	// Decoder is used as a comparison vs. the Output layer.
 	Decoder decoder.SoftMax
 
-	// Loops are the the control loops for running the sim, in different Modes
+	// Loops are the control loops for running the sim, in different Modes
 	// across stacks of Levels.
 	Loops *looper.Stacks `new-window:"+" display:"no-inline"`
 

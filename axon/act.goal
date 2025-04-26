@@ -44,7 +44,7 @@ func NeuronIsOff(ni uint32) bool {
 
 // SpikeParams contains spiking activation function params.
 // Implements a basic thresholded Vm model, and optionally
-// the AdEx adaptive exponential function (adapt is KNaAdapt)
+// the AdEx adaptive exponential function.
 type SpikeParams struct {
 
 	// Thr is the spiking threshold value Theta (Θ) for firing output activation,

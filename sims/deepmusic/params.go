@@ -23,12 +23,11 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.NMDA.MgC = 1.4 // 1.4, 5 > 1.2, 0 ?
 				ly.Acts.NMDA.Voff = 0
 				ly.Acts.NMDA.Ge = 0.006
-				ly.Acts.GabaB.Gk = 0.015  // 0.015 > 0.012 lower
-				ly.Acts.Mahp.Gk = 0.04    // 0.04 == 0.05+ > 0.02 -- reduces hidden activity
-				ly.Acts.Sahp.Gk = 0.1     // 0.1 == 0.02 no real diff
-				ly.Acts.Sahp.Off = 0.8    //
-				ly.Acts.Sahp.Slope = 0.02 //
-				ly.Acts.Sahp.CaTau = 5    // 5 > 10
+				ly.Acts.GabaB.Gk = 0.015      // 0.015 > 0.012 lower
+				ly.Acts.Mahp.Gk = 0.06        // 0.05 > 0.02, esp with kna = false
+				ly.Acts.Sahp.Gk = 0.1         // 0.05 > 0.1? todo retest
+				ly.Acts.Sahp.CaTau = 5        // 5 > 10 verfied
+				ly.Acts.KNa.On.SetBool(false) // false and Mahp = 0.05 is better
 			}},
 		{Sel: ".SuperLayer", Doc: "super layer params",
 			Set: func(ly *axon.LayerParams) {

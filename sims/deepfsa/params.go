@@ -34,14 +34,10 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.NMDA.Ge = 0.006
 				ly.Acts.GabaB.Gk = 0.015 // 0.015 def -- makes no diff down to 0.008
 				ly.Learn.LearnNMDA.Ge = 0.006
-				ly.Acts.Sahp.Gk = 0.1     //
-				ly.Acts.Sahp.Off = 0.8    //
-				ly.Acts.Sahp.Slope = 0.02 //
-				ly.Acts.Sahp.CaTau = 10   //
-				// ly.Learn.CaLearn.Dt.PTau =        60   // 60 for 300 cyc, 40 for 200 (scales linearly)
-				// ly.Learn.CaLearn.Dt.DTau =        60   // "
-				// ly.Learn.CaSpk.Dt.PTau =          60   // "
-				// ly.Learn.CaSpk.Dt.DTau =          60   // "
+				ly.Acts.Mahp.Gk = 0.05  // 0.02 def; 0.05 might compensate for lack of KNa?
+				ly.Acts.Sahp.Gk = 0.1   // 0.05 def
+				ly.Acts.Sahp.CaTau = 10 // 10 (def) > 5?
+				ly.Acts.KNa.On.SetBool(false)
 				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // ?
 			}},
 		{Sel: ".SuperLayer", Doc: "super layer params",

@@ -341,12 +341,12 @@ struct KirParams {
 struct KNaParams {
 	On: i32,
 	Rise: f32,
+	Decay: f32,
 	Max: f32,
-	Tau: f32,
-	Dt: f32,
+	DtRise: f32,
+	DtDecay: f32,
 	pad: i32,
 	pad1: i32,
-	pad2: i32,
 }
 struct KNaMedSlow {
 	On: i32,
@@ -360,8 +360,8 @@ struct KNaMedSlow {
 //////// import: "chans-mahp.go"
 struct MahpParams {
 	Gk: f32,
-	Voff: f32,
-	Vslope: f32,
+	Off: f32,
+	Slope: f32,
 	TauMax: f32,
 	Tadj: f32,
 	DtMax: f32,

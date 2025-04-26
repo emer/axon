@@ -96,7 +96,7 @@ Original formulation due to Mainen & Sejnowski (1996) is widely used, and used h
 
 ![mAHP vs. fKNA](fig_mahp_vs_fkna.png?raw=true "mAHP vs. fast KNa (tau = 50, rise = 0.05)")
 
-The `Time Run` plot (above) shows how the mAHP current develops over time in response to spiking, in comparison to the KNa function, with the default "fast" parameters of 50msec and rise = 0.05.  The mAHP is much more "anticipatory" due to the direct V sensitivity, whereas KNa is much more "reactive", responding only the the Na after spiking.
+The `Time Run` plot (above) shows how the mAHP current develops over time in response to spiking, in comparison to the KNa function, with the default "fast" parameters of 50msec and rise = 0.05.  The mAHP is much more "anticipatory" due to the direct V sensitivity, whereas KNa is much more "reactive", responding only the Na after spiking.
 
 ## NMDA
 
@@ -141,7 +141,7 @@ The logistic operates on integrated Ca:
 
 ![mAHP vs. fKNA](fig_mahp_vs_fkna.png?raw=true "mAHP vs. fast KNa (tau = 50, rise = 0.05)")
 
-The `Time Run` plot (above) shows how the mAHP current develops over time in response to spiking, in comparison to the KNa function, with the default "fast" parameters of 50msec and rise = 0.05.  The mAHP is much more "anticipatory" due to the direct V sensitivity, whereas KNa is much more "reactive", responding only the the Na after spiking.
+The `Time Run` plot (above) shows how the mAHP current develops over time in response to spiking, in comparison to the KNa function, with the default "fast" parameters of 50msec and rise = 0.05.  The mAHP is much more "anticipatory" due to the direct V sensitivity, whereas KNa is much more "reactive", responding only the Na after spiking.
 
 ## sKCa: Voltage-gated Calcium Channels
 

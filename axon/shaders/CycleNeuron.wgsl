@@ -999,19 +999,19 @@ fn KirParams_Gkir(kp: KirParams, v: f32, m: f32) -> f32 {
 struct KNaParams {
 	On: i32,
 	Rise: f32,
+	Decay: f32,
 	Max: f32,
-	Tau: f32,
-	Dt: f32,
+	DtRise: f32,
+	DtDecay: f32,
 	pad: i32,
 	pad1: i32,
-	pad2: i32,
 }
 fn KNaParams_GcFromSpike(ka: KNaParams, gKNa: ptr<function,f32>, spike: bool) {
 	if (ka.On == 1) {
 		if (spike) {
-			*gKNa += ka.Rise * (ka.Max - *gKNa);
+			*gKNa += ka.DtRise * (ka.Max - *gKNa);
 		} else {
-			*gKNa -= ka.Dt * *gKNa;
+			*gKNa -= ka.DtDecay * *gKNa;
 		}
 	} else {
 		*gKNa = f32(0);
@@ -1035,8 +1035,8 @@ fn KNaMedSlow_GcFromSpike(ka: KNaMedSlow, gKNaM: ptr<function,f32>,gKNaS: ptr<fu
 //////// import: "chans-mahp.go"
 struct MahpParams {
 	Gk: f32,
-	Voff: f32,
-	Vslope: f32,
+	Off: f32,
+	Slope: f32,
 	TauMax: f32,
 	Tadj: f32,
 	DtMax: f32,
@@ -1049,9 +1049,9 @@ fn MahpParams_EFun(mp: MahpParams, z: f32) -> f32 {
 	}return z / (FastExp(z) - 1.0);
 }
 fn MahpParams_NinfTauFromV(mp: MahpParams, v: f32, ninf: ptr<function,f32>,tau: ptr<function,f32>) {
-	var vo = v - mp.Voff;
-	var a = mp.DtMax * mp.Vslope * MahpParams_EFun(mp, -vo/mp.Vslope);
-	var b = mp.DtMax * mp.Vslope * MahpParams_EFun(mp, vo/mp.Vslope);
+	var vo = v - mp.Off;
+	var a = mp.DtMax * mp.Slope * MahpParams_EFun(mp, -vo/mp.Slope);
+	var b = mp.DtMax * mp.Slope * MahpParams_EFun(mp, vo/mp.Slope);
 	*tau = 1.0 / (a + b);
 	*ninf = a * *tau; // a / (a+b)
 	*tau /= mp.Tadj;  // correct right away..

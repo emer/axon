@@ -18,6 +18,11 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Noise.Ge = 0.0001                    // 0.0001 > others; could just be noise ;)
 				ly.Acts.Noise.Gi = 0.0001                    // 0.0001 perhaps better than others
 				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // false >> true; orig = true
+				// todo: experiment with these:
+				// ly.Acts.Mahp.Gk = 0.06                       // 0.02 def; 0.05 might compensate for lack of KNa?
+				// ly.Acts.Sahp.Gk = 0.1                        // 0.05 def
+				// ly.Acts.Sahp.CaTau = 10                      // 10 (def) > 5?
+				// ly.Acts.KNa.On.SetBool(false)
 				// ly.Acts.NMDA.Tau = 100                       // 100 def >> 200
 				// ly.Learn.LearnNMDA.Tau = 100                 // 100 def >> 200
 			}},
