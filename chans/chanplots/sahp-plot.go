@@ -80,13 +80,17 @@ func (pl *SahpPlot) GCaRun() { //types:add
 	plot.SetFirstStyler(dir.Float64("Ca"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
-	ons := []string{"Ninf", "Tau"}
+	ons := []string{"Ninf"}
 	for _, on := range ons {
 		plot.SetFirstStyler(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
 			s.Plot.Title = "sAHP G(Ca)"
 		})
 	}
+	plot.SetFirstStyler(dir.Float64("Tau"), func(s *plot.Style) {
+		s.On = true
+		s.RightY = true
+	})
 	if pl.Tabs != nil {
 		pl.Tabs.AsLab().PlotTensorFS(dir)
 	}

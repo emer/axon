@@ -110,9 +110,9 @@ type Sim struct {
 	// stable neural representations.
 	GababGk float32 `default:"0.015"`
 
-	// KNaAdapt activates sodium-gated potassium adaptation mechanisms
+	// KNa toggles the use of sodium-gated potassium adaptation mechanisms
 	// that cause the neuron to reduce spiking over time.
-	KNaAdapt bool `default:"true"`
+	KNa bool `default:"true"`
 
 	// MahpGk is the strength of mAHP M-type K channel, which drives adaptation
 	// similar to KNa adaptation mechanisms.
@@ -186,7 +186,7 @@ func (ss *Sim) Defaults() {
 	ss.ErevE = 0
 	ss.ErevI = -90
 	ss.Noise = 0
-	ss.KNaAdapt = true
+	ss.KNa = true
 	ss.MahpGk = 0.05
 	ss.NmdaGe = 0.006
 	ss.GababGk = 0.015
@@ -238,7 +238,7 @@ func (ss *Sim) ApplyParams() {
 	} else {
 		lyp.Acts.Noise.On.SetBool(false)
 	}
-	lyp.Acts.KNa.On.SetBool(ss.KNaAdapt)
+	lyp.Acts.KNa.On.SetBool(ss.KNa)
 	lyp.Acts.Mahp.Gk = ss.MahpGk
 	lyp.Acts.NMDA.Ge = ss.NmdaGe
 	lyp.Acts.GabaB.Gk = ss.GababGk
@@ -459,7 +459,7 @@ func (ss *Sim) ConfigStats() {
 						s.Label = "Vm"
 					case "Act", "Spike":
 						s.On = true
-					case "Inet", "ISI", "ISIAvg", "VmDend", "GababM", "VgccCa":
+					case "ISI", "ISIAvg", "VmDend", "GababM", "VgccCa":
 						s.RightY = true
 					}
 				})
