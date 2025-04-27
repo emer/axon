@@ -153,7 +153,7 @@ type Config struct {
 	Title string `display:"-" default:"Object Recognition"`
 
 	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/objrec/README.md"`
+	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/sims/objrec/README.md"`
 
 	// Doc is brief documentation of the sim.
 	Doc string `display:"-" default:"This simulation explores how a hierarchy of areas in the ventral stream of visual processing (up to inferotemporal (IT) cortex) can produce robust object recognition that is invariant to changes in position, size, etc of retinal input images."`

@@ -145,7 +145,7 @@ type Config struct {
 	Title string `display:"-" default:"Axon hippocampus"`
 
 	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/hip/README.md"`
+	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/sims/hip/README.md"`
 
 	// Doc is brief documentation of the sim.
 	Doc string `display:"-" default:"Simulates the hippocampus on basic AB-AC paired associates task."`

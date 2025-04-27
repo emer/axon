@@ -158,11 +158,6 @@ func (ss *Sim) ConfigSim() {
 		ss.Net.SaveParamsSnapshot(&ss.Config, ss.Config.Params.Good)
 		os.Exit(0)
 	}
-	if ss.Config.GUI {
-		ss.RunGUI()
-	} else {
-		ss.RunNoGUI()
-	}
 }
 
 func (ss *Sim) ConfigEnv() {

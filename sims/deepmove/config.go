@@ -132,7 +132,7 @@ type Config struct {
 	Title string `display:"-" default:"DeepAxon Move Prediction"`
 
 	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/deep_move/README.md"`
+	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/sims/deep_move/README.md"`
 
 	// Doc is brief documentation of the sim.
 	Doc string `display:"-" default:"This demonstrates a basic deep predictive learning Axon model that learns to predict the effects of movement on visual inputs."`

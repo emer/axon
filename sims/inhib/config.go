@@ -87,7 +87,7 @@ type Config struct {
 	Title string `display:"-" default:"Axon inhibition test"`
 
 	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/inhib/README.md"`
+	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/sims/inhib/README.md"`
 
 	// Doc is brief documentation of the sim.
 	Doc string `display:"-" default:"This explores how inhibitory interneurons can dynamically control overall activity levels within the network, by providing both feedforward and feedback inhibition to excitatory pyramidal neurons.."`

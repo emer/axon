@@ -127,7 +127,7 @@ type Config struct {
 	Title string `display:"-" default:"Ventral Striatum Patch"`
 
 	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/vspatch/README.md"`
+	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/sims/vspatch/README.md"`
 
 	// Doc is brief documentation of the sim.
 	Doc string `display:"-" default:"This project simulates the Ventral Striatum (VS) Patch (striosome) neurons that predict reward to generate an RPE (reward prediction error). It is a testbed for learning the quantitative value representations needed for this."`

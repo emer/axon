@@ -111,7 +111,7 @@ type Config struct {
 	Title string `display:"-" default:"Reinforcement learning"`
 
 	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/rl/README.md"`
+	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/sims/rl/README.md"`
 
 	// Doc is brief documentation of the sim.
 	Doc string `display:"-" default:"rl explores the temporal differences (TD) reinforcement learning algorithm under some basic Pavlovian conditioning environments."`

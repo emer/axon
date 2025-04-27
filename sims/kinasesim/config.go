@@ -77,7 +77,7 @@ type Config struct {
 	Title string `display:"-" default:"Kinase learning equations"`
 
 	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/kinaseq/README.md"`
+	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/sims/kinaseq/README.md"`
 
 	// Doc is brief documentation of the sim.
 	Doc string `display:"-" default:"This simulation explores calcium-based synaptic learning rules, specifically at the synaptic level."`

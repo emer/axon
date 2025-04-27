@@ -127,7 +127,7 @@ type Config struct {
 	Title string `display:"-" default:"Prefrontal Cortex Maintenance"`
 
 	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/pfcmaint/README.md"`
+	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/sims/pfcmaint/README.md"`
 
 	// Doc is brief documentation of the sim.
 	Doc string `display:"-" default:"This project tests prefrontal cortex (PFC) active maintenance mechanisms supported by the pyramidal tract (PT) neurons, in the PTMaint layer type."`

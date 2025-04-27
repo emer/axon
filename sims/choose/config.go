@@ -151,7 +151,7 @@ type Config struct {
 	Title string `display:"-" default:"Choose Maze Arms"`
 
 	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/choose/README.md"`
+	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/sims/choose/README.md"`
 
 	// Doc is brief documentation of the sim.
 	Doc string `display:"-" default:"This project tests the Rubicon framework making cost-benefit based choices."`

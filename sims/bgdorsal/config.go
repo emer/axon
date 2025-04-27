@@ -135,7 +135,7 @@ type Config struct {
 	Title string `display:"-" default:"Pallidal Core (GPe) Dorsal Striatum"`
 
 	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/bgdorsal/README.md"`
+	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/sims/bgdorsal/README.md"`
 
 	// Doc is brief documentation of the sim.
 	Doc string `display:"-" default:"This project simulates the Dorsal Basal Ganglia, starting with the Dorsal Striatum, centered on the Pallidum Core (GPe) areas that drive Go vs. No selection of motor actions."`

@@ -125,7 +125,7 @@ type Config struct {
 	Title string `display:"-" default:"Axon random associator"`
 
 	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/ra25/README.md"`
+	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/sims/ra25/README.md"`
 
 	// Doc is brief documentation of the sim.
 	Doc string `display:"-" default:"This demonstrates a basic Axon model and provides a template for creating new models. It has a random-associator four-layer axon network that uses the standard supervised learning paradigm to learn mappings between 25 random input / output patterns defined over 5x5 input / output layers."`

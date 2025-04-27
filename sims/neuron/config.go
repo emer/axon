@@ -70,7 +70,7 @@ type Config struct {
 	Title string `display:"-" default:"Axon single neuron"`
 
 	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/neuron/README.md"`
+	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/sims/neuron/README.md"`
 
 	// Doc is brief documentation of the sim.
 	Doc string `display:"-" default:"This simulation gives an in-depth view inside the processing within an individual neuron, including the various channels that shape its dynamics in important ways."`

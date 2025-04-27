@@ -122,7 +122,7 @@ type Config struct {
 	Title string `display:"-" default:"Primary Value, Learned Value"`
 
 	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/pvlv/README.md"`
+	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/sims/pvlv/README.md"`
 
 	// Doc is brief documentation of the sim.
 	Doc string `display:"-" default:"Simulates the primary value, learned value model of classical conditioning and phasic dopamine in the amygdala, ventral striatum and associated areas."`

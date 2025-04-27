@@ -148,7 +148,7 @@ type Config struct {
 	Title string `display:"-" default:"DeepAxon Finite State Automaton"`
 
 	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/deep_fsa/README.md"`
+	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/sims/deep_fsa/README.md"`
 
 	// Doc is brief documentation of the sim.
 	Doc string `display:"-" default:"This demonstrates a basic deep predictive learning Axon model on the Finite State Automaton problem (e.g., the Reber grammar). The network learns the underlying grammar that generates partially ambiguous observable state tokens, strictly through errors in predicting the sequences of these tokens."`
