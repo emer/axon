@@ -89,11 +89,15 @@ func (pl *VGCCPlot) GVRun() { //types:add
 	plot.SetFirstStyler(dir.Float64("V"), func(s *plot.Style) {
 		s.Role = plot.X
 	})
-	ons := []string{"Gvgcc", "M", "H"}
+	plot.SetFirstStyler(dir.Float64("Gvgcc"), func(s *plot.Style) {
+		s.On = true
+		s.Plot.Title = "VGCC G(t)"
+		s.RightY = true
+	})
+	ons := []string{"M", "H"}
 	for _, on := range ons {
 		plot.SetFirstStyler(dir.Float64(on), func(s *plot.Style) {
 			s.On = true
-			s.Plot.Title = "VGCC G(V)"
 		})
 	}
 	if pl.Tabs != nil {
