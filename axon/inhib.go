@@ -174,17 +174,19 @@ func PoolInhib(fb *fsfffb.GiParams, pi, di uint32, gimult float32) {
 	fsi = fb.FSiFromFFs(fsi, Pools.Value(int(pi), int(di), int(fsfffb.FFs)), Pools.Value(int(pi), int(di), int(fsfffb.FBs)))
 	Pools.Set(fsi, int(pi), int(di), int(fsfffb.FSi))
 	clamped := PoolsInt.Value(int(pi), int(di), int(Clamped)) > 0
-	Pools.Set(fb.Gi*fb.FS(fsi, Pools.Value(int(pi), int(di), int(fsfffb.GeExts)), clamped), int(pi), int(di), int(fsfffb.FSGi))
+	fsgi := fb.Gi * fb.FS(fsi, Pools.Value(int(pi), int(di), int(fsfffb.GeExts)), clamped)
+	Pools.Set(fsgi, int(pi), int(di), int(fsfffb.FSGi))
 
 	ssf := Pools.Value(int(pi), int(di), int(fsfffb.SSf))
 	ssi := Pools.Value(int(pi), int(di), int(fsfffb.SSi))
 	fb.SSFromFBs(&ssf, &ssi, Pools.Value(int(pi), int(di), int(fsfffb.FBs)))
-	Pools.Set(fb.Gi*fb.SS*ssi, int(pi), int(di), int(fsfffb.SSGi))
+	ssgi := fb.Gi * fb.SS * ssi
 	Pools.Set(ssf, int(pi), int(di), int(fsfffb.SSf))
 	Pools.Set(ssi, int(pi), int(di), int(fsfffb.SSi))
+	Pools.Set(ssgi, int(pi), int(di), int(fsfffb.SSGi))
 
-	Pools.Set(PoolInhibGiFromFSSS(pi, di)+fb.FFPrv*Pools.Value(int(pi), int(di), int(fsfffb.FFAvgPrv)), int(pi), int(di), int(fsfffb.TotalGi))
-	PoolInhibSaveOrig(pi, di)
+	Pools.Set(fsgi+ssgi+fb.FFPrv*Pools.Value(int(pi), int(di), int(fsfffb.FFAvgPrv)), int(pi), int(di), int(fsfffb.TotalGi))
+	Pools.Set(Pools.Value(int(pi), int(di), int(fsfffb.TotalGi)), int(pi), int(di), int(fsfffb.GiOrig))
 }
 
 func PoolInhibInit(pi, di uint32) {
@@ -244,16 +246,6 @@ func PoolInhibSpikesFromRaw(pi, di uint32) {
 	Pools.Set(Pools.Value(int(pi), int(di), int(fsfffb.FFsRaw)), int(pi), int(di), int(fsfffb.FFs))
 	Pools.Set(Pools.Value(int(pi), int(di), int(fsfffb.GeExtRaw)), int(pi), int(di), int(fsfffb.GeExts))
 	PoolInhibInitRaw(pi, di)
-}
-
-// SaveOrig saves the current Gi values as original values
-func PoolInhibSaveOrig(pi, di uint32) {
-	Pools.Set(Pools.Value(int(pi), int(di), int(fsfffb.TotalGi)), int(pi), int(di), int(fsfffb.GiOrig))
-}
-
-// GiFromFSSS returns the sum of FSGi and SSGi as overall inhibition
-func PoolInhibGiFromFSSS(pi, di uint32) float32 {
-	return Pools.Value(int(pi), int(di), int(fsfffb.FSGi)) + Pools.Value(int(pi), int(di), int(fsfffb.SSGi))
 }
 
 // LayerMax updates given pool-level inhib values from given layer-level Gi

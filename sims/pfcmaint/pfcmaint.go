@@ -7,7 +7,7 @@
 // in the PTMaint layer type.
 package pfcmaint
 
-//go:generate core generate -add-types -add-funcs
+//go:generate core generate -add-types -add-funcs -gosl
 
 import (
 	"fmt"

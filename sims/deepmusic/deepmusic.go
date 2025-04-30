@@ -6,7 +6,7 @@
 // in a musical sequence of notes.
 package deepmusic
 
-//go:generate core generate -add-types -add-funcs
+//go:generate core generate -add-types -gosl -add-funcs
 
 import (
 	"fmt"

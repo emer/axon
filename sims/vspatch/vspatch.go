@@ -7,7 +7,7 @@
 // ganglia, for the Ventral Striatum (VS) global Go vs. No case.
 package vspatch
 
-//go:generate core generate -add-types -add-funcs
+//go:generate core generate -add-types -add-funcs -gosl
 
 import (
 	"fmt"

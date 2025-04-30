@@ -9,7 +9,7 @@
 // and SST neurons (slow spiking).
 package inhib
 
-//go:generate core generate -add-types -add-funcs
+//go:generate core generate -add-types -add-funcs -gosl
 
 import (
 	"fmt"
@@ -75,13 +75,42 @@ type Sim struct {
 	// the inhibitory interneurons directly.
 	FSFFFB bool
 
-	// InhibExciteScale is the scaling factor for inhibition to excitation pathways,
-	// which determines the strength of inhibition when not using FSFFFB function.
-	InhibExciteScale float32
+	// Gi is overall inhibition gain, which is the main parameter to adjust
+	// to change overall activation levels, scaling both the FS and SS factors.
+	Gi float32 `min:"0" default:"1,1.1,0.75,0.9"`
 
-	// InhibInhibScale is the scaling factor for inhibition to inhibition pathways,
+	// FB is a scaling factor for contribution of FB spikes to FSi value,
+	// where FF spikes always contribute with a factor of 1.
+	// For small networks, 0.5 or 1 works best; larger networks and
+	// more demanding inhibition requires higher levels.
+	FB float32 `min:"0" default:"0.5,1,4"`
+
+	// FSTau is fast spiking (PV+) intgration time constant in cycles (msec).
+	// Tau is roughly 2/3 of the way to asymptotic value.
+	FSTau float32 `min:"0" default:"6"`
+
+	// SS is the multiplier on SS slow-spiking (SST+) in contributing to the
+	// overall Gi inhibition. FS contributes at a factor of 1.
+	SS float32 `min:"0" default:"30"`
+
+	// SSfTau is the slow-spiking (SST+) facilitation decay time constant
+	// in cycles (msec). Facilication factor SSf determines impact of FB spikes
+	// as a function of spike input.
+	// Tau is roughly 2/3 of the way to asymptotic value.
+	SSfTau float32 `min:"0" default:"20"`
+
+	// SSiTau is the slow-spiking (SST+) integration time constant in cycles (msec)
+	// cascaded on top of FSTau.
+	// Tau is roughly 2/3 of the way to asymptotic value.
+	SSiTau float32 `min:"0" default:"50"`
+
+	// InhibExcite is the scaling factor for inhibition to excitation pathways,
 	// which determines the strength of inhibition when not using FSFFFB function.
-	InhibInhibScale float32
+	InhibExcite float32
+
+	// InhibInhib is the scaling factor for inhibition to inhibition pathways,
+	// which determines the strength of inhibition when not using FSFFFB function.
+	InhibInhib float32
 
 	// simulation configuration parameters -- set by .toml config file and / or args
 	Config *Config `new-window:"+"`
@@ -123,6 +152,29 @@ type Sim struct {
 	RandSeeds randx.Seeds `display:"-"`
 }
 
+func (ss *Sim) ShouldDisplay(field string) bool {
+	switch field {
+	case "Gi", "FB", "FSTau", "SS", "SSfTau", "SSiTau":
+		return ss.FSFFFB
+	case "InhibExcite", "InhibInhib":
+		return !ss.FSFFFB
+	default:
+		return true
+	}
+}
+
+func (ss *Sim) Defaults() {
+	ss.FSFFFB = true
+	ss.Gi = 1.1
+	ss.FB = 1
+	ss.FSTau = 6
+	ss.SS = 30
+	ss.SSfTau = 20
+	ss.SSiTau = 50
+	ss.InhibExcite = 8
+	ss.InhibInhib = 1
+}
+
 // RunSim runs the simulation as a standalone app
 // with given configuration.
 func RunSim(cfg *Config) error {
@@ -146,12 +198,6 @@ func EmbedSim(b tree.Node) *Sim {
 	ss.Init()
 	ss.ConfigGUI(b)
 	return ss
-}
-
-func (ss *Sim) Defaults() {
-	ss.FSFFFB = false
-	ss.InhibExciteScale = 8
-	ss.InhibInhibScale = 1
 }
 
 func (ss *Sim) ConfigSim() {
@@ -286,17 +332,24 @@ func (ss *Sim) ApplyParams() {
 	ss.Params.ApplyAll(ss.Net)
 
 	for _, ly := range ss.Net.Layers {
+		ip := &ly.Params.Inhib.Layer
+		ip.Gi = ss.Gi
+		ip.FB = ss.FB
+		ip.FSTau = ss.FSTau
+		ip.SS = ss.SS
+		ip.SSfTau = ss.SSfTau
+		ip.SSiTau = ss.SSiTau
 		for _, pt := range ly.RecvPaths {
 			if pt.Type != axon.InhibPath {
 				continue
 			}
 			if ss.FSFFFB {
-				pt.Params.PathScale.Abs = ss.InhibInhibScale
+				pt.Params.PathScale.Abs = ss.InhibInhib
 			} else {
 				if strings.HasPrefix(ly.Name, "Inhib") {
-					pt.Params.PathScale.Abs = ss.InhibInhibScale
+					pt.Params.PathScale.Abs = ss.InhibInhib
 				} else {
-					pt.Params.PathScale.Abs = ss.InhibExciteScale
+					pt.Params.PathScale.Abs = ss.InhibExcite
 				}
 			}
 		}
@@ -502,10 +555,8 @@ func (ss *Sim) ConfigStats() {
 		trialNameFunc(mode, level, phase == Start)
 	})
 
-	// up to a point, it is good to use loops over stats in one function,
-	// to reduce repetition of boilerplate.
-	layers := ss.Net.LayersByType(axon.SuperLayer) // axon.InputLayer,
-	statNames := []string{"Spikes", "Ge", "Act", "Gi", "TotalGi", "FFs", "FBs", "FSi", "SSi", "SSf", "FSGi", "SSGi"}
+	layers := []string{"Layer1", "Layer2"}
+	statNames := []string{"Spikes", "Vm", "VmDend", "Ge", "Act", "Gi", "FFs", "FBs", "FSi", "SSi", "SSf", "FSGi", "SSGi"}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		for _, lnm := range layers {
 			ly := ss.Net.LayerByName(lnm)
@@ -521,13 +572,11 @@ func (ss *Sim) ConfigStats() {
 				if phase == Start {
 					tsr.SetNumRows(0)
 					plot.SetFirstStyler(tsr, func(s *plot.Style) {
-						s.Range.SetMin(0).SetMax(1)
+						// s.Range.SetMin(0).SetMax(1)
 						s.On = false
 						switch stnm {
 						case "Act":
 							s.On = true
-							// case "TotalGi":
-							// 	s.On = true
 						}
 					})
 					continue
@@ -536,8 +585,8 @@ func (ss *Sim) ConfigStats() {
 				case Cycle:
 					var stat float32
 					switch stnm {
-					case "Spikes":
-						stat = ly.AvgMaxVarByPool("Spike", 0, di).Avg
+					case "Spikes", "Vm", "VmDend":
+						stat = ly.AvgMaxVarByPool(stnm, 0, di).Avg
 					case "Ge":
 						stat = axon.PoolAvgMax(axon.AMGeInt, axon.AMCycle, axon.Avg, uint32(pi), uint32(di))
 					case "Act":

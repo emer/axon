@@ -6,7 +6,7 @@
 // on visual inputs.
 package deepmove
 
-//go:generate core generate -add-types -add-funcs
+//go:generate core generate -add-types -add-funcs -gosl
 
 import (
 	"fmt"

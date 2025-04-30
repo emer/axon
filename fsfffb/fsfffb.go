@@ -11,16 +11,17 @@
 // active at any time, where k is typically 10-20 percent of N.
 package fsfffb
 
-//go:generate core generate -add-types
+//go:generate core generate -add-types -gosl
 
 import "cogentcore.org/lab/gosl/slbool"
 
 //gosl:start
 
 // GiParams parameterizes feedforward (FF) and feedback (FB) inhibition (FFFB)
-// based on incoming spikes (FF) and outgoing spikes (FB)
-// across Fast (PV+) and Slow (SST+) timescales.
-// FF -> PV -> FS fast spikes, FB -> SST -> SS slow spikes (slow to get going)
+// based on incoming spikes (FF) and outgoing spikes (FB) for given excitatory pool
+// across Fast (PV+ neurons) and Slow (SST+ neurons) timescales.
+// FF+FB -> FS fast spikes (PV), FB*SSf -> SS (SST) slow spikes, which are slow
+// to start due to the SSf facilitation factor that increases slowly.
 type GiParams struct {
 
 	// On enables this level of inhibition.
@@ -30,13 +31,14 @@ type GiParams struct {
 	// to change overall activation levels, scaling both the FS and SS factors.
 	Gi float32 `min:"0" default:"1,1.1,0.75,0.9"`
 
-	// FB is the amount of FB spikes included in FF for driving FS.
+	// FB is a scaling factor for contribution of FB spikes to FSi value,
+	// where FF spikes always contribute with a factor of 1.
 	// For small networks, 0.5 or 1 works best; larger networks and
 	// more demanding inhibition requires higher levels.
 	FB float32 `min:"0" default:"0.5,1,4"`
 
 	// FSTau is fast spiking (PV+) intgration time constant in cycles (msec).
-	// Tau is roughly how long it takes for value to change significantly = 1.4x the half-life.
+	// Tau is roughly 2/3 of the way to asymptotic value.
 	FSTau float32 `min:"0" default:"6"`
 
 	// SS is the multiplier on SS slow-spiking (SST+) in contributing to the
@@ -46,12 +48,12 @@ type GiParams struct {
 	// SSfTau is the slow-spiking (SST+) facilitation decay time constant
 	// in cycles (msec). Facilication factor SSf determines impact of FB spikes
 	// as a function of spike input.
-	// Tau is roughly how long it takes for value to change significantly = 1.4x the half-life.
+	// Tau is roughly 2/3 of the way to asymptotic value.
 	SSfTau float32 `min:"0" default:"20"`
 
 	// SSiTau is the slow-spiking (SST+) integration time constant in cycles (msec)
 	// cascaded on top of FSTau.
-	// Tau is roughly how long it takes for value to change significantly = 1.4x the half-life.
+	// Tau is roughly 2/3 of the way to asymptotic value.
 	SSiTau float32 `min:"0" default:"50"`
 
 	// FS0 is the fast spiking zero point: below this level, no FS inhibition
@@ -127,8 +129,8 @@ func (fb *GiParams) FS0Thr(val float32) float32 {
 	return max(val-fb.FS0, 0.0)
 }
 
-// FS returns the current effective FS value based on fsi and fsd
-// if clamped, then only use gext, without applying FS0
+// FS returns the current effective FS value based on fsi.
+// If clamped, then only use gext, without applying FS0
 func (fb *GiParams) FS(fsi, gext float32, clamped bool) float32 {
 	if clamped && gext > fb.ClampExtMin {
 		return gext

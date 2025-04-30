@@ -7,7 +7,7 @@
 // drive Go vs. No selection of motor actions.
 package bgdorsal
 
-//go:generate core generate -add-types -add-funcs
+//go:generate core generate -add-types -add-funcs -gosl
 
 import (
 	"fmt"

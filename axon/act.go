@@ -46,7 +46,7 @@ func NeuronIsOff(ni uint32) bool {
 
 // SpikeParams contains spiking activation function params.
 // Implements a basic thresholded Vm model, and optionally
-// the AdEx adaptive exponential function (adapt is KNaAdapt)
+// the AdEx adaptive exponential function.
 type SpikeParams struct {
 
 	// Thr is the spiking threshold value Theta (Θ) for firing output activation,
@@ -395,15 +395,15 @@ type DtParams struct {
 	// individual input state (e.g., roughly the 200 msec theta cycle),
 	// used in computing ActInt, GeInt from Ge, and GiInt from GiSyn.
 	// This is used for scoring performance, not for learning, in cycles,
-	// which should be milliseconds typically (tau is roughly how long it takes
-	// for value to change significantly ~1.4x the half-life),
+	// which should be milliseconds typically
+	// (Tau is roughly 2/3 of the way to asymptote).
 	IntTau float32 `default:"40" min:"1"`
 
 	// LongAvgTau is a time constant for integrating slower long-time-scale averages,
 	// such as ActAvg, Pool.ActsMAvg, ActsPAvg. Computed in NewState
 	// when a new input state is present (i.e., not msec but in units
-	// of a theta cycle) (tau is roughly how long it takes for value to change
-	// significantly). Set lower for smaller models.
+	// of a theta cycle) (Tau is roughly 2/3 of the way to asymptote).
+	// Set lower for smaller models.
 	LongAvgTau float32 `default:"20" min:"1"`
 
 	// maxCycStart is the cycle to start updating the CaPMaxCa, CaPMax values

@@ -7,7 +7,7 @@
 // and associated areas.
 package pvlv
 
-//go:generate core generate -add-types -add-funcs
+//go:generate core generate -add-types -add-funcs -gosl
 
 import (
 	"fmt"

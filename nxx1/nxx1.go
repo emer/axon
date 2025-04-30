@@ -19,7 +19,7 @@ overall values.
 */
 package nxx1
 
-//go:generate core generate -add-types
+//go:generate core generate -add-types -gosl
 
 import (
 	"cogentcore.org/core/math32"

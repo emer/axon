@@ -8,7 +8,7 @@
 // size, etc of retinal input images.
 package lvis
 
-//go:generate core generate -add-types -add-funcs
+//go:generate core generate -add-types -add-funcs -gosl
 
 import (
 	"fmt"

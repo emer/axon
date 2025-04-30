@@ -10,7 +10,7 @@ Includes excitatory, leak, inhibition, and dynamic potassium channels.
 */
 package chans
 
-//go:generate core generate -add-types
+//go:generate core generate -add-types -gosl
 
 //gosl:start
 

@@ -6,7 +6,7 @@
 // specifically at the synaptic level.
 package kinasesim
 
-//go:generate core generate -add-types -add-funcs
+//go:generate core generate -add-types -add-funcs -gosl
 
 import (
 	"reflect"

@@ -6,7 +6,7 @@
 // underlying the axon models, largely from the chans collection of channels.
 package main
 
-//go:generate core generate -add-types
+//go:generate core generate -add-types -gosl
 
 import (
 	"cogentcore.org/lab/tensorfs"

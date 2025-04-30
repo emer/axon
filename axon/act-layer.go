@@ -231,7 +231,7 @@ func (ly *LayerParams) SubPoolGiFromSpikes(ctx *Context, lpi, pi, di uint32, lyI
 		PoolInhibLayerMax(pi, di, Pools.Value(int(lpi), int(di), int(fsfffb.TotalGi))) // note: this requires lpl inhib to have been computed before!
 	} else {
 		PoolInhibPoolMax(pi, di, Pools.Value(int(pi), int(di), int(fsfffb.TotalGi))) // display only
-		PoolInhibSaveOrig(lpi, di)                                                   // effective GiOrig
+		Pools.Set(Pools.Value(int(lpi), int(di), int(fsfffb.TotalGi)), int(lpi), int(di), int(fsfffb.GiOrig))
 	}
 }
 

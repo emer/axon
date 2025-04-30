@@ -933,8 +933,8 @@ struct Chans {
 //////// import: "chans-gabab.go"
 struct GABABParams {
 	Gk: f32,
-	RiseTau: f32,
-	DecayTau: f32,
+	Rise: f32,
+	Decay: f32,
 	Gbase: f32,
 	GiSpike: f32,
 	MaxTime: f32,
@@ -978,12 +978,11 @@ struct KirParams {
 	Mrest: f32,
 }
 fn KirParams_Minf(kp: KirParams, v: f32) -> f32 {
-	return 1.0 / (1.0 + FastExp((v-(kp.MinfOff))/kp.MinfTau));
+	return 1.0 / (1.0 + FastExp((v-kp.MinfOff)/kp.MinfTau));
 }
 fn KirParams_MTau(kp: KirParams, v: f32) -> f32 {
-	var alpha = 0.1 * FastExp((v-(kp.RiseOff))/(-kp.RiseTau));
-	var beta = 0.27 / (1.0 + FastExp((v-(kp.DecayOff))/(-kp.DecayTau)));
-	var sum = alpha + beta;return 1.0 / sum;
+	var alpha = 0.1 * FastExp(-(v-kp.RiseOff)/kp.RiseTau);
+	var beta = 0.27 / (1.0 + FastExp(-(v-kp.DecayOff)/kp.DecayTau));return 1.0 / (alpha + beta);
 }
 fn KirParams_DM(kp: KirParams, v: f32,m: f32) -> f32 {
 	var minf = KirParams_Minf(kp, v);
@@ -1115,14 +1114,14 @@ struct SahpParams {
 struct SKCaParams {
 	Gk: f32,
 	C50: f32,
-	ActTau: f32,
-	DeTau: f32,
+	Rise: f32,
+	Decay: f32,
 	KCaR: f32,
 	CaRDecayTau: f32,
 	CaInThr: f32,
 	CaInTau: f32,
-	ActDt: f32,
-	DeDt: f32,
+	RiseDt: f32,
+	DecayDt: f32,
 	CaRDecayDt: f32,
 	CaInDt: f32,
 }
@@ -1144,8 +1143,8 @@ fn SKCaParams_CaInRFromSpike(sp: SKCaParams, spike: f32,caD: f32, caIn: ptr<func
 fn SKCaParams_MFromCa(sp: SKCaParams, caR: f32,mcur: f32) -> f32 {
 	var mas = SKCaParams_MAsympHill(sp, caR);
 	if (mas > mcur) {
-		return mcur + sp.ActDt*(mas-mcur);
-	}return mcur + sp.DeDt*(mas-mcur);
+		return mcur + sp.RiseDt*(mas-mcur);
+	}return mcur + sp.DecayDt*(mas-mcur);
 }
 
 //////// import: "chans-vgcc.go"

@@ -262,8 +262,8 @@ struct Chans {
 //////// import: "chans-gabab.go"
 struct GABABParams {
 	Gk: f32,
-	RiseTau: f32,
-	DecayTau: f32,
+	Rise: f32,
+	Decay: f32,
 	Gbase: f32,
 	GiSpike: f32,
 	MaxTime: f32,
@@ -347,14 +347,14 @@ struct SahpParams {
 struct SKCaParams {
 	Gk: f32,
 	C50: f32,
-	ActTau: f32,
-	DeTau: f32,
+	Rise: f32,
+	Decay: f32,
 	KCaR: f32,
 	CaRDecayTau: f32,
 	CaInThr: f32,
 	CaInTau: f32,
-	ActDt: f32,
-	DeDt: f32,
+	RiseDt: f32,
+	DecayDt: f32,
 	CaRDecayDt: f32,
 	CaInDt: f32,
 }

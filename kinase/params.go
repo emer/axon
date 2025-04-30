@@ -4,7 +4,7 @@
 
 package kinase
 
-//go:generate core generate -add-types
+//go:generate core generate -add-types -gosl
 
 //gosl:start
 

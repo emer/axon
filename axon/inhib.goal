@@ -167,17 +167,19 @@ func PoolInhib(fb *fsfffb.GiParams, pi, di uint32, gimult float32) {
 	fsi = fb.FSiFromFFs(fsi, Pools[pi, di, fsfffb.FFs], Pools[pi, di, fsfffb.FBs])
 	Pools[pi, di, fsfffb.FSi] = fsi
 	clamped := PoolsInt[pi, di, Clamped] > 0
-	Pools[pi, di, fsfffb.FSGi] = fb.Gi * fb.FS(fsi, Pools[pi, di, fsfffb.GeExts], clamped)
+	fsgi := fb.Gi * fb.FS(fsi, Pools[pi, di, fsfffb.GeExts], clamped)
+	Pools[pi, di, fsfffb.FSGi] = fsgi
 
 	ssf := Pools[pi, di, fsfffb.SSf]
 	ssi := Pools[pi, di, fsfffb.SSi]
 	fb.SSFromFBs(&ssf, &ssi, Pools[pi, di, fsfffb.FBs])
-	Pools[pi, di, fsfffb.SSGi] = fb.Gi * fb.SS * ssi
+	ssgi := fb.Gi * fb.SS * ssi
 	Pools[pi, di, fsfffb.SSf] = ssf
 	Pools[pi, di, fsfffb.SSi] = ssi
+	Pools[pi, di, fsfffb.SSGi] = ssgi
 
-	Pools[pi, di, fsfffb.TotalGi] = PoolInhibGiFromFSSS(pi, di) + fb.FFPrv*Pools[pi, di, fsfffb.FFAvgPrv]
-	PoolInhibSaveOrig(pi, di)
+	Pools[pi, di, fsfffb.TotalGi] = fsgi + ssgi + fb.FFPrv*Pools[pi, di, fsfffb.FFAvgPrv]
+	Pools[pi, di, fsfffb.GiOrig] = Pools[pi, di, fsfffb.TotalGi]
 }
 
 func PoolInhibInit(pi, di uint32) {
@@ -237,16 +239,6 @@ func PoolInhibSpikesFromRaw(pi, di uint32) {
 	Pools[pi, di, fsfffb.FFs] = Pools[pi, di, fsfffb.FFsRaw]
 	Pools[pi, di, fsfffb.GeExts] = Pools[pi, di, fsfffb.GeExtRaw]
 	PoolInhibInitRaw(pi, di)
-}
-
-// SaveOrig saves the current Gi values as original values
-func PoolInhibSaveOrig(pi, di uint32) {
-	Pools[pi, di, fsfffb.GiOrig] = Pools[pi, di, fsfffb.TotalGi]
-}
-
-// GiFromFSSS returns the sum of FSGi and SSGi as overall inhibition
-func PoolInhibGiFromFSSS(pi, di uint32) float32 {
-	return Pools[pi, di, fsfffb.FSGi] + Pools[pi, di, fsfffb.SSGi]
 }
 
 // LayerMax updates given pool-level inhib values from given layer-level Gi

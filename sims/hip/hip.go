@@ -5,7 +5,7 @@
 // hip runs a hippocampus model for testing parameters and new learning ideas
 package hip
 
-//go:generate core generate -add-types -add-funcs
+//go:generate core generate -add-types -gosl -add-funcs
 
 import (
 	"fmt"

@@ -87,7 +87,7 @@ fn LayerParams_SubPoolGiFromSpikes(ly: LayerParams, ctx: Context, lpi: u32,pi: u
 	} else {
 		PoolInhibPoolMax(pi, di, Pools[Index3D(TensorStrides[130], TensorStrides[131], // display only
 		TensorStrides[132], u32(pi), u32(di), u32(TotalGi))]);
-		PoolInhibSaveOrig(lpi, di); // effective GiOrig
+		Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(lpi), u32(di), u32(GiOrig))] = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(lpi), u32(di), u32(TotalGi))];
 	}
 }
 
@@ -270,8 +270,8 @@ struct Chans {
 //////// import: "chans-gabab.go"
 struct GABABParams {
 	Gk: f32,
-	RiseTau: f32,
-	DecayTau: f32,
+	Rise: f32,
+	Decay: f32,
 	Gbase: f32,
 	GiSpike: f32,
 	MaxTime: f32,
@@ -355,14 +355,14 @@ struct SahpParams {
 struct SKCaParams {
 	Gk: f32,
 	C50: f32,
-	ActTau: f32,
-	DeTau: f32,
+	Rise: f32,
+	Decay: f32,
 	KCaR: f32,
 	CaRDecayTau: f32,
 	CaInThr: f32,
 	CaInTau: f32,
-	ActDt: f32,
-	DeDt: f32,
+	RiseDt: f32,
+	DecayDt: f32,
 	CaRDecayDt: f32,
 	CaInDt: f32,
 }
@@ -620,15 +620,17 @@ fn PoolInhib(fb: GiParams, pi: u32,di: u32, gimult: f32) {
 	fsi = GiParams_FSiFromFFs(fb, fsi, Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FFs))], Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FBs))]);
 	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FSi))] = fsi;
 	var clamped = PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(Clamped))] > 0;
-	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FSGi))] = fb.Gi * GiParams_FS(fb, fsi, Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(GeExts))], clamped);
+	var fsgi = fb.Gi * GiParams_FS(fb, fsi, Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(GeExts))], clamped);
+	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FSGi))] = fsgi;
 	var ssf = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(SSf))];
 	var ssi = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(SSi))];
 	GiParams_SSFromFBs(fb, &ssf, &ssi, Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FBs))]);
-	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(SSGi))] = fb.Gi * fb.SS * ssi;
+	var ssgi = fb.Gi * fb.SS * ssi;
 	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(SSf))] = ssf;
 	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(SSi))] = ssi;
-	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(TotalGi))] = PoolInhibGiFromFSSS(pi, di) + fb.FFPrv*Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FFAvgPrv))];
-	PoolInhibSaveOrig(pi, di);
+	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(SSGi))] = ssgi;
+	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(TotalGi))] = fsgi + ssgi + fb.FFPrv*Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FFAvgPrv))];
+	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(GiOrig))] = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(TotalGi))];
 }
 fn PoolInhibInitRaw(pi: u32,di: u32) {
 	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FFsRaw))] = 0.0;
@@ -662,13 +664,6 @@ fn PoolInhibSpikesFromRaw(pi: u32,di: u32) {
 	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FFs))] = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FFsRaw))];
 	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(GeExts))] = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(GeExtRaw))];
 	PoolInhibInitRaw(pi, di);
-}
-fn PoolInhibSaveOrig(pi: u32,di: u32) {
-	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(GiOrig))] = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(TotalGi))];
-}
-fn PoolInhibGiFromFSSS(pi: u32,di: u32) -> f32 {
-	return Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FSGi))] + Pools[Index3D(TensorStrides[130], TensorStrides[131],
-	TensorStrides[132], u32(pi), u32(di), u32(SSGi))];
 }
 fn PoolInhibLayerMax(pi: u32,di: u32, liGi: f32) {
 	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(LayGi))] = liGi;

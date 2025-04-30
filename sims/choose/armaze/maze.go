@@ -13,7 +13,7 @@
 // only allow switching at the start.
 package armaze
 
-//go:generate core generate -add-types
+//go:generate core generate -add-types -gosl
 
 import (
 	"fmt"

@@ -8,7 +8,7 @@
 // defined over 5x5 input / output layers (i.e., 25 units)
 package ra25
 
-//go:generate core generate -add-types -add-funcs
+//go:generate core generate -add-types -add-funcs -gosl
 
 import (
 	"embed"
