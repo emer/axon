@@ -49,7 +49,7 @@ type GiParams struct {
 	// Tau is roughly how long it takes for value to change significantly = 1.4x the half-life.
 	SSfTau float32 `min:"0" default:"20"`
 
-	// SSiTau is the slow-spiking (SST+) intgration time constant in cycles (msec)
+	// SSiTau is the slow-spiking (SST+) integration time constant in cycles (msec)
 	// cascaded on top of FSTau.
 	// Tau is roughly how long it takes for value to change significantly = 1.4x the half-life.
 	SSiTau float32 `min:"0" default:"50"`

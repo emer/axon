@@ -1,6 +1,6 @@
 # FS (Fast & Slow) FFFB Inhibition
 
-[FFFB](https://github.com/emer/axon/tree/main/fffb) is the feedforward (FF) and feedback (FB) inhibition mechanism, originally developed for the Leabra model.  It applies inhibition as a function of the average `Ge` (excitatory conductance) of units in the layer (this is FF = reflecting all the excitatory input to a layer) and average `Act` rate-code-like activation within the layer (which is FB = reflecting the activity level within the layer itself).  Act is slowly integrated over time as a function of the ISI (inter-spike-interval).
+[FFFB](https://github.com/emer/leabra/tree/main/fffb) is the feedforward (FF) and feedback (FB) inhibition mechanism, developed for the Leabra model.  It applies inhibition as a function of the average `Ge` (excitatory conductance) of units in the layer (this is FF = reflecting all the excitatory input to a layer) and average `Act` rate-code-like activation within the layer (which is FB = reflecting the activity level within the layer itself).  Act is slowly integrated over time as a function of the ISI (inter-spike-interval).
 
 FS-FFFB is a *fast and slow* (FS) version of FFFB that works directly with spike input signals instead of using "internal" variables like Ge and Act, and uses time dynamics based on an emerging consensus about the differences between three major classes of inhibitory interneurons, and their functional properties, e.g., [Cardin, 2018](#references).
 

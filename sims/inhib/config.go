@@ -90,7 +90,7 @@ type Config struct {
 	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/sims/inhib/README.md"`
 
 	// Doc is brief documentation of the sim.
-	Doc string `display:"-" default:"This explores how inhibitory interneurons can dynamically control overall activity levels within the network, by providing both feedforward and feedback inhibition to excitatory pyramidal neurons.."`
+	Doc string `display:"-" default:"This explores how inhibitory interneurons can dynamically control overall activity levels within the network, by providing both feedforward and feedback inhibition to excitatory pyramidal neurons, with different time scales provided by PV neurons (fast spiking) and SST neurons (slow spiking)."`
 
 	// Includes has a list of additional config files to include.
 	// After configuration, it contains list of include files added.

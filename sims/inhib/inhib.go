@@ -4,7 +4,9 @@
 
 // inhib: This simulation explores how inhibitory interneurons can dynamically
 // control overall activity levels within the network, by providing both
-// feedforward and feedback inhibition to excitatory pyramidal neurons.
+// feedforward and feedback inhibition to excitatory pyramidal neurons,
+// with different time scales provided by PV neurons (fast spiking)
+// and SST neurons (slow spiking).
 package inhib
 
 //go:generate core generate -add-types -add-funcs
@@ -13,6 +15,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strings"
 
 	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/core"
@@ -67,6 +70,18 @@ const (
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
+
+	// FSFFFB turns on the FS-FFFB summary inhibition function instead of using
+	// the inhibitory interneurons directly.
+	FSFFFB bool
+
+	// InhibExciteScale is the scaling factor for inhibition to excitation pathways,
+	// which determines the strength of inhibition when not using FSFFFB function.
+	InhibExciteScale float32
+
+	// InhibInhibScale is the scaling factor for inhibition to inhibition pathways,
+	// which determines the strength of inhibition when not using FSFFFB function.
+	InhibInhibScale float32
 
 	// simulation configuration parameters -- set by .toml config file and / or args
 	Config *Config `new-window:"+"`
@@ -133,7 +148,14 @@ func EmbedSim(b tree.Node) *Sim {
 	return ss
 }
 
+func (ss *Sim) Defaults() {
+	ss.FSFFFB = false
+	ss.InhibExciteScale = 8
+	ss.InhibInhibScale = 1
+}
+
 func (ss *Sim) ConfigSim() {
+	ss.Defaults()
 	ss.Root, _ = tensorfs.NewDir("Root")
 	tensorfs.CurRoot = ss.Root
 	ss.Net = axon.NewNetwork(ss.Config.Name)
@@ -255,8 +277,30 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 }
 
 func (ss *Sim) ApplyParams() {
+	if ss.FSFFFB {
+		ss.Params.ExtraSheets = "FSFFFB Trained"
+	} else {
+		ss.Params.ExtraSheets = "Trained"
+	}
 	ss.Params.Script = ss.Config.Params.Script
 	ss.Params.ApplyAll(ss.Net)
+
+	for _, ly := range ss.Net.Layers {
+		for _, pt := range ly.RecvPaths {
+			if pt.Type != axon.InhibPath {
+				continue
+			}
+			if ss.FSFFFB {
+				pt.Params.PathScale.Abs = ss.InhibInhibScale
+			} else {
+				if strings.HasPrefix(ly.Name, "Inhib") {
+					pt.Params.PathScale.Abs = ss.InhibInhibScale
+				} else {
+					pt.Params.PathScale.Abs = ss.InhibExciteScale
+				}
+			}
+		}
+	}
 }
 
 ////////  Init, utils
@@ -300,7 +344,7 @@ func (ss *Sim) ConfigLoops() {
 
 	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, cycles-plusPhase, cycles-1, Cycle, Trial, Train)
 
-	// ls.Stacks[Train].OnInit.Add("Init", func() { ss.Init() })
+	ls.Stacks[Test].OnInit.Add("Init", func() { ss.Init() })
 
 	ls.AddOnStartToLoop(Trial, "ApplyInputs", func(mode enums.Enum) {
 		ss.ApplyInputs(mode.(Modes))
@@ -480,8 +524,10 @@ func (ss *Sim) ConfigStats() {
 						s.Range.SetMin(0).SetMax(1)
 						s.On = false
 						switch stnm {
-						case "TotalGi":
+						case "Act":
 							s.On = true
+							// case "TotalGi":
+							// 	s.On = true
 						}
 					})
 					continue
@@ -556,7 +602,7 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles
 	nv.Options.Raster.Max = ss.Config.Run.Cycles
 	nv.SetNet(ss.Net)
-	ss.NetUpdate.Config(nv, axon.Cycle, ss.StatCounters)
+	ss.NetUpdate.Config(nv, axon.Theta, ss.StatCounters)
 	ss.GUI.OnStop = func(mode, level enums.Enum) {
 		vu := ss.NetViewUpdater(mode)
 		vu.UpdateWhenStopped(mode, level)
