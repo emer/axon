@@ -35,13 +35,10 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Spikes.VmR = -60 // key for firing early, plus noise
 				ly.Acts.Init.Vm = -60    // key for firing early, plus noise
 				ly.Acts.Erev.L = -60     // more excitable
-				ly.Acts.Gbar.L = 20
 				ly.Acts.KNa.On.SetBool(false)
-				ly.Acts.GabaB.Gk = 0 // no gabab
-				ly.Acts.NMDA.Ge = 0  // no nmda
-				ly.Acts.Noise.On.SetBool(false)
-				ly.Acts.Noise.Ge = 0.01 // 0.001 min
-				ly.Acts.Noise.Gi = 0.0  //
+				ly.Acts.Noise.On.SetBool(true)
+				ly.Acts.Noise.Ge = 0.2
+				ly.Acts.Noise.Gi = 0.01 //
 			}},
 		{Sel: "#Layer0", Doc: "Input layer",
 			Set: func(ly *axon.LayerParams) {
@@ -93,6 +90,8 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".ToInhib", Doc: "to inhibitory pathways",
 			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Rel = 1
+				pt.PathScale.Abs = 5 // 5: strong is critical to get into fast spiking regime
 				pt.Com.Delay = 1
 			}},
 	},

@@ -165,14 +165,14 @@ func (ss *Sim) ShouldDisplay(field string) bool {
 
 func (ss *Sim) Defaults() {
 	ss.FSFFFB = true
-	ss.Gi = 1.1
+	ss.Gi = 1
 	ss.FB = 1
 	ss.FSTau = 6
 	ss.SS = 30
 	ss.SSfTau = 20
 	ss.SSiTau = 50
-	ss.InhibExcite = 8
-	ss.InhibInhib = 1
+	ss.InhibExcite = 0.8
+	ss.InhibInhib = 0.8
 }
 
 // RunSim runs the simulation as a standalone app
@@ -556,7 +556,7 @@ func (ss *Sim) ConfigStats() {
 	})
 
 	layers := []string{"Layer1", "Layer2"}
-	statNames := []string{"Spikes", "Vm", "VmDend", "Ge", "Act", "Gi", "FFs", "FBs", "FSi", "SSi", "SSf", "FSGi", "SSGi"}
+	statNames := []string{"Spike", "Vm", "VmDend", "Ge", "Act", "Gi", "FFs", "FBs", "FSi", "SSi", "SSf", "FSGi", "SSGi"}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		for _, lnm := range layers {
 			ly := ss.Net.LayerByName(lnm)
@@ -577,6 +577,8 @@ func (ss *Sim) ConfigStats() {
 						switch stnm {
 						case "Act":
 							s.On = true
+						case "Vm", "VmDend":
+							s.RightY = true
 						}
 					})
 					continue
@@ -585,7 +587,7 @@ func (ss *Sim) ConfigStats() {
 				case Cycle:
 					var stat float32
 					switch stnm {
-					case "Spikes", "Vm", "VmDend":
+					case "Spike", "Vm", "VmDend":
 						stat = ly.AvgMaxVarByPool(stnm, 0, di).Avg
 					case "Ge":
 						stat = axon.PoolAvgMax(axon.AMGeInt, axon.AMCycle, axon.Avg, uint32(pi), uint32(di))
@@ -657,7 +659,7 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 		vu.UpdateWhenStopped(mode, level)
 	}
 
-	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1, 2.75)
+	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1.5, 2.5)
 	nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
 
 	ss.StatsInit()
@@ -668,6 +670,15 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 	ss.GUI.AddLooperCtrl(p, ss.Loops)
 
 	tree.Add(p, func(w *core.Separator) {})
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Defaults", Icon: icons.Update,
+		Tooltip: "Restore initial default parameters.",
+		Active:  egui.ActiveStopped,
+		Func: func() {
+			ss.Defaults()
+			ss.Init()
+			ss.GUI.UpdateWindow()
+		},
+	})
 	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{
 		Label:   "New Seed",
 		Icon:    icons.Add,
