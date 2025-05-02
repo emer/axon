@@ -400,7 +400,6 @@ func (ss *Sim) Init() {
 	ss.SetRunName()
 	ss.InitRandSeed(0)
 	// ss.ConfigEnv() // always do -- otherwise env params not reset after run
-	ss.GUI.StopNow = false
 	ss.ApplyParams()
 	ss.StatsInit()
 	ss.NewRun()

@@ -364,7 +364,6 @@ func (ss *Sim) Init() {
 	ss.Loops.ResetCounters()
 	ss.SetRunName()
 	ss.InitRandSeed(0)
-	ss.GUI.StopNow = false
 	ss.ApplyParams()
 	ss.StatsInit()
 	ss.NewRun()

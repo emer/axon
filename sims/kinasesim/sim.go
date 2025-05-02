@@ -155,7 +155,6 @@ func (ss *Sim) ConfigSim() {
 func (ss *Sim) Init() {
 	ss.SetRunName()
 	ss.InitRandSeed(0)
-	ss.GUI.StopNow = false
 	ss.ConfigKinase()
 	ss.StatsInit()
 }
@@ -167,7 +166,7 @@ func (ss *Sim) InitRandSeed(run int) {
 
 // Stop tells the sim to stop running
 func (ss *Sim) Stop() {
-	ss.GUI.StopNow = true
+	ss.GUI.SetStopNow()
 }
 
 //////// Stats
@@ -372,12 +371,11 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 		Tooltip: "Runs Kinase sweep over set of minus / plus spiking levels.",
 		Active:  egui.ActiveStopped,
 		Func: func() {
-			if !ss.GUI.IsRunning {
+			if !ss.GUI.IsRunning() {
 				go func() {
-					ss.GUI.IsRunning = true
+					ss.GUI.StartRun()
 					ss.Sweep()
-					ss.GUI.IsRunning = false
-					ss.GUI.UpdateWindow()
+					ss.GUI.Stopped(Test, Condition)
 				}()
 			}
 		},
@@ -386,12 +384,11 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 		Tooltip: "Runs NTrials of Kinase updating.",
 		Active:  egui.ActiveStopped,
 		Func: func() {
-			if !ss.GUI.IsRunning {
+			if !ss.GUI.IsRunning() {
 				go func() {
-					ss.GUI.IsRunning = true
+					ss.GUI.StartRun()
 					ss.Run()
-					ss.GUI.IsRunning = false
-					ss.GUI.UpdateWindow()
+					ss.GUI.Stopped(Test, Trial)
 				}()
 			}
 		},
@@ -400,12 +397,11 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 		Tooltip: "Runs one Trial of Kinase updating.",
 		Active:  egui.ActiveStopped,
 		Func: func() {
-			if !ss.GUI.IsRunning {
+			if !ss.GUI.IsRunning() {
 				go func() {
-					ss.GUI.IsRunning = true
+					ss.GUI.StartRun()
 					ss.Trial()
-					ss.GUI.IsRunning = false
-					ss.GUI.UpdateWindow()
+					ss.GUI.Stopped(Test, Trial)
 				}()
 			}
 		},

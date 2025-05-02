@@ -263,7 +263,6 @@ func (ss *Sim) Init() {
 	ss.InitRandSeed(0)
 	// ss.ConfigEnv() // re-config env just in case a different set of patterns was
 	// selected or patterns have been modified etc
-	ss.GUI.StopNow = false
 	ss.ApplyParams()
 	ss.StatsInit()
 	ss.NewRun()

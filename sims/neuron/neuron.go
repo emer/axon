@@ -254,7 +254,6 @@ func (ss *Sim) ApplyParams() {
 func (ss *Sim) Init() {
 	ss.SetRunName()
 	ss.InitRandSeed(0)
-	ss.GUI.StopNow = false
 	ss.ApplyParams()
 	ss.StatsInit()
 	ss.NewRun()
@@ -280,7 +279,6 @@ func (ss *Sim) InitRandSeed(run int) {
 // RunCycles updates neuron over specified number of cycles.
 func (ss *Sim) RunCycles() {
 	ctx := ss.Net.Context()
-	ss.GUI.StopNow = false
 	ss.Net.InitActs()
 	ctx.NewState(Test, false)
 	ss.ApplyParams()
@@ -296,7 +294,7 @@ func (ss *Sim) RunCycles() {
 		ctx.Cycle = int32(cyc)
 		ss.RunStats(Test, Cycle, Step)
 		ss.NetUpdate.UpdateCycle(cyc, Test, Cycle)
-		if ss.GUI.StopNow {
+		if ss.GUI.StopNow() {
 			break
 		}
 	}
@@ -341,7 +339,7 @@ func (ss *Sim) NeuronUpdate(nt *axon.Network, inputOn bool) {
 
 // Stop tells the sim to stop running
 func (ss *Sim) Stop() {
-	ss.GUI.StopNow = true
+	ss.GUI.SetStopNow()
 }
 
 //////// Stats
@@ -526,12 +524,11 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 		Tooltip: "Runs neuron updating over Cycles.",
 		Active:  egui.ActiveStopped,
 		Func: func() {
-			if !ss.GUI.IsRunning {
+			if !ss.GUI.IsRunning() {
 				go func() {
-					ss.GUI.IsRunning = true
+					ss.GUI.StartRun()
 					ss.RunCycles()
-					ss.GUI.IsRunning = false
-					ss.GUI.UpdateWindow()
+					ss.GUI.Stopped(Test, Trial)
 				}()
 			}
 		},

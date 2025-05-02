@@ -375,7 +375,6 @@ func (ss *Sim) Init() {
 	ss.InitRandSeed(0)
 	ss.ConfigEnv() // always do -- otherwise env params not reset after run
 	// selected or patterns have been modified etc
-	ss.GUI.StopNow = false
 	ss.ApplyParams()
 	ss.StatsInit()
 	ss.NewRun()

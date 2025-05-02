@@ -3,12 +3,12 @@ module github.com/emer/axon/v2
 go 1.23.4
 
 require (
-	cogentcore.org/core v0.3.10-0.20250427014623-de19631808dc
-	cogentcore.org/lab v0.1.1-0.20250417215607-52af09a8ee8f
+	cogentcore.org/core v0.3.10-0.20250429190334-2e6129cfd538
+	cogentcore.org/lab v0.1.1-0.20250502170537-c2f728058d0f
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/chewxy/math32 v1.10.1
 	github.com/cogentcore/yaegi v0.0.0-20240724064145-e32a03faad56
-	github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250421193715-8ee934c6c0f6
+	github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250502170855-f1a87d89008f
 	github.com/emer/v1vision v0.1.1-0.20241223003153-dd6818448b3b
 	github.com/stretchr/testify v1.10.0
 	gitlab.com/gomidi/midi/v2 v2.0.30
@@ -52,12 +52,12 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/tdewolff/minify/v2 v2.21.3 // indirect
 	github.com/tdewolff/parse/v2 v2.7.19 // indirect
-	golang.org/x/crypto v0.36.0 // indirect
+	golang.org/x/crypto v0.37.0 // indirect
 	golang.org/x/mod v0.20.0 // indirect
-	golang.org/x/net v0.37.0 // indirect
-	golang.org/x/sync v0.12.0 // indirect
-	golang.org/x/sys v0.31.0 // indirect
-	golang.org/x/text v0.23.0 // indirect
+	golang.org/x/net v0.39.0 // indirect
+	golang.org/x/sync v0.13.0 // indirect
+	golang.org/x/sys v0.32.0 // indirect
+	golang.org/x/text v0.24.0 // indirect
 	golang.org/x/tools v0.24.0 // indirect
 	gonum.org/v1/gonum v0.15.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

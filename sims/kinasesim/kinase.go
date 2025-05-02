@@ -216,7 +216,7 @@ func (ss *Sim) Run() {
 
 // RunImpl runs NTrials, recording to RunLog and TrialLog
 func (ss *Sim) RunImpl(minusHz, plusHz float32, ntrials int) {
-	if ss.GUI.StopNow {
+	if ss.GUI.StopNow() {
 		return
 	}
 	ss.StatsStart(Test, Trial)
@@ -235,7 +235,7 @@ func (ss *Sim) Trial() {
 
 // TrialImpl runs one trial for given parameters
 func (ss *Sim) TrialImpl(minusHz, plusHz float32) {
-	if ss.GUI.StopNow {
+	if ss.GUI.StopNow() {
 		return
 	}
 	ss.StatsStart(Test, Trial)
