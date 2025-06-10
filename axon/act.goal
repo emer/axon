@@ -1006,6 +1006,9 @@ func (ac *ActParams) DecayLearnCa(ctx *Context, ni, di uint32, decay float32) {
 	Neurons[ni, di, LearnCaP] -= decay * Neurons[ni, di, LearnCaP]
 	Neurons[ni, di, LearnCaD] -= decay * Neurons[ni, di, LearnCaD]
 
+	Neurons[ni, di, ETrace] -= decay * Neurons[ni, di, ETrace]
+	Neurons[ni, di, ETraceLearn] += decay * (1.0 - Neurons[ni, di, ETraceLearn])
+
 	// recovers
 	Neurons[ni, di, SKCaIn] += decay * (1.0 - Neurons[ni, di, SKCaIn])
 	Neurons[ni, di, SKCaR] -= decay * Neurons[ni, di, SKCaR]
@@ -1198,6 +1201,8 @@ func (ac *ActParams) InitLongActs(ctx *Context, ni, di uint32) {
 	Neurons[ni, di, Beta2] = 0
 	Neurons[ni, di, ActM] = 0
 	Neurons[ni, di, ActP] = 0
+	Neurons[ni, di, ETrace] = 0
+	Neurons[ni, di, ETraceLearn] = 1
 }
 
 ////////  Cycle

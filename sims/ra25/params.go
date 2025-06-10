@@ -19,6 +19,9 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.ActAvg.Nominal = 0.06 // 0.6 > 0.5
 				ly.Acts.NMDA.MgC = 1.2         // 1.2 > 1.4 here, still..
 				ly.Learn.CaSpike.SpikeCaSyn = 8
+				ly.Learn.CaSpike.Dt.MTau = 5
+				// ly.Learn.CaLearn.ETraceTau = 5
+				// ly.Learn.CaLearn.ETraceScale = 5 // 5 has effects
 				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // false > true here
 			}},
 		{Sel: "#Input", Doc: "critical now to specify the activity level",

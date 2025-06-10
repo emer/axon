@@ -359,6 +359,17 @@ func (ss *Sim) ConfigLoops() {
 	ls.Loop(Train, Run).OnStart.Add("NewRun", ss.NewRun)
 
 	trainEpoch := ls.Loop(Train, Epoch)
+	trainEpoch.IsDone.AddBool("NZeroStop", func() bool {
+		stopNz := ss.Config.Run.NZero
+		if stopNz <= 0 {
+			return false
+		}
+		curModeDir := ss.Current.Dir(Train.String())
+		curNZero := int(curModeDir.Value("NZero").Float1D(-1))
+		stop := curNZero >= stopNz
+		return stop
+		return false
+	})
 	trainEpoch.OnStart.Add("TestAtInterval", func() {
 		if (ss.Config.Run.TestInterval > 0) && ((trainEpoch.Counter.Cur+1)%ss.Config.Run.TestInterval == 0) {
 			ss.TestAll()
@@ -541,9 +552,12 @@ func (ss *Sim) ConfigStats() {
 
 	// up to a point, it is good to use loops over stats in one function,
 	// to reduce repetition of boilerplate.
-	statNames := []string{"InputP_CorSim", "Err"}
+	statNames := []string{"InputP_CorSim", "Err", "NZero", "FirstZero", "LastZero"}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		for _, name := range statNames {
+			if name == "NZero" && (mode != Train || level == Trial) {
+				return
+			}
 			modeDir := ss.Stats.Dir(mode.String())
 			curModeDir := ss.Current.Dir(mode.String())
 			levelDir := modeDir.Dir(level.String())
@@ -557,7 +571,25 @@ func (ss *Sim) ConfigStats() {
 				plot.SetFirstStyler(tsr, func(s *plot.Style) {
 					s.Range.SetMin(0).SetMax(1)
 					s.On = true
+					switch name {
+					case "NZero", "UnitErr", "Output":
+						s.On = false
+					case "FirstZero", "LastZero":
+						if level < Run {
+							s.On = false
+						}
+					}
 				})
+				switch name {
+				case "NZero":
+					if level == Epoch {
+						curModeDir.Float64(name, 1).SetFloat1D(0, 0)
+					}
+				case "FirstZero", "LastZero":
+					if level == Epoch {
+						curModeDir.Float64(name, 1).SetFloat1D(-1, 0)
+					}
+				}
 				continue
 			}
 			switch level {
@@ -590,7 +622,32 @@ func (ss *Sim) ConfigStats() {
 					tsr.AppendRowFloat(stat)
 				}
 			case Epoch:
-				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
+				nz := curModeDir.Float64("NZero", 1).Float1D(0)
+				switch name {
+				case "NZero":
+					err := stats.StatSum.Call(subDir.Value("Err")).Float1D(0)
+					stat = curModeDir.Float64(name, 1).Float1D(0)
+					if err == 0 {
+						stat++
+					} else {
+						stat = 0
+					}
+					curModeDir.Float64(name, 1).SetFloat1D(stat, 0)
+				case "FirstZero":
+					stat = curModeDir.Float64(name, 1).Float1D(0)
+					if stat < 0 && nz == 1 {
+						stat = curModeDir.Int("Epoch", 1).Float1D(0)
+					}
+					curModeDir.Float64(name, 1).SetFloat1D(stat, 0)
+				case "LastZero":
+					stat = curModeDir.Float64(name, 1).Float1D(0)
+					if stat < 0 && nz >= float64(ss.Config.Run.NZero) {
+						stat = curModeDir.Int("Epoch", 1).Float1D(0)
+					}
+					curModeDir.Float64(name, 1).SetFloat1D(stat, 0)
+				default:
+					stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
+				}
 				tsr.AppendRowFloat(stat)
 			case Run:
 				stat = stats.StatFinal.Call(subDir.Value(name)).Float1D(0)

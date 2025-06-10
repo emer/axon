@@ -1012,6 +1012,16 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32) {
 	Neurons.Set(Neurons.Value(int(ni), int(di), int(ActInt)), int(ni), int(di), int(ActP))
 	nrnCaP := Neurons.Value(int(ni), int(di), int(CaP))
 	nrnCaD := Neurons.Value(int(ni), int(di), int(CaD))
+	nrnDelta := nrnCaD - Neurons.Value(int(ni), int(di), int(CaDPrev))
+	et := Neurons.Value(int(ni), int(di), int(ETrace))
+	et += ly.Learn.CaLearn.ETraceDt * (nrnDelta - et)
+	etLrn := 1 + ly.Learn.CaLearn.ETraceScale*et
+	if etLrn < 0 {
+		etLrn = 0
+	}
+	Neurons.Set(et, int(ni), int(di), int(ETrace))
+	Neurons.Set(etLrn, int(ni), int(di), int(ETraceLearn))
+
 	da := GlobalScalars.Value(int(GvDA), int(di))
 	ach := GlobalScalars.Value(int(GvACh), int(di))
 	mlr := ly.Learn.RLRate.RLRateSigDeriv(nrnCaD, PoolAvgMax(AMCaD, AMCycle, Max, lpi, di))

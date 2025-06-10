@@ -47,6 +47,12 @@ type LearnCaParams struct {
 	// into NMDA Ca in [LearnCa].
 	VgccTau float32 `default:"10"`
 
+	ETraceTau float32
+
+	ETraceScale float32
+
+	pad, pad1 int32
+
 	// Dt are time constants for integrating [LearnCa] across
 	// M, P and D cascading levels.
 	Dt kinase.CaDtParams `display:"inline"`
@@ -54,10 +60,13 @@ type LearnCaParams struct {
 	// VgccDt rate = 1 / tau
 	VgccDt float32 `display:"-" json:"-" xml:"-" edit:"-"`
 
+	// ETraceDt rate = 1 / tau
+	ETraceDt float32 `display:"-" json:"-" xml:"-" edit:"-"`
+
 	// NormInv = 1 / Norm
 	NormInv float32 `display:"-" json:"-" xml:"-" edit:"-"`
 
-	pad, pad2 int32
+	pad2 int32
 }
 
 func (lc *LearnCaParams) Defaults() {
@@ -65,14 +74,17 @@ func (lc *LearnCaParams) Defaults() {
 	lc.SpikeVGCC.SetBool(true)
 	lc.SpikeVgccCa = 35
 	lc.VgccTau = 10
+	lc.ETraceTau = 5
+	lc.ETraceScale = 0
 	lc.Dt.Defaults()
-	lc.Dt.MTau = 2
+	lc.Dt.MTau = 2 // todo: should be 5? seems no diff in initial tests.
 	lc.Update()
 }
 
 func (lc *LearnCaParams) Update() {
 	lc.Dt.Update()
 	lc.VgccDt = 1 / lc.VgccTau
+	lc.ETraceDt = 1 / lc.ETraceTau
 	lc.NormInv = 1 / lc.Norm
 }
 

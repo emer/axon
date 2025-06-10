@@ -40,5 +40,3 @@ and for 300 cycles:
 So 300 cycles just appends zeros to the start, and provides a very good fit.
 
 
-
-

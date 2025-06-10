@@ -144,6 +144,8 @@ const (
 	// CaSyn is the neuron-level integration of spike-driven calcium, used to approximate
 	// synaptic calcium influx as a product of sender and receiver neuron CaSyn values,
 	// which are integrated separately because it is computationally much more efficient.
+	// CaSyn enters into a Sender * Receiver product at each synapse to give the effective
+	// credit assignment factor for learning.
 	// This value is driven directly by spikes, with an exponential integration time
 	// constant of 30 msec (default), which captures the coincidence window for pre*post
 	// firing on NMDA receptor opening. The neuron [CaBins] values record the temporal
@@ -153,10 +155,9 @@ const (
 
 	// LearnCa is the receiving neuron calcium signal, which is integrated up to
 	// [LearnCaP] and [LearnCaD], the difference of which is the temporal error
-	// component of the standard axon cortical learning rule.
+	// component of the kinase cortical learning rule.
 	// LearnCa combines NMDA via [NmdaCa] and spiking-driven VGCC [VgccCaInt] calcium
-	// sources (vs. CaM which only reflects a simple spiking component).
-	// The NMDA signal reflects both sending and receiving activity, while the
+	// sources. The NMDA signal reflects both sending and receiving activity, while the
 	// VGCC signal is purely receiver spiking, and a balance of both works best.
 	LearnCa
 
@@ -183,6 +184,12 @@ const (
 	// derivative computed from [CaD] of recv unit, and the normalized difference
 	// (CaP - CaD) / MAX(CaP - CaD).
 	RLRate
+
+	// ETrace is the eligibility trace for this neuron.
+	ETrace
+
+	// ETrace is the learning factor for the eligibility trace for this neuron.
+	ETraceLearn
 
 	//////// NMDA channels
 
@@ -389,7 +396,7 @@ const (
 	// senders = current raw spiking drive.
 	GeRaw
 
-	// GeSyn is the time-integrated total excitatory synaptic conductance,
+	// GeSyn is the time-integrated total excitatory (AMPA) synaptic conductance,
 	// with an instantaneous rise time from each spike (in GeRaw) and
 	// exponential decay with Dt.GeTau, aggregated over pathways.
 	// Does *not* include Gbar.E.
@@ -561,13 +568,15 @@ var NeuronVarProps = map[string]string{
 	"CaD":     `cat:"Learn"`,
 	"CaDPrev": `cat:"Learn"`,
 
-	"CaSyn":    `cat:"Learn"`,
-	"LearnCa":  `cat:"Learn"`,
-	"LearnCaM": `cat:"Learn"`,
-	"LearnCaP": `cat:"Learn"`,
-	"LearnCaD": `cat:"Learn"`,
-	"CaDiff":   `cat:"Learn"`,
-	"RLRate":   `cat:"Learn" auto-scale:"+"`,
+	"CaSyn":       `cat:"Learn"`,
+	"LearnCa":     `cat:"Learn"`,
+	"LearnCaM":    `cat:"Learn"`,
+	"LearnCaP":    `cat:"Learn"`,
+	"LearnCaD":    `cat:"Learn"`,
+	"CaDiff":      `cat:"Learn"`,
+	"RLRate":      `cat:"Learn" auto-scale:"+"`,
+	"ETrace":      `cat:"Learn"`,
+	"ETraceLearn": `cat:"Learn" auto-scale:"+"`,
 
 	//////// NMDA channels
 
