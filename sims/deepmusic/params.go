@@ -29,8 +29,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Sahp.CaTau = 5        // 5 > 10 verfied
 				ly.Acts.KNa.On.SetBool(false) // false and Mahp = 0.05 is better
 				ly.Learn.CaSpike.Dt.MTau = 5
-				ly.Learn.CaLearn.ETraceTau = 2   // 2 > others?
-				ly.Learn.CaLearn.ETraceScale = 1 // 1 > 0.5 etc
+				ly.Learn.CaLearn.ETraceTau = 4     // 4 best in other models
+				ly.Learn.CaLearn.ETraceScale = 0.1 // 0.1 > others?
 			}},
 		{Sel: ".SuperLayer", Doc: "super layer params",
 			Set: func(ly *axon.LayerParams) {

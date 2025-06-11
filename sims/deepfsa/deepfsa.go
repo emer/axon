@@ -48,6 +48,7 @@ const (
 	Trial
 	Epoch
 	Run
+	Expt
 )
 
 // StatsPhase is the phase of stats processing for given mode, level.
@@ -297,6 +298,7 @@ func (ss *Sim) ConfigLoops() {
 	plusPhase := ss.Config.Run.PlusCycles
 
 	ls.AddStack(Train, Trial).
+		AddLevel(Expt, 1).
 		AddLevel(Run, ss.Config.Run.Runs).
 		AddLevel(Epoch, ss.Config.Run.Epochs).
 		AddLevelIncr(Trial, trials, ss.Config.Run.NData).
@@ -619,6 +621,9 @@ func (ss *Sim) ConfigStats() {
 				tsr.AppendRowFloat(stat)
 			case Run:
 				stat = stats.StatFinal.Call(subDir.Value(name)).Float1D(0)
+				tsr.AppendRowFloat(stat)
+			default: // Expt
+				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
 				tsr.AppendRowFloat(stat)
 			}
 		}

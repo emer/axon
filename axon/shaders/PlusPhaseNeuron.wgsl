@@ -846,7 +846,7 @@ fn RLRateParams_RLRateDiff(rl: RLRateParams, scap: f32,scad: f32) -> f32 {
 	}
 	var smax = max(scap, scad);
 	if (smax > rl.SpikeThr) { // avoid div by 0
-		var dif = abs(scap - scad);
+		var dif = abs(scap - scad); // todo: revisit this part vs. just the thresholding
 		if (dif < rl.DiffThr) {
 			return rl.Min;
 		}return (dif / smax);

@@ -49,20 +49,20 @@ func (i Modes) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *Modes) UnmarshalText(text []byte) error { return enums.UnmarshalText(i, text, "Modes") }
 
-var _LevelsValues = []Levels{0, 1, 2, 3}
+var _LevelsValues = []Levels{0, 1, 2, 3, 4}
 
 // LevelsN is the highest valid value for type Levels, plus one.
 //
 //gosl:start
-const LevelsN Levels = 4
+const LevelsN Levels = 5
 
 //gosl:end
 
-var _LevelsValueMap = map[string]Levels{`Cycle`: 0, `Trial`: 1, `Epoch`: 2, `Run`: 3}
+var _LevelsValueMap = map[string]Levels{`Cycle`: 0, `Trial`: 1, `Epoch`: 2, `Run`: 3, `Expt`: 4}
 
-var _LevelsDescMap = map[Levels]string{0: ``, 1: ``, 2: ``, 3: ``}
+var _LevelsDescMap = map[Levels]string{0: ``, 1: ``, 2: ``, 3: ``, 4: ``}
 
-var _LevelsMap = map[Levels]string{0: `Cycle`, 1: `Trial`, 2: `Epoch`, 3: `Run`}
+var _LevelsMap = map[Levels]string{0: `Cycle`, 1: `Trial`, 2: `Epoch`, 3: `Run`, 4: `Expt`}
 
 // String returns the string representation of this Levels value.
 func (i Levels) String() string { return enums.String(i, _LevelsMap) }

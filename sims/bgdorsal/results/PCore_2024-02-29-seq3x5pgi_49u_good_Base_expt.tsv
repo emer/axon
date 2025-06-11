@@ -1,2 +1,0 @@
-|Expt	|Run	|Epoch	$RunName	#NCorrect	#RewPred	#Rew	#RPE	#EpochsToCrit	#NToCrit
-0	24	8	2024-02-29-seq3x5pgi_49u_good_Base	2.224	0.1992	0.6441	0.4494	9.68	25

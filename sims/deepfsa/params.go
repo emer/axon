@@ -40,7 +40,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // ?
 				ly.Learn.CaSpike.Dt.MTau = 5
 				ly.Learn.CaLearn.ETraceTau = 4
-				ly.Learn.CaLearn.ETraceScale = 2
+				ly.Learn.CaLearn.ETraceScale = 1.0 // 0.1 > 0.05, 0.2 etc
 			}},
 		{Sel: ".SuperLayer", Doc: "super layer params",
 			Set: func(ly *axon.LayerParams) {
@@ -96,6 +96,7 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Adapt.LRate = 0.01          // 0.01 or 0.0001 music
 				pt.SWts.Init.SPct = 1.0             // 1 works fine here -- .5 also ok
 				pt.Learn.DWt.CaPScale = 0.95        // 0.95 > 0.98 > 1
+				pt.SWts.Adapt.HiMeanDecay = 0.0008  // 0.0008 default
 				pt.Learn.DWt.SynCa20.SetBool(false) // 10 > 20 reliably
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",

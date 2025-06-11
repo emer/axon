@@ -81,7 +81,6 @@ func (lc *LearnCaParams) Defaults() {
 	lc.ETraceTau = 5
 	lc.ETraceScale = 0
 	lc.Dt.Defaults()
-	lc.Dt.MTau = 2 // todo: should be 5? seems no diff in initial tests.
 	lc.Update()
 }
 
@@ -229,8 +228,7 @@ type RLRateParams struct {
 	SpikeThr float32 `default:"0.1"`
 
 	// DiffThr is the threshold on recv neuron error delta, i.e., |CaP - CaD|
-	//
-	//	below which lrate is at Min value.
+	// below which lrate is at Min value.
 	DiffThr float32 `default:"0.02"`
 
 	// Min is the minimum learning rate value when |CaP - CaD| Diff is below DiffThr.
@@ -299,7 +297,7 @@ func (rl *RLRateParams) RLRateDiff(scap, scad float32) float32 {
 	}
 	smax := math32.Max(scap, scad)
 	if smax > rl.SpikeThr { // avoid div by 0
-		dif := math32.Abs(scap - scad)
+		dif := math32.Abs(scap - scad) // todo: revisit this part vs. just the thresholding
 		if dif < rl.DiffThr {
 			return rl.Min
 		}

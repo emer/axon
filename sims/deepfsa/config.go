@@ -132,7 +132,7 @@ type LogConfig struct {
 	SaveWeights bool
 
 	// Train has the list of Train mode levels to save log files for.
-	Train []string `default:"['Run', 'Epoch']" nest:"+"`
+	Train []string `default:"['Expt', 'Run', 'Epoch']" nest:"+"`
 
 	// Test has the list of Test mode levels to save log files for.
 	Test []string `nest:"+"`
