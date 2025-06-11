@@ -47,8 +47,12 @@ type LearnCaParams struct {
 	// into NMDA Ca in [LearnCa].
 	VgccTau float32 `default:"10"`
 
+	// ETraceTau is the time constant for integrating an eligibility trace factor,
+	// which computes an exponential integrator of local neuron-wise error gradients.
 	ETraceTau float32
 
+	// ETraceScale multiplies the contribution of the ETrace to learning, determining
+	// the strength of its effect.
 	ETraceScale float32
 
 	pad, pad1 int32
@@ -766,25 +770,6 @@ func (ls *LRateParams) Init() {
 // learning rules.
 type DWtParams struct {
 
-	// Trace uses the default trace-based version of the kinase error-driven cortical
-	// learning algorithm, where the per-trial error delta is computed from
-	// [LearnCaP] - [LearnCaD], and the credit assignment factor is computed from the
-	// synaptic product of [CaSyn], integrated over [CaBins] separately on the
-	// sender and receiver neurons, which are then multiplied at each synapse and
-	// integrated to efficiently compute synaptic CaP and CaD factors.
-	// This synaptic CaD is integrated across theta cycle trials with the Tau
-	// parameter to produce the final multiplicative credit assignment factor.
-	// If Trace = false, then the synaptic CaP - CaD delta is used directly as
-	// the error-driven learning signal, precluding the longer-timescale trace
-	// integration factor (Trace = false is automatically used for Target layers).
-	Trace slbool.Bool `default:"true"`
-
-	// Tau is the time constant for integrating the synaptic trace [Tr]
-	// over the theta cycle learning timescale. Larger values (greater than 1)
-	// produce longer time windows of integration, and should only be used when
-	// there is temporal structure to be learned across these longer timescales.
-	Tau float32 `default:"1,2,4"`
-
 	// SynCa20 uses an effective 20msec time window for synaptic calcium computation
 	// from the [CaBins] values for send and recv neurons in computing the SynCa
 	// synaptic calcium value. The default is 10msec, i.e., 1 bin, which works well
@@ -813,31 +798,16 @@ type DWtParams struct {
 	// In Matrix and VSPatch it applies to normalized GeIntNorm value: setting this relatively
 	// high encourages sparser representations.
 	LearnThr float32
-
-	// Dt rate = 1 / tau
-	Dt float32 `display:"-" json:"-" xml:"-" edit:"-"`
-
-	pad float32
 }
 
 func (tp *DWtParams) Defaults() {
-	tp.Trace.SetBool(true)
-	tp.Tau = 1
 	tp.SynCa20.SetBool(false)
 	tp.CaPScale = 1
 	tp.SubMean = 0
 	tp.LearnThr = 0
-	tp.Update()
 }
 
 func (tp *DWtParams) Update() {
-	tp.Dt = 1.0 / tp.Tau
-}
-
-// TrFromCa returns updated trace factor as function of a
-// synaptic calcium update factor and current trace
-func (tp *DWtParams) TrFromCa(tr float32, ca float32) float32 {
-	return tr + tp.Dt*(ca-tr)
 }
 
 ////////  HebbParams

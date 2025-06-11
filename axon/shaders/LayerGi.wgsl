@@ -869,14 +869,10 @@ struct LRateParams {
 	Eff: f32,
 }
 struct DWtParams {
-	Trace: i32,
-	Tau: f32,
 	SynCa20: i32,
 	CaPScale: f32,
 	SubMean: f32,
 	LearnThr: f32,
-	Dt: f32,
-	pad: f32,
 }
 struct HebbParams {
 	On: i32,

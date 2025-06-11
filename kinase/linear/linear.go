@@ -6,6 +6,7 @@ package kinase
 
 import (
 	"fmt"
+	"image"
 	"log/slog"
 	"math/rand"
 	"slices"
@@ -376,7 +377,7 @@ func (ls *Linear) Regress() {
 	esfn := strings.ToLower(estr)
 
 	plt := plot.New()
-	plt.SetImageRender(1280, 1024)
+	plt.SetSize(image.Point{1280, 1024})
 	plots.NewLine(plt, tensor.NewFloat64FromValues(startCaP...)).Styler(func(s *plot.Style) {
 		s.Plot.Scale = 2
 		s.Plot.Title = "CaP Linear Regression Coefficients: " + estr
@@ -386,11 +387,10 @@ func (ls *Linear) Regress() {
 	plots.NewLine(plt, tensor.NewFloat64FromValues(endCaP...)).Styler(func(s *plot.Style) {
 		s.Label = "Final"
 	})
-	plt.Draw()
-	imagex.Save(plt.Painter.RenderImage(), "plot-coefficients-cap-"+esfn+".png")
+	imagex.Save(plt.RenderImage(), "plot-coefficients-cap-"+esfn+".png")
 
 	plt = plot.New()
-	plt.SetImageRender(1280, 1024)
+	plt.SetSize(image.Point{1280, 1024})
 	plots.NewLine(plt, tensor.NewFloat64FromValues(startCaD...)).Styler(func(s *plot.Style) {
 		s.Plot.Scale = 2
 		s.Plot.Title = "CaD Linear Regression Coefficients: " + estr
@@ -400,8 +400,7 @@ func (ls *Linear) Regress() {
 	plots.NewLine(plt, tensor.NewFloat64FromValues(endCaD...)).Styler(func(s *plot.Style) {
 		s.Label = "Final"
 	})
-	plt.Draw()
-	imagex.Save(plt.Painter.RenderImage(), "plot-coefficients-cad-"+esfn+".png")
+	imagex.Save(plt.RenderImage(), "plot-coefficients-cad-"+esfn+".png")
 
 	/*
 		for vi := 0; vi < 2; vi++ {

@@ -9,6 +9,7 @@ import (
 	"image/color"
 
 	"cogentcore.org/core/colors"
+	"cogentcore.org/core/math32"
 	"cogentcore.org/core/paint"
 )
 
@@ -49,7 +50,7 @@ func (ld *LEDraw) Init() {
 	if ld.ImgSize.X == 0 || ld.ImgSize.Y == 0 {
 		ld.Defaults()
 	}
-	ld.Paint = paint.NewPainter(ld.ImgSize.X, ld.ImgSize.Y)
+	ld.Paint = paint.NewPainter(math32.FromPoint(ld.ImgSize))
 	ld.Paint.Stroke.Width.Pw(ld.Width)
 	ld.Paint.Stroke.Color = colors.Uniform(ld.LineColor)
 	ld.Paint.Fill.Color = colors.Uniform(ld.BgColor)
@@ -85,7 +86,7 @@ func (ld *LEDraw) DrawSeg(seg LEDSegs) {
 	case CenterV:
 		ld.Paint.Line(ctrX, ctrY-szY, ctrX, ctrY+szY)
 	}
-	ld.Paint.PathDone()
+	ld.Paint.Draw()
 }
 
 // DrawLED draws one LED of given number, based on LEDdata
@@ -94,7 +95,6 @@ func (ld *LEDraw) DrawLED(num int) {
 	for _, seg := range led {
 		ld.DrawSeg(seg)
 	}
-	ld.Paint.RenderToImage()
 }
 
 //////////////////////////////////////////////////////////////////////////

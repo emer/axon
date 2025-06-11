@@ -17,7 +17,7 @@ Debug = false
 
 [Params]
   NUnits = 6
-  Script = "sim.Sim.Params.Layer[\"Script\"] = &axon.LayerSheet{\n\t&axon.LayerSel{Sel:\".PFCLayer\", Set: func(ly *axon.LayerParams) {\n\t\tly.Learn.NeuroMod.DAModGain = 0.01\n\t}},\n}\nsim.Sim.Params.Path[\"Script\"] = &axon.PathSheet{\n\t&axon.PathSel{Sel:\"Path\", Set: func(pt *axon.PathParams) {\n\t\tpt.Learn.LRate.Base = 0.04\n\t\tpt.Learn.DWt.Tau = 2\n\t}},\n}\n"
+  Script = "sim.Sim.Params.Layer[\"Script\"] = &axon.LayerSheet{\n\t&axon.LayerSel{Sel:\".PFCLayer\", Set: func(ly *axon.LayerParams) {\n\t\tly.Learn.NeuroMod.DAModGain = 0.01\n\t}},\n}\nsim.Sim.Params.Path[\"Script\"] = &axon.PathSheet{\n\t&axon.PathSel{Sel:\"Path\", Set: func(pt *axon.PathParams) {\n\t\tpt.Learn.LRate.Base = 0.04\n\t}},\n}\n"
   Sheet = ''
   Tag = ''
   Note = ''

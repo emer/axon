@@ -117,7 +117,6 @@ var PathParams = axon.PathSheets{
 				pt.Learn.DWt.SubMean = 0   // 0 > 1 even with CTCtxt = 0
 				pt.SWts.Adapt.LRate = 0.01 // 0.01 == 0.0001 but 0.001 not as good..
 				pt.SWts.Init.SPct = 1.0    // 1 works fine here -- .5 also ok
-				pt.Learn.DWt.Tau = 2       // 4 == 2 > 1
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {
@@ -130,7 +129,6 @@ var PathParams = axon.PathSheets{
 		{Sel: ".CTCtxtPath", Doc: "all CT context paths",
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.002 // has almost no effect in 1to1
-				pt.Learn.DWt.Tau = 2        // late in learning 2 does best
 				pt.Learn.DWt.SubMean = 0    //
 			}},
 		{Sel: ".CTFromSuper", Doc: "1to1 > full",

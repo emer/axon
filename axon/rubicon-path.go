@@ -10,12 +10,10 @@ package axon
 // Learning is driven by the Tr trace as function of ACh * Send Act
 // recorded prior to US, and at US, recv unit delta: CaP - CaDPrev
 // times normalized GeIntNorm for recv unit credit assignment.
-// The Learn.DWt.Tau time constant determines trace updating over trials
-// when ACh is above threshold -- this determines strength of second-order
-// conditioning -- default of 1 means none, but can be increased as needed.
 type BLAPathParams struct {
 
-	// use 0.01 for acquisition (don't unlearn) and 1 for extinction -- negative delta learning rate multiplier
+	// use 0.01 for acquisition (don't unlearn) and 1 for extinction.
+	// negative delta learning rate multiplier
 	NegDeltaLRate float32 `default:"0.01,1"`
 
 	// threshold on this layer's ACh level for trace learning updates
@@ -46,7 +44,6 @@ func (pj *PathParams) BLADefaults() {
 	pj.SWts.Init.Mean = 0.1
 	pj.SWts.Init.Var = 0.05
 	pj.SWts.Init.Sym.SetBool(false)
-	pj.Learn.DWt.Tau = 1 // increase for second order conditioning
 	pj.Learn.DWt.Update()
 	pj.Learn.LRate.Base = 0.02
 }
@@ -59,7 +56,6 @@ func (pj *PathParams) VSPatchDefaults() {
 	pj.SWts.Init.Mean = 0.5
 	pj.SWts.Init.Var = 0.25
 	pj.SWts.Init.Sym.SetBool(false)
-	pj.Learn.DWt.Tau = 1
 	pj.Learn.DWt.LearnThr = 0 // 0.3
 	pj.Learn.DWt.Update()
 	pj.Learn.LRate.Base = 0.02 // 0.02 needed for smooth integ on vspatch test

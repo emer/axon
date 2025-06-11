@@ -19,8 +19,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Noise.Gi = 0.0001                    // 0.0001 perhaps better than others
 				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // false >> true; orig = true
 				ly.Learn.CaSpike.Dt.MTau = 5
-				ly.Learn.CaLearn.ETraceTau = 3   // 3,1 > 2,1
-				ly.Learn.CaLearn.ETraceScale = 0 // 1 > 0.5 etc
+				ly.Learn.CaLearn.ETraceTau = 4     // 4 > 3?
+				ly.Learn.CaLearn.ETraceScale = 0.2 // 0.5 > 1
 				// todo: experiment with these:
 				// ly.Acts.Mahp.Gk = 0.06                       // 0.02 def; 0.05 might compensate for lack of KNa?
 				// ly.Acts.Sahp.Gk = 0.1                        // 0.05 def
@@ -116,7 +116,6 @@ var PathParams = axon.PathSheets{
 		{Sel: "Path", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.04         // 0.04 > 0.03
-				pt.Learn.DWt.Tau = 1               // 1 > 2
 				pt.Learn.DWt.CaPScale = 1.05       // 1.05 > 1 > 1.1
 				pt.Learn.DWt.SynCa20.SetBool(true) // 20 > 10
 				pt.SWts.Adapt.HiMeanDecay = 0.0008 // 0.0008 for 4x6, 0.005 for 3x10 -- not clear if real..

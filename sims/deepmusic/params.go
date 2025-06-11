@@ -113,7 +113,6 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Adapt.HiMeanDecay = 0      // 0 > 0.0008 (lvis best)
 				pt.SWts.Adapt.HiMeanThr = 0.5      // 0.5, 0.0008 goes the distance
 				pt.SWts.Init.SPct = 1.0            // 1 works fine here -- .5 also ok
-				pt.Learn.DWt.Tau = 1               // 1 > 2 v0.0.9
 				pt.Learn.DWt.CaPScale = 0.95       // 0.95 def >> 1
 				pt.Learn.DWt.SynCa20.SetBool(true) // 20 > 10; 25 was even better before
 			}},
@@ -124,7 +123,6 @@ var PathParams = axon.PathSheets{
 		{Sel: ".CTCtxtPath", Doc: "all CT context paths",
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.001 // 0.001 >> 0.002 for full
-				pt.Learn.DWt.Tau = 2        // 1 > 2 > 4 v0.0.9
 				pt.Learn.DWt.SubMean = 0    // 0 > 1 -- 1 is especially bad
 			}},
 		{Sel: ".CTFromSuper", Doc: "1to1 > full",

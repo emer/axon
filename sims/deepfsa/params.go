@@ -95,7 +95,6 @@ var PathParams = axon.PathSheets{
 				pt.Learn.LRate.Base = 0.03          // .03 > others -- same as CtCtxt
 				pt.SWts.Adapt.LRate = 0.01          // 0.01 or 0.0001 music
 				pt.SWts.Init.SPct = 1.0             // 1 works fine here -- .5 also ok
-				pt.Learn.DWt.Tau = 1                // 1 >> 2 v0.0.9
 				pt.Learn.DWt.CaPScale = 0.95        // 0.95 > 0.98 > 1
 				pt.Learn.DWt.SynCa20.SetBool(false) // 10 > 20 reliably
 			}},
@@ -106,7 +105,6 @@ var PathParams = axon.PathSheets{
 		{Sel: ".CTCtxtPath", Doc: "all CT context paths",
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.02 // 0.02 >= 0.03 > 0.01
-				pt.Learn.DWt.Tau = 2       // 2 = 3 > 1 > 4 still v0.0.9
 				pt.Learn.DWt.SubMean = 0   // 0 > 1 -- 1 is especially bad
 			}},
 		{Sel: ".CTFromSuper", Doc: "full > 1to1",

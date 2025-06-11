@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math/rand"
 
+	"cogentcore.org/core/paint"
 	"cogentcore.org/lab/tensor"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/v1vision/vfilter"
@@ -64,7 +65,7 @@ func (ev *LEDEnv) Label() string { return ev.Name }
 func (ev *LEDEnv) State(element string) tensor.Values {
 	switch element {
 	case "Image":
-		vfilter.RGBToGrey(ev.Draw.Paint.RenderImage(), &ev.OrigImg, 0, false) // pad for filt, bot zero
+		vfilter.RGBToGrey(paint.RenderToImage(ev.Draw.Paint), &ev.OrigImg, 0, false) // pad for filt, bot zero
 		return &ev.OrigImg
 	case "V1":
 		return &ev.Vis.V1AllTsr
@@ -191,6 +192,6 @@ func (ev *LEDEnv) DrawLED(led int) {
 // FilterImg filters the image from LED
 func (ev *LEDEnv) FilterImg() {
 	ev.XFormRand.Gen(&ev.XForm)
-	img := ev.XForm.Image(ev.Draw.Paint.RenderImage())
+	img := ev.XForm.Image(paint.RenderToImage(ev.Draw.Paint))
 	ev.Vis.Filter(img)
 }
