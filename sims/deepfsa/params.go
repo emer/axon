@@ -32,15 +32,19 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.NMDA.MgC = 1.4 // 1.4, 5 > 1.2, 0 ?
 				ly.Acts.NMDA.Voff = 0
 				ly.Acts.NMDA.Ge = 0.006
+				// ly.Acts.VGCC.Ge = 0 // note: actually beneficial (small diff)
 				ly.Acts.GabaB.Gk = 0.015 // 0.015 def -- makes no diff down to 0.008
 				ly.Acts.Mahp.Gk = 0.05   // 0.02 def; 0.05 might compensate for lack of KNa?
 				ly.Acts.Sahp.Gk = 0.1    // 0.05 def
 				ly.Acts.Sahp.CaTau = 10  // 10 (def) > 5?
 				ly.Acts.KNa.On.SetBool(false)
-				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // ?
+				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // false > true
+				// ly.Learn.RLRate.SigmoidMin = 1 // beneficial
 				ly.Learn.CaSpike.Dt.MTau = 5
+				ly.Learn.CaLearn.ETraceAct.SetBool(true)
 				ly.Learn.CaLearn.ETraceTau = 4
-				ly.Learn.CaLearn.ETraceScale = 1.0 // 0.1 > 0.05, 0.2 etc
+				ly.Learn.CaLearn.ETraceScale = 0.5 // 0.1 > 0.05, 0.2 etc
+				ly.Learn.CaLearn.ETraceBase = 0.5
 			}},
 		{Sel: ".SuperLayer", Doc: "super layer params",
 			Set: func(ly *axon.LayerParams) {

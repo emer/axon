@@ -47,6 +47,8 @@ type LearnCaParams struct {
 	// into NMDA Ca in [LearnCa].
 	VgccTau float32 `default:"10"`
 
+	ETraceAct slbool.Bool
+
 	// ETraceTau is the time constant for integrating an eligibility trace factor,
 	// which computes an exponential integrator of local neuron-wise error gradients.
 	ETraceTau float32
@@ -55,7 +57,8 @@ type LearnCaParams struct {
 	// the strength of its effect.
 	ETraceScale float32
 
-	pad, pad1 int32
+	// Baseline value for Etrace component
+	ETraceBase float32
 
 	// Dt are time constants for integrating [LearnCa] across
 	// M, P and D cascading levels.
@@ -80,6 +83,7 @@ func (lc *LearnCaParams) Defaults() {
 	lc.VgccTau = 10
 	lc.ETraceTau = 5
 	lc.ETraceScale = 0
+	lc.ETraceBase = 1
 	lc.Dt.Defaults()
 	lc.Update()
 }
@@ -120,6 +124,23 @@ func (lc *LearnCaParams) LearnCas(ctx *Context, ni, di uint32) {
 	Neurons.SetAdd(lc.Dt.PDt*(Neurons.Value(int(ni), int(di), int(LearnCaM))-Neurons.Value(int(ni), int(di), int(LearnCaP))), int(ni), int(di), int(LearnCaP))
 	Neurons.SetAdd(lc.Dt.DDt*(Neurons.Value(int(ni), int(di), int(LearnCaP))-Neurons.Value(int(ni), int(di), int(LearnCaD))), int(ni), int(di), int(LearnCaD))
 	Neurons.Set(Neurons.Value(int(ni), int(di), int(LearnCaP))-Neurons.Value(int(ni), int(di), int(LearnCaD)), int(ni), int(di), int(CaDiff))
+}
+
+func (lc *LearnCaParams) ETrace(ctx *Context, ni, di uint32, cad float32) {
+	var tr float32
+	if lc.ETraceAct.IsTrue() {
+		tr = Neurons.Value(int(ni), int(di), int(CaDPrev)) // don't double count current
+	} else {
+		tr = cad - Neurons.Value(int(ni), int(di), int(CaDPrev))
+	}
+	et := Neurons.Value(int(ni), int(di), int(ETrace))
+	et += lc.ETraceDt * (tr - et)
+	etLrn := lc.ETraceBase + lc.ETraceScale*et
+	if etLrn < 0 {
+		etLrn = 0
+	}
+	Neurons.Set(et, int(ni), int(di), int(ETrace))
+	Neurons.Set(etLrn, int(ni), int(di), int(ETraceLearn))
 }
 
 ////////  TrgAvgActParams
@@ -202,9 +223,10 @@ func (ta *TrgAvgActParams) ShouldDisplay(field string) bool {
 
 ////////  RLRateParams
 
-// RLRateParams are recv neuron learning rate modulation parameters.
+// RLRateParams are receiving neuron learning rate modulation parameters.
 // Has two factors: the derivative of the sigmoid based on CaD
-// activity levels, and based on the phase-wise differences in activity (Diff).
+// activity levels, and the max-normalized phase-wise differences in activity
+// (Diff): |CaP - CaD| / max(CaP, CaD).
 type RLRateParams struct {
 
 	// On toggles use of learning rate modulation.
@@ -220,7 +242,10 @@ type RLRateParams struct {
 	// Set to 1 to disable Sigmoid derivative factor, which is default for Target layers.
 	SigmoidMin float32 `default:"0.05,1"`
 
-	// Diff modulates learning rate as a function of plus - minus differences.
+	// Diff modulates learning rate as a function of max-normalized plus - minus
+	// differences, which reduces learning for more active neurons and emphasizes
+	// it for less active ones. This is typically essential.
+	// Diff = |CaP - CaD| / max(CaP, CaD).
 	Diff slbool.Bool
 
 	// SpikeThr is the threshold on Max(CaP, CaD) below which Min lrate applies.
@@ -290,14 +315,14 @@ func (rl *RLRateParams) RLRateSigDeriv(act float32, laymax float32) float32 {
 }
 
 // RLRateDiff returns the learning rate as a function of difference between
-// CaP and CaD values
+// CaP and CaD values, normalized by max(CaP, CaD)
 func (rl *RLRateParams) RLRateDiff(scap, scad float32) float32 {
 	if rl.On.IsFalse() || rl.Diff.IsFalse() {
 		return 1.0
 	}
 	smax := math32.Max(scap, scad)
 	if smax > rl.SpikeThr { // avoid div by 0
-		dif := math32.Abs(scap - scad) // todo: revisit this part vs. just the thresholding
+		dif := math32.Abs(scap - scad)
 		if dif < rl.DiffThr {
 			return rl.Min
 		}
