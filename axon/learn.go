@@ -81,7 +81,6 @@ func (lc *LearnCaParams) Defaults() {
 	lc.ETraceTau = 4
 	lc.ETraceScale = 0
 	lc.Dt.Defaults()
-	lc.Dt.MTau = 2 // todo: should be 5? seems no diff in initial tests.
 	lc.Update()
 }
 

@@ -105,27 +105,25 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, syni, si, ri, lpi, pi, di uint3
 	}
 
 	// error-gradient factor
-	var err, dwt float32
+	var err float32
 	if isTarget {
 		err = syCaP - syCaD // for target layers, syn Ca drives error signal directly
-		dwt = err
 	} else {
-		err = Neurons.Value(int(ri), int(di), int(LearnCaP)) - Neurons.Value(int(ri), int(di), int(LearnCaD))
-		dwt = err * tr * Neurons.Value(int(ri), int(di), int(ETraceLearn))
+		err = tr * (Neurons.Value(int(ri), int(di), int(LearnCaP)) - Neurons.Value(int(ri), int(di), int(LearnCaD))) * Neurons.Value(int(ri), int(di), int(ETraceLearn))
 	}
 
 	// softbound immediately -- enters into zero sum.
 	// also other types might not use, so need to do this per learning rule.
 	lwt := Synapses.Value(int(syni), int(LWt)) // linear weight
-	if dwt > 0 {
-		dwt *= (1 - lwt)
+	if err > 0 {
+		err *= (1 - lwt)
 	} else {
-		dwt *= lwt
+		err *= lwt
 	}
 	if pt.Type == CTCtxtPath { // rn.RLRate IS needed for other pathways, just not the context one
-		SynapseTraces.Set(pt.Learn.LRate.Eff*dwt, int(syni), int(di), int(DiDWt))
+		SynapseTraces.Set(pt.Learn.LRate.Eff*err, int(syni), int(di), int(DiDWt))
 	} else {
-		SynapseTraces.Set(Neurons.Value(int(ri), int(di), int(RLRate))*pt.Learn.LRate.Eff*dwt, int(syni), int(di), int(DiDWt))
+		SynapseTraces.Set(Neurons.Value(int(ri), int(di), int(RLRate))*pt.Learn.LRate.Eff*err, int(syni), int(di), int(DiDWt))
 	}
 }
 
@@ -146,36 +144,37 @@ func (pt *PathParams) DWtSynHebb(ctx *Context, syni, si, ri, lpi, pi, di uint32)
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
 // Adds proportional CPCA learning rule for hip-specific paths
 func (pt *PathParams) DWtSynHip(ctx *Context, syni, si, ri, lpi, pi, di uint32, isTarget bool) {
+	var syCaP, syCaD float32
+	pt.SynCa(ctx, si, ri, di, &syCaP, &syCaD)
+
+	syn := syCaD // synaptic activity co-product factor.
+	// integrate synaptic trace over time: this is actually beneficial in certain cases,
+	// in addition to the ETraceLearn factor.
+	SynapseTraces.Set(syn, int(syni), int(di), int(DTr))
+	tr := pt.Learn.DWt.SynTrace(SynapseTraces.Value(int(syni), int(di), int(Tr)), syn)
+	SynapseTraces.Set(tr, int(syni), int(di), int(Tr))
+
 	if Synapses.Value(int(syni), int(Wt)) == 0 { // failed con, no learn
 		return
 	}
 
-	var syCaP, syCaD float32
-	pt.SynCa(ctx, si, ri, di, &syCaP, &syCaD)
-	syn := syCaD // synaptic activity
-
 	// error-driven learning part
 	rLearnCaP := Neurons.Value(int(ri), int(di), int(LearnCaP))
 	rLearnCaD := Neurons.Value(int(ri), int(di), int(LearnCaD))
-	var err, dwt float32
+	var err float32
 	if isTarget {
 		err = syCaP - syCaD // for target layers, syn Ca drives error signal directly
-		dwt = err
 	} else {
-		err = rLearnCaP - rLearnCaD // hiddens: recv NMDA Ca drives error signal w/ trace credit
-		dwt = err * syn * Neurons.Value(int(ri), int(di), int(ETraceLearn))
+		err = tr * (rLearnCaP - rLearnCaD) * Neurons.Value(int(ri), int(di), int(ETraceLearn))
 	}
-
-	SynapseTraces.Set(err, int(syni), int(di), int(DTr))
-	SynapseTraces.Set(syn, int(syni), int(di), int(Tr))
 
 	// softbound immediately -- enters into zero sum.
 	// also other types might not use, so need to do this per learning rule
 	lwt := Synapses.Value(int(syni), int(LWt)) // linear weight
-	if dwt > 0 {
-		dwt *= (1 - lwt)
+	if err > 0 {
+		err *= (1 - lwt)
 	} else {
-		dwt *= lwt
+		err *= lwt
 	}
 
 	// hebbian-learning part
@@ -185,7 +184,7 @@ func (pt *PathParams) DWtSynHip(ctx *Context, syni, si, ri, lpi, pi, di uint32, 
 	hebb := rLearnCaP * (sNrnCap*(savg-lwt) - (1-sNrnCap)*lwt)
 
 	// setting delta weight (note: impossible to be CTCtxtPath)
-	dwt = Neurons.Value(int(ri), int(di), int(RLRate)) * pt.Learn.LRate.Eff * (pt.Hip.Hebb*hebb + pt.Hip.Err*dwt)
+	dwt := Neurons.Value(int(ri), int(di), int(RLRate)) * pt.Learn.LRate.Eff * (pt.Hip.Hebb*hebb + pt.Hip.Err*err)
 	SynapseTraces.Set(dwt, int(syni), int(di), int(DiDWt))
 }
 
@@ -214,7 +213,8 @@ func (pt *PathParams) DWtSynBLA(ctx *Context, syni, si, ri, lpi, pi, di uint32) 
 		// note: the former NonUSLRate parameter is not used -- Trace update Tau replaces it..  elegant
 		dtr := ach * Neurons.Value(int(si), int(di), int(Burst))
 		SynapseTraces.Set(dtr, int(syni), int(di), int(DTr))
-		SynapseTraces.Set(dtr, int(syni), int(di), int(Tr))
+		tr := pt.Learn.DWt.SynTrace(SynapseTraces.Value(int(syni), int(di), int(Tr)), dtr)
+		SynapseTraces.Set(tr, int(syni), int(di), int(Tr))
 	} else {
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DTr))
 	}
