@@ -43,8 +43,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.CaSpike.Dt.MTau = 5
 				ly.Learn.CaLearn.ETraceAct.SetBool(true)
 				ly.Learn.CaLearn.ETraceTau = 4
-				ly.Learn.CaLearn.ETraceScale = 0.5 // 0.1 > 0.05, 0.2 etc
-				ly.Learn.CaLearn.ETraceBase = 0.5
+				ly.Learn.CaLearn.ETraceScale = 0.1 // 0.1 > 0.05, 0.2 etc
+				ly.Learn.CaLearn.ETraceBase = 1
 			}},
 		{Sel: ".SuperLayer", Doc: "super layer params",
 			Set: func(ly *axon.LayerParams) {

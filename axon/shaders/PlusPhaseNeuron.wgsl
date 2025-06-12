@@ -782,10 +782,10 @@ struct LearnCaParams {
 	SpikeVGCC: i32,
 	SpikeVgccCa: f32,
 	VgccTau: f32,
-	ETraceAct: i32,
 	ETraceTau: f32,
 	ETraceScale: f32,
 	ETraceBase: f32,
+	ETraceMin: f32,
 	Dt: CaDtParams,
 	VgccDt: f32,
 	ETraceDt: f32,
@@ -793,18 +793,12 @@ struct LearnCaParams {
 	pad2: i32,
 }
 fn LearnCaParams_ETrace(lc: LearnCaParams, ctx: Context, ni: u32,di: u32, cad: f32) {
-	var tr: f32;
-	if (lc.ETraceAct == 1) {
-		tr = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // don't double count current
-		TensorStrides[72], u32(ni), u32(di), u32(CaDPrev))];
-	} else {
-		tr = cad - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaDPrev))];
-	}
+	var tr = cad - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaDPrev))];
 	var et = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(ETrace))];
 	et += lc.ETraceDt * (tr - et);
 	var etLrn = lc.ETraceBase + lc.ETraceScale*et;
-	if (etLrn < 0) {
-		etLrn = f32(0);
+	if (etLrn < lc.ETraceMin) {
+		etLrn = lc.ETraceMin;
 	}
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(ETrace))] = et;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],

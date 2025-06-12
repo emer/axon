@@ -3,5 +3,5 @@
 
 [Run]
 	Trials = 128
-	Epochs = 200
+	Epochs = 400
 
