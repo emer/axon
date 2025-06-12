@@ -39,9 +39,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.KNa.On.SetBool(false)
 				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // false > true
 				ly.Learn.CaLearn.ETraceTau = 4
-				ly.Learn.CaLearn.ETraceScale = 1 // 0.1 > 0.05, 0.2 etc
-				ly.Learn.CaLearn.ETraceBase = 1
-				ly.Learn.CaLearn.ETraceMax = 1
+				ly.Learn.CaLearn.ETraceScale = 0.1 // 0.1 > 0.05, 0.2 etc
 			}},
 		{Sel: ".SuperLayer", Doc: "super layer params",
 			Set: func(ly *axon.LayerParams) {
