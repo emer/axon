@@ -83,17 +83,8 @@ fn LayerParams_PlusPhaseNeuron(ly: LayerParams, ctx: Context, ni: u32,di: u32) {
 	var lpi = LayerParams_PoolIndex(ly, u32(u32(0)));
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(ActP))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(ActInt))];
 	var nrnCaP = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaP))];
-	var nrnCaD = Neurons[Index3D(TensorStrides[70], TensorStrides[71],
-	TensorStrides[72], u32(ni), u32(di), u32(CaD))];
-	var nrnDelta = nrnCaD - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaDPrev))];
-	var et = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(ETrace))];
-	et += ly.Learn.CaLearn.ETraceDt * (nrnDelta - et);
-	var etLrn = 1 + ly.Learn.CaLearn.ETraceScale*et;
-	if (etLrn < 0) {
-		etLrn = f32(0);
-	}
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(ETrace))] = et;
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(ETraceLearn))] = etLrn;
+	var nrnCaD = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaD))];
+	LearnCaParams_ETrace(ly.Learn.CaLearn, ctx, ni, di, nrnCaD);
 	var da = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvDA), u32(di))];
 	var ach = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvACh), u32(di))];
 	var mlr = RLRateParams_RLRateSigDeriv(ly.Learn.RLRate, nrnCaD, PoolAvgMax(AMCaD, AMCycle, Max, lpi, di));
@@ -791,15 +782,33 @@ struct LearnCaParams {
 	SpikeVGCC: i32,
 	SpikeVgccCa: f32,
 	VgccTau: f32,
+	ETraceAct: i32,
 	ETraceTau: f32,
 	ETraceScale: f32,
 	pad: f32,
-	pad1: f32,
 	Dt: CaDtParams,
 	VgccDt: f32,
 	ETraceDt: f32,
 	NormInv: f32,
 	pad2: i32,
+}
+fn LearnCaParams_ETrace(lc: LearnCaParams, ctx: Context, ni: u32,di: u32, cad: f32) {
+	var tr: f32;
+	if (lc.ETraceAct == 1) {
+		tr = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // don't double count current
+		TensorStrides[72], u32(ni), u32(di), u32(CaDPrev))];
+	} else {
+		tr = cad - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaDPrev))];
+	}
+	var et = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(ETrace))];
+	et += lc.ETraceDt * (tr - et);
+	var etLrn = 1 + lc.ETraceScale*et;
+	if (etLrn < 0) {
+		etLrn = f32(0);
+	}
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(ETrace))] = et;
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
+	u32(ni), u32(di), u32(ETraceLearn))] = etLrn;
 }
 struct TrgAvgActParams {
 	GiBaseInit: f32,

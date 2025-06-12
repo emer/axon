@@ -1011,16 +1011,7 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32) {
 	Neurons[ni, di, ActP] = Neurons[ni, di, ActInt]
 	nrnCaP := Neurons[ni, di, CaP]
 	nrnCaD := Neurons[ni, di, CaD]
-	// ly.Learn.CaLearn.ETrace(ctx, ni, di, nrnCaD)
-	nrnDelta := nrnCaD - Neurons[ni, di, CaDPrev]
-	et := Neurons[ni, di, ETrace]
-	et += ly.Learn.CaLearn.ETraceDt * (nrnDelta - et)
-	etLrn := 1 + ly.Learn.CaLearn.ETraceScale * et
-	if etLrn < 0 {
-		etLrn = 0
-	}
-	Neurons[ni, di, ETrace] = et
-	Neurons[ni, di, ETraceLearn] = etLrn
+	ly.Learn.CaLearn.ETrace(ctx, ni, di, nrnCaD)
 	
 	da := GlobalScalars[GvDA, di]
 	ach := GlobalScalars[GvACh, di]

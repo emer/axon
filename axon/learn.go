@@ -47,6 +47,9 @@ type LearnCaParams struct {
 	// into NMDA Ca in [LearnCa].
 	VgccTau float32 `default:"10"`
 
+	// ETraceAct uses activation instead of local self-error gradient for trace.
+	ETraceAct slbool.Bool
+
 	// ETraceTau is the time constant for integrating an eligibility trace factor,
 	// which computes an exponential integrator of local neuron-wise error gradients.
 	ETraceTau float32
@@ -55,7 +58,7 @@ type LearnCaParams struct {
 	// the strength of its effect.
 	ETraceScale float32
 
-	pad, pad1 float32
+	pad float32
 
 	// Dt are time constants for integrating [LearnCa] across
 	// M, P and D cascading levels.
@@ -81,7 +84,7 @@ func (lc *LearnCaParams) Defaults() {
 	lc.ETraceTau = 4
 	lc.ETraceScale = 0
 	lc.Dt.Defaults()
-	lc.Dt.MTau = 2
+	lc.Dt.MTau = 2 // 2 > 5 in deepfsa, significant effect
 	lc.Update()
 }
 
@@ -124,7 +127,12 @@ func (lc *LearnCaParams) LearnCas(ctx *Context, ni, di uint32) {
 }
 
 func (lc *LearnCaParams) ETrace(ctx *Context, ni, di uint32, cad float32) {
-	tr := cad - Neurons.Value(int(ni), int(di), int(CaDPrev))
+	var tr float32
+	if lc.ETraceAct.IsTrue() {
+		tr = Neurons.Value(int(ni), int(di), int(CaDPrev)) // don't double count current
+	} else {
+		tr = cad - Neurons.Value(int(ni), int(di), int(CaDPrev))
+	}
 	et := Neurons.Value(int(ni), int(di), int(ETrace))
 	et += lc.ETraceDt * (tr - et)
 	etLrn := 1 + lc.ETraceScale*et

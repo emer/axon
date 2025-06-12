@@ -38,8 +38,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Sahp.CaTau = 10  // 10 (def) > 5?
 				ly.Acts.KNa.On.SetBool(false)
 				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // false > true
-				// ly.Learn.CaLearn.Dt.MTau = 5
-				ly.Learn.CaSpike.Dt.MTau = 5 // note: error in job 80
+				ly.Learn.CaLearn.Dt.MTau = 2                 // 2 > 5 actually
+				ly.Learn.CaLearn.ETraceAct.SetBool(false)
 				ly.Learn.CaLearn.ETraceTau = 4
 				ly.Learn.CaLearn.ETraceScale = 0.1 // 0.1 > 0.05, 0.2 etc
 			}},
