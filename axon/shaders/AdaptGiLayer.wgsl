@@ -727,7 +727,7 @@ struct LearnCaParams {
 	ETraceTau: f32,
 	ETraceScale: f32,
 	ETraceBase: f32,
-	ETraceMin: f32,
+	ETraceMax: f32,
 	Dt: CaDtParams,
 	VgccDt: f32,
 	ETraceDt: f32,

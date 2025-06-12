@@ -785,7 +785,7 @@ struct LearnCaParams {
 	ETraceTau: f32,
 	ETraceScale: f32,
 	ETraceBase: f32,
-	ETraceMin: f32,
+	ETraceMax: f32,
 	Dt: CaDtParams,
 	VgccDt: f32,
 	ETraceDt: f32,
@@ -797,8 +797,10 @@ fn LearnCaParams_ETrace(lc: LearnCaParams, ctx: Context, ni: u32,di: u32, cad: f
 	var et = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(ETrace))];
 	et += lc.ETraceDt * (tr - et);
 	var etLrn = lc.ETraceBase + lc.ETraceScale*et;
-	if (etLrn < lc.ETraceMin) {
-		etLrn = lc.ETraceMin;
+	if (etLrn < 0) {
+		etLrn = f32(0);
+	} else if (etLrn > lc.ETraceMax) {
+		etLrn = lc.ETraceMax;
 	}
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(ETrace))] = et;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],

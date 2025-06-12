@@ -58,8 +58,9 @@ type LearnCaParams struct {
 	// Baseline value for Etrace component
 	ETraceBase float32
 
-	// Minimum value for Etrace component: set to -1 for no contraints
-	ETraceMin float32
+	// Maximum value for Etrace component: set to baseline to only allow decrements
+	// from errors, for example.
+	ETraceMax float32
 
 	// Dt are time constants for integrating [LearnCa] across
 	// M, P and D cascading levels.
@@ -85,7 +86,7 @@ func (lc *LearnCaParams) Defaults() {
 	lc.ETraceTau = 4
 	lc.ETraceScale = 0
 	lc.ETraceBase = 1
-	lc.ETraceMin = 0
+	lc.ETraceMax = 1
 	lc.Dt.Defaults()
 	lc.Update()
 }
@@ -133,8 +134,10 @@ func (lc *LearnCaParams) ETrace(ctx *Context, ni, di uint32, cad float32) {
 	et := Neurons.Value(int(ni), int(di), int(ETrace))
 	et += lc.ETraceDt * (tr - et)
 	etLrn := lc.ETraceBase + lc.ETraceScale*et
-	if etLrn < lc.ETraceMin {
-		etLrn = lc.ETraceMin
+	if etLrn < 0 {
+		etLrn = 0
+	} else if etLrn > lc.ETraceMax {
+		etLrn = lc.ETraceMax
 	}
 	Neurons.Set(et, int(ni), int(di), int(ETrace))
 	Neurons.Set(etLrn, int(ni), int(di), int(ETraceLearn))
