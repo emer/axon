@@ -778,17 +778,20 @@ fn PathParams_SynCa(pt: PathParams, ctx: Context, si: u32,ri: u32,di: u32, syCaP
 	*syCaD = cd;
 }
 fn PathParams_DWtSynCortex(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32, isTarget: bool) {
-	if (Synapses[Index2D(TensorStrides[170], TensorStrides[171], // failed con, no learn
-	u32(syni), u32(Wt))] == 0) {
-		return;
-	}
 	var syCaP: f32;
 	var syCaD: f32;
 	PathParams_SynCa(pt, ctx, si, ri, di, &syCaP, &syCaD);
-	var syn = syCaD;             // synaptic activity factor.
+	var syn = syCaD;             // synaptic activity co-product factor.
 	if (pt.Type == CTCtxtPath) { // layer 6 CT pathway
-		syn = Neurons[Index3D(TensorStrides[70], TensorStrides[71],
-		TensorStrides[72], u32(si), u32(di), u32(BurstPrv))];
+		syn = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
+		u32(si), u32(di), u32(BurstPrv))];
+	}
+	SynapseTraces[Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr))] = syn;
+	var tr = DWtParams_SynTrace(pt.Learn.DWt, SynapseTraces[Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr))], syn);
+	SynapseTraces[Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr))] = tr;
+	if (Synapses[Index2D(TensorStrides[170], TensorStrides[171], // failed con, no learn
+	u32(syni), u32(Wt))] == 0) {
+		return;
 	}
 	var err: f32;
 	var dwt: f32;
@@ -797,12 +800,9 @@ fn PathParams_DWtSynCortex(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u
 		dwt = err;
 	} else {
 		err = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnCaP))] - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnCaD))];
-		dwt = err * syn * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
+		dwt = err * tr * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
 		u32(ri), u32(di), u32(ETraceLearn))];
 	}
-	SynapseTraces[Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr))] = err;
-	SynapseTraces[Index3D(TensorStrides[180], TensorStrides[181],
-	TensorStrides[182], u32(syni), u32(di), u32(Tr))] = syn;
 	var lwt = Synapses[Index2D(TensorStrides[170], TensorStrides[171], // linear weight
 	u32(syni), u32(LWt))];
 	if (dwt > 0) {
@@ -1097,7 +1097,14 @@ struct DWtParams {
 	SynCa20: i32,
 	CaPScale: f32,
 	SubMean: f32,
+	SynTraceTau: f32,
 	LearnThr: f32,
+	SynTraceDt: f32,
+	pad: f32,
+	pad1: f32,
+}
+fn DWtParams_SynTrace(tp: DWtParams, tr: f32, syn: f32) -> f32 {
+	return tr + tp.SynTraceDt*(syn-tr);
 }
 struct HebbParams {
 	On: i32,

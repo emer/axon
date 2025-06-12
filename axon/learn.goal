@@ -79,6 +79,7 @@ func (lc *LearnCaParams) Defaults() {
 	lc.ETraceTau = 4
 	lc.ETraceScale = 0
 	lc.Dt.Defaults()
+	lc.Dt.MTau = 2 // todo: should be 5? seems no diff in initial tests.
 	lc.Update()
 }
 
@@ -805,21 +806,44 @@ type DWtParams struct {
 	// Some special path types (e.g., Hebb) benefit from SubMean = 1 always.
 	SubMean float32 `default:"0,1"`
 
+	// SynTraceTau is the time constant for integrating the synaptic trace [Tr]
+	// as a function of the synaptic activity credit assignment factor at the end
+	// of the theta cycle learning timescale. Larger values (greater than 1)
+	// produce longer time windows of integration, and should only be used when
+	// there is temporal structure to be learned across these longer timescales.
+	// This synaptic trace is beneficial in addition to the receiver-based
+	// eligibility trace ETraceLearn.
+	SynTraceTau float32 `default:"1,2,4"`
+
 	// LearnThr is the threshold for learning, for specialized learning algorithms.
 	// This is not relevant for the standard kinase error-driven cortical learning algorithm.
 	// In Matrix and VSPatch it applies to normalized GeIntNorm value: setting this relatively
 	// high encourages sparser representations.
 	LearnThr float32
+
+	// Dt rate = 1 / tau
+	SynTraceDt float32 `display:"-" json:"-" xml:"-" edit:"-"`
+
+	pad, pad1 float32
 }
 
 func (tp *DWtParams) Defaults() {
 	tp.SynCa20.SetBool(false)
 	tp.CaPScale = 1
 	tp.SubMean = 0
+	tp.SynTraceTau = 1
 	tp.LearnThr = 0
+	tp.Update()
 }
 
 func (tp *DWtParams) Update() {
+	tp.SynTraceDt = 1.0 / tp.SynTraceTau
+}
+
+// SynTrace returns updated trace factor as function of the synaptic
+// coactivity factor and the current trace.
+func (tp *DWtParams) SynTrace(tr float32, syn float32) float32 {
+	return tr + tp.SynTraceDt*(syn-tr)
 }
 
 ////////  HebbParams

@@ -86,17 +86,24 @@ func (pt *PathParams) SynCa(ctx *Context, si, ri, di uint32, syCaP, syCaD *float
 // based on the receiving neuron's [LearnCaP] - [LearnCaD], multiplied by a separate
 // synaptic activation credit assignment factor computed from synaptic co-product CaD values.
 func (pt *PathParams) DWtSynCortex(ctx *Context, syni, si, ri, lpi, pi, di uint32, isTarget bool) {
+	var syCaP, syCaD float32
+	pt.SynCa(ctx, si, ri, di, &syCaP, &syCaD)
+
+	syn := syCaD               // synaptic activity co-product factor.
+	if pt.Type == CTCtxtPath { // layer 6 CT pathway
+		syn = Neurons.Value(int(si), int(di), int(BurstPrv))
+	}
+
+	// integrate synaptic trace over time: this is actually beneficial in certain cases,
+	// in addition to the ETraceLearn factor.
+	SynapseTraces.Set(syn, int(syni), int(di), int(DTr))
+	tr := pt.Learn.DWt.SynTrace(SynapseTraces.Value(int(syni), int(di), int(Tr)), syn)
+	SynapseTraces.Set(tr, int(syni), int(di), int(Tr))
+
 	if Synapses.Value(int(syni), int(Wt)) == 0 { // failed con, no learn
 		return
 	}
 
-	var syCaP, syCaD float32
-	pt.SynCa(ctx, si, ri, di, &syCaP, &syCaD)
-
-	syn := syCaD               // synaptic activity factor.
-	if pt.Type == CTCtxtPath { // layer 6 CT pathway
-		syn = Neurons.Value(int(si), int(di), int(BurstPrv))
-	}
 	// error-gradient factor
 	var err, dwt float32
 	if isTarget {
@@ -104,12 +111,8 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, syni, si, ri, lpi, pi, di uint3
 		dwt = err
 	} else {
 		err = Neurons.Value(int(ri), int(di), int(LearnCaP)) - Neurons.Value(int(ri), int(di), int(LearnCaD))
-		dwt = err * syn * Neurons.Value(int(ri), int(di), int(ETraceLearn))
+		dwt = err * tr * Neurons.Value(int(ri), int(di), int(ETraceLearn))
 	}
-
-	// save factors for GUI
-	SynapseTraces.Set(err, int(syni), int(di), int(DTr))
-	SynapseTraces.Set(syn, int(syni), int(di), int(Tr))
 
 	// softbound immediately -- enters into zero sum.
 	// also other types might not use, so need to do this per learning rule.
