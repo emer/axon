@@ -38,7 +38,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Sahp.CaTau = 10  // 10 (def) > 5?
 				ly.Acts.KNa.On.SetBool(false)
 				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // false > true
-				ly.Learn.CaLearn.Dt.MTau = 5
+				// ly.Learn.CaLearn.Dt.MTau = 5
+				ly.Learn.CaSpike.Dt.MTau = 5 // note: error in job 80
 				ly.Learn.CaLearn.ETraceTau = 4
 				ly.Learn.CaLearn.ETraceScale = 0.1 // 0.1 > 0.05, 0.2 etc
 			}},
@@ -106,9 +107,9 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".CTCtxtPath", Doc: "all CT context paths",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.LRate.Base = 0.02   // 0.02 >= 0.03 > 0.01
-				pt.Learn.DWt.SynTraceTau = 2 // 2 = 3 > 1 > 4 still v0.2.25
-				pt.Learn.DWt.SubMean = 0     // 0 > 1 -- 1 is especially bad
+				pt.Learn.LRate.Base = 0.02 // 0.02 >= 0.03 > 0.01
+				// pt.Learn.DWt.SynTraceTau = 2 // 2 = 3 > 1 > 4 still v0.2.25
+				pt.Learn.DWt.SubMean = 0 // 0 > 1 -- 1 is especially bad
 			}},
 		{Sel: ".CTFromSuper", Doc: "full > 1to1",
 			Set: func(pt *axon.PathParams) {
