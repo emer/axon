@@ -24,9 +24,16 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.NMDA.Ge = 0.006
 				ly.Acts.GabaB.Gk = 0.015 // 0.015 def
 				ly.Learn.LearnNMDA.Ge = 0.006
-				ly.Acts.Mahp.Gk = 0.04 // 0.04 == 0.05+ > 0.02 -- reduces hidden activity
-				ly.Acts.Sahp.Gk = 0.1  // 0.1 == 0.02 no real diff
-				ly.Acts.Sahp.CaTau = 5 // 5 > 10
+
+				ly.Acts.Mahp.Gk = 0.02       // 0.02
+				ly.Acts.Sahp.Gk = 0.1        // 0.1 == 0.02 no real diff
+				ly.Acts.Sahp.CaTau = 5       // 5 > 10
+				ly.Acts.KNa.On.SetBool(true) // true, Maph=0.02 > false, .04, .05
+
+				ly.Learn.CaLearn.Dt.MTau = 2
+				ly.Learn.CaLearn.ETraceAct.SetBool(false)
+				ly.Learn.CaLearn.ETraceTau = 4
+				ly.Learn.CaLearn.ETraceScale = 0.1 // 0.1 = 0.2 > others
 			}},
 		{Sel: ".SuperLayer", Doc: "super layer params",
 			Set: func(ly *axon.LayerParams) {
@@ -117,7 +124,7 @@ var PathParams = axon.PathSheets{
 				pt.Learn.DWt.SubMean = 0     // 0 > 1 even with CTCtxt = 0
 				pt.SWts.Adapt.LRate = 0.01   // 0.01 == 0.0001 but 0.001 not as good..
 				pt.SWts.Init.SPct = 1.0      // 1 works fine here -- .5 also ok
-				pt.Learn.DWt.SynTraceTau = 2 // 4 == 2 > 1
+				pt.Learn.DWt.SynTraceTau = 2 // 4 == 2 > 1 still 0.2.28
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {
@@ -131,7 +138,7 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.002  // has almost no effect in 1to1
 				pt.Learn.DWt.SubMean = 0     //
-				pt.Learn.DWt.SynTraceTau = 2 // late in learning 2 does best
+				pt.Learn.DWt.SynTraceTau = 2 // 2 > 1 still 0.2.28
 			}},
 		{Sel: ".CTFromSuper", Doc: "1to1 > full",
 			Set: func(pt *axon.PathParams) {

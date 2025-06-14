@@ -25,6 +25,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.ActAvg.AdaptMax = 0.01  // 0.05 default; 0.01 has effect; lower not effective at preventing instability on its own.
 				ly.Inhib.ActAvg.LoTol = 0.8
 				ly.Inhib.ActAvg.HiTol = 0.0
+
 				ly.Acts.Decay.Act = 0.0   // 0 == .2
 				ly.Acts.Decay.Glong = 0.6 // 0.6 def
 				ly.Acts.Dend.SSGi = 2     // 2 new default
@@ -36,32 +37,39 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.NMDA.MgC = 1.4    // mg1, voff0, gbarexp.2, gbarr3 = better
 				ly.Acts.NMDA.Voff = 0     // mg1, voff0 = mg1.4, voff5 w best params
 				ly.Acts.AK.Gk = 0.1
-				ly.Acts.VGCC.Ge = 0.02                   // non nmda: 0.15 good, 0.3 blows up, nmda: .02 best
-				ly.Acts.VGCC.Ca = 25                     // 25 / 10tau same as SpkVGCC
-				ly.Acts.Mahp.Gk = 0.01                   // 0.01 > 0.02 > higher -- long run
-				ly.Acts.Sahp.Gk = 0.05                   // was 0.1, 0.05 def
-				ly.Acts.Sahp.Off = 0.8                   //
-				ly.Acts.Sahp.Slope = 0.02                //
-				ly.Acts.Sahp.CaTau = 5                   // 5 ok -- not tested
+				ly.Acts.VGCC.Ge = 0.02 // non nmda: 0.15 good, 0.3 blows up, nmda: .02 best
+				ly.Acts.VGCC.Ca = 25   // 25 / 10tau same as SpkVGCC
+
+				ly.Acts.Mahp.Gk = 0.01       // 0.01 > 0.02 > higher -- long run
+				ly.Acts.Sahp.Gk = 0.05       // was 0.1, 0.05 def
+				ly.Acts.Sahp.Off = 0.8       //
+				ly.Acts.Sahp.Slope = 0.02    //
+				ly.Acts.Sahp.CaTau = 5       // 5 ok -- not tested
+				ly.Acts.KNa.On.SetBool(true) // true def
+
 				ly.Learn.CaLearn.Norm = 80               // 80 def; 60 makes CaLearnMax closer to 1
 				ly.Learn.CaLearn.SpikeVGCC.SetBool(true) // sig better..
 				ly.Learn.CaLearn.SpikeVgccCa = 35        // 70 / 5 or 35 / 10 both work
 				ly.Learn.CaLearn.VgccTau = 10            // 10 > 5 ?
 				// ly.Learn.CaLearn.UpdtThr = 0.01          // 0.01 > 0.05 -- was LrnThr
-				ly.Learn.CaLearn.Dt.MTau = 2               // 2 > 1 ?
-				ly.Learn.CaSpike.SpikeCaM = 12             // 12 > 8 -- for larger nets
-				ly.Learn.CaSpike.SpikeCaSyn = 12           // 12 > 8 -- TODO revisit!
-				ly.Learn.CaSpike.CaSynTau = 30             // 30 > 20, 40
-				ly.Learn.CaSpike.Dt.MTau = 5               // 5 > 10?
-				ly.Learn.LearnNMDA.Ge = 0.006              // 0.006 def
-				ly.Learn.LearnNMDA.MgC = 1.4               // 1.2 for unified Act params, else 1.4
-				ly.Learn.LearnNMDA.Voff = 0                // 0 for unified Act params, else 5
-				ly.Learn.LearnNMDA.Tau = 100               // 100 def
+				ly.Learn.CaLearn.Dt.MTau = 2 // 2 > 1 ?
+
+				ly.Learn.CaSpike.SpikeCaM = 12   // 12 > 8 -- for larger nets
+				ly.Learn.CaSpike.SpikeCaSyn = 12 // 12 > 8 -- TODO revisit!
+				ly.Learn.CaSpike.CaSynTau = 30   // 30 > 20, 40
+				ly.Learn.CaSpike.Dt.MTau = 5     // 5 > 10?
+
+				ly.Learn.LearnNMDA.Ge = 0.006 // 0.006 def
+				ly.Learn.LearnNMDA.MgC = 1.4  // 1.2 for unified Act params, else 1.4
+				ly.Learn.LearnNMDA.Voff = 0   // 0 for unified Act params, else 5
+				ly.Learn.LearnNMDA.Tau = 100  // 100 def
+
 				ly.Learn.TrgAvgAct.RescaleOn.SetBool(true) // critical!
 				ly.Learn.TrgAvgAct.SubMean = 0             // 0 > 1 key throughout -- even .5 slows learning -- doesn't help slow pca
 				ly.Learn.TrgAvgAct.SynScaleRate = 0.002    // 0.002 >= 0.005 > 0.001 > 0.0005 too weak even with adapt gi
 				ly.Learn.TrgAvgAct.ErrLRate = 0.02         // 0.02 def
-				ly.Learn.RLRate.On.SetBool(true)           // beneficial for trace
+
+				ly.Learn.RLRate.On.SetBool(true) // beneficial for trace
 				ly.Learn.RLRate.SigmoidMin = 0.05
 				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // false >> true
 				ly.Learn.RLRate.Diff.SetBool(true)

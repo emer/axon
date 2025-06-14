@@ -33,14 +33,16 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.NMDA.Voff = 0
 				ly.Acts.NMDA.Ge = 0.006
 				ly.Acts.GabaB.Gk = 0.015 // 0.015 def -- makes no diff down to 0.008
-				ly.Acts.Mahp.Gk = 0.05   // 0.02 def; 0.05 might compensate for lack of KNa?
-				ly.Acts.Sahp.Gk = 0.1    // 0.05 def
-				ly.Acts.Sahp.CaTau = 10  // 10 (def) > 5?
-				ly.Acts.KNa.On.SetBool(false)
+
+				ly.Acts.Mahp.Gk = 0.02  // 0.02 def; 0.05 might compensate for lack of KNa?
+				ly.Acts.Sahp.Gk = 0.1   // 0.05 def
+				ly.Acts.Sahp.CaTau = 10 // 10 (def) > 5?
+
+				ly.Acts.KNa.On.SetBool(true)                 // false > true?
 				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // false > true
 				ly.Learn.CaLearn.Dt.MTau = 2                 // 2 > 5 actually
 				ly.Learn.CaLearn.ETraceAct.SetBool(false)
-				ly.Learn.CaLearn.ETraceTau = 4
+				ly.Learn.CaLearn.ETraceTau = 4     // 4 == 5
 				ly.Learn.CaLearn.ETraceScale = 0.1 // 0.1 > 0.05, 0.2 etc
 			}},
 		{Sel: ".SuperLayer", Doc: "super layer params",
@@ -108,7 +110,7 @@ var PathParams = axon.PathSheets{
 		{Sel: ".CTCtxtPath", Doc: "all CT context paths",
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.02 // 0.02 >= 0.03 > 0.01
-				// pt.Learn.DWt.SynTraceTau = 2 // 2 = 3 > 1 > 4 still v0.2.25
+				// pt.Learn.DWt.SynTraceTau = 2 // 1 > 2 now
 				pt.Learn.DWt.SubMean = 0 // 0 > 1 -- 1 is especially bad
 			}},
 		{Sel: ".CTFromSuper", Doc: "full > 1to1",

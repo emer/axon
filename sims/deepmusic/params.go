@@ -23,13 +23,17 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.NMDA.MgC = 1.4 // 1.4, 5 > 1.2, 0 ?
 				ly.Acts.NMDA.Voff = 0
 				ly.Acts.NMDA.Ge = 0.006
-				ly.Acts.GabaB.Gk = 0.015      // 0.015 > 0.012 lower
-				ly.Acts.Mahp.Gk = 0.06        // 0.05 > 0.02, esp with kna = false
+				ly.Acts.GabaB.Gk = 0.015 // 0.015 > 0.012 lower
+
+				ly.Acts.Mahp.Gk = 0.05        // 0.05 > 0.02, esp with kna = false
 				ly.Acts.Sahp.Gk = 0.1         // 0.05 > 0.1? todo retest
 				ly.Acts.Sahp.CaTau = 5        // 5 > 10 verfied
 				ly.Acts.KNa.On.SetBool(false) // false and Mahp = 0.05 is better
+
+				ly.Learn.CaLearn.Dt.MTau = 2 // 2 > 5 actually
+				ly.Learn.CaLearn.ETraceAct.SetBool(false)
 				ly.Learn.CaLearn.ETraceTau = 4
-				ly.Learn.CaLearn.ETraceScale = 0.1 // 0.1 > 0.05, 0.2 etc
+				ly.Learn.CaLearn.ETraceScale = 0.05 // 0.05 >= 0.1, 0.2 etc
 			}},
 		{Sel: ".SuperLayer", Doc: "super layer params",
 			Set: func(ly *axon.LayerParams) {
@@ -122,9 +126,9 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".CTCtxtPath", Doc: "all CT context paths",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.LRate.Base = 0.001  // 0.001 >> 0.002 for full
-				pt.Learn.DWt.SubMean = 0     // 0 > 1 -- 1 is especially bad
-				pt.Learn.DWt.SynTraceTau = 2 // 1 > 2 > 4 v0.0.9
+				pt.Learn.LRate.Base = 0.001 // 0.001 >> 0.002 for full
+				pt.Learn.DWt.SubMean = 0    // 0 > 1 -- 1 is especially bad
+				// pt.Learn.DWt.SynTraceTau = 2 // 1 > 2 > 4 v0.0.9
 			}},
 		{Sel: ".CTFromSuper", Doc: "1to1 > full",
 			Set: func(pt *axon.PathParams) {

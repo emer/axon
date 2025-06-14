@@ -9,7 +9,7 @@ command install {
 		return
 	}
 	
-	simd := args[0][1:len(args[0])-1] // get rid of [] surrounding args -- todo fixme
+	simd := args[0] // get rid of [] surrounding args
 	scdir := $pwd$
 	_, proj := filepath.Split(simd)
 	user := $echo "$USER"$
