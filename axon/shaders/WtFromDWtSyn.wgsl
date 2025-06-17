@@ -824,9 +824,9 @@ struct SWtParams {
 	Limit: F32,
 }
 fn SWtParams_WtValue(sp: SWtParams, swt: f32,lwt: f32) -> f32 {
-	return swt * SWtParams_SigFromLinWt(sp, lwt);
+	return swt * SWtParams_SigmoidLWt(sp, lwt);
 }
-fn SWtParams_SigFromLinWt(sp: SWtParams, lw: f32) -> f32 {
+fn SWtParams_SigmoidLWt(sp: SWtParams, lw: f32) -> f32 {
 	var wt: f32;
 	if (sp.Adapt.SigGain == 1) {
 		wt = lw;
@@ -858,13 +858,13 @@ struct LRateParams {
 }
 struct DWtParams {
 	SynCa20: i32,
+	SynCaDiff: i32,
 	CaPScale: f32,
 	SubMean: f32,
 	SynTraceTau: f32,
 	LearnThr: f32,
 	SynTraceDt: f32,
 	pad: f32,
-	pad1: f32,
 }
 struct HebbParams {
 	On: i32,

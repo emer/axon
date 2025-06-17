@@ -109,7 +109,11 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, syni, si, ri, lpi, pi, di uint3
 	if isTarget {
 		err = syCaP - syCaD // for target layers, syn Ca drives error signal directly
 	} else {
-		err = tr * (Neurons.Value(int(ri), int(di), int(LearnCaP)) - Neurons.Value(int(ri), int(di), int(LearnCaD))) * Neurons.Value(int(ri), int(di), int(ETraceLearn))
+		if pt.Learn.DWt.SynCaDiff.IsTrue() {
+			err = (Neurons.Value(int(ri), int(di), int(LearnCaP))*syCaP - Neurons.Value(int(ri), int(di), int(LearnCaD))*syCaD) * Neurons.Value(int(ri), int(di), int(ETraceLearn))
+		} else {
+			err = tr * (Neurons.Value(int(ri), int(di), int(LearnCaP)) - Neurons.Value(int(ri), int(di), int(LearnCaD))) * Neurons.Value(int(ri), int(di), int(ETraceLearn))
+		}
 	}
 
 	// softbound immediately -- enters into zero sum.

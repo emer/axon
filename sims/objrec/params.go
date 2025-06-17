@@ -91,7 +91,7 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				// pt.Com.MaxDelay = 10 // not much effect
 				// pt.Com.Delay = 10
-				pt.Learn.LRate.Base = 0.1     // 0.1 > 0.2 much better behavior overall; just slower initial learning for trace, 0.02 for notrace
+				pt.Learn.LRate.Base = 0.1     // 0.1 > 0.2 for syncadiff = false; .05 for syncadiff?
 				pt.Learn.DWt.SubMean = 1      // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
 				pt.SWts.Adapt.LRate = 0.0001  // 0.005 == .1 == .01
 				pt.SWts.Adapt.HiMeanDecay = 0 // 0 > 0.0008 (best in lvis)
@@ -99,6 +99,7 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Init.SPct = 1         // 1 >= lower (trace-v11)
 				pt.Learn.DWt.CaPScale = 1     //
 				pt.Learn.DWt.SynCa20.SetBool(false)
+				pt.Learn.DWt.SynCaDiff.SetBool(true)
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger",
 			Set: func(pt *axon.PathParams) {

@@ -31,7 +31,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Dend.SSGi = 2     // 2 new default
 				ly.Acts.Dend.GExp = 0.2   // 0.2 > 0.1 > 0
 				ly.Acts.Dend.GR = 3       // 2 good for 0.2
-				ly.Acts.Dt.VmDendC = 5    // 5 much better in fsa!
+				ly.Acts.Dt.VmDendC = 500  // 500 def
 				ly.Acts.GabaB.Gk = 0.012  // 0.012 > 0.015
 				ly.Acts.NMDA.Ge = 0.006   // 0.006 def
 				ly.Acts.NMDA.MgC = 1.4    // mg1, voff0, gbarexp.2, gbarr3 = better
@@ -40,12 +40,14 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.VGCC.Ge = 0.02 // non nmda: 0.15 good, 0.3 blows up, nmda: .02 best
 				ly.Acts.VGCC.Ca = 25   // 25 / 10tau same as SpkVGCC
 
-				ly.Acts.Mahp.Gk = 0.01       // 0.01 > 0.02 > higher -- long run
+				ly.Acts.Mahp.Gk = 0.05       // 0.05 does not go the distance for kna=false
 				ly.Acts.Sahp.Gk = 0.05       // was 0.1, 0.05 def
 				ly.Acts.Sahp.Off = 0.8       //
 				ly.Acts.Sahp.Slope = 0.02    //
 				ly.Acts.Sahp.CaTau = 5       // 5 ok -- not tested
-				ly.Acts.KNa.On.SetBool(true) // true def
+				ly.Acts.KNa.On.SetBool(true) // false > true
+				ly.Acts.KNa.Med.Max = 0.05
+				ly.Acts.KNa.Slow.Max = 0.05
 
 				ly.Learn.CaLearn.Norm = 80               // 80 def; 60 makes CaLearnMax closer to 1
 				ly.Learn.CaLearn.SpikeVGCC.SetBool(true) // sig better..
@@ -195,6 +197,7 @@ var PathParams = axon.PathSheets{
 				pt.Learn.DWt.SubMean = 1           // 1 > 0 for trgavg weaker
 				pt.Learn.DWt.CaPScale = 1          // Env10: 1
 				pt.Learn.DWt.SynCa20.SetBool(false)
+				pt.Learn.DWt.SynCaDiff.SetBool(false) // todo: expt
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger",
 			Set: func(pt *axon.PathParams) {

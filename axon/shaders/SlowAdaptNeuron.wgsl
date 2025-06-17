@@ -889,9 +889,9 @@ struct SWtParams {
 	Limit: F32,
 }
 fn SWtParams_WtValue(sp: SWtParams, swt: f32,lwt: f32) -> f32 {
-	return swt * SWtParams_SigFromLinWt(sp, lwt);
+	return swt * SWtParams_SigmoidLWt(sp, lwt);
 }
-fn SWtParams_SigFromLinWt(sp: SWtParams, lw: f32) -> f32 {
+fn SWtParams_SigmoidLWt(sp: SWtParams, lw: f32) -> f32 {
 	var wt: f32;
 	if (sp.Adapt.SigGain == 1) {
 		wt = lw;
@@ -901,7 +901,7 @@ fn SWtParams_SigFromLinWt(sp: SWtParams, lw: f32) -> f32 {
 		wt = SigFun(lw, sp.Adapt.SigGain, f32(f32(1)));
 	}return 2.0 * wt; // center at 1 instead of .5
 }
-fn SWtParams_LinFromSigWt(sp: SWtParams, wt: f32) -> f32 {
+fn SWtParams_LWtFromWt(sp: SWtParams, wt: f32) -> f32 {
 	var wte = wt * 0.5;
 	if (wte < 0) {
 		wte = f32(0);
@@ -916,7 +916,7 @@ fn SWtParams_LinFromSigWt(sp: SWtParams, wt: f32) -> f32 {
 	}return SigInvFun(wte, sp.Adapt.SigGain, f32(f32(1)));
 }
 fn SWtParams_LWtFromWts(sp: SWtParams, wt: f32,swt: f32) -> f32 {
-	var rwt = wt / swt;return SWtParams_LinFromSigWt(sp, rwt);
+	var rwt = wt / swt;return SWtParams_LWtFromWt(sp, rwt);
 }
 struct LRateParams {
 	Base: f32,
@@ -926,13 +926,13 @@ struct LRateParams {
 }
 struct DWtParams {
 	SynCa20: i32,
+	SynCaDiff: i32,
 	CaPScale: f32,
 	SubMean: f32,
 	SynTraceTau: f32,
 	LearnThr: f32,
 	SynTraceDt: f32,
 	pad: f32,
-	pad1: f32,
 }
 struct HebbParams {
 	On: i32,

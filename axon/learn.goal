@@ -493,7 +493,7 @@ func SigInvFun61(w float32) float32 {
 type SWtInitParams struct {
 
 	// SPct is how much of the initial random weights to capture in the
-	// slow, structural SWt values, with the rest going into the online leanring
+	// slow, structural SWt values, with the rest going into the online learning
 	// LWt values. 1 gives the strongest initial biasing effect, for larger
 	// models that need more structural support. 0.5 should work for most models
 	// where stronger constraints are not needed.
@@ -622,7 +622,7 @@ func (sp *SWtParams) Update() {
 
 // WtVal returns the effective Wt value given the SWt and LWt values
 func (sp *SWtParams) WtValue(swt, lwt float32) float32 {
-	return swt * sp.SigFromLinWt(lwt)
+	return swt * sp.SigmoidLWt(lwt)
 }
 
 // ClipSWt returns SWt value clipped to valid range
@@ -641,10 +641,10 @@ func (sp *SWtParams) ClipWt(wt float32) float32 {
 	return wt
 }
 
-// SigFromLinWt returns sigmoidal contrast-enhanced weight from linear weight,
+// SigmoidLWt returns sigmoidal contrast-enhanced weight from linear weight,
 // centered at 1 and normed in range +/- 1 around that
 // in preparation for multiplying times SWt
-func (sp *SWtParams) SigFromLinWt(lw float32) float32 {
+func (sp *SWtParams) SigmoidLWt(lw float32) float32 {
 	var wt float32
 	if sp.Adapt.SigGain == 1 {
 		wt = lw
@@ -656,10 +656,10 @@ func (sp *SWtParams) SigFromLinWt(lw float32) float32 {
 	return 2.0 * wt // center at 1 instead of .5
 }
 
-// LinFromSigWt returns linear weight from sigmoidal contrast-enhanced weight.
+// LWtFromWt returns linear weight from sigmoidal contrast-enhanced weight.
 // wt is centered at 1, and normed in range +/- 1 around that,
 // return value is in 0-1 range, centered at .5
-func (sp *SWtParams) LinFromSigWt(wt float32) float32 {
+func (sp *SWtParams) LWtFromWt(wt float32) float32 {
 	wte := wt * 0.5
 	if wte < 0 {
 		wte = 0
@@ -679,7 +679,7 @@ func (sp *SWtParams) LinFromSigWt(wt float32) float32 {
 // LWt is set to reproduce given Wt relative to given SWt base value.
 func (sp *SWtParams) LWtFromWts(wt, swt float32) float32 {
 	rwt := wt / swt
-	return sp.LinFromSigWt(rwt)
+	return sp.LWtFromWt(rwt)
 }
 
 // WtFromDWt updates the synaptic weights from accumulated weight changes.
@@ -797,6 +797,11 @@ type DWtParams struct {
 	// for most cases. This uses 2 bins if set.
 	SynCa20 slbool.Bool
 
+	// SynCaDiff uses the CaP - CaD difference in SynCa directly in computing the
+	// error gradient, instead of using it as a separate credit assignment factor.
+	// This is incompatible with SynTraceTau > 1 (ignores SynTrace).
+	SynCaDiff slbool.Bool
+
 	// CaPScale is a separate multiplier for the CaP component of synaptic calcium, to
 	// allow separate weighting of potentiation (CaP) vs. depression (CaD) factors.
 	// An increased CaP level results in an overall potentiation bias, which acts
@@ -832,7 +837,7 @@ type DWtParams struct {
 	// Dt rate = 1 / tau
 	SynTraceDt float32 `display:"-" json:"-" xml:"-" edit:"-"`
 
-	pad, pad1 float32
+	pad float32
 }
 
 func (tp *DWtParams) Defaults() {

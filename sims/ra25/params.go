@@ -56,6 +56,7 @@ var PathParams = axon.PathSheets{
 				pt.Learn.DWt.SubMean = 0   // 1 > 0 for long run stability
 				pt.Learn.DWt.CaPScale = 1  // 1
 				pt.Learn.DWt.SynCa20.SetBool(false)
+				pt.Learn.DWt.SynCaDiff.SetBool(false) // todo: expt
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {
