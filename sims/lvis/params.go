@@ -193,11 +193,10 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Adapt.SubMean = 1          // 1 > 0 -- definitely needed
 				pt.SWts.Adapt.HiMeanDecay = 0.0008 // 0.0008 best
 				pt.SWts.Adapt.HiMeanThr = 0.5      // 0.5, 0.0008 goes the distance
-				pt.Learn.LRate.Base = 0.005        // 0.005 def; 0.01 > 0.02 later (trace)
+				pt.Learn.LRate.Base = 0.005        // 0.005 def
 				pt.Learn.DWt.SubMean = 1           // 1 > 0 for trgavg weaker
 				pt.Learn.DWt.CaPScale = 1          // Env10: 1
 				pt.Learn.DWt.SynCa20.SetBool(false)
-				pt.Learn.DWt.SynCaDiff.SetBool(true) // todo: expt
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger",
 			Set: func(pt *axon.PathParams) {

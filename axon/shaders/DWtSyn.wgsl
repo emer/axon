@@ -800,12 +800,8 @@ fn PathParams_DWtSynCortex(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u
 	if (isTarget) {
 		err = syCaP - syCaD; // for target layers, syn Ca drives error signal directly
 	} else {
-		if (pt.Learn.DWt.SynCaDiff == 1) {
-			err = (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnCaP))]*syCaP - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnCaD))]*syCaD) * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(ETraceLearn))];
-		} else {
-			err = tr * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnCaP))] - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnCaD))]) * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
-			u32(ri), u32(di), u32(ETraceLearn))];
-		}
+		err = tr * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnCaP))] - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnCaD))]) * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
+		u32(ri), u32(di), u32(ETraceLearn))];
 	}
 	var lwt = Synapses[Index2D(TensorStrides[170], TensorStrides[171], // linear weight
 	u32(syni), u32(LWt))];
@@ -1098,13 +1094,13 @@ struct LRateParams {
 }
 struct DWtParams {
 	SynCa20: i32,
-	SynCaDiff: i32,
 	CaPScale: f32,
 	SubMean: f32,
 	SynTraceTau: f32,
 	LearnThr: f32,
 	SynTraceDt: f32,
 	pad: f32,
+	pad1: f32,
 }
 fn DWtParams_SynTrace(tp: DWtParams, tr: f32, syn: f32) -> f32 {
 	return tr + tp.SynTraceDt*(syn-tr);

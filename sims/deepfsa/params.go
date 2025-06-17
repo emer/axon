@@ -97,15 +97,14 @@ var PathParams = axon.PathSheets{
 		{Sel: "Path", Doc: "std",
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.DWt.SubMean = 0            // 0 > 1 -- even with CTCtxt = 0
-				pt.Learn.LRate.Base = 0.01          // .03 > others (.01 for SynCaDiff; .02 fails)
+				pt.Learn.LRate.Base = 0.03          // .03 > others
 				pt.SWts.Adapt.LRate = 0.01          // 0.01 or 0.0001 music
 				pt.SWts.Init.SPct = 1.0             // 1 works fine here -- .5 also ok
 				pt.Learn.DWt.CaPScale = 0.95        // 0.95 > 0.98 > 1
 				pt.SWts.Adapt.HiMeanDecay = 0.0008  // 0.0008 default
 				pt.Learn.DWt.SynCa20.SetBool(false) // 10 > 20 reliably
 				pt.Learn.DWt.SynTraceTau = 1        // 1 >> 2 v0.0.9
-				pt.Learn.DWt.SynCaDiff.SetBool(true)
-				pt.Learn.DWt.LearnThr = 0
+				pt.Learn.DWt.LearnThr = 0           // SubMean = 0, so not much impact here -- no benefits
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {
@@ -116,7 +115,7 @@ var PathParams = axon.PathSheets{
 				pt.Learn.LRate.Base = 0.02 // 0.02 >= 0.03 > 0.01
 				// pt.Learn.DWt.SynTraceTau = 2 // 1 > 2 now
 				pt.Learn.DWt.SubMean = 0 // 0 > 1 -- 1 is especially bad
-				pt.Learn.DWt.SynCaDiff.SetBool(false)
+				pt.Learn.DWt.LearnThr = 0
 			}},
 		{Sel: ".CTFromSuper", Doc: "full > 1to1",
 			Set: func(pt *axon.PathParams) {

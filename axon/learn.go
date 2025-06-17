@@ -799,11 +799,6 @@ type DWtParams struct {
 	// for most cases. This uses 2 bins if set.
 	SynCa20 slbool.Bool
 
-	// SynCaDiff uses the CaP - CaD difference in SynCa directly in computing the
-	// error gradient, instead of using it as a separate credit assignment factor.
-	// This is incompatible with SynTraceTau > 1 (ignores SynTrace).
-	SynCaDiff slbool.Bool
-
 	// CaPScale is a separate multiplier for the CaP component of synaptic calcium, to
 	// allow separate weighting of potentiation (CaP) vs. depression (CaD) factors.
 	// An increased CaP level results in an overall potentiation bias, which acts
@@ -839,7 +834,7 @@ type DWtParams struct {
 	// Dt rate = 1 / tau
 	SynTraceDt float32 `display:"-" json:"-" xml:"-" edit:"-"`
 
-	pad float32
+	pad, pad1 float32
 }
 
 func (tp *DWtParams) Defaults() {
