@@ -34,11 +34,13 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.NMDA.Ge = 0.006
 				ly.Acts.GabaB.Gk = 0.015 // 0.015 def -- makes no diff down to 0.008
 
-				ly.Acts.Mahp.Gk = 0.02  // 0.02 def; 0.05 might compensate for lack of KNa?
-				ly.Acts.Sahp.Gk = 0.1   // 0.05 def
-				ly.Acts.Sahp.CaTau = 10 // 10 (def) > 5?
+				ly.Acts.Mahp.Gk = 0.05       // 0.05 > 0.02
+				ly.Acts.Sahp.Gk = 0.1        // 0.1 > 0.05 def
+				ly.Acts.Sahp.CaTau = 10      // 10 (def) > 5?
+				ly.Acts.KNa.On.SetBool(true) // false > true
+				ly.Acts.KNa.Med.Max = 0.05   // 0.2 def
+				ly.Acts.KNa.Slow.Max = 0.05
 
-				ly.Acts.KNa.On.SetBool(true)                 // false > true?
 				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // false > true
 				ly.Learn.CaLearn.Dt.MTau = 2                 // 2 > 5 actually
 				ly.Learn.CaLearn.ETraceAct.SetBool(false)
@@ -95,7 +97,7 @@ var PathParams = axon.PathSheets{
 		{Sel: "Path", Doc: "std",
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.DWt.SubMean = 0            // 0 > 1 -- even with CTCtxt = 0
-				pt.Learn.LRate.Base = 0.01          // .03 > others (.01 for SynCaDiff?)
+				pt.Learn.LRate.Base = 0.01          // .03 > others (.01 for SynCaDiff; .02 fails)
 				pt.SWts.Adapt.LRate = 0.01          // 0.01 or 0.0001 music
 				pt.SWts.Init.SPct = 1.0             // 1 works fine here -- .5 also ok
 				pt.Learn.DWt.CaPScale = 0.95        // 0.95 > 0.98 > 1
@@ -103,6 +105,7 @@ var PathParams = axon.PathSheets{
 				pt.Learn.DWt.SynCa20.SetBool(false) // 10 > 20 reliably
 				pt.Learn.DWt.SynTraceTau = 1        // 1 >> 2 v0.0.9
 				pt.Learn.DWt.SynCaDiff.SetBool(true)
+				pt.Learn.DWt.LearnThr = 0
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {

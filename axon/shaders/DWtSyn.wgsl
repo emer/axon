@@ -781,6 +781,9 @@ fn PathParams_DWtSynCortex(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u
 	var syCaP: f32;
 	var syCaD: f32;
 	PathParams_SynCa(pt, ctx, si, ri, di, &syCaP, &syCaD);
+	if (syCaP < pt.Learn.DWt.LearnThr && syCaD < pt.Learn.DWt.LearnThr) {
+		return;
+	}
 	var syn = syCaD;             // synaptic activity co-product factor.
 	if (pt.Type == CTCtxtPath) { // layer 6 CT pathway
 		syn = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],

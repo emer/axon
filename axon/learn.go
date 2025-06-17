@@ -830,8 +830,8 @@ type DWtParams struct {
 	// eligibility trace ETraceLearn.
 	SynTraceTau float32 `default:"1,2,4"`
 
-	// LearnThr is the threshold for learning, for specialized learning algorithms.
-	// This is not relevant for the standard kinase error-driven cortical learning algorithm.
+	// LearnThr is the threshold for learning, applied to SynCa CaP and CaD for Kinase
+	// cortical learning rule.
 	// In Matrix and VSPatch it applies to normalized GeIntNorm value: setting this relatively
 	// high encourages sparser representations.
 	LearnThr float32

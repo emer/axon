@@ -89,6 +89,10 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, syni, si, ri, lpi, pi, di uint3
 	var syCaP, syCaD float32
 	pt.SynCa(ctx, si, ri, di, &syCaP, &syCaD)
 
+	if syCaP < pt.Learn.DWt.LearnThr && syCaD < pt.Learn.DWt.LearnThr {
+		return
+	}
+
 	syn := syCaD               // synaptic activity co-product factor.
 	if pt.Type == CTCtxtPath { // layer 6 CT pathway
 		syn = Neurons.Value(int(si), int(di), int(BurstPrv))
