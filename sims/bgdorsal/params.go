@@ -27,10 +27,13 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.KNa.On.SetBool(true) // true > false for sure 4x6
 
 				// todo: experiment with these:
-				// ly.Acts.Mahp.Gk = 0.06                       // 0.02 def; 0.05 might compensate for lack of KNa?
-				// ly.Acts.Sahp.Gk = 0.1                        // 0.05 def
-				// ly.Acts.Sahp.CaTau = 10                      // 10 (def) > 5?
-				// ly.Acts.KNa.On.SetBool(false)
+				ly.Acts.Mahp.Gk = 0.05  //
+				ly.Acts.Sahp.Gk = 0.1   // 0.05 def
+				ly.Acts.Sahp.CaTau = 10 // 10 (def) > 5?
+				ly.Acts.KNa.On.SetBool(true)
+				ly.Acts.KNa.Med.Max = 0.05 // 0.2 def
+				ly.Acts.KNa.Slow.Max = 0.05
+
 				// ly.Acts.NMDA.Tau = 100                       // 100 def >> 200
 				// ly.Learn.LearnNMDA.Tau = 100                 // 100 def >> 200
 			}},
@@ -124,7 +127,8 @@ var PathParams = axon.PathSheets{
 				pt.Learn.DWt.SynTraceTau = 1       // 1 > 2
 				pt.Learn.DWt.CaPScale = 1.05       // 1.05 > 1 > 1.1
 				pt.Learn.DWt.SynCa20.SetBool(true) // 20 > 10
-				pt.SWts.Adapt.HiMeanDecay = 0.005  // 0.0008 for 4x6, 0.005 for 3x10 -- not clear if real..
+				pt.SWts.Adapt.HiMeanDecay = 0.0008 // 0.0008 for 4x6, 0.005 for 3x10 -- not clear if real..
+				pt.Learn.DWt.SubMean = 0           // 0 >> 1 -- fails at 1
 			}},
 		// {Sel: ".PFCPath", Doc: "",
 		// 	Set: func(pt *axon.PathParams) {

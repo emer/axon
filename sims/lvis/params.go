@@ -41,13 +41,13 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.VGCC.Ca = 25   // 25 / 10tau same as SpkVGCC
 
 				ly.Acts.Mahp.Gk = 0.05       // 0.05 > lower, higher; but still needs kna
-				ly.Acts.Sahp.Gk = 0.05       // was 0.1, 0.05 def
+				ly.Acts.Sahp.Gk = 0.1        // was 0.1, 0.05 def
 				ly.Acts.Sahp.Off = 0.8       //
 				ly.Acts.Sahp.Slope = 0.02    //
 				ly.Acts.Sahp.CaTau = 5       // 5 ok -- not tested
 				ly.Acts.KNa.On.SetBool(true) // false > true
-				ly.Acts.KNa.Med.Max = 0.01   // 0.05 > 0.1 so far..
-				ly.Acts.KNa.Slow.Max = 0.01
+				ly.Acts.KNa.Med.Max = 0.05   // 0.1 > 0.05 -- 0.05 blows up around 1500
+				ly.Acts.KNa.Slow.Max = 0.05
 
 				ly.Learn.CaLearn.Norm = 80               // 80 def; 60 makes CaLearnMax closer to 1
 				ly.Learn.CaLearn.SpikeVGCC.SetBool(true) // sig better..
@@ -197,6 +197,7 @@ var PathParams = axon.PathSheets{
 				pt.Learn.DWt.SubMean = 1           // 1 > 0 for trgavg weaker
 				pt.Learn.DWt.CaPScale = 1          // Env10: 1
 				pt.Learn.DWt.SynCa20.SetBool(false)
+				pt.Learn.DWt.LearnThr = 0 // 0.001 still shows impairment
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger",
 			Set: func(pt *axon.PathParams) {

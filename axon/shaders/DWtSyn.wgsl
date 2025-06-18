@@ -781,9 +781,6 @@ fn PathParams_DWtSynCortex(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u
 	var syCaP: f32;
 	var syCaD: f32;
 	PathParams_SynCa(pt, ctx, si, ri, di, &syCaP, &syCaD);
-	if (syCaP < pt.Learn.DWt.LearnThr && syCaD < pt.Learn.DWt.LearnThr) {
-		return;
-	}
 	var syn = syCaD;             // synaptic activity co-product factor.
 	if (pt.Type == CTCtxtPath) { // layer 6 CT pathway
 		syn = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
@@ -800,8 +797,10 @@ fn PathParams_DWtSynCortex(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u
 	if (isTarget) {
 		err = syCaP - syCaD; // for target layers, syn Ca drives error signal directly
 	} else {
-		err = tr * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnCaP))] - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnCaD))]) * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
-		u32(ri), u32(di), u32(ETraceLearn))];
+		if (syCaP > pt.Learn.DWt.LearnThr || syCaD > pt.Learn.DWt.LearnThr) {
+			err = tr * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnCaP))] - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnCaD))]) * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
+			u32(ri), u32(di), u32(ETraceLearn))];
+		}
 	}
 	var lwt = Synapses[Index2D(TensorStrides[170], TensorStrides[171], // linear weight
 	u32(syni), u32(LWt))];

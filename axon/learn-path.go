@@ -89,10 +89,6 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, syni, si, ri, lpi, pi, di uint3
 	var syCaP, syCaD float32
 	pt.SynCa(ctx, si, ri, di, &syCaP, &syCaD)
 
-	if syCaP < pt.Learn.DWt.LearnThr && syCaD < pt.Learn.DWt.LearnThr {
-		return
-	}
-
 	syn := syCaD               // synaptic activity co-product factor.
 	if pt.Type == CTCtxtPath { // layer 6 CT pathway
 		syn = Neurons.Value(int(si), int(di), int(BurstPrv))
@@ -113,7 +109,9 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, syni, si, ri, lpi, pi, di uint3
 	if isTarget {
 		err = syCaP - syCaD // for target layers, syn Ca drives error signal directly
 	} else {
-		err = tr * (Neurons.Value(int(ri), int(di), int(LearnCaP)) - Neurons.Value(int(ri), int(di), int(LearnCaD))) * Neurons.Value(int(ri), int(di), int(ETraceLearn))
+		if syCaP > pt.Learn.DWt.LearnThr || syCaD > pt.Learn.DWt.LearnThr {
+			err = tr * (Neurons.Value(int(ri), int(di), int(LearnCaP)) - Neurons.Value(int(ri), int(di), int(LearnCaD))) * Neurons.Value(int(ri), int(di), int(ETraceLearn))
+		}
 	}
 
 	// softbound immediately -- enters into zero sum.
