@@ -8,7 +8,7 @@ require (
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/chewxy/math32 v1.10.1
 	github.com/cogentcore/yaegi v0.0.0-20240724064145-e32a03faad56
-	github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250502170855-f1a87d89008f
+	github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250623102355-92b32156cd4f
 	github.com/emer/v1vision v0.1.1-0.20241223003153-dd6818448b3b
 	github.com/stretchr/testify v1.10.0
 	gitlab.com/gomidi/midi/v2 v2.0.30
