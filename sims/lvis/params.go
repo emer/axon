@@ -21,8 +21,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Pool.FB = 1
 				ly.Inhib.Layer.ClampExtMin = 0.0 // 0.05 default doesn't activate output!
 				ly.Inhib.Pool.ClampExtMin = 0.0
-				ly.Inhib.ActAvg.AdaptRate = 0.005 // was 0.1 -- got fluctations
-				ly.Inhib.ActAvg.AdaptMax = 0.01   // 0.05 default; 0.01 has effect; lower not effective at preventing instability on its own.
+				ly.Inhib.ActAvg.AdaptRate = 0.05 // 0.005 too slow; 0.1 too fast
+				ly.Inhib.ActAvg.AdaptMax = 0.01  // 0.05 default; 0.01 has effect; lower not effective at preventing instability on its own.
 				ly.Inhib.ActAvg.LoTol = 0.8
 				ly.Inhib.ActAvg.HiTol = 0.0
 				ly.Acts.Dt.LongAvgTau = 200 // 200 > 20 for smoothing ripples
@@ -47,7 +47,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Sahp.Slope = 0.02    //
 				ly.Acts.Sahp.CaTau = 5       // 5 ok -- not tested
 				ly.Acts.KNa.On.SetBool(true) // true, .05 > false
-				ly.Acts.KNa.Med.Max = 0.1    // 0.1 > 0.05 -- 0.05 blows up around 1500
+				ly.Acts.KNa.Med.Max = 0.1    // 0.1 > 0.05 -- 0.05 blows up around 1500, 0.1 just at end
 				ly.Acts.KNa.Slow.Max = 0.1
 
 				ly.Learn.CaLearn.Norm = 80               // 80 def; 60 makes CaLearnMax closer to 1

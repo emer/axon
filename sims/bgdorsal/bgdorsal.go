@@ -943,6 +943,18 @@ func (ss *Sim) ConfigStats() {
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		runAllFunc(mode, level, phase == Start)
 	})
+
+	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
+	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		actGeFunc(mode, level, phase == Start)
+	})
+
+	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, Run, lays...)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		trnEpc := ss.Loops.Loop(Train, Epoch).Counter.Cur
+		pcaFunc(mode, level, phase == Start, trnEpc)
+	})
 }
 
 // StatCounters returns counters string to show at bottom of netview.
@@ -974,7 +986,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI(b tree.Node) {
 	ss.GUI.MakeBody(b, ss, ss.Root, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
-
+	ss.GUI.StopLevel = Trial
 	nv := ss.GUI.AddNetView("Network")
 	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles
 	nv.Options.Raster.Max = ss.Config.Run.Cycles

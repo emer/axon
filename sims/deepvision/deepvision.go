@@ -24,8 +24,6 @@ import (
 	"cogentcore.org/core/tree"
 	"cogentcore.org/lab/base/mpi"
 	"cogentcore.org/lab/base/randx"
-	"cogentcore.org/lab/plot"
-	"cogentcore.org/lab/stats/stats"
 	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/decoder"
@@ -250,8 +248,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	sac := net.AddLayer2D("Saccade", axon.InputLayer, 11, 11)
 	objvel := net.AddLayer2D("ObjVel", axon.InputLayer, 11, 11)
 
-	mtpos := net.AddLayer4D("MTPos", axon.SuperLayer, 8, 8, 1, 1).AddClass("LIP")
-	mtposP := net.AddPulvForLayer(mtpos, space).AddClass("LIP")
+	mtpos := net.AddLayer4D("MTPos", axon.SuperLayer, 8, 8, 1, 1).AddClass("MTpos")
+	mtposP := net.AddPulvForLayer(mtpos, space).AddClass("MTpos")
 
 	lip, lipCT := net.AddSuperCT4D("LIP", "", 8, 8, 4, 4, space, pts.PT3x3Skp1)
 
@@ -429,11 +427,11 @@ func (ss *Sim) ConfigLoops() {
 		}
 	})
 
-	trainEpoch.OnStart.Add("TestAtInterval", func() {
-		if (ss.Config.Run.TestInterval > 0) && ((trainEpoch.Counter.Cur+1)%ss.Config.Run.TestInterval == 0) {
-			ss.TestAll()
-		}
-	})
+	// trainEpoch.OnStart.Add("TestAtInterval", func() {
+	// 	if (ss.Config.Run.TestInterval > 0) && ((trainEpoch.Counter.Cur+1)%ss.Config.Run.TestInterval == 0) {
+	// 		ss.TestAll()
+	// 	}
+	// })
 
 	ls.AddOnStartToAll("StatsStart", ss.StatsStart)
 	ls.AddOnEndToAll("StatsStep", ss.StatsStep)
@@ -603,77 +601,38 @@ func (ss *Sim) ConfigStats() {
 		trialNameFunc(mode, level, phase == Start)
 	})
 
-	// up to a point, it is good to use loops over stats in one function,
-	// to reduce repetition of boilerplate.
-	statNames := []string{"CorSim"}
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		for _, name := range statNames {
-			modeDir := ss.Stats.Dir(mode.String())
-			curModeDir := ss.Current.Dir(mode.String())
-			levelDir := modeDir.Dir(level.String())
-			subDir := modeDir.Dir((level - 1).String()) // note: will fail for Cycle
-			tsr := levelDir.Float64(name)
-			ndata := int(ss.Net.Context().NData)
-			var stat float64
-			if phase == Start {
-				tsr.SetNumRows(0)
-				plot.SetFirstStyler(tsr, func(s *plot.Style) {
-					s.Range.SetMin(0).SetMax(1)
-					s.On = true
-					// switch name {
-					// case "UnitErr", "Resp":
-					// 	s.On = false
-					// }
-				})
-				continue
-			}
-			switch level {
-			case Trial:
-				// out := ss.Net.LayerByName("Output")
-				// ltsr := curModeDir.Float64(out.Name+"_ActM", out.Shape.Sizes...)
-				// ev := ss.Envs.ByMode(ss.CurrentMode()).(*Obj3DSacEnv)
-				for di := range ndata {
-					var stat float64
-					curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
-					tsr.AppendRowFloat(stat)
-				}
-			case Epoch:
-				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
-				tsr.AppendRowFloat(stat)
-			case Run:
-				stat = stats.StatFinal.Call(subDir.Value(name)).Float1D(0)
-				tsr.AppendRowFloat(stat)
-			}
-		}
-	})
-
 	perTrlFunc := axon.StatPerTrialMSec(ss.Stats, Train, Trial)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		perTrlFunc(mode, level, phase == Start)
 	})
 
+	plays := net.LayersByType(axon.PulvinarLayer)
+	corSimFunc := axon.StatCorSim(ss.Stats, ss.Current, net, Trial, Run, plays...)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		corSimFunc(mode, level, phase == Start)
+	})
+
+	prevCorFunc := axon.StatPrevCorSim(ss.Stats, ss.Current, net, Trial, Run, plays...)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		prevCorFunc(mode, level, phase == Start)
+	})
+
 	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
-	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, lays...)
+	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		actGeFunc(mode, level, phase == Start)
 	})
 
-	giMultFunc := axon.StatLayerGiMult(ss.Stats, net, Train, Epoch, lays...)
+	giMultFunc := axon.StatLayerGiMult(ss.Stats, net, Train, Epoch, Run, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		giMultFunc(mode, level, phase == Start)
 	})
 
-	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, lays...)
+	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, Run, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		trnEpc := ss.Loops.Loop(Train, Epoch).Counter.Cur
 		pcaFunc(mode, level, phase == Start, trnEpc)
 	})
-
-	// TODO: crashing in sampleshape
-	// stateFunc := axon.StatLayerState(ss.Stats, net, Test, Trial, true, "ActM", "Output")
-	// ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-	// 	stateFunc(mode, level, phase == Start)
-	// })
 }
 
 // StatCounters returns counters string to show at bottom of netview.

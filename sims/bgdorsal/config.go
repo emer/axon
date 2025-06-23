@@ -106,6 +106,10 @@ type RunConfig struct {
 
 	// PlusCycles is the total number of plus-phase cycles per trial. For Cycles=300, use 100.
 	PlusCycles int `default:"50"`
+
+	// PCAInterval is how often (in epochs) to compute PCA on hidden
+	// representations to measure variance.
+	PCAInterval int `default:"10"`
 }
 
 // LogConfig has config parameters related to logging data.

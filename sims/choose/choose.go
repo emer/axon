@@ -46,6 +46,7 @@ const (
 	Trial
 	Epoch
 	Run
+	Expt
 )
 
 // StatsPhase is the phase of stats processing for given mode, level.
@@ -436,6 +437,7 @@ func (ss *Sim) ConfigLoops() {
 
 	// Note: actual max counters set by env
 	ls.AddStack(Train, Trial).
+		AddLevel(Expt, 1).
 		AddLevel(Run, ss.Config.Run.Runs).
 		AddLevel(Epoch, ss.Config.Run.Epochs).
 		AddLevelIncr(Trial, trials, ss.Config.Run.NData).
@@ -601,7 +603,7 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 			itsr := ev.State(lnm)
 			ly.ApplyExt(uint32(di), itsr)
 		}
-		curModeDir.StringValue("TrialName", 1).SetString1D(ev.String(), 0)
+		curModeDir.StringValue("TrialName", ndata).SetString1D(ev.String(), di)
 		ss.ApplyRubicon(ev, mode, uint32(di))
 	}
 
@@ -772,6 +774,18 @@ func (ss *Sim) ConfigStats() {
 	// 		}
 	// 	}
 	// })
+	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer, axon.PTMaintLayer, axon.PTPredLayer, axon.GPLayer, axon.STNLayer, axon.MatrixLayer, axon.BGThalLayer, axon.UrgencyLayer)
+	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		actGeFunc(mode, level, phase == Start)
+	})
+
+	clays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.PTMaintLayer, axon.PTPredLayer)
+	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, Run, clays...)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		trnEpc := ss.Loops.Loop(Train, Epoch).Counter.Cur
+		pcaFunc(mode, level, phase == Start, trnEpc)
+	})
 }
 
 // StatCounters returns counters string to show at bottom of netview.
@@ -802,7 +816,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI(b tree.Node) {
 	ss.GUI.MakeBody(b, ss, ss.Root, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
-
+	ss.GUI.StopLevel = Trial
 	nv := ss.GUI.AddNetView("Network")
 	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles
 	nv.Options.Raster.Max = ss.Config.Run.Cycles

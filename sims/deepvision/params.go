@@ -92,6 +92,26 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Decay.Act = 1          // these make no diff
 				ly.Acts.Decay.Glong = 1
 			}},
+		{Sel: ".LIP", Doc: "pool inhib",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.05
+				ly.Inhib.ActAvg.Offset = 0
+				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
+				ly.Inhib.Pool.On.SetBool(true) // needs pool-level
+				ly.Inhib.Layer.FB = 1          //
+				ly.Inhib.Pool.FB = 4
+				ly.Inhib.Layer.Gi = 1.0
+				ly.Inhib.Pool.Gi = 1.05
+			}},
+		{Sel: ".MTpos", Doc: "layer inhib",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.15
+				ly.Inhib.ActAvg.Offset = 0
+				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
+				ly.Inhib.Pool.On.SetBool(false)
+				ly.Inhib.Layer.FB = 1
+				ly.Inhib.Layer.Gi = 1.0
+			}},
 		{Sel: ".V2", Doc: "pool inhib, sparse activity",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.02        // .02 1.6.15 SSGi -- was higher
@@ -161,26 +181,6 @@ var LayerParams = axon.LayerSheets{
 		// 		ly.Inhib.ActAvg.Nominal =  .06
 		// 	}},
 	},
-	"RndOutPats": {
-		{Sel: "#Output", Doc: "high inhib for one-hot output",
-			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.Layer.Gi = 0.9       // 0.9 > 1.0
-				ly.Inhib.ActAvg.Nominal = 0.1 // 0.1 seems good
-			}},
-	},
-	"LocalOutPats": {
-		{Sel: "#Output", Doc: "high inhib for one-hot output",
-			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.Layer.Gi = 1.5 // 1.5 = 1.6 > 1.4
-				ly.Inhib.ActAvg.Nominal = 0.01
-			}},
-	},
-	"OutAdapt": {
-		{Sel: "#Output", Doc: "general output, Localist default -- see RndOutPats, LocalOutPats",
-			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.AdaptGi.SetBool(true) // true = definitely worse
-			}},
-	},
 }
 
 // PathParams sets the minimal non-default params.
@@ -228,6 +228,12 @@ var PathParams = axon.PathSheets{
 					pt.IncGain =              1   // .5 def
 				}},
 		*/
+		{Sel: ".Fixed", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.Learn.Learn.SetBool(false)
+				pt.SWts.Init.Mean = 0.8
+				pt.SWts.Init.Var = 0
+			}},
 		{Sel: ".V1V2", Doc: "special SWt params",
 			Set: func(pt *axon.PathParams) {
 				pt.SWts.Init.Mean = 0.4 // .4 here is key!
@@ -331,13 +337,6 @@ var PathParams = axon.PathSheets{
 				pt.PathScale.Rel = 0.5          // .5 > .8 > 1 > .4 > .3 etc
 				pt.SWts.Adapt.On.SetBool(false) // seems better
 				// "apt.SWts.Init.Var =   0.05
-			}},
-	},
-	"ToOutTol": {
-		{Sel: ".ToOut", Doc: "to output -- some things should be different..",
-			Set: func(pt *axon.PathParams) {
-				// todo: param missing:
-				// pt.PathScale.LoTol = 0.5 // activation dropping off a cliff there at the end..
 			}},
 	},
 }

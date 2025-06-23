@@ -666,18 +666,18 @@ func (ss *Sim) ConfigStats() {
 		perTrlFunc(mode, level, phase == Start)
 	})
 
-	prevCorFunc := axon.StatPrevCorSim(ss.Stats, ss.Current, net, Trial, "InputP")
+	prevCorFunc := axon.StatPrevCorSim(ss.Stats, ss.Current, net, Trial, Run, "InputP")
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		prevCorFunc(mode, level, phase == Start)
 	})
 
 	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
-	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, lays...)
+	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		actGeFunc(mode, level, phase == Start)
 	})
 
-	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, lays...)
+	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, Run, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		trnEpc := ss.Loops.Loop(Train, Epoch).Counter.Cur
 		pcaFunc(mode, level, phase == Start, trnEpc)
@@ -724,6 +724,7 @@ func (ss *Sim) ConfigNetView(nv *netview.NetView) {
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI(b tree.Node) {
 	ss.GUI.MakeBody(b, ss, ss.Root, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
+	ss.GUI.StopLevel = Trial
 	ss.GUI.CycleUpdateInterval = 10
 
 	nv := ss.GUI.AddNetView("Network")

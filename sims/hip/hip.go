@@ -483,8 +483,7 @@ func (ss *Sim) ConfigStats() {
 		trialNameFunc(mode, level, phase == Start)
 	})
 
-	// up to a point, it is good to use loops over stats in one function,
-	// to reduce repetition of boilerplate.
+	// todo: update stats
 	statNames := []string{"CorSim", "UnitErr", "Err", "NZero", "FirstZero", "LastZero"}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		for _, name := range statNames {
@@ -526,7 +525,7 @@ func (ss *Sim) ConfigStats() {
 			}
 			switch level {
 			case Trial:
-				out := ss.Net.LayerByName("Output")
+				out := ss.Net.LayerByName("EC5") // todo: need to update stats
 				for di := range ndata {
 					var stat float64
 					switch name {
@@ -590,7 +589,7 @@ func (ss *Sim) ConfigStats() {
 	})
 
 	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
-	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, lays...)
+	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		actGeFunc(mode, level, phase == Start)
 	})
@@ -638,7 +637,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 func (ss *Sim) ConfigGUI(b tree.Node) {
 	ss.GUI.MakeBody(b, ss, ss.Root, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
 	ss.GUI.CycleUpdateInterval = 10
-
+	ss.GUI.StopLevel = Trial
 	nv := ss.GUI.AddNetView("Network")
 	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles
 	nv.Options.Raster.Max = ss.Config.Run.Cycles

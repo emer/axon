@@ -2,10 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// ra25 runs a simple random-associator four-layer axon network
-// that uses the standard supervised learning paradigm to learn
-// mappings between 25 random input / output patterns
-// defined over 5x5 input / output layers (i.e., 25 units)
+// mpi is a test case for mpi distributed computing, using ra25 example.
 package mpi
 
 //go:generate core generate -add-types -add-funcs -gosl
@@ -57,6 +54,7 @@ const (
 	Trial
 	Epoch
 	Run
+	Expt
 )
 
 // StatsPhase is the phase of stats processing for given mode, level.
@@ -299,6 +297,7 @@ func (ss *Sim) ConfigLoops() {
 	plusPhase := ss.Config.Run.PlusCycles
 
 	ls.AddStack(Train, Trial).
+		AddLevel(Expt, 1).
 		AddLevel(Run, ss.Config.Run.Runs).
 		AddLevel(Epoch, ss.Config.Run.Epochs).
 		AddLevelIncr(Trial, trials, ss.Config.Run.NData).
@@ -633,6 +632,9 @@ func (ss *Sim) ConfigStats() {
 			case Run:
 				stat = stats.StatFinal.Call(subDir.Value(name)).Float1D(0)
 				tsr.AppendRowFloat(stat)
+			default: // Expt
+				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
+				tsr.AppendRowFloat(stat)
 			}
 		}
 	})
@@ -643,12 +645,12 @@ func (ss *Sim) ConfigStats() {
 	})
 
 	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
-	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, lays...)
+	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		actGeFunc(mode, level, phase == Start)
 	})
 
-	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, lays...)
+	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, Run, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		trnEpc := ss.Loops.Loop(Train, Epoch).Counter.Cur
 		pcaFunc(mode, level, phase == Start, trnEpc)
@@ -689,7 +691,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI(b tree.Node) {
 	ss.GUI.MakeBody(b, ss, ss.Root, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
-
+	ss.GUI.StopLevel = Trial
 	nv := ss.GUI.AddNetView("Network")
 	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles
 	nv.Options.Raster.Max = ss.Config.Run.Cycles

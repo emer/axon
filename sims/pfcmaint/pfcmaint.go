@@ -541,13 +541,13 @@ func (ss *Sim) ConfigStats() {
 		}
 	})
 
-	prevCorFunc := axon.StatPrevCorSim(ss.Stats, ss.Current, net, Trial, "ItemP", "TimeP")
+	prevCorFunc := axon.StatPrevCorSim(ss.Stats, ss.Current, net, Trial, Run, "ItemP", "TimeP")
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		prevCorFunc(mode, level, phase == Start)
 	})
 
 	lays := net.LayersByClass("PFC")
-	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, lays...)
+	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		actGeFunc(mode, level, phase == Start)
 	})
@@ -583,7 +583,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI(b tree.Node) {
 	ss.GUI.MakeBody(b, ss, ss.Root, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
-
+	ss.GUI.StopLevel = Trial
 	nv := ss.GUI.AddNetView("Network")
 	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles
 	nv.Options.Raster.Max = ss.Config.Run.Cycles

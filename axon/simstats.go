@@ -270,16 +270,15 @@ func StatPerTrialMSec(statsDir *tensorfs.Node, trainMode enums.Enum, trialLevel 
 		switch levi {
 		case 1:
 			epcTimer.Stop()
-			subd := modeDir.Dir(levels[0].String())
-			trls := errors.Ignore1(subd.Values())[0] // must be a stat
+			subDir := modeDir.Dir(levels[0].String())
+			trls := errors.Ignore1(subDir.Values())[0] // must be a stat
 			epcTimer.N = trls.Len()
 			pertrl := float64(epcTimer.Avg()) / float64(time.Millisecond)
 			tsr.AppendRowFloat(pertrl)
 			epcTimer.ResetStart()
 		default:
-			subd := modeDir.Dir(levels[levi-1].String())
-			stat := stats.StatMean.Call(subd.Value(name))
-			tsr.AppendRow(stat)
+			subDir := modeDir.Dir(levels[levi-1].String())
+			tsr.AppendRow(stats.StatMean.Call(subDir.Value(name)))
 		}
 	}
 }
@@ -289,7 +288,7 @@ func StatPerTrialMSec(statsDir *tensorfs.Node, trainMode enums.Enum, trialLevel 
 // of parameter tuning to ensure everything is in an appropriate dynamic range.
 // It only runs for given trainMode at given trialLevel and above,
 // with higher levels computing the Mean of lower levels.
-func StatLayerActGe(statsDir *tensorfs.Node, net *Network, trainMode, trialLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
+func StatLayerActGe(statsDir *tensorfs.Node, net *Network, trainMode, trialLevel, runLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
 	statNames := []string{"ActMAvg", "ActMMax", "MaxGeM"}
 	levels := make([]enums.Enum, 10) // should be enough
 	return func(mode, level enums.Enum, start bool) {
@@ -328,12 +327,15 @@ func StatLayerActGe(statsDir *tensorfs.Node, net *Network, trainMode, trialLevel
 						}
 						tsr.AppendRowFloat(float64(stat))
 					}
+				case int(runLevel.Int64() - trialLevel.Int64()):
+					subDir := modeDir.Dir(levels[levi-1].String())
+					tsr.AppendRow(stats.StatFinal.Call(subDir.Value(name)))
 				default:
-					subd := modeDir.Dir(levels[levi-1].String())
+					subDir := modeDir.Dir(levels[levi-1].String())
 					if levi == 1 && si == 0 { // use official longer timescale avg stat here
 						tsr.AppendRowFloat(float64(LayerStates.Value(int(ly.Index), 0, int(LayerActMAvg))))
 					} else {
-						tsr.AppendRow(stats.StatMean.Call(subd.Value(name)))
+						tsr.AppendRow(stats.StatMean.Call(subDir.Value(name)))
 					}
 				}
 			}
@@ -345,7 +347,7 @@ func StatLayerActGe(statsDir *tensorfs.Node, net *Network, trainMode, trialLevel
 // for given layer names. This should be computed at the epoch level or above
 // (not the trial level, because this value is not per-ndata and will not sync
 // with other trial level stats).
-func StatLayerGiMult(statsDir *tensorfs.Node, net *Network, trainMode, epochLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
+func StatLayerGiMult(statsDir *tensorfs.Node, net *Network, trainMode, epochLevel, runLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
 	statNames := []string{"GiMult"}
 	levels := make([]enums.Enum, 10) // should be enough
 	return func(mode, level enums.Enum, start bool) {
@@ -377,10 +379,12 @@ func StatLayerGiMult(statsDir *tensorfs.Node, net *Network, trainMode, epochLeve
 						stat = LayerStates.Value(int(li), int(0), int(LayerGiMult))
 					}
 					tsr.AppendRowFloat(float64(stat))
+				case int(runLevel.Int64() - epochLevel.Int64()):
+					subDir := modeDir.Dir(levels[levi-1].String())
+					tsr.AppendRow(stats.StatFinal.Call(subDir.Value(name)))
 				default:
-					subd := modeDir.Dir(levels[levi-1].String())
-					stat := stats.StatMean.Call(subd.Value(name))
-					tsr.AppendRow(stat)
+					subDir := modeDir.Dir(levels[levi-1].String())
+					tsr.AppendRow(stats.StatMean.Call(subDir.Value(name)))
 				}
 			}
 		}
@@ -433,7 +437,7 @@ var PCAStrongThr = 0.01
 // with higher levels computing the Mean of lower levels.
 // Trial level just records ActM values for layers in a separate PCA subdir,
 // which are input to next level computation where PCA is computed.
-func StatPCA(statsDir, currentDir *tensorfs.Node, net *Network, interval int, trainMode, trialLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool, epc int) {
+func StatPCA(statsDir, currentDir *tensorfs.Node, net *Network, interval int, trainMode, trialLevel, runLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool, epc int) {
 	statNames := []string{"PCA_NStrong", "PCA_Top5", "PCA_Next", "PCA_Rest"}
 	levels := make([]enums.Enum, 10) // should be enough
 	return func(mode, level enums.Enum, start bool, epc int) {
@@ -518,11 +522,59 @@ func StatPCA(statsDir, currentDir *tensorfs.Node, net *Network, interval int, tr
 						stat = svals[si]
 					}
 					tsr.AppendRowFloat(float64(stat))
+				case int(runLevel.Int64() - trialLevel.Int64()):
+					subDir := modeDir.Dir(levels[levi-1].String())
+					tsr.AppendRow(stats.StatFinal.Call(subDir.Value(name)))
 				default:
-					subd := modeDir.Dir(levels[levi-1].String())
-					stat := stats.StatMean.Call(subd.Value(name))
-					tsr.AppendRow(stat)
+					subDir := modeDir.Dir(levels[levi-1].String())
+					tsr.AppendRow(stats.StatMean.Call(subDir.Value(name)))
 				}
+			}
+		}
+	}
+}
+
+// StatCorSim returns a Stats function that records 1 - [LayerPhaseDiff] stats,
+// i.e., Correlation-based similarity, for given layer names.
+func StatCorSim(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel, runLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
+	levels := make([]enums.Enum, 10) // should be enough
+	levels[0] = trialLevel
+	return func(mode, level enums.Enum, start bool) {
+		levi := int(level.Int64() - trialLevel.Int64())
+		if levi < 0 {
+			return
+		}
+		levels[levi] = level
+		modeDir := statsDir.Dir(mode.String())
+		curModeDir := currentDir.Dir(mode.String())
+		levelDir := modeDir.Dir(level.String())
+		ndata := int(net.Context().NData)
+		for _, lnm := range layerNames {
+			ly := net.LayerByName(lnm)
+			li := ly.Params.Index
+			name := lnm + "_CorSim"
+			tsr := levelDir.Float64(name)
+			if start {
+				tsr.SetNumRows(0)
+				plot.SetFirstStyler(tsr, func(s *plot.Style) {
+					s.Range.SetMin(0).SetMax(1)
+					s.On = true
+				})
+				continue
+			}
+			switch levi {
+			case 0: // trial
+				for di := range ndata {
+					stat := 1.0 - float64(LayerStates.Value(int(li), int(di), int(LayerPhaseDiff)))
+					curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
+					tsr.AppendRowFloat(float64(stat))
+				}
+			case int(runLevel.Int64() - trialLevel.Int64()):
+				subDir := modeDir.Dir(levels[levi-1].String())
+				tsr.AppendRow(stats.StatFinal.Call(subDir.Value(name)))
+			default:
+				subDir := modeDir.Dir(levels[levi-1].String())
+				tsr.AppendRow(stats.StatMean.Call(subDir.Value(name)))
 			}
 		}
 	}
@@ -531,9 +583,10 @@ func StatPCA(statsDir, currentDir *tensorfs.Node, net *Network, interval int, tr
 // StatPrevCorSim returns a Stats function that compute correlations
 // between previous trial activity state and current minus phase and
 // plus phase state. This is important for predictive learning.
-func StatPrevCorSim(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
+func StatPrevCorSim(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel, runLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
 	statNames := []string{"PrevToMCorSim", "PrevToPCorSim"}
 	levels := make([]enums.Enum, 10) // should be enough
+	levels[0] = trialLevel
 	return func(mode, level enums.Enum, start bool) {
 		levi := int(level.Int64() - trialLevel.Int64())
 		if levi < 0 {
@@ -581,10 +634,12 @@ func StatPrevCorSim(statsDir, currentDir *tensorfs.Node, net *Network, trialLeve
 						}
 						tsr.AppendRowFloat(stat)
 					}
+				case int(runLevel.Int64() - trialLevel.Int64()):
+					subDir := modeDir.Dir(levels[levi-1].String())
+					tsr.AppendRow(stats.StatFinal.Call(subDir.Value(name)))
 				default:
-					subd := modeDir.Dir(levels[levi-1].String())
-					stat := stats.StatMean.Call(subd.Value(name))
-					tsr.AppendRow(stat)
+					subDir := modeDir.Dir(levels[levi-1].String())
+					tsr.AppendRow(stats.StatMean.Call(subDir.Value(name)))
 				}
 			}
 		}

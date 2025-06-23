@@ -23,8 +23,6 @@ import (
 	"cogentcore.org/core/tree"
 	"cogentcore.org/lab/base/mpi"
 	"cogentcore.org/lab/base/randx"
-	"cogentcore.org/lab/plot"
-	"cogentcore.org/lab/stats/stats"
 	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/egui"
@@ -560,67 +558,24 @@ func (ss *Sim) ConfigStats() {
 		perTrlFunc(mode, level, phase == Start)
 	})
 
-	// up to a point, it is good to use loops over stats in one function,
-	// to reduce repetition of boilerplate.
-	statNames := []string{"DepthP_CorSim", "HeadDirP_CorSim"}
+	plays := net.LayersByType(axon.PulvinarLayer)
+	corSimFunc := axon.StatCorSim(ss.Stats, ss.Current, net, Trial, Run, plays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		for _, name := range statNames {
-			modeDir := ss.Stats.Dir(mode.String())
-			curModeDir := ss.Current.Dir(mode.String())
-			levelDir := modeDir.Dir(level.String())
-			subDir := modeDir.Dir((level - 1).String()) // note: will fail for Cycle
-			tsr := levelDir.Float64(name)
-			ctx := ss.Net.Context()
-			ndata := int(ctx.NData)
-			var stat float64
-			if phase == Start {
-				tsr.SetNumRows(0)
-				plot.SetFirstStyler(tsr, func(s *plot.Style) {
-					s.Range.SetMin(0).SetMax(1)
-					s.On = true
-				})
-				continue
-			}
-			switch level {
-			case Trial:
-				depth := ss.Net.LayerByName("DepthP")
-				headDir := ss.Net.LayerByName("HeadDirP")
-				for di := range ndata {
-					var stat float64
-					switch name {
-					case "DepthP_CorSim":
-						stat = 1.0 - float64(axon.LayerStates.Value(int(depth.Index), int(di), int(axon.LayerPhaseDiff)))
-					case "HeadDirP_CorSim":
-						stat = 1.0 - float64(axon.LayerStates.Value(int(headDir.Index), int(di), int(axon.LayerPhaseDiff)))
-					}
-					curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
-					tsr.AppendRowFloat(stat)
-				}
-			case Epoch:
-				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
-				tsr.AppendRowFloat(stat)
-			case Run:
-				stat = stats.StatFinal.Call(subDir.Value(name)).Float1D(0)
-				tsr.AppendRowFloat(stat)
-			default: // Expt
-				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
-				tsr.AppendRowFloat(stat)
-			}
-		}
+		corSimFunc(mode, level, phase == Start)
 	})
 
-	prevCorFunc := axon.StatPrevCorSim(ss.Stats, ss.Current, net, Trial, "DepthP", "HeadDirP")
+	prevCorFunc := axon.StatPrevCorSim(ss.Stats, ss.Current, net, Trial, Run, plays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		prevCorFunc(mode, level, phase == Start)
 	})
 
 	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
-	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, lays...)
+	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		actGeFunc(mode, level, phase == Start)
 	})
 
-	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, lays...)
+	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, Run, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		trnEpc := ss.Loops.Loop(Train, Epoch).Counter.Cur
 		pcaFunc(mode, level, phase == Start, trnEpc)
@@ -668,7 +623,7 @@ func (ss *Sim) ConfigNetView(nv *netview.NetView) {
 func (ss *Sim) ConfigGUI(b tree.Node) {
 	ss.GUI.MakeBody(b, ss, ss.Root, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
 	ss.GUI.CycleUpdateInterval = 10
-
+	ss.GUI.StopLevel = Trial
 	nv := ss.GUI.AddNetView("Network")
 	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles
 	nv.Options.Raster.Max = ss.Config.Run.Cycles

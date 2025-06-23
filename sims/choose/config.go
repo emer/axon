@@ -138,7 +138,7 @@ type LogConfig struct {
 	SaveWeights bool
 
 	// Train has the list of Train mode levels to save log files for.
-	Train []string `default:"['Run', 'Epoch']" nest:"+"`
+	Train []string `default:"['Expt', 'Run', 'Epoch']" nest:"+"`
 }
 
 // Config has the overall Sim configuration options.
