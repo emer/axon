@@ -32,7 +32,7 @@ import (
 // ImagesEnv provides the rendered results of the Obj3D + Saccade generator.
 type ImagesEnv struct {
 
-	// name of this environment
+	// Name of this environment (Train, Test mode).
 	Name string
 
 	// image file name

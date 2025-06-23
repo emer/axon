@@ -100,6 +100,8 @@ func init() {
 		"DWtSyn":                       reflect.ValueOf(axon.DWtSyn),
 		"DiDWt":                        reflect.ValueOf(axon.DiDWt),
 		"DrivesLayer":                  reflect.ValueOf(axon.DrivesLayer),
+		"ETrace":                       reflect.ValueOf(axon.ETrace),
+		"ETraceLearn":                  reflect.ValueOf(axon.ETraceLearn),
 		"ExcitatoryG":                  reflect.ValueOf(axon.ExcitatoryG),
 		"Ext":                          reflect.ValueOf(axon.Ext),
 		"Exts":                         reflect.ValueOf(&axon.Exts).Elem(),

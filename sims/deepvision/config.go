@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package deepfsa
+package deepvision
 
 import (
 	"cogentcore.org/core/base/errors"
@@ -12,31 +12,13 @@ import (
 // EnvConfig has config params for environment
 // note: only adding fields for key Env params that matter for both Network and Env
 // other params are set via the Env map data mechanism.
-type EnvConfig struct {
+type EnvConfig struct { //types:add
 
-	// Env parameters: can set any field/subfield on Env struct,
-	// using standard TOML formatting.
+	// env parameters -- can set any field/subfield on Env struct, using standard TOML formatting
 	Env map[string]any
 
-	// UnitsPer is the number of units per localist output unit. 1 works better than 5 here
-	UnitsPer int `default:"1"`
-
-	// InputNames are names of input letters.
-	InputNames []string `default:"['B','T','S','X','V','P','E']"`
-
-	// InputMap is the map of input names, initialized during ConfigEnv.
-	InputNameMap map[string]int `display:"-"`
-}
-
-// InitNameMap is called during ConfigEnv
-func (cfg *EnvConfig) InitNameMap() {
-	if cfg.InputNameMap != nil {
-		return
-	}
-	cfg.InputNameMap = make(map[string]int, len(cfg.InputNames))
-	for i, nm := range cfg.InputNames {
-		cfg.InputNameMap[nm] = i
-	}
+	// whether to binarize the V1 activity patterns, which has generally been helpful.
+	BinarizeV1 bool
 }
 
 // ParamConfig has config parameters related to sim params.
@@ -80,10 +62,26 @@ type RunConfig struct {
 	// GPUDevice selects the gpu device to use.
 	GPUDevice int
 
+	// MPI uses MPI message passing interface for data parallel computation
+	// between nodes running identical copies of the same sim, sharing DWt changes.
+	MPI bool
+
+	// GPUSameNodeMPI if true and both MPI and GPU are being used, this selects
+	// a different GPU for each MPI proc rank, assuming a multi-GPU node.
+	// set to false if running MPI across multiple GPU nodes.
+	GPUSameNodeMPI bool
+
 	// NData is the number of data-parallel items to process in parallel per trial.
 	// Is significantly faster for both CPU and GPU.  Results in an effective
 	// mini-batch of learning.
-	NData int `default:"16" min:"1"`
+	NData int `default:"8" min:"1"`
+
+	// SlowInterval is the interval between slow adaptive processes.
+	// This generally needs to be longer than the default of 100 in larger models.
+	SlowInterval int `default:"400"` // 400 best > 800 >> 100
+
+	// AdaptGiInterval is the interval between adapting inhibition steps.
+	AdaptGiInterval int `default:"400"` // ?
 
 	// NThreads is the number of parallel threads for CPU computation;
 	// 0 = use default.
@@ -95,14 +93,14 @@ type RunConfig struct {
 	Run int `default:"0" flag:"run"`
 
 	// Runs is the total number of runs to do when running Train, starting from Run.
-	Runs int `default:"5" min:"1"`
+	Runs int `default:"1" min:"1"`
 
 	// Epochs is the total number of epochs per run.
-	Epochs int `default:"100"`
+	Epochs int `default:"1000"`
 
 	// Trials is the total number of trials per epoch.
 	// Should be an even multiple of NData.
-	Trials int `default:"196"`
+	Trials int `default:"512"`
 
 	// Cycles is the total number of cycles per trial: at least 200.
 	Cycles int `default:"200"`
@@ -115,11 +113,14 @@ type RunConfig struct {
 
 	// TestInterval is how often (in epochs) to run through all the test patterns,
 	// in terms of training epochs. Can use 0 or -1 for no testing.
-	TestInterval int `default:"0"`
+	TestInterval int `default:"20"`
 
 	// PCAInterval is how often (in epochs) to compute PCA on hidden
 	// representations to measure variance.
 	PCAInterval int `default:"10"`
+
+	// ConfusionEpc is the epoch to start recording confusion matrix.
+	ConfusionEpc int `default:"500"`
 
 	// StartWeights is the name of weights file to load at start of first run.
 	StartWeights string
@@ -131,27 +132,30 @@ type LogConfig struct {
 	// SaveWeights will save final weights after each run.
 	SaveWeights bool
 
+	// SaveWeightsAt is a list of epoch counters at which to save weights.
+	SaveWeightsAt []int `default:"[400, 800]"`
+
 	// Train has the list of Train mode levels to save log files for.
-	Train []string `default:"['Expt', 'Run', 'Epoch']" nest:"+"`
+	Train []string `default:"['Run', 'Epoch']" nest:"+"`
 
 	// Test has the list of Test mode levels to save log files for.
-	Test []string `nest:"+"`
+	Test []string `default:"['Epoch']" nest:"+"`
 }
 
 // Config has the overall Sim configuration options.
 type Config struct {
 
 	// Name is the short name of the sim.
-	Name string `display:"-" default:"FSA"`
+	Name string `display:"-" default:"DeepVision"`
 
 	// Title is the longer title of the sim.
-	Title string `display:"-" default:"Finite State Automaton"`
+	Title string `display:"-" default:"Deep Vision"`
 
 	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/sims/deep_fsa/README.md"`
+	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/sims/deepvision/README.md"`
 
 	// Doc is brief documentation of the sim.
-	Doc string `display:"-" default:"This demonstrates a basic deep predictive learning Axon model on the Finite State Automaton problem (e.g., the Reber grammar). The network learns the underlying grammar that generates partially ambiguous observable state tokens, strictly through errors in predicting the sequences of these tokens."`
+	Doc string `display:"-" default:"This simulation does deep predictive learning on 3D objects tumbling through space, using a visual system with both where (dorsal, LIP) and what (ventral, IT) pathways learning based purely on predicting the next frame of the image."`
 
 	// Includes has a list of additional config files to include.
 	// After configuration, it contains list of include files added.
@@ -164,7 +168,7 @@ type Config struct {
 	// Debug reports debugging information.
 	Debug bool
 
-	// Env has environment related configuration options.
+	// environment configuration options
 	Env EnvConfig `display:"add-fields"`
 
 	// Params has parameter related configuration options.

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package lvis
+package deepvision
 
 import (
 	"github.com/emer/axon/v2/axon"
@@ -21,11 +21,11 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Pool.FB = 1
 				ly.Inhib.Layer.ClampExtMin = 0.0 // 0.05 default doesn't activate output!
 				ly.Inhib.Pool.ClampExtMin = 0.0
-				ly.Inhib.ActAvg.AdaptRate = 0.005 // was 0.1 -- got fluctations
-				ly.Inhib.ActAvg.AdaptMax = 0.01   // 0.05 default; 0.01 has effect; lower not effective at preventing instability on its own.
+				ly.Inhib.ActAvg.AdaptRate = 0.05 // was 0.1 -- got fluctations
+				ly.Inhib.ActAvg.AdaptMax = 0.01  // 0.05 default; 0.01 has effect; lower not effective at preventing instability on its own.
 				ly.Inhib.ActAvg.LoTol = 0.8
 				ly.Inhib.ActAvg.HiTol = 0.0
-				ly.Acts.Dt.LongAvgTau = 200 // 200 > 20 for smoothing ripples
+				ly.Acts.Dt.LongAvgTau = 200 // 20 def; trying much longer to smooth
 
 				ly.Acts.Decay.Act = 0.0   // 0 == .2
 				ly.Acts.Decay.Glong = 0.6 // 0.6 def
@@ -41,13 +41,13 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.VGCC.Ge = 0.02 // non nmda: 0.15 good, 0.3 blows up, nmda: .02 best
 				ly.Acts.VGCC.Ca = 25   // 25 / 10tau same as SpkVGCC
 
-				ly.Acts.Mahp.Gk = 0.05       // 0.05 > lower, higher; but still needs kna
-				ly.Acts.Sahp.Gk = 0.1        // was 0.1, 0.05 def
-				ly.Acts.Sahp.Off = 0.8       //
-				ly.Acts.Sahp.Slope = 0.02    //
-				ly.Acts.Sahp.CaTau = 5       // 5 ok -- not tested
-				ly.Acts.KNa.On.SetBool(true) // true, .05 > false
-				ly.Acts.KNa.Med.Max = 0.05   // 0.1 > 0.05 -- 0.05 blows up around 1500
+				ly.Acts.Mahp.Gk = 0.05        // 0.05 > lower, higher; but still needs kna
+				ly.Acts.Sahp.Gk = 0.1         // was 0.1, 0.05 def
+				ly.Acts.Sahp.Off = 0.8        //
+				ly.Acts.Sahp.Slope = 0.02     //
+				ly.Acts.Sahp.CaTau = 5        // 5 ok -- not tested
+				ly.Acts.KNa.On.SetBool(false) // true, .05 > false
+				ly.Acts.KNa.Med.Max = 0.05    // 0.1 > 0.05 -- 0.05 blows up around 1500
 				ly.Acts.KNa.Slow.Max = 0.05
 
 				ly.Learn.CaLearn.Norm = 80               // 80 def; 60 makes CaLearnMax closer to 1

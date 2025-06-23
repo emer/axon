@@ -85,13 +85,15 @@ type MoveEnv struct {
 	// depth for each angle (NFOVRays), normalized log
 	DepthLogs []float32
 
-	// current rendered state tensors -- extensible map
+	// CurStates is the current rendered state tensors.
 	CurStates map[string]*tensor.Float32
 
-	// next rendered state tensors -- updated from actions
+	// NextStates is the next rendered state tensors -- updated from actions.
 	NextStates map[string]*tensor.Float32
 
-	// random number generator for the env -- all random calls must use this -- set seed here for weight initialization values
+	// Rand is the random number generator for the env.
+	// All random calls must use this.
+	// Set seed here for weight initialization values.
 	Rand randx.SysRand `display:"-"`
 
 	// random seed

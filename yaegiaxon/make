@@ -6,5 +6,5 @@ command extract {
     }
 }
 
-extract fsfffb chans chans/chanplots kinase axon sims/neuron sims/inhib 
+extract fsfffb chans chans/chanplots kinase axon sims/neuron sims/inhib sims/deepfsa
 

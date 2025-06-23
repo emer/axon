@@ -107,7 +107,7 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, syni, si, ri, lpi, pi, di uint3
 	if isTarget {
 		err = syCaP - syCaD // for target layers, syn Ca drives error signal directly
 	} else {
-		if syCaP > pt.Learn.DWt.LearnThr || syCaD > pt.Learn.DWt.LearnThr {
+		if pt.Type == CTCtxtPath || syCaP > pt.Learn.DWt.LearnThr || syCaD > pt.Learn.DWt.LearnThr {
 			err = tr * (Neurons[ri, di, LearnCaP] - Neurons[ri, di, LearnCaD]) * Neurons[ri, di, ETraceLearn] 
 		}
 	}

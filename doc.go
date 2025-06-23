@@ -3,29 +3,22 @@
 // license that can be found in the LICENSE file.
 
 /*
-Package axon is the overall repository for all standard Axon algorithm code
-implemented in the Go language (golang) with Python wrappers.
+This is the Go implementation of the Axon algorithm for spiking
+biologically based models of cognition, based on the
+emergent framework. Development of Axon is supported by the
+Obelisk project at Astera.org and by collaborations with scientists
+at the University of California Davis, and other institutions around
+he world.
 
-This top-level of the repository has no functional code -- everything is organized
-into the following sub-repositories:
+Axon is the spiking version of Leabra, with several advances.
+As a backcronym, _Axon_ could stand for Adaptive eXcitation Of Noise,
+reflecting the ability to learn using the power of error-backpropagation
+in the context of noisy spiking activation. The spiking function of the
+axon is what was previously missing from Leabra.
 
-* axon: the core standard implementation with the minimal set of standard mechanisms
-exclusively using rate-coded neurons -- there are too many differences with spiking,
-so that is now separated out into a different package.
-
-* deep: the DeepAxon version which performs predictive
-learning by attempting to predict the activation states over the Pulvinar nucleus
-of the thalamus (in posterior sensory cortex), which are driven phasically every
-100 msec by deep layer 5 intrinsic bursting (5IB) neurons that have strong focal
-(essentially 1-to-1) connections onto the Pulvinar Thalamic Relay Cell (Pulv)
-neurons.
-
-* examples: these actually compile into runnable programs and provide the starting
-point for your own simulations.  examples/ra25 is the place to start for the most
-basic standard template of a model that learns a small set of input / output
-patterns in a classic supervised-learning manner.
-
-* python: follow the instructions in the README.md file to build a python wrapper
-that will allow you to fully control the models using Python.
+Axon is used to develop large-scale systems-neuroscience models
+of the brain, and full documentation is available at CompCogNeuro.org,
+including running examples of simulations in this package, and the
+Rubicon model of goal-driven, motivated cognition.
 */
 package axon

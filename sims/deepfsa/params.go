@@ -38,7 +38,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Sahp.Gk = 0.1        // 0.1 > 0.05 def
 				ly.Acts.Sahp.CaTau = 10      // 10 (def) > 5?
 				ly.Acts.KNa.On.SetBool(true) // false > true
-				ly.Acts.KNa.Med.Max = 0.05   // 0.2 def
+				ly.Acts.KNa.Med.Max = 0.05   // 0.05 > 0.2 def
 				ly.Acts.KNa.Slow.Max = 0.05
 
 				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // false > true
@@ -104,7 +104,7 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Adapt.HiMeanDecay = 0.0008  // 0.0008 default
 				pt.Learn.DWt.SynCa20.SetBool(false) // 10 > 20 reliably
 				pt.Learn.DWt.SynTraceTau = 1        // 1 >> 2 v0.0.9
-				pt.Learn.DWt.LearnThr = 0           // SubMean = 0, so not much impact here -- no benefits
+				pt.Learn.DWt.LearnThr = 0.05        //
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {

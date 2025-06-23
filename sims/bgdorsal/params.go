@@ -18,21 +18,17 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Noise.Ge = 0.0001                    // 0.0001 > others; could just be noise ;)
 				ly.Acts.Noise.Gi = 0.0001                    // 0.0001 perhaps better than others
 				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // false >> true; orig = true
-				ly.Learn.CaLearn.Dt.MTau = 2                 // 5 > 2 here; longer cycle time..
+				ly.Learn.CaLearn.Dt.MTau = 5                 // 5 > 2 here; longer cycle time..
 				ly.Learn.CaLearn.ETraceAct.SetBool(false)    // false > true: act not beneficial
 				ly.Learn.CaLearn.ETraceTau = 4               // 4 > 3?
 				ly.Learn.CaLearn.ETraceScale = 0             // 0 > 0.02 > higher: not useful overall
 
-				ly.Acts.Mahp.Gk = 0.02       // 0.02 def; 0.05 might compensate for lack of KNa?
-				ly.Acts.KNa.On.SetBool(true) // true > false for sure 4x6
-
-				// todo: experiment with these:
-				ly.Acts.Mahp.Gk = 0.05  //
-				ly.Acts.Sahp.Gk = 0.1   // 0.05 def
+				ly.Acts.Mahp.Gk = 0.02  // 0.02 def; 0.05 might compensate for lack of KNa?
+				ly.Acts.Sahp.Gk = 0.05  // 0.05 def
 				ly.Acts.Sahp.CaTau = 10 // 10 (def) > 5?
 				ly.Acts.KNa.On.SetBool(true)
-				ly.Acts.KNa.Med.Max = 0.05 // 0.2 def
-				ly.Acts.KNa.Slow.Max = 0.05
+				ly.Acts.KNa.Med.Max = 0.2 // 0.2 def
+				ly.Acts.KNa.Slow.Max = 0.2
 
 				// ly.Acts.NMDA.Tau = 100                       // 100 def >> 200
 				// ly.Learn.LearnNMDA.Tau = 100                 // 100 def >> 200
@@ -129,12 +125,17 @@ var PathParams = axon.PathSheets{
 				pt.Learn.DWt.SynCa20.SetBool(true) // 20 > 10
 				pt.SWts.Adapt.HiMeanDecay = 0.0008 // 0.0008 for 4x6, 0.005 for 3x10 -- not clear if real..
 				pt.Learn.DWt.SubMean = 0           // 0 >> 1 -- fails at 1
+				pt.Learn.DWt.LearnThr = 0.1
 			}},
 		// {Sel: ".PFCPath", Doc: "",
 		// 	Set: func(pt *axon.PathParams) {
 		// 		pt.Learn.DWt.CaPScale = 1
 		// 		pt.Learn.SynCaBin.Envelope = kinase.Env30
 		// 	}},
+		{Sel: ".CTCtxtPath", Doc: "all CT context paths",
+			Set: func(pt *axon.PathParams) {
+				pt.Learn.DWt.LearnThr = 0
+			}},
 		{Sel: ".CTtoPred", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 2 // 1 def

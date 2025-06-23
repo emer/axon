@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package lvis
+package deepvision
 
 import (
 	"image"
@@ -52,10 +52,14 @@ func (vi *V1Img) SetImage(img image.Image, filtsz int) {
 	if isz != vi.Size {
 		vi.Img = transform.Resize(vi.Img, vi.Size.X, vi.Size.Y, transform.Linear)
 	}
-	vfilter.RGBToTensor(vi.Img, &vi.Tsr, filtsz, false) // pad for filt, bot zero
-	// vfilter.WrapPadRGB(&vi.Tsr, filtsz)
-	vfilter.FadePadRGB(&vi.Tsr, filtsz)
-	colorspace.RGBTensorToLMSComps(&vi.LMS, &vi.Tsr)
+	vfilter.RGBToGrey(vi.Img, &vi.Tsr, filtsz, false) // pad for filt, bot zero
+	vfilter.WrapPad(&vi.Tsr, filtsz)
+
+	// LVis:
+	// vfilter.RGBToTensor(vi.Img, &vi.Tsr, filtsz, false) // pad for filt, bot zero
+	// vfilter.FadePadRGB(&vi.Tsr, filtsz)
+	// colorspace.RGBTensorToLMSComps(&vi.LMS, &vi.Tsr)
+
 	// vi.Tsr.SetMetaData("image", "+")
 	// vi.Tsr.SetMetaData("min", "0")
 }
@@ -79,12 +83,14 @@ type V1sOut struct {
 // Vis encapsulates specific visual processing pipeline for V1 filtering
 type Vis struct {
 
-	// Record separate rows in V1s summary for each color.
-	// otherwise just records the max across all colors
-	SepColor bool `default:"false"`
+	// binarizing result has been useful: todo: revisit
+	Binarize bool
+
+	// threshold for binarizing
+	BinThr float32 `default:"0.4"`
 
 	// if true, do full color filtering -- else Black/White only
-	Color bool `default:"true"`
+	Color bool `default:"false"`
 
 	// extra gain for color channels -- lower contrast in general"`
 	ColorGain float32 `default:"8"`
@@ -141,23 +147,25 @@ type Vis struct {
 }
 
 // Defaults sets default values: high: sz = 12, spc = 4, med: sz = 24, spc = 8
-func (vi *Vis) Defaults(bord_ex, sz, spc int, img *V1Img) {
+func (vi *Vis) Defaults(sz, spc int, img *V1Img) {
 	vi.Img = img
-	vi.Color = true
-	vi.SepColor = false
+	vi.Color = false
 	vi.ColorGain = 8
+	vi.BinThr = 0.4
 	vi.V1sGabor.Defaults()
 	vi.V1sGabor.SetSize(sz, spc)
 	// note: first arg is border -- we are relying on Geom
 	// to set border to .5 * filter size
 	// any further border sizes on same image need to add Geom.FiltRt!
-	vi.V1sGeom.Set(image.Point{sz/2 + bord_ex, sz/2 + bord_ex}, image.Point{spc, spc}, image.Point{sz, sz})
+	// vi.V1sGeom.Set(image.Point{sz/2 + bord_ex, sz/2 + bord_ex}, image.Point{spc, spc}, image.Point{sz, sz})
+	// note: no border
+	vi.V1sGeom.Set(image.Point{0, 0}, image.Point{spc, spc}, image.Point{sz, sz})
 	vi.V1sNeighInhib.Defaults()
 	vi.V1sKWTA.Defaults()
 	// values from lvis models
-	vi.V1sKWTA.LayFFFB.Gi = 1.5
-	vi.V1sKWTA.XX1.Gain = 80
-	vi.V1sKWTA.XX1.NVar = 0.01
+	// vi.V1sKWTA.LayFFFB.Gi = 1.5
+	// vi.V1sKWTA.XX1.Gain = 80
+	// vi.V1sKWTA.XX1.NVar = 0.01
 	vi.V1sGabor.ToTensor(&vi.V1sGaborTsr)
 }
 
@@ -219,9 +227,6 @@ func (vi *Vis) V1All() {
 	nx := vi.V1sPoolTsr.DimSize(1)
 	nang := vi.V1sPoolTsr.DimSize(3)
 	nrows := 5
-	if vi.Color && vi.SepColor {
-		nrows += 4
-	}
 	oshp := []int{ny, nx, nrows, nang}
 	vi.V1AllTsr.SetShapeSizes(oshp...)
 	// 1 length-sum
@@ -229,16 +234,12 @@ func (vi *Vis) V1All() {
 	// 2 end-stop
 	vfilter.FeatAgg([]int{0, 1}, 1, &vi.V1cEndStopTsr, &vi.V1AllTsr)
 	// 2 pooled simple cell
-	if vi.Color && vi.SepColor {
-		rgout := &vi.V1s[colorspace.RedGreen]
-		byout := &vi.V1s[colorspace.BlueYellow]
-		vfilter.MaxPool(image.Point{2, 2}, image.Point{2, 2}, &rgout.KwtaTsr, &rgout.PoolTsr)
-		vfilter.MaxPool(image.Point{2, 2}, image.Point{2, 2}, &byout.KwtaTsr, &byout.PoolTsr)
-		vfilter.FeatAgg([]int{0, 1}, 5, &rgout.PoolTsr, &vi.V1AllTsr)
-		vfilter.FeatAgg([]int{0, 1}, 7, &byout.PoolTsr, &vi.V1AllTsr)
-	} else {
-		vfilter.FeatAgg([]int{0, 1}, 3, &vi.V1sPoolTsr, &vi.V1AllTsr)
-	}
+	vfilter.FeatAgg([]int{0, 1}, 3, &vi.V1sPoolTsr, &vi.V1AllTsr)
+
+	// todo:
+	// if vi.Binarize {
+	// 	norm.Binarize32(vi.V1AllTsr.Values, vi.BinThr, 1, 0)
+	// }
 }
 
 // Filter is overall method to run filters on image set by SetImage*

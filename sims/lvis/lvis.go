@@ -1085,6 +1085,10 @@ func (ss *Sim) RunNoGUI() {
 	mpi.Printf("Running %d Runs starting at %d\n", ss.Config.Run.Runs, ss.Config.Run.Run)
 	ss.Loops.Loop(Train, Run).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.Runs)
 
+	if ss.Config.Run.StartWeights != "" {
+		ss.Loops.Loop(Train, Epoch).Counter.Cur = ss.Config.Run.StartEpoch
+	}
+
 	ss.Loops.Run(Train)
 
 	axon.CloseLogFiles(ss.Loops, ss.Stats, Cycle)

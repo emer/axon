@@ -140,6 +140,9 @@ type RunConfig struct {
 
 	// StartWeights is the name of weights file to load at start of first run.
 	StartWeights string
+
+	// Epoch counter to set when loading start weights.
+	StartEpoch int
 }
 
 // LogConfig has config parameters related to logging data.
@@ -149,7 +152,7 @@ type LogConfig struct {
 	SaveWeights bool
 
 	// SaveWeightsAt is a list of epoch counters at which to save weights.
-	SaveWeightsAt []int `default:"[400, 800]"`
+	SaveWeightsAt []int `default:"[400, 800, 1200]"`
 
 	// Train has the list of Train mode levels to save log files for.
 	Train []string `default:"['Run', 'Epoch']" nest:"+"`
