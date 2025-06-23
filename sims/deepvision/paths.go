@@ -8,66 +8,26 @@ import "github.com/emer/emergent/v2/paths"
 
 // Paths holds all the special projections.
 type Paths struct {
-
 	// Standard feedforward topographic projection, recv = 1/2 send size
 	PT4x4Skp2 *paths.PoolTile
 
 	// Reciprocal
 	PT4x4Skp2Recip *paths.PoolTile
 
-	// Standard feedforward topographic projection, recv = 1/2 send size
-	PT4x4Skp2Sub2 *paths.PoolTileSub
+	// sparser skip 2 -- no overlap
+	PT2x2Skp2 *paths.PoolTile
 
 	// Reciprocal
-	PT4x4Skp2Sub2Recip *paths.PoolTileSub
+	PT2x2Skp2Recip *paths.PoolTile
 
-	// Standard feedforward topographic projection, recv = 1/2 send size
-	PT4x4Skp2Sub2Send *paths.PoolTileSub
+	// Standard same-to-same size topographic projection
+	PT3x3Skp1 *paths.PoolTile
 
-	// Standard feedforward topographic projection, recv = 1/2 send size
-	PT4x4Skp2Sub2SendRecip *paths.PoolTileSub
+	// Sigmoidal topographic projection used in LIP saccade remapping layers
+	PTSigTopo *paths.PoolTile
 
-	// same-size paths
-	PT2x2Skp1 *paths.PoolTile
-
-	// same-size paths reciprocal
-	PT2x2Skp1Recip *paths.PoolTile
-
-	// same-size paths
-	PT2x2Skp1Sub2 *paths.PoolTileSub
-
-	// same-size paths reciprocal
-	PT2x2Skp1Sub2Recip *paths.PoolTileSub
-
-	// same-size paths
-	PT2x2Skp1Sub2Send *paths.PoolTileSub
-
-	// same-size paths reciprocal
-	PT2x2Skp1Sub2SendRecip *paths.PoolTileSub
-
-	// lateral inhib projection
-	PT2x2Skp2 *paths.PoolTileSub
-
-	// for V4 <-> TEO
-	PT4x4Skp0 *paths.PoolTile
-
-	// for V4 <-> TEO
-	PT4x4Skp0Recip *paths.PoolTile
-
-	// for V4 <-> TEO
-	PT4x4Skp0Sub2 *paths.PoolTileSub
-
-	// for V4 <-> TEO
-	PT4x4Skp0Sub2Recip *paths.PoolTileSub
-
-	// for TE <-> TEO
-	PT1x1Skp0 *paths.PoolTile
-
-	// for TE <-> TEO
-	PT1x1Skp0Recip *paths.PoolTile
-
-	// lateral inhibitory connectivity for subpools
-	PT6x6Skp2Lat *paths.PoolTileSub
+	// Gaussian topographic projection used in LIP saccade remapping layers
+	PTGaussTopo *paths.PoolTile
 }
 
 func (pj *Paths) Defaults() {
@@ -76,88 +36,55 @@ func (pj *Paths) Defaults() {
 	pj.PT4x4Skp2.Skip.Set(2, 2)
 	pj.PT4x4Skp2.Start.Set(-1, -1)
 	pj.PT4x4Skp2.TopoRange.Min = 0.8
-	pj.PT4x4Skp2Recip = paths.NewPoolTileRecip(pj.PT4x4Skp2)
+	// but using a symmetric scale range .8 - 1.2 seems like it might be good -- otherwise
+	// weights are systematicaly smaller.
+	// note: gauss defaults on
+	// pj.PT4x4Skp2.GaussFull.DefNoWrap()
+	// pj.PT4x4Skp2.GaussInPool.DefNoWrap()
 
-	pj.PT4x4Skp2Sub2 = paths.NewPoolTileSub()
-	pj.PT4x4Skp2Sub2.Size.Set(4, 4)
-	pj.PT4x4Skp2Sub2.Skip.Set(2, 2)
-	pj.PT4x4Skp2Sub2.Start.Set(-1, -1)
-	pj.PT4x4Skp2Sub2.Subs.Set(2, 2)
-	pj.PT4x4Skp2Sub2.TopoRange.Min = 0.8
-	pj.PT4x4Skp2Sub2Recip = paths.NewPoolTileSubRecip(pj.PT4x4Skp2Sub2)
+	pj.PT4x4Skp2Recip = paths.NewPoolTile()
+	pj.PT4x4Skp2Recip.Size.Set(4, 4)
+	pj.PT4x4Skp2Recip.Skip.Set(2, 2)
+	pj.PT4x4Skp2Recip.Start.Set(-1, -1)
+	pj.PT4x4Skp2Recip.TopoRange.Min = 0.8 // note: none of these make a very big diff
+	pj.PT4x4Skp2Recip.Recip = true
 
-	pj.PT4x4Skp2Sub2Send = paths.NewPoolTileSub()
-	*pj.PT4x4Skp2Sub2Send = *pj.PT4x4Skp2Sub2
-	pj.PT4x4Skp2Sub2Send.SendSubs = true
-	pj.PT4x4Skp2Sub2SendRecip = paths.NewPoolTileSubRecip(pj.PT4x4Skp2Sub2Send)
-
-	pj.PT2x2Skp1 = paths.NewPoolTile()
-	pj.PT2x2Skp1.Size.Set(2, 2)
-	pj.PT2x2Skp1.Skip.Set(1, 1)
-	pj.PT2x2Skp1.Start.Set(0, 0)
-	pj.PT2x2Skp1.TopoRange.Min = 0.8
-	pj.PT2x2Skp1Recip = paths.NewPoolTileRecip(pj.PT2x2Skp1)
-
-	pj.PT2x2Skp1Sub2 = paths.NewPoolTileSub()
-	pj.PT2x2Skp1Sub2.Size.Set(2, 2)
-	pj.PT2x2Skp1Sub2.Skip.Set(1, 1)
-	pj.PT2x2Skp1Sub2.Start.Set(0, 0)
-	pj.PT2x2Skp1Sub2.Subs.Set(2, 2)
-	pj.PT2x2Skp1Sub2.TopoRange.Min = 0.8
-
-	pj.PT2x2Skp1Sub2Recip = paths.NewPoolTileSubRecip(pj.PT2x2Skp1Sub2)
-
-	pj.PT2x2Skp1Sub2Send = paths.NewPoolTileSub()
-	pj.PT2x2Skp1Sub2Send.Size.Set(2, 2)
-	pj.PT2x2Skp1Sub2Send.Skip.Set(1, 1)
-	pj.PT2x2Skp1Sub2Send.Start.Set(0, 0)
-	pj.PT2x2Skp1Sub2Send.Subs.Set(2, 2)
-	pj.PT2x2Skp1Sub2Send.SendSubs = true
-	pj.PT2x2Skp1Sub2Send.TopoRange.Min = 0.8
-
-	pj.PT2x2Skp1Sub2SendRecip = paths.NewPoolTileSub()
-	*pj.PT2x2Skp1Sub2SendRecip = *pj.PT2x2Skp1Sub2Send
-	pj.PT2x2Skp1Sub2SendRecip.Recip = true
-
-	pj.PT2x2Skp2 = paths.NewPoolTileSub()
+	pj.PT2x2Skp2 = paths.NewPoolTile()
 	pj.PT2x2Skp2.Size.Set(2, 2)
 	pj.PT2x2Skp2.Skip.Set(2, 2)
 	pj.PT2x2Skp2.Start.Set(0, 0)
-	pj.PT2x2Skp2.Subs.Set(2, 2)
+	pj.PT2x2Skp2.TopoRange.Min = 0.8
 
-	pj.PT4x4Skp0 = paths.NewPoolTile()
-	pj.PT4x4Skp0.Size.Set(4, 4)
-	pj.PT4x4Skp0.Skip.Set(0, 0)
-	pj.PT4x4Skp0.Start.Set(0, 0)
-	pj.PT4x4Skp0.GaussFull.Sigma = 1.5
-	pj.PT4x4Skp0.GaussInPool.Sigma = 1.5
-	pj.PT4x4Skp0.TopoRange.Min = 0.8
-	pj.PT4x4Skp0Recip = paths.NewPoolTileRecip(pj.PT4x4Skp0)
+	pj.PT2x2Skp2Recip = paths.NewPoolTile()
+	pj.PT2x2Skp2Recip.Size.Set(2, 2)
+	pj.PT2x2Skp2Recip.Skip.Set(2, 2)
+	pj.PT2x2Skp2Recip.Start.Set(0, 0)
+	pj.PT2x2Skp2Recip.TopoRange.Min = 0.8
+	pj.PT2x2Skp2Recip.Recip = true
 
-	pj.PT4x4Skp0Sub2 = paths.NewPoolTileSub()
-	pj.PT4x4Skp0Sub2.Size.Set(4, 4)
-	pj.PT4x4Skp0Sub2.Skip.Set(0, 0)
-	pj.PT4x4Skp0Sub2.Start.Set(0, 0)
-	pj.PT4x4Skp0Sub2.Subs.Set(2, 2)
-	pj.PT4x4Skp0Sub2.SendSubs = true
-	pj.PT4x4Skp0Sub2.GaussFull.Sigma = 1.5
-	pj.PT4x4Skp0Sub2.GaussInPool.Sigma = 1.5
-	pj.PT4x4Skp0Sub2.TopoRange.Min = 0.8
-	pj.PT4x4Skp0Sub2Recip = paths.NewPoolTileSubRecip(pj.PT4x4Skp0Sub2)
+	pj.PT3x3Skp1 = paths.NewPoolTile()
+	pj.PT3x3Skp1.Size.Set(3, 3)
+	pj.PT3x3Skp1.Skip.Set(1, 1)
+	pj.PT3x3Skp1.Start.Set(-1, -1)
+	pj.PT3x3Skp1.TopoRange.Min = 0.8 // note: none of these make a very big diff
 
-	pj.PT1x1Skp0 = paths.NewPoolTile()
-	pj.PT1x1Skp0.Size.Set(1, 1)
-	pj.PT1x1Skp0.Skip.Set(0, 0)
-	pj.PT1x1Skp0.Start.Set(0, 0)
-	pj.PT1x1Skp0.GaussFull.Sigma = 1.5
-	pj.PT1x1Skp0.GaussInPool.Sigma = 1.5
-	pj.PT1x1Skp0.TopoRange.Min = 0.8
-	pj.PT1x1Skp0Recip = paths.NewPoolTileRecip(pj.PT1x1Skp0)
+	pj.PTSigTopo = paths.NewPoolTile()
+	pj.PTSigTopo.GaussOff()
+	pj.PTSigTopo.Size.Set(1, 1)
+	pj.PTSigTopo.Skip.Set(0, 0)
+	pj.PTSigTopo.Start.Set(0, 0)
+	pj.PTSigTopo.TopoRange.Min = 0.6
+	pj.PTSigTopo.SigFull.On = true
+	pj.PTSigTopo.SigFull.Gain = 0.05
+	pj.PTSigTopo.SigFull.CtrMove = 0.5
 
-	pj.PT6x6Skp2Lat = paths.NewPoolTileSub()
-	pj.PT6x6Skp2Lat.Size.Set(6, 6)
-	pj.PT6x6Skp2Lat.Skip.Set(2, 2)
-	pj.PT6x6Skp2Lat.Start.Set(-2, -2)
-	pj.PT6x6Skp2Lat.Subs.Set(2, 2)
-	pj.PT6x6Skp2Lat.TopoRange.Min = 0.8
+	pj.PTGaussTopo = paths.NewPoolTile()
+	pj.PTGaussTopo.Size.Set(1, 1)
+	pj.PTGaussTopo.Skip.Set(0, 0)
+	pj.PTGaussTopo.Start.Set(0, 0)
+	pj.PTGaussTopo.TopoRange.Min = 0.6
+	pj.PTGaussTopo.GaussInPool.On = false // Full only
+	pj.PTGaussTopo.GaussFull.Sigma = 0.6
+	pj.PTGaussTopo.GaussFull.Wrap = true
+	pj.PTGaussTopo.GaussFull.CtrMove = 1
 }

@@ -230,7 +230,14 @@ func (ev *Obj3DSacEnv) Step() bool {
 }
 
 func (ev *Obj3DSacEnv) State(element string) tensor.Values {
-	return ev.CurStates[element]
+	switch element {
+	case "V1m":
+		return &ev.V1Med.V1AllTsr
+	case "V1h":
+		return &ev.V1Hi.V1AllTsr
+	default:
+		return ev.CurStates[element]
+	}
 }
 
 func (ev *Obj3DSacEnv) Action(element string, input tensor.Values) {

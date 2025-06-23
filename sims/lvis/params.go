@@ -47,8 +47,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Sahp.Slope = 0.02    //
 				ly.Acts.Sahp.CaTau = 5       // 5 ok -- not tested
 				ly.Acts.KNa.On.SetBool(true) // true, .05 > false
-				ly.Acts.KNa.Med.Max = 0.05   // 0.1 > 0.05 -- 0.05 blows up around 1500
-				ly.Acts.KNa.Slow.Max = 0.05
+				ly.Acts.KNa.Med.Max = 0.1    // 0.1 > 0.05 -- 0.05 blows up around 1500
+				ly.Acts.KNa.Slow.Max = 0.1
 
 				ly.Learn.CaLearn.Norm = 80               // 80 def; 60 makes CaLearnMax closer to 1
 				ly.Learn.CaLearn.SpikeVGCC.SetBool(true) // sig better..

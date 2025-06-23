@@ -52,13 +52,12 @@ func (vi *V1Img) SetImage(img image.Image, filtsz int) {
 	if isz != vi.Size {
 		vi.Img = transform.Resize(vi.Img, vi.Size.X, vi.Size.Y, transform.Linear)
 	}
-	vfilter.RGBToGrey(vi.Img, &vi.Tsr, filtsz, false) // pad for filt, bot zero
-	vfilter.WrapPad(&vi.Tsr, filtsz)
+	vfilter.RGBToTensor(vi.Img, &vi.Tsr, filtsz, false) // pad for filt, bot zero
+	vfilter.WrapPadRGB(&vi.Tsr, filtsz)
+	colorspace.RGBTensorToLMSComps(&vi.LMS, &vi.Tsr)
 
 	// LVis:
-	// vfilter.RGBToTensor(vi.Img, &vi.Tsr, filtsz, false) // pad for filt, bot zero
 	// vfilter.FadePadRGB(&vi.Tsr, filtsz)
-	// colorspace.RGBTensorToLMSComps(&vi.LMS, &vi.Tsr)
 
 	// vi.Tsr.SetMetaData("image", "+")
 	// vi.Tsr.SetMetaData("min", "0")

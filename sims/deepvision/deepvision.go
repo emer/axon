@@ -194,6 +194,7 @@ func (ss *Sim) ConfigEnv() {
 		reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
 	}
 	trn.Trial.Max = ss.Config.Run.Trials
+	trn.Config()
 
 	tst.Name = Test.String()
 	tst.Defaults()
@@ -205,6 +206,7 @@ func (ss *Sim) ConfigEnv() {
 		reflectx.SetFieldsFromMap(tst, ss.Config.Env.Env)
 	}
 	tst.Trial.Max = ss.Config.Run.Trials
+	tst.Config()
 
 	// if ss.Config.Run.MPI {
 	// 	if ss.Config.Debug {
@@ -229,9 +231,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
 	space := float32(4)
-	one2one := paths.NewOneToOne()
+	// one2one := paths.NewOneToOne()
 	full := paths.NewFull()
 	pool1to1 := paths.NewPoolOneToOne()
+	pts := &ss.Paths
 
 	// trn := ss.Envs.ByMode(Train).(*Obj3DSacEnv)
 
@@ -247,9 +250,15 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	sac := net.AddLayer2D("Saccade", axon.InputLayer, 11, 11)
 	objvel := net.AddLayer2D("ObjVel", axon.InputLayer, 11, 11)
 
-	lip, lipCT := net.AddSuperCT4D("LIP", "", 8, 8, 4, 4, space, one2one)
+	mtpos := net.AddLayer4D("MTPos", axon.SuperLayer, 8, 8, 1, 1).AddClass("LIP")
+	mtposP := net.AddPulvForLayer(mtpos, space).AddClass("LIP")
 
-	net.ConnectToPulv(lip, lipCT, v1m, pool1to1, pool1to1, "")
+	lip, lipCT := net.AddSuperCT4D("LIP", "", 8, 8, 4, 4, space, pts.PT3x3Skp1)
+
+	net.ConnectLayers(v1m, mtpos, pool1to1, axon.ForwardPath).AddClass("Fixed")
+	net.ConnectLayers(mtpos, lip, pool1to1, axon.ForwardPath).AddClass("Fixed")
+
+	net.ConnectToPulv(lip, lipCT, mtposP, full, pool1to1, "FromLIP")
 
 	net.ConnectLayers(eyepos, lip, full, axon.ForwardPath)
 	net.ConnectLayers(sacplan, lip, full, axon.ForwardPath)
@@ -261,15 +270,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectLayers(sac, lip, full, axon.ForwardPath)
 
-	// pj := &ss.Paths
-
 	// var p4x4s2, p2x2s1, p4x4s2send, p2x2s1send, p4x4s2recip, p2x2s1recip, v4toteo, teotov4 paths.Pattern
-	// p4x4s2 = pj.PT4x4Skp2
-	// p2x2s1 = pj.PT2x2Skp1
-	// p4x4s2send = pj.PT4x4Skp2
-	// p2x2s1send = pj.PT2x2Skp1
-	// p4x4s2recip = pj.PT4x4Skp2Recip
-	// p2x2s1recip = pj.PT2x2Skp1Recip
+	// p4x4s2 = pt.PT4x4Skp2
+	// p2x2s1 = pt.PT2x2Skp1
+	// p4x4s2send = pt.PT4x4Skp2
+	// p2x2s1send = pt.PT2x2Skp1
+	// p4x4s2recip = pt.PT4x4Skp2Recip
+	// p2x2s1recip = pt.PT2x2Skp1Recip
 	// v4toteo = full
 	// teotov4 = full
 
@@ -279,6 +286,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	lip.PlaceAbove(v1m)
 	lipCT.PlaceBehind(lip, space)
+	mtpos.PlaceBehind(lipCT, space)
+	mtposP.PlaceRightOf(mtpos, space)
 
 	eyepos.PlaceRightOf(lip, space)
 	sacplan.PlaceBehind(eyepos, space)
@@ -289,7 +298,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.Defaults()
 	net.SetNThreads(ss.Config.Run.NThreads)
 	ss.ApplyParams()
-	net.InitWeights()
+	ss.InitWeights(net)
 
 	mpi.Println(net.SizeReport(false))
 
@@ -304,6 +313,34 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// if ss.Config.Run.MPI {
 	// 	ss.Decoder.Comm = ss.Comm
 	// }
+}
+
+func (ss *Sim) SetTopoScales(net *axon.Network, send, recv string, pooltile *paths.PoolTile) {
+	return // TODO:
+	// slay := net.LayerByName(send)
+	// rlay := net.LayerByName(recv)
+	// pt, _ := rlay.RecvPathBySendName(send)
+	// scales := &tensor.Float32{}
+	// pooltile.TopoWeights(&slay.Shape, &rlay.Shape, scales)
+	// TODO: this function does not exist:
+	// pt.SetScalesRPool(scales)
+}
+
+func (ss *Sim) InitWeights(net *axon.Network) {
+	// net.InitTopoScales() //  sets all wt scales
+	pts := &ss.Paths
+
+	// these are not set automatically b/c prjn is Full, not PoolTile
+	ss.SetTopoScales(net, "EyePos", "LIP", pts.PTGaussTopo)
+	ss.SetTopoScales(net, "SacPlan", "LIP", pts.PTSigTopo)
+	ss.SetTopoScales(net, "ObjVel", "LIP", pts.PTSigTopo)
+
+	ss.SetTopoScales(net, "LIP", "LIPCT", pts.PT3x3Skp1)
+	ss.SetTopoScales(net, "EyePos", "LIPCT", pts.PTGaussTopo)
+	ss.SetTopoScales(net, "Saccade", "LIPCT", pts.PTSigTopo)
+	ss.SetTopoScales(net, "ObjVel", "LIPCT", pts.PTSigTopo)
+
+	net.InitWeights()
 }
 
 func (ss *Sim) ApplyParams() {
@@ -380,17 +417,6 @@ func (ss *Sim) ConfigLoops() {
 	ls.Loop(Train, Run).OnStart.Add("NewRun", ss.NewRun)
 
 	trainEpoch := ls.Loop(Train, Epoch)
-	trainEpoch.IsDone.AddBool("NZeroStop", func() bool {
-		stopNz := ss.Config.Run.NZero
-		if stopNz <= 0 {
-			return false
-		}
-		curModeDir := ss.Current.Dir(Train.String())
-		curNZero := int(curModeDir.Value("NZero").Float1D(-1))
-		stop := curNZero >= stopNz
-		return stop
-		return false
-	})
 
 	trainEpoch.OnStart.Add("SaveWeightsAt", func() {
 		epc := trainEpoch.Counter.Cur
