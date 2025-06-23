@@ -21,7 +21,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Pool.FB = 1
 				ly.Inhib.Layer.ClampExtMin = 0.0 // 0.05 default doesn't activate output!
 				ly.Inhib.Pool.ClampExtMin = 0.0
-				ly.Inhib.ActAvg.AdaptRate = 0.05 // was 0.1 -- got fluctations
+				ly.Inhib.ActAvg.AdaptRate = 0.02 // 0.02 is slowest that tracks reasonably close
 				ly.Inhib.ActAvg.AdaptMax = 0.01  // 0.05 default; 0.01 has effect; lower not effective at preventing instability on its own.
 				ly.Inhib.ActAvg.LoTol = 0.8
 				ly.Inhib.ActAvg.HiTol = 0.0
@@ -99,7 +99,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
 				ly.Inhib.Pool.On.SetBool(true) // needs pool-level
 				ly.Inhib.Layer.FB = 1          //
-				ly.Inhib.Pool.FB = 4
+				ly.Inhib.Pool.FB = 2
 				ly.Inhib.Layer.Gi = 1.0
 				ly.Inhib.Pool.Gi = 1.05
 			}},
@@ -111,6 +111,15 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Pool.On.SetBool(false)
 				ly.Inhib.Layer.FB = 1
 				ly.Inhib.Layer.Gi = 1.0
+			}},
+		{Sel: ".MTposP", Doc: "layer inhib",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.15
+				ly.Inhib.ActAvg.Offset = 0
+				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
+				ly.Inhib.Pool.On.SetBool(false)
+				ly.Inhib.Layer.FB = 1
+				ly.Inhib.Layer.Gi = 0.8
 			}},
 		{Sel: ".V2", Doc: "pool inhib, sparse activity",
 			Set: func(ly *axon.LayerParams) {
@@ -194,7 +203,8 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Adapt.SubMean = 1          // 1 > 0 -- definitely needed
 				pt.SWts.Adapt.HiMeanDecay = 0.0008 // 0.0008 best
 				pt.SWts.Adapt.HiMeanThr = 0.5      // 0.5, 0.0008 goes the distance
-				pt.Learn.LRate.Base = 0.005        // 0.005 def
+				pt.SWts.Init.SPct = 1.0            // should be 1 -- was 0.5 previously
+				pt.Learn.LRate.Base = 0.02         // lvis is
 				pt.Learn.DWt.SubMean = 1           // 1 > 0 for trgavg weaker
 				pt.Learn.DWt.CaPScale = 1          // Env10: 1
 				pt.Learn.DWt.SynCa20.SetBool(false)
