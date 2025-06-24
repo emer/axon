@@ -24,6 +24,7 @@ import (
 	"cogentcore.org/core/tree"
 	"cogentcore.org/lab/base/mpi"
 	"cogentcore.org/lab/base/randx"
+	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/decoder"
@@ -174,50 +175,65 @@ func (ss *Sim) ConfigSim() {
 
 func (ss *Sim) ConfigEnv() {
 	// Can be called multiple times -- don't re-create
-	var trn, tst *Obj3DSacEnv
-	if len(ss.Envs) == 0 {
-		trn = &Obj3DSacEnv{}
-		tst = &Obj3DSacEnv{}
-	} else {
-		trn = ss.Envs.ByMode(Train).(*Obj3DSacEnv)
-		tst = ss.Envs.ByMode(Test).(*Obj3DSacEnv)
+	newEnv := (len(ss.Envs) == 0)
+	ndata := ss.Config.Run.NData
+	var objdata *table.Table
+
+	for di := 0; di < ndata; di++ {
+		var trn, tst *Obj3DSacEnv
+		if newEnv {
+			trn = &Obj3DSacEnv{}
+			tst = &Obj3DSacEnv{}
+		} else {
+			trn = ss.Envs.ByModeDi(Train, di).(*Obj3DSacEnv)
+			tst = ss.Envs.ByModeDi(Test, di).(*Obj3DSacEnv)
+		}
+
+		trn.Name = env.ModeDi(Train, di)
+		trn.Defaults()
+		trn.NData = ndata
+		trn.Di = di
+		trn.V1Med.Binarize = ss.Config.Env.BinarizeV1
+		trn.V1Hi.Binarize = ss.Config.Env.BinarizeV1
+		trn.RandSeed = 73 + int64(di)*73
+		if ss.Config.Env.Env != nil {
+			reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
+		}
+		trn.Config()
+		if di == 0 {
+			trn.OpenTable()
+			objdata = trn.Table
+		} else {
+			trn.Table = objdata
+		}
+
+		tst.Name = env.ModeDi(Test, di)
+		tst.Defaults()
+		tst.NData = ndata
+		tst.Di = di
+		tst.V1Med.Binarize = ss.Config.Env.BinarizeV1
+		tst.V1Hi.Binarize = ss.Config.Env.BinarizeV1
+		tst.RandSeed = 181 + int64(di)*181
+		// tst.Test = true
+		if ss.Config.Env.Env != nil {
+			reflectx.SetFieldsFromMap(tst, ss.Config.Env.Env)
+		}
+		tst.Config()
+		tst.Table = objdata
+
+		// if ss.Config.Run.MPI {
+		// 	if ss.Config.Debug {
+		// 		mpi.Printf("Did Env MPIAlloc\n")
+		// 	}
+		// 	trn.MPIAlloc()
+		// 	tst.MPIAlloc()
+		// }
+
+		trn.Init(0)
+		tst.Init(0)
+
+		ss.Envs.Add(trn, tst)
 	}
-
-	trn.Name = Train.String()
-	trn.Defaults()
-	trn.V1Med.Binarize = ss.Config.Env.BinarizeV1
-	trn.V1Hi.Binarize = ss.Config.Env.BinarizeV1
-	trn.RandSeed = 73
-	if ss.Config.Env.Env != nil {
-		reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
-	}
-	trn.Trial.Max = ss.Config.Run.Trials
-	trn.Config()
-
-	tst.Name = Test.String()
-	tst.Defaults()
-	tst.V1Med.Binarize = ss.Config.Env.BinarizeV1
-	tst.V1Hi.Binarize = ss.Config.Env.BinarizeV1
-	tst.RandSeed = 73
-	// tst.Test = true
-	if ss.Config.Env.Env != nil {
-		reflectx.SetFieldsFromMap(tst, ss.Config.Env.Env)
-	}
-	tst.Trial.Max = ss.Config.Run.Trials
-	tst.Config()
-
-	// if ss.Config.Run.MPI {
-	// 	if ss.Config.Debug {
-	// 		mpi.Printf("Did Env MPIAlloc\n")
-	// 	}
-	// 	trn.MPIAlloc()
-	// 	tst.MPIAlloc()
-	// }
-
-	trn.Init(0)
-	tst.Init(0)
-
-	ss.Envs.Add(trn, tst)
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
@@ -234,7 +250,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	pool1to1 := paths.NewPoolOneToOne()
 	pts := &ss.Paths
 
-	// trn := ss.Envs.ByMode(Train).(*Obj3DSacEnv)
+	// trn := ss.Envs.ByModeDi(Train, 0).(*Obj3DSacEnv)
 
 	// LIP network
 	v1m := net.AddLayer4D("V1m", axon.InputLayer, 8, 8, 5, 4).AddClass("V1m")
@@ -243,15 +259,18 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	v1m.SetSampleShape(emer.CenterPoolIndexes(v1m, 2), emer.CenterPoolShape(v1m, 2))
 	v1h.SetSampleShape(emer.CenterPoolIndexes(v1h, 2), emer.CenterPoolShape(v1h, 2))
 
-	eyepos := net.AddLayer2D("EyePos", axon.InputLayer, 21, 21)
-	sacplan := net.AddLayer2D("SacPlan", axon.InputLayer, 11, 11)
-	sac := net.AddLayer2D("Saccade", axon.InputLayer, 11, 11)
-	objvel := net.AddLayer2D("ObjVel", axon.InputLayer, 11, 11)
+	eyepos := net.AddLayer2D("EyePos", axon.InputLayer, 21, 21).AddClass("PopCode")
+	sacplan := net.AddLayer2D("SacPlan", axon.InputLayer, 11, 11).AddClass("PopCode")
+	sac := net.AddLayer2D("Saccade", axon.InputLayer, 11, 11).AddClass("PopCode")
+	objvel := net.AddLayer2D("ObjVel", axon.InputLayer, 11, 11).AddClass("PopCode")
 
-	mtpos := net.AddLayer4D("MTPos", axon.SuperLayer, 8, 8, 1, 1).AddClass("MTpos")
+	mtpos := net.AddLayer4D("MTpos", axon.SuperLayer, 8, 8, 1, 1).AddClass("MTpos")
 	mtposP := net.AddPulvForLayer(mtpos, space).AddClass("MTpos")
 
 	lip, lipCT := net.AddSuperCT4D("LIP", "", 8, 8, 4, 4, space, pts.PT3x3Skp1)
+
+	lip.SetSampleShape(emer.CenterPoolIndexes(lip, 2), emer.CenterPoolShape(lip, 2))
+	lipCT.SetSampleShape(emer.CenterPoolIndexes(lipCT, 2), emer.CenterPoolShape(lipCT, 2))
 
 	net.ConnectLayers(v1m, mtpos, pool1to1, axon.ForwardPath).AddClass("Fixed")
 	net.ConnectLayers(mtpos, lip, pool1to1, axon.ForwardPath).AddClass("Fixed")
@@ -282,10 +301,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	v1h.PlaceRightOf(v1m, space)
 
-	lip.PlaceAbove(v1m)
-	lipCT.PlaceBehind(lip, space)
-	mtpos.PlaceBehind(lipCT, space)
+	mtpos.PlaceAbove(v1m)
 	mtposP.PlaceRightOf(mtpos, space)
+	lip.PlaceBehind(mtpos, space*2)
+	lipCT.PlaceBehind(lip, space)
 
 	eyepos.PlaceRightOf(lip, space)
 	sacplan.PlaceBehind(eyepos, space)
@@ -458,14 +477,15 @@ func (ss *Sim) ConfigLoops() {
 // Any other start-of-trial logic can also be put here.
 func (ss *Sim) ApplyInputs(mode Modes) {
 	net := ss.Net
+	ctx := ss.Net.Context()
 	ndata := int(net.Context().NData)
 	curModeDir := ss.Current.Dir(mode.String())
-	ev := ss.Envs.ByMode(mode).(*Obj3DSacEnv)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	net.InitExt()
-	for di := range ndata {
+	for di := uint32(0); di < ctx.NData; di++ {
+		ev := ss.Envs.ByModeDi(mode, int(di)).(*Obj3DSacEnv)
 		ev.Step()
-		curModeDir.StringValue("TrialName", ndata).SetString1D(ev.String(), di)
+		curModeDir.StringValue("TrialName", ndata).SetString1D(ev.String(), int(di))
 		for _, lnm := range lays {
 			ly := ss.Net.LayerByName(lnm)
 			st := ev.State(ly.Name)
@@ -481,8 +501,10 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 func (ss *Sim) NewRun() {
 	ctx := ss.Net.Context()
 	ss.InitRandSeed(ss.Loops.Loop(Train, Run).Counter.Cur)
-	ss.Envs.ByMode(Train).Init(0)
-	ss.Envs.ByMode(Test).Init(0)
+	for di := 0; di < int(ctx.NData); di++ {
+		ss.Envs.ByModeDi(Train, di).Init(0)
+		ss.Envs.ByModeDi(Test, di).Init(0)
+	}
 	ctx.Reset()
 	ss.Net.InitWeights()
 	if ss.Config.Run.StartWeights != "" {
@@ -493,7 +515,10 @@ func (ss *Sim) NewRun() {
 
 // TestAll runs through the full set of testing items
 func (ss *Sim) TestAll() {
-	ss.Envs.ByMode(Test).Init(0)
+	ctx := ss.Net.Context()
+	for di := 0; di < int(ctx.NData); di++ {
+		ss.Envs.ByModeDi(Test, di).Init(0)
+	}
 	ss.Loops.ResetAndRun(Test)
 	ss.Loops.Mode = Train // important because this is called from Train Run: go back.
 }
@@ -617,7 +642,7 @@ func (ss *Sim) ConfigStats() {
 		prevCorFunc(mode, level, phase == Start)
 	})
 
-	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
+	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.PulvinarLayer, axon.InputLayer)
 	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		actGeFunc(mode, level, phase == Start)

@@ -408,7 +408,7 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 	net := ss.Net
 	ctx := ss.Net.Context()
 	ndata := int(ctx.NData)
-	lays := net.LayersByClass("InputLayer", "TargetLayer")
+	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	curModeDir := ss.Current.Dir(mode.String())
 
 	net.InitExt()

@@ -25,7 +25,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.ActAvg.AdaptMax = 0.01  // 0.05 default; 0.01 has effect; lower not effective at preventing instability on its own.
 				ly.Inhib.ActAvg.LoTol = 0.8
 				ly.Inhib.ActAvg.HiTol = 0.0
-				ly.Acts.Dt.LongAvgTau = 200 // 20 def; trying much longer to smooth
+				ly.Acts.Dt.LongAvgTau = 20 // todo: increase back to 200?
 
 				ly.Acts.Decay.Act = 0.0   // 0 == .2
 				ly.Acts.Decay.Glong = 0.6 // 0.6 def
@@ -41,21 +41,16 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.VGCC.Ge = 0.02 // non nmda: 0.15 good, 0.3 blows up, nmda: .02 best
 				ly.Acts.VGCC.Ca = 25   // 25 / 10tau same as SpkVGCC
 
-				ly.Acts.Mahp.Gk = 0.05        // 0.05 > lower, higher; but still needs kna
-				ly.Acts.Sahp.Gk = 0.1         // was 0.1, 0.05 def
-				ly.Acts.Sahp.Off = 0.8        //
-				ly.Acts.Sahp.Slope = 0.02     //
-				ly.Acts.Sahp.CaTau = 5        // 5 ok -- not tested
-				ly.Acts.KNa.On.SetBool(false) // true, .05 > false
-				ly.Acts.KNa.Med.Max = 0.05    // 0.1 > 0.05 -- 0.05 blows up around 1500
-				ly.Acts.KNa.Slow.Max = 0.05
+				ly.Acts.Mahp.Gk = 0.05       // 0.05 > lower, higher; but still needs kna
+				ly.Acts.Sahp.Gk = 0.1        // was 0.1, 0.05 def
+				ly.Acts.Sahp.Off = 0.8       //
+				ly.Acts.Sahp.Slope = 0.02    //
+				ly.Acts.Sahp.CaTau = 5       // 5 ok -- not tested
+				ly.Acts.KNa.On.SetBool(true) // true, .05 > false
+				ly.Acts.KNa.Med.Max = 0.1    // 0.1 > 0.05 -- 0.05 blows up around 1500
+				ly.Acts.KNa.Slow.Max = 0.1
 
-				ly.Learn.CaLearn.Norm = 80               // 80 def; 60 makes CaLearnMax closer to 1
-				ly.Learn.CaLearn.SpikeVGCC.SetBool(true) // sig better..
-				ly.Learn.CaLearn.SpikeVgccCa = 35        // 70 / 5 or 35 / 10 both work
-				ly.Learn.CaLearn.VgccTau = 10            // 10 > 5 ?
-				// ly.Learn.CaLearn.UpdtThr = 0.01          // 0.01 > 0.05 -- was LrnThr
-				ly.Learn.CaLearn.Dt.MTau = 2 // 2 > 1 ?
+				ly.Learn.CaLearn.Dt.MTau = 2 // 2 == 5?
 
 				ly.Learn.CaSpike.SpikeCaM = 12   // 12 > 8 -- for larger nets
 				ly.Learn.CaSpike.SpikeCaSyn = 12 // 12 > 8 -- TODO revisit!
@@ -87,25 +82,71 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Pool.On.SetBool(true)
 				ly.Inhib.Layer.Gi = 0.9        // was 0.9
 				ly.Inhib.Pool.Gi = 0.9         // 0.9 >= 1.1 def -- more activity
-				ly.Inhib.ActAvg.Nominal = 0.04 // .06 for !SepColor actuals: V1m8: .04, V1m16: .03
+				ly.Inhib.ActAvg.Nominal = 0.05 // .06 for !SepColor actuals: V1m8: .04, V1m16: .03
 				ly.Acts.Clamp.Ge = 1.5         // was 1.0
 				ly.Acts.Decay.Act = 1          // these make no diff
 				ly.Acts.Decay.Glong = 1
 			}},
+		{Sel: ".PopCode", Doc: "",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.Layer.FB = 1 // keep normalized
+				ly.Inhib.Pool.On.SetBool(false)
+				ly.Inhib.Layer.Gi = 0.9 // 0.9
+				ly.Inhib.ActAvg.Nominal = 0.1
+				ly.Acts.Clamp.Ge = 1.5 // was 1.0
+			}},
+		{Sel: "#EyePos", Doc: "",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.04
+			}},
+		{Sel: ".CTLayer", Doc: "CT NMDA gbar factor is key",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.12 // CT in general more active
+				ly.CT.GeGain = 1.0             // 1 == 1.5 > 0.5 except depth
+				ly.CT.DecayTau = 0             // decay is very bad
+				ly.Acts.Dend.SSGi = 0          // 0 > higher -- kills nmda maint!
+				ly.Acts.Decay.Act = 0.0
+				ly.Acts.Decay.Glong = 0.0
+				ly.Acts.GabaB.Gk = 0.015 // 0.015 standard gaba
+				ly.Acts.NMDA.Ge = 0.006
+				ly.Acts.NMDA.Tau = 100
+				ly.Acts.MaintNMDA.Ge = 0.006 // not relevant -- no CTSelf
+				ly.Acts.MaintNMDA.Tau = 100
+			}},
+		{Sel: ".PulvinarLayer", Doc: "Pulvinar",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.Layer.Gi = 0.8    // 0.8 good -- was 0.9
+				ly.Pulv.DriveScale = 0.1   // 0.1 > 0.15 -- does not work with 0.05
+				ly.Pulv.FullDriveAct = 0.6 // 0.6 def
+				ly.Acts.Decay.Act = 0.0
+				ly.Acts.Decay.Glong = 0.0        // clear long
+				ly.Acts.Decay.AHP = 0.0          // clear long
+				ly.Learn.RLRate.SigmoidMin = 1.0 // 1 > .05
+			}},
 		{Sel: ".LIP", Doc: "pool inhib",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.05
+				ly.Inhib.ActAvg.Nominal = 0.12 // 0.04 actual -- inflating to deal with overactive CT
 				ly.Inhib.ActAvg.Offset = 0
 				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
 				ly.Inhib.Pool.On.SetBool(true) // needs pool-level
 				ly.Inhib.Layer.FB = 1          //
+				ly.Inhib.Pool.FB = 2           // 2 > 1
+				ly.Inhib.Layer.Gi = 1.2
+				ly.Inhib.Pool.Gi = 0.8
+			}},
+		{Sel: "#LIPCT", Doc: "pool inhib",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.04 // more ge for MTposP
+				ly.Inhib.ActAvg.Offset = 0
+				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
+				ly.Inhib.Layer.FB = 1
 				ly.Inhib.Pool.FB = 2
-				ly.Inhib.Layer.Gi = 1.0
-				ly.Inhib.Pool.Gi = 1.05
+				ly.Inhib.Layer.Gi = 1.3
+				ly.Inhib.Pool.Gi = 1.0
 			}},
 		{Sel: ".MTpos", Doc: "layer inhib",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.15
+				ly.Inhib.ActAvg.Nominal = 0.1
 				ly.Inhib.ActAvg.Offset = 0
 				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
 				ly.Inhib.Pool.On.SetBool(false)
@@ -119,7 +160,15 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
 				ly.Inhib.Pool.On.SetBool(false)
 				ly.Inhib.Layer.FB = 1
-				ly.Inhib.Layer.Gi = 0.8
+				ly.Inhib.Layer.Gi = 1.0
+			}},
+		{Sel: "#V1m", Doc: "",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.05
+			}},
+		{Sel: "#V1h", Doc: "",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.03
 			}},
 		{Sel: ".V2", Doc: "pool inhib, sparse activity",
 			Set: func(ly *axon.LayerParams) {
@@ -163,32 +212,6 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Pool.FB = 4
 				ly.Inhib.Pool.Gi = 1.0 // 1.0; 1.1?
 			}},
-		{Sel: "#Output", Doc: "general output, Localist default -- see RndOutPats, LocalOutPats",
-			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.Layer.Gi = 1.17              // 1.2 FB4 > 1.3 FB 1 SS0
-				ly.Inhib.Layer.FB = 4                 // 4 > 1 -- try higher
-				ly.Inhib.ActAvg.Nominal = 0.005       // .005 > .008 > .01 -- prevents loss of Ge over time..
-				ly.Inhib.ActAvg.Offset = 0.01         // 0.01 > 0.012 > 0.005?
-				ly.Inhib.ActAvg.AdaptGi.SetBool(true) // needed in any case
-				ly.Inhib.ActAvg.LoTol = 0.1           // 0.1 > 0.05 > 0.2 > 0.5 older..
-				ly.Inhib.ActAvg.HiTol = 0.02          // 0.02 > 0 tiny bit
-				ly.Inhib.ActAvg.AdaptRate = 0.01      // 0.01 > 0.1
-				ly.Acts.Clamp.Ge = 0.8                // .6 = .7 > .5 (tiny diff) -- input has 1.0 now
-				ly.Learn.CaSpike.SpikeCaM = 12        // 12 > 8 probably; 8 = orig, 12 = new trace
-				ly.Learn.RLRate.On.SetBool(true)      // beneficial for trace
-				ly.Learn.RLRate.SigmoidMin = 0.05     // 0.05 > 1 now!
-				ly.Learn.RLRate.Diff.SetBool(true)
-				ly.Learn.RLRate.DiffThr = 0.02 // 0.02 def - todo
-				ly.Learn.RLRate.SpikeThr = 0.1 // 0.1 def
-				ly.Learn.RLRate.Min = 0.001
-			}},
-		// {Sel: "#Claustrum", Doc: "testing -- not working",
-		// 	Set: func(ly *axon.LayerParams) {
-		// 		ly.Inhib.Layer.Gi =     0.8
-		// 		ly.Inhib.Pool.On.SetBool(false) // needs pool-level
-		// 		ly.Inhib.Layer.On.SetBool(true)
-		// 		ly.Inhib.ActAvg.Nominal =  .06
-		// 	}},
 	},
 }
 
@@ -204,45 +227,36 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Adapt.HiMeanDecay = 0.0008 // 0.0008 best
 				pt.SWts.Adapt.HiMeanThr = 0.5      // 0.5, 0.0008 goes the distance
 				pt.SWts.Init.SPct = 1.0            // should be 1 -- was 0.5 previously
-				pt.Learn.LRate.Base = 0.02         // lvis is
+				pt.Learn.LRate.Base = 0.01         // lvis is .002
 				pt.Learn.DWt.SubMean = 1           // 1 > 0 for trgavg weaker
 				pt.Learn.DWt.CaPScale = 1          // Env10: 1
 				pt.Learn.DWt.SynCa20.SetBool(false)
-				pt.Learn.DWt.LearnThr = 0 // even 0.01 with v32 fails after 150 or so -- lower max activity levels throughout the net
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 0.2
 				// pt.Learn.LRate.Base =  0
 			}},
-		{Sel: ".ToOut", Doc: "to output -- some things should be different..",
+		{Sel: ".CTCtxtPath", Doc: "all CT context paths",
 			Set: func(pt *axon.PathParams) {
-				// pt.Learn.LRate.Base =    0.01  // base 0.01
-				pt.SWts.Adapt.On.SetBool(false) // off > on
-				pt.SWts.Init.SPct = 0           // when off, 0
-				pt.PathScale.Abs = 2.0          // 2.0 >= 1.8 > 2.2 > 1.5 > 1.2 trace
+				// pt.Learn.LRate.Base = 0.002  // has almost no effect in 1to1
+				pt.Learn.DWt.SubMean = 0     //
+				pt.Learn.DWt.SynTraceTau = 2 // 2 > 1 still 0.2.28
 			}},
-		// {Sel: ".FmOut", Doc: "from output -- some things should be different..",
-		// 	Set: func(pt *axon.PathParams) {}},
-		/*
-			{Sel: ".Inhib", Doc: "inhibitory projection -- not necc with fs-fffb inhib",
-				Set: func(pt *axon.PathParams) {
-					pt.Learn.Learn =          .SetBool(true)   // learned decorrel is good
-					pt.Learn.LRate.Base =     0.0001 // .0001 > .001 -- slower better!
-					pt.Learn.DWt.SubMean =  1      // 1 is *essential* here!
-					pt.SWts.Init.Var =         0.0
-					pt.SWts.Init.Mean =        0.1
-					pt.SWts.Init.Sym =         .SetBool(false)
-					pt.SWts.Adapt.On =         .SetBool(false)
-					pt.PathScale.Abs =        0.2 // .2 > .1 for controlling PCA; .3 or.4 with GiSynThr .01
-					pt.IncGain =              1   // .5 def
-				}},
-		*/
+		{Sel: ".FromPulv", Doc: "defaults to .Back but generally weaker is better",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Rel = 0.2 // todo: major param
+			}},
 		{Sel: ".Fixed", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.Learn.SetBool(false)
 				pt.SWts.Init.Mean = 0.8
 				pt.SWts.Init.Var = 0
+			}},
+		{Sel: "#MTposToLIP", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Rel = 1
+				pt.PathScale.Abs = 6 // 4 works..
 			}},
 		{Sel: ".V1V2", Doc: "special SWt params",
 			Set: func(pt *axon.PathParams) {
@@ -315,38 +329,6 @@ var PathParams = axon.PathSheets{
 		{Sel: ".TEOTE", Doc: "stronger",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 1.2
-			}},
-		{Sel: ".OutTEO", Doc: "weaker",
-			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.3 // .3 > .2 v53 in long run
-			}},
-		// {Sel: ".OutV4", Doc: "weaker",
-		// 	Set: func(pt *axon.PathParams) {
-		// 		pt.PathScale.Rel =  0.1 // .1 > .2 v53
-		// 	}},
-		{Sel: "#OutputToTE", Doc: "weaker",
-			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.1 // 0.1 (hard xform) > 0.2 (reg xform) > 0.3 trace
-			}},
-		{Sel: "#TEToOutput", Doc: "weaker",
-			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 1.0 // turn off for TE testing
-			}},
-
-		// shortcuts -- .5 > .2 (v32 still) -- all tested together
-		// {Sel: "#V1l16ToClaustrum", Doc: "random fixed -- not useful",
-		// 	Set: func(pt *axon.PathParams) {
-		// 		pt.Learn.Learn.SetBool(false)
-		// 		pt.PathScale.Rel =  0.5   // .5 > .8 > 1 > .4 > .3 etc
-		// 		pt.SWts.Adapt.On =  .SetBool(false) // seems better
-		// 	}},
-		{Sel: ".V1SC", Doc: "v1 shortcut",
-			Set: func(pt *axon.PathParams) {
-				pt.Learn.LRate.Base = 0.001 //
-				// pt.Learn.Learn.SetBool(false)
-				pt.PathScale.Rel = 0.5          // .5 > .8 > 1 > .4 > .3 etc
-				pt.SWts.Adapt.On.SetBool(false) // seems better
-				// "apt.SWts.Init.Var =   0.05
 			}},
 	},
 }

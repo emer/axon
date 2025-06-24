@@ -70,6 +70,12 @@ type Obj3DSacEnv struct {
 	// Row of table -- this is actual counter driving everything
 	Row env.Counter `display:"inline"`
 
+	// Number of data-parallel environments.
+	NData int
+
+	// data-parallel index of this env.
+	Di int
+
 	// CurCat is the current object category
 	CurCat string
 
@@ -117,6 +123,7 @@ func (ev *Obj3DSacEnv) Defaults() {
 	ev.V1Med.Defaults(24, 8, &ev.Img)
 	ev.V1Hi.Defaults(12, 4, &ev.Img)
 
+	ev.Tick.Max = 8 // important: must be sync'd with actual data
 }
 
 func (ev *Obj3DSacEnv) Config() {
@@ -130,12 +137,16 @@ func (ev *Obj3DSacEnv) Config() {
 
 func (ev *Obj3DSacEnv) Init(run int) {
 	ev.Trial.Init()
+	ev.Trial.Cur = ev.Di
+	ev.Trial.Max = 0
+	ev.Trial.Same()
 	ev.Tick.Init()
-	ev.Row.Cur = -1 // init state -- key so that first Step() = 0
-	ev.OpenTable()
+	ev.Tick.Cur = -1
+	ev.Row.Cur = ev.Tick.Max * ev.Di
 }
 
-// OpenTable loads data.tsv file at Path
+// OpenTable loads data.tsv file at Path.
+// only do this for one env and copy to the others.
 func (ev *Obj3DSacEnv) OpenTable() {
 	if ev.Table == nil {
 		ev.Table = table.New("obj3dsac_data")
@@ -220,8 +231,10 @@ func (ev *Obj3DSacEnv) String() string {
 
 func (ev *Obj3DSacEnv) Step() bool {
 	ev.Trial.Same()
-	ev.Row.Incr() // auto-rotates
-
+	if ev.Tick.Incr() {
+		ev.Trial.Cur += ev.NData
+	}
+	ev.Row.Cur = ev.Trial.Cur*ev.Tick.Max + ev.Tick.Cur
 	ev.SetCtrs()
 	ev.EncodePops()
 	ev.FilterImage()
