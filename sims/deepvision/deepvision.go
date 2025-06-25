@@ -264,7 +264,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	sac := net.AddLayer2D("Saccade", axon.InputLayer, 11, 11).AddClass("PopCode")
 	objvel := net.AddLayer2D("ObjVel", axon.InputLayer, 11, 11).AddClass("PopCode")
 
-	mtpos := net.AddLayer4D("MTpos", axon.SuperLayer, 8, 8, 1, 1).AddClass("MTpos")
+	// 2,2 for mt > 1,1
+	mtpos := net.AddLayer4D("MTpos", axon.SuperLayer, 8, 8, 2, 2).AddClass("MTpos")
 	mtposP := net.AddPulvForLayer(mtpos, space).AddClass("MTpos")
 
 	lip, lipCT := net.AddSuperCT4D("LIP", "", 8, 8, 4, 4, space, pts.PT3x3Skp1)
@@ -287,16 +288,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectLayers(sac, lip, full, axon.ForwardPath)
 
-	// var p4x4s2, p2x2s1, p4x4s2send, p2x2s1send, p4x4s2recip, p2x2s1recip, v4toteo, teotov4 paths.Pattern
-	// p4x4s2 = pt.PT4x4Skp2
-	// p2x2s1 = pt.PT2x2Skp1
-	// p4x4s2send = pt.PT4x4Skp2
-	// p2x2s1send = pt.PT2x2Skp1
-	// p4x4s2recip = pt.PT4x4Skp2Recip
-	// p2x2s1recip = pt.PT2x2Skp1Recip
-	// v4toteo = full
-	// teotov4 = full
-
 	// 	Positioning
 
 	v1h.PlaceRightOf(v1m, space)
@@ -310,6 +301,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	sacplan.PlaceBehind(eyepos, space)
 	sac.PlaceBehind(sacplan, space)
 	objvel.PlaceBehind(sac, space)
+
+	if !ss.Config.Run.LIPOnly {
+		// todo: rest of network
+	}
 
 	net.Build()
 	net.Defaults()

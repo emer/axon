@@ -25,7 +25,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.ActAvg.AdaptMax = 0.01  // 0.05 default; 0.01 has effect; lower not effective at preventing instability on its own.
 				ly.Inhib.ActAvg.LoTol = 0.8
 				ly.Inhib.ActAvg.HiTol = 0.0
-				ly.Acts.Dt.LongAvgTau = 20 // todo: increase back to 200?
+				ly.Acts.Dt.LongAvgTau = 100 // 100 >= 200
 
 				ly.Acts.Decay.Act = 0.0   // 0 == .2
 				ly.Acts.Decay.Glong = 0.6 // 0.6 def
@@ -125,7 +125,7 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".LIP", Doc: "pool inhib",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.12 // 0.04 actual -- inflating to deal with overactive CT
+				ly.Inhib.ActAvg.Nominal = 0.12 // 0.12 > 0.2; 0.04 actual -- inflating to deal with overactive CT
 				ly.Inhib.ActAvg.Offset = 0
 				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
 				ly.Inhib.Pool.On.SetBool(true) // needs pool-level
@@ -146,7 +146,7 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".MTpos", Doc: "layer inhib",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.1
+				ly.Inhib.ActAvg.Nominal = 0.1 // .1
 				ly.Inhib.ActAvg.Offset = 0
 				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
 				ly.Inhib.Pool.On.SetBool(false)
@@ -222,12 +222,12 @@ var PathParams = axon.PathSheets{
 		{Sel: "Path", Doc: "exploring",
 			Set: func(pt *axon.PathParams) {
 				pt.SWts.Adapt.On.SetBool(true)     // true > false, esp in cosdiff
-				pt.SWts.Adapt.LRate = 0.0002       // .0002, .001 > .01 > .1 after 250epc in NStrong
+				pt.SWts.Adapt.LRate = 0.0002       // 0.0002 (lvis) == 0.001
 				pt.SWts.Adapt.SubMean = 1          // 1 > 0 -- definitely needed
 				pt.SWts.Adapt.HiMeanDecay = 0.0008 // 0.0008 best
 				pt.SWts.Adapt.HiMeanThr = 0.5      // 0.5, 0.0008 goes the distance
-				pt.SWts.Init.SPct = 1.0            // should be 1 -- was 0.5 previously
-				pt.Learn.LRate.Base = 0.01         // lvis is .002
+				pt.SWts.Init.SPct = 1              // 1 > 0.5
+				pt.Learn.LRate.Base = 0.001        // 0.001 > 0.005 > higher
 				pt.Learn.DWt.SubMean = 1           // 1 > 0 for trgavg weaker
 				pt.Learn.DWt.CaPScale = 1          // Env10: 1
 				pt.Learn.DWt.SynCa20.SetBool(false)

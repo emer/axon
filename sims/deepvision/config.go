@@ -55,6 +55,9 @@ type ParamConfig struct {
 // RunConfig has config parameters related to running the sim.
 type RunConfig struct {
 
+	// LIPOnly only runs the LIP subnetwork, not the full model.
+	LIPOnly bool
+
 	// GPU uses the GPU for computation, generally faster than CPU even for
 	// small models if NData ~16.
 	GPU bool `default:"true"`
