@@ -84,7 +84,7 @@ type CaSpikeParams struct {
 	// based on a spike impulse, which is then cascaded into updating the
 	// CaP and CaD values. These values are used for stats and RLRate computation,
 	// but do not drive learning directly. Larger values (e.g., 12) may be useful
-	// in some models.
+	// in larger models.
 	SpikeCaM float32 `default:"8,12"`
 
 	// SpikeCaSyn is the drive factor for updating the neuron-level CaSyn
@@ -92,8 +92,8 @@ type CaSpikeParams struct {
 	// into CaBins which are then used to compute synapse-level pre * post
 	// Ca values over the theta cycle, which then drive the Tr credit assignment
 	// trace factor for kinase error-driven cortical learning. Changes in this
-	// value will affect the net learning rate.
-	SpikeCaSyn float32 `default:"8"`
+	// value will affect the net learning rate. Generally tracks SpikeCaM.
+	SpikeCaSyn float32 `default:"8,12"`
 
 	// CaSynTau is the time constant for integrating the spike-driven calcium
 	// trace CaSyn at sender and recv neurons. See SpikeCaSyn for more info.

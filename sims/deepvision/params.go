@@ -15,6 +15,7 @@ var LayerParams = axon.LayerSheets{
 		{Sel: "Layer", Doc: "needs some special inhibition and learning params",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.04 // 0.04 for most layers
+				ly.Inhib.ActAvg.Offset = 0.008 // good default
 				ly.Inhib.Layer.Gi = 1.1        // 1.1 def, 1.0 for lower layers is best
 				ly.Inhib.Pool.Gi = 1.1         // "
 				ly.Inhib.Layer.FB = 1          // setting for layers below
@@ -125,38 +126,21 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".LIP", Doc: "pool inhib",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.12 // 0.12 > 0.2; 0.04 actual -- inflating to deal with overactive CT
-				ly.Inhib.ActAvg.Offset = 0
-				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
-				ly.Inhib.Pool.On.SetBool(true) // needs pool-level
-				ly.Inhib.Layer.FB = 1          //
-				ly.Inhib.Pool.FB = 2           // 2 > 1
-				ly.Inhib.Layer.Gi = 1.2
-				ly.Inhib.Pool.Gi = 0.8
+				ly.Inhib.ActAvg.Nominal = 0.06         // 0.06 > 0.8 > ~0.03 actual: CT Ge too high if lower
+				ly.Inhib.ActAvg.AdaptGi.SetBool(false) // adapt not good
+				ly.Inhib.Pool.On.SetBool(true)         // needs pool-level
+				ly.Inhib.Layer.FB = 1                  // 1
+				ly.Inhib.Pool.FB = 4                   // 4 == 2 > 1
+				ly.Inhib.Layer.Gi = 1.2                // 1.2 == 1.3 & CT too
+				ly.Inhib.Pool.Gi = 1                   // 1 >> 0.8 & CT too
 			}},
 		{Sel: "#LIPCT", Doc: "pool inhib",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.04 // more ge for MTposP
-				ly.Inhib.ActAvg.Offset = 0
-				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
-				ly.Inhib.Layer.FB = 1
-				ly.Inhib.Pool.FB = 2
-				ly.Inhib.Layer.Gi = 1.3
-				ly.Inhib.Pool.Gi = 1.0
+				ly.Inhib.ActAvg.Nominal = 0.02 // 0.02 > 0.01[5] vs 0.05+ actual: more ge for MTposP
 			}},
 		{Sel: ".MTpos", Doc: "layer inhib",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.1 // .1
-				ly.Inhib.ActAvg.Offset = 0
-				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
-				ly.Inhib.Pool.On.SetBool(false)
-				ly.Inhib.Layer.FB = 1
-				ly.Inhib.Layer.Gi = 1.0
-			}},
-		{Sel: ".MTposP", Doc: "layer inhib",
-			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.15
-				ly.Inhib.ActAvg.Offset = 0
+				ly.Inhib.ActAvg.Nominal = 0.1 // note: has no effect due to 1to1 cons!
 				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
 				ly.Inhib.Pool.On.SetBool(false)
 				ly.Inhib.Layer.FB = 1
@@ -166,17 +150,37 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.05
 			}},
+		{Sel: "#V1mP", Doc: "",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.05
+				ly.Inhib.Layer.FB = 1
+				ly.Inhib.Pool.FB = 4
+				ly.Inhib.Pool.On.SetBool(true)
+				ly.Inhib.Layer.Gi = 1
+				ly.Inhib.Pool.Gi = 1 // 1 > 1.05
+			}},
 		{Sel: "#V1h", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.03
 			}},
 		{Sel: ".V2", Doc: "pool inhib, sparse activity",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.02        // .02 1.6.15 SSGi -- was higher
-				ly.Inhib.ActAvg.Offset = 0.008        // 0.008 > 0.005; nominal is lower to increase Ge
-				ly.Inhib.ActAvg.AdaptGi.SetBool(true) // true
-				ly.Inhib.Pool.On.SetBool(true)        // needs pool-level
-				ly.Inhib.Layer.FB = 1                 //
+				ly.Inhib.ActAvg.Nominal = 0.02
+				ly.Inhib.ActAvg.Offset = 0.008        // key for CT vs. 0.028
+				ly.Inhib.ActAvg.AdaptGi.SetBool(true) // CT needs adapt
+				ly.Inhib.Pool.On.SetBool(true)
+				ly.Inhib.Layer.FB = 1 //
+				ly.Inhib.Pool.FB = 4
+				ly.Inhib.Layer.Gi = 1.0 // 1
+				ly.Inhib.Pool.Gi = 1.05 // 1.05 good..
+			}},
+		{Sel: ".V3", Doc: "pool inhib, denser activity",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.05
+				ly.Inhib.ActAvg.Offset = 0
+				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
+				ly.Inhib.Pool.On.SetBool(true)
+				ly.Inhib.Layer.FB = 1
 				ly.Inhib.Pool.FB = 4
 				ly.Inhib.Layer.Gi = 1.0 // 1.1?
 				ly.Inhib.Pool.Gi = 1.05 // was 0.95 but gi mult goes up..
@@ -237,21 +241,34 @@ var PathParams = axon.PathSheets{
 				pt.PathScale.Rel = 0.2
 				// pt.Learn.LRate.Base =  0
 			}},
+		{Sel: ".FwdWeak", Doc: "weak feedforward pathway",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Rel = 0.2
+				// pt.Learn.LRate.Base =  0
+			}},
 		{Sel: ".CTCtxtPath", Doc: "all CT context paths",
 			Set: func(pt *axon.PathParams) {
 				// pt.Learn.LRate.Base = 0.002  // has almost no effect in 1to1
 				pt.Learn.DWt.SubMean = 0     //
 				pt.Learn.DWt.SynTraceTau = 2 // 2 > 1 still 0.2.28
 			}},
-		{Sel: ".FromPulv", Doc: "defaults to .Back but generally weaker is better",
+		{Sel: ".CTSelfCtxt", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.2 // todo: major param
+				pt.PathScale.Rel = 0.5 // 0.5 > 0.2 > 0.8
+			}},
+		{Sel: ".FromPulv", Doc: "defaults to .Back",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Rel = 0.2 // 0.2 == 0.1
 			}},
 		{Sel: ".Fixed", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.Learn.SetBool(false)
 				pt.SWts.Init.Mean = 0.8
 				pt.SWts.Init.Var = 0
+			}},
+		{Sel: ".FromLIP", Doc: "modulatory inputs from LIP",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Rel = 0.1
 			}},
 		{Sel: "#MTposToLIP", Doc: "",
 			Set: func(pt *axon.PathParams) {
@@ -260,14 +277,19 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".V1V2", Doc: "special SWt params",
 			Set: func(pt *axon.PathParams) {
-				pt.SWts.Init.Mean = 0.4 // .4 here is key!
-				pt.SWts.Limit.Min = 0.1 // .1-.7
-				pt.SWts.Limit.Max = 0.7 //
-				pt.PathScale.Abs = 1.4  // 1.4 > 2.0 for color -- extra boost to get more v2 early on
+				// todo: reinvestigate:
+				// pt.SWts.Init.Mean = 0.4 // .4 here is key!
+				// pt.SWts.Limit.Min = 0.1 // .1-.7
+				// pt.SWts.Limit.Max = 0.7 //
+				pt.PathScale.Abs = 1.0 // 1.4 in lvis
 			}},
 		{Sel: ".V1V2fmSm", Doc: "weaker",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 0.2
+			}},
+		{Sel: "#V2ToV2CT", Doc: "overactive",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 0.2 // 0.2
 			}},
 		{Sel: ".V2V4", Doc: "extra boost",
 			Set: func(pt *axon.PathParams) {

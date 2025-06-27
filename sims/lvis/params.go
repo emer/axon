@@ -47,7 +47,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Sahp.Slope = 0.02    //
 				ly.Acts.Sahp.CaTau = 5       // 5 ok -- not tested
 				ly.Acts.KNa.On.SetBool(true) // true, .05 > false
-				ly.Acts.KNa.Med.Max = 0.1    // 0.1 > 0.05 -- 0.05 blows up around 1500, 0.1 just at end
+				ly.Acts.KNa.Med.Max = 0.1    // 0.1 > 0.05 -- 0.05 blows up around 1500, 0.1 goes with spct1
 				ly.Acts.KNa.Slow.Max = 0.1
 
 				ly.Learn.CaLearn.Norm = 80               // 80 def; 60 makes CaLearnMax closer to 1
@@ -58,7 +58,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.CaLearn.Dt.MTau = 2 // 2 > 1 ?
 
 				ly.Learn.CaSpike.SpikeCaM = 12   // 12 > 8 -- for larger nets
-				ly.Learn.CaSpike.SpikeCaSyn = 12 // 12 > 8 -- TODO revisit!
+				ly.Learn.CaSpike.SpikeCaSyn = 12 // 12 >> 8 -- essential
 				ly.Learn.CaSpike.CaSynTau = 30   // 30 > 20, 40
 				ly.Learn.CaSpike.Dt.MTau = 5     // 5 > 10?
 

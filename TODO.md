@@ -1,10 +1,9 @@
 * More etrace param search
-* ETrace as just mean activity
 * Sahp vs. KNa -- do we really need all these variations of the same thing?
+* KNa is essential in Lvis
 
+* SpikeCaSyn = 12 is essential in Lvis -- try in other models vs 8
 
-* rename deep -> ? for predictive learning thing
-
-* update docs per the updated CCN docs
+* update Go code docs throughout per the updated CCN docs
 
 

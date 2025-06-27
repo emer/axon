@@ -122,7 +122,7 @@ func (net *Network) AddPulvForLayer(lay *Layer, space float32) *Layer {
 // Typically pulv is a different shape than super and ct, so use Full or appropriate
 // topological pattern. Adds optional pathClass name as a suffix.
 func (net *Network) ConnectToPulv(super, ct, pulv *Layer, toPulvPat, fmPulvPat paths.Pattern, pathClass string) (toPulv, toSuper, toCT *Path) {
-	pathClass = params.AddClass(pathClass, "PFCPath")
+	pathClass = params.AddClass(pathClass)
 	toPulv = net.ConnectLayers(ct, pulv, toPulvPat, ForwardPath)
 	toPulv.AddClass("CTToPulv", pathClass)
 	toSuper = net.ConnectLayers(pulv, super, fmPulvPat, BackPath)
@@ -142,7 +142,7 @@ func (net *Network) ConnectCtxtToCT(send, recv *Layer, pat paths.Pattern) *Path 
 // The CTCtxtPath has a Class label of CTSelfCtxt, and the regular one is CTSelfMaint
 // with optional class added.
 func (net *Network) ConnectCTSelf(ly *Layer, pat paths.Pattern, pathClass string) (ctxt, maint *Path) {
-	pathClass = params.AddClass(pathClass, "PFCPath")
+	pathClass = params.AddClass(pathClass)
 	ctxt = net.ConnectLayers(ly, ly, pat, CTCtxtPath)
 	ctxt.AddClass("CTSelfCtxt", pathClass)
 	maint = net.LateralConnectLayer(ly, pat)
@@ -158,7 +158,7 @@ func (net *Network) ConnectCTSelf(ly *Layer, pat paths.Pattern, pathClass string
 // This automatically sets the FromSuper flag to engage proper defaults,
 // Uses given pathway pattern -- e.g., Full, OneToOne, or PoolOneToOne
 func (net *Network) ConnectSuperToCT(send, recv *Layer, pat paths.Pattern, pathClass string) *Path {
-	pathClass = params.AddClass(pathClass, "PFCPath")
+	pathClass = params.AddClass(pathClass)
 	pt := net.ConnectLayers(send, recv, pat, CTCtxtPath)
 	pt.AddClass("CTFromSuper", pathClass)
 	return pt

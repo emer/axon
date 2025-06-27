@@ -252,12 +252,16 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	// trn := ss.Envs.ByModeDi(Train, 0).(*Obj3DSacEnv)
 
+	sample2 := func(ly *axon.Layer) {
+		ly.SetSampleShape(emer.CenterPoolIndexes(ly, 2), emer.CenterPoolShape(ly, 2))
+	}
+
 	// LIP network
 	v1m := net.AddLayer4D("V1m", axon.InputLayer, 8, 8, 5, 4).AddClass("V1m")
 	v1h := net.AddLayer4D("V1h", axon.InputLayer, 16, 16, 5, 4).AddClass("V1h")
 
-	v1m.SetSampleShape(emer.CenterPoolIndexes(v1m, 2), emer.CenterPoolShape(v1m, 2))
-	v1h.SetSampleShape(emer.CenterPoolIndexes(v1h, 2), emer.CenterPoolShape(v1h, 2))
+	sample2(v1m)
+	sample2(v1h)
 
 	eyepos := net.AddLayer2D("EyePos", axon.InputLayer, 21, 21).AddClass("PopCode")
 	sacplan := net.AddLayer2D("SacPlan", axon.InputLayer, 11, 11).AddClass("PopCode")
@@ -269,14 +273,15 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mtposP := net.AddPulvForLayer(mtpos, space).AddClass("MTpos")
 
 	lip, lipCT := net.AddSuperCT4D("LIP", "", 8, 8, 4, 4, space, pts.PT3x3Skp1)
+	// net.ConnectCTSelf(lipCT, full, "LIPSelf") // this is bad for performance
 
-	lip.SetSampleShape(emer.CenterPoolIndexes(lip, 2), emer.CenterPoolShape(lip, 2))
-	lipCT.SetSampleShape(emer.CenterPoolIndexes(lipCT, 2), emer.CenterPoolShape(lipCT, 2))
+	sample2(lip)
+	sample2(lipCT)
 
 	net.ConnectLayers(v1m, mtpos, pool1to1, axon.ForwardPath).AddClass("Fixed")
 	net.ConnectLayers(mtpos, lip, pool1to1, axon.ForwardPath).AddClass("Fixed")
 
-	net.ConnectToPulv(lip, lipCT, mtposP, full, pool1to1, "FromLIP")
+	net.ConnectToPulv(lip, lipCT, mtposP, full, pool1to1, "")
 
 	net.ConnectLayers(eyepos, lip, full, axon.ForwardPath)
 	net.ConnectLayers(sacplan, lip, full, axon.ForwardPath)
@@ -302,8 +307,50 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	sac.PlaceBehind(sacplan, space)
 	objvel.PlaceBehind(sac, space)
 
-	if !ss.Config.Run.LIPOnly {
-		// todo: rest of network
+	if ss.Config.Run.V2Plus {
+		// V2
+		v1mP := net.AddPulvForLayer(v1m, space).AddClass("V1m")
+		v2, v2CT := net.AddSuperCT4D("V2", "", 8, 8, 10, 10, space, pts.PT3x3Skp1) // 3x3 >> p1to1
+		sample2(v2)
+		sample2(v2CT)
+
+		// orig has v2selfct 3x3s1
+		net.ConnectToPulv(v2, v2CT, v1mP, pts.PT3x3Skp1, pts.PT3x3Skp1, "FromV1mP") // 3x3 >> p1to1
+
+		net.ConnectLayers(v1m, v2, pts.PT3x3Skp1, axon.ForwardPath).AddClass("V1V2")
+		net.ConnectLayers(v1h, v2, pts.PT4x4Skp2, axon.ForwardPath).AddClass("V1V2")
+
+		// net.ConnectLayers(v2CT, lipCT, pool1to1, axon.ForwardPath).AddClass("FwdWeak") // harmful
+		net.ConnectLayers(lipCT, v2CT, pool1to1, axon.BackPath) // critical!
+
+		net.ConnectLayers(v2, lip, pool1to1, axon.ForwardPath).AddClass("FwdWeak") // good later
+		net.ConnectLayers(lip, v2, pool1to1, axon.BackPath)                        // helpful
+
+		v2.PlaceAbove(v1m)
+		mtpos.PlaceAbove(v2)
+
+		if ss.Config.Run.V3Plus {
+			v3, v3CT := net.AddSuperCT4D("V3", "", 4, 4, 10, 10, space, pts.PT3x3Skp1) // 3x3 >> p1to1?? orig 1to1
+			sample2(v3)
+			sample2(v3CT)
+
+			// orig has v3selfct 3x3s1
+			net.ConnectToPulv(v3, v3CT, v1mP, pts.PT4x4Skp2Recip, pts.PT4x4Skp2, "FromV1mP") // 3x3 >> p1to1??
+
+			net.ConnectLayers(v2, v3, pts.PT4x4Skp2, axon.ForwardPath)
+			net.ConnectLayers(v3, v2, pts.PT4x4Skp2Recip, axon.BackPath)
+
+			net.ConnectLayers(v3CT, lipCT, pts.PT2x2Skp2Recip, axon.ForwardPath).AddClass("FwdWeak")
+			net.ConnectLayers(lipCT, v3CT, pts.PT2x2Skp2, axon.BackPath)
+
+			net.ConnectLayers(v2CT, v3CT, pts.PT4x4Skp2, axon.ForwardPath).AddClass("FwdWeak") // missing in orig
+			net.ConnectLayers(v3CT, v2CT, pts.PT4x4Skp2Recip, axon.BackPath)                   // strong .5 in orig
+
+			net.ConnectLayers(v3, lip, pts.PT2x2Skp2Recip, axon.ForwardPath).AddClass("FwdWeak")
+			net.ConnectLayers(lip, v3, pts.PT2x2Skp2, axon.BackPath)
+
+			v3.PlaceRightOf(v2, space)
+		}
 	}
 
 	net.Build()
