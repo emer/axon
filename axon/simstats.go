@@ -632,6 +632,7 @@ func StatPrevCorSim(statsDir, currentDir *tensorfs.Node, net *Network, trialLeve
 							cov := metric.Correlation(actP, prev)
 							stat = cov.Float1D(0)
 						}
+						curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
 						tsr.AppendRowFloat(stat)
 					}
 				case int(runLevel.Int64() - trialLevel.Int64()):

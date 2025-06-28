@@ -33,7 +33,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Dend.GExp = 0.2   // 0.2 > 0.1 > 0
 				ly.Acts.Dend.GR = 3       // 2 good for 0.2
 				ly.Acts.Dt.VmDendC = 500  // 500 def
-				ly.Acts.GabaB.Gk = 0.012  // 0.012 > 0.015
+				ly.Acts.GabaB.Gk = 0.012  // 0.012 > 0.015 TODO: recheck
 				ly.Acts.NMDA.Ge = 0.006   // 0.006 def
 				ly.Acts.NMDA.MgC = 1.4    // mg1, voff0, gbarexp.2, gbarr3 = better
 				ly.Acts.NMDA.Voff = 0     // mg1, voff0 = mg1.4, voff5 w best params

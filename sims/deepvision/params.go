@@ -29,13 +29,13 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Dt.LongAvgTau = 100 // 100 >= 200
 
 				ly.Acts.Decay.Act = 0.0   // 0 == .2
-				ly.Acts.Decay.Glong = 0.6 // 0.6 def
+				ly.Acts.Decay.Glong = 0.3 // 0.3 > 0.2, 0.1, higher
 				ly.Acts.Dend.SSGi = 2     // 2 new default
 				ly.Acts.Dend.GExp = 0.2   // 0.2 > 0.1 > 0
 				ly.Acts.Dend.GR = 3       // 2 good for 0.2
 				ly.Acts.Dt.VmDendC = 500  // 500 def
-				ly.Acts.GabaB.Gk = 0.012  // 0.012 > 0.015
-				ly.Acts.NMDA.Ge = 0.006   // 0.006 def
+				ly.Acts.GabaB.Gk = 0.015  // 0.015 (def) > 0.012
+				ly.Acts.NMDA.Ge = 0.006   // 0.006 def > 0.005
 				ly.Acts.NMDA.MgC = 1.4    // mg1, voff0, gbarexp.2, gbarr3 = better
 				ly.Acts.NMDA.Voff = 0     // mg1, voff0 = mg1.4, voff5 w best params
 				ly.Acts.AK.Gk = 0.1
@@ -48,13 +48,13 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Sahp.Slope = 0.02    //
 				ly.Acts.Sahp.CaTau = 5       // 5 ok -- not tested
 				ly.Acts.KNa.On.SetBool(true) // true, .05 > false
-				ly.Acts.KNa.Med.Max = 0.1    // 0.1 > 0.05 -- 0.05 blows up around 1500
-				ly.Acts.KNa.Slow.Max = 0.1
+				ly.Acts.KNa.Med.Max = 0.05   // 0.1 > 0.05 -- 0.05 blows up in lvis
+				ly.Acts.KNa.Slow.Max = 0.05
 
 				ly.Learn.CaLearn.Dt.MTau = 2 // 2 == 5?
 
-				ly.Learn.CaSpike.SpikeCaM = 12   // 12 > 8 -- for larger nets
-				ly.Learn.CaSpike.SpikeCaSyn = 12 // 12 > 8 -- TODO revisit!
+				ly.Learn.CaSpike.SpikeCaM = 12   // 12 > 8 -- dv too (lvis)
+				ly.Learn.CaSpike.SpikeCaSyn = 12 // 12 >> 8 -- "
 				ly.Learn.CaSpike.CaSynTau = 30   // 30 > 20, 40
 				ly.Learn.CaSpike.Dt.MTau = 5     // 5 > 10?
 
@@ -103,12 +103,12 @@ var LayerParams = axon.LayerSheets{
 		{Sel: ".CTLayer", Doc: "CT NMDA gbar factor is key",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.12 // CT in general more active
-				ly.CT.GeGain = 1.0             // 1 == 1.5 > 0.5 except depth
-				ly.CT.DecayTau = 0             // decay is very bad
+				ly.CT.GeGain = 1.0             // 1 > 1.5
+				ly.CT.DecayTau = 0             // 0 >> 100
 				ly.Acts.Dend.SSGi = 0          // 0 > higher -- kills nmda maint!
 				ly.Acts.Decay.Act = 0.0
-				ly.Acts.Decay.Glong = 0.0
-				ly.Acts.GabaB.Gk = 0.015 // 0.015 standard gaba
+				ly.Acts.Decay.Glong = 0.0 // 0 > 0.1
+				ly.Acts.GabaB.Gk = 0.015  // 0.015 standard gaba
 				ly.Acts.NMDA.Ge = 0.006
 				ly.Acts.NMDA.Tau = 100
 				ly.Acts.MaintNMDA.Ge = 0.006 // not relevant -- no CTSelf
@@ -169,21 +169,24 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.ActAvg.Offset = 0.008        // key for CT vs. 0.028
 				ly.Inhib.ActAvg.AdaptGi.SetBool(true) // CT needs adapt
 				ly.Inhib.Pool.On.SetBool(true)
-				ly.Inhib.Layer.FB = 1 //
+				ly.Inhib.Layer.FB = 1
 				ly.Inhib.Pool.FB = 4
 				ly.Inhib.Layer.Gi = 1.0 // 1
-				ly.Inhib.Pool.Gi = 1.05 // 1.05 good..
+				ly.Inhib.Pool.Gi = 1.05 // 1.05 > others
 			}},
 		{Sel: ".V3", Doc: "pool inhib, denser activity",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.05
-				ly.Inhib.ActAvg.Offset = 0
 				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
 				ly.Inhib.Pool.On.SetBool(true)
 				ly.Inhib.Layer.FB = 1
 				ly.Inhib.Pool.FB = 4
-				ly.Inhib.Layer.Gi = 1.0 // 1.1?
-				ly.Inhib.Pool.Gi = 1.05 // was 0.95 but gi mult goes up..
+				ly.Inhib.Layer.Gi = 1.0 // 1
+				ly.Inhib.Pool.Gi = 1.05 // 1.05 > 1?
+			}},
+		{Sel: "#V3CT", Doc: "more activity",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.05
 			}},
 		{Sel: ".V4", Doc: "pool inhib, sparse activity",
 			Set: func(ly *axon.LayerParams) {
@@ -266,15 +269,23 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Init.Mean = 0.8
 				pt.SWts.Init.Var = 0
 			}},
-		{Sel: ".FromLIP", Doc: "modulatory inputs from LIP",
-			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.1
-			}},
+		// {Sel: ".FromLIP", Doc: "modulatory inputs from LIP",
+		// 	Set: func(pt *axon.PathParams) {
+		// 		pt.PathScale.Rel = 0.1
+		// 	}},
+
+		//////// LIP
 		{Sel: "#MTposToLIP", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 1
 				pt.PathScale.Abs = 6 // 4 works..
 			}},
+		{Sel: "#LIPToLIPCT", Doc: "ok",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1 // even though LIPCT has very high Ge, reducing is bad
+			}},
+
+		//////// V2
 		{Sel: ".V1V2", Doc: "special SWt params",
 			Set: func(pt *axon.PathParams) {
 				// todo: reinvestigate:
@@ -283,49 +294,27 @@ var PathParams = axon.PathSheets{
 				// pt.SWts.Limit.Max = 0.7 //
 				pt.PathScale.Abs = 1.0 // 1.4 in lvis
 			}},
-		{Sel: ".V1V2fmSm", Doc: "weaker",
-			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.2
-			}},
 		{Sel: "#V2ToV2CT", Doc: "overactive",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 0.2 // 0.2
 			}},
+
+		//////// V3
+		{Sel: "#V2ToV3", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1.0 // 1 > 2
+			}},
+		{Sel: "#V3ToV3CT", Doc: "overactive",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1 // 1 > 0.7 despite high Ge
+			}},
+
 		{Sel: ".V2V4", Doc: "extra boost",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1.0  // 1.0 prev, 1.2 not better
-				pt.SWts.Init.Mean = 0.4 // .4 a tiny bit better overall
-				pt.SWts.Limit.Min = 0.1 // .1-.7 def
-				pt.SWts.Limit.Max = 0.7 //
-			}},
-		{Sel: ".V2V4sm", Doc: "extra boost",
-			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 1.0 // 1.0 prev, 1.2 not better
-			}},
-		{Sel: "#V2m16ToV4f16", Doc: "weights into V416 getting too high",
-			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1.0 // was 0.8, but as of #680 1.0 better
-			}},
-		{Sel: "#V2l16ToV4f16", Doc: "weights into V416 getting too high",
-			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1.0 // see above
-			}},
-		// {Sel: ".V4TEO", Doc: "stronger",
-		// 	Set: func(pt *axon.PathParams) {
-		// 		// pt.PathScale.Abs =  "1.2 // trying bigger -- was low
-		// 	}},
-		{Sel: ".V4TEOoth", Doc: "weaker rel",
-			Set: func(pt *axon.PathParams) {
-				// pt.PathScale.Abs =  1.2 // trying bigger -- was low
-				pt.PathScale.Rel = 0.5
-			}},
-		// {Sel: ".V4Out", Doc: "NOT weaker",
-		// 	Set: func(pt *axon.PathParams) {
-		// 		pt.PathScale.Rel =  "1 // 1 > 0.5 > .2 -- v53 still
-		// 	}},
-		{Sel: ".TEOTE", Doc: "too weak at start",
-			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1 // 1.2 not better
+				// pt.SWts.Init.Mean = 0.4 // .4 a tiny bit better overall
+				// pt.SWts.Limit.Min = 0.1 // .1-.7 def
+				// pt.SWts.Limit.Max = 0.7 //
 			}},
 
 		// back projections

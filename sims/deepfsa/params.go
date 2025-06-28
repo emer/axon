@@ -64,7 +64,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Layer.FB = 1
 				ly.Acts.Dend.SSGi = 0 // 0 > higher -- kills nmda maint!
 				ly.CT.GeGain = 2.0    // 2.0 > 1.5 for sure (v0.2.1+)
-				ly.CT.DecayTau = 50   // 100 for Cycles=300
+				ly.CT.DecayTau = 50   // 100 for Cycles=300 TODO: revisit!
 				ly.Acts.Decay.Act = 0.0
 				ly.Acts.Decay.Glong = 0.0
 				ly.Acts.GabaB.Gk = 0.015                // 0.015 def > 0.01

@@ -12,6 +12,7 @@ package deepvision
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"reflect"
 
@@ -24,6 +25,9 @@ import (
 	"cogentcore.org/core/tree"
 	"cogentcore.org/lab/base/mpi"
 	"cogentcore.org/lab/base/randx"
+	"cogentcore.org/lab/plot"
+	"cogentcore.org/lab/stats/metric"
+	"cogentcore.org/lab/stats/stats"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/axon/v2/axon"
@@ -272,7 +276,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mtpos := net.AddLayer4D("MTpos", axon.SuperLayer, 8, 8, 2, 2).AddClass("MTpos")
 	mtposP := net.AddPulvForLayer(mtpos, space).AddClass("MTpos")
 
-	lip, lipCT := net.AddSuperCT4D("LIP", "", 8, 8, 4, 4, space, pts.PT3x3Skp1)
+	lip, lipCT := net.AddSuperCT4D("LIP", "", 8, 8, 4, 4, space, pts.PT3x3Skp1) // 4x4 == 5x5
 	// net.ConnectCTSelf(lipCT, full, "LIPSelf") // this is bad for performance
 
 	sample2(lip)
@@ -340,7 +344,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 			net.ConnectLayers(v2, v3, pts.PT4x4Skp2, axon.ForwardPath)
 			net.ConnectLayers(v3, v2, pts.PT4x4Skp2Recip, axon.BackPath)
 
-			net.ConnectLayers(v3CT, lipCT, pts.PT2x2Skp2Recip, axon.ForwardPath).AddClass("FwdWeak")
+			// net.ConnectLayers(v3CT, lipCT, pts.PT2x2Skp2Recip, axon.ForwardPath).AddClass("FwdWeak") // bad for lip
 			net.ConnectLayers(lipCT, v3CT, pts.PT2x2Skp2, axon.BackPath)
 
 			net.ConnectLayers(v2CT, v3CT, pts.PT4x4Skp2, axon.ForwardPath).AddClass("FwdWeak") // missing in orig
@@ -673,15 +677,14 @@ func (ss *Sim) ConfigStats() {
 		perTrlFunc(mode, level, phase == Start)
 	})
 
-	plays := net.LayersByType(axon.PulvinarLayer)
-	corSimFunc := axon.StatCorSim(ss.Stats, ss.Current, net, Trial, Run, plays...)
+	corSimFunc := ss.StatCorSim()
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		corSimFunc(mode, level, phase == Start)
+		corSimFunc(mode, level, phase)
 	})
 
-	prevCorFunc := axon.StatPrevCorSim(ss.Stats, ss.Current, net, Trial, Run, plays...)
+	prevCorFunc := ss.StatPrevCorSim()
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		prevCorFunc(mode, level, phase == Start)
+		prevCorFunc(mode, level, phase)
 	})
 
 	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.PulvinarLayer, axon.InputLayer)
@@ -702,6 +705,155 @@ func (ss *Sim) ConfigStats() {
 	})
 }
 
+// StatCorSim returns a Stats function that records 1 - [LayerPhaseDiff] stats,
+// i.e., Correlation-based similarity, for given layer names.
+func (ss *Sim) StatCorSim() func(mode Modes, level Levels, phase StatsPhase) {
+	net := ss.Net
+	layers := net.LayersByType(axon.PulvinarLayer)
+	ticks := []string{"", "0", "Foc", "Sac"}
+	return func(mode Modes, level Levels, phase StatsPhase) {
+		if level < Trial {
+			return
+		}
+		modeDir := ss.Stats.Dir(mode.String())
+		curModeDir := ss.Current.Dir(mode.String())
+		levelDir := modeDir.Dir(level.String())
+		subDir := modeDir.Dir((level - 1).String())
+		ndata := int(net.Context().NData)
+		for _, lnm := range layers {
+			for _, t := range ticks {
+				ly := net.LayerByName(lnm)
+				li := ly.Params.Index
+				name := lnm + "_CorSim" + t
+				tsr := levelDir.Float64(name)
+				if phase == Start {
+					tsr.SetNumRows(0)
+					plot.SetFirstStyler(tsr, func(s *plot.Style) {
+						s.Range.SetMin(0).SetMax(1)
+						s.On = true
+					})
+					continue
+				}
+				switch level {
+				case Trial:
+					for di := range ndata {
+						ev := ss.Envs.ByModeDi(mode, di).(*Obj3DSacEnv)
+						tick := ev.Tick.Cur
+						nan := math.NaN()
+						stat := 1.0 - float64(axon.LayerStates.Value(int(li), int(di), int(axon.LayerPhaseDiff)))
+						switch t {
+						case "":
+						case "0":
+							if tick != 0 {
+								stat = nan
+							}
+						case "Foc":
+							if tick == 0 || tick%2 == 0 {
+								stat = nan
+							}
+						case "Sac":
+							if tick == 0 || tick%2 == 1 {
+								stat = nan
+							}
+						}
+						curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
+						tsr.AppendRowFloat(float64(stat))
+					}
+				case Run:
+					tsr.AppendRow(stats.StatFinal.Call(subDir.Value(name)))
+				default:
+					tsr.AppendRow(stats.StatMean.Call(subDir.Value(name)))
+				}
+			}
+		}
+	}
+}
+
+// StatPrevCorSim returns a Stats function that compute correlations
+// between previous trial activity state and current minus phase and
+// plus phase state. This is important for predictive learning.
+func (ss *Sim) StatPrevCorSim() func(mode Modes, level Levels, phase StatsPhase) {
+	net := ss.Net
+	layers := net.LayersByType(axon.PulvinarLayer)
+	ticks := []string{"", "0", "Foc", "Sac"}
+	statNames := []string{"PrevToMCorSim", "PrevToPCorSim"}
+	return func(mode Modes, level Levels, phase StatsPhase) {
+		if level < Trial {
+			return
+		}
+		modeDir := ss.Stats.Dir(mode.String())
+		curModeDir := ss.Current.Dir(mode.String())
+		levelDir := modeDir.Dir(level.String())
+		subDir := modeDir.Dir((level - 1).String())
+		ndata := int(net.Context().NData)
+		for _, lnm := range layers {
+			for _, t := range ticks {
+				for si, statName := range statNames {
+					ly := net.LayerByName(lnm)
+					name := lnm + "_" + statName + t
+					tsr := levelDir.Float64(name)
+					if phase == Start {
+						tsr.SetNumRows(0)
+						plot.SetFirstStyler(tsr, func(s *plot.Style) {
+							s.Range.SetMin(0).SetMax(1)
+						})
+						continue
+					}
+					switch level {
+					case Trial:
+						// note: current lnm + _var is standard reusable unit vals buffer
+						actM := curModeDir.Float64(lnm+"_ActM", ly.GetSampleShape().Sizes...)
+						actP := curModeDir.Float64(lnm+"_ActP", ly.GetSampleShape().Sizes...)
+						// note: CaD is sufficiently stable that it is fine to compare with ActM and ActP
+						prev := curModeDir.Float64(lnm+"_CaDPrev", ly.GetSampleShape().Sizes...)
+						for di := range ndata {
+							ev := ss.Envs.ByModeDi(mode, di).(*Obj3DSacEnv)
+							tick := ev.Tick.Cur
+							nan := math.NaN()
+							ly.UnitValuesSampleTensor(prev, "CaDPrev", di)
+							prev.SetShapeSizes(prev.Len()) // set to 1D -- inexpensive and faster for computation
+							var stat float64
+							switch si {
+							case 0:
+								ly.UnitValuesSampleTensor(actM, "ActM", di)
+								actM.SetShapeSizes(actM.Len())
+								cov := metric.Correlation(actM, prev)
+								stat = cov.Float1D(0)
+							case 1:
+								ly.UnitValuesSampleTensor(actP, "ActP", di)
+								actP.SetShapeSizes(actP.Len())
+								cov := metric.Correlation(actP, prev)
+								stat = cov.Float1D(0)
+							}
+							switch t {
+							case "":
+							case "0":
+								if tick != 0 {
+									stat = nan
+								}
+							case "Foc":
+								if tick == 0 || tick%2 == 0 {
+									stat = nan
+								}
+							case "Sac":
+								if tick == 0 || tick%2 == 1 {
+									stat = nan
+								}
+							}
+							curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
+							tsr.AppendRowFloat(stat)
+						}
+					case Run:
+						tsr.AppendRow(stats.StatFinal.Call(subDir.Value(name)))
+					default:
+						tsr.AppendRow(stats.StatMean.Call(subDir.Value(name)))
+					}
+				}
+			}
+		}
+	}
+}
+
 // StatCounters returns counters string to show at bottom of netview.
 func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 	counters := ss.Loops.Stacks[mode].CountersString()
@@ -716,13 +868,17 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 		return counters
 	}
 	counters += fmt.Sprintf(" TrialName: %s", curModeDir.StringValue("TrialName").String1D(di))
-	// statNames := []string{"CorSim", "UnitErr", "Err"}
-	// if level == Cycle || curModeDir.Node(statNames[0]) == nil {
-	// 	return counters
-	// }
-	// for _, name := range statNames {
-	// 	counters += fmt.Sprintf(" %s: %.4g", name, curModeDir.Float64(name).Float1D(di))
-	// }
+	ev := ss.Envs.ByModeDi(mode, di).(*Obj3DSacEnv)
+	counters += fmt.Sprintf(" Tick: %d", ev.Tick.Cur)
+	if level == Cycle {
+		return counters
+	}
+	statNames := []string{"MTposP_CorSim", "V1mP_CorSim"}
+	for _, name := range statNames {
+		if curModeDir.Node(name) != nil {
+			counters += fmt.Sprintf(" %s: %.4g", name, curModeDir.Float64(name).Float1D(di))
+		}
+	}
 	return counters
 }
 
