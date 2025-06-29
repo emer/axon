@@ -4,6 +4,8 @@ package axon
 
 import (
 	"embed"
+	"fmt"
+	"math"
 	"unsafe"
 	"cogentcore.org/core/gpu"
 	"cogentcore.org/lab/tensor"
@@ -12,12 +14,13 @@ import (
 //go:embed shaders/*.wgsl
 var shaders embed.FS
 
-// ComputeGPU is the compute gpu device
-var ComputeGPU *gpu.GPU
+var (
+	// ComputeGPU is the compute gpu device
+	ComputeGPU *gpu.GPU
 
-// UseGPU indicates whether to use GPU vs. CPU.
-var UseGPU bool
-
+	// UseGPU indicates whether to use GPU vs. CPU.
+	UseGPU bool
+)
 // GPUSystem is a GPU compute System with kernels operating on the
 // same set of data variables.
 var GPUSystem *gpu.ComputeSystem
@@ -63,6 +66,7 @@ func GPUInit() {
 	}
 	gp := gpu.NewComputeGPU()
 	ComputeGPU = gp
+	_ = fmt.Sprintf("%g",math.NaN()) // keep imports happy
 	{
 		sy := gpu.NewComputeSystem(gp, "Default")
 		GPUSystem = sy
@@ -108,18 +112,18 @@ func GPUInit() {
 			vr.ReadOnly = true
 			vr = sgp.AddStruct("Paths", int(unsafe.Sizeof(PathParams{})), 1, gpu.ComputeShader)
 			vr.ReadOnly = true
-			vr = sgp.AddStruct("NetworkIxs", int(unsafe.Sizeof(NetworkIndexes{})), 1, gpu.ComputeShader)
-			vr.ReadOnly = true
-			vr = sgp.Add("PoolIxs", gpu.Uint32, 1, gpu.ComputeShader)
-			vr.ReadOnly = true
-			vr = sgp.Add("NeuronIxs", gpu.Uint32, 1, gpu.ComputeShader)
-			vr.ReadOnly = true
 			sgp.SetNValues(1)
 		}
 		{
 			sgp := vars.AddGroup(gpu.Storage, "Indexes")
 			var vr *gpu.Var
 			_ = vr
+			vr = sgp.AddStruct("NetworkIxs", int(unsafe.Sizeof(NetworkIndexes{})), 1, gpu.ComputeShader)
+			vr.ReadOnly = true
+			vr = sgp.Add("PoolIxs", gpu.Uint32, 1, gpu.ComputeShader)
+			vr.ReadOnly = true
+			vr = sgp.Add("NeuronIxs", gpu.Uint32, 1, gpu.ComputeShader)
+			vr.ReadOnly = true
 			vr = sgp.Add("SynapseIxs", gpu.Uint32, 1, gpu.ComputeShader)
 			vr.ReadOnly = true
 			vr = sgp.Add("PathSendCon", gpu.Uint32, 1, gpu.ComputeShader)
@@ -143,18 +147,24 @@ func GPUInit() {
 			vr = sgp.Add("GlobalScalars", gpu.Float32, 1, gpu.ComputeShader)
 			vr = sgp.Add("GlobalVectors", gpu.Float32, 1, gpu.ComputeShader)
 			vr = sgp.Add("Exts", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("Pools", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("PoolsInt", gpu.Int32, 1, gpu.ComputeShader)
 			sgp.SetNValues(1)
 		}
 		{
 			sgp := vars.AddGroup(gpu.Storage, "Synapse")
 			var vr *gpu.Var
 			_ = vr
-			vr = sgp.Add("Pools", gpu.Float32, 1, gpu.ComputeShader)
-			vr = sgp.Add("PoolsInt", gpu.Int32, 1, gpu.ComputeShader)
 			vr = sgp.Add("PathGBuf", gpu.Int32, 1, gpu.ComputeShader)
 			vr = sgp.Add("PathGSyns", gpu.Float32, 1, gpu.ComputeShader)
 			vr = sgp.Add("Synapses", gpu.Float32, 1, gpu.ComputeShader)
-			vr = sgp.Add("SynapseTraces", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("SynapseTraces0", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("SynapseTraces1", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("SynapseTraces2", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("SynapseTraces3", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("SynapseTraces4", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("SynapseTraces5", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("SynapseTraces6", gpu.Float32, 1, gpu.ComputeShader)
 			sgp.SetNValues(1)
 		}
 		sy.Config()
@@ -1509,13 +1519,13 @@ func ToGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(0, "Paths", 0)
 			gpu.SetValueFrom(v, Paths)
 		case NetworkIxsVar:
-			v, _ := syVars.ValueByIndex(0, "NetworkIxs", 0)
+			v, _ := syVars.ValueByIndex(1, "NetworkIxs", 0)
 			gpu.SetValueFrom(v, NetworkIxs)
 		case PoolIxsVar:
-			v, _ := syVars.ValueByIndex(0, "PoolIxs", 0)
+			v, _ := syVars.ValueByIndex(1, "PoolIxs", 0)
 			gpu.SetValueFrom(v, PoolIxs.Values)
 		case NeuronIxsVar:
-			v, _ := syVars.ValueByIndex(0, "NeuronIxs", 0)
+			v, _ := syVars.ValueByIndex(1, "NeuronIxs", 0)
 			gpu.SetValueFrom(v, NeuronIxs.Values)
 		case SynapseIxsVar:
 			v, _ := syVars.ValueByIndex(1, "SynapseIxs", 0)
@@ -1554,10 +1564,10 @@ func ToGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(2, "Exts", 0)
 			gpu.SetValueFrom(v, Exts.Values)
 		case PoolsVar:
-			v, _ := syVars.ValueByIndex(3, "Pools", 0)
+			v, _ := syVars.ValueByIndex(2, "Pools", 0)
 			gpu.SetValueFrom(v, Pools.Values)
 		case PoolsIntVar:
-			v, _ := syVars.ValueByIndex(3, "PoolsInt", 0)
+			v, _ := syVars.ValueByIndex(2, "PoolsInt", 0)
 			gpu.SetValueFrom(v, PoolsInt.Values)
 		case PathGBufVar:
 			v, _ := syVars.ValueByIndex(3, "PathGBuf", 0)
@@ -1569,8 +1579,15 @@ func ToGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(3, "Synapses", 0)
 			gpu.SetValueFrom(v, Synapses.Values)
 		case SynapseTracesVar:
-			v, _ := syVars.ValueByIndex(3, "SynapseTraces", 0)
-			gpu.SetValueFrom(v, SynapseTraces.Values)
+			bsz := 536870912
+			n := SynapseTraces.Len()
+			nb := int(math.Ceil(float64(n) / float64(bsz)))
+			for bi := range nb {
+				v, _ := syVars.ValueByIndex(3, fmt.Sprintf("SynapseTraces%d", bi), 0)
+				st := bsz * bi
+				ed := min(bsz * (bi+1), n)
+				gpu.SetValueFrom(v, SynapseTraces.Values[st:ed])
+			}
 		}
 	}
 }
@@ -1653,13 +1670,13 @@ func ReadFromGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(0, "Paths", 0)
 			v.GPUToRead(sy.CommandEncoder)
 		case NetworkIxsVar:
-			v, _ := syVars.ValueByIndex(0, "NetworkIxs", 0)
+			v, _ := syVars.ValueByIndex(1, "NetworkIxs", 0)
 			v.GPUToRead(sy.CommandEncoder)
 		case PoolIxsVar:
-			v, _ := syVars.ValueByIndex(0, "PoolIxs", 0)
+			v, _ := syVars.ValueByIndex(1, "PoolIxs", 0)
 			v.GPUToRead(sy.CommandEncoder)
 		case NeuronIxsVar:
-			v, _ := syVars.ValueByIndex(0, "NeuronIxs", 0)
+			v, _ := syVars.ValueByIndex(1, "NeuronIxs", 0)
 			v.GPUToRead(sy.CommandEncoder)
 		case SynapseIxsVar:
 			v, _ := syVars.ValueByIndex(1, "SynapseIxs", 0)
@@ -1698,10 +1715,10 @@ func ReadFromGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(2, "Exts", 0)
 			v.GPUToRead(sy.CommandEncoder)
 		case PoolsVar:
-			v, _ := syVars.ValueByIndex(3, "Pools", 0)
+			v, _ := syVars.ValueByIndex(2, "Pools", 0)
 			v.GPUToRead(sy.CommandEncoder)
 		case PoolsIntVar:
-			v, _ := syVars.ValueByIndex(3, "PoolsInt", 0)
+			v, _ := syVars.ValueByIndex(2, "PoolsInt", 0)
 			v.GPUToRead(sy.CommandEncoder)
 		case PathGBufVar:
 			v, _ := syVars.ValueByIndex(3, "PathGBuf", 0)
@@ -1713,8 +1730,13 @@ func ReadFromGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(3, "Synapses", 0)
 			v.GPUToRead(sy.CommandEncoder)
 		case SynapseTracesVar:
-			v, _ := syVars.ValueByIndex(3, "SynapseTraces", 0)
-			v.GPUToRead(sy.CommandEncoder)
+			bsz := 536870912
+			n := SynapseTraces.Len()
+			nb := int(math.Ceil(float64(n) / float64(bsz)))
+			for bi := range nb {
+				v, _ := syVars.ValueByIndex(3, fmt.Sprintf("SynapseTraces%d", bi), 0)
+				v.GPUToRead(sy.CommandEncoder)
+			}
 		}
 	}
 }
@@ -1734,15 +1756,15 @@ func SyncFromGPU(vars ...GPUVars) {
 			v.ReadSync()
 			gpu.ReadToBytes(v, Paths)
 		case NetworkIxsVar:
-			v, _ := syVars.ValueByIndex(0, "NetworkIxs", 0)
+			v, _ := syVars.ValueByIndex(1, "NetworkIxs", 0)
 			v.ReadSync()
 			gpu.ReadToBytes(v, NetworkIxs)
 		case PoolIxsVar:
-			v, _ := syVars.ValueByIndex(0, "PoolIxs", 0)
+			v, _ := syVars.ValueByIndex(1, "PoolIxs", 0)
 			v.ReadSync()
 			gpu.ReadToBytes(v, PoolIxs.Values)
 		case NeuronIxsVar:
-			v, _ := syVars.ValueByIndex(0, "NeuronIxs", 0)
+			v, _ := syVars.ValueByIndex(1, "NeuronIxs", 0)
 			v.ReadSync()
 			gpu.ReadToBytes(v, NeuronIxs.Values)
 		case SynapseIxsVar:
@@ -1794,11 +1816,11 @@ func SyncFromGPU(vars ...GPUVars) {
 			v.ReadSync()
 			gpu.ReadToBytes(v, Exts.Values)
 		case PoolsVar:
-			v, _ := syVars.ValueByIndex(3, "Pools", 0)
+			v, _ := syVars.ValueByIndex(2, "Pools", 0)
 			v.ReadSync()
 			gpu.ReadToBytes(v, Pools.Values)
 		case PoolsIntVar:
-			v, _ := syVars.ValueByIndex(3, "PoolsInt", 0)
+			v, _ := syVars.ValueByIndex(2, "PoolsInt", 0)
 			v.ReadSync()
 			gpu.ReadToBytes(v, PoolsInt.Values)
 		case PathGBufVar:
@@ -1814,9 +1836,16 @@ func SyncFromGPU(vars ...GPUVars) {
 			v.ReadSync()
 			gpu.ReadToBytes(v, Synapses.Values)
 		case SynapseTracesVar:
-			v, _ := syVars.ValueByIndex(3, "SynapseTraces", 0)
-			v.ReadSync()
-			gpu.ReadToBytes(v, SynapseTraces.Values)
+			bsz := 536870912
+			n := SynapseTraces.Len()
+			nb := int(math.Ceil(float64(n) / float64(bsz)))
+			for bi := range nb {
+				v, _ := syVars.ValueByIndex(3, fmt.Sprintf("SynapseTraces%d", bi), 0)
+				v.ReadSync()
+				st := bsz * bi
+				ed := min(bsz * (bi+1), n)
+				gpu.ReadToBytes(v, SynapseTraces.Values[st:ed])
+			}
 		}
 	}
 }

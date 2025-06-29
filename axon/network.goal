@@ -36,10 +36,6 @@ import (
 	"github.com/emer/emergent/v2/paths"
 )
 
-// note: networkbase.go has all the basic infrastructure;
-// network.go has the algorithm-specific code.
-// Everything is defined on Network type.
-
 //gosl:start
 
 // NetworkIndexes are indexes and sizes for processing network.
@@ -83,16 +79,7 @@ type NetworkIndexes struct {
 	// RubiconNNegUSs is the total number of .Rubicon Negative USs.
 	RubiconNNegUSs uint32 `edit:"-"`
 
-	// todo: remove these: need a generic solution to larger buffers:
-
-	// GPUMaxBuffFloats is the maximum size in float32 (4 bytes) of a GPU buffer
-	// needed for GPU access.
-	GPUMaxBuffFloats uint32 `edit:"-"`
-
-	// GPUSyncCaBanks is the total number of SynCa banks of GPUMaxBufferBytes arrays in GPU.
-	GPUSynCaBanks uint32 `edit:"-"`
-	
-	pad, pad1, pad2 uint32
+	pad uint32
 }
 
 //gosl:end

@@ -181,8 +181,10 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Pool.On.SetBool(true)
 				ly.Inhib.Layer.FB = 1
 				ly.Inhib.Pool.FB = 4
-				ly.Inhib.Layer.Gi = 1.0 // 1
-				ly.Inhib.Pool.Gi = 1.05 // 1.05 > 1?
+				ly.Inhib.Layer.Gi = 1.0   // 1
+				ly.Inhib.Pool.Gi = 1.05   // 1.05 > 1?
+				ly.Acts.GabaB.Gk = 0.015  // 0.015 with shortcuts
+				ly.Acts.Decay.Glong = 0.3 // 0.3 > 0.6
 			}},
 		{Sel: "#V3CT", Doc: "more activity",
 			Set: func(ly *axon.LayerParams) {
@@ -269,10 +271,13 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Init.Mean = 0.8
 				pt.SWts.Init.Var = 0
 			}},
-		// {Sel: ".FromLIP", Doc: "modulatory inputs from LIP",
-		// 	Set: func(pt *axon.PathParams) {
-		// 		pt.PathScale.Rel = 0.1
-		// 	}},
+		{Sel: ".V1SC", Doc: "v1 shortcut",
+			Set: func(pt *axon.PathParams) {
+				pt.Learn.LRate.Base = 0.001 //
+				// pt.Learn.Learn.SetBool(false)
+				pt.PathScale.Rel = 0.5          // .5 > .8 > 1 > .4 > .3 etc
+				pt.SWts.Adapt.On.SetBool(false) // seems better
+			}},
 
 		//////// LIP
 		{Sel: "#MTposToLIP", Doc: "",
@@ -308,7 +313,16 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 1 // 1 > 0.7 despite high Ge
 			}},
+		{Sel: "#V3CTToV1mP", Doc: "less",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Rel = 0.2 // 0.2 > 0.1 > 0.5+
+			}},
+		// {Sel: "#V3ToLIP", Doc: "less?",
+		// 	Set: func(pt *axon.PathParams) {
+		// 		pt.PathScale.Rel = 0.2 // 0.2 == 0.1
+		// 	}},
 
+		//////// V4
 		{Sel: ".V2V4", Doc: "extra boost",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 1.0 // 1.0 prev, 1.2 not better

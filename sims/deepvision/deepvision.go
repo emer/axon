@@ -253,6 +253,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	full := paths.NewFull()
 	pool1to1 := paths.NewPoolOneToOne()
 	pts := &ss.Paths
+	rndcut := paths.NewUniformRand()
+	rndcut.PCon = 0.1
+	_ = rndcut
 
 	// trn := ss.Envs.ByModeDi(Train, 0).(*Obj3DSacEnv)
 
@@ -352,6 +355,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 			net.ConnectLayers(v3, lip, pts.PT2x2Skp2Recip, axon.ForwardPath).AddClass("FwdWeak")
 			net.ConnectLayers(lip, v3, pts.PT2x2Skp2, axon.BackPath)
+
+			net.ConnectLayers(v1m, v3, rndcut, axon.ForwardPath).AddClass("V1SC")   // shortcut!
+			net.ConnectLayers(v1m, v3CT, rndcut, axon.ForwardPath).AddClass("V1SC") // shortcut!
 
 			v3.PlaceRightOf(v2, space)
 		}

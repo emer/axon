@@ -33,6 +33,7 @@ var (
 	//////// Indexes
 
 	// NetworkIxs have indexes and sizes for entire network (one only).
+	//gosl:group Indexes
 	//gosl:read-only
 	NetworkIxs []NetworkIndexes
 
@@ -51,7 +52,6 @@ var (
 	// SynapseIxs have index values for each synapse:
 	// providing index into recv, send neurons, path.
 	// [Indexes][NSyns]; NSyns = [Layer][SendPaths][SendNeurons][Syns]
-	//gosl:group Indexes
 	//gosl:read-only
 	//gosl:dims 2
 	SynapseIxs *tensor.Uint32
@@ -125,12 +125,9 @@ var (
 	//gosl:dims 2
 	Exts *tensor.Float32
 
-	//////// Pool and Synapse State
-
 	// Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition,
 	// Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex].
 	// [Layer * Pools][Data][PoolVars+AvgMax]
-	//gosl:group Synapse
 	//gosl:dims 3
 	Pools *tensor.Float32
 
@@ -140,10 +137,13 @@ var (
 	//gosl:dims 3
 	PoolsInt *tensor.Int32
 
+	//////// Synapse State
+
 	// PathGBuf is the conductance buffer for accumulating spikes.
 	// Subslices are allocated to each pathway.
 	// Uses int-encoded values for faster GPU atomic integration.
 	// [NPathNeur][Data][MaxDel+1]; NPathNeur = [Layer][RecvPaths][RecvNeurons]
+	//gosl:group Synapse
 	//gosl:dims 3
 	PathGBuf *tensor.Int32
 
@@ -160,14 +160,13 @@ var (
 	//gosl:dims 2
 	Synapses *tensor.Float32
 
-	//////// SynapseTraces
-
 	// SynapseTraces are synaptic variables that depend on the data
 	// parallel index, for accumulating learning traces and weight changes per data.
-	// This is the largest data size, so multiple instances are used
+	// This is the largest data size, so nbuffs multiple instances are used
 	// to handle larger networks.
 	// [NSyns][Data][Vars]; NSyns = [Layer][SendPaths][SendNeurons][Syns]
 	//gosl:dims 3
+	//gosl:nbuffs 7
 	SynapseTraces *tensor.Float32
 )
 
