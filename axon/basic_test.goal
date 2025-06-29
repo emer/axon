@@ -836,8 +836,6 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 	testNet := newTestNet(1)
 	ctx := testNet.Context()
 
-	// fmt.Printf("synbanks: %d\n", ctx.NetIndexes.NSynCaBanks)
-
 	inPats := newInPats()
 	inLay := testNet.LayerByName("Input")
 	hidLay := testNet.LayerByName("Hidden")
@@ -1365,19 +1363,6 @@ func TestGPUSlowAdaptLearn(t *testing.T) {
 	gpuValues := NetDebugLearn(t, false, true, 1, 1, false, false, true)
 	// this has bad tolerance, due to GABAB -- similar to NMDA issues
 	ReportValDiffs(t, Tol3, cpuValues, gpuValues, "CPU", "GPU")
-}
-
-func TestGPUSynCa(t *testing.T) {
-	if os.Getenv("TEST_GPU") != "true" {
-		t.Skip("Set TEST_GPU env var to run GPU tests")
-	}
-	testNet := newTestNetFull(16)
-	_ = testNet
-	// testNet.ConfigGPUnoGUI()
-	// passed := testNet.GPU.TestSynCa()
-	// if !passed {
-	// 	t.Errorf("GPU SynCa write failed\n")
-	// }
 }
 
 func TestInhibAct(t *testing.T) {

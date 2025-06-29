@@ -1248,7 +1248,7 @@ func (nt *Network) SizeReport(detail bool) string {
 	synWtMem := nt.Synapses.Len() * synVarBytes
 	synCaMem := nt.SynapseTraces.Len() * synVarBytes
 
-	fmt.Fprintf(&b, "\n\n%14s:\t Neurons: %d\t NeurMem: %v \t Syns: %d \t SynIndexes: %v \t SynWts: %v \t SynCa: %v\n",
+	fmt.Fprintf(&b, "\n\n%14s:\t Neurons: %d\t NeurMem: %v \t Syns: %d \t SynIndexes: %v \t SynWts: %v \t SynTr: %v\n",
 		nt.Name, nix.NNeurons, (datasize.Size)(nrnMem).String(), nix.NSyns,
 		(datasize.Size)(synIndexMem).String(), (datasize.Size)(synWtMem).String(), (datasize.Size)(synCaMem).String())
 	return b.String()
