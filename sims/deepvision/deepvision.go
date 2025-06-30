@@ -279,7 +279,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mtpos := net.AddLayer4D("MTpos", axon.SuperLayer, 8, 8, 2, 2).AddClass("MTpos")
 	mtposP := net.AddPulvForLayer(mtpos, space).AddClass("MTpos")
 
-	lip, lipCT := net.AddSuperCT4D("LIP", "", 8, 8, 4, 4, space, pts.PT3x3Skp1) // 4x4 == 5x5
+	lip, lipCT := net.AddSuperCT4D("LIP", "LIPCtxt", 8, 8, 4, 4, space, pts.PT3x3Skp1) // 4x4 == 5x5
 	// net.ConnectCTSelf(lipCT, full, "LIPSelf") // this is bad for performance
 
 	sample2(lip)
@@ -290,6 +290,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectToPulv(lip, lipCT, mtposP, full, pool1to1, "")
 
+	// todo: try not having these!
 	net.ConnectLayers(eyepos, lip, full, axon.ForwardPath)
 	net.ConnectLayers(sacplan, lip, full, axon.ForwardPath)
 	net.ConnectLayers(objvel, lip, full, axon.ForwardPath)
@@ -314,55 +315,94 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	sac.PlaceBehind(sacplan, space)
 	objvel.PlaceBehind(sac, space)
 
-	if ss.Config.Run.V2Plus {
-		// V2
-		v1mP := net.AddPulvForLayer(v1m, space).AddClass("V1m")
-		v2, v2CT := net.AddSuperCT4D("V2", "", 8, 8, 10, 10, space, pts.PT3x3Skp1) // 3x3 >> p1to1
-		sample2(v2)
-		sample2(v2CT)
+	var v1mP, v2, v2CT, v3, v3CT, v4, v4CT *axon.Layer
 
-		// orig has v2selfct 3x3s1
-		net.ConnectToPulv(v2, v2CT, v1mP, pts.PT3x3Skp1, pts.PT3x3Skp1, "FromV1mP") // 3x3 >> p1to1
-
-		net.ConnectLayers(v1m, v2, pts.PT3x3Skp1, axon.ForwardPath).AddClass("V1V2")
-		net.ConnectLayers(v1h, v2, pts.PT4x4Skp2, axon.ForwardPath).AddClass("V1V2")
-
-		// net.ConnectLayers(v2CT, lipCT, pool1to1, axon.ForwardPath).AddClass("FwdWeak") // harmful
-		net.ConnectLayers(lipCT, v2CT, pool1to1, axon.BackPath) // critical!
-
-		net.ConnectLayers(v2, lip, pool1to1, axon.ForwardPath).AddClass("FwdWeak") // good later
-		net.ConnectLayers(lip, v2, pool1to1, axon.BackPath)                        // helpful
-
-		v2.PlaceAbove(v1m)
-		mtpos.PlaceAbove(v2)
-
-		if ss.Config.Run.V3Plus {
-			v3, v3CT := net.AddSuperCT4D("V3", "", 4, 4, 10, 10, space, pts.PT3x3Skp1) // 3x3 >> p1to1?? orig 1to1
-			sample2(v3)
-			sample2(v3CT)
-
-			// orig has v3selfct 3x3s1
-			net.ConnectToPulv(v3, v3CT, v1mP, pts.PT4x4Skp2Recip, pts.PT4x4Skp2, "FromV1mP") // 3x3 >> p1to1??
-
-			net.ConnectLayers(v2, v3, pts.PT4x4Skp2, axon.ForwardPath)
-			net.ConnectLayers(v3, v2, pts.PT4x4Skp2Recip, axon.BackPath)
-
-			// net.ConnectLayers(v3CT, lipCT, pts.PT2x2Skp2Recip, axon.ForwardPath).AddClass("FwdWeak") // bad for lip
-			net.ConnectLayers(lipCT, v3CT, pts.PT2x2Skp2, axon.BackPath)
-
-			net.ConnectLayers(v2CT, v3CT, pts.PT4x4Skp2, axon.ForwardPath).AddClass("FwdWeak") // missing in orig
-			net.ConnectLayers(v3CT, v2CT, pts.PT4x4Skp2Recip, axon.BackPath)                   // strong .5 in orig
-
-			net.ConnectLayers(v3, lip, pts.PT2x2Skp2Recip, axon.ForwardPath).AddClass("FwdWeak")
-			net.ConnectLayers(lip, v3, pts.PT2x2Skp2, axon.BackPath)
-
-			net.ConnectLayers(v1m, v3, rndcut, axon.ForwardPath).AddClass("V1SC")   // shortcut!
-			net.ConnectLayers(v1m, v3CT, rndcut, axon.ForwardPath).AddClass("V1SC") // shortcut!
-
-			v3.PlaceRightOf(v2, space)
-		}
+	//////// V2
+	if !ss.Config.Run.V2Plus {
+		goto build
 	}
+	v1mP = net.AddPulvForLayer(v1m, space).AddClass("V1m")
+	v2, v2CT = net.AddSuperCT4D("V2", "", 8, 8, 10, 10, space, pts.PT3x3Skp1) // 3x3 >> p1to1
+	sample2(v2)
+	sample2(v2CT)
 
+	// orig has v2selfct 3x3s1
+	net.ConnectToPulv(v2, v2CT, v1mP, pts.PT3x3Skp1, pts.PT3x3Skp1, "FromV1mP") // 3x3 >> p1to1
+
+	net.ConnectLayers(v1m, v2, pts.PT3x3Skp1, axon.ForwardPath).AddClass("V1V2")
+	net.ConnectLayers(v1h, v2, pts.PT4x4Skp2, axon.ForwardPath).AddClass("V1V2")
+
+	// net.ConnectLayers(v2CT, lipCT, pool1to1, axon.ForwardPath).AddClass("FwdWeak") // harmful
+	net.ConnectLayers(lipCT, v2CT, pool1to1, axon.BackPath) // critical!
+
+	net.ConnectLayers(v2, lip, pool1to1, axon.ForwardPath).AddClass("FwdWeak") // good later
+	net.ConnectLayers(lip, v2, pool1to1, axon.BackPath)                        // helpful
+
+	v2.PlaceAbove(v1m)
+	mtpos.PlaceAbove(v2)
+
+	//////// V3
+	if !ss.Config.Run.V3Plus {
+		goto build
+	}
+	v3, v3CT = net.AddSuperCT4D("V3", "", 4, 4, 10, 10, space, pts.PT3x3Skp1)
+	sample2(v3)
+	sample2(v3CT)
+
+	// old has v3selfct 3x3s1
+	// orig 4x4
+	net.ConnectToPulv(v3, v3CT, v1mP, pts.PT4x4Skp2Recip, pts.PT4x4Skp2, "FromV1mP")
+
+	// note: orig 4x4skp2
+	net.ConnectLayers(v2, v3, pts.PT4x4Skp2, axon.ForwardPath)
+	net.ConnectLayers(v3, v2, pts.PT4x4Skp2Recip, axon.BackPath)
+
+	// net.ConnectLayers(v3CT, lipCT, pts.PT2x2Skp2Recip, axon.ForwardPath).AddClass("FwdWeak") // bad for lip
+	// net.ConnectLayers(lipCT, v3CT, pts.PT2x2Skp2, axon.BackPath) // bad; 2x2 orig
+
+	// missing in orig, slower at start but needed for later:
+	net.ConnectLayers(v2CT, v3CT, pts.PT4x4Skp2, axon.ForwardPath).AddClass("FwdWeak")
+
+	// todo: strong .5 in orig
+	net.ConnectLayers(v3CT, v2CT, pts.PT4x4Skp2Recip, axon.BackPath) // yes top-down CT
+
+	// orig 2x2:
+	net.ConnectLayers(v3, lip, pts.PT2x2Skp2Recip, axon.ForwardPath).AddClass("FwdWeak")
+	net.ConnectLayers(lip, v3, pts.PT2x2Skp2, axon.BackPath)
+
+	net.ConnectLayers(v1m, v3, rndcut, axon.ForwardPath).AddClass("V1SC")   // shortcut!
+	net.ConnectLayers(v1m, v3CT, rndcut, axon.ForwardPath).AddClass("V1SC") // shortcut!
+
+	v3.PlaceRightOf(v2, space)
+
+	//////// V4
+	if !ss.Config.Run.V4Plus {
+		goto build
+	}
+	v4, v4CT = net.AddSuperCT4D("V4", "", 4, 4, 10, 10, space, pts.PT3x3Skp1) // 3x3 >> p1to1?? orig 1to1
+	sample2(v4)
+	sample2(v4CT)
+
+	// orig has v4selfct 3x3s1
+	net.ConnectToPulv(v4, v4CT, v1mP, pts.PT4x4Skp2Recip, pts.PT4x4Skp2, "FromV1mP") // 3x3 >> p1to1??
+
+	net.ConnectLayers(v2, v4, pts.PT4x4Skp2, axon.ForwardPath)
+	net.ConnectLayers(v4, v2, pts.PT4x4Skp2Recip, axon.BackPath)
+
+	net.ConnectLayers(v4, v3, pts.PT3x3Skp1, axon.BackPath) // v4 -> v3 but not v3 -> v4
+
+	// no V4 <-> LIP
+	// no FF CT -> CT?
+	// net.ConnectLayers(v2CT, v4CT, pts.PT4x4Skp2, axon.ForwardPath).AddClass("FwdWeak")
+
+	net.ConnectLayers(v4CT, v2CT, pts.PT4x4Skp2Recip, axon.BackPath) // strong .5 in orig
+
+	net.ConnectLayers(v1m, v4, rndcut, axon.ForwardPath).AddClass("V1SC")   // shortcut!
+	net.ConnectLayers(v1m, v4CT, rndcut, axon.ForwardPath).AddClass("V1SC") // shortcut!
+
+	v4.PlaceBehind(v3CT, space)
+
+build:
 	net.Build()
 	net.Defaults()
 	net.SetNThreads(ss.Config.Run.NThreads)

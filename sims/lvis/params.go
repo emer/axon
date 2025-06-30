@@ -33,7 +33,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Dend.GExp = 0.2   // 0.2 > 0.1 > 0
 				ly.Acts.Dend.GR = 3       // 2 good for 0.2
 				ly.Acts.Dt.VmDendC = 500  // 500 def
-				ly.Acts.GabaB.Gk = 0.012  // 0.012 > 0.015 TODO: recheck
+				ly.Acts.GabaB.Gk = 0.012  // 0.012 > 0.015 confirmed latest dev.34
 				ly.Acts.NMDA.Ge = 0.006   // 0.006 def
 				ly.Acts.NMDA.MgC = 1.4    // mg1, voff0, gbarexp.2, gbarr3 = better
 				ly.Acts.NMDA.Voff = 0     // mg1, voff0 = mg1.4, voff5 w best params
@@ -195,7 +195,7 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Adapt.HiMeanDecay = 0.0008 // 0.0008 best
 				pt.SWts.Adapt.HiMeanThr = 0.5      // 0.5, 0.0008 goes the distance
 				pt.SWts.Init.SPct = 1.0            // should be 1 -- was 0.5 previously
-				pt.Learn.LRate.Base = 0.005        // 0.005 def
+				pt.Learn.LRate.Base = 0.005        // 0.005 > 0.002; but lrate sched @ 200 epc to .002?
 				pt.Learn.DWt.SubMean = 1           // 1 > 0 for trgavg weaker
 				pt.Learn.DWt.CaPScale = 1          // Env10: 1
 				pt.Learn.DWt.SynCa20.SetBool(false)

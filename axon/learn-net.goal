@@ -76,6 +76,7 @@ func (nt *Network) AdaptGi() {
 // LRateMod sets the LRate modulation parameter for Paths, which is
 // for dynamic modulation of learning rate (see also LRateSched).
 // Updates the effective learning rate factor accordingly.
+// Must call ToGPUParams() after once done changing all params.
 func (nt *Network) LRateMod(mod float32) {
 	for _, ly := range nt.Layers {
 		// if ly.Off { // keep all sync'd
@@ -88,6 +89,7 @@ func (nt *Network) LRateMod(mod float32) {
 // LRateSched sets the schedule-based learning rate multiplier.
 // See also LRateMod.
 // Updates the effective learning rate factor accordingly.
+// Must call ToGPUParams() after once done changing all params.
 func (nt *Network) LRateSched(sched float32) {
 	for _, ly := range nt.Layers {
 		// if ly.Off { // keep all sync'd

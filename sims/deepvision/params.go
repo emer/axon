@@ -181,10 +181,10 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Pool.On.SetBool(true)
 				ly.Inhib.Layer.FB = 1
 				ly.Inhib.Pool.FB = 4
-				ly.Inhib.Layer.Gi = 1.0   // 1
-				ly.Inhib.Pool.Gi = 1.05   // 1.05 > 1?
-				ly.Acts.GabaB.Gk = 0.015  // 0.015 with shortcuts
-				ly.Acts.Decay.Glong = 0.3 // 0.3 > 0.6
+				ly.Inhib.Layer.Gi = 1.0 // 1
+				ly.Inhib.Pool.Gi = 1.05 // 1.05 > 1
+				// ly.Acts.GabaB.Gk = 0.015  // 0.015 > 0.012 with shortcuts
+				// ly.Acts.Decay.Glong = 0.3 // 0.3 > 0.6
 			}},
 		{Sel: "#V3CT", Doc: "more activity",
 			Set: func(ly *axon.LayerParams) {
@@ -192,14 +192,13 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".V4", Doc: "pool inhib, sparse activity",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.02        // .02 1.6.15 SSGi
-				ly.Inhib.ActAvg.Offset = 0.008        // 0.008 > 0.005; nominal is lower to increase Ge
-				ly.Inhib.ActAvg.AdaptGi.SetBool(true) // true
-				ly.Inhib.Pool.On.SetBool(true)        // needs pool-level
-				ly.Inhib.Layer.FB = 1                 //
+				ly.Inhib.ActAvg.Nominal = 0.05
+				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
+				ly.Inhib.Pool.On.SetBool(true)
+				ly.Inhib.Layer.FB = 1
 				ly.Inhib.Pool.FB = 4
-				ly.Inhib.Layer.Gi = 1.0 // 1.1?
-				ly.Inhib.Pool.Gi = 1.05 // was 1.0 but gi mult goes up
+				ly.Inhib.Layer.Gi = 1.0 // 1
+				ly.Inhib.Pool.Gi = 1.05 // 1.05 > 1
 			}},
 		{Sel: ".TEO", Doc: "initial activity",
 			Set: func(ly *axon.LayerParams) {
@@ -253,9 +252,8 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".CTCtxtPath", Doc: "all CT context paths",
 			Set: func(pt *axon.PathParams) {
-				// pt.Learn.LRate.Base = 0.002  // has almost no effect in 1to1
-				pt.Learn.DWt.SubMean = 0     //
-				pt.Learn.DWt.SynTraceTau = 2 // 2 > 1 still 0.2.28
+				pt.Learn.DWt.SubMean = 0     // 0 > 1
+				pt.Learn.DWt.SynTraceTau = 2 // 2 > 1: faster start with 1, but then fails later
 			}},
 		{Sel: ".CTSelfCtxt", Doc: "",
 			Set: func(pt *axon.PathParams) {
@@ -273,7 +271,7 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".V1SC", Doc: "v1 shortcut",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.LRate.Base = 0.001 //
+				// pt.Learn.LRate.Base = 0.001 //
 				// pt.Learn.Learn.SetBool(false)
 				pt.PathScale.Rel = 0.5          // .5 > .8 > 1 > .4 > .3 etc
 				pt.SWts.Adapt.On.SetBool(false) // seems better
