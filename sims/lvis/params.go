@@ -195,7 +195,7 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Adapt.HiMeanDecay = 0.0008 // 0.0008 best
 				pt.SWts.Adapt.HiMeanThr = 0.5      // 0.5, 0.0008 goes the distance
 				pt.SWts.Init.SPct = 1.0            // should be 1 -- was 0.5 previously
-				pt.Learn.LRate.Base = 0.005        // 0.005 > 0.002; but lrate sched @ 200 epc to .002?
+				pt.Learn.LRate.Base = 0.005        // 0.005 > 0.002; 0.002 = act avg fluctuations later
 				pt.Learn.DWt.SubMean = 1           // 1 > 0 for trgavg weaker
 				pt.Learn.DWt.CaPScale = 1          // Env10: 1
 				pt.Learn.DWt.SynCa20.SetBool(false)

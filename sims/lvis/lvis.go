@@ -663,14 +663,14 @@ func (ss *Sim) ConfigLoops() {
 
 	trainEpoch.OnStart.Add("SaveWeightsAt", func() {
 		epc := trainEpoch.Counter.Cur
-		if epc == 200 || slices.Contains(ss.Config.Log.SaveWeightsAt, epc) {
+		if slices.Contains(ss.Config.Log.SaveWeightsAt, epc) {
 			ctrString := fmt.Sprintf("%03d_%05d", ls.Loop(Train, Run).Counter.Cur, epc)
 			axon.SaveWeights(ss.Net, ctrString, ss.RunName())
-			if epc == 200 {
-				fmt.Println("learning rate schedule multiplier: .4 at:", epc)
-				ss.Net.LRateSched(.4)
-				axon.ToGPUParams()
-			}
+			// if epc == 200 { // note: slower lrate causes weird fluctuations in activity
+			// 	fmt.Println("learning rate schedule multiplier: .4 at:", epc)
+			// 	ss.Net.LRateSched(.4)
+			// 	axon.ToGPUParams()
+			// }
 		}
 	})
 
