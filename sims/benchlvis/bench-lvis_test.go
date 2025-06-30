@@ -81,10 +81,8 @@ func TestGPUSynCa(t *testing.T) {
 	axon.GPUInit()
 	axon.UseGPU = true
 
-	nix := net.NetIxs()
-
 	// on mac, only works up to ndata = 6 -- 7 fails
-	fmt.Printf("ndata: %d   floats per: %X  banks: %d\n", ctx.NData, nix.GPUMaxBuffFloats, nix.GPUSynCaBanks)
+	fmt.Printf("ndata: %d\n", ctx.NData)
 
 	// passed := net.GPU.TestSynCa()
 	// if !passed {

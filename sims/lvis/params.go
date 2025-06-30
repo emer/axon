@@ -190,7 +190,7 @@ var PathParams = axon.PathSheets{
 		{Sel: "Path", Doc: "exploring",
 			Set: func(pt *axon.PathParams) {
 				pt.SWts.Adapt.On.SetBool(true)     // true > false, esp in cosdiff
-				pt.SWts.Adapt.LRate = 0.0002       // .0002, .001 > .01 > .1 after 250epc in NStrong
+				pt.SWts.Adapt.LRate = 0.0001       // .0002, .001 > .01 > .1 after 250epc in NStrong
 				pt.SWts.Adapt.SubMean = 1          // 1 > 0 -- definitely needed
 				pt.SWts.Adapt.HiMeanDecay = 0.0008 // 0.0008 best
 				pt.SWts.Adapt.HiMeanThr = 0.5      // 0.5, 0.0008 goes the distance
