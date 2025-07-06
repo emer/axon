@@ -255,6 +255,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		// hidp = net.AddPulvForSuper(hid, space)
 	}
 	net.ConnectCTSelf(hidct, full, "")
+	// above maint + ctself is essential here, but not in deepfsa
+	// net.ConnectLayers(hidct, hidct, full, axon.CTCtxtPath).AddClass("CTSelfCtxt")
+
 	net.ConnectToPulv(hid, hidct, inPulv, full, full, "")
 	net.ConnectLayers(in, hid, full, axon.ForwardPath)
 	// net.ConnectLayers(hidct, hid, full, BackPath) // not useful

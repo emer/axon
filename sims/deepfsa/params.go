@@ -23,11 +23,11 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.TrgAvgAct.ErrLRate = 0.02      // 0.02 def
 				ly.Acts.Gbar.L = 20                     // std
 				ly.Acts.Decay.Act = 0.0                 // 0 == 0.2
-				ly.Acts.Decay.Glong = 0.0
-				ly.Acts.Dt.LongAvgTau = 20 // 20 > higher for objrec, lvis
-				ly.Acts.Dend.GExp = 0.2    // 0.2 > 0.5 > 0.1 > 0
-				ly.Acts.Dend.GR = 3        // 3 / 0.2 > 6 / 0.5
-				ly.Acts.Dend.SSGi = 2      // 2 > 3
+				ly.Acts.Decay.Glong = 0.0               // 0.2 improves FirstZero slightly, but not LastZero
+				ly.Acts.Dt.LongAvgTau = 20              // 20 > higher for objrec, lvis
+				ly.Acts.Dend.GExp = 0.2                 // 0.2 > 0.5 > 0.1 > 0
+				ly.Acts.Dend.GR = 3                     // 3 / 0.2 > 6 / 0.5
+				ly.Acts.Dend.SSGi = 2                   // 2 > 3
 				ly.Acts.AK.Gk = 0.1
 				ly.Acts.NMDA.MgC = 1.4 // 1.4, 5 > 1.2, 0 ?
 				ly.Acts.NMDA.Voff = 0
@@ -46,6 +46,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.CaLearn.ETraceAct.SetBool(false)
 				ly.Learn.CaLearn.ETraceTau = 4     // 4 == 5
 				ly.Learn.CaLearn.ETraceScale = 0.1 // 0.1 > 0.05, 0.2 etc
+
+				// ly.Learn.CaSpike.SpikeCaSyn = 8 // vs 12 in lvis -- 12 does NOT work here
 			}},
 		{Sel: ".SuperLayer", Doc: "super layer params",
 			Set: func(ly *axon.LayerParams) {
@@ -104,7 +106,7 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Adapt.HiMeanDecay = 0.0008  // 0.0008 default
 				pt.Learn.DWt.SynCa20.SetBool(false) // 10 > 20 reliably
 				pt.Learn.DWt.SynTraceTau = 1        // 1 >> 2 v0.0.9
-				pt.Learn.DWt.LearnThr = 0.05        //
+				pt.Learn.DWt.LearnThr = 0           // > 0 ok but not better
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {

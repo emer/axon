@@ -223,7 +223,11 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// hidct.Shape.SetShape([]int{10, 20}, nil, nil) // 200 == 500 == 1000 >> 100 here!
 	// note: tried 4D 6,6,2,2 with pool 1to1 -- not better
 	// also 12,12 not better than 10,10
+
+	// this adds maint + ctself: better than plain ctself, but not by much
 	net.ConnectCTSelf(hidct, full, "")
+	// pure CT self, no maintenance:
+	// net.ConnectLayers(hidct, hidct, full, axon.CTCtxtPath).AddClass("CTSelfCtxt")
 
 	net.ConnectLayers(in, hid, full, axon.ForwardPath)
 	net.ConnectToPulv(hid, hidct, inp, full, full, "") // inp -> hid and inp -> hidct is *essential*

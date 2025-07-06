@@ -47,8 +47,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Sahp.Slope = 0.02    //
 				ly.Acts.Sahp.CaTau = 5       // 5 ok -- not tested
 				ly.Acts.KNa.On.SetBool(true) // true, .05 > false
-				ly.Acts.KNa.Med.Max = 0.1    // 0.1 > 0.05 -- 0.05 blows up around 1500, 0.1 goes with spct1
-				ly.Acts.KNa.Slow.Max = 0.1   // med is more impairing than slow
+				ly.Acts.KNa.Med.Max = 0.05   // 0.1 > 0.05 -- 0.05 blows up around 1500, 0.1 goes with spct1
+				ly.Acts.KNa.Slow.Max = 0.05  // med is more impairing than slow
 
 				ly.Learn.CaLearn.Norm = 80               // 80 def; 60 makes CaLearnMax closer to 1
 				ly.Learn.CaLearn.SpikeVGCC.SetBool(true) // sig better..
@@ -116,23 +116,23 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".TEO", Doc: "initial activity",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.03        // .03 1.6.15 SSGi
-				ly.Inhib.ActAvg.Offset = 0.01         // 0.01 > lower, higher; nominal is lower to increase Ge
-				ly.Inhib.ActAvg.AdaptGi.SetBool(true) // true
-				ly.Inhib.Layer.On.SetBool(false)      // no layer!
-				ly.Inhib.Pool.On.SetBool(true)        // needs pool-level
+				ly.Inhib.ActAvg.Nominal = 0.03         // .03 1.6.15 SSGi
+				ly.Inhib.ActAvg.Offset = 0.01          // 0.01 > lower, higher; nominal is lower to increase Ge
+				ly.Inhib.ActAvg.AdaptGi.SetBool(false) // true
+				ly.Inhib.Layer.On.SetBool(false)       // no layer!
+				ly.Inhib.Pool.On.SetBool(true)         // needs pool-level
 				ly.Inhib.Pool.FB = 4
-				ly.Inhib.Pool.Gi = 1.0 // 1.0; 1.05?
+				ly.Inhib.Pool.Gi = 1.11 // 1.2 > others for non-adapt
 			}},
 		{Sel: "#TE", Doc: "initial activity",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.03        // .03 1.6.15 SSGi
-				ly.Inhib.ActAvg.Offset = 0.01         // 0.01 > lower, higher; nominal is lower to increase Ge
-				ly.Inhib.ActAvg.AdaptGi.SetBool(true) // true
-				ly.Inhib.Layer.On.SetBool(false)      // no layer!
-				ly.Inhib.Pool.On.SetBool(true)        // needs pool-level
+				ly.Inhib.ActAvg.Nominal = 0.03         // .03 1.6.15 SSGi
+				ly.Inhib.ActAvg.Offset = 0.01          // 0.01 > lower, higher; nominal is lower to increase Ge
+				ly.Inhib.ActAvg.AdaptGi.SetBool(false) // true
+				ly.Inhib.Layer.On.SetBool(false)       // no layer!
+				ly.Inhib.Pool.On.SetBool(true)         // needs pool-level
 				ly.Inhib.Pool.FB = 4
-				ly.Inhib.Pool.Gi = 1.0 // 1.0; 1.1?
+				ly.Inhib.Pool.Gi = 1.11 // 1.2 > others for non-adapt
 			}},
 		{Sel: "#Output", Doc: "general output, Localist default -- see RndOutPats, LocalOutPats",
 			Set: func(ly *axon.LayerParams) {

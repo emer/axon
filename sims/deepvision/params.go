@@ -163,6 +163,8 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.03
 			}},
+
+		//////// V2
 		{Sel: ".V2", Doc: "pool inhib, sparse activity",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.02
@@ -174,10 +176,12 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Layer.Gi = 1.0 // 1
 				ly.Inhib.Pool.Gi = 1.05 // 1.05 > others
 			}},
+
+		//////// V3
 		{Sel: ".V3", Doc: "pool inhib, denser activity",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.05
-				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
+				ly.Inhib.ActAvg.Nominal = 0.03
+				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
 				ly.Inhib.Pool.On.SetBool(true)
 				ly.Inhib.Layer.FB = 1
 				ly.Inhib.Pool.FB = 4
@@ -188,37 +192,57 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: "#V3CT", Doc: "more activity",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.05
+				ly.Inhib.Layer.Gi = 1.1 // 1.1 > 1.2 > 1
+				ly.Inhib.Pool.Gi = 1.1  // 1.1 > 1.2 > 1
 			}},
+
+		//////// DP
+		{Sel: ".DP", Doc: "full",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.1
+				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
+				ly.Inhib.Pool.On.SetBool(false)
+				ly.Inhib.Layer.FB = 1
+				ly.Inhib.Layer.Gi = 1.2 // 1.2 > 1.1
+			}},
+		{Sel: "#DPCT", Doc: "less activity",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.Layer.Gi = 1.2 // 1.2 ? 1.1 too?
+			}},
+
+		//////// V4
 		{Sel: ".V4", Doc: "pool inhib, sparse activity",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.05
-				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
+				ly.Inhib.ActAvg.Nominal = 0.03
+				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
 				ly.Inhib.Pool.On.SetBool(true)
 				ly.Inhib.Layer.FB = 1
 				ly.Inhib.Pool.FB = 4
 				ly.Inhib.Layer.Gi = 1.0 // 1
 				ly.Inhib.Pool.Gi = 1.05 // 1.05 > 1
 			}},
-		{Sel: ".TEO", Doc: "initial activity",
+		{Sel: "#V4CT", Doc: "more activity",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.03        // .03 1.6.15 SSGi
-				ly.Inhib.ActAvg.Offset = 0.01         // 0.01 > lower, higher; nominal is lower to increase Ge
-				ly.Inhib.ActAvg.AdaptGi.SetBool(true) // true
-				ly.Inhib.Layer.On.SetBool(false)      // no layer!
-				ly.Inhib.Pool.On.SetBool(true)        // needs pool-level
-				ly.Inhib.Pool.FB = 4
-				ly.Inhib.Pool.Gi = 1.0 // 1.0; 1.05?
+				ly.Inhib.Layer.Gi = 1.1 // 1.1
+				ly.Inhib.Pool.Gi = 1.1  // 1.1
 			}},
-		{Sel: "#TE", Doc: "initial activity",
+
+		//////// TEO
+		{Sel: ".TEO", Doc: "pool inhib, sparse activity",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.03        // .03 1.6.15 SSGi
-				ly.Inhib.ActAvg.Offset = 0.01         // 0.01 > lower, higher; nominal is lower to increase Ge
-				ly.Inhib.ActAvg.AdaptGi.SetBool(true) // true
-				ly.Inhib.Layer.On.SetBool(false)      // no layer!
-				ly.Inhib.Pool.On.SetBool(true)        // needs pool-level
+				// ly.Acts.Decay.Glong = 0 ?
+				ly.Inhib.ActAvg.Nominal = 0.04 // 0.04 > 0.03
+				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
+				ly.Inhib.Pool.On.SetBool(true)
+				ly.Inhib.Layer.FB = 1
 				ly.Inhib.Pool.FB = 4
-				ly.Inhib.Pool.Gi = 1.0 // 1.0; 1.1?
+				ly.Inhib.Layer.Gi = 1.0 // 1
+				ly.Inhib.Pool.Gi = 1.05 // 1.05
+			}},
+		{Sel: "#TEOCT", Doc: "more activity",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.Layer.Gi = 1.2 // ?
+				ly.Inhib.Pool.Gi = 1.2  // ?
 			}},
 	},
 }
@@ -257,7 +281,8 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".CTSelfCtxt", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.5 // 0.5 > 0.2 > 0.8
+				pt.PathScale.Rel = 0.1 //
+				pt.PathScale.Abs = 0.5 // 0.5 orig?
 			}},
 		{Sel: ".FromPulv", Doc: "defaults to .Back",
 			Set: func(pt *axon.PathParams) {
@@ -309,7 +334,7 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: "#V3ToV3CT", Doc: "overactive",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1 // 1 > 0.7 despite high Ge
+				pt.PathScale.Abs = 0.5 // 0.5
 			}},
 		{Sel: "#V3CTToV1mP", Doc: "less",
 			Set: func(pt *axon.PathParams) {
@@ -320,38 +345,26 @@ var PathParams = axon.PathSheets{
 		// 		pt.PathScale.Rel = 0.2 // 0.2 == 0.1
 		// 	}},
 
-		//////// V4
-		{Sel: ".V2V4", Doc: "extra boost",
+		//////// DP
+		{Sel: "#DPToDPCT", Doc: "overactive",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1.0 // 1.0 prev, 1.2 not better
-				// pt.SWts.Init.Mean = 0.4 // .4 a tiny bit better overall
-				// pt.SWts.Limit.Min = 0.1 // .1-.7 def
-				// pt.SWts.Limit.Max = 0.7 //
+				pt.PathScale.Abs = 0.5 // 0.5
 			}},
 
-		// back projections
-		{Sel: ".V4V2", Doc: "weaker",
+		//////// V4
+		{Sel: "#V4ToV4CT", Doc: "overactive",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.05 // .05 > .02 > .1 v70
-				pt.SWts.Init.Mean = 0.4 // .4 matches V2V4 -- not that big a diff on its own
-				pt.SWts.Limit.Min = 0.1 // .1-.7 def
-				pt.SWts.Limit.Max = 0.7 //
+				pt.PathScale.Abs = 0.5 // 0.5
 			}},
-		// {Sel: ".TEOV2", Doc: "weaker -- not used",
-		// 	Set: func(pt *axon.PathParams) {
-		// 		pt.PathScale.Rel =  "0.05 // .05 > .02 > .1
-		// 	}},
-		{Sel: ".TEOV4", Doc: "weaker",
+
+		//////// TEO
+		{Sel: "#TEOToTEOCT", Doc: "overactive",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.1 // .1 == .2
+				pt.PathScale.Abs = 0.5 // 0.5
 			}},
-		{Sel: ".TETEO", Doc: "std",
+		{Sel: "#V4ToTEO", Doc: "stronger",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.1 // .1 orig
-			}},
-		{Sel: ".TEOTE", Doc: "stronger",
-			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1.2
+				pt.PathScale.Abs = 1 // 1 > 1.5 still..
 			}},
 	},
 }

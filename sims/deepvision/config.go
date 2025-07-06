@@ -61,6 +61,9 @@ type RunConfig struct {
 	// V3Plus includes V3 and higher layers
 	V3Plus bool
 
+	// DP adds the DP layer, on top of V3
+	DP bool
+
 	// V4Plus includes V4 and higher layers
 	V4Plus bool
 
@@ -133,6 +136,9 @@ type RunConfig struct {
 	// PCAInterval is how often (in epochs) to compute PCA on hidden
 	// representations to measure variance.
 	PCAInterval int `default:"10"`
+
+	// RSAInterval is how often to run RSA analyses over epochs.
+	RSAInterval int `default:"10"`
 
 	// ConfusionEpc is the epoch to start recording confusion matrix.
 	ConfusionEpc int `default:"500"`

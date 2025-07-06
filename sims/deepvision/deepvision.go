@@ -280,7 +280,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mtposP := net.AddPulvForLayer(mtpos, space).AddClass("MTpos")
 
 	lip, lipCT := net.AddSuperCT4D("LIP", "LIPCtxt", 8, 8, 4, 4, space, pts.PT3x3Skp1) // 4x4 == 5x5
-	// net.ConnectCTSelf(lipCT, full, "LIPSelf") // this is bad for performance
+	// net.ConnectCTSelf(lipCT, full, "LIPSelf") // maint + ctself: bad
+	net.ConnectLayers(lipCT, lipCT, pts.PT3x3Skp1, axon.CTCtxtPath).AddClass("CTSelfCtxt")
 
 	sample2(lip)
 	sample2(lipCT)
@@ -290,7 +291,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectToPulv(lip, lipCT, mtposP, full, pool1to1, "")
 
-	// todo: try not having these!
+	// these are important for good performance on pure LIP version:
 	net.ConnectLayers(eyepos, lip, full, axon.ForwardPath)
 	net.ConnectLayers(sacplan, lip, full, axon.ForwardPath)
 	net.ConnectLayers(objvel, lip, full, axon.ForwardPath)
@@ -310,12 +311,12 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	lip.PlaceBehind(mtpos, space*2)
 	lipCT.PlaceBehind(lip, space)
 
-	eyepos.PlaceRightOf(lip, space)
+	eyepos.PlaceRightOf(mtposP, space)
 	sacplan.PlaceBehind(eyepos, space)
 	sac.PlaceBehind(sacplan, space)
 	objvel.PlaceBehind(sac, space)
 
-	var v1mP, v2, v2CT, v3, v3CT, v4, v4CT *axon.Layer
+	var v1mP, v2, v2CT, v3, v3CT, dp, dpCT, v3P, v4, v4CT, teo, teoCT, v4P *axon.Layer
 
 	//////// V2
 	if !ss.Config.Run.V2Plus {
@@ -326,8 +327,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	sample2(v2)
 	sample2(v2CT)
 
-	// orig has v2selfct 3x3s1
 	net.ConnectToPulv(v2, v2CT, v1mP, pts.PT3x3Skp1, pts.PT3x3Skp1, "FromV1mP") // 3x3 >> p1to1
+
+	// old has v2selfct 3x3s1, not good here:
+	// net.ConnectLayers(v2CT, v2CT, pts.PT3x3Skp1, axon.CTCtxtPath).AddClass("CTSelfCtxt")
 
 	net.ConnectLayers(v1m, v2, pts.PT3x3Skp1, axon.ForwardPath).AddClass("V1V2")
 	net.ConnectLayers(v1h, v2, pts.PT4x4Skp2, axon.ForwardPath).AddClass("V1V2")
@@ -349,11 +352,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	sample2(v3)
 	sample2(v3CT)
 
-	// old has v3selfct 3x3s1
 	// orig 4x4
 	net.ConnectToPulv(v3, v3CT, v1mP, pts.PT4x4Skp2Recip, pts.PT4x4Skp2, "FromV1mP")
 
-	// note: orig 4x4skp2
+	// old has v3selfct 3x3s1:
+	net.ConnectLayers(v3CT, v3CT, pts.PT3x3Skp1, axon.CTCtxtPath).AddClass("CTSelfCtxt")
+
+	// orig 4x4skp2
 	net.ConnectLayers(v2, v3, pts.PT4x4Skp2, axon.ForwardPath)
 	net.ConnectLayers(v3, v2, pts.PT4x4Skp2Recip, axon.BackPath)
 
@@ -365,6 +370,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	// todo: strong .5 in orig
 	net.ConnectLayers(v3CT, v2CT, pts.PT4x4Skp2Recip, axon.BackPath) // yes top-down CT
+	// orig has a "leak" from super -> CT here: (2x2 == 4x4) --
+	// good: mostly prevents "sag" at end
+	net.ConnectLayers(v3, v2CT, pts.PT2x2Skp2Recip, axon.BackPath)
 
 	// orig 2x2:
 	net.ConnectLayers(v3, lip, pts.PT2x2Skp2Recip, axon.ForwardPath).AddClass("FwdWeak")
@@ -374,6 +382,28 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(v1m, v3CT, rndcut, axon.ForwardPath).AddClass("V1SC") // shortcut!
 
 	v3.PlaceRightOf(v2, space)
+
+	//////// DP
+	if ss.Config.Run.DP {
+		dp, dpCT = net.AddSuperCT4D("DP", "", 1, 1, 10, 10, space, full)
+
+		net.ConnectLayers(v3, dp, full, axon.ForwardPath)
+		net.ConnectLayers(dp, v3, full, axon.BackPath)
+
+		net.ConnectLayers(dpCT, v3CT, full, axon.BackPath)
+		// leak from super to CT:
+		net.ConnectLayers(dp, v3CT, full, axon.BackPath)
+
+		v3P = net.AddPulvForLayer(v3, space).AddClass("V3")
+		net.ConnectToPulv(dp, dpCT, v3P, full, full, "FromV3P")
+		net.ConnectLayers(v2CT, v3P, pts.PT4x4Skp2, axon.ForwardPath) // fwd CT, but not recip!
+
+		net.ConnectLayers(v1m, dp, rndcut, axon.ForwardPath).AddClass("V1SC")   // shortcut!
+		net.ConnectLayers(v1m, dpCT, rndcut, axon.ForwardPath).AddClass("V1SC") // shortcut!
+
+		dp.PlaceRightOf(v3, space)
+		v3P.PlaceRightOf(v3CT, space)
+	}
 
 	//////// V4
 	if !ss.Config.Run.V4Plus {
@@ -395,12 +425,49 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// no FF CT -> CT?
 	// net.ConnectLayers(v2CT, v4CT, pts.PT4x4Skp2, axon.ForwardPath).AddClass("FwdWeak")
 
-	net.ConnectLayers(v4CT, v2CT, pts.PT4x4Skp2Recip, axon.BackPath) // strong .5 in orig
+	// net.ConnectLayers(v4CT, v2CT, pts.PT4x4Skp2Recip, axon.BackPath) // strong .5 in orig
+
+	// leak from super to CT:
+	net.ConnectLayers(v4, v2CT, pts.PT2x2Skp2Recip, axon.BackPath) // strong .5 in orig
 
 	net.ConnectLayers(v1m, v4, rndcut, axon.ForwardPath).AddClass("V1SC")   // shortcut!
 	net.ConnectLayers(v1m, v4CT, rndcut, axon.ForwardPath).AddClass("V1SC") // shortcut!
 
 	v4.PlaceBehind(v3CT, space)
+
+	//////// TEO
+	if !ss.Config.Run.TEOPlus {
+		goto build
+	}
+	teo, teoCT = net.AddSuperCT4D("TEO", "", 4, 4, 10, 10, space, pool1to1)
+	sample2(teo)
+	sample2(teoCT)
+
+	// net.ConnectToPulv(teo, teoCT, v1mP, full, full, "FromV1mP") // not in orig
+
+	net.ConnectLayers(v4, teo, pts.PT3x3Skp1, axon.ForwardPath)
+	net.ConnectLayers(teo, v4, pts.PT3x3Skp1, axon.BackPath)
+
+	net.ConnectLayers(teo, v3, pts.PT3x3Skp1, axon.BackPath) // teo -> v3 but not v3 -> teo
+
+	// net.ConnectLayers(v2CT, teoCT, pts.PT4x4Skp2, axon.ForwardPath).AddClass("FwdWeak")
+
+	net.ConnectLayers(teoCT, v2CT, pts.PT4x4Skp2Recip, axon.BackPath)
+	net.ConnectLayers(teoCT, v4CT, pts.PT4x4Skp2Recip, axon.BackPath)
+
+	v4P = net.AddPulvForLayer(v4, space).AddClass("V4")
+	net.ConnectToPulv(teo, teoCT, v4P, pts.PT4x4Skp2Recip, pts.PT4x4Skp2, "FromV4P")
+
+	// orig has a "leak" from super -> CT here, helps stabilize reps
+	// net.ConnectLayers(teo, v2CT, pts.PT4x4Skp2Recip, axon.BackPath) // maybe not
+	net.ConnectLayers(teo, v3CT, pts.PT3x3Skp1, axon.BackPath)
+	net.ConnectLayers(teo, v4CT, pts.PT3x3Skp1, axon.BackPath)
+
+	net.ConnectLayers(v1m, teo, rndcut, axon.ForwardPath).AddClass("V1SC")   // shortcut!
+	net.ConnectLayers(v1m, teoCT, rndcut, axon.ForwardPath).AddClass("V1SC") // shortcut!
+
+	v4P.PlaceBehind(v4CT, space)
+	teo.PlaceRightOf(eyepos, space)
 
 build:
 	net.Build()
@@ -733,6 +800,14 @@ func (ss *Sim) ConfigStats() {
 		prevCorFunc(mode, level, phase)
 	})
 
+	if ss.Config.Run.V2Plus {
+		slays := net.LayersByType(axon.SuperLayer)
+		rsaFunc := ss.StatRSA(slays...)
+		ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+			rsaFunc(mode, level, phase)
+		})
+	}
+
 	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.PulvinarLayer, axon.InputLayer)
 	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
@@ -946,10 +1021,11 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 		vu.UpdateWhenStopped(mode, level)
 	}
 
-	// nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1.733, 2.3)
-	// nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
+	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1.05, 2.3)
+	nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, -.1, .05), math32.Vec3(0, 1, 0))
 
 	ss.StatsInit()
+	ss.RSAGUI()
 	ss.GUI.FinalizeGUI(false)
 }
 
@@ -978,12 +1054,14 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 }
 
 func (ss *Sim) RunGUI() {
+	ss.RSAInit()
 	ss.Init()
 	ss.ConfigGUI(nil)
 	ss.GUI.Body.RunMainWindow()
 }
 
 func (ss *Sim) RunNoGUI() {
+	ss.RSAInit()
 	ss.Init()
 
 	if ss.Config.Params.Note != "" {
