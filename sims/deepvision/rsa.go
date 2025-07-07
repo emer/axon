@@ -11,68 +11,71 @@ import (
 	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/stats/metric"
 	"cogentcore.org/lab/stats/stats"
+	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensor/tmath"
 	"cogentcore.org/lab/tensorcore"
 	"cogentcore.org/lab/tensorfs"
 )
 
-var Debug = false
+var (
+	Debug = false
 
-// 20 Object categs: IMPORTANT: do not change the order of this list as it is used
-// in various places as the cannonical ordering for e.g., Expt1 data
-var Objs = []string{
-	"banana",
-	"layercake",
-	"trafficcone",
-	"sailboat",
-	"trex",
-	"person",
-	"guitar",
-	"tablelamp",
-	"doorknob",
-	"handgun",
-	"donut",
-	"chair",
-	"slrcamera",
-	"elephant",
-	"piano",
-	"fish",
-	"car",
-	"heavycannon",
-	"stapler",
-	"motorcycle",
-}
+	// 20 Object categs: IMPORTANT: do not change the order of this list as it is used
+	// in various places as the cannonical ordering for e.g., Expt1 data
+	Objs = []string{
+		"banana",
+		"layercake",
+		"trafficcone",
+		"sailboat",
+		"trex",
+		"person",
+		"guitar",
+		"tablelamp",
+		"doorknob",
+		"handgun",
+		"donut",
+		"chair",
+		"slrcamera",
+		"elephant",
+		"piano",
+		"fish",
+		"car",
+		"heavycannon",
+		"stapler",
+		"motorcycle",
+	}
 
-var ObjIdxs map[string]int
+	ObjIdxs map[string]int
 
-// CanonicalCats is best-fitting 5-category leabra ("Centroid")
-var CanonicalCats = map[string]string{
-	"banana":      "1-pyramid",
-	"layercake":   "1-pyramid",
-	"trafficcone": "1-pyramid",
-	"sailboat":    "1-pyramid",
-	"trex":        "1-pyramid",
-	"person":      "2-vertical",
-	"guitar":      "2-vertical",
-	"tablelamp":   "2-vertical",
-	"doorknob":    "3-round",
-	"donut":       "3-round",
-	"handgun":     "3-round",
-	"chair":       "3-round",
-	"slrcamera":   "4-box",
-	"elephant":    "4-box",
-	"piano":       "4-box",
-	"fish":        "4-box",
-	"car":         "5-horiz",
-	"heavycannon": "5-horiz",
-	"stapler":     "5-horiz",
-	"motorcycle":  "5-horiz",
-}
+	// CanonicalCats is best-fitting 5-category leabra ("Centroid")
+	CanonicalCats = map[string]string{
+		"banana":      "1-pyramid",
+		"layercake":   "1-pyramid",
+		"trafficcone": "1-pyramid",
+		"sailboat":    "1-pyramid",
+		"trex":        "1-pyramid",
+		"person":      "2-vertical",
+		"guitar":      "2-vertical",
+		"tablelamp":   "2-vertical",
+		"doorknob":    "3-round",
+		"donut":       "3-round",
+		"handgun":     "3-round",
+		"chair":       "3-round",
+		"slrcamera":   "4-box",
+		"elephant":    "4-box",
+		"piano":       "4-box",
+		"fish":        "4-box",
+		"car":         "5-horiz",
+		"heavycannon": "5-horiz",
+		"stapler":     "5-horiz",
+		"motorcycle":  "5-horiz",
+	}
 
-var CanonicalGroups []string // CanonicalCats with repeats all blank, for grouped labels
+	CanonicalGroups []string // CanonicalCats with repeats all blank, for grouped labels
 
-var rsaStatNames = []string{"RSAvsV1", "RSAvsTE", "RSAvsExpt", "MeanCentroid", "MeanBasic", "MeanExpt"}
+	rsaStatNames = []string{"RSAvsV1", "RSAvsTE", "RSAvsExpt"} // , "MeanCentroid", "MeanBasic", "MeanExpt"}
+)
 
 // StatRSA returns a Stats function that records RSA:
 // representational similarity analysis stats.
@@ -83,7 +86,7 @@ func (ss *Sim) StatRSA(layers ...string) func(mode Modes, level Levels, phase St
 			return
 		}
 		trnEpc := ss.Loops.Loop(Train, Epoch).Counter.Cur
-		interval := ss.Config.Run.PCAInterval
+		interval := ss.Config.Run.RSAInterval
 		modeDir := ss.Stats.Dir(mode.String())
 		curModeDir := ss.Current.Dir(mode.String()).Dir("RSA")
 		levelDir := modeDir.Dir(level.String())
@@ -95,7 +98,7 @@ func (ss *Sim) StatRSA(layers ...string) func(mode Modes, level Levels, phase St
 					ev := ss.Envs.ByModeDi(mode, di).(*Obj3DSacEnv)
 					tick := ev.Tick.Cur
 					if tick == 2 { // using tick 2 for all data
-						ss.rsaTrial(curModeDir, lnm, ev.CurObj, di)
+						ss.rsaTrial(curModeDir, lnm, ev.CurCat, di)
 					}
 				}
 				continue // no actual stats at trial level
@@ -161,22 +164,43 @@ func (ss *Sim) RSAInit() {
 	}
 }
 
+var SimMatGridStyle = func(s *tensorcore.GridStyle) {
+	s.TopZero = true
+	s.Range.SetMin(0).SetMax(1)
+	s.ColorMap = core.ColorMapName("Viridis")
+	s.GridFill = 1
+	s.DimExtra = 0.15
+}
+
 func (ss *Sim) RSAGUI() {
 	curModeDir := ss.Current.Dir(Train.String()).Dir("RSA")
 	tbs := ss.GUI.Tabs.AsLab()
 	_, idx := tbs.CurrentTab()
 
 	exSmat := curModeDir.Float64("Expt_Smat")
-	tensorcore.AddGridStylerTo(exSmat, func(s *tensorcore.GridStyle) {
-		s.Range.SetMin(0).SetMax(1)
-		s.ColorMap = core.ColorMapName("Viridis")
-		s.GridFill = 1
-		s.DimExtra = 0.15
-	})
+	tensorcore.AddGridStylerTo(exSmat, SimMatGridStyle)
 	tg := tbs.TensorGrid("Expt", exSmat)
 	tg.RowLabels = CanonicalGroups
 	tg.ColumnLabels = CanonicalGroups
 	tbs.SelectTabIndex(idx)
+}
+
+// RSASaveRActs saves running average activation data to file.
+func (ss *Sim) RSASaveRActs(fname string) error {
+	curModeDir := ss.Current.Dir(Train.String()).Dir("RSA")
+	ravgs := tensorfs.DirTable(curModeDir.Dir("RAvgs"), nil)
+	return errors.Log(ravgs.SaveCSV(fsx.Filename(fname), tensor.Tab, table.Headers))
+}
+
+// RSAOpenRActs opens running average activation data from file.
+func (ss *Sim) RSAOpenRActs(fname fsx.Filename) error { //types:add
+	curModeDir := ss.Current.Dir(Train.String()).Dir("RSA")
+	ravgs := tensorfs.DirTable(curModeDir.Dir("RAvgs"), nil)
+	err := errors.Log(errors.Log(ravgs.OpenCSV(fname, tensor.Tab)))
+	if err != nil {
+		tensorfs.DirFromTable(curModeDir.Dir("RAvgs"), ravgs)
+	}
+	return err
 }
 
 // rsaTrial accumulates running-average activations for layer, object in _Ravg
@@ -184,7 +208,7 @@ func (ss *Sim) rsaTrial(curModeDir *tensorfs.Node, lnm, obj string, di int) {
 	avgDt := 0.1
 	avgDtC := 1 - avgDt
 	ly := ss.Net.LayerByName(lnm)
-	atsr := curModeDir.Dir(lnm+"_Ravg").Float64(obj, ly.Shape.Sizes...)
+	atsr := curModeDir.Dir("RAvgs").Dir(lnm).Float64(obj, ly.Shape.Sizes...)
 
 	varName := "Act"
 	vtsr := curModeDir.Float32(lnm+"_"+varName, ly.Shape.Sizes...)
@@ -211,21 +235,21 @@ func (ss *Sim) rsaEpoch(curModeDir *tensorfs.Node, layers ...string) {
 
 	for _, lnm := range layers {
 		smat := curModeDir.Float64(lnm+"_Smat", nc, nc)
-		v1snm := rsaStatNames[0] //
+		v1snm := lnm + "_" + rsaStatNames[0]
 		v1sim := 1.0
 		if lnm != "V1m" {
 			v1sim = metric.Correlation(v1Smat, smat).Float1D(0)
 		}
 		curModeDir.Float64(v1snm, 1).SetFloat1D(v1sim, 0)
 
-		tesnm := rsaStatNames[1]
+		tesnm := lnm + "_" + rsaStatNames[1]
 		tesim := 1.0
 		if teSmat.Len() == nc*nc && lnm != "TE" {
 			tesim = metric.Correlation(teSmat, smat).Float1D(0)
 		}
 		curModeDir.Float64(tesnm, 1).SetFloat1D(tesim, 0)
 
-		exsnm := rsaStatNames[2]
+		exsnm := lnm + "_" + rsaStatNames[2]
 		exsim := metric.Correlation(exSmat, smat).Float1D(0)
 		curModeDir.Float64(exsnm, 1).SetFloat1D(exsim, 0)
 	}
@@ -237,7 +261,7 @@ func rsaSimMats(curModeDir *tensorfs.Node, layers ...string) {
 	for _, lnm := range layers {
 		// Canonical simat
 		smat := curModeDir.Float64(lnm+"_Smat", nc, nc)
-		adir := curModeDir.Dir(lnm + "_Ravg")
+		adir := curModeDir.Dir("RAvgs").Dir(lnm)
 		for ci, obj := range Objs {
 			atsr := tensor.As1D(adir.Float64(obj))
 			for oci := ci + 1; oci < nc; oci++ {

@@ -15,6 +15,7 @@ import (
 	"math"
 	"os"
 	"reflect"
+	"slices"
 
 	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/core"
@@ -281,7 +282,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	lip, lipCT := net.AddSuperCT4D("LIP", "LIPCtxt", 8, 8, 4, 4, space, pts.PT3x3Skp1) // 4x4 == 5x5
 	// net.ConnectCTSelf(lipCT, full, "LIPSelf") // maint + ctself: bad
-	net.ConnectLayers(lipCT, lipCT, pts.PT3x3Skp1, axon.CTCtxtPath).AddClass("CTSelfCtxt")
+	// net.ConnectLayers(lipCT, lipCT, pts.PT3x3Skp1, axon.CTCtxtPath).AddClass("CTSelfCtxt")
 
 	sample2(lip)
 	sample2(lipCT)
@@ -316,7 +317,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	sac.PlaceBehind(sacplan, space)
 	objvel.PlaceBehind(sac, space)
 
-	var v1mP, v2, v2CT, v3, v3CT, dp, dpCT, v3P, v4, v4CT, teo, teoCT, v4P *axon.Layer
+	var v1mP, v2, v2CT, v3, v3CT, dp, dpCT, v3P, v4, v4CT, teo, teoCT, v4P, te, teCT, teoP *axon.Layer
 
 	//////// V2
 	if !ss.Config.Run.V2Plus {
@@ -355,8 +356,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// orig 4x4
 	net.ConnectToPulv(v3, v3CT, v1mP, pts.PT4x4Skp2Recip, pts.PT4x4Skp2, "FromV1mP")
 
-	// old has v3selfct 3x3s1:
-	net.ConnectLayers(v3CT, v3CT, pts.PT3x3Skp1, axon.CTCtxtPath).AddClass("CTSelfCtxt")
+	// old has v3selfct 3x3s1: not bad up to .2, but no benefit
+	// net.ConnectLayers(v3CT, v3CT, pts.PT3x3Skp1, axon.CTCtxtPath).AddClass("CTSelfCtxt")
 
 	// orig 4x4skp2
 	net.ConnectLayers(v2, v3, pts.PT4x4Skp2, axon.ForwardPath)
@@ -413,8 +414,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	sample2(v4)
 	sample2(v4CT)
 
-	// orig has v4selfct 3x3s1
 	net.ConnectToPulv(v4, v4CT, v1mP, pts.PT4x4Skp2Recip, pts.PT4x4Skp2, "FromV1mP") // 3x3 >> p1to1??
+
+	// orig has v4selfct 3x3s1 -- todo try, also one with maint
+	net.ConnectLayers(v4CT, v4CT, pts.PT3x3Skp1, axon.CTCtxtPath).AddClass("CTSelfCtxt")
 
 	net.ConnectLayers(v2, v4, pts.PT4x4Skp2, axon.ForwardPath)
 	net.ConnectLayers(v4, v2, pts.PT4x4Skp2Recip, axon.BackPath)
@@ -443,7 +446,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	sample2(teo)
 	sample2(teoCT)
 
-	// net.ConnectToPulv(teo, teoCT, v1mP, full, full, "FromV1mP") // not in orig
+	// orig has teoselfct 3x3s1 -- todo try, also one with maint
+	net.ConnectLayers(teoCT, teoCT, pts.PT3x3Skp1, axon.CTCtxtPath).AddClass("CTSelfCtxt")
 
 	net.ConnectLayers(v4, teo, pts.PT3x3Skp1, axon.ForwardPath)
 	net.ConnectLayers(teo, v4, pts.PT3x3Skp1, axon.BackPath)
@@ -460,7 +464,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	// orig has a "leak" from super -> CT here, helps stabilize reps
 	// net.ConnectLayers(teo, v2CT, pts.PT4x4Skp2Recip, axon.BackPath) // maybe not
-	net.ConnectLayers(teo, v3CT, pts.PT3x3Skp1, axon.BackPath)
+	// net.ConnectLayers(teo, v3CT, pts.PT3x3Skp1, axon.BackPath)
 	net.ConnectLayers(teo, v4CT, pts.PT3x3Skp1, axon.BackPath)
 
 	net.ConnectLayers(v1m, teo, rndcut, axon.ForwardPath).AddClass("V1SC")   // shortcut!
@@ -468,6 +472,34 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	v4P.PlaceBehind(v4CT, space)
 	teo.PlaceRightOf(eyepos, space)
+
+	//////// TE
+	if !ss.Config.Run.TE {
+		goto build
+	}
+	te, teCT = net.AddSuperCT4D("TE", "", 2, 2, 10, 10, space, pool1to1)
+	sample2(te)
+	sample2(teCT)
+
+	// orig has teselfct 3x3s1 -- todo try, also one with maint
+	net.ConnectLayers(teCT, teCT, full, axon.CTCtxtPath).AddClass("CTSelfCtxt")
+
+	net.ConnectLayers(teo, te, full, axon.ForwardPath)
+	net.ConnectLayers(te, teo, full, axon.BackPath)
+
+	net.ConnectLayers(te, v4, full, axon.BackPath) // te -> v3 but not v3 -> te
+
+	net.ConnectLayers(teCT, v4CT, full, axon.BackPath)
+	net.ConnectLayers(teCT, teoCT, full, axon.BackPath)
+
+	teoP = net.AddPulvForLayer(teo, space).AddClass("TEO")
+	net.ConnectToPulv(te, teCT, teoP, full, full, "FromTEOP")
+
+	net.ConnectLayers(v1m, te, rndcut, axon.ForwardPath).AddClass("V1SC")   // shortcut!
+	net.ConnectLayers(v1m, teCT, rndcut, axon.ForwardPath).AddClass("V1SC") // shortcut!
+
+	teoP.PlaceBehind(teoCT, space)
+	te.PlaceRightOf(teo, space)
 
 build:
 	net.Build()
@@ -602,6 +634,7 @@ func (ss *Sim) ConfigLoops() {
 			}
 			ctrString := fmt.Sprintf("%03d_%05d", ls.Loop(Train, Run).Counter.Cur, epc)
 			axon.SaveWeights(ss.Net, ctrString, ss.RunName())
+			ss.RSASaveRActs("RSARActs_" + ss.RunName() + "_" + ctrString + ".tsv")
 		}
 	})
 
@@ -617,6 +650,9 @@ func (ss *Sim) ConfigLoops() {
 	ls.Loop(Train, Run).OnEnd.Add("SaveWeights", func() {
 		ctrString := fmt.Sprintf("%03d_%05d", ls.Loop(Train, Run).Counter.Cur, ls.Loop(Train, Epoch).Counter.Cur)
 		axon.SaveWeightsIfConfigSet(ss.Net, ss.Config.Log.SaveWeights, ctrString, ss.RunName())
+		if ss.Config.Log.SaveWeights {
+			ss.RSASaveRActs("RSARActs_" + ss.RunName() + "_" + ctrString + ".tsv")
+		}
 	})
 
 	if ss.Config.GUI {
@@ -802,6 +838,10 @@ func (ss *Sim) ConfigStats() {
 
 	if ss.Config.Run.V2Plus {
 		slays := net.LayersByType(axon.SuperLayer)
+		slays = slices.DeleteFunc(slays, func(s string) bool {
+			return s == "MTpos"
+		})
+		slays = append(slays, "V1m")
 		rsaFunc := ss.StatRSA(slays...)
 		ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 			rsaFunc(mode, level, phase)
@@ -1021,7 +1061,7 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 		vu.UpdateWhenStopped(mode, level)
 	}
 
-	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1.05, 2.3)
+	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1.3, 2.15)
 	nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, -.1, .05), math32.Vec3(0, 1, 0))
 
 	ss.StatsInit()

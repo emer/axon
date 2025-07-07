@@ -70,8 +70,8 @@ type RunConfig struct {
 	// TEOPlus includes TEO and higher layers
 	TEOPlus bool
 
-	// TEPlus includes TE and higher layers
-	TEPlus bool
+	// TE includes TE layer
+	TE bool
 
 	// GPU uses the GPU for computation, generally faster than CPU even for
 	// small models if NData ~16.

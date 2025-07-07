@@ -244,6 +244,24 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Layer.Gi = 1.2 // ?
 				ly.Inhib.Pool.Gi = 1.2  // ?
 			}},
+
+		//////// TE
+		{Sel: ".TE", Doc: "pool inhib, sparse activity",
+			Set: func(ly *axon.LayerParams) {
+				// ly.Acts.Decay.Glong = 0 ?
+				ly.Inhib.ActAvg.Nominal = 0.04 // 0.04 > 0.03
+				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
+				ly.Inhib.Pool.On.SetBool(true)
+				ly.Inhib.Layer.FB = 1
+				ly.Inhib.Pool.FB = 4
+				ly.Inhib.Layer.Gi = 1.0 // 1
+				ly.Inhib.Pool.Gi = 1.05 // 1.05
+			}},
+		{Sel: "#TECT", Doc: "more activity",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.Layer.Gi = 1.2 // ?
+				ly.Inhib.Pool.Gi = 1.2  // ?
+			}},
 	},
 }
 
@@ -282,7 +300,7 @@ var PathParams = axon.PathSheets{
 		{Sel: ".CTSelfCtxt", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 0.1 //
-				pt.PathScale.Abs = 0.5 // 0.5 orig?
+				pt.PathScale.Abs = 0.2 // 0.5 orig?
 			}},
 		{Sel: ".FromPulv", Doc: "defaults to .Back",
 			Set: func(pt *axon.PathParams) {
@@ -363,6 +381,16 @@ var PathParams = axon.PathSheets{
 				pt.PathScale.Abs = 0.5 // 0.5
 			}},
 		{Sel: "#V4ToTEO", Doc: "stronger",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1 // 1 > 1.5 still..
+			}},
+
+		//////// TE
+		{Sel: "#TEToTECT", Doc: "overactive",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 0.5 // 0.5
+			}},
+		{Sel: "#TEOToTE", Doc: "stronger",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 1 // 1 > 1.5 still..
 			}},
