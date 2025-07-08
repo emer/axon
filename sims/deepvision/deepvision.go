@@ -417,7 +417,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToPulv(v4, v4CT, v1mP, pts.PT4x4Skp2Recip, pts.PT4x4Skp2, "FromV1mP") // 3x3 >> p1to1??
 
 	// orig has v4selfct 3x3s1 -- todo try, also one with maint
-	net.ConnectLayers(v4CT, v4CT, pts.PT3x3Skp1, axon.CTCtxtPath).AddClass("CTSelfCtxt")
+	// net.ConnectLayers(v4CT, v4CT, pts.PT3x3Skp1, axon.CTCtxtPath).AddClass("CTSelfCtxt")
+	net.ConnectCTSelf(v4CT, pts.PT3x3Skp1, "")
 
 	net.ConnectLayers(v2, v4, pts.PT4x4Skp2, axon.ForwardPath)
 	net.ConnectLayers(v4, v2, pts.PT4x4Skp2Recip, axon.BackPath)
@@ -447,7 +448,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	sample2(teoCT)
 
 	// orig has teoselfct 3x3s1 -- todo try, also one with maint
-	net.ConnectLayers(teoCT, teoCT, pts.PT3x3Skp1, axon.CTCtxtPath).AddClass("CTSelfCtxt")
+	// net.ConnectLayers(teoCT, teoCT, pts.PT3x3Skp1, axon.CTCtxtPath).AddClass("CTSelfCtxt")
+	net.ConnectCTSelf(teoCT, pts.PT3x3Skp1, "")
 
 	net.ConnectLayers(v4, teo, pts.PT3x3Skp1, axon.ForwardPath)
 	net.ConnectLayers(teo, v4, pts.PT3x3Skp1, axon.BackPath)
@@ -482,7 +484,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	sample2(teCT)
 
 	// orig has teselfct 3x3s1 -- todo try, also one with maint
-	net.ConnectLayers(teCT, teCT, full, axon.CTCtxtPath).AddClass("CTSelfCtxt")
+	// net.ConnectLayers(teCT, teCT, full, axon.CTCtxtPath).AddClass("CTSelfCtxt")
+	net.ConnectCTSelf(teCT, full, "")
 
 	net.ConnectLayers(teo, te, full, axon.ForwardPath)
 	net.ConnectLayers(te, teo, full, axon.BackPath)
@@ -634,7 +637,7 @@ func (ss *Sim) ConfigLoops() {
 			}
 			ctrString := fmt.Sprintf("%03d_%05d", ls.Loop(Train, Run).Counter.Cur, epc)
 			axon.SaveWeights(ss.Net, ctrString, ss.RunName())
-			ss.RSASaveRActs("RSARActs_" + ss.RunName() + "_" + ctrString + ".tsv")
+			ss.RSASaveRActs("RSARActs_" + ss.RunName() + "_" + ctrString + ".tar.gz")
 		}
 	})
 
@@ -651,7 +654,7 @@ func (ss *Sim) ConfigLoops() {
 		ctrString := fmt.Sprintf("%03d_%05d", ls.Loop(Train, Run).Counter.Cur, ls.Loop(Train, Epoch).Counter.Cur)
 		axon.SaveWeightsIfConfigSet(ss.Net, ss.Config.Log.SaveWeights, ctrString, ss.RunName())
 		if ss.Config.Log.SaveWeights {
-			ss.RSASaveRActs("RSARActs_" + ss.RunName() + "_" + ctrString + ".tsv")
+			ss.RSASaveRActs("RSARActs_" + ss.RunName() + "_" + ctrString + ".tar.gz")
 		}
 	})
 
@@ -1080,6 +1083,15 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 		Active:  egui.ActiveAlways,
 		Func: func() {
 			ss.RandSeeds.NewSeeds()
+		},
+	})
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{
+		Label:   "Open RAvgs",
+		Icon:    icons.Open,
+		Tooltip: "Open running-average activation data from tar file, and run stats on data.",
+		Active:  egui.ActiveAlways,
+		Func: func() {
+			core.CallFunc(ss.GUI.Body, ss.RSAOpenRActs)
 		},
 	})
 	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{

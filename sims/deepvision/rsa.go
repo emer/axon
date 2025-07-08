@@ -5,17 +5,19 @@
 package deepvision
 
 import (
+	"os"
+
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/fsx"
 	"cogentcore.org/core/core"
 	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/stats/metric"
 	"cogentcore.org/lab/stats/stats"
-	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensor/tmath"
 	"cogentcore.org/lab/tensorcore"
 	"cogentcore.org/lab/tensorfs"
+	"github.com/emer/axon/v2/axon"
 )
 
 var (
@@ -185,20 +187,29 @@ func (ss *Sim) RSAGUI() {
 	tbs.SelectTabIndex(idx)
 }
 
-// RSASaveRActs saves running average activation data to file.
+// RSASaveRActs saves running average activation data to tar file.
 func (ss *Sim) RSASaveRActs(fname string) error {
+	f, err := os.Create(fname)
+	if errors.Log(err) != nil {
+		return err
+	}
+	defer f.Close()
 	curModeDir := ss.Current.Dir(Train.String()).Dir("RSA")
-	ravgs := tensorfs.DirTable(curModeDir.Dir("RAvgs"), nil)
-	return errors.Log(ravgs.SaveCSV(fsx.Filename(fname), tensor.Tab, table.Headers))
+	err = tensorfs.Tar(f, curModeDir.Dir("RAvgs"), true, nil) // gz
+	return errors.Log(err)
 }
 
-// RSAOpenRActs opens running average activation data from file.
+// RSAOpenRActs opens running average activation data from tar file.
 func (ss *Sim) RSAOpenRActs(fname fsx.Filename) error { //types:add
+	f, err := os.Open(string(fname))
+	if errors.Log(err) != nil {
+		return err
+	}
+	defer f.Close()
 	curModeDir := ss.Current.Dir(Train.String()).Dir("RSA")
-	ravgs := tensorfs.DirTable(curModeDir.Dir("RAvgs"), nil)
-	err := errors.Log(errors.Log(ravgs.OpenCSV(fname, tensor.Tab)))
-	if err != nil {
-		tensorfs.DirFromTable(curModeDir.Dir("RAvgs"), ravgs)
+	err = errors.Log(tensorfs.Untar(f, curModeDir.Dir("RAvgs"), true))
+	if err == nil {
+		ss.RSAStats()
 	}
 	return err
 }
@@ -221,6 +232,13 @@ func (ss *Sim) rsaTrial(curModeDir *tensorfs.Node, lnm, obj string, di int) {
 		avg = avgDtC*avg + avgDt*act
 		atsr.SetFloat1D(avg, lni)
 	}
+}
+
+// RSAStats runs stats on current data.
+func (ss *Sim) RSAStats() {
+	curModeDir := ss.Current.Dir(Train.String()).Dir("RSA")
+	slays := ss.Net.LayersByType(axon.SuperLayer)
+	ss.rsaEpoch(curModeDir, slays...)
 }
 
 // rsaEpoch computes all stats at epoch level
@@ -264,12 +282,18 @@ func rsaSimMats(curModeDir *tensorfs.Node, layers ...string) {
 		adir := curModeDir.Dir("RAvgs").Dir(lnm)
 		for ci, obj := range Objs {
 			atsr := tensor.As1D(adir.Float64(obj))
+			if atsr.Len() == 0 {
+				continue
+			}
 			for oci := ci + 1; oci < nc; oci++ {
 				oobj := Objs[oci]
-				otsr := adir.Float64(oobj)
-				sim := metric.InvCorrelation(atsr, tensor.As1D(otsr))
-				smat.SetFloat(sim.Float1D(0), ci, oci)
-				smat.SetFloat(sim.Float1D(0), oci, ci)
+				otsr := tensor.As1D(adir.Float64(oobj))
+				sim := 0.0
+				if otsr.Len() > 0 {
+					sim = metric.InvCorrelation(atsr, otsr).Float1D(0)
+				}
+				smat.SetFloat(sim, ci, oci)
+				smat.SetFloat(sim, oci, ci)
 			}
 		}
 	}

@@ -111,7 +111,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.GabaB.Gk = 0.015  // 0.015 standard gaba
 				ly.Acts.NMDA.Ge = 0.006
 				ly.Acts.NMDA.Tau = 100
-				ly.Acts.MaintNMDA.Ge = 0.006 // not relevant -- no CTSelf
+				ly.Acts.MaintNMDA.Ge = 0.006
 				ly.Acts.MaintNMDA.Tau = 100
 			}},
 		{Sel: ".PulvinarLayer", Doc: "Pulvinar",
@@ -300,7 +300,12 @@ var PathParams = axon.PathSheets{
 		{Sel: ".CTSelfCtxt", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 0.1 //
-				pt.PathScale.Abs = 0.2 // 0.5 orig?
+				pt.PathScale.Abs = 0.5 // 0.5 orig?
+			}},
+		{Sel: ".CTSelfMaint", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 0.5
+				pt.Com.GType = axon.MaintG
 			}},
 		{Sel: ".FromPulv", Doc: "defaults to .Back",
 			Set: func(pt *axon.PathParams) {

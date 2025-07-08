@@ -117,7 +117,7 @@ type RunConfig struct {
 	Epochs int `default:"1000"`
 
 	// Trials is the total number of trials per epoch.
-	// Should be an even multiple of NData.
+	// Should be an even multiple of NData. Was 512 in Leabra model.
 	Trials int `default:"512"`
 
 	// Cycles is the total number of cycles per trial: at least 200.
