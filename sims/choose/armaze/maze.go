@@ -333,17 +333,17 @@ func (ev *Env) RenderAction(act Actions) {
 //////////////////////////////////////////////////
 //   Action
 
-func (ev *Env) DecodeAct(vt *tensor.Float32) Actions {
+func (ev *Env) DecodeAct(vt *tensor.Float64) Actions {
 	mxi := ev.DecodeLocalist(vt)
 	return Actions(mxi)
 }
 
-func (ev *Env) DecodeLocalist(vt *tensor.Float32) int {
+func (ev *Env) DecodeLocalist(vt *tensor.Float64) int {
 	dx := vt.DimSize(1)
-	var max float32
+	var max float64
 	var mxi int
 	for i := 0; i < dx; i++ {
-		var sum float32
+		var sum float64
 		for j := 0; j < ev.Config.Params.NYReps; j++ {
 			sum += vt.Value(j, i)
 		}
