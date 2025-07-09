@@ -6,6 +6,7 @@ package deepvision
 
 import (
 	"os"
+	"strings"
 
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/fsx"
@@ -17,7 +18,6 @@ import (
 	"cogentcore.org/lab/tensor/tmath"
 	"cogentcore.org/lab/tensorcore"
 	"cogentcore.org/lab/tensorfs"
-	"github.com/emer/axon/v2/axon"
 )
 
 var (
@@ -175,13 +175,17 @@ var SimMatGridStyle = func(s *tensorcore.GridStyle) {
 }
 
 func (ss *Sim) RSAGUI() {
+	ss.rsaSimMatGrid("Expt_Smat")
+}
+
+func (ss *Sim) rsaSimMatGrid(nm string) {
 	curModeDir := ss.Current.Dir(Train.String()).Dir("RSA")
 	tbs := ss.GUI.Tabs.AsLab()
 	_, idx := tbs.CurrentTab()
 
-	exSmat := curModeDir.Float64("Expt_Smat")
-	tensorcore.AddGridStylerTo(exSmat, SimMatGridStyle)
-	tg := tbs.TensorGrid("Expt", exSmat)
+	smat := curModeDir.Float64(nm)
+	tensorcore.AddGridStylerTo(smat, SimMatGridStyle)
+	tg := tbs.TensorGrid(strings.TrimSuffix(nm, "_Smat"), smat)
 	tg.RowLabels = CanonicalGroups
 	tg.ColumnLabels = CanonicalGroups
 	tbs.SelectTabIndex(idx)
@@ -234,11 +238,21 @@ func (ss *Sim) rsaTrial(curModeDir *tensorfs.Node, lnm, obj string, di int) {
 	}
 }
 
-// RSAStats runs stats on current data.
+// RSAStats runs stats on current data, displaying grids.
+// This is run on saved data, in GUI.
 func (ss *Sim) RSAStats() {
 	curModeDir := ss.Current.Dir(Train.String()).Dir("RSA")
-	slays := ss.Net.LayersByType(axon.SuperLayer)
+	ravgs := curModeDir.Dir("RAvgs")
+	var slays []string
+	ravgs.NodesFunc(func(nd *tensorfs.Node) bool {
+		slays = append(slays, nd.Name())
+		return false
+	})
+	// fmt.Println("slays:", slays)
 	ss.rsaEpoch(curModeDir, slays...)
+	for _, lnm := range slays {
+		ss.rsaSimMatGrid(lnm + "_Smat")
+	}
 }
 
 // rsaEpoch computes all stats at epoch level

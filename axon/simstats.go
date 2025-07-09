@@ -28,10 +28,10 @@ func StatsNode(statsDir *tensorfs.Node, mode, level enums.Enum) *tensorfs.Node {
 	return modeDir.Dir(level.String())
 }
 
-func StatsLayerValues(net *Network, curDir *tensorfs.Node, mode enums.Enum, di int, layName, varName string) *tensor.Float32 {
+func StatsLayerValues(net *Network, curDir *tensorfs.Node, mode enums.Enum, di int, layName, varName string) *tensor.Float64 {
 	curModeDir := curDir.Dir(mode.String())
 	ly := net.LayerByName(layName)
-	tsr := curModeDir.Float32(layName+"_"+varName, ly.Shape.Sizes...)
+	tsr := curModeDir.Float64(layName+"_"+varName, ly.Shape.Sizes...)
 	ly.UnitValuesTensor(tsr, varName, di)
 	return tsr
 }
@@ -448,6 +448,7 @@ func StatPCA(statsDir, currentDir *tensorfs.Node, net *Network, interval int, tr
 		levels[levi] = level
 		modeDir := statsDir.Dir(mode.String())
 		curModeDir := currentDir.Dir(mode.String())
+		curPCADir := curModeDir.Dir("PCA")
 		pcaDir := statsDir.Dir("PCA")
 		levelDir := modeDir.Dir(level.String())
 		ndata := int(net.Context().NData)
@@ -457,7 +458,7 @@ func StatPCA(statsDir, currentDir *tensorfs.Node, net *Network, interval int, tr
 			sizes = append(sizes, ly.GetSampleShape().Sizes...)
 			vtsr := pcaDir.Float64(lnm, sizes...)
 			if levi == 0 {
-				ltsr := curModeDir.Float64(lnm+"_ActM", ly.GetSampleShape().Sizes...)
+				ltsr := curPCADir.Float64(lnm+"_ActM", ly.GetSampleShape().Sizes...)
 				if start {
 					vtsr.SetNumRows(0)
 				} else {
@@ -473,8 +474,8 @@ func StatPCA(statsDir, currentDir *tensorfs.Node, net *Network, interval int, tr
 			if !start && levi == 1 {
 				if interval > 0 && epc%interval == 0 {
 					hasNew = true
-					vals := curModeDir.Float64("PCA_Vals_" + lnm)
-					covar := curModeDir.Float64("PCA_Covar_" + lnm)
+					vals := curPCADir.Float64("Vals_" + lnm)
+					covar := curPCADir.Float64("Covar_" + lnm)
 					metric.CovarianceMatrixOut(metric.Covariance, vtsr, covar)
 					matrix.SVDValuesOut(covar, vals)
 					ln := vals.Len()
@@ -584,7 +585,7 @@ func StatCorSim(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel, r
 // between previous trial activity state and current minus phase and
 // plus phase state. This is important for predictive learning.
 func StatPrevCorSim(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel, runLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
-	statNames := []string{"PrevToMCorSim", "PrevToPCorSim"}
+	statNames := []string{"PrevToM", "PrevToP"}
 	levels := make([]enums.Enum, 10) // should be enough
 	levels[0] = trialLevel
 	return func(mode, level enums.Enum, start bool) {
@@ -662,6 +663,9 @@ func StatLevelAll(statsDir *tensorfs.Node, srcMode, srcLevel enums.Enum, styleFu
 		cols := levelDir.NodesFunc(nil) // all nodes
 		for _, cl := range cols {
 			clv := cl.Tensor.(tensor.Values)
+			if clv.NumDims() == 0 || clv.DimSize(0) == 0 {
+				continue
+			}
 			if start {
 				trg := tensorfs.ValueType(allDir, cl.Name(), clv.DataType(), clv.ShapeSizes()...)
 				if trg.Len() == 0 {

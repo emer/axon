@@ -553,21 +553,22 @@ func (ss *Sim) DecodeAct(ev *MotorSeqEnv, mode Modes, di int) int {
 	tsr := axon.StatsLayerValues(ss.Net, ss.Current, mode, di, "MotorBS", "ActM")
 	return ss.SoftMaxChoose4D(tsr, mode)
 	// return ss.HardChoose4D(tsr, mode)
+	return 1
 }
 
 // SoftMaxChoose2D probabalistically selects column with most activity in layer,
 // using a softmax with Config.Env.ActSoftMaxGain gain factor
-func (ss *Sim) SoftMaxChoose2D(vt *tensor.Float32, mode Modes) int {
+func (ss *Sim) SoftMaxChoose2D(vt *tensor.Float64, mode Modes) int {
 	dy := vt.DimSize(0)
 	nact := vt.DimSize(1)
 	var tot float32
 	probs := make([]float32, nact)
 	for i := range probs {
-		var sum float32
+		var sum float64
 		for j := 0; j < dy; j++ {
 			sum += vt.Value(j, i)
 		}
-		p := math32.FastExp(ss.Config.Env.ActSoftMaxGain * sum)
+		p := math32.FastExp(ss.Config.Env.ActSoftMaxGain * float32(sum))
 		probs[i] = p
 		tot += p
 	}
@@ -580,20 +581,20 @@ func (ss *Sim) SoftMaxChoose2D(vt *tensor.Float32, mode Modes) int {
 
 // SoftMaxChoose4D probabalistically selects column with most activity in layer,
 // using a softmax with Config.Env.ActSoftMaxGain gain factor
-func (ss *Sim) SoftMaxChoose4D(vt *tensor.Float32, mode Modes) int {
+func (ss *Sim) SoftMaxChoose4D(vt *tensor.Float64, mode Modes) int {
 	nact := vt.DimSize(1)
 	nuY := vt.DimSize(2)
 	nuX := vt.DimSize(3)
 	var tot float32
 	probs := make([]float32, nact)
 	for i := range probs {
-		var sum float32
+		var sum float64
 		for j := 0; j < nuY; j++ {
 			for k := 0; k < nuX; k++ {
 				sum += vt.Value(0, i, j, k)
 			}
 		}
-		p := math32.FastExp(ss.Config.Env.ActSoftMaxGain * sum)
+		p := math32.FastExp(ss.Config.Env.ActSoftMaxGain * float32(sum))
 		probs[i] = p
 		tot += p
 	}

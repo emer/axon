@@ -416,8 +416,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectToPulv(v4, v4CT, v1mP, pts.PT4x4Skp2Recip, pts.PT4x4Skp2, "FromV1mP") // 3x3 >> p1to1??
 
-	// orig has v4selfct 3x3s1 -- todo try, also one with maint
+	// orig has v4selfct 3x3s1
 	// net.ConnectLayers(v4CT, v4CT, pts.PT3x3Skp1, axon.CTCtxtPath).AddClass("CTSelfCtxt")
+	// maint is maybe better:
 	net.ConnectCTSelf(v4CT, pts.PT3x3Skp1, "")
 
 	net.ConnectLayers(v2, v4, pts.PT4x4Skp2, axon.ForwardPath)
@@ -429,7 +430,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// no FF CT -> CT?
 	// net.ConnectLayers(v2CT, v4CT, pts.PT4x4Skp2, axon.ForwardPath).AddClass("FwdWeak")
 
-	// net.ConnectLayers(v4CT, v2CT, pts.PT4x4Skp2Recip, axon.BackPath) // strong .5 in orig
+	// net.ConnectLayers(v4CT, v2CT, pts.PT4x4Skp2Recip, axon.BackPath) // tiny bit worse
 
 	// leak from super to CT:
 	net.ConnectLayers(v4, v2CT, pts.PT2x2Skp2Recip, axon.BackPath) // strong .5 in orig
@@ -446,6 +447,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	teo, teoCT = net.AddSuperCT4D("TEO", "", 4, 4, 10, 10, space, pool1to1)
 	sample2(teo)
 	sample2(teoCT)
+
+	net.LateralConnectLayer(teo, pool1to1).AddClass("TEOSelfMaint")
 
 	// orig has teoselfct 3x3s1 -- todo try, also one with maint
 	// net.ConnectLayers(teoCT, teoCT, pts.PT3x3Skp1, axon.CTCtxtPath).AddClass("CTSelfCtxt")
@@ -482,6 +485,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	te, teCT = net.AddSuperCT4D("TE", "", 2, 2, 10, 10, space, pool1to1)
 	sample2(te)
 	sample2(teCT)
+
+	net.LateralConnectLayer(te, pool1to1).AddClass("TESelfMaint")
 
 	// orig has teselfct 3x3s1 -- todo try, also one with maint
 	// net.ConnectLayers(teCT, teCT, full, axon.CTCtxtPath).AddClass("CTSelfCtxt")
@@ -936,11 +941,12 @@ func (ss *Sim) StatCorSim() func(mode Modes, level Levels, phase StatsPhase) {
 // StatPrevCorSim returns a Stats function that compute correlations
 // between previous trial activity state and current minus phase and
 // plus phase state. This is important for predictive learning.
+// Also the super layer stats track overall representation change over time.
 func (ss *Sim) StatPrevCorSim() func(mode Modes, level Levels, phase StatsPhase) {
 	net := ss.Net
-	layers := net.LayersByType(axon.PulvinarLayer)
+	layers := net.LayersByType(axon.PulvinarLayer, axon.SuperLayer)
 	ticks := []string{"", "0", "Foc", "Sac"}
-	statNames := []string{"PrevToMCorSim", "PrevToPCorSim"}
+	statNames := []string{"PrevToM", "PrevToP"}
 	return func(mode Modes, level Levels, phase StatsPhase) {
 		if level < Trial {
 			return

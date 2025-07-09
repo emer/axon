@@ -300,11 +300,11 @@ var PathParams = axon.PathSheets{
 		{Sel: ".CTSelfCtxt", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 0.1 //
-				pt.PathScale.Abs = 0.5 // 0.5 orig?
+				pt.PathScale.Abs = 0.2 // 0.5 orig?
 			}},
 		{Sel: ".CTSelfMaint", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 0.5
+				pt.PathScale.Abs = 0.2
 				pt.Com.GType = axon.MaintG
 			}},
 		{Sel: ".FromPulv", Doc: "defaults to .Back",
@@ -389,6 +389,11 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 1 // 1 > 1.5 still..
 			}},
+		{Sel: ".TEOSelfMaint", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 0.2 // 0.2 > 0.5 ?
+				pt.Com.GType = axon.MaintG
+			}},
 
 		//////// TE
 		{Sel: "#TEToTECT", Doc: "overactive",
@@ -398,6 +403,11 @@ var PathParams = axon.PathSheets{
 		{Sel: "#TEOToTE", Doc: "stronger",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 1 // 1 > 1.5 still..
+			}},
+		{Sel: ".TESelfMaint", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 0.2 // 0.2 > 0.5?
+				pt.Com.GType = axon.MaintG
 			}},
 	},
 }
