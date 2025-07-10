@@ -20,6 +20,10 @@ import (
 	"cogentcore.org/lab/tensorfs"
 )
 
+type ObjCat struct {
+	Obj, Cat string
+}
+
 var (
 	Debug = false
 
@@ -48,35 +52,57 @@ var (
 		"motorcycle",
 	}
 
-	ObjIdxs map[string]int
-
 	// CanonicalCats is best-fitting 5-category leabra ("Centroid")
-	CanonicalCats = map[string]string{
-		"banana":      "1-pyramid",
-		"layercake":   "1-pyramid",
-		"trafficcone": "1-pyramid",
-		"sailboat":    "1-pyramid",
-		"trex":        "1-pyramid",
-		"person":      "2-vertical",
-		"guitar":      "2-vertical",
-		"tablelamp":   "2-vertical",
-		"doorknob":    "3-round",
-		"donut":       "3-round",
-		"handgun":     "3-round",
-		"chair":       "3-round",
-		"slrcamera":   "4-box",
-		"elephant":    "4-box",
-		"piano":       "4-box",
-		"fish":        "4-box",
-		"car":         "5-horiz",
-		"heavycannon": "5-horiz",
-		"stapler":     "5-horiz",
-		"motorcycle":  "5-horiz",
+	CanonicalCats = []ObjCat{
+		{"banana", "1-pyramid"},
+		{"layercake", "1-pyramid"},
+		{"trafficcone", "1-pyramid"},
+		{"sailboat", "1-pyramid"},
+		{"trex", "1-pyramid"},
+		{"person", "2-vertical"},
+		{"guitar", "2-vertical"},
+		{"tablelamp", "2-vertical"},
+		{"doorknob", "3-round"},
+		{"donut", "3-round"},
+		{"handgun", "3-round"},
+		{"chair", "3-round"},
+		{"slrcamera", "4-box"},
+		{"elephant", "4-box"},
+		{"piano", "4-box"},
+		{"fish", "4-box"},
+		{"car", "5-horiz"},
+		{"heavycannon", "5-horiz"},
+		{"stapler", "5-horiz"},
+		{"motorcycle", "5-horiz"},
 	}
 
 	CanonicalGroups []string // CanonicalCats with repeats all blank, for grouped labels
 
-	rsaStatNames = []string{"RSAvsV1", "RSAvsTE", "RSAvsExpt"} // , "MeanCentroid", "MeanBasic", "MeanExpt"}
+	// Alt1Cats alternative categories
+	Alt1Cats = []ObjCat{
+		{"layercake", "1-vertical"},
+		{"trafficcone", "1-vertical"},
+		{"sailboat", "1-vertical"},
+		{"person", "1-vertical"},
+		{"guitar", "1-vertical"},
+		{"tablelamp", "1-vertical"},
+		{"chair", "2-chair"},
+		{"doorknob", "2-chair"},
+		{"donut", "3-box"},
+		{"elephant", "3-box"},
+		{"slrcamera", "3-box"},
+		{"piano", "3-box"},
+		{"fish", "4-horiz"},
+		{"banana", "4-horiz"},
+		{"car", "4-horiz"},
+		{"heavycannon", "4-horiz"},
+		{"stapler", "4-horiz"},
+		{"motorcycle", "4-horiz"},
+		{"trex", "5-handle"},
+		{"handgun", "5-handle"},
+	}
+
+	rsaStatNames = []string{"RSAvsV1", "RSAvsTE", "RSAvsExpt", "MeanCentroid", "MeanAlt1"}
 )
 
 // StatRSA returns a Stats function that records RSA:
@@ -153,17 +179,20 @@ func (ss *Sim) RSAInit() {
 	mx := stats.Max(tensor.As1D(smat))
 	tmath.DivOut(smat, mx, smat)
 
-	ObjIdxs = make(map[string]int, nc)
-	CanonicalGroups = make([]string, nc)
+	CanonicalGroups = ss.gridLabels(CanonicalCats)
+}
+
+func (ss *Sim) gridLabels(cats []ObjCat) []string {
+	nc := len(cats)
+	gl := make([]string, nc)
 	lstcat := ""
-	for i, o := range Objs {
-		ObjIdxs[o] = i
-		cat := CanonicalCats[o]
-		if cat != lstcat {
-			CanonicalGroups[i] = cat
-			lstcat = cat
+	for i, oc := range cats {
+		if oc.Cat != lstcat {
+			gl[i] = oc.Cat
+			lstcat = oc.Cat
 		}
 	}
+	return gl
 }
 
 var SimMatGridStyle = func(s *tensorcore.GridStyle) {
@@ -175,10 +204,10 @@ var SimMatGridStyle = func(s *tensorcore.GridStyle) {
 }
 
 func (ss *Sim) RSAGUI() {
-	ss.rsaSimMatGrid("Expt_Smat")
+	ss.rsaSimMatGrid("Expt_Smat", CanonicalGroups)
 }
 
-func (ss *Sim) rsaSimMatGrid(nm string) {
+func (ss *Sim) rsaSimMatGrid(nm string, labels []string) {
 	curModeDir := ss.Current.Dir(Train.String()).Dir("RSA")
 	tbs := ss.GUI.Tabs.AsLab()
 	_, idx := tbs.CurrentTab()
@@ -186,8 +215,8 @@ func (ss *Sim) rsaSimMatGrid(nm string) {
 	smat := curModeDir.Float64(nm)
 	tensorcore.AddGridStylerTo(smat, SimMatGridStyle)
 	tg := tbs.TensorGrid(strings.TrimSuffix(nm, "_Smat"), smat)
-	tg.RowLabels = CanonicalGroups
-	tg.ColumnLabels = CanonicalGroups
+	tg.RowLabels = labels
+	tg.ColumnLabels = labels
 	tbs.SelectTabIndex(idx)
 }
 
@@ -251,14 +280,19 @@ func (ss *Sim) RSAStats() {
 	// fmt.Println("slays:", slays)
 	ss.rsaEpoch(curModeDir, slays...)
 	for _, lnm := range slays {
-		ss.rsaSimMatGrid(lnm + "_Smat")
+		ss.rsaSimMatGrid(lnm+"_Smat", CanonicalGroups)
+	}
+	altgps := ss.gridLabels(Alt1Cats)
+	for _, lnm := range slays {
+		ss.rsaSimMatGrid(lnm+"_Alt1_Smat", altgps)
 	}
 }
 
 // rsaEpoch computes all stats at epoch level
 func (ss *Sim) rsaEpoch(curModeDir *tensorfs.Node, layers ...string) {
 	// first get everything per-layer
-	rsaSimMats(curModeDir, layers...)
+	rsaSimMats(curModeDir, "", CanonicalCats, layers...)
+	rsaSimMats(curModeDir, "_Alt1", Alt1Cats, layers...)
 
 	nc := len(Objs)
 	v1Smat := curModeDir.Float64("V1m_Smat", nc, nc)
@@ -284,23 +318,32 @@ func (ss *Sim) rsaEpoch(curModeDir *tensorfs.Node, layers ...string) {
 		exsnm := lnm + "_" + rsaStatNames[2]
 		exsim := metric.Correlation(exSmat, smat).Float1D(0)
 		curModeDir.Float64(exsnm, 1).SetFloat1D(exsim, 0)
+
+		mcnm := lnm + "_" + rsaStatNames[3]
+		acd := AvgContrastDist(smat, CanonicalCats)
+		curModeDir.Float64(mcnm, 1).SetFloat1D(acd, 0)
+
+		asmat := curModeDir.Float64(lnm+"_Alt1_Smat", nc, nc)
+		mcnm = lnm + "_" + rsaStatNames[4]
+		acd = AvgContrastDist(asmat, Alt1Cats)
+		curModeDir.Float64(mcnm, 1).SetFloat1D(acd, 0)
 	}
 }
 
 // rsaSimMats computes the similarity matrixes from running average acts
-func rsaSimMats(curModeDir *tensorfs.Node, layers ...string) {
+func rsaSimMats(curModeDir *tensorfs.Node, typNm string, cats []ObjCat, layers ...string) {
 	nc := len(Objs)
 	for _, lnm := range layers {
 		// Canonical simat
-		smat := curModeDir.Float64(lnm+"_Smat", nc, nc)
+		smat := curModeDir.Float64(lnm+typNm+"_Smat", nc, nc)
 		adir := curModeDir.Dir("RAvgs").Dir(lnm)
-		for ci, obj := range Objs {
-			atsr := tensor.As1D(adir.Float64(obj))
+		for ci, oc := range cats {
+			atsr := tensor.As1D(adir.Float64(oc.Obj))
 			if atsr.Len() == 0 {
 				continue
 			}
 			for oci := ci + 1; oci < nc; oci++ {
-				oobj := Objs[oci]
+				oobj := cats[oci].Obj
 				otsr := tensor.As1D(adir.Float64(oobj))
 				sim := 0.0
 				if otsr.Len() > 0 {
@@ -311,6 +354,45 @@ func rsaSimMats(curModeDir *tensorfs.Node, layers ...string) {
 			}
 		}
 	}
+}
+
+// AvgContrastDist computes average contrast dist over given cat map
+// nms gives the base category names for each row in the simat, which is
+// then used to lookup the meta category in the catmap, which is used
+// for determining the within vs. between category status.
+func AvgContrastDist(smat *tensor.Float64, cats []ObjCat) float64 {
+	nc := len(cats)
+	avgd := 0.0
+	for ri := range nc {
+		aid := 0.0
+		ain := 0
+		abd := 0.0
+		abn := 0
+		rc := cats[ri]
+		for ci := range nc {
+			if ri == ci {
+				continue
+			}
+			cc := cats[ci]
+			d := smat.Float(ri, ci)
+			if cc.Cat == rc.Cat {
+				aid += d
+				ain++
+			} else {
+				abd += d
+				abn++
+			}
+		}
+		if ain > 0 {
+			aid /= float64(ain)
+		}
+		if abn > 0 {
+			abd /= float64(abn)
+		}
+		avgd += aid - abd
+	}
+	avgd /= float64(nc)
+	return avgd
 }
 
 // // RSA handles representational similarity analysis
@@ -327,42 +409,6 @@ func rsaSimMats(curModeDir *tensorfs.Node, layers ...string) {
 // 	PermDists  map[string]float64       `desc:"avg contrast dist for permutation"`
 // }
 //
-// // SetCats sets the categories from given list of category/object_file names
-// func (rs *RSA) SetCats(objs []string) {
-// 	rs.Cats = make([]string, 0, 20*20)
-// 	for _, ob := range objs {
-// 		cat := strings.Split(ob, "/")[0]
-// 		rs.Cats = append(rs.Cats, cat)
-// 	}
-// }
-//
-// func (rs *RSA) SimByName(cn string) *simat.SimMat {
-// 	sm, ok := rs.Sims[cn]
-// 	if !ok || sm == nil {
-// 		sm = &simat.SimMat{}
-// 		rs.Sims[cn] = sm
-// 	}
-// 	return sm
-// }
-//
-// func (rs *RSA) Cat5SimByName(cn string) *simat.SimMat {
-// 	sm, ok := rs.Cat5Sims[cn]
-// 	if !ok || sm == nil {
-// 		sm = &simat.SimMat{}
-// 		rs.Cat5Sims[cn] = sm
-// 	}
-// 	return sm
-// }
-//
-// func (rs *RSA) Cat5ObjByName(cn string) *[]string {
-// 	sm, ok := rs.Cat5Objs[cn]
-// 	if !ok || sm == nil {
-// 		nsm := sliceclone.String(rs.Cats)
-// 		sm = &nsm
-// 		rs.Cat5Objs[cn] = sm
-// 	}
-// 	return sm
-// }
 //
 // // StatsFmActs computes RSA stats from given acts table, for given columns (layer names)
 // func (rs *RSA) StatsFmActs(acts *etable.Table, lays []string) {
@@ -378,9 +424,6 @@ func rsaSimMats(curModeDir *tensorfs.Node, layers ...string) {
 // 	for i, cn := range lays {
 // 		sm := rs.SimByName(cn)
 // 		rs.SimMatFmActs(sm, tix, cn)
-//
-// 		osm := rs.SimByName(cn + "_Obj")
-// 		rs.ObjSimMat(osm, sm, rs.Cats)
 //
 // 		dist := metric.CrossEntropy64(osm.Mat.(*tensor.Float64).Values, expt.Mat.(*tensor.Float64).Values)
 // 		rs.ExptDists[i] = dist
@@ -424,44 +467,6 @@ func rsaSimMats(curModeDir *tensorfs.Node, layers ...string) {
 // 	copy(*obj5p, objp)
 // 	rs.PermNCats[laynm] = ncat
 // 	rs.PermDists[laynm] = pdist
-// }
-//
-// // ConfigSimMat sets meta data
-// func (rs *RSA) ConfigSimMat(sm *simat.SimMat) {
-// 	smat := sm.Mat.(*tensor.Float64)
-// 	smat.SetMetaData("max", "2")
-// 	smat.SetMetaData("min", "0")
-// 	smat.SetMetaData("colormap", "Viridis")
-// 	smat.SetMetaData("grid-fill", "1")
-// 	smat.SetMetaData("dim-extra", "0.5")
-// }
-//
-// // OpenSimMat opens a saved sim mat for given layer name,
-// // using given cat strings per row of sim mat
-// func (rs *RSA) OpenSimMat(laynm string, fname gi.FileName) {
-// 	sm := rs.SimByName(laynm)
-// 	no := len(rs.Cats)
-// 	sm.Init()
-// 	rs.ConfigSimMat(sm)
-// 	smat := sm.Mat.(*tensor.Float64)
-// 	smat.SetShape([]int{no, no}, nil, nil)
-// 	err := tensor.OpenCSV(smat, fname, etable.Tab.Rune())
-// 	if err != nil {
-// 		log.Println(err)
-// 		return
-// 	}
-// 	sm.Rows = simat.BlankRepeat(rs.Cats)
-// 	sm.Cols = sm.Rows
-// 	rs.StatsSortPermuteCat5(laynm)
-// 	rs.PermDists[laynm+"_BasicDist"] = rs.AvgBasicDist(sm, rs.Cats)
-//
-// 	expt := rs.SimByName("Expt1")
-//
-// 	osm := rs.SimByName(laynm + "_Obj")
-// 	rs.ObjSimMat(osm, sm, rs.Cats)
-// 	dist := metric.CrossEntropy64(osm.Mat.(*tensor.Float64).Values, expt.Mat.(*tensor.Float64).Values)
-// 	rs.PermDists[laynm+"_ExptDist"] = dist
-//
 // }
 //
 // // CatSortSimMat takes an input sim matrix and categorizes the items according to given cats
@@ -559,48 +564,6 @@ func rsaSimMats(curModeDir *tensorfs.Node, layers ...string) {
 // 	return sobjs
 // }
 //
-// // AvgContrastDist computes average contrast dist over given cat map
-// // nms gives the base category names for each row in the simat, which is
-// // then used to lookup the meta category in the catmap, which is used
-// // for determining the within vs. between category status.
-// func (rs *RSA) AvgContrastDist(insm *simat.SimMat, nms []string, catmap map[string]string) float64 {
-// 	no := len(insm.Rows)
-// 	smatv := insm.Mat.(*tensor.Float64).Values
-// 	avgd := 0.0
-// 	for ri := 0; ri < no; ri++ {
-// 		roff := ri * no
-// 		aid := 0.0
-// 		ain := 0
-// 		abd := 0.0
-// 		abn := 0
-// 		rnm := nms[ri]
-// 		rc := catmap[rnm]
-// 		for ci := 0; ci < no; ci++ {
-// 			if ri == ci {
-// 				continue
-// 			}
-// 			cnm := nms[ci]
-// 			cc := catmap[cnm]
-// 			d := smatv[roff+ci]
-// 			if cc == rc {
-// 				aid += d
-// 				ain++
-// 			} else {
-// 				abd += d
-// 				abn++
-// 			}
-// 		}
-// 		if ain > 0 {
-// 			aid /= float64(ain)
-// 		}
-// 		if abn > 0 {
-// 			abd /= float64(abn)
-// 		}
-// 		avgd += aid - abd
-// 	}
-// 	avgd /= float64(no)
-// 	return avgd
-// }
 //
 // // AvgBasicDist computes average distance within basic-level categories given by nms
 // func (rs *RSA) AvgBasicDist(insm *simat.SimMat, nms []string) float64 {
@@ -722,46 +685,3 @@ func rsaSimMats(curModeDir *tensorfs.Node, layers ...string) {
 // 	return itrmap, nCatUsed, -std
 // }
 //
-// // ObjSimMat compresses full simat into a much smaller per-object sim mat
-// func (rs *RSA) ObjSimMat(osm *simat.SimMat, fsm *simat.SimMat, nms []string) {
-// 	fsmat := fsm.Mat.(*tensor.Float64)
-//
-// 	ono := len(Objs)
-// 	osm.Init()
-// 	osmat := osm.Mat.(*tensor.Float64)
-// 	osmat.SetShape([]int{ono, ono}, nil, nil)
-// 	osm.Rows = LbaCatsBlanks
-// 	osm.Cols = LbaCatsBlanks
-// 	osmat.SetMetaData("max", "1")
-// 	osmat.SetMetaData("min", "0")
-// 	osmat.SetMetaData("colormap", "Viridis")
-// 	osmat.SetMetaData("grid-fill", "1")
-// 	osmat.SetMetaData("dim-extra", "0.15")
-//
-// 	nmat := &tensor.Float64{}
-// 	nmat.SetShape([]int{ono, ono}, nil, nil)
-//
-// 	nf := len(nms)
-// 	for ri := 0; ri < nf; ri++ {
-// 		roi := ObjIdxs[nms[ri]]
-// 		for ci := 0; ci < nf; ci++ {
-// 			sidx := ri*nf + ci
-// 			sval := fsmat.Values[sidx]
-// 			coi := ObjIdxs[nms[ci]]
-// 			oidx := roi*ono + coi
-// 			if ri == ci {
-// 				osmat.Values[oidx] = 0
-// 			} else {
-// 				osmat.Values[oidx] += sval
-// 			}
-// 			nmat.Values[oidx] += 1
-// 		}
-// 	}
-// 	for ri := 0; ri < ono; ri++ {
-// 		for ci := 0; ci < ono; ci++ {
-// 			oidx := ri*ono + ci
-// 			osmat.Values[oidx] /= nmat.Values[oidx]
-// 		}
-// 	}
-// 	norm.DivNorm64(osmat.Values, norm.Max64)
-// }

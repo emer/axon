@@ -71,7 +71,7 @@ type LayerInhibIndexes struct {
 
 // LayerParams contains all of the layer parameters.
 // These values must remain constant over the course of computation.
-// On the GPU, they are loaded into a uniform.
+// On the GPU, they are loaded into a read-only data storage buffer.
 type LayerParams struct {
 
 	// Type is the functional type of layer, which determines the code path

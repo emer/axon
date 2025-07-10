@@ -391,8 +391,13 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".TEOSelfMaint", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 0.2 // 0.2 > 0.5 ?
+				pt.PathScale.Abs = 0.4 // 0.2 > 0.5 ?
 				pt.Com.GType = axon.MaintG
+			}},
+		{Sel: ".TEOCTSelfNOT", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Rel = 0.1 //
+				pt.PathScale.Abs = 0.2 // 0.5 orig?
 			}},
 
 		//////// TE
@@ -406,8 +411,13 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".TESelfMaint", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 0.2 // 0.2 > 0.5?
+				pt.PathScale.Abs = 0.4 // 0.2 > 0.5?
 				pt.Com.GType = axon.MaintG
+			}},
+		{Sel: ".TECTSelfNOT", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Rel = 0.1 //
+				pt.PathScale.Abs = 0.2 // 0.5 orig?
 			}},
 	},
 }

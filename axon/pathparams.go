@@ -112,7 +112,7 @@ type GScaleValues struct {
 
 // PathParams contains all of the path parameters.
 // These values must remain constant over the course of computation.
-// On the GPU, they are loaded into a uniform.
+// On the GPU, they are loaded into a read-only storage buffer.
 type PathParams struct {
 
 	// Type is the functional type of path, which determines the code path

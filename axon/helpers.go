@@ -11,10 +11,10 @@ import (
 	"cogentcore.org/lab/base/mpi"
 )
 
-////////////////////////////////////////////////////
-// Misc
+//////// Misc
 
-// ToggleLayersOff can be used to disable layers in a Network, for example if you are doing an ablation study.
+// ToggleLayersOff can be used to disable layers in a Network,
+// for example if you are doing an ablation study.
 func ToggleLayersOff(net *Network, layerNames []string, off bool) {
 	for _, lnm := range layerNames {
 		lyi := net.LayerByName(lnm)
@@ -26,8 +26,7 @@ func ToggleLayersOff(net *Network, layerNames []string, off bool) {
 	}
 }
 
-/////////////////////////////////////////////
-// Weights files
+//////// Weights files
 
 // WeightsFilename returns default current weights file name,
 // using train run and epoch counters from looper

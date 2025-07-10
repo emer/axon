@@ -452,7 +452,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	// orig has teoselfct 3x3s1 -- todo try, also one with maint
 	// net.ConnectLayers(teoCT, teoCT, pts.PT3x3Skp1, axon.CTCtxtPath).AddClass("CTSelfCtxt")
-	net.ConnectCTSelf(teoCT, pts.PT3x3Skp1, "")
+	net.ConnectCTSelf(teoCT, pts.PT3x3Skp1, "TEOCTSelf")
 
 	net.ConnectLayers(v4, teo, pts.PT3x3Skp1, axon.ForwardPath)
 	net.ConnectLayers(teo, v4, pts.PT3x3Skp1, axon.BackPath)
@@ -490,7 +490,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	// orig has teselfct 3x3s1 -- todo try, also one with maint
 	// net.ConnectLayers(teCT, teCT, full, axon.CTCtxtPath).AddClass("CTSelfCtxt")
-	net.ConnectCTSelf(teCT, full, "")
+	net.ConnectCTSelf(teCT, full, "TECTSelf")
 
 	net.ConnectLayers(teo, te, full, axon.ForwardPath)
 	net.ConnectLayers(te, teo, full, axon.BackPath)

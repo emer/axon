@@ -122,7 +122,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Layer.On.SetBool(false)       // no layer!
 				ly.Inhib.Pool.On.SetBool(true)         // needs pool-level
 				ly.Inhib.Pool.FB = 4
-				ly.Inhib.Pool.Gi = 1.11 // 1.2 > others for non-adapt
+				ly.Inhib.Pool.Gi = 1.12 // 1.12 > others for non-adapt
 			}},
 		{Sel: "#TE", Doc: "initial activity",
 			Set: func(ly *axon.LayerParams) {
@@ -132,7 +132,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Layer.On.SetBool(false)       // no layer!
 				ly.Inhib.Pool.On.SetBool(true)         // needs pool-level
 				ly.Inhib.Pool.FB = 4
-				ly.Inhib.Pool.Gi = 1.11 // 1.2 > others for non-adapt
+				ly.Inhib.Pool.Gi = 1.12 // 1.12 > others for non-adapt
 			}},
 		{Sel: "#Output", Doc: "general output, Localist default -- see RndOutPats, LocalOutPats",
 			Set: func(ly *axon.LayerParams) {
