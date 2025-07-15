@@ -305,14 +305,6 @@ func (ss *Sim) InitRandSeed(run int) {
 	ss.RandSeeds.Set(run, &ss.Net.Rand)
 }
 
-// CurrentMode returns the current Train / Test mode from Context.
-func (ss *Sim) CurrentMode() Modes {
-	ctx := ss.Net.Context()
-	var md Modes
-	md.SetInt64(int64(ctx.Mode))
-	return md
-}
-
 // NetViewUpdater returns the NetViewUpdate for given mode.
 func (ss *Sim) NetViewUpdater(mode enums.Enum) *axon.NetViewUpdate {
 	if mode.Int64() == Train.Int64() {
@@ -349,7 +341,7 @@ func (ss *Sim) ConfigLoops() {
 
 	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, cycles-plusPhase, cycles-1, Cycle, Theta, Train) // note: Theta
 
-	ls.Stacks[Train].OnInit.Add("Init", func() { ss.Init() })
+	ls.Stacks[Train].OnInit.Add("Init", ss.Init)
 
 	ls.AddOnStartToLoop(Theta, "ApplyInputs", func(mode enums.Enum) {
 		trial := ls.Stacks[mode].Loops[Trial].Counter.Cur
@@ -377,8 +369,8 @@ func (ss *Sim) ConfigLoops() {
 	if ss.Config.GUI {
 		axon.LooperUpdateNetView(ls, Cycle, Theta, ss.NetViewUpdater)
 
-		ls.Stacks[Train].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })
-		ls.Stacks[Test].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })
+		ls.Stacks[Train].OnInit.Add("GUI-Init", ss.GUI.UpdateWindow)
+		ls.Stacks[Test].OnInit.Add("GUI-Init", ss.GUI.UpdateWindow)
 	}
 
 	if ss.Config.Debug {

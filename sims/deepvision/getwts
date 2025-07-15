@@ -1,0 +1,17 @@
+#!/usr/bin/env goal
+
+gossh 147.185.40.150
+@0
+args := goalrun.Args()
+if len(args) < 2 {
+	fmt.Println("Requires 2+ args, first is epoch rest are job id names")
+}
+
+for _, jd := range args[1:] {
+	for i := range 1 {
+		fn := fmt.Sprintf("%s/DeepVision_Base_000_%d00_0%s.wts.gz", jd, i, args[0])
+		fmt.Println(fn)
+		[scp {"@1:simserver/deepvision/oreilly/jobs/" + fn} {"simdata/jobs/" + fn}]
+	}
+}
+

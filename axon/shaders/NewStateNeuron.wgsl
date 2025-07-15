@@ -6,25 +6,11 @@
 var<storage, read> TensorStrides: array<u32>;
 @group(0) @binding(1)
 var<storage, read> Layers: array<LayerParams>;
-@group(0) @binding(2)
-var<storage, read> Paths: array<PathParams>;
 // // NetworkIxs have indexes and sizes for entire network (one only). 
 @group(1) @binding(0)
 var<storage, read> NetworkIxs: array<NetworkIndexes>;
-@group(1) @binding(1)
-var<storage, read> PoolIxs: array<u32>;
 @group(1) @binding(2)
 var<storage, read> NeuronIxs: array<u32>;
-@group(1) @binding(3)
-var<storage, read> SynapseIxs: array<u32>;
-@group(1) @binding(4)
-var<storage, read> PathSendCon: array<u32>;
-@group(1) @binding(5)
-var<storage, read> RecvPathIxs: array<u32>;
-@group(1) @binding(6)
-var<storage, read> PathRecvCon: array<u32>;
-@group(1) @binding(7)
-var<storage, read> RecvSynIxs: array<u32>;
 // // Ctx is the current context state (one only). This is read-only except in // specific kernels. 
 @group(2) @binding(0)
 var<storage, read_write> Ctx: array<Context>;
@@ -32,39 +18,7 @@ var<storage, read_write> Ctx: array<Context>;
 var<storage, read_write> Neurons: array<f32>;
 @group(2) @binding(2)
 var<storage, read_write> NeuronAvgs: array<f32>;
-@group(2) @binding(3)
-var<storage, read_write> LayerStates: array<f32>;
-@group(2) @binding(4)
-var<storage, read_write> GlobalScalars: array<f32>;
-@group(2) @binding(5)
-var<storage, read_write> GlobalVectors: array<f32>;
-@group(2) @binding(6)
-var<storage, read_write> Exts: array<f32>;
-@group(2) @binding(7)
-var<storage, read_write> Pools: array<f32>;
-@group(2) @binding(8)
-var<storage, read_write> PoolsInt: array<i32>;
 // // PathGBuf is the conductance buffer for accumulating spikes. // Subslices are allocated to each pathway. // Uses int-encoded values for faster GPU atomic integration. // [NPathNeur][Data][MaxDel+1]; NPathNeur = [Layer][RecvPaths][RecvNeurons] 
-@group(3) @binding(0)
-var<storage, read_write> PathGBuf: array<i32>;
-@group(3) @binding(1)
-var<storage, read_write> PathGSyns: array<f32>;
-@group(3) @binding(2)
-var<storage, read_write> Synapses: array<f32>;
-@group(3) @binding(3)
-var<storage, read_write> SynapseTraces0: array<f32>;
-@group(3) @binding(4)
-var<storage, read_write> SynapseTraces1: array<f32>;
-@group(3) @binding(5)
-var<storage, read_write> SynapseTraces2: array<f32>;
-@group(3) @binding(6)
-var<storage, read_write> SynapseTraces3: array<f32>;
-@group(3) @binding(7)
-var<storage, read_write> SynapseTraces4: array<f32>;
-@group(3) @binding(8)
-var<storage, read_write> SynapseTraces5: array<f32>;
-@group(3) @binding(9)
-var<storage, read_write> SynapseTraces6: array<f32>;
 
 alias GPUVars = i32;
 
@@ -78,174 +32,8 @@ fn Index2D(s0: u32, s1: u32, i0: u32, i1: u32) -> u32 {
 	return s0 * i0 + s1 * i1;
 }
 
-fn Index1D(s0: u32, i0: u32) -> u32 {
-	return s0 * i0;
-}
-
 fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 	return s0 * i0 + s1 * i1 + s2 * i2;
-}
-
-fn SynapseTracesGet(ix: u32) -> f32 {
-	let ii = ix / 536870912;
-	switch ii {
-	case u32(0): {
-		return SynapseTraces0[ix];
-	}
-	case u32(1): {
-		return SynapseTraces1[ix - 536870912];
-	}
-	case u32(2): {
-		return SynapseTraces2[ix - 1073741824];
-	}
-	case u32(3): {
-		return SynapseTraces3[ix - 1610612736];
-	}
-	case u32(4): {
-		return SynapseTraces4[ix - 2147483648];
-	}
-	case u32(5): {
-		return SynapseTraces5[ix - 2684354560];
-	}
-	default: {
-		return SynapseTraces6[ix - 3221225472];
-	}
-	}
-}
-
-fn SynapseTracesSet(vl: f32, ix: u32) {
-	let ii = ix / 536870912;
-	switch ii {
-	case u32(0): {
-		SynapseTraces0[ix] = vl;
-	}
-	case u32(1): {
-		SynapseTraces1[ix - 536870912] = vl;
-	}
-	case u32(2): {
-		SynapseTraces2[ix - 1073741824] = vl;
-	}
-	case u32(3): {
-		SynapseTraces3[ix - 1610612736] = vl;
-	}
-	case u32(4): {
-		SynapseTraces4[ix - 2147483648] = vl;
-	}
-	case u32(5): {
-		SynapseTraces5[ix - 2684354560] = vl;
-	}
-	default: {
-		SynapseTraces6[ix - 3221225472] = vl;
-	}
-	}
-}
-
-fn SynapseTracesSetAdd(vl: f32, ix: u32) {
-	let ii = ix / 536870912;
-	switch ii {
-	case u32(0): {
-		SynapseTraces0[ix] += vl;
-	}
-	case u32(1): {
-		SynapseTraces1[ix - 536870912] += vl;
-	}
-	case u32(2): {
-		SynapseTraces2[ix - 1073741824] += vl;
-	}
-	case u32(3): {
-		SynapseTraces3[ix - 1610612736] += vl;
-	}
-	case u32(4): {
-		SynapseTraces4[ix - 2147483648] += vl;
-	}
-	case u32(5): {
-		SynapseTraces5[ix - 2684354560] += vl;
-	}
-	default: {
-		SynapseTraces6[ix - 3221225472] += vl;
-	}
-	}
-}
-
-fn SynapseTracesSetSub(vl: f32, ix: u32) {
-	let ii = ix / 536870912;
-	switch ii {
-	case u32(0): {
-		SynapseTraces0[ix] -= vl;
-	}
-	case u32(1): {
-		SynapseTraces1[ix - 536870912] -= vl;
-	}
-	case u32(2): {
-		SynapseTraces2[ix - 1073741824] -= vl;
-	}
-	case u32(3): {
-		SynapseTraces3[ix - 1610612736] -= vl;
-	}
-	case u32(4): {
-		SynapseTraces4[ix - 2147483648] -= vl;
-	}
-	case u32(5): {
-		SynapseTraces5[ix - 2684354560] -= vl;
-	}
-	default: {
-		SynapseTraces6[ix - 3221225472] -= vl;
-	}
-	}
-}
-
-fn SynapseTracesSetMul(vl: f32, ix: u32) {
-	let ii = ix / 536870912;
-	switch ii {
-	case u32(0): {
-		SynapseTraces0[ix] *= vl;
-	}
-	case u32(1): {
-		SynapseTraces1[ix - 536870912] *= vl;
-	}
-	case u32(2): {
-		SynapseTraces2[ix - 1073741824] *= vl;
-	}
-	case u32(3): {
-		SynapseTraces3[ix - 1610612736] *= vl;
-	}
-	case u32(4): {
-		SynapseTraces4[ix - 2147483648] *= vl;
-	}
-	case u32(5): {
-		SynapseTraces5[ix - 2684354560] *= vl;
-	}
-	default: {
-		SynapseTraces6[ix - 3221225472] *= vl;
-	}
-	}
-}
-
-fn SynapseTracesSetDiv(vl: f32, ix: u32) {
-	let ii = ix / 536870912;
-	switch ii {
-	case u32(0): {
-		SynapseTraces0[ix] /= vl;
-	}
-	case u32(1): {
-		SynapseTraces1[ix - 536870912] /= vl;
-	}
-	case u32(2): {
-		SynapseTraces2[ix - 1073741824] /= vl;
-	}
-	case u32(3): {
-		SynapseTraces3[ix - 1610612736] /= vl;
-	}
-	case u32(4): {
-		SynapseTraces4[ix - 2147483648] /= vl;
-	}
-	case u32(5): {
-		SynapseTraces5[ix - 2684354560] /= vl;
-	}
-	default: {
-		SynapseTraces6[ix - 3221225472] /= vl;
-	}
-	}
 }
 
 

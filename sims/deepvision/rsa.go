@@ -84,22 +84,26 @@ var (
 		{"trafficcone", "1-vertical"},
 		{"sailboat", "1-vertical"},
 		{"person", "1-vertical"},
-		{"guitar", "1-vertical"},
-		{"tablelamp", "1-vertical"},
-		{"chair", "2-chair"},
-		{"doorknob", "2-chair"},
-		{"donut", "3-box"},
-		{"elephant", "3-box"},
-		{"slrcamera", "3-box"},
-		{"piano", "3-box"},
-		{"fish", "4-horiz"},
-		{"banana", "4-horiz"},
-		{"car", "4-horiz"},
-		{"heavycannon", "4-horiz"},
+		{"guitar", "1-vertical"},    // weaker
+		{"tablelamp", "1-vertical"}, // weaker
+
+		{"donut", "2-box"},
+		{"piano", "2-box"},
+		{"handgun", "2-box"},
+		{"elephant", "2-box"},
+
+		{"heavycannon", "3-wheels"},
+		{"trex", "3-wheels"},
+		{"motorcycle", "3-wheels"},
+		{"car", "3-wheels"},
+		{"slrcamera", "3-wheels"},
+
 		{"stapler", "4-horiz"},
-		{"motorcycle", "4-horiz"},
-		{"trex", "5-handle"},
-		{"handgun", "5-handle"},
+		{"banana", "4-horiz"},
+		{"fish", "4-horiz"},
+
+		{"chair", "6-chair"},
+		{"doorknob", "7-doorknob"},
 	}
 
 	rsaStatNames = []string{"RSAvsV1", "RSAvsTE", "RSAvsExpt", "MeanCentroid", "MeanAlt1"}
@@ -389,7 +393,7 @@ func AvgContrastDist(smat *tensor.Float64, cats []ObjCat) float64 {
 		if abn > 0 {
 			abd /= float64(abn)
 		}
-		avgd += aid - abd
+		avgd += abd - aid
 	}
 	avgd /= float64(nc)
 	return avgd

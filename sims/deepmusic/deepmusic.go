@@ -355,7 +355,7 @@ func (ss *Sim) ConfigLoops() {
 
 	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, cycles-plusPhase, cycles-1, Cycle, Trial, Train)
 
-	ls.Stacks[Train].OnInit.Add("Init", func() { ss.Init() })
+	ls.Stacks[Train].OnInit.Add("Init", ss.Init)
 
 	ls.AddOnStartToLoop(Trial, "ApplyInputs", func(mode enums.Enum) {
 		ss.ApplyInputs(mode.(Modes))
@@ -392,8 +392,8 @@ func (ss *Sim) ConfigLoops() {
 	if ss.Config.GUI {
 		axon.LooperUpdateNetView(ls, Cycle, Trial, ss.NetViewUpdater)
 
-		ls.Stacks[Train].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })
-		ls.Stacks[Test].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })
+		ls.Stacks[Train].OnInit.Add("GUI-Init", ss.GUI.UpdateWindow)
+		ls.Stacks[Test].OnInit.Add("GUI-Init", ss.GUI.UpdateWindow)
 	}
 
 	if ss.Config.Debug {
@@ -614,7 +614,7 @@ func (ss *Sim) ConfigStats() {
 						} else {
 							stat = 0
 						}
-						ev := ss.Envs.ByMode(ss.CurrentMode()).(*MusicEnv)
+						ev := ss.Envs.ByMode(Modes(ss.Net.Context().Mode)).(*MusicEnv)
 						if ev.Play {
 							if ss.Config.Env.PlayTarg {
 								ev.PlayNote(plusIndex[di])

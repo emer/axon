@@ -53,7 +53,7 @@ type RunConfig struct {
 
 	// GPU uses the GPU for computation, generally faster than CPU even for
 	// small models if NData ~16.
-	GPU bool `default:"true"`
+	GPU bool `default:"false"`
 
 	// GPUDevice selects the gpu device to use.
 	GPUDevice int
@@ -61,7 +61,7 @@ type RunConfig struct {
 	// NData is the number of data-parallel items to process in parallel per trial.
 	// Is significantly faster for both CPU and GPU.  Results in an effective
 	// mini-batch of learning.
-	NData int `default:"16" min:"1"`
+	NData int `default:"1" min:"1"`
 
 	// NThreads is the number of parallel threads for CPU computation;
 	// 0 = use default.

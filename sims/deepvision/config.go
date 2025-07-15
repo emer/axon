@@ -16,9 +16,6 @@ type EnvConfig struct { //types:add
 
 	// env parameters -- can set any field/subfield on Env struct, using standard TOML formatting
 	Env map[string]any
-
-	// whether to binarize the V1 activity patterns, which has generally been helpful.
-	BinarizeV1 bool
 }
 
 // ParamConfig has config parameters related to sim params.

@@ -40,9 +40,6 @@ import (
 	"github.com/emer/emergent/v2/paths"
 )
 
-// go:embed random_5x5_25.tsv
-// var content embed.FS
-
 // Modes are the looping modes (Stacks) for running and statistics.
 type Modes int32 //enums:enum
 const (
@@ -198,8 +195,6 @@ func (ss *Sim) ConfigEnv() {
 		trn.Defaults()
 		trn.NData = ndata
 		trn.Di = di
-		trn.V1Med.Binarize = ss.Config.Env.BinarizeV1
-		trn.V1Hi.Binarize = ss.Config.Env.BinarizeV1
 		trn.RandSeed = 73 + int64(di)*73
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
@@ -216,8 +211,6 @@ func (ss *Sim) ConfigEnv() {
 		tst.Defaults()
 		tst.NData = ndata
 		tst.Di = di
-		tst.V1Med.Binarize = ss.Config.Env.BinarizeV1
-		tst.V1Hi.Binarize = ss.Config.Env.BinarizeV1
 		tst.RandSeed = 181 + int64(di)*181
 		// tst.Test = true
 		if ss.Config.Env.Env != nil {
@@ -419,7 +412,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// orig has v4selfct 3x3s1
 	// net.ConnectLayers(v4CT, v4CT, pts.PT3x3Skp1, axon.CTCtxtPath).AddClass("CTSelfCtxt")
 	// maint is maybe better:
-	net.ConnectCTSelf(v4CT, pts.PT3x3Skp1, "")
+	net.ConnectCTSelf(v4CT, pts.PT3x3Skp1, "V4CTSelf")
 
 	net.ConnectLayers(v2, v4, pts.PT4x4Skp2, axon.ForwardPath)
 	net.ConnectLayers(v4, v2, pts.PT4x4Skp2Recip, axon.BackPath)
@@ -429,6 +422,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// no V4 <-> LIP
 	// no FF CT -> CT?
 	// net.ConnectLayers(v2CT, v4CT, pts.PT4x4Skp2, axon.ForwardPath).AddClass("FwdWeak")
+	// net.ConnectLayers(v3, v4, pts.PT3x3Skp1, axon.ForwardPath).AddClass("FwdWeak")
 
 	// net.ConnectLayers(v4CT, v2CT, pts.PT4x4Skp2Recip, axon.BackPath) // tiny bit worse
 
@@ -451,17 +445,17 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.LateralConnectLayer(teo, pool1to1).AddClass("TEOSelfMaint")
 
 	// orig has teoselfct 3x3s1 -- todo try, also one with maint
-	// net.ConnectLayers(teoCT, teoCT, pts.PT3x3Skp1, axon.CTCtxtPath).AddClass("CTSelfCtxt")
-	net.ConnectCTSelf(teoCT, pts.PT3x3Skp1, "TEOCTSelf")
+	// net.ConnectLayers(teoCT, teoCT, pool1to1, axon.CTCtxtPath).AddClass("CTSelfCtxt")
+	net.ConnectCTSelf(teoCT, pool1to1, "TEOCTSelf") // 1to1? blows up later
 
 	net.ConnectLayers(v4, teo, pts.PT3x3Skp1, axon.ForwardPath)
 	net.ConnectLayers(teo, v4, pts.PT3x3Skp1, axon.BackPath)
 
 	net.ConnectLayers(teo, v3, pts.PT3x3Skp1, axon.BackPath) // teo -> v3 but not v3 -> teo
 
-	// net.ConnectLayers(v2CT, teoCT, pts.PT4x4Skp2, axon.ForwardPath).AddClass("FwdWeak")
+	// net.ConnectLayers(v4CT, teoCT, pts.PT3x3Skp1, axon.ForwardPath).AddClass("FwdWeak")
 
-	net.ConnectLayers(teoCT, v2CT, pts.PT4x4Skp2Recip, axon.BackPath)
+	// net.ConnectLayers(teoCT, v2CT, pts.PT4x4Skp2Recip, axon.BackPath) // not needed..
 	net.ConnectLayers(teoCT, v4CT, pts.PT4x4Skp2Recip, axon.BackPath)
 
 	v4P = net.AddPulvForLayer(v4, space).AddClass("V4")
@@ -470,7 +464,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// orig has a "leak" from super -> CT here, helps stabilize reps
 	// net.ConnectLayers(teo, v2CT, pts.PT4x4Skp2Recip, axon.BackPath) // maybe not
 	// net.ConnectLayers(teo, v3CT, pts.PT3x3Skp1, axon.BackPath)
-	net.ConnectLayers(teo, v4CT, pts.PT3x3Skp1, axon.BackPath)
+	// net.ConnectLayers(teo, v4CT, pts.PT3x3Skp1, axon.BackPath) // no diff really
 
 	net.ConnectLayers(v1m, teo, rndcut, axon.ForwardPath).AddClass("V1SC")   // shortcut!
 	net.ConnectLayers(v1m, teoCT, rndcut, axon.ForwardPath).AddClass("V1SC") // shortcut!
@@ -488,9 +482,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.LateralConnectLayer(te, pool1to1).AddClass("TESelfMaint")
 
-	// orig has teselfct 3x3s1 -- todo try, also one with maint
-	// net.ConnectLayers(teCT, teCT, full, axon.CTCtxtPath).AddClass("CTSelfCtxt")
-	net.ConnectCTSelf(teCT, full, "TECTSelf")
+	// net.ConnectLayers(teCT, teCT, pool1to1, axon.CTCtxtPath).AddClass("CTSelfCtxt")
+	net.ConnectCTSelf(teCT, pool1to1, "TECTSelf") // maint plus does better
 
 	net.ConnectLayers(teo, te, full, axon.ForwardPath)
 	net.ConnectLayers(te, teo, full, axon.BackPath)
@@ -587,14 +580,6 @@ func (ss *Sim) InitRandSeed(run int) {
 	ss.RandSeeds.Set(run, &ss.Net.Rand)
 }
 
-// CurrentMode returns the current Train / Test mode from Context.
-func (ss *Sim) CurrentMode() Modes {
-	ctx := ss.Net.Context()
-	var md Modes
-	md.SetInt64(int64(ctx.Mode))
-	return md
-}
-
 // NetViewUpdater returns the NetViewUpdate for given mode.
 func (ss *Sim) NetViewUpdater(mode enums.Enum) *axon.NetViewUpdate {
 	if mode.Int64() == Train.Int64() {
@@ -624,7 +609,7 @@ func (ss *Sim) ConfigLoops() {
 
 	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, cycles-plusPhase, cycles-1, Cycle, Trial, Train)
 
-	ls.Stacks[Train].OnInit.Add("Init", func() { ss.Init() })
+	ls.Stacks[Train].OnInit.Add("Init", ss.Init)
 
 	ls.AddOnStartToLoop(Trial, "ApplyInputs", func(mode enums.Enum) {
 		ss.ApplyInputs(mode.(Modes))
@@ -644,6 +629,23 @@ func (ss *Sim) ConfigLoops() {
 			axon.SaveWeights(ss.Net, ctrString, ss.RunName())
 			ss.RSASaveRActs("RSARActs_" + ss.RunName() + "_" + ctrString + ".tar.gz")
 		}
+	})
+
+	trainEpoch.OnStart.Add("TurnOnAdaptGi", func() {
+		epc := trainEpoch.Counter.Cur
+		if epc != 200 {
+			return
+		}
+		lays := []string{"V4CT", "TEOCT", "TECT"}
+		for _, lnm := range lays {
+			ly := ss.Net.LayerByName(lnm)
+			if ly == nil {
+				continue
+			}
+			ly.Params.Inhib.ActAvg.AdaptGi.SetBool(true)
+		}
+		axon.ToGPUParams()
+		fmt.Println("At epoch:", epc, "turned on AdaptGi in CT layers")
 	})
 
 	// trainEpoch.OnStart.Add("TestAtInterval", func() {
@@ -666,8 +668,8 @@ func (ss *Sim) ConfigLoops() {
 	if ss.Config.GUI {
 		axon.LooperUpdateNetView(ls, Cycle, Trial, ss.NetViewUpdater)
 
-		ls.Stacks[Train].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })
-		ls.Stacks[Test].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })
+		ls.Stacks[Train].OnInit.Add("GUI-Init", ss.GUI.UpdateWindow)
+		ls.Stacks[Test].OnInit.Add("GUI-Init", ss.GUI.UpdateWindow)
 	}
 
 	if ss.Config.Debug {

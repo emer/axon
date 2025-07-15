@@ -4,51 +4,17 @@
 // // Layers are all the layer parameters. 
 @group(0) @binding(0)
 var<storage, read> TensorStrides: array<u32>;
-@group(0) @binding(1)
-var<storage, read> Layers: array<LayerParams>;
 @group(0) @binding(2)
 var<storage, read> Paths: array<PathParams>;
 // // NetworkIxs have indexes and sizes for entire network (one only). 
 @group(1) @binding(0)
 var<storage, read> NetworkIxs: array<NetworkIndexes>;
-@group(1) @binding(1)
-var<storage, read> PoolIxs: array<u32>;
-@group(1) @binding(2)
-var<storage, read> NeuronIxs: array<u32>;
 @group(1) @binding(3)
 var<storage, read> SynapseIxs: array<u32>;
-@group(1) @binding(4)
-var<storage, read> PathSendCon: array<u32>;
-@group(1) @binding(5)
-var<storage, read> RecvPathIxs: array<u32>;
-@group(1) @binding(6)
-var<storage, read> PathRecvCon: array<u32>;
-@group(1) @binding(7)
-var<storage, read> RecvSynIxs: array<u32>;
 // // Ctx is the current context state (one only). This is read-only except in // specific kernels. 
 @group(2) @binding(0)
 var<storage, read_write> Ctx: array<Context>;
-@group(2) @binding(1)
-var<storage, read_write> Neurons: array<f32>;
-@group(2) @binding(2)
-var<storage, read_write> NeuronAvgs: array<f32>;
-@group(2) @binding(3)
-var<storage, read_write> LayerStates: array<f32>;
-@group(2) @binding(4)
-var<storage, read_write> GlobalScalars: array<f32>;
-@group(2) @binding(5)
-var<storage, read_write> GlobalVectors: array<f32>;
-@group(2) @binding(6)
-var<storage, read_write> Exts: array<f32>;
-@group(2) @binding(7)
-var<storage, read_write> Pools: array<f32>;
-@group(2) @binding(8)
-var<storage, read_write> PoolsInt: array<i32>;
 // // PathGBuf is the conductance buffer for accumulating spikes. // Subslices are allocated to each pathway. // Uses int-encoded values for faster GPU atomic integration. // [NPathNeur][Data][MaxDel+1]; NPathNeur = [Layer][RecvPaths][RecvNeurons] 
-@group(3) @binding(0)
-var<storage, read_write> PathGBuf: array<i32>;
-@group(3) @binding(1)
-var<storage, read_write> PathGSyns: array<f32>;
 @group(3) @binding(2)
 var<storage, read_write> Synapses: array<f32>;
 @group(3) @binding(3)
@@ -76,14 +42,6 @@ fn main(@builtin(workgroup_id) wgid: vec3<u32>, @builtin(num_workgroups) nwg: ve
 
 fn Index2D(s0: u32, s1: u32, i0: u32, i1: u32) -> u32 {
 	return s0 * i0 + s1 * i1;
-}
-
-fn Index1D(s0: u32, i0: u32) -> u32 {
-	return s0 * i0;
-}
-
-fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
-	return s0 * i0 + s1 * i1 + s2 * i2;
 }
 
 fn SynapseTracesGet(ix: u32) -> f32 {
@@ -246,6 +204,10 @@ fn SynapseTracesSetDiv(vl: f32, ix: u32) {
 		SynapseTraces6[ix - 3221225472] /= vl;
 	}
 	}
+}
+
+fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
+	return s0 * i0 + s1 * i1 + s2 * i2;
 }
 
 

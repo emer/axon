@@ -223,44 +223,47 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: "#V4CT", Doc: "more activity",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.Layer.Gi = 1.1 // 1.1
-				ly.Inhib.Pool.Gi = 1.1  // 1.1
+				ly.Inhib.ActAvg.Nominal = 0.04 // 0.04 better but needs stronger V1mP output
+				ly.Inhib.Layer.Gi = 1.1        // 1.1
+				ly.Inhib.Pool.Gi = 1.1         // 1.1
 			}},
 
 		//////// TEO
 		{Sel: ".TEO", Doc: "pool inhib, sparse activity",
 			Set: func(ly *axon.LayerParams) {
-				// ly.Acts.Decay.Glong = 0 ?
 				ly.Inhib.ActAvg.Nominal = 0.04 // 0.04 > 0.03
 				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
 				ly.Inhib.Pool.On.SetBool(true)
 				ly.Inhib.Layer.FB = 1
 				ly.Inhib.Pool.FB = 4
-				ly.Inhib.Layer.Gi = 1.0 // 1
-				ly.Inhib.Pool.Gi = 1.05 // 1.05
+				ly.Inhib.Layer.Gi = 1.1 // 1
+				ly.Inhib.Pool.Gi = 1.1  // 1.05
+				// ly.Acts.Decay.Glong = 0 // 0.3 def > 0
 			}},
 		{Sel: "#TEOCT", Doc: "more activity",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.Layer.Gi = 1.2 // ?
-				ly.Inhib.Pool.Gi = 1.2  // ?
+				ly.Inhib.ActAvg.Nominal = 0.05 // 0.05 > 0.04 but needs stronger V4P output
+				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
+				ly.Inhib.Layer.Gi = 1.25 // ?
+				ly.Inhib.Pool.Gi = 1.25  // ?
 			}},
 
 		//////// TE
 		{Sel: ".TE", Doc: "pool inhib, sparse activity",
 			Set: func(ly *axon.LayerParams) {
-				// ly.Acts.Decay.Glong = 0 ?
 				ly.Inhib.ActAvg.Nominal = 0.04 // 0.04 > 0.03
 				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
 				ly.Inhib.Pool.On.SetBool(true)
 				ly.Inhib.Layer.FB = 1
 				ly.Inhib.Pool.FB = 4
-				ly.Inhib.Layer.Gi = 1.0 // 1
-				ly.Inhib.Pool.Gi = 1.05 // 1.05
+				ly.Inhib.Layer.Gi = 1.1 // 1
+				ly.Inhib.Pool.Gi = 1.1  // 1.05
+				// ly.Acts.Decay.Glong = 0 // 0.3 def > 0
 			}},
 		{Sel: "#TECT", Doc: "more activity",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.Layer.Gi = 1.2 // ?
-				ly.Inhib.Pool.Gi = 1.2  // ?
+				ly.Inhib.Layer.Gi = 1.25 // ?
+				ly.Inhib.Pool.Gi = 1.25  // ?
 			}},
 	},
 }
@@ -351,9 +354,9 @@ var PathParams = axon.PathSheets{
 			}},
 
 		//////// V3
-		{Sel: "#V2ToV3", Doc: "",
+		{Sel: "#V2ToV3", Doc: "ge is weakish",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1.0 // 1 > 2
+				pt.PathScale.Abs = 1.2 // 1.2 > 1
 			}},
 		{Sel: "#V3ToV3CT", Doc: "overactive",
 			Set: func(pt *axon.PathParams) {
@@ -379,25 +382,37 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 0.5 // 0.5
 			}},
+		{Sel: "#V2ToV4", Doc: "ge is weakish",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1.2 // 1.2 > 1.0
+			}},
+		{Sel: "#V4CTToV1mP", Doc: "stronger",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1.5 // ?
+			}},
 
 		//////// TEO
 		{Sel: "#TEOToTEOCT", Doc: "overactive",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 0.5 // 0.5
 			}},
-		{Sel: "#V4ToTEO", Doc: "stronger",
+		{Sel: "#V4ToTEO", Doc: "ge is weakish",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1 // 1 > 1.5 still..
+				pt.PathScale.Abs = 1.2 // 1.2 > 1.0
 			}},
 		{Sel: ".TEOSelfMaint", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 0.4 // 0.2 > 0.5 ?
+				pt.PathScale.Abs = 0.2 // 0.1 is ok
 				pt.Com.GType = axon.MaintG
 			}},
-		{Sel: ".TEOCTSelfNOT", Doc: "",
+		{Sel: ".TEOCTSelf", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 0.1 //
-				pt.PathScale.Abs = 0.2 // 0.5 orig?
+				pt.PathScale.Abs = 0.2 // 0.1 is ok
+			}},
+		{Sel: "#TEOCTToV4P", Doc: "stronger",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1.5 // ?
 			}},
 
 		//////// TE
@@ -405,19 +420,23 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 0.5 // 0.5
 			}},
-		{Sel: "#TEOToTE", Doc: "stronger",
+		{Sel: "#TEOToTE", Doc: "ge is weakish",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1 // 1 > 1.5 still..
+				pt.PathScale.Abs = 1.2 // 1.2 > 1.0
 			}},
 		{Sel: ".TESelfMaint", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 0.4 // 0.2 > 0.5?
+				pt.PathScale.Abs = 0.25 // 0.2 > others
 				pt.Com.GType = axon.MaintG
 			}},
-		{Sel: ".TECTSelfNOT", Doc: "",
+		{Sel: ".TECTSelf", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.1 //
-				pt.PathScale.Abs = 0.2 // 0.5 orig?
+				pt.PathScale.Rel = 0.1  //
+				pt.PathScale.Abs = 0.25 // 0.2 > others for rep, not getting stuck
+			}},
+		{Sel: "#TECTToTEOP", Doc: "stronger",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1.5 // ?
 			}},
 	},
 }
