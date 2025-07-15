@@ -8,6 +8,7 @@ import (
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/math32/vecint"
+	"github.com/emer/emergent/v2/egui"
 )
 
 // ParamConfig has config parameters related to sim params.
@@ -117,29 +118,7 @@ type LogConfig struct {
 
 // Config has the overall Sim configuration options.
 type Config struct {
-
-	// Name is the short name of the sim.
-	Name string `display:"-" default:"RA25"`
-
-	// Title is the longer title of the sim.
-	Title string `display:"-" default:"Axon random associator"`
-
-	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/sims/ra25/README.md"`
-
-	// Doc is brief documentation of the sim.
-	Doc string `display:"-" default:"This demonstrates a basic Axon model and provides a template for creating new models. It has a random-associator four-layer axon network that uses the standard supervised learning paradigm to learn mappings between 25 random input / output patterns defined over 5x5 input / output layers."`
-
-	// Includes has a list of additional config files to include.
-	// After configuration, it contains list of include files added.
-	Includes []string
-
-	// GUI means open the GUI. Otherwise it runs automatically and quits,
-	// saving results to log files.
-	GUI bool `default:"true"`
-
-	// Debug reports debugging information.
-	Debug bool
+	egui.BaseConfig
 
 	// Params has parameter related configuration options.
 	Params ParamConfig `display:"add-fields"`
@@ -151,10 +130,12 @@ type Config struct {
 	Log LogConfig `display:"add-fields"`
 }
 
-func (cfg *Config) IncludesPtr() *[]string { return &cfg.Includes }
-
 func (cfg *Config) Defaults() {
 	errors.Log(reflectx.SetFromDefaultTags(cfg))
+	cfg.Name = "RA25"
+	cfg.Title = "Axon random associator"
+	cfg.URL = "https://github.com/emer/axon/blob/main/sims/ra25/README.md"
+	cfg.Doc = "This demonstrates a basic Axon model and provides a template for creating new models. It has a random-associator four-layer axon network that uses the standard supervised learning paradigm to learn mappings between 25 random input / output patterns defined over 5x5 input / output layers."
 }
 
 func NewConfig() *Config {

@@ -5,13 +5,10 @@
 package main
 
 import (
-	"cogentcore.org/core/cli"
 	"github.com/emer/axon/v2/sims/ra25"
+	"github.com/emer/emergent/v2/egui"
 )
 
 func main() {
-	cfg := ra25.NewConfig()
-	opts := cli.DefaultOptions(cfg.Name, cfg.Title)
-	opts.DefaultFiles = append(opts.DefaultFiles, "config.toml")
-	cli.Run(opts, cfg, ra25.RunSim)
+	egui.RunCmd(ra25.NewConfig(), ra25.RunSim)
 }
