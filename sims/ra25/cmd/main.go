@@ -9,4 +9,4 @@ import (
 	"github.com/emer/emergent/v2/egui"
 )
 
-func main() { egui.Run(ra25.RunSim) }
+func main() { egui.Run[ra25.Sim, ra25.Config]() }

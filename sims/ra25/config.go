@@ -5,8 +5,6 @@
 package ra25
 
 import (
-	"cogentcore.org/core/base/errors"
-	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/math32/vecint"
 	"github.com/emer/emergent/v2/egui"
 )
@@ -131,15 +129,8 @@ type Config struct {
 }
 
 func (cfg *Config) Defaults() {
-	errors.Log(reflectx.SetFromDefaultTags(cfg))
 	cfg.Name = "RA25"
 	cfg.Title = "Axon random associator"
 	cfg.URL = "https://github.com/emer/axon/blob/main/sims/ra25/README.md"
 	cfg.Doc = "This demonstrates a basic Axon model and provides a template for creating new models. It has a random-associator four-layer axon network that uses the standard supervised learning paradigm to learn mappings between 25 random input / output patterns defined over 5x5 input / output layers."
-}
-
-func NewConfig() *Config {
-	cfg := &Config{}
-	cfg.Defaults()
-	return cfg
 }
