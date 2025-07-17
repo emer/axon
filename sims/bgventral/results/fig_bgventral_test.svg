@@ -17,488 +17,488 @@
         id="group-1">
         <text
           id="text-0"
-          style="stroke:none;fill:#191B22;direction:ltr;highlight-color:#FFE17B;x:454;font-size:16.2px;text-decoration:none;select-color:#D8E2FF;y:25.65625;"
-          x="454"
-          y="25.65625">Ventral BG Positive vs. Negative Test</text>
+          style="stroke:none;font-size:16.2px;y:38.484375;select-color:#D8E2FF;highlight-color:#FFE17B;x:352;fill:#191B22;text-decoration:none;direction:ltr;"
+          x="352"
+          y="38.484375">Ventral BG Positive vs. Negative Test</text>
       </g>
       <g
         id="group-2">
         <text
           id="text-0"
-          style="text-decoration:none;direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;x:649;fill:#191B22;font-size:16.2px;stroke:none;y:591.375;"
-          x="649"
-          y="591.375">Trial</text>
+          style="fill:#191B22;select-color:#D8E2FF;y:589.0625;stroke:none;font-size:16.2px;text-decoration:none;direction:ltr;highlight-color:#FFE17B;x:645;"
+          x="645"
+          y="589.0625">Trial</text>
       </g>
       <g
         id="group-3">
         <text
           id="text-0"
-          style="direction:ltr;highlight-color:#FFE17B;x:79;fill:#191B22;text-decoration:none;select-color:#D8E2FF;y:563.08435;stroke:none;font-size:16.2px;"
-          x="79"
-          y="563.08435">0</text>
+          style="x:116;y:546.6188;stroke:none;select-color:#D8E2FF;highlight-color:#FFE17B;direction:ltr;fill:#191B22;font-size:16.2px;text-decoration:none;"
+          x="116"
+          y="546.6188">0</text>
       </g>
       <g
         id="group-4">
         <text
           id="text-0"
-          style="x:367;y:563.08435;font-size:16.2px;highlight-color:#FFE17B;text-decoration:none;direction:ltr;select-color:#D8E2FF;stroke:none;fill:#191B22;"
-          x="367"
-          y="563.08435">30</text>
+          style="highlight-color:#FFE17B;x:385;stroke:none;font-size:16.2px;text-decoration:none;direction:ltr;fill:#191B22;select-color:#D8E2FF;y:546.6188;"
+          x="385"
+          y="546.6188">30</text>
       </g>
       <g
         id="group-5">
         <text
           id="text-0"
-          style="font-size:16.2px;direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;x:659.5;y:563.08435;stroke:none;text-decoration:none;fill:#191B22;"
-          x="659.5"
-          y="563.08435">60</text>
+          style="text-decoration:none;select-color:#D8E2FF;highlight-color:#FFE17B;x:661;stroke:none;fill:#191B22;font-size:16.2px;direction:ltr;y:546.6188;"
+          x="661"
+          y="546.6188">60</text>
       </g>
       <g
         id="group-6">
         <text
           id="text-0"
-          style="y:563.08435;stroke:none;text-decoration:none;direction:ltr;select-color:#D8E2FF;x:952;fill:#191B22;font-size:16.2px;highlight-color:#FFE17B;"
-          x="952"
-          y="563.08435">90</text>
+          style="x:937;y:546.6188;stroke:none;fill:#191B22;font-size:16.2px;text-decoration:none;select-color:#D8E2FF;highlight-color:#FFE17B;direction:ltr;"
+          x="937"
+          y="546.6188">90</text>
       </g>
       <g
         id="group-7">
         <text
           id="text-0"
-          style="fill:#191B22;text-decoration:none;direction:ltr;x:1240;y:563.08435;stroke:none;font-size:16.2px;select-color:#D8E2FF;highlight-color:#FFE17B;"
-          x="1240"
-          y="563.08435">120</text>
+          style="y:546.6188;font-size:16.2px;direction:ltr;select-color:#D8E2FF;x:1206;stroke:none;fill:#191B22;text-decoration:none;highlight-color:#FFE17B;"
+          x="1206"
+          y="546.6188">120</text>
       </g>
       <path
         id="path-8"
         style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
-        d="M84 545V527" />
+        d="M123 520V493" />
       <path
         id="path-9"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M376.5 545V527" />
+        d="M399 520V493" />
       <path
         id="path-10"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M669 545V527" />
+        d="M675 520V493" />
       <path
         id="path-11"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M961.5 545V527" />
+        d="M951 520V493" />
       <path
         id="path-12"
-        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
-        d="M1254 545V527" />
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M1227 520V493" />
       <path
         id="path-13"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M181.5 536V527" />
+        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        d="M215 506.5V493" />
       <path
         id="path-14"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M279 536V527" />
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        d="M307 506.5V493" />
       <path
         id="path-15"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M474 536V527" />
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        d="M491 506.5V493" />
       <path
         id="path-16"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M571.5 536V527" />
+        d="M583 506.5V493" />
       <path
         id="path-17"
-        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
-        d="M766.5 536V527" />
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M767 506.5V493" />
       <path
         id="path-18"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M864 536V527" />
+        d="M859 506.5V493" />
       <path
         id="path-19"
         style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
-        d="M1059 536V527" />
+        d="M1043 506.5V493" />
       <path
         id="path-20"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M1156.5 536V527" />
+        d="M1135 506.5V493" />
       <path
         id="path-21"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M84 527H1254" />
+        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        d="M123 493H1227" />
       <g
         id="group-22">
         <text
           id="text-0"
-          style="stroke-width:1pt;fill:#191B22;select-color:#D8E2FF;x:0;y:313.375;highlight-color:#FFE17B;stroke:#191B22;font-size:16.2px;text-decoration:none;direction:ltr;"
-          transform="matrix(-4.371139e-08,-1,1,-4.371139e-08,-292,292)"
+          style="stroke:#191B22;stroke-width:1pt;fill:#191B22;text-decoration:none;direction:ltr;x:0;font-size:16.2px;select-color:#D8E2FF;highlight-color:#FFE17B;y:321.0625;"
+          transform="matrix(-4.371139e-08,-1,1,-4.371139e-08,-289,289)"
           x="0"
-          y="313.375">RT</text>
+          y="321.0625">RT</text>
       </g>
       <g
         id="group-23">
         <text
           id="text-0"
-          style="stroke:#191B22;stroke-width:1pt;fill:#191B22;text-decoration:none;select-color:#D8E2FF;font-size:16.2px;direction:ltr;highlight-color:#FFE17B;x:28.5;y:531.1094;"
-          x="28.5"
-          y="531.1094">0.00</text>
+          style="font-size:16.2px;direction:ltr;select-color:#D8E2FF;x:42;stroke:#191B22;fill:#191B22;text-decoration:none;highlight-color:#FFE17B;y:500.15625;stroke-width:1pt;"
+          x="42"
+          y="500.15625">0.00</text>
       </g>
       <g
         id="group-24">
         <text
           id="text-0"
-          style="y:408.60938;stroke:#191B22;stroke-width:1pt;direction:ltr;highlight-color:#FFE17B;x:28.5;fill:#191B22;font-size:16.2px;text-decoration:none;select-color:#D8E2FF;"
-          x="28.5"
-          y="408.60938">0.25</text>
+          style="y:390.15625;fill:#191B22;font-size:16.2px;text-decoration:none;select-color:#D8E2FF;highlight-color:#FFE17B;x:42;stroke:#191B22;stroke-width:1pt;direction:ltr;"
+          x="42"
+          y="390.15625">0.25</text>
       </g>
       <g
         id="group-25">
         <text
           id="text-0"
-          style="x:28.5;y:286.10938;stroke:#191B22;direction:ltr;highlight-color:#FFE17B;text-decoration:none;select-color:#D8E2FF;stroke-width:1pt;fill:#191B22;font-size:16.2px;"
-          x="28.5"
-          y="286.10938">0.50</text>
+          style="direction:ltr;highlight-color:#FFE17B;y:280.15625;font-size:16.2px;stroke-width:1pt;fill:#191B22;text-decoration:none;select-color:#D8E2FF;x:42;stroke:#191B22;"
+          x="42"
+          y="280.15625">0.50</text>
       </g>
       <g
         id="group-26">
         <text
           id="text-0"
-          style="direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;x:28.5;y:163.60938;stroke-width:1pt;fill:#191B22;font-size:16.2px;stroke:#191B22;text-decoration:none;"
-          x="28.5"
-          y="163.60938">0.75</text>
+          style="fill:#191B22;text-decoration:none;highlight-color:#FFE17B;x:42;stroke:#191B22;stroke-width:1pt;font-size:16.2px;direction:ltr;select-color:#D8E2FF;y:170.15625;"
+          x="42"
+          y="170.15625">0.75</text>
       </g>
       <g
         id="group-27">
         <text
           id="text-0"
-          style="fill:#191B22;text-decoration:none;y:41.109375;x:28.5;stroke:#191B22;stroke-width:1pt;font-size:16.2px;direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;"
-          x="28.5"
-          y="41.109375">1.00</text>
+          style="stroke:#191B22;font-size:16.2px;select-color:#D8E2FF;highlight-color:#FFE17B;x:42;y:60.15625;stroke-width:1pt;fill:#191B22;text-decoration:none;direction:ltr;"
+          x="42"
+          y="60.15625">1.00</text>
       </g>
       <path
         id="path-28"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M62 525H80" />
+        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        d="M92 491H119" />
       <path
         id="path-29"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M62 402.5H80" />
+        d="M92 381H119" />
       <path
         id="path-30"
-        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
-        d="M62 280H80" />
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        d="M92 271H119" />
       <path
         id="path-31"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M62 157.5H80" />
+        d="M92 161H119" />
       <path
         id="path-32"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M62 35H80" />
+        d="M92 51H119" />
       <path
         id="path-33"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M71 500.5H80" />
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        d="M105.5 469H119" />
       <path
         id="path-34"
-        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
-        d="M71 476H80" />
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        d="M105.5 447H119" />
       <path
         id="path-35"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M71 451.5H80" />
+        d="M105.5 425H119" />
       <path
         id="path-36"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M71 427H80" />
+        d="M105.5 403H119" />
       <path
         id="path-37"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M71 378H80" />
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        d="M105.5 359H119" />
       <path
         id="path-38"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M71 353.5H80" />
+        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        d="M105.5 337H119" />
       <path
         id="path-39"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M71 329H80" />
+        d="M105.5 315H119" />
       <path
         id="path-40"
-        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
-        d="M71 304.5H80" />
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M105.5 293H119" />
       <path
         id="path-41"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M71 255.5H80" />
+        d="M105.5 249H119" />
       <path
         id="path-42"
-        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
-        d="M71 231H80" />
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M105.5 227H119" />
       <path
         id="path-43"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M71 206.5H80" />
+        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        d="M105.5 205H119" />
       <path
         id="path-44"
-        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
-        d="M71 182H80" />
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M105.5 183H119" />
       <path
         id="path-45"
-        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
-        d="M71 133H80" />
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M105.5 139H119" />
       <path
         id="path-46"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M71 108.5H80" />
+        d="M105.5 117H119" />
       <path
         id="path-47"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M71 84.00002H80" />
+        d="M105.5 95.00001H119" />
       <path
         id="path-48"
-        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
-        d="M71 59.50001H80" />
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M105.5 73.00001H119" />
       <path
         id="path-49"
         style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
-        d="M80 35V525" />
+        d="M119 51V491" />
       <g
         id="group-50">
         <text
           id="text-0"
-          style="stroke:#191B22;text-decoration:none;highlight-color:#FFE17B;y:259.375;stroke-width:1pt;fill:#191B22;font-size:16.2px;direction:ltr;select-color:#D8E2FF;x:1316;"
-          transform="matrix(-4.371139e-08,1,-1,-4.371139e-08,1554,-1078)"
+          style="text-decoration:none;highlight-color:#FFE17B;stroke:#191B22;font-size:16.2px;direction:ltr;select-color:#D8E2FF;x:1316;y:240.0625;stroke-width:1pt;fill:#191B22;"
+          transform="matrix(-4.371139e-08,1,-1,-4.371139e-08,1524,-1108)"
           x="1316"
-          y="259.375">Negative</text>
+          y="240.0625">Negative</text>
       </g>
       <g
         id="group-51">
         <text
           id="text-0"
-          style="y:531.1094;x:1277.5;stroke-width:1pt;fill:#191B22;font-size:16.2px;text-decoration:none;direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;stroke:#191B22;"
-          x="1277.5"
-          y="531.1094">0</text>
+          style="text-decoration:none;highlight-color:#FFE17B;x:1260;y:500.15625;stroke-width:1pt;fill:#191B22;font-size:16.2px;direction:ltr;select-color:#D8E2FF;stroke:#191B22;"
+          x="1260"
+          y="500.15625">0</text>
       </g>
       <g
         id="group-52">
         <text
           id="text-0"
-          style="stroke:#191B22;stroke-width:1pt;font-size:16.2px;select-color:#D8E2FF;highlight-color:#FFE17B;y:408.60938;fill:#191B22;text-decoration:none;direction:ltr;x:1277.5;"
-          x="1277.5"
-          y="408.60938">1</text>
+          style="stroke:#191B22;text-decoration:none;direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;y:390.15625;stroke-width:1pt;fill:#191B22;font-size:16.2px;x:1260;"
+          x="1260"
+          y="390.15625">1</text>
       </g>
       <g
         id="group-53">
         <text
           id="text-0"
-          style="y:286.10938;stroke-width:1pt;fill:#191B22;font-size:16.2px;text-decoration:none;direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;stroke:#191B22;x:1277.5;"
-          x="1277.5"
-          y="286.10938">2</text>
+          style="stroke:#191B22;stroke-width:1pt;font-size:16.2px;select-color:#D8E2FF;highlight-color:#FFE17B;x:1260;fill:#191B22;text-decoration:none;direction:ltr;y:280.15625;"
+          x="1260"
+          y="280.15625">2</text>
       </g>
       <g
         id="group-54">
         <text
           id="text-0"
-          style="stroke:#191B22;stroke-width:1pt;font-size:16.2px;select-color:#D8E2FF;highlight-color:#FFE17B;fill:#191B22;text-decoration:none;direction:ltr;x:1277.5;y:163.60938;"
-          x="1277.5"
-          y="163.60938">3</text>
+          style="stroke-width:1pt;text-decoration:none;direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;x:1260;y:170.15625;stroke:#191B22;fill:#191B22;font-size:16.2px;"
+          x="1260"
+          y="170.15625">3</text>
       </g>
       <g
         id="group-55">
         <text
           id="text-0"
-          style="x:1277.5;y:41.109375;stroke:#191B22;stroke-width:1pt;fill:#191B22;select-color:#D8E2FF;font-size:16.2px;text-decoration:none;direction:ltr;highlight-color:#FFE17B;"
-          x="1277.5"
-          y="41.109375">4</text>
+          style="stroke:#191B22;fill:#191B22;font-size:16.2px;direction:ltr;highlight-color:#FFE17B;stroke-width:1pt;text-decoration:none;select-color:#D8E2FF;x:1260;y:60.15625;"
+          x="1260"
+          y="60.15625">4</text>
       </g>
       <path
         id="path-56"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M1258 525H1276" />
+        d="M1231 491H1258" />
       <path
         id="path-57"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M1258 402.5H1276" />
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        d="M1231 381H1258" />
       <path
         id="path-58"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M1258 280H1276" />
+        d="M1231 271H1258" />
       <path
         id="path-59"
-        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
-        d="M1258 157.5H1276" />
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        d="M1231 161H1258" />
       <path
         id="path-60"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M1258 35H1276" />
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        d="M1231 51H1258" />
       <path
         id="path-61"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M1258 500.5H1267" />
+        d="M1231 469H1244.5" />
       <path
         id="path-62"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M1258 476H1267" />
+        d="M1231 447H1244.5" />
       <path
         id="path-63"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M1258 451.5H1267" />
+        d="M1231 425H1244.5" />
       <path
         id="path-64"
-        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
-        d="M1258 427H1267" />
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M1231 403H1244.5" />
       <path
         id="path-65"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M1258 378H1267" />
+        d="M1231 359H1244.5" />
       <path
         id="path-66"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M1258 353.5H1267" />
+        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        d="M1231 337H1244.5" />
       <path
         id="path-67"
-        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
-        d="M1258 329H1267" />
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M1231 315H1244.5" />
       <path
         id="path-68"
-        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
-        d="M1258 304.5H1267" />
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        d="M1231 293H1244.5" />
       <path
         id="path-69"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M1258 255.5H1267" />
+        d="M1231 249H1244.5" />
       <path
         id="path-70"
-        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
-        d="M1258 231H1267" />
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M1231 227H1244.5" />
       <path
         id="path-71"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M1258 206.5H1267" />
+        d="M1231 205H1244.5" />
       <path
         id="path-72"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M1258 182H1267" />
+        d="M1231 183H1244.5" />
       <path
         id="path-73"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M1258 133H1267" />
+        d="M1231 139H1244.5" />
       <path
         id="path-74"
         style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
-        d="M1258 108.5H1267" />
+        d="M1231 117H1244.5" />
       <path
         id="path-75"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M1258 84.00002H1267" />
+        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        d="M1231 95.00001H1244.5" />
       <path
         id="path-76"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M1258 59.50001H1267" />
+        d="M1231 73.00001H1244.5" />
       <path
         id="path-77"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M1258 35V525" />
+        d="M1231 51V491" />
       <g
         id="group-78">
         <path
           id="path-0"
-          style="stroke:#008000;stroke-width:1pt;fill:none;"
-          d="M84 525H181.5L191.25 512.75H288.75L298.5 500.5H396L405.75 488.25H503.25L513 476H610.5L620.25 463.75H717.75L727.5 451.5H825L834.75 439.25H932.25L942 427H1039.5L1049.25 414.75H1146.75L1156.5 402.5H1254" />
+          style="stroke:#46B137;stroke-width:1pt;fill:none;"
+          d="M123 491H215L224.2 480H316.2L325.4 469H417.4L426.6 458H518.6L527.8 447H619.8L629 436H721L730.2 425H822.2L831.4 414H923.4L932.6 403H1024.6L1033.8 392H1125.8L1135 381H1227" />
         <path
           id="path-1"
-          style="stroke:#008000;stroke-width:1pt;fill:none;"
-          d="M84 525H181.5L191.25 512.75H288.75L298.5 500.5H396L405.75 488.25H503.25L513 476H610.5L620.25 463.75H717.75L727.5 451.5H825L834.75 439.25H932.25L942 427H1039.5L1049.25 414.75H1146.75L1156.5 402.5H1254" />
+          style="stroke:#46B137;stroke-width:1pt;fill:none;"
+          d="M123 491H215L224.2 480H316.2L325.4 469H417.4L426.6 458H518.6L527.8 447H619.8L629 436H721L730.2 425H822.2L831.4 414H923.4L932.6 403H1024.6L1033.8 392H1125.8L1135 381H1227" />
         <path
           id="path-2"
-          style="fill:none;stroke:#F53C35;stroke-width:1pt;"
-          d="M84 525L181.5 402.5L191.25 525L230.25 476L240 463.75L249.75 451.5L288.75 402.5L298.5 525L386.25 414.75L396 402.5L405.75 525L493.5 414.75L503.25 402.5L513 525L610.5 402.5L620.25 525L698.25 427L708.0001 414.75L717.75 402.5L727.5 525L766.5 476L776.2499 463.75L786 451.5L825 402.5L834.75 525L844.5 512.75L854.2501 500.5L864 488.25L912.75 427L922.4999 414.75L932.25 402.5L942 525L990.75 463.75L1000.5 451.5L1010.25 439.25L1039.5 402.5L1049.25 525L1146.75 402.5L1156.5 525L1254 402.5" />
+          style="stroke-width:1pt;fill:none;stroke:#F53C35;"
+          d="M123 491L141.4 469L150.6 458L187.4 414L196.6 403L215 381L224.2 491L233.4 480L261 447L270.2 436L279.4 425L288.6 414L297.8 403L307 392L316.2 381L325.4 491L343.8 469L353 458L362.2 447L371.4 436L380.6 425L389.8 414L399 403L408.2 392L417.4 381L426.6 491L435.8 480L454.2 458L463.4 447L472.6 436L481.8 425L500.2 403L518.6 381L527.8 491L564.6 447L573.8 436L601.4 403L610.6 392L619.8 381L629 491L638.2 480L647.4 469L684.2 425L693.4 414L702.6 403L711.8 392L721 381L730.2 491L739.4 480L748.6 469L767 447L776.2 436L785.4 425L794.6 414L803.8 403L822.2 381L831.4 491L840.6 480L849.8 469L859 458L877.4 436L886.6 425L905 403L914.2 392L923.4 381L932.6 491L941.8 480L960.2 458L969.4 447L978.6 436L987.8 425L997 414L1015.4 392L1024.6 381L1033.8 491L1043 480L1052.2 469L1061.4 458L1070.6 447L1079.8 436L1098.2 414L1107.4 403L1116.6 392L1125.8 381L1135 491L1144.2 480L1171.8 447L1181 436L1190.2 425L1199.4 414L1208.6 403L1217.8 392L1227 381" />
         <path
           id="path-3"
           style="stroke:#F53C35;stroke-width:1pt;fill:none;"
-          d="M84 525L181.5 402.5L191.25 525L230.25 476L240 463.75L249.75 451.5L288.75 402.5L298.5 525L386.25 414.75L396 402.5L405.75 525L493.5 414.75L503.25 402.5L513 525L610.5 402.5L620.25 525L698.25 427L708.0001 414.75L717.75 402.5L727.5 525L766.5 476L776.2499 463.75L786 451.5L825 402.5L834.75 525L844.5 512.75L854.2501 500.5L864 488.25L912.75 427L922.4999 414.75L932.25 402.5L942 525L990.75 463.75L1000.5 451.5L1010.25 439.25L1039.5 402.5L1049.25 525L1146.75 402.5L1156.5 525L1254 402.5" />
+          d="M123 491L141.4 469L150.6 458L187.4 414L196.6 403L215 381L224.2 491L233.4 480L261 447L270.2 436L279.4 425L288.6 414L297.8 403L307 392L316.2 381L325.4 491L343.8 469L353 458L362.2 447L371.4 436L380.6 425L389.8 414L399 403L408.2 392L417.4 381L426.6 491L435.8 480L454.2 458L463.4 447L472.6 436L481.8 425L500.2 403L518.6 381L527.8 491L564.6 447L573.8 436L601.4 403L610.6 392L619.8 381L629 491L638.2 480L647.4 469L684.2 425L693.4 414L702.6 403L711.8 392L721 381L730.2 491L739.4 480L748.6 469L767 447L776.2 436L785.4 425L794.6 414L803.8 403L822.2 381L831.4 491L840.6 480L849.8 469L859 458L877.4 436L886.6 425L905 403L914.2 392L923.4 381L932.6 491L941.8 480L960.2 458L969.4 447L978.6 436L987.8 425L997 414L1015.4 392L1024.6 381L1033.8 491L1043 480L1052.2 469L1061.4 458L1070.6 447L1079.8 436L1098.2 414L1107.4 403L1116.6 392L1125.8 381L1135 491L1144.2 480L1171.8 447L1181 436L1190.2 425L1199.4 414L1208.6 403L1217.8 392L1227 381" />
         <path
           id="path-4"
           style="fill:none;stroke:#0000FF;stroke-width:1pt;"
-          d="M84 188.125L93.75 35L103.5 295.3125L113.25 525H181.5L191.25 203.4375L201 50.3125L210.75 448.4375L220.5 525H288.75L298.5 50.3125L308.25 35L318 80.9375L327.75 525H396L405.75 35H425.25L435 525H503.25L513 35H542.25L552 463.75L561.75 525H610.5L620.25 35H659.25L669 448.4375L678.75 525H717.75L727.5 35H776.2499L786 310.625L795.75 525H825L834.75 35H893.25L903 525H922.4999L932.25 509.6875L942 35H1010.25L1020 448.4375L1029.75 525L1039.5 249.375L1049.25 35H1117.5L1127.25 111.5625L1137 325.9375L1146.75 35H1224.75L1234.5 280L1244.25 494.375L1254 96.25" />
+          d="M123 188.5L132.2 51L141.4 284.75L150.6 491H215L224.2 202.25L233.4 64.75L242.6 422.25L251.8 491H316.2L325.4 64.75L334.6 51L343.8 92.25L353 491H417.4L426.6 51H445L454.2 491H518.6L527.8 51H555.4L564.6 436L573.8 491H619.8L629 51H665.8L675 422.25L684.2 491H721L730.2 51H776.2L785.4 298.5L794.6 491H822.2L831.4 51H886.6L895.8 491H914.2L923.4 477.25L932.6 51H997L1006.2 422.25L1015.4 491L1024.6 243.5L1033.8 51H1098.2L1107.4 119.75L1116.6 312.25L1125.8 51H1199.4L1208.6 271L1217.8 463.5L1227 106" />
         <path
           id="path-5"
           style="stroke:#0000FF;stroke-width:1pt;fill:none;"
-          d="M84 188.125L93.75 35L103.5 295.3125L113.25 525H181.5L191.25 203.4375L201 50.3125L210.75 448.4375L220.5 525H288.75L298.5 50.3125L308.25 35L318 80.9375L327.75 525H396L405.75 35H425.25L435 525H503.25L513 35H542.25L552 463.75L561.75 525H610.5L620.25 35H659.25L669 448.4375L678.75 525H717.75L727.5 35H776.2499L786 310.625L795.75 525H825L834.75 35H893.25L903 525H922.4999L932.25 509.6875L942 35H1010.25L1020 448.4375L1029.75 525L1039.5 249.375L1049.25 35H1117.5L1127.25 111.5625L1137 325.9375L1146.75 35H1224.75L1234.5 280L1244.25 494.375L1254 96.25" />
+          d="M123 188.5L132.2 51L141.4 284.75L150.6 491H215L224.2 202.25L233.4 64.75L242.6 422.25L251.8 491H316.2L325.4 64.75L334.6 51L343.8 92.25L353 491H417.4L426.6 51H445L454.2 491H518.6L527.8 51H555.4L564.6 436L573.8 491H619.8L629 51H665.8L675 422.25L684.2 491H721L730.2 51H776.2L785.4 298.5L794.6 491H822.2L831.4 51H886.6L895.8 491H914.2L923.4 477.25L932.6 51H997L1006.2 422.25L1015.4 491L1024.6 243.5L1033.8 51H1098.2L1107.4 119.75L1116.6 312.25L1125.8 51H1199.4L1208.6 271L1217.8 463.5L1227 106" />
         <path
           id="path-6"
-          style="stroke:#FFA500;stroke-width:1pt;fill:none;"
-          d="M84 229.775L93.75 259.0219L103.5 205.226L113.25 525H181.5L191.25 221.1183L201 239.8516L210.75 144.515L220.5 525H288.75L298.5 267.8266L308.25 253.9688L318 191.2086L327.75 525H396L405.75 288.8813L415.5 286.7375L425.25 236.3594L435 157.5L444.75 525H503.25L513 301.4375L522.75 302.5859L532.5 279.0813L542.25 229.0859L552 238.7L561.75 525H610.5L620.25 313.3813L630 315.3719L639.75 309.9359L649.5 291.7141L659.25 278.2391L669 165.0727L678.75 525H708.0001L717.75 235.9L727.5 325.325L737.25 318.4344L747 304.6531L756.75 309.4766L766.5 309.1703L776.2499 278.3922L786 220.5195L795.75 525H815.25L825 201.6L834.75 324.7125L844.5 318.0516L854.2501 309.0938L864 312.5391L873.75 313.4578L883.5 303.1984L893.25 261.5484L903 110.95L912.75 525H922.4999L932.25 170.0562L942 329.3828L951.75 320.1188L961.5 314.9891L971.25 314.7594L981 312.9984L990.75 304.0406L1000.5 307.3328L1010.25 244.475L1020 150.85L1029.75 94.85L1039.5 220.1912L1049.25 322.7219L1059 318.9703L1068.75 313.7641L1078.5 313.6875L1088.25 317.0562L1098 306.1844L1107.75 304.1172L1117.5 280.3828L1127.25 223.5655L1137 195.72L1146.75 266.7547L1156.5 325.9375L1166.25 320.1188L1176 311.3906L1185.75 309.0172L1195.5 309.5531L1205.25 310.625L1215 294.2406L1224.75 250.9828L1234.5 208.656L1244.25 198.5375L1254 231.6323" />
+          style="stroke:#FD8F00;stroke-width:1pt;fill:none;"
+          d="M123 225.9L132.2 252.1625L141.4 203.856L150.6 491H215L224.2 218.1267L233.4 234.9484L242.6 149.34L251.8 491H316.2L325.4 260.0688L334.6 247.625L343.8 191.269L353 491H417.4L426.6 278.975L435.8 277.05L445 231.8125L454.2 161L463.4 491H518.6L527.8 290.25L537 291.2812L546.2 270.175L555.4 225.2812L564.6 233.9143L573.8 491H619.8L629 300.975L638.2 302.7625L647.4 297.8813L656.6 281.5187L665.8 269.4188L675 167.8L684.2 491H711.8L721 231.4L730.2 311.7L739.4 305.5125L748.6 293.1375L757.8 297.4688L767 297.1938L776.2 269.5562L785.4 217.5889L794.6 491H813L822.2 200.6L831.4 311.15L840.6 305.1688L849.8 297.125L859 300.2188L868.2 301.0437L877.4 291.8312L886.6 254.4312L895.8 119.2L905 491H914.2L923.4 172.275L932.6 315.3438L941.8 307.025L951 302.4188L960.2 302.2125L969.4 300.6313L978.6 292.5875L987.8 295.5438L997 239.1L1006.2 155.0286L1015.4 104.7429L1024.6 217.2941L1033.8 309.3625L1043 305.9937L1052.2 301.3188L1061.4 301.25L1070.6 304.275L1079.8 294.5125L1089 292.6562L1098.2 271.3438L1107.4 220.3241L1116.6 195.32L1125.8 259.1063L1135 312.25L1144.2 307.025L1153.4 299.1875L1162.6 297.0562L1171.8 297.5375L1181 298.5L1190.2 283.7875L1199.4 244.9438L1208.6 206.936L1217.8 197.85L1227 227.5677" />
         <path
           id="path-7"
-          style="fill:none;stroke:#FFA500;stroke-width:1pt;"
-          d="M84 229.775L93.75 259.0219L103.5 205.226L113.25 525H181.5L191.25 221.1183L201 239.8516L210.75 144.515L220.5 525H288.75L298.5 267.8266L308.25 253.9688L318 191.2086L327.75 525H396L405.75 288.8813L415.5 286.7375L425.25 236.3594L435 157.5L444.75 525H503.25L513 301.4375L522.75 302.5859L532.5 279.0813L542.25 229.0859L552 238.7L561.75 525H610.5L620.25 313.3813L630 315.3719L639.75 309.9359L649.5 291.7141L659.25 278.2391L669 165.0727L678.75 525H708.0001L717.75 235.9L727.5 325.325L737.25 318.4344L747 304.6531L756.75 309.4766L766.5 309.1703L776.2499 278.3922L786 220.5195L795.75 525H815.25L825 201.6L834.75 324.7125L844.5 318.0516L854.2501 309.0938L864 312.5391L873.75 313.4578L883.5 303.1984L893.25 261.5484L903 110.95L912.75 525H922.4999L932.25 170.0562L942 329.3828L951.75 320.1188L961.5 314.9891L971.25 314.7594L981 312.9984L990.75 304.0406L1000.5 307.3328L1010.25 244.475L1020 150.85L1029.75 94.85L1039.5 220.1912L1049.25 322.7219L1059 318.9703L1068.75 313.7641L1078.5 313.6875L1088.25 317.0562L1098 306.1844L1107.75 304.1172L1117.5 280.3828L1127.25 223.5655L1137 195.72L1146.75 266.7547L1156.5 325.9375L1166.25 320.1188L1176 311.3906L1185.75 309.0172L1195.5 309.5531L1205.25 310.625L1215 294.2406L1224.75 250.9828L1234.5 208.656L1244.25 198.5375L1254 231.6323" />
+          style="stroke:#FD8F00;stroke-width:1pt;fill:none;"
+          d="M123 225.9L132.2 252.1625L141.4 203.856L150.6 491H215L224.2 218.1267L233.4 234.9484L242.6 149.34L251.8 491H316.2L325.4 260.0688L334.6 247.625L343.8 191.269L353 491H417.4L426.6 278.975L435.8 277.05L445 231.8125L454.2 161L463.4 491H518.6L527.8 290.25L537 291.2812L546.2 270.175L555.4 225.2812L564.6 233.9143L573.8 491H619.8L629 300.975L638.2 302.7625L647.4 297.8813L656.6 281.5187L665.8 269.4188L675 167.8L684.2 491H711.8L721 231.4L730.2 311.7L739.4 305.5125L748.6 293.1375L757.8 297.4688L767 297.1938L776.2 269.5562L785.4 217.5889L794.6 491H813L822.2 200.6L831.4 311.15L840.6 305.1688L849.8 297.125L859 300.2188L868.2 301.0437L877.4 291.8312L886.6 254.4312L895.8 119.2L905 491H914.2L923.4 172.275L932.6 315.3438L941.8 307.025L951 302.4188L960.2 302.2125L969.4 300.6313L978.6 292.5875L987.8 295.5438L997 239.1L1006.2 155.0286L1015.4 104.7429L1024.6 217.2941L1033.8 309.3625L1043 305.9937L1052.2 301.3188L1061.4 301.25L1070.6 304.275L1079.8 294.5125L1089 292.6562L1098.2 271.3438L1107.4 220.3241L1116.6 195.32L1125.8 259.1063L1135 312.25L1144.2 307.025L1153.4 299.1875L1162.6 297.0562L1171.8 297.5375L1181 298.5L1190.2 283.7875L1199.4 244.9438L1208.6 206.936L1217.8 197.85L1227 227.5677" />
         <rect
           id="rect-8"
           style="fill:#FAF9FEBF;"
-          x="1127"
-          y="33"
-          width="129"
-          height="120" />
+          x="1036"
+          y="49"
+          width="193"
+          height="176" />
         <g
           id="group-9">
           <path
             id="path-0"
-            style="fill:none;stroke:#008000;stroke-width:1pt;"
-            d="M1211 48H1256" />
+            style="fill:none;stroke:#46B137;stroke-width:1pt;"
+            d="M1162 71H1229" />
         </g>
         <g
           id="group-10">
           <text
             id="text-0"
-            style="stroke-width:1pt;text-decoration:none;direction:ltr;x:1127;y:54.375;stroke:#008000;fill:#191B22;font-size:16.2px;select-color:#D8E2FF;highlight-color:#FFE17B;"
-            x="1127"
-            y="54.375">Positive</text>
+            style="y:81.0625;fill:#191B22;text-decoration:none;direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;x:1036;stroke:#46B137;stroke-width:1pt;font-size:16.2px;"
+            x="1036"
+            y="81.0625">Positive</text>
         </g>
         <g
           id="group-11">
           <path
             id="path-0"
             style="stroke:#F53C35;stroke-width:1pt;fill:none;"
-            d="M1211 78H1256" />
+            d="M1162 115H1229" />
         </g>
         <g
           id="group-12">
           <text
             id="text-0"
-            style="stroke:#F53C35;fill:#191B22;select-color:#D8E2FF;highlight-color:#FFE17B;x:1127;y:84.375;stroke-width:1pt;font-size:16.2px;text-decoration:none;direction:ltr;"
-            x="1127"
-            y="84.375">Negative</text>
+            style="stroke:#F53C35;font-size:16.2px;highlight-color:#FFE17B;stroke-width:1pt;fill:#191B22;text-decoration:none;direction:ltr;select-color:#D8E2FF;x:1036;y:125.0625;"
+            x="1036"
+            y="125.0625">Negative</text>
         </g>
         <g
           id="group-13">
           <path
             id="path-0"
-            style="stroke:#0000FF;stroke-width:1pt;fill:none;"
-            d="M1211 108H1256" />
+            style="stroke-width:1pt;fill:none;stroke:#0000FF;"
+            d="M1162 159H1229" />
         </g>
         <g
           id="group-14">
           <text
             id="text-0"
-            style="stroke:#0000FF;font-size:16.2px;select-color:#D8E2FF;x:1127;highlight-color:#FFE17B;y:114.375;stroke-width:1pt;fill:#191B22;text-decoration:none;direction:ltr;"
-            x="1127"
-            y="114.375">Gated</text>
+            style="stroke:#0000FF;font-size:16.2px;select-color:#D8E2FF;highlight-color:#FFE17B;x:1036;y:169.0625;stroke-width:1pt;fill:#191B22;text-decoration:none;direction:ltr;"
+            x="1036"
+            y="169.0625">Gated</text>
         </g>
         <g
           id="group-15">
           <path
             id="path-0"
-            style="stroke:#FFA500;stroke-width:1pt;fill:none;"
-            d="M1211 138H1256" />
+            style="stroke:#FD8F00;stroke-width:1pt;fill:none;"
+            d="M1162 203H1229" />
         </g>
         <g
           id="group-16">
           <text
             id="text-0"
-            style="stroke-width:1pt;font-size:16.2px;text-decoration:none;direction:ltr;select-color:#D8E2FF;stroke:#FFA500;highlight-color:#FFE17B;x:1127;y:144.375;fill:#191B22;"
-            x="1127"
-            y="144.375">RT</text>
+            style="x:1036;stroke:#FD8F00;stroke-width:1pt;font-size:16.2px;direction:ltr;highlight-color:#FFE17B;fill:#191B22;text-decoration:none;select-color:#D8E2FF;y:213.0625;"
+            x="1036"
+            y="213.0625">RT</text>
         </g>
       </g>
     </g>

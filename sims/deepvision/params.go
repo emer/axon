@@ -124,6 +124,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Decay.AHP = 0.0          // clear long
 				ly.Learn.RLRate.SigmoidMin = 1.0 // 1 > .05
 			}},
+
+		//////// LIP
 		{Sel: ".LIP", Doc: "pool inhib",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.06         // 0.06 > 0.8 > ~0.03 actual: CT Ge too high if lower
@@ -136,9 +138,10 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: "#LIPCT", Doc: "pool inhib",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.02 // 0.02 > 0.01[5] vs 0.05+ actual: more ge for MTposP
-				ly.Inhib.Layer.Gi = 1.2        // 1.2 == 1.3 & CT too
-				ly.Inhib.Pool.Gi = 1           // 1 >> 0.8 & CT too
+				ly.Inhib.ActAvg.Nominal = 0.03 // 0.02 > 0.01[5] vs 0.05+ actual: more ge for MTposP
+				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
+				ly.Inhib.Layer.Gi = 1.2 // 1.2 == 1.3 & CT too
+				ly.Inhib.Pool.Gi = 1    // 1 >> 0.8 & CT too
 			}},
 		{Sel: ".MTpos", Doc: "layer inhib",
 			Set: func(ly *axon.LayerParams) {

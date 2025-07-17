@@ -17,418 +17,427 @@
         id="group-1">
         <text
           id="text-0"
-          style="text-decoration:none;highlight-color:#FFE17B;font-size:16.2px;direction:ltr;select-color:#D8E2FF;x:557;y:25.65625;stroke:none;fill:#191B22;"
-          x="557"
-          y="25.65625">Ventral BG Training</text>
+          style="font-size:16.2px;text-decoration:none;direction:ltr;highlight-color:#FFE17B;x:502.5;y:38.484375;stroke:none;select-color:#D8E2FF;fill:#191B22;"
+          x="502.5"
+          y="38.484375">Ventral BG Training</text>
       </g>
       <g
         id="group-2">
         <text
           id="text-0"
-          style="stroke:none;text-decoration:none;direction:ltr;select-color:#D8E2FF;fill:#191B22;font-size:16.2px;highlight-color:#FFE17B;x:663.5;y:591.375;"
-          x="663.5"
-          y="591.375">Epoch</text>
+          style="font-size:16.2px;fill:#191B22;text-decoration:none;direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;x:682;y:589.0625;stroke:none;"
+          x="682"
+          y="589.0625">Epoch</text>
       </g>
       <g
         id="group-3">
         <text
           id="text-0"
-          style="text-decoration:none;direction:ltr;highlight-color:#FFE17B;stroke:none;font-size:16.2px;select-color:#D8E2FF;x:52;y:563.08435;fill:#191B22;"
-          x="52"
-          y="563.08435">0</text>
+          style="fill:#191B22;font-size:16.2px;text-decoration:none;direction:ltr;y:546.6188;stroke:none;select-color:#D8E2FF;highlight-color:#FFE17B;x:116;"
+          x="116"
+          y="546.6188">0</text>
       </g>
       <g
         id="group-4">
         <text
           id="text-0"
-          style="x:271.13794;y:563.08435;fill:#191B22;font-size:16.2px;select-color:#D8E2FF;highlight-color:#FFE17B;stroke:none;text-decoration:none;direction:ltr;"
-          x="271.13794"
-          y="563.08435">5</text>
+          style="stroke:none;fill:#191B22;font-size:16.2px;text-decoration:none;direction:ltr;select-color:#D8E2FF;x:323.75864;highlight-color:#FFE17B;y:546.6188;"
+          x="323.75864"
+          y="546.6188">5</text>
       </g>
       <g
         id="group-5">
         <text
           id="text-0"
-          style="fill:#191B22;font-size:16.2px;text-decoration:none;direction:ltr;y:563.08435;stroke:none;select-color:#D8E2FF;highlight-color:#FFE17B;x:485.77588;"
-          x="485.77588"
-          y="563.08435">10</text>
+          style="fill:#191B22;text-decoration:none;direction:ltr;highlight-color:#FFE17B;stroke:none;font-size:16.2px;select-color:#D8E2FF;x:524.5173;y:546.6188;"
+          x="524.5173"
+          y="546.6188">10</text>
       </g>
       <g
         id="group-6">
         <text
           id="text-0"
-          style="select-color:#D8E2FF;highlight-color:#FFE17B;x:704.91376;stroke:none;font-size:16.2px;direction:ltr;fill:#191B22;text-decoration:none;y:563.08435;"
-          x="704.91376"
-          y="563.08435">15</text>
+          style="highlight-color:#FFE17B;x:732.2758;stroke:none;fill:#191B22;font-size:16.2px;select-color:#D8E2FF;text-decoration:none;direction:ltr;y:546.6188;"
+          x="732.2758"
+          y="546.6188">15</text>
       </g>
       <g
         id="group-7">
         <text
           id="text-0"
-          style="font-size:16.2px;text-decoration:none;select-color:#D8E2FF;stroke:none;fill:#191B22;direction:ltr;highlight-color:#FFE17B;x:924.05176;y:563.08435;"
-          x="924.05176"
-          y="563.08435">20</text>
+          style="fill:#191B22;highlight-color:#FFE17B;y:546.6188;stroke:none;font-size:16.2px;text-decoration:none;direction:ltr;select-color:#D8E2FF;x:940.0345;"
+          x="940.0345"
+          y="546.6188">20</text>
       </g>
       <g
         id="group-8">
         <text
           id="text-0"
-          style="stroke:none;fill:#191B22;font-size:16.2px;x:1143.1897;y:563.08435;text-decoration:none;direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;"
-          x="1143.1897"
-          y="563.08435">25</text>
+          style="direction:ltr;y:546.6188;stroke:none;fill:#191B22;font-size:16.2px;text-decoration:none;select-color:#D8E2FF;highlight-color:#FFE17B;x:1147.7931;"
+          x="1147.7931"
+          y="546.6188">25</text>
       </g>
       <path
         id="path-9"
-        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
-        d="M57 545V527" />
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M123 520V493" />
       <path
         id="path-10"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M276.1379 545V527" />
+        d="M330.7586 520V493" />
       <path
         id="path-11"
-        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
-        d="M495.2759 545V527" />
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M538.5173 520V493" />
       <path
         id="path-12"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M714.4138 545V527" />
+        d="M746.2758 520V493" />
       <path
         id="path-13"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M933.5518 545V527" />
+        d="M954.0345 520V493" />
       <path
         id="path-14"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M1152.69 545V527" />
+        d="M1161.793 520V493" />
       <path
         id="path-15"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M100.8276 536V527" />
+        d="M164.5517 506.5V493" />
       <path
         id="path-16"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M144.6552 536V527" />
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        d="M206.1035 506.5V493" />
       <path
         id="path-17"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M188.4828 536V527" />
+        d="M247.6552 506.5V493" />
       <path
         id="path-18"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M232.3103 536V527" />
+        d="M289.2069 506.5V493" />
       <path
         id="path-19"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M319.9655 536V527" />
+        d="M372.3104 506.5V493" />
       <path
         id="path-20"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M363.7931 536V527" />
+        d="M413.8621 506.5V493" />
       <path
         id="path-21"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M407.6207 536V527" />
+        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        d="M455.4138 506.5V493" />
       <path
         id="path-22"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M451.4483 536V527" />
+        d="M496.9655 506.5V493" />
       <path
         id="path-23"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M539.1035 536V527" />
+        d="M580.069 506.5V493" />
       <path
         id="path-24"
-        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
-        d="M582.931 536V527" />
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M621.6207 506.5V493" />
       <path
         id="path-25"
-        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
-        d="M626.7586 536V527" />
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M663.1724 506.5V493" />
       <path
         id="path-26"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M670.5862 536V527" />
+        d="M704.7241 506.5V493" />
       <path
         id="path-27"
-        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
-        d="M758.2414 536V527" />
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M787.8276 506.5V493" />
       <path
         id="path-28"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M802.069 536V527" />
+        d="M829.3793 506.5V493" />
       <path
         id="path-29"
         style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
-        d="M845.8965 536V527" />
+        d="M870.931 506.5V493" />
       <path
         id="path-30"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M889.7241 536V527" />
+        d="M912.4827 506.5V493" />
       <path
         id="path-31"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M977.3793 536V527" />
+        d="M995.5862 506.5V493" />
       <path
         id="path-32"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M1021.207 536V527" />
+        d="M1037.138 506.5V493" />
       <path
         id="path-33"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M1065.035 536V527" />
+        d="M1078.69 506.5V493" />
       <path
         id="path-34"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M1108.862 536V527" />
+        d="M1120.241 506.5V493" />
       <path
         id="path-35"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M1196.517 536V527" />
+        d="M1203.345 506.5V493" />
       <path
         id="path-36"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M1240.345 536V527" />
+        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        d="M1244.897 506.5V493" />
       <path
         id="path-37"
-        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
-        d="M1284.172 536V527" />
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M1286.448 506.5V493" />
       <path
         id="path-38"
-        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
-        d="M1328 536V527" />
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M1328 506.5V493" />
       <path
         id="path-39"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M57 527H1328" />
+        d="M123 493H1328" />
       <g
         id="group-40">
         <text
           id="text-0"
-          style="y:531.1094;stroke-width:1pt;fill:#191B22;text-decoration:none;direction:ltr;highlight-color:#FFE17B;x:1.5;stroke:#191B22;font-size:16.2px;select-color:#D8E2FF;"
-          x="1.5"
-          y="531.1094">0.00</text>
+          style="select-color:#D8E2FF;highlight-color:#FFE17B;y:345.5625;stroke:#191B22;stroke-width:1pt;fill:#191B22;text-decoration:none;font-size:16.2px;direction:ltr;x:0;"
+          transform="matrix(-4.371139e-08,-1,1,-4.371139e-08,-313.5,313.5)"
+          x="0"
+          y="345.5625">Gated</text>
       </g>
       <g
         id="group-41">
         <text
           id="text-0"
-          style="select-color:#D8E2FF;x:1.5;y:408.60938;stroke-width:1pt;fill:#191B22;text-decoration:none;highlight-color:#FFE17B;stroke:#191B22;font-size:16.2px;direction:ltr;"
-          x="1.5"
-          y="408.60938">0.25</text>
+          style="text-decoration:none;direction:ltr;y:500.15625;stroke:#191B22;stroke-width:1pt;font-size:16.2px;x:42;fill:#191B22;select-color:#D8E2FF;highlight-color:#FFE17B;"
+          x="42"
+          y="500.15625">0.00</text>
       </g>
       <g
         id="group-42">
         <text
           id="text-0"
-          style="stroke:#191B22;fill:#191B22;font-size:16.2px;highlight-color:#FFE17B;x:1.5;y:286.10938;stroke-width:1pt;text-decoration:none;direction:ltr;select-color:#D8E2FF;"
-          x="1.5"
-          y="286.10938">0.50</text>
+          style="direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;x:42;fill:#191B22;font-size:16.2px;text-decoration:none;y:390.15625;stroke:#191B22;stroke-width:1pt;"
+          x="42"
+          y="390.15625">0.25</text>
       </g>
       <g
         id="group-43">
         <text
           id="text-0"
-          style="font-size:16.2px;select-color:#D8E2FF;fill:#191B22;stroke-width:1pt;text-decoration:none;direction:ltr;highlight-color:#FFE17B;x:1.5;y:163.60938;stroke:#191B22;"
-          x="1.5"
-          y="163.60938">0.75</text>
+          style="stroke-width:1pt;fill:#191B22;font-size:16.2px;direction:ltr;highlight-color:#FFE17B;x:42;stroke:#191B22;text-decoration:none;select-color:#D8E2FF;y:280.15625;"
+          x="42"
+          y="280.15625">0.50</text>
       </g>
       <g
         id="group-44">
         <text
           id="text-0"
-          style="stroke-width:1pt;direction:ltr;font-size:16.2px;text-decoration:none;select-color:#D8E2FF;highlight-color:#FFE17B;x:1.5;y:41.109375;stroke:#191B22;fill:#191B22;"
-          x="1.5"
-          y="41.109375">1.00</text>
+          style="stroke:#191B22;fill:#191B22;font-size:16.2px;highlight-color:#FFE17B;x:42;stroke-width:1pt;text-decoration:none;direction:ltr;select-color:#D8E2FF;y:170.15625;"
+          x="42"
+          y="170.15625">0.75</text>
       </g>
-      <path
-        id="path-45"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M35 525H53" />
+      <g
+        id="group-45">
+        <text
+          id="text-0"
+          style="stroke:#191B22;font-size:16.2px;select-color:#D8E2FF;highlight-color:#FFE17B;x:42;stroke-width:1pt;fill:#191B22;text-decoration:none;direction:ltr;y:60.15625;"
+          x="42"
+          y="60.15625">1.00</text>
+      </g>
       <path
         id="path-46"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M35 402.5H53" />
+        d="M92 491H119" />
       <path
         id="path-47"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M35 280H53" />
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        d="M92 381H119" />
       <path
         id="path-48"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M35 157.5H53" />
+        d="M92 271H119" />
       <path
         id="path-49"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M35 35H53" />
+        d="M92 161H119" />
       <path
         id="path-50"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M44 500.5H53" />
+        d="M92 51H119" />
       <path
         id="path-51"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M44 476H53" />
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        d="M105.5 469H119" />
       <path
         id="path-52"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M44 451.5H53" />
+        d="M105.5 447H119" />
       <path
         id="path-53"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M44 427H53" />
+        d="M105.5 425H119" />
       <path
         id="path-54"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M44 378H53" />
+        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        d="M105.5 403H119" />
       <path
         id="path-55"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M44 353.5H53" />
+        d="M105.5 359H119" />
       <path
         id="path-56"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M44 329H53" />
+        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        d="M105.5 337H119" />
       <path
         id="path-57"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M44 304.5H53" />
+        d="M105.5 315H119" />
       <path
         id="path-58"
-        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
-        d="M44 255.5H53" />
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M105.5 293H119" />
       <path
         id="path-59"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M44 231H53" />
+        d="M105.5 249H119" />
       <path
         id="path-60"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M44 206.5H53" />
+        d="M105.5 227H119" />
       <path
         id="path-61"
         style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
-        d="M44 182H53" />
+        d="M105.5 205H119" />
       <path
         id="path-62"
         style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M44 133H53" />
+        d="M105.5 183H119" />
       <path
         id="path-63"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M44 108.5H53" />
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        d="M105.5 139H119" />
       <path
         id="path-64"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
-        d="M44 84.00002H53" />
+        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        d="M105.5 117H119" />
       <path
         id="path-65"
-        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
-        d="M44 59.50001H53" />
+        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        d="M105.5 95.00001H119" />
       <path
         id="path-66"
-        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
-        d="M53 35V525" />
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M105.5 73.00001H119" />
+      <path
+        id="path-67"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M119 51V491" />
       <g
-        id="group-67">
+        id="group-68">
         <path
           id="path-0"
-          style="stroke:#0000FF;stroke-width:1pt;fill:none;"
-          d="M57 375.7031L100.8276 456.0938L144.6552 425.4688L188.4828 352.7344L232.3103 283.8281L276.1379 287.6562L319.9655 264.6875L363.7931 257.0312L451.4483 249.375L495.2759 257.0312L539.1035 299.1406L582.931 260.8594L626.7586 253.2031L670.5862 295.3125L714.4138 253.2031L758.2414 299.1406L802.069 276.1719L845.8965 264.6875L889.7241 268.5156L933.5518 249.375L977.3793 218.75L1021.207 268.5156L1065.035 276.1719L1108.862 280L1152.69 302.9688L1196.517 280L1240.345 241.7188L1284.172 264.6875L1328 299.1406" />
+          style="stroke-width:1pt;fill:none;stroke:#0000FF;"
+          d="M123 356.9375L164.5517 429.125L206.1035 401.625L247.6552 336.3125L289.2069 274.4375L330.7586 277.875L372.3104 257.25L413.8621 250.375L496.9655 243.5L538.5173 250.375L580.069 288.1875L621.6207 253.8125L663.1724 246.9375L704.7241 284.75L746.2758 246.9375L787.8276 288.1875L829.3793 267.5625L870.931 257.25L912.4827 260.6875L954.0345 243.5L995.5862 216L1037.138 260.6875L1078.69 267.5625L1120.241 271L1161.793 291.625L1203.345 271L1244.897 236.625L1286.448 257.25L1328 288.1875" />
         <path
           id="path-1"
-          style="fill:none;stroke:#0000FF;stroke-width:1pt;"
-          d="M57 375.7031L100.8276 456.0938L144.6552 425.4688L188.4828 352.7344L232.3103 283.8281L276.1379 287.6562L319.9655 264.6875L363.7931 257.0312L451.4483 249.375L495.2759 257.0312L539.1035 299.1406L582.931 260.8594L626.7586 253.2031L670.5862 295.3125L714.4138 253.2031L758.2414 299.1406L802.069 276.1719L845.8965 264.6875L889.7241 268.5156L933.5518 249.375L977.3793 218.75L1021.207 268.5156L1065.035 276.1719L1108.862 280L1152.69 302.9688L1196.517 280L1240.345 241.7188L1284.172 264.6875L1328 299.1406" />
+          style="stroke:#0000FF;stroke-width:1pt;fill:none;"
+          d="M123 356.9375L164.5517 429.125L206.1035 401.625L247.6552 336.3125L289.2069 274.4375L330.7586 277.875L372.3104 257.25L413.8621 250.375L496.9655 243.5L538.5173 250.375L580.069 288.1875L621.6207 253.8125L663.1724 246.9375L704.7241 284.75L746.2758 246.9375L787.8276 288.1875L829.3793 267.5625L870.931 257.25L912.4827 260.6875L954.0345 243.5L995.5862 216L1037.138 260.6875L1078.69 267.5625L1120.241 271L1161.793 291.625L1203.345 271L1244.897 236.625L1286.448 257.25L1328 288.1875" />
         <path
           id="path-2"
           style="stroke:#FF5AE2;stroke-width:1pt;fill:none;"
-          d="M57 322.1094L100.8276 272.3438L144.6552 291.4844L188.4828 276.1719L232.3103 249.375L276.1379 291.4844L319.9655 272.3438L363.7931 268.5156L407.6207 253.2031L451.4483 264.6875L495.2759 287.6562L539.1035 283.8281L582.931 276.1719L626.7586 260.8594L670.5862 306.7969L714.4138 257.0312L758.2414 302.9688L845.8965 287.6562L889.7241 295.3125L933.5518 264.6875L977.3793 234.0625L1021.207 287.6562L1065.035 283.8281L1108.862 295.3125L1152.69 333.5938L1196.517 287.6562L1240.345 257.0312L1284.172 291.4844L1328 306.7969" />
+          d="M123 308.8125L164.5517 264.125L206.1035 281.3125L247.6552 267.5625L289.2069 243.5L330.7586 281.3125L372.3104 264.125L413.8621 260.6875L455.4138 246.9375L496.9655 257.25L538.5173 277.875L580.069 274.4375L621.6207 267.5625L663.1724 253.8125L704.7241 295.0625L746.2758 250.375L787.8276 291.625L829.3793 284.75L870.931 277.875L912.4827 284.75L954.0345 257.25L995.5862 229.75L1037.138 277.875L1078.69 274.4375L1120.241 284.75L1161.793 319.125L1203.345 277.875L1244.897 250.375L1286.448 281.3125L1328 295.0625" />
         <path
           id="path-3"
-          style="stroke:#FF5AE2;stroke-width:1pt;fill:none;"
-          d="M57 322.1094L100.8276 272.3438L144.6552 291.4844L188.4828 276.1719L232.3103 249.375L276.1379 291.4844L319.9655 272.3438L363.7931 268.5156L407.6207 253.2031L451.4483 264.6875L495.2759 287.6562L539.1035 283.8281L582.931 276.1719L626.7586 260.8594L670.5862 306.7969L714.4138 257.0312L758.2414 302.9688L845.8965 287.6562L889.7241 295.3125L933.5518 264.6875L977.3793 234.0625L1021.207 287.6562L1065.035 283.8281L1108.862 295.3125L1152.69 333.5938L1196.517 287.6562L1240.345 257.0312L1284.172 291.4844L1328 306.7969" />
+          style="fill:none;stroke:#FF5AE2;stroke-width:1pt;"
+          d="M123 308.8125L164.5517 264.125L206.1035 281.3125L247.6552 267.5625L289.2069 243.5L330.7586 281.3125L372.3104 264.125L413.8621 260.6875L455.4138 246.9375L496.9655 257.25L538.5173 277.875L580.069 274.4375L621.6207 267.5625L663.1724 253.8125L704.7241 295.0625L746.2758 250.375L787.8276 291.625L829.3793 284.75L870.931 277.875L912.4827 284.75L954.0345 257.25L995.5862 229.75L1037.138 277.875L1078.69 274.4375L1120.241 284.75L1161.793 319.125L1203.345 277.875L1244.897 250.375L1286.448 281.3125L1328 295.0625" />
         <path
           id="path-4"
-          style="stroke:#FF0000;stroke-width:1pt;fill:none;"
-          d="M57 218.75L100.8276 226.4062L144.6552 184.2969L188.4828 126.875L232.3103 77.10938L276.1379 100.0781L319.9655 88.59375L363.7931 92.42188L407.6207 65.625H451.4483L495.2759 88.59375L539.1035 80.9375L582.931 65.625L626.7586 80.9375L670.5862 84.76562L714.4138 61.79688L758.2414 77.10938L802.069 61.79688L845.8965 57.96875L889.7241 77.10938L933.5518 57.96875L977.3793 65.625L1021.207 77.10938L1065.035 73.28125L1108.862 57.96875L1152.69 65.625L1196.517 50.3125L1240.345 57.96875L1284.172 77.10938L1328 50.3125" />
+          style="stroke:#00AEC1;stroke-width:1pt;fill:none;"
+          d="M123 216L164.5517 222.875L206.1035 185.0625L247.6552 133.5L289.2069 88.8125L330.7586 109.4375L372.3104 99.125L413.8621 102.5625L455.4138 78.5H496.9655L538.5173 99.125L580.069 92.25L621.6207 78.5L663.1724 92.25L704.7241 95.6875L746.2758 75.0625L787.8276 88.8125L829.3793 75.0625L870.931 71.625L912.4827 88.8125L954.0345 71.625L995.5862 78.5L1037.138 88.8125L1078.69 85.375L1120.241 71.625L1161.793 78.5L1203.345 64.75L1244.897 71.625L1286.448 88.8125L1328 64.75" />
         <path
           id="path-5"
-          style="stroke:#FF0000;stroke-width:1pt;fill:none;"
-          d="M57 218.75L100.8276 226.4062L144.6552 184.2969L188.4828 126.875L232.3103 77.10938L276.1379 100.0781L319.9655 88.59375L363.7931 92.42188L407.6207 65.625H451.4483L495.2759 88.59375L539.1035 80.9375L582.931 65.625L626.7586 80.9375L670.5862 84.76562L714.4138 61.79688L758.2414 77.10938L802.069 61.79688L845.8965 57.96875L889.7241 77.10938L933.5518 57.96875L977.3793 65.625L1021.207 77.10938L1065.035 73.28125L1108.862 57.96875L1152.69 65.625L1196.517 50.3125L1240.345 57.96875L1284.172 77.10938L1328 50.3125" />
+          style="fill:none;stroke:#00AEC1;stroke-width:1pt;"
+          d="M123 216L164.5517 222.875L206.1035 185.0625L247.6552 133.5L289.2069 88.8125L330.7586 109.4375L372.3104 99.125L413.8621 102.5625L455.4138 78.5H496.9655L538.5173 99.125L580.069 92.25L621.6207 78.5L663.1724 92.25L704.7241 95.6875L746.2758 75.0625L787.8276 88.8125L829.3793 75.0625L870.931 71.625L912.4827 88.8125L954.0345 71.625L995.5862 78.5L1037.138 88.8125L1078.69 85.375L1120.241 71.625L1161.793 78.5L1203.345 64.75L1244.897 71.625L1286.448 88.8125L1328 64.75" />
         <path
           id="path-6"
-          style="stroke-width:1pt;fill:none;stroke:#3DA930;"
-          d="M57 505.8594L100.8276 463.75L144.6552 440.7812L188.4828 368.0469L232.3103 291.4844L276.1379 356.5625L319.9655 325.9375H363.7931L407.6207 283.8281L451.4483 295.3125L495.2759 341.25L539.1035 329.7656L582.931 306.7969H626.7586L670.5862 356.5625L714.4138 283.8281L758.2414 345.0781L802.069 322.1094L845.8965 310.625L889.7241 337.4219L933.5518 287.6562L977.3793 264.6875L1021.207 329.7656L1065.035 322.1094L1108.862 318.2812L1152.69 364.2188L1196.517 302.9688L1240.345 280L1284.172 333.5938L1328 322.1094" />
+          style="stroke:#3DA930;stroke-width:1pt;fill:none;"
+          d="M123 473.8125L164.5517 436L206.1035 415.375L247.6552 350.0625L289.2069 281.3125L330.7586 339.75L372.3104 312.25H413.8621L455.4138 274.4375L496.9655 284.75L538.5173 326L580.069 315.6875L621.6207 295.0625H663.1724L704.7241 339.75L746.2758 274.4375L787.8276 329.4375L829.3793 308.8125L870.931 298.5L912.4827 322.5625L954.0345 277.875L995.5862 257.25L1037.138 315.6875L1078.69 308.8125L1120.241 305.375L1161.793 346.625L1203.345 291.625L1244.897 271L1286.448 319.125L1328 308.8125" />
         <path
           id="path-7"
           style="stroke:#3DA930;stroke-width:1pt;fill:none;"
-          d="M57 505.8594L100.8276 463.75L144.6552 440.7812L188.4828 368.0469L232.3103 291.4844L276.1379 356.5625L319.9655 325.9375H363.7931L407.6207 283.8281L451.4483 295.3125L495.2759 341.25L539.1035 329.7656L582.931 306.7969H626.7586L670.5862 356.5625L714.4138 283.8281L758.2414 345.0781L802.069 322.1094L845.8965 310.625L889.7241 337.4219L933.5518 287.6562L977.3793 264.6875L1021.207 329.7656L1065.035 322.1094L1108.862 318.2812L1152.69 364.2188L1196.517 302.9688L1240.345 280L1284.172 333.5938L1328 322.1094" />
+          d="M123 473.8125L164.5517 436L206.1035 415.375L247.6552 350.0625L289.2069 281.3125L330.7586 339.75L372.3104 312.25H413.8621L455.4138 274.4375L496.9655 284.75L538.5173 326L580.069 315.6875L621.6207 295.0625H663.1724L704.7241 339.75L746.2758 274.4375L787.8276 329.4375L829.3793 308.8125L870.931 298.5L912.4827 322.5625L954.0345 277.875L995.5862 257.25L1037.138 315.6875L1078.69 308.8125L1120.241 305.375L1161.793 346.625L1203.345 291.625L1244.897 271L1286.448 319.125L1328 308.8125" />
         <rect
           id="rect-8"
           style="fill:#FAF9FEBF;"
-          x="1219"
-          y="33"
-          width="111"
-          height="120" />
+          x="1165"
+          y="49"
+          width="165"
+          height="176" />
         <g
           id="group-9">
           <path
             id="path-0"
-            style="stroke-width:1pt;fill:none;stroke:#0000FF;"
-            d="M1285 48H1330" />
+            style="stroke:#0000FF;stroke-width:1pt;fill:none;"
+            d="M1263 71H1330" />
         </g>
         <g
           id="group-10">
           <text
             id="text-0"
-            style="stroke:#0000FF;stroke-width:1pt;text-decoration:none;direction:ltr;fill:#191B22;font-size:16.2px;select-color:#D8E2FF;highlight-color:#FFE17B;x:1219;y:54.375;"
-            x="1219"
-            y="54.375">Gated</text>
+            style="text-decoration:none;direction:ltr;highlight-color:#FFE17B;x:1165;y:81.0625;stroke:#0000FF;font-size:16.2px;select-color:#D8E2FF;stroke-width:1pt;fill:#191B22;"
+            x="1165"
+            y="81.0625">Gated</text>
         </g>
         <g
           id="group-11">
           <path
             id="path-0"
             style="stroke:#FF5AE2;stroke-width:1pt;fill:none;"
-            d="M1285 78H1330" />
+            d="M1263 115H1330" />
         </g>
         <g
           id="group-12">
           <text
             id="text-0"
-            style="text-decoration:none;stroke:#FF5AE2;fill:#191B22;font-size:16.2px;direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;x:1219;y:84.375;stroke-width:1pt;"
-            x="1219"
-            y="84.375">Should</text>
+            style="x:1165;fill:#191B22;text-decoration:none;direction:ltr;select-color:#D8E2FF;y:125.0625;stroke:#FF5AE2;stroke-width:1pt;font-size:16.2px;highlight-color:#FFE17B;"
+            x="1165"
+            y="125.0625">Should</text>
         </g>
         <g
           id="group-13">
           <path
             id="path-0"
-            style="stroke:#FF0000;stroke-width:1pt;fill:none;"
-            d="M1285 108H1330" />
+            style="stroke:#00AEC1;stroke-width:1pt;fill:none;"
+            d="M1263 159H1330" />
         </g>
         <g
           id="group-14">
           <text
             id="text-0"
-            style="stroke-width:1pt;font-size:16.2px;direction:ltr;x:1219;y:114.375;stroke:#FF0000;text-decoration:none;select-color:#D8E2FF;highlight-color:#FFE17B;fill:#191B22;"
-            x="1219"
-            y="114.375">Match</text>
+            style="y:169.0625;stroke:#00AEC1;stroke-width:1pt;fill:#191B22;text-decoration:none;x:1165;font-size:16.2px;direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;"
+            x="1165"
+            y="169.0625">Match</text>
         </g>
         <g
           id="group-15">
           <path
             id="path-0"
             style="stroke:#3DA930;stroke-width:1pt;fill:none;"
-            d="M1285 138H1330" />
+            d="M1263 203H1330" />
         </g>
         <g
           id="group-16">
           <text
             id="text-0"
-            style="fill:#191B22;direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;y:144.375;stroke:#3DA930;font-size:16.2px;text-decoration:none;x:1219;stroke-width:1pt;"
-            x="1219"
-            y="144.375">Rew</text>
+            style="fill:#191B22;x:1165;stroke:#3DA930;stroke-width:1pt;direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;y:213.0625;font-size:16.2px;text-decoration:none;"
+            x="1165"
+            y="213.0625">Rew</text>
         </g>
       </g>
     </g>

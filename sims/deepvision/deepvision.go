@@ -281,7 +281,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	sample2(lipCT)
 
 	net.ConnectLayers(v1m, mtpos, pool1to1, axon.ForwardPath).AddClass("Fixed")
-	net.ConnectLayers(mtpos, lip, pool1to1, axon.ForwardPath) // .AddClass("Fixed")
+	net.ConnectLayers(mtpos, lip, pool1to1, axon.ForwardPath).AddClass("Fixed")
 
 	net.ConnectToPulv(lip, lipCT, mtposP, full, pool1to1, "")
 
