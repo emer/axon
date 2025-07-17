@@ -49,10 +49,6 @@ type ParamConfig struct {
 // RunConfig has config parameters related to running the sim.
 type RunConfig struct {
 
-	// GPU uses the GPU for computation, generally faster than CPU even for
-	// small models if NData ~16.
-	GPU bool `default:"false"`
-
 	// GPUDevice selects the gpu device to use.
 	GPUDevice int
 

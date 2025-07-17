@@ -130,7 +130,7 @@ func (ss *Sim) ConfigSim() {
 	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag, reflect.ValueOf(ss))
 	ss.RandSeeds.Init(100) // max 100 runs
 	ss.InitRandSeed(0)
-	if ss.Config.Run.GPU {
+	if ss.Config.GPU {
 		// gpu.DebugAdapter = true
 		gpu.SelectAdapter = ss.Config.Run.GPUDevice
 		axon.GPUInit()
