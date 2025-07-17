@@ -154,8 +154,7 @@ func (dp *DriveParams) EffectiveDrive(di uint32, i uint32) float32 {
 	return math32.Max(GlobalVectors.Value(int(GvDrives), int(i), int(di)), dp.DriveMin)
 }
 
-///////////////////////////////////////////////////////////////////////////////
-//  UrgencyParams
+////////  UrgencyParams
 
 // UrgencyParams has urgency (increasing pressure to do something)
 // and parameters for updating it.
@@ -225,8 +224,7 @@ func (ur *UrgencyParams) AddEffort(di uint32, inc float32) {
 	ur.Urge(di)
 }
 
-/////////////////////////////////////////////////////////
-// USParams
+//////// USParams
 
 // RubiconLNormFun is the normalizing function applied to the sum of all
 // weighted raw values: 1 - (1 / (1 + usRaw.Sum()))
@@ -363,8 +361,7 @@ func (us *USParams) USposToZero(di uint32) {
 	}
 }
 
-///////////////////////////////////////////////////////////////////
-//  LHb & RMTg
+////////  LHb & RMTg
 
 // LHbParams has values for computing LHb & RMTg which drives dips / pauses in DA firing.
 // LHb handles all US-related (PV = primary value) processing.
@@ -479,8 +476,7 @@ func (lh *LHbParams) DAforNoUS(di uint32) float32 {
 	return 0
 }
 
-//////////////////////////////////////////////////////////
-//  GiveUpParams
+////////  GiveUpParams
 
 // GiveUpParams are parameters for computing when to give up,
 // based on Utility, Timing and Progress factors.
@@ -588,8 +584,7 @@ func (gp *GiveUpParams) Sums(di uint32) (cnSum, guSum float32) {
 	return
 }
 
-//////////////////////////////////////////////////////////
-//  Rubicon
+////////  Rubicon
 
 // Rubicon implements core elements of the Rubicon goal-directed motivational
 // model, representing the core brainstem-level (hypothalamus) bodily drives
@@ -978,8 +973,7 @@ func (rp *Rubicon) SetGoalDistEst(di uint32, dist float32) {
 	GlobalScalars.Set(rate, int(GvProgressRate), int(di))
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//    methods below used in computing Rubicon state, not generally called from sims
+////////    methods below used in computing Rubicon state, not generally called from sims
 
 // HasPosUS returns true if there is at least one non-zero positive US
 func (rp *Rubicon) HasPosUS(di uint32) bool {

@@ -281,7 +281,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	sample2(lipCT)
 
 	net.ConnectLayers(v1m, mtpos, pool1to1, axon.ForwardPath).AddClass("Fixed")
-	net.ConnectLayers(mtpos, lip, pool1to1, axon.ForwardPath).AddClass("Fixed")
+	net.ConnectLayers(mtpos, lip, pool1to1, axon.ForwardPath) // .AddClass("Fixed")
 
 	net.ConnectToPulv(lip, lipCT, mtposP, full, pool1to1, "")
 
@@ -363,7 +363,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(v2CT, v3CT, pts.PT4x4Skp2, axon.ForwardPath).AddClass("FwdWeak")
 
 	// todo: strong .5 in orig
-	net.ConnectLayers(v3CT, v2CT, pts.PT4x4Skp2Recip, axon.BackPath) // yes top-down CT
+	// net.ConnectLayers(v3CT, v2CT, pts.PT4x4Skp2Recip, axon.BackPath) // yes top-down CT
 	// orig has a "leak" from super -> CT here: (2x2 == 4x4) --
 	// good: mostly prevents "sag" at end
 	net.ConnectLayers(v3, v2CT, pts.PT2x2Skp2Recip, axon.BackPath)
@@ -379,6 +379,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	//////// DP
 	if ss.Config.Run.DP {
+
+		// todo: DP config just like v4
+
 		dp, dpCT = net.AddSuperCT4D("DP", "", 1, 1, 10, 10, space, full)
 
 		net.ConnectLayers(v3, dp, full, axon.ForwardPath)

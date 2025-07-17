@@ -130,13 +130,15 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.ActAvg.AdaptGi.SetBool(false) // adapt not good
 				ly.Inhib.Pool.On.SetBool(true)         // needs pool-level
 				ly.Inhib.Layer.FB = 1                  // 1
+				ly.Inhib.Layer.Gi = 1                  // 1.2 == 1.3 & CT too
 				ly.Inhib.Pool.FB = 4                   // 4 == 2 > 1
-				ly.Inhib.Layer.Gi = 1.2                // 1.2 == 1.3 & CT too
-				ly.Inhib.Pool.Gi = 1                   // 1 >> 0.8 & CT too
+				ly.Inhib.Pool.Gi = 0.9                 // 1 >> 0.8 & CT too
 			}},
 		{Sel: "#LIPCT", Doc: "pool inhib",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.02 // 0.02 > 0.01[5] vs 0.05+ actual: more ge for MTposP
+				ly.Inhib.Layer.Gi = 1.2        // 1.2 == 1.3 & CT too
+				ly.Inhib.Pool.Gi = 1           // 1 >> 0.8 & CT too
 			}},
 		{Sel: ".MTpos", Doc: "layer inhib",
 			Set: func(ly *axon.LayerParams) {
@@ -388,7 +390,7 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: "#V4CTToV1mP", Doc: "stronger",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1.5 // ?
+				pt.PathScale.Abs = 1.5 // 1.5 > 1
 			}},
 
 		//////// TEO
@@ -402,17 +404,17 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".TEOSelfMaint", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 0.2 // 0.1 is ok
+				pt.PathScale.Abs = 0.2 // 0.2 > 0.1 for categ
 				pt.Com.GType = axon.MaintG
 			}},
 		{Sel: ".TEOCTSelf", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 0.1 //
-				pt.PathScale.Abs = 0.2 // 0.1 is ok
+				pt.PathScale.Abs = 0.2 // 0.2 > 0.1 for categ
 			}},
 		{Sel: "#TEOCTToV4P", Doc: "stronger",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1.5 // ?
+				pt.PathScale.Abs = 1.5 // 1.5 > 1
 			}},
 
 		//////// TE
@@ -426,17 +428,17 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".TESelfMaint", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 0.25 // 0.2 > others
+				pt.PathScale.Abs = 0.25 // 0.25 > others for categ
 				pt.Com.GType = axon.MaintG
 			}},
 		{Sel: ".TECTSelf", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 0.1  //
-				pt.PathScale.Abs = 0.25 // 0.2 > others for rep, not getting stuck
+				pt.PathScale.Abs = 0.25 // 0.25 > others for categ
 			}},
 		{Sel: "#TECTToTEOP", Doc: "stronger",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1.5 // ?
+				pt.PathScale.Abs = 1.5 // 1.5 > 1
 			}},
 	},
 }

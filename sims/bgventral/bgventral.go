@@ -411,6 +411,7 @@ func (ss *Sim) ApplyInputs(mode Modes, trial, theta int) {
 // ApplyRubicon applies Rubicon reward inputs
 func (ss *Sim) ApplyRubicon(ev *GoNoEnv, mode Modes, trial int, di uint32) {
 	rp := &ss.Net.Rubicon
+	rp.NewState(di, &ss.Net.Rand) // first before anything else is updated
 	rp.EffortUrgencyUpdate(di, 1)
 	if mode == Test {
 		rp.Urgency.Reset(di)
@@ -652,9 +653,9 @@ func (ss *Sim) ConfigStats() {
 				if mode == Train {
 					break
 				}
+				// below is special Test Epoch stats to summarize testing data
 				if si == 0 {
 					stats.Groups(curModeDir, subDir.Value("TrialName"))
-					break
 				}
 				stats.GroupStats(curModeDir, stats.StatMean, subDir.Value(name))
 				// note: results go under Group name: TrialName

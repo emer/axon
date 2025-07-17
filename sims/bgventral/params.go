@@ -72,7 +72,7 @@ var PathParams = axon.PathSheets{
 		{Sel: "#UrgencyToVMtxGo", Doc: "strong urgency factor",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 0.1 // don't dilute from others
-				pt.PathScale.Abs = 0   // todo: is misbehaving here
+				pt.PathScale.Abs = 1
 				pt.Learn.Learn.SetBool(false)
 			}},
 		{Sel: ".SuperToPT", Doc: "one-to-one from super",

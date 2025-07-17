@@ -96,7 +96,7 @@ func (gp *GPParams) Defaults() {
 func (gp *GPParams) Update() {
 }
 
-// MatrixGated is called after std PlusPhase, on CPU, has Pool info
+// MatrixGated is called after std PlusPhase, has Pool info
 // downloaded from GPU, to set Gated flag based on CaPMax activity
 func (ly *LayerParams) MatrixGated(ctx *Context) {
 	lpi := ly.PoolIndex(0)
