@@ -5,9 +5,8 @@
 package hip
 
 import (
-	"cogentcore.org/core/base/errors"
-	"cogentcore.org/core/base/reflectx"
 	"github.com/emer/axon/v2/axon"
+	"github.com/emer/emergent/v2/egui"
 )
 
 // EnvConfig has config params for environment.
@@ -73,10 +72,6 @@ type ParamConfig struct {
 // RunConfig has config parameters related to running the sim.
 type RunConfig struct {
 
-	// GPU uses the GPU for computation, generally faster than CPU even for
-	// small models if NData ~16.
-	GPU bool `default:"true"`
-
 	// GPUDevice selects the gpu device to use.
 	GPUDevice int
 
@@ -137,29 +132,7 @@ type LogConfig struct {
 
 // Config has the overall Sim configuration options.
 type Config struct {
-
-	// Name is the short name of the sim.
-	Name string `display:"-" default:"Hip"`
-
-	// Title is the longer title of the sim.
-	Title string `display:"-" default:"Axon hippocampus"`
-
-	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/sims/hip/README.md"`
-
-	// Doc is brief documentation of the sim.
-	Doc string `display:"-" default:"Simulates the hippocampus on basic AB-AC paired associates task."`
-
-	// Includes has a list of additional config files to include.
-	// After configuration, it contains list of include files added.
-	Includes []string
-
-	// GUI means open the GUI. Otherwise it runs automatically and quits,
-	// saving results to log files.
-	GUI bool `default:"true"`
-
-	// Debug reports debugging information.
-	Debug bool
+	egui.BaseConfig
 
 	// Hip has hippocampus sizing parameters.
 	Hip axon.HipConfig `display:"add-fields"`
@@ -177,15 +150,10 @@ type Config struct {
 	Log LogConfig `display:"add-fields"`
 }
 
-func (cfg *Config) IncludesPtr() *[]string { return &cfg.Includes }
-
 func (cfg *Config) Defaults() {
-	errors.Log(reflectx.SetFromDefaultTags(cfg))
+	cfg.Name = "Hip"
+	cfg.Title = "Axon hippocampus"
+	cfg.URL = "https://github.com/emer/axon/blob/main/sims/hip/README.md"
+	cfg.Doc = "Simulates the hippocampus on basic AB-AC paired associates task."
 	cfg.Hip.Defaults()
-}
-
-func NewConfig() *Config {
-	cfg := &Config{}
-	cfg.Defaults()
-	return cfg
 }
