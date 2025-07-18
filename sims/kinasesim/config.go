@@ -5,8 +5,7 @@
 package kinasesim
 
 import (
-	"cogentcore.org/core/base/errors"
-	"cogentcore.org/core/base/reflectx"
+	"github.com/emer/emergent/v2/egui"
 )
 
 // ParamConfig has config parameters related to sim params.
@@ -69,18 +68,7 @@ type LogConfig struct {
 
 // Config has the overall Sim configuration options.
 type Config struct {
-
-	// Name is the short name of the sim.
-	Name string `display:"-" default:"KinaseEQ"`
-
-	// Title is the longer title of the sim.
-	Title string `display:"-" default:"Kinase learning equations"`
-
-	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/sims/kinaseq/README.md"`
-
-	// Doc is brief documentation of the sim.
-	Doc string `display:"-" default:"This simulation explores calcium-based synaptic learning rules, specifically at the synaptic level."`
+	egui.BaseConfig
 
 	// RandomHz generates random firing rates, for testing
 	RandomHz bool
@@ -106,17 +94,6 @@ type Config struct {
 	// Inhibitory conductance
 	Gi float32 `min:"0" step:"0.01" default:"0.1"`
 
-	// Includes has a list of additional config files to include.
-	// After configuration, it contains list of include files added.
-	Includes []string `display:"-"`
-
-	// GUI means open the GUI. Otherwise it runs automatically and quits,
-	// saving results to log files.
-	GUI bool `default:"true"`
-
-	// Debug reports debugging information.
-	Debug bool
-
 	// Params has parameter related configuration options.
 	Params ParamConfig `display:"add-fields"`
 
@@ -127,14 +104,9 @@ type Config struct {
 	Log LogConfig `display:"add-fields"`
 }
 
-func (cfg *Config) IncludesPtr() *[]string { return &cfg.Includes }
-
 func (cfg *Config) Defaults() {
-	errors.Log(reflectx.SetFromDefaultTags(cfg))
-}
-
-func NewConfig() *Config {
-	cfg := &Config{}
-	cfg.Defaults()
-	return cfg
+	cfg.Name = "KinaseEQ"
+	cfg.Title = "Kinase learning equations"
+	cfg.URL = "https://github.com/emer/axon/blob/main/sims/kinasesim/README.md"
+	cfg.Doc = "This simulation explores calcium-based synaptic learning rules, specifically at the synaptic level."
 }

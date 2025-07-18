@@ -5,13 +5,8 @@
 package main
 
 import (
-	"cogentcore.org/core/cli"
 	"github.com/emer/axon/v2/sims/kinasesim"
+	"github.com/emer/emergent/v2/egui"
 )
 
-func main() {
-	cfg := kinasesim.NewConfig()
-	opts := cli.DefaultOptions(cfg.Name, cfg.Title)
-	opts.DefaultFiles = append(opts.DefaultFiles, "config.toml")
-	cli.Run(opts, cfg, kinasesim.RunSim)
-}
+func main() { egui.Run[kinasesim.Sim, kinasesim.Config]() }
