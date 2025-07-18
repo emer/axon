@@ -5,13 +5,8 @@
 package main
 
 import (
-	"cogentcore.org/core/cli"
 	"github.com/emer/axon/v2/sims/bgdorsal"
+	"github.com/emer/emergent/v2/egui"
 )
 
-func main() {
-	cfg := bgdorsal.NewConfig()
-	opts := cli.DefaultOptions(cfg.Name, cfg.Title)
-	opts.DefaultFiles = append(opts.DefaultFiles, "config.toml")
-	cli.Run(opts, cfg, bgdorsal.RunSim)
-}
+func main() { egui.Run[bgdorsal.Sim, bgdorsal.Config]() }
