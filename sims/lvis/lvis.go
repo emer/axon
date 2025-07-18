@@ -11,6 +11,7 @@ package lvis
 //go:generate core generate -add-types -add-funcs -gosl
 
 import (
+	"embed"
 	"fmt"
 	"os"
 	"reflect"
@@ -36,6 +37,9 @@ import (
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/paths"
 )
+
+//go:embed *.json
+var embedfs embed.FS
 
 // Modes are the looping modes (Stacks) for running and statistics.
 type Modes int32 //enums:enum

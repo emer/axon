@@ -242,10 +242,10 @@ func (ev *ImagesEnv) OpenConfig() error {
 	cfnm := fmt.Sprintf("%s_cats.json", ev.ImageFile)
 	tsfnm := fmt.Sprintf("%s_ntest%d_tst.json", ev.ImageFile, ev.Images.NTestPerCat)
 	trfnm := fmt.Sprintf("%s_ntest%d_trn.json", ev.ImageFile, ev.Images.NTestPerCat)
-	if errors.Log1(fsx.FileExists(cfnm)) {
-		errors.Log(jsonx.Open(&ev.Images.Cats, cfnm))
-		errors.Log(jsonx.Open(&ev.Images.ImagesTest, tsfnm))
-		errors.Log(jsonx.Open(&ev.Images.ImagesTrain, trfnm))
+	if errors.Log1(fsx.FileExistsFS(embedfs, cfnm)) {
+		errors.Log(jsonx.OpenFS(&ev.Images.Cats, embedfs, cfnm))
+		errors.Log(jsonx.OpenFS(&ev.Images.ImagesTest, embedfs, tsfnm))
+		errors.Log(jsonx.OpenFS(&ev.Images.ImagesTrain, embedfs, trfnm))
 		ev.Images.ToTrainAll()
 		ev.Images.Flats()
 		return nil
@@ -258,9 +258,9 @@ func (ev *ImagesEnv) SaveConfig() {
 	cfnm := fmt.Sprintf("%s_cats.json", ev.ImageFile)
 	tsfnm := fmt.Sprintf("%s_ntest%d_tst.json", ev.ImageFile, ev.Images.NTestPerCat)
 	trfnm := fmt.Sprintf("%s_ntest%d_trn.json", ev.ImageFile, ev.Images.NTestPerCat)
-	errors.Log(jsonx.Save(ev.Images.Cats, cfnm))
-	errors.Log(jsonx.Save(ev.Images.ImagesTest, tsfnm))
-	errors.Log(jsonx.Save(ev.Images.ImagesTrain, trfnm))
+	errors.Log(jsonx.Save(ev.Images.Cats, filepath.Join("..", cfnm)))
+	errors.Log(jsonx.Save(ev.Images.ImagesTest, filepath.Join("..", tsfnm)))
+	errors.Log(jsonx.Save(ev.Images.ImagesTrain, filepath.Join("..", trfnm)))
 }
 
 // ConfigPats configures the output patterns
