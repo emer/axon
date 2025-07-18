@@ -5,13 +5,8 @@
 package main
 
 import (
-	"cogentcore.org/core/cli"
 	"github.com/emer/axon/v2/sims/bgventral"
+	"github.com/emer/emergent/v2/egui"
 )
 
-func main() {
-	cfg := bgventral.NewConfig()
-	opts := cli.DefaultOptions(cfg.Name, cfg.Title)
-	opts.DefaultFiles = append(opts.DefaultFiles, "config.toml")
-	cli.Run(opts, cfg, bgventral.RunSim)
-}
+func main() { egui.Run[bgventral.Sim, bgventral.Config]() }
