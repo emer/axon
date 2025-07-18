@@ -152,6 +152,9 @@ type Sim struct {
 	RandSeeds randx.Seeds `display:"-"`
 }
 
+func (ss *Sim) SetConfig(cfg *Config) { ss.Config = cfg }
+func (ss *Sim) Body() *core.Body      { return ss.GUI.Body }
+
 func (ss *Sim) ShouldDisplay(field string) bool {
 	switch field {
 	case "Gi", "FB", "FSTau", "SS", "SSfTau", "SSiTau":
@@ -175,31 +178,6 @@ func (ss *Sim) Defaults() {
 	ss.InhibInhib = 0.8
 }
 
-// RunSim runs the simulation as a standalone app
-// with given configuration.
-func RunSim(cfg *Config) error {
-	ss := &Sim{Config: cfg}
-	ss.ConfigSim()
-	if ss.Config.GUI {
-		ss.RunGUI()
-	} else {
-		ss.RunNoGUI()
-	}
-	return nil
-}
-
-// EmbedSim runs the simulation with default configuration
-// embedded within given body element.
-func EmbedSim(b tree.Node) *Sim {
-	cfg := NewConfig()
-	cfg.GUI = true
-	ss := &Sim{Config: cfg}
-	ss.ConfigSim()
-	ss.Init()
-	ss.ConfigGUI(b)
-	return ss
-}
-
 func (ss *Sim) ConfigSim() {
 	ss.Defaults()
 	ss.Root, _ = tensorfs.NewDir("Root")
@@ -208,7 +186,7 @@ func (ss *Sim) ConfigSim() {
 	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag, reflect.ValueOf(ss))
 	ss.RandSeeds.Init(100) // max 100 runs
 	ss.InitRandSeed(0)
-	if ss.Config.Run.GPU {
+	if ss.Config.GPU {
 		gpu.SelectAdapter = ss.Config.Run.GPUDevice
 		axon.GPUInit()
 		axon.UseGPU = true
@@ -697,12 +675,6 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 			core.TheApp.OpenURL(ss.Config.URL)
 		},
 	})
-}
-
-func (ss *Sim) RunGUI() {
-	ss.Init()
-	ss.ConfigGUI(nil)
-	ss.GUI.Body.RunMainWindow()
 }
 
 func (ss *Sim) RunNoGUI() {

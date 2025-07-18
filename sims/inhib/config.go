@@ -5,9 +5,8 @@
 package inhib
 
 import (
-	"cogentcore.org/core/base/errors"
-	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/math32/vecint"
+	"github.com/emer/emergent/v2/egui"
 )
 
 // ParamConfig has config parameters related to sim params.
@@ -54,9 +53,6 @@ type ParamConfig struct {
 // RunConfig has config parameters related to running the sim.
 type RunConfig struct {
 
-	// GPU uses the GPU for computation, largely for testing purposes here.
-	GPU bool `default:"false"`
-
 	// GPUDevice selects the gpu device to use.
 	GPUDevice int
 
@@ -79,29 +75,7 @@ type LogConfig struct {
 
 // Config has the overall Sim configuration options.
 type Config struct {
-
-	// Name is the short name of the sim.
-	Name string `display:"-" default:"Inhib"`
-
-	// Title is the longer title of the sim.
-	Title string `display:"-" default:"Axon inhibition test"`
-
-	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/sims/inhib/README.md"`
-
-	// Doc is brief documentation of the sim.
-	Doc string `display:"-" default:"This explores how inhibitory interneurons can dynamically control overall activity levels within the network, by providing both feedforward and feedback inhibition to excitatory pyramidal neurons, with different time scales provided by PV neurons (fast spiking) and SST neurons (slow spiking)."`
-
-	// Includes has a list of additional config files to include.
-	// After configuration, it contains list of include files added.
-	Includes []string `display:"-"`
-
-	// GUI means open the GUI. Otherwise it runs automatically and quits,
-	// saving results to log files.
-	GUI bool `default:"true"`
-
-	// Debug reports debugging information.
-	Debug bool
+	egui.BaseConfig
 
 	// Params has parameter related configuration options.
 	Params ParamConfig `display:"add-fields"`
@@ -113,14 +87,9 @@ type Config struct {
 	Log LogConfig `display:"add-fields"`
 }
 
-func (cfg *Config) IncludesPtr() *[]string { return &cfg.Includes }
-
 func (cfg *Config) Defaults() {
-	errors.Log(reflectx.SetFromDefaultTags(cfg))
-}
-
-func NewConfig() *Config {
-	cfg := &Config{}
-	cfg.Defaults()
-	return cfg
+	cfg.Name = "Inhib"
+	cfg.Title = "Axon inhibition test"
+	cfg.URL = "https://github.com/emer/axon/blob/main/sims/inhib/README.md"
+	cfg.Doc = "This explores how inhibitory interneurons can dynamically control overall activity levels within the network, by providing both feedforward and feedback inhibition to excitatory pyramidal neurons, with different time scales provided by PV neurons (fast spiking) and SST neurons (slow spiking)."
 }
