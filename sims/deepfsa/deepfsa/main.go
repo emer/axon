@@ -5,13 +5,8 @@
 package main
 
 import (
-	"cogentcore.org/core/cli"
 	"github.com/emer/axon/v2/sims/deepfsa"
+	"github.com/emer/emergent/v2/egui"
 )
 
-func main() {
-	cfg := deepfsa.NewConfig()
-	opts := cli.DefaultOptions(cfg.Name, cfg.Title)
-	opts.DefaultFiles = append(opts.DefaultFiles, "config.toml")
-	cli.Run(opts, cfg, deepfsa.RunSim)
-}
+func main() { egui.Run[deepfsa.Sim, deepfsa.Config]() }
