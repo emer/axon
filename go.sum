@@ -1,7 +1,7 @@
-cogentcore.org/core v0.3.12-0.20250715210458-b4f73d8321cf h1:RBf7XUZQxh9EJeeQmkPJoMYa1Ghcap32iGgYN2NyD7g=
-cogentcore.org/core v0.3.12-0.20250715210458-b4f73d8321cf/go.mod h1:Bwg3msVxqnfwvmQjpyJbyHMeox3UAcBcBitkGEdSYSE=
-cogentcore.org/lab v0.1.2-0.20250714011213-5cbdb01f18ba h1:iuap1juRBPmbrGsgf+sA4+A2Ng/muHeNyvwxzXKqJPg=
-cogentcore.org/lab v0.1.2-0.20250714011213-5cbdb01f18ba/go.mod h1:7yddwYo9H4dZFzSfyYwYC5KHIZLLRi35hRxBkbJoOWw=
+cogentcore.org/core v0.3.12 h1:wniqGY3wB+xDcJ3KfobR7VutWeiZafSQkjnbOW4nAXQ=
+cogentcore.org/core v0.3.12/go.mod h1:Bwg3msVxqnfwvmQjpyJbyHMeox3UAcBcBitkGEdSYSE=
+cogentcore.org/lab v0.1.2 h1:km5VUi3HVmP28maFnCvNgGXV4bGMjlPAXFIHchaRZ4k=
+cogentcore.org/lab v0.1.2/go.mod h1:ilGaPEvvAVCHiUxpO83w01g1+Ix0tJxK+fnAmnLNOMk=
 github.com/Bios-Marcel/wastebasket/v2 v2.0.3 h1:TkoDPcSqluhLGE+EssHu7UGmLgUEkWg7kNyHyyJ3Q9g=
 github.com/Bios-Marcel/wastebasket/v2 v2.0.3/go.mod h1:769oPCv6eH7ugl90DYIsWwjZh4hgNmMS3Zuhe1bH6KU=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
@@ -42,8 +42,8 @@ github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dlclark/regexp2 v1.11.0 h1:G/nrcoOa7ZXlpoa/91N3X7mM3r8eIlMBBJZvsz/mxKI=
 github.com/dlclark/regexp2 v1.11.0/go.mod h1:DHkYz0B9wPfa6wondMfaivmHpzrQ3v9q8cnmRbL6yW8=
-github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250630184401-56587d34404f h1:w1KvRnwE8kBesPlEzGDZhPNFoT+4RAVdjVt3nP0l550=
-github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250630184401-56587d34404f/go.mod h1:frNe9pJ4gUCjeuDQoz/qtHQeKviDZTmrpuKetfT54qg=
+github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250717205125-e619cee2adff h1:e7KXjx+c7IIiwR7nqgHi1dvYC3CkCPo+njVKURtOlwA=
+github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250717205125-e619cee2adff/go.mod h1:8sj0mbkqf9PwM3eV+tDO+BjU6Ef+UdMqgkwyD9PfhFc=
 github.com/emer/v1vision v0.1.1-0.20241223003153-dd6818448b3b h1:UBArUDbvn8BWihXRqQldTAao2KmbJmxZwWo9BJB+O1s=
 github.com/emer/v1vision v0.1.1-0.20241223003153-dd6818448b3b/go.mod h1:UxlVgZX0apfnWPXD9XOkaC4TnZkQhgU8D3G2Lj20sTg=
 github.com/ericchiang/css v1.3.0 h1:e0vS+vpujMjtT3/SYu7qTHn1LVzXWcLCCDjlfq3YlLY=
