@@ -117,7 +117,7 @@ type Sim struct {
 
 	// StatFuncs are statistics functions called at given mode and level,
 	// to perform all stats computations. phase = Start does init at start of given level,
-	// and all intialization / configuration (called during Init too).
+	// and all initialization / configuration (called during Init too).
 	StatFuncs []func(mode Modes, level Levels, phase StatsPhase) `display:"-"`
 
 	// GUI manages all the GUI elements
