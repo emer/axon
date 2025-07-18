@@ -6,8 +6,8 @@ package deepmusic
 
 import (
 	"bytes"
+	"embed"
 	"fmt"
-	"os"
 	"time"
 
 	"cogentcore.org/core/math32/minmax"
@@ -18,6 +18,9 @@ import (
 	"gitlab.com/gomidi/midi/v2/gm"
 	"gitlab.com/gomidi/midi/v2/smf"
 )
+
+//go:embed bach_goldberg.mid
+var embedfs embed.FS
 
 // MusicEnv reads in a midi SMF file and presents it as a sequence of notes.
 // Songs with one note at a time per track are currently supported.
@@ -108,7 +111,7 @@ func (ev *MusicEnv) TrackInfo(track smf.Track) (name string, ticks int, bpm floa
 
 func (ev *MusicEnv) LoadSong(fname string) error {
 	ev.Song = table.New()
-	data, err := os.ReadFile(fname)
+	data, err := embedfs.ReadFile(fname)
 	if err != nil {
 		fmt.Println(err)
 		return err
