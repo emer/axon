@@ -5,13 +5,8 @@
 package main
 
 import (
-	"cogentcore.org/core/cli"
 	"github.com/emer/axon/v2/sims/lvis"
+	"github.com/emer/emergent/v2/egui"
 )
 
-func main() {
-	cfg := lvis.NewConfig()
-	opts := cli.DefaultOptions(cfg.Name, cfg.Title)
-	opts.DefaultFiles = append(opts.DefaultFiles, "config.toml")
-	cli.Run(opts, cfg, lvis.RunSim)
-}
+func main() { egui.Run[lvis.Sim, lvis.Config]() }

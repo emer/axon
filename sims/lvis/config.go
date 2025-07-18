@@ -5,8 +5,7 @@
 package lvis
 
 import (
-	"cogentcore.org/core/base/errors"
-	"cogentcore.org/core/base/reflectx"
+	"github.com/emer/emergent/v2/egui"
 )
 
 // EnvConfig has config params for environment
@@ -70,10 +69,6 @@ type ParamConfig struct {
 
 // RunConfig has config parameters related to running the sim.
 type RunConfig struct {
-
-	// GPU uses the GPU for computation, generally faster than CPU even for
-	// small models if NData ~16.
-	GPU bool `default:"true"`
 
 	// GPUDevice selects the gpu device to use.
 	GPUDevice int
@@ -163,29 +158,7 @@ type LogConfig struct {
 
 // Config has the overall Sim configuration options.
 type Config struct {
-
-	// Name is the short name of the sim.
-	Name string `display:"-" default:"LVis"`
-
-	// Title is the longer title of the sim.
-	Title string `display:"-" default:"Leabra Vision"`
-
-	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/sims/lvis/README.md"`
-
-	// Doc is brief documentation of the sim.
-	Doc string `display:"-" default:"This simulation explores how a hierarchy of areas in the ventral stream of visual processing (up to inferotemporal (IT) cortex) can produce robust object recognition that is invariant to changes in position, size, etc of retinal input images."`
-
-	// Includes has a list of additional config files to include.
-	// After configuration, it contains list of include files added.
-	Includes []string
-
-	// GUI means open the GUI. Otherwise it runs automatically and quits,
-	// saving results to log files.
-	GUI bool `default:"true"`
-
-	// Debug reports debugging information.
-	Debug bool
+	egui.BaseConfig
 
 	// environment configuration options
 	Env EnvConfig `display:"add-fields"`
@@ -200,14 +173,9 @@ type Config struct {
 	Log LogConfig `display:"add-fields"`
 }
 
-func (cfg *Config) IncludesPtr() *[]string { return &cfg.Includes }
-
 func (cfg *Config) Defaults() {
-	errors.Log(reflectx.SetFromDefaultTags(cfg))
-}
-
-func NewConfig() *Config {
-	cfg := &Config{}
-	cfg.Defaults()
-	return cfg
+	cfg.Name = "LVis"
+	cfg.Title = "Leabra Vision"
+	cfg.URL = "https://github.com/emer/axon/blob/main/sims/lvis/README.md"
+	cfg.Doc = "This simulation explores how a hierarchy of areas in the ventral stream of visual processing (up to inferotemporal (IT) cortex) can produce robust object recognition that is invariant to changes in position, size, etc of retinal input images."
 }
