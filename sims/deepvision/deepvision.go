@@ -11,6 +11,7 @@ package deepvision
 //go:generate core generate -add-types -add-funcs -gosl
 
 import (
+	"embed"
 	"fmt"
 	"math"
 	"os"
@@ -39,6 +40,9 @@ import (
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/paths"
 )
+
+//go:embed expt1_simat.csv
+var embedfs embed.FS
 
 // Modes are the looping modes (Stacks) for running and statistics.
 type Modes int32 //enums:enum
