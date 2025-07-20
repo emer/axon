@@ -266,7 +266,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(v1m, mtpos, pool1to1, axon.ForwardPath).AddClass("Fixed")
 	net.ConnectLayers(mtpos, lip, pool1to1, axon.ForwardPath).AddClass("Fixed")
 
-	net.ConnectToPulv(lip, lipCT, mtposP, full, pool1to1, "")
+	net.ConnectToPulv(lip, lipCT, mtposP, full, pool1to1, "") // full >> pts.PT3x3Skp1
 
 	// these are important for good performance on pure LIP version:
 	net.ConnectLayers(eyepos, lip, full, axon.ForwardPath)

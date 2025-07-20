@@ -125,32 +125,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.RLRate.SigmoidMin = 1.0 // 1 > .05
 			}},
 
-		//////// LIP
-		{Sel: ".LIP", Doc: "pool inhib",
-			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.06         // 0.06 > 0.8 > ~0.03 actual: CT Ge too high if lower
-				ly.Inhib.ActAvg.AdaptGi.SetBool(false) // adapt not good
-				ly.Inhib.Pool.On.SetBool(true)         // needs pool-level
-				ly.Inhib.Layer.FB = 1                  // 1
-				ly.Inhib.Layer.Gi = 1                  // 1.2 == 1.3 & CT too
-				ly.Inhib.Pool.FB = 4                   // 4 == 2 > 1
-				ly.Inhib.Pool.Gi = 0.9                 // 1 >> 0.8 & CT too
-			}},
-		{Sel: "#LIPCT", Doc: "pool inhib",
-			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.03 // 0.02 > 0.01[5] vs 0.05+ actual: more ge for MTposP
-				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
-				ly.Inhib.Layer.Gi = 1.2 // 1.2 == 1.3 & CT too
-				ly.Inhib.Pool.Gi = 1    // 1 >> 0.8 & CT too
-			}},
-		{Sel: ".MTpos", Doc: "layer inhib",
-			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.1 // note: has no effect due to 1to1 cons!
-				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
-				ly.Inhib.Pool.On.SetBool(false)
-				ly.Inhib.Layer.FB = 1
-				ly.Inhib.Layer.Gi = 1.0
-			}},
+		//////// V1
 		{Sel: "#V1m", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.05
@@ -167,6 +142,36 @@ var LayerParams = axon.LayerSheets{
 		{Sel: "#V1h", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.03
+			}},
+
+		//////// LIP
+		{Sel: ".LIP", Doc: "pool inhib",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.02         // ~0.02 actual
+				ly.Inhib.ActAvg.AdaptGi.SetBool(false) // adapt not needed
+				ly.Inhib.Pool.On.SetBool(true)         // needs pool-level
+				ly.Inhib.Layer.FB = 1                  // 1
+				ly.Inhib.Layer.Gi = 1.2                // 1.2 > lower for sure
+				ly.Inhib.Pool.FB = 4                   // 4 == 2 > 1
+				ly.Inhib.Pool.Gi = 1                   // 0.95 and lower = higher actmax, but worse corsim
+			}},
+		{Sel: "#LIPCT", Doc: "pool inhib",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.04 // 0.03 initial, goes up to .04..
+				// ly.Inhib.ActAvg.AdaptGi.SetBool(false) // not neded
+				// note: tried layer, pool Gi independent of LIP and same values are best here.
+			}},
+		{Sel: ".MTpos", Doc: "layer inhib",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.1 // note: has no effect due to 1to1 cons! actual .15
+				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
+				ly.Inhib.Pool.On.SetBool(false)
+				ly.Inhib.Layer.FB = 1
+				ly.Inhib.Layer.Gi = 1 // 1 == 0.9 -- no advantage, 1 better matches P
+			}},
+		{Sel: "#MTposP", Doc: "layer inhib",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.Layer.Gi = 0.9 // 0.9 > 1 > higher, lower
 			}},
 
 		//////// V2
@@ -337,11 +342,19 @@ var PathParams = axon.PathSheets{
 		{Sel: "#MTposToLIP", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 1
-				pt.PathScale.Abs = 6 // 4 works..
+				pt.PathScale.Abs = 6 // 6 > 8
 			}},
-		{Sel: "#LIPToLIPCT", Doc: "ok",
+		{Sel: "#MTposPToLIP", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1 // even though LIPCT has very high Ge, reducing is bad
+				pt.PathScale.Abs = 1 // higher not better?
+			}},
+		{Sel: "#LIPToLIPCT", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 0.25 // 0.3 == 0.2,.5 > 0.4
+			}},
+		{Sel: "#LIPCTToMTposP", Doc: "stronger",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 3.0 // 3 == 3.5, 4 > 2.5
 			}},
 
 		//////// V2
