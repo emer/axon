@@ -4,10 +4,7 @@
 
 package pfcmaint
 
-import (
-	"cogentcore.org/core/base/errors"
-	"cogentcore.org/core/base/reflectx"
-)
+import "github.com/emer/emergent/v2/egui"
 
 // EnvConfig has config params for environment.
 type EnvConfig struct {
@@ -67,9 +64,6 @@ type ParamConfig struct {
 // RunConfig has config parameters related to running the sim.
 type RunConfig struct {
 
-	// GPU uses the GPU for computation; only for testing in this model -- not faster.
-	GPU bool `default:"true"`
-
 	// GPUDevice selects the gpu device to use.
 	GPUDevice int
 
@@ -119,29 +113,7 @@ type LogConfig struct {
 
 // Config has the overall Sim configuration options.
 type Config struct {
-
-	// Name is the short name of the sim.
-	Name string `display:"-" default:"PFCMaintS"`
-
-	// Title is the longer title of the sim.
-	Title string `display:"-" default:"Prefrontal Cortex Maintenance"`
-
-	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/sims/pfcmaint/README.md"`
-
-	// Doc is brief documentation of the sim.
-	Doc string `display:"-" default:"This project tests prefrontal cortex (PFC) active maintenance mechanisms supported by the pyramidal tract (PT) neurons, in the PTMaint layer type."`
-
-	// Includes has a list of additional config files to include.
-	// After configuration, it contains list of include files added.
-	Includes []string
-
-	// GUI means open the GUI. Otherwise it runs automatically and quits,
-	// saving results to log files.
-	GUI bool `default:"true"`
-
-	// Debug reports debugging information.
-	Debug bool
+	egui.BaseConfig
 
 	// Env has environment configuration options.
 	Env EnvConfig `display:"add-fields"`
@@ -156,14 +128,9 @@ type Config struct {
 	Log LogConfig `display:"add-fields"`
 }
 
-func (cfg *Config) IncludesPtr() *[]string { return &cfg.Includes }
-
 func (cfg *Config) Defaults() {
-	errors.Log(reflectx.SetFromDefaultTags(cfg))
-}
-
-func NewConfig() *Config {
-	cfg := &Config{}
-	cfg.Defaults()
-	return cfg
+	cfg.Name = "PFCMaintS"
+	cfg.Title = "Prefrontal Cortex Maintenance"
+	cfg.URL = "https://github.com/emer/axon/blob/main/sims/pfcmaint/README.md"
+	cfg.Doc = "This project tests prefrontal cortex (PFC) active maintenance mechanisms supported by the pyramidal tract (PT) neurons, in the PTMaint layer type."
 }
