@@ -4,10 +4,7 @@
 
 package pvlv
 
-import (
-	"cogentcore.org/core/base/errors"
-	"cogentcore.org/core/base/reflectx"
-)
+import "github.com/emer/emergent/v2/egui"
 
 // EnvConfig has config params for environment.
 type EnvConfig struct {
@@ -73,9 +70,6 @@ type ParamConfig struct {
 // RunConfig has config parameters related to running the sim.
 type RunConfig struct {
 
-	// GPU uses the GPU for computation: not faster in this case.
-	GPU bool `default:"false"`
-
 	// GPUDevice selects the gpu device to use.
 	GPUDevice int
 
@@ -114,29 +108,7 @@ type LogConfig struct {
 
 // Config has the overall Sim configuration options.
 type Config struct {
-
-	// Name is the short name of the sim.
-	Name string `display:"-" default:"PVLV"`
-
-	// Title is the longer title of the sim.
-	Title string `display:"-" default:"Primary Value, Learned Value"`
-
-	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/sims/pvlv/README.md"`
-
-	// Doc is brief documentation of the sim.
-	Doc string `display:"-" default:"Simulates the primary value, learned value model of classical conditioning and phasic dopamine in the amygdala, ventral striatum and associated areas."`
-
-	// Includes has a list of additional config files to include.
-	// After configuration, it contains list of include files added.
-	Includes []string
-
-	// GUI means open the GUI. Otherwise it runs automatically and quits,
-	// saving results to log files.
-	GUI bool `default:"true"`
-
-	// Debug reports debugging information.
-	Debug bool
+	egui.BaseConfig
 
 	// Env has environment configuration options.
 	Env EnvConfig `display:"add-fields"`
@@ -151,14 +123,9 @@ type Config struct {
 	Log LogConfig `display:"add-fields"`
 }
 
-func (cfg *Config) IncludesPtr() *[]string { return &cfg.Includes }
-
 func (cfg *Config) Defaults() {
-	errors.Log(reflectx.SetFromDefaultTags(cfg))
-}
-
-func NewConfig() *Config {
-	cfg := &Config{}
-	cfg.Defaults()
-	return cfg
+	cfg.Name = "PVLV"
+	cfg.Title = "Primary Value, Learned Value"
+	cfg.URL = "https://github.com/emer/axon/blob/main/sims/pvlv/README.md"
+	cfg.Doc = "Simulates the primary value, learned value model of classical conditioning and phasic dopamine in the amygdala, ventral striatum and associated areas."
 }
