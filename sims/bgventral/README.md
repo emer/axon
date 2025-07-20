@@ -8,11 +8,11 @@ These `ACC` layers have `PopCode` representations of values, and the BG gating i
 
 # results
 
-<img src="results/fig_pcore_train.png" width="800">
+<img src="results/fig_bgventral_train.png" width="800">
 
 Training data shows close match between Gated and Should (high Match proportion).
 
-<img src="results/fig_pcore_test_learned.png" width="800">
+<img src="results/fig_bgventral_test.png" width="800">
 
 Testing data over ACC Pos (outer loop) and ACC Neg (inner loop) (see fig below) shows increasing probability of gating as Pos increases, and reduced firing, and slower RT, as Neg increases, closely matching the target `Should` behavior.  25 samples of each case are performed, so intermediate levels indicate probability of gating.  Model shows appropriate probabilistic behavior on the marginal cases.
 

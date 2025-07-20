@@ -363,26 +363,45 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	//////// DP
 	if ss.Config.Run.DP {
 
-		// todo: DP config just like v4
+		dp, dpCT = net.AddSuperCT4D("DP", "", 4, 4, 10, 10, space, pts.PT3x3Skp1)
+		sample2(dp)
+		sample2(dpCT)
 
-		dp, dpCT = net.AddSuperCT4D("DP", "", 1, 1, 10, 10, space, full)
+		net.ConnectToPulv(dp, dpCT, v1mP, pts.PT4x4Skp2Recip, pts.PT4x4Skp2, "FromV1mP") // 3x3 >> p1to1??
 
-		net.ConnectLayers(v3, dp, full, axon.ForwardPath)
-		net.ConnectLayers(dp, v3, full, axon.BackPath)
+		// todo test:
+		net.ConnectLayers(dpCT, dpCT, pts.PT3x3Skp1, axon.CTCtxtPath).AddClass("CTSelfCtxt")
+		// maint is maybe better:
+		// net.ConnectCTSelf(dpCT, pts.PT3x3Skp1, "DPCTSelf")
 
-		net.ConnectLayers(dpCT, v3CT, full, axon.BackPath)
-		// leak from super to CT:
-		net.ConnectLayers(dp, v3CT, full, axon.BackPath)
+		net.ConnectLayers(v2, dp, pts.PT4x4Skp2, axon.ForwardPath)
+		net.ConnectLayers(dp, v2, pts.PT4x4Skp2Recip, axon.BackPath)
+
+		net.ConnectLayers(v3, dp, pts.PT3x3Skp1, axon.ForwardPath) // todo
+		net.ConnectLayers(dp, v3, pts.PT3x3Skp1, axon.BackPath)    // dp -> v3 but not v3 -> dp
 
 		v3P = net.AddPulvForLayer(v3, space).AddClass("V3")
-		net.ConnectToPulv(dp, dpCT, v3P, full, full, "FromV3P")
+		net.ConnectToPulv(dp, dpCT, v3P, pts.PT3x3Skp1, pts.PT3x3Skp1, "FromV3P")
 		net.ConnectLayers(v2CT, v3P, pts.PT4x4Skp2, axon.ForwardPath) // fwd CT, but not recip!
+
+		// no DP <-> LIP?
+		// no FF CT -> CT?
+		// net.ConnectLayers(v2CT, dpCT, pts.PT4x4Skp2, axon.ForwardPath).AddClass("FwdWeak")
+		// net.ConnectLayers(v3, dp, pts.PT3x3Skp1, axon.ForwardPath).AddClass("FwdWeak")
+
+		// net.ConnectLayers(dpCT, v2CT, pts.PT4x4Skp2Recip, axon.BackPath) // tiny bit worse
+
+		// leak from super to CT:
+		net.ConnectLayers(dp, v2CT, pts.PT2x2Skp2Recip, axon.BackPath) // strong .5 in orig
+		net.ConnectLayers(dp, v3CT, pts.PT3x3Skp1, axon.BackPath)
+
+		// net.ConnectLayers(dpCT, v3CT, full, axon.BackPath)
 
 		net.ConnectLayers(v1m, dp, rndcut, axon.ForwardPath).AddClass("V1SC")   // shortcut!
 		net.ConnectLayers(v1m, dpCT, rndcut, axon.ForwardPath).AddClass("V1SC") // shortcut!
 
-		dp.PlaceRightOf(v3, space)
-		v3P.PlaceRightOf(v3CT, space)
+		v3P.PlaceBehind(v3CT, space)
+		dp.PlaceBehind(v3P, space)
 	}
 
 	//////// V4
@@ -418,7 +437,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(v1m, v4, rndcut, axon.ForwardPath).AddClass("V1SC")   // shortcut!
 	net.ConnectLayers(v1m, v4CT, rndcut, axon.ForwardPath).AddClass("V1SC") // shortcut!
 
-	v4.PlaceBehind(v3CT, space)
+	v4.PlaceRightOf(v3, space)
 
 	//////// TEO
 	if !ss.Config.Run.TEOPlus {

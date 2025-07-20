@@ -207,17 +207,21 @@ var LayerParams = axon.LayerSheets{
 			}},
 
 		//////// DP
-		{Sel: ".DP", Doc: "full",
+		{Sel: ".DP", Doc: "pool inhib, sparse activity",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.1
+				ly.Inhib.ActAvg.Nominal = 0.03
 				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
-				ly.Inhib.Pool.On.SetBool(false)
+				ly.Inhib.Pool.On.SetBool(true)
 				ly.Inhib.Layer.FB = 1
-				ly.Inhib.Layer.Gi = 1.2 // 1.2 > 1.1
+				ly.Inhib.Pool.FB = 4
+				ly.Inhib.Layer.Gi = 1.0 // 1
+				ly.Inhib.Pool.Gi = 1.05 // 1.05 > 1
 			}},
-		{Sel: "#DPCT", Doc: "less activity",
+		{Sel: "#DPCT", Doc: "more activity",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.Layer.Gi = 1.2 // 1.2 ? 1.1 too?
+				ly.Inhib.ActAvg.Nominal = 0.04 // 0.04 better but needs stronger V1mP output
+				ly.Inhib.Layer.Gi = 1.1        // 1.1
+				ly.Inhib.Pool.Gi = 1.1         // 1.1
 			}},
 
 		//////// V4
@@ -370,6 +374,10 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 0.2 // 0.2
 			}},
+		{Sel: "#V2CTToV1mP", Doc: "more?",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1.0 // 1.0 == 1.2 > higher -- could try 1.2 again
+			}},
 
 		//////// V3
 		{Sel: "#V2ToV3", Doc: "ge is weakish",
@@ -390,9 +398,22 @@ var PathParams = axon.PathSheets{
 		// 	}},
 
 		//////// DP
+		{Sel: "#V2ToDP", Doc: "ge is weakish",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1.5 // 1.2 > 1
+			}},
+		{Sel: "#V3ToDP", Doc: "ge is weakish",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Rel = 1
+				pt.PathScale.Abs = 1.0 // 1.0 > 1.2
+			}},
 		{Sel: "#DPToDPCT", Doc: "overactive",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 0.5 // 0.5
+			}},
+		{Sel: "#DPCTToV1mP", Doc: "stronger",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1.5 // 1.5 > 1
 			}},
 
 		//////// V4
