@@ -11,7 +11,6 @@ func init() {
 	Symbols["github.com/emer/axon/v2/sims/deepfsa/deepfsa"] = map[string]reflect.Value{
 		// function, constant and variable definitions
 		"Cycle":            reflect.ValueOf(deepfsa.Cycle),
-		"EmbedSim":         reflect.ValueOf(deepfsa.EmbedSim),
 		"Epoch":            reflect.ValueOf(deepfsa.Epoch),
 		"Expt":             reflect.ValueOf(deepfsa.Expt),
 		"LayerParams":      reflect.ValueOf(&deepfsa.LayerParams).Elem(),
@@ -19,10 +18,8 @@ func init() {
 		"LevelsValues":     reflect.ValueOf(deepfsa.LevelsValues),
 		"ModesN":           reflect.ValueOf(deepfsa.ModesN),
 		"ModesValues":      reflect.ValueOf(deepfsa.ModesValues),
-		"NewConfig":        reflect.ValueOf(deepfsa.NewConfig),
 		"PathParams":       reflect.ValueOf(&deepfsa.PathParams).Elem(),
 		"Run":              reflect.ValueOf(deepfsa.Run),
-		"RunSim":           reflect.ValueOf(deepfsa.RunSim),
 		"Start":            reflect.ValueOf(deepfsa.Start),
 		"StatsPhaseN":      reflect.ValueOf(deepfsa.StatsPhaseN),
 		"StatsPhaseValues": reflect.ValueOf(deepfsa.StatsPhaseValues),

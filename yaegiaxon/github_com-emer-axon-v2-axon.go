@@ -592,6 +592,7 @@ func init() {
 		"Spiked":                       reflect.ValueOf(axon.Spiked),
 		"StartNN":                      reflect.ValueOf(axon.StartNN),
 		"StartOff":                     reflect.ValueOf(axon.StartOff),
+		"StatCorSim":                   reflect.ValueOf(axon.StatCorSim),
 		"StatExcludeLevel":             reflect.ValueOf(axon.StatExcludeLevel),
 		"StatLayerActGe":               reflect.ValueOf(axon.StatLayerActGe),
 		"StatLayerGiMult":              reflect.ValueOf(axon.StatLayerGiMult),

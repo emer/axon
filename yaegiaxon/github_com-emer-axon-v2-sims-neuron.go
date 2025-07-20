@@ -11,15 +11,12 @@ func init() {
 	Symbols["github.com/emer/axon/v2/sims/neuron/neuron"] = map[string]reflect.Value{
 		// function, constant and variable definitions
 		"Cycle":            reflect.ValueOf(neuron.Cycle),
-		"EmbedSim":         reflect.ValueOf(neuron.EmbedSim),
 		"LayerParams":      reflect.ValueOf(&neuron.LayerParams).Elem(),
 		"LevelsN":          reflect.ValueOf(neuron.LevelsN),
 		"LevelsValues":     reflect.ValueOf(neuron.LevelsValues),
 		"ModesN":           reflect.ValueOf(neuron.ModesN),
 		"ModesValues":      reflect.ValueOf(neuron.ModesValues),
-		"NewConfig":        reflect.ValueOf(neuron.NewConfig),
 		"PathParams":       reflect.ValueOf(&neuron.PathParams).Elem(),
-		"RunSim":           reflect.ValueOf(neuron.RunSim),
 		"Start":            reflect.ValueOf(neuron.Start),
 		"StatsPhaseN":      reflect.ValueOf(neuron.StatsPhaseN),
 		"StatsPhaseValues": reflect.ValueOf(neuron.StatsPhaseValues),
