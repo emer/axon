@@ -4,10 +4,7 @@
 
 package rl
 
-import (
-	"cogentcore.org/core/base/errors"
-	"cogentcore.org/core/base/reflectx"
-)
+import "github.com/emer/emergent/v2/egui"
 
 // EnvConfig has config params for environment.
 type EnvConfig struct {
@@ -50,9 +47,6 @@ type ParamConfig struct {
 
 // RunConfig has config parameters related to running the sim.
 type RunConfig struct {
-
-	// GPU uses the GPU for computation; only for testing in this model -- not faster.
-	GPU bool `default:"false"`
 
 	// GPUDevice selects the gpu device to use.
 	GPUDevice int
@@ -103,32 +97,10 @@ type LogConfig struct {
 
 // Config has the overall Sim configuration options.
 type Config struct {
-
-	// Name is the short name of the sim.
-	Name string `display:"-" default:"RL"`
-
-	// Title is the longer title of the sim.
-	Title string `display:"-" default:"Reinforcement learning"`
-
-	// URL is a link to the online README or other documentation for this sim.
-	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/sims/rl/README.md"`
-
-	// Doc is brief documentation of the sim.
-	Doc string `display:"-" default:"rl explores the temporal differences (TD) reinforcement learning algorithm under some basic Pavlovian conditioning environments."`
-
-	// Includes has a list of additional config files to include.
-	// After configuration, it contains list of include files added.
-	Includes []string
+	egui.BaseConfig
 
 	// if true, use Rescorla-Wagner -- set in code or rebuild network
 	RW bool
-
-	// GUI means open the GUI. Otherwise it runs automatically and quits,
-	// saving results to log files.
-	GUI bool `default:"true"`
-
-	// Debug reports debugging information.
-	Debug bool
 
 	// Env has environment configuration options.
 	Env EnvConfig `display:"add-fields"`
@@ -143,14 +115,9 @@ type Config struct {
 	Log LogConfig `display:"add-fields"`
 }
 
-func (cfg *Config) IncludesPtr() *[]string { return &cfg.Includes }
-
 func (cfg *Config) Defaults() {
-	errors.Log(reflectx.SetFromDefaultTags(cfg))
-}
-
-func NewConfig() *Config {
-	cfg := &Config{}
-	cfg.Defaults()
-	return cfg
+	cfg.Name = "RL"
+	cfg.Title = "Reinforcement learning"
+	cfg.URL = "https://github.com/emer/axon/blob/main/sims/rl/README.md"
+	cfg.Doc = "rl explores the temporal differences (TD) reinforcement learning algorithm under some basic Pavlovian conditioning environments."
 }
