@@ -11,6 +11,7 @@ func init() {
 	Symbols["github.com/emer/axon/v2/sims/bgventral/bgventral"] = map[string]reflect.Value{
 		// function, constant and variable definitions
 		"Cycle":            reflect.ValueOf(bgventral.Cycle),
+		"Embed":            reflect.ValueOf(bgventral.Embed),
 		"Epoch":            reflect.ValueOf(bgventral.Epoch),
 		"LayerParams":      reflect.ValueOf(&bgventral.LayerParams).Elem(),
 		"LevelsN":          reflect.ValueOf(bgventral.LevelsN),

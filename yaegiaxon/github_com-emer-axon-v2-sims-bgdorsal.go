@@ -11,6 +11,7 @@ func init() {
 	Symbols["github.com/emer/axon/v2/sims/bgdorsal/bgdorsal"] = map[string]reflect.Value{
 		// function, constant and variable definitions
 		"Cycle":            reflect.ValueOf(bgdorsal.Cycle),
+		"Embed":            reflect.ValueOf(bgdorsal.Embed),
 		"Epoch":            reflect.ValueOf(bgdorsal.Epoch),
 		"Expt":             reflect.ValueOf(bgdorsal.Expt),
 		"LayerParams":      reflect.ValueOf(&bgdorsal.LayerParams).Elem(),
