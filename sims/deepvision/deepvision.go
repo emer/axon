@@ -11,7 +11,6 @@ package deepvision
 //go:generate core generate -add-types -add-funcs -gosl
 
 import (
-	"embed"
 	"fmt"
 	"math"
 	"os"
@@ -40,9 +39,6 @@ import (
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/paths"
 )
-
-//go:embed expt1_simat.csv
-var embedfs embed.FS
 
 // Modes are the looping modes (Stacks) for running and statistics.
 type Modes int32 //enums:enum
@@ -361,24 +357,24 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	v3.PlaceRightOf(v2, space)
 
 	//////// DP
-	if ss.Config.Run.DP {
+	if ss.Config.Run.DP { // now a significant benefit in V1mP performance!
 
 		dp, dpCT = net.AddSuperCT4D("DP", "", 4, 4, 10, 10, space, pts.PT3x3Skp1)
 		sample2(dp)
 		sample2(dpCT)
 
-		net.ConnectToPulv(dp, dpCT, v1mP, pts.PT4x4Skp2Recip, pts.PT4x4Skp2, "FromV1mP") // 3x3 >> p1to1??
+		net.ConnectToPulv(dp, dpCT, v1mP, pts.PT4x4Skp2Recip, pts.PT4x4Skp2, "FromV1mP")
 
 		// todo test:
-		net.ConnectLayers(dpCT, dpCT, pts.PT3x3Skp1, axon.CTCtxtPath).AddClass("CTSelfCtxt")
+		// net.ConnectLayers(dpCT, dpCT, pts.PT3x3Skp1, axon.CTCtxtPath).AddClass("CTSelfCtxt")
 		// maint is maybe better:
 		// net.ConnectCTSelf(dpCT, pts.PT3x3Skp1, "DPCTSelf")
 
-		net.ConnectLayers(v2, dp, pts.PT4x4Skp2, axon.ForwardPath)
-		net.ConnectLayers(dp, v2, pts.PT4x4Skp2Recip, axon.BackPath)
+		// net.ConnectLayers(v2, dp, pts.PT4x4Skp2, axon.ForwardPath) // better without
+		// net.ConnectLayers(dp, v2, pts.PT4x4Skp2Recip, axon.BackPath)
 
-		net.ConnectLayers(v3, dp, pts.PT3x3Skp1, axon.ForwardPath) // todo
-		net.ConnectLayers(dp, v3, pts.PT3x3Skp1, axon.BackPath)    // dp -> v3 but not v3 -> dp
+		net.ConnectLayers(v3, dp, pts.PT3x3Skp1, axon.ForwardPath) // v3 > v2 connectivity
+		net.ConnectLayers(dp, v3, pts.PT3x3Skp1, axon.BackPath)
 
 		v3P = net.AddPulvForLayer(v3, space).AddClass("V3")
 		net.ConnectToPulv(dp, dpCT, v3P, pts.PT3x3Skp1, pts.PT3x3Skp1, "FromV3P")
@@ -413,6 +409,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	sample2(v4CT)
 
 	net.ConnectToPulv(v4, v4CT, v1mP, pts.PT4x4Skp2Recip, pts.PT4x4Skp2, "FromV1mP") // 3x3 >> p1to1??
+	// no V4 -> v1mP
+	// net.ConnectLayers(v1mP, v4, pts.PT4x4Skp2, axon.BackPath).AddClass("FromPulv", "FromV1mP")
+	// net.ConnectLayers(v1mP, v4CT, pts.PT4x4Skp2, axon.BackPath).AddClass("FromPulv", "FromV1mP")
 
 	// orig has v4selfct 3x3s1
 	// net.ConnectLayers(v4CT, v4CT, pts.PT3x3Skp1, axon.CTCtxtPath).AddClass("CTSelfCtxt")

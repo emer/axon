@@ -4,11 +4,11 @@ go 1.23.4
 
 require (
 	cogentcore.org/core v0.3.12
-	cogentcore.org/lab v0.1.2
+	cogentcore.org/lab v0.1.3-0.20250722024402-3159fa00aebf
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/chewxy/math32 v1.10.1
 	github.com/cogentcore/yaegi v0.0.0-20250622201820-b7838bdd95eb
-	github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250717205125-e619cee2adff
+	github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250721194303-26f94339ac13
 	github.com/emer/v1vision v0.1.1-0.20241223003153-dd6818448b3b
 	github.com/stretchr/testify v1.10.0
 	gitlab.com/gomidi/midi/v2 v2.0.30

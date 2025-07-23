@@ -5,6 +5,7 @@
 package deepvision
 
 import (
+	"embed"
 	"os"
 	"strings"
 
@@ -19,6 +20,9 @@ import (
 	"cogentcore.org/lab/tensorcore"
 	"cogentcore.org/lab/tensorfs"
 )
+
+//go:embed expt1_simat.csv
+var embedfs embed.FS
 
 type ObjCat struct {
 	Obj, Cat string
@@ -179,7 +183,7 @@ func (ss *Sim) RSAInit() {
 	nc := len(Objs)
 
 	smat := curModeDir.Float64("Expt_Smat", nc, nc)
-	errors.Log(tensor.OpenCSV(smat, fsx.Filename("expt1_simat.csv"), tensor.Comma))
+	errors.Log(tensor.OpenFS(smat, embedfs, "expt1_simat.csv", tensor.Comma))
 	mx := stats.Max(tensor.As1D(smat))
 	tmath.DivOut(smat, mx, smat)
 

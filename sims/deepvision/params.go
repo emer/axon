@@ -136,8 +136,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Layer.FB = 1
 				ly.Inhib.Pool.FB = 4
 				ly.Inhib.Pool.On.SetBool(true)
-				ly.Inhib.Layer.Gi = 1
-				ly.Inhib.Pool.Gi = 1 // 1 > 1.05
+				ly.Inhib.Layer.Gi = 1.0
+				ly.Inhib.Pool.Gi = 0.85 // .85 >= .8 > .9 > higher for later perf
 			}},
 		{Sel: "#V1h", Doc: "",
 			Set: func(ly *axon.LayerParams) {
@@ -400,7 +400,7 @@ var PathParams = axon.PathSheets{
 		//////// DP
 		{Sel: "#V2ToDP", Doc: "ge is weakish",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1.5 // 1.2 > 1
+				pt.PathScale.Abs = 1.2 // 1.2 >= 1 > 1.5
 			}},
 		{Sel: "#V3ToDP", Doc: "ge is weakish",
 			Set: func(pt *axon.PathParams) {
@@ -425,9 +425,15 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 1.2 // 1.2 > 1.0
 			}},
-		{Sel: "#V4CTToV1mP", Doc: "stronger",
+		{Sel: "#V4CTToV1mP", Doc: "expt",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1.5 // 1.5 > 1
+				pt.PathScale.Rel = 0.05 // 1 > .5 so far
+				pt.PathScale.Abs = 1.5  // 1.5 > 1
+			}},
+		{Sel: ".V4CTSelf", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Rel = 0.1 //
+				pt.PathScale.Abs = 0.1 //
 			}},
 
 		//////// TEO
@@ -441,7 +447,7 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".TEOSelfMaint", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 0.2 // 0.2 > 0.1 for categ
+				pt.PathScale.Abs = 0.3 // 0.2 > 0.1 for categ
 				pt.Com.GType = axon.MaintG
 			}},
 		{Sel: ".TEOCTSelf", Doc: "",
@@ -465,13 +471,13 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".TESelfMaint", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 0.25 // 0.25 > others for categ
+				pt.PathScale.Abs = 0.3 // 0.25 > others for categ
 				pt.Com.GType = axon.MaintG
 			}},
 		{Sel: ".TECTSelf", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.1  //
-				pt.PathScale.Abs = 0.25 // 0.25 > others for categ
+				pt.PathScale.Rel = 0.1 //
+				pt.PathScale.Abs = 0.2 // 0.25 > others for categ
 			}},
 		{Sel: "#TECTToTEOP", Doc: "stronger",
 			Set: func(pt *axon.PathParams) {
