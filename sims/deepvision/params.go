@@ -427,8 +427,8 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: "#V4CTToV1mP", Doc: "expt",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.05 // 1 > .5 so far
-				pt.PathScale.Abs = 1.5  // 1.5 > 1
+				pt.PathScale.Rel = 1.0 // 1 > .5; .05 still not great for impact
+				pt.PathScale.Abs = 1.5 // 1.5 > 1
 			}},
 		{Sel: ".V4CTSelf", Doc: "",
 			Set: func(pt *axon.PathParams) {
