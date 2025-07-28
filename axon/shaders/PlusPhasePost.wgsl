@@ -1344,10 +1344,10 @@ fn LayerParams_MatrixPostPlus(ly: LayerParams, ctx: Context) {
 			continue;
 		}
 		for (var spi = u32(1); spi < ly.Indexes.NPools; spi++) {
-			var pfact = PoolAvgMax(AMCaPMax, AMCycle, Avg, LayerParams_PoolIndex(pf, spi), di); // todo: right var?
+			var pfact = PoolAvgMax(AMCaP, AMCycle, Avg, LayerParams_PoolIndex(pf, spi), di); // must be CaP
 			var pfnet = ly.Striatum.BasePF + pfact;
-			var ptD1act = PoolAvgMax(AMCaD, AMCycle, Avg, LayerParams_PoolIndex(patchD1, spi), di);
-			var ptD2act = PoolAvgMax(AMCaD, AMCycle, Avg, LayerParams_PoolIndex(patchD2, spi), di);
+			var ptD1act = PoolAvgMax(AMCaP, AMCycle, Avg, LayerParams_PoolIndex(patchD1, spi), di);
+			var ptD2act = PoolAvgMax(AMCaP, AMCycle, Avg, LayerParams_PoolIndex(patchD2, spi), di);
 			var da = pfnet * StriatumParams_PatchDA(ly.Striatum, ptD1act, ptD2act) * NeuroModParams_DASign(ly.Learn.NeuroMod);
 			var pi = LayerParams_PoolIndex(ly, spi);
 			Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DA))] = da;
@@ -1363,7 +1363,7 @@ fn LayerParams_PatchPostPlus(ly: LayerParams, ctx: Context) {
 	var pf = Layers[ly.Striatum.PFIndex];
 	for (var di = u32(0); di < ctx.NData; di++) {
 		for (var spi = u32(1); spi < ly.Indexes.NPools; spi++) {
-			var pfact = PoolAvgMax(AMCaPMax, AMCycle, Avg, LayerParams_PoolIndex(pf, spi), di); // todo: right var?
+			var pfact = PoolAvgMax(AMCaP, AMCycle, Avg, LayerParams_PoolIndex(pf, spi), di); // must be CaP
 			var pfnet = ly.Striatum.BasePF + pfact;
 			Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(LayerParams_PoolIndex(ly, spi)), u32(di), u32(ModAct))] = pfnet;
 		}

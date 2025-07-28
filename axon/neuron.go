@@ -681,11 +681,13 @@ var NeuronVarProps = map[string]string{
 
 	//////// Layer-level variables
 
-	"DA":    `cat:"Learn" doc:"dopamine neuromodulation (layer-level variable)"`,
-	"ACh":   `cat:"Learn" doc:"cholinergic neuromodulation (layer-level variable)"`,
-	"NE":    `cat:"Learn" doc:"norepinepherine (noradrenaline) neuromodulation  (layer-level variable)"`,
-	"Ser":   `cat:"Learn" doc:"serotonin neuromodulation (layer-level variable)"`,
-	"Gated": `cat:"Learn" doc:"signals whether the layer gated"`,
+	"DA":     `cat:"Learn" doc:"dopamine neuromodulation (layer-level variable)"`,
+	"ACh":    `cat:"Learn" doc:"cholinergic neuromodulation (layer-level variable)"`,
+	"NE":     `cat:"Learn" doc:"norepinepherine (noradrenaline) neuromodulation  (layer-level variable)"`,
+	"Ser":    `cat:"Learn" doc:"serotonin neuromodulation (layer-level variable)"`,
+	"Gated":  `cat:"Learn" doc:"signals whether the layer gated (pool-level variable)"`,
+	"ModAct": `cat:"Learn" doc:"pool-level modulatory activity signal (for BG Matrix and Patch layers)"`,
+	"PoolDA": `cat:"Learn" doc:"pool-level dopamine signal (for BG Matrix layers only)"`,
 }
 
 var (
@@ -693,9 +695,9 @@ var (
 	NeuronVarsMap  map[string]int
 )
 
-// NeuronLayerVars are layer-level variables displayed as neuron layers.
+// NeuronLayerVars are pool or layer-level variables displayed as neuron layers.
 var (
-	NeuronLayerVars  = []string{"DA", "ACh", "NE", "Ser", "Gated"}
+	NeuronLayerVars  = []string{"DA", "ACh", "NE", "Ser", "Gated", "ModAct", "PoolDA"}
 	NNeuronLayerVars = len(NeuronLayerVars)
 	NNeuronCaBins    = 20 // generic max for display
 )

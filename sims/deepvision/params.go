@@ -244,7 +244,7 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: "#V4CT", Doc: "more activity",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.05 // 0.04 better but needs stronger V1mP output
+				ly.Inhib.ActAvg.Nominal = 0.04 // 0.04 better but needs stronger V1mP output
 				ly.Inhib.Layer.Gi = 1.1        // 1.1
 				ly.Inhib.Pool.Gi = 1.1         // 1.1
 			}},
@@ -384,7 +384,7 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: "#V2CTToV1mP", Doc: "more?",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1.0 // 1.0 == 1.2 > higher -- could try 1.2 again
+				pt.PathScale.Abs = 0.8 // 1.0 == 1.2 > higher -- could try 1.2 again
 			}},
 
 		//////// V3

@@ -91,7 +91,7 @@ func (net *Network) AddVentralBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX
 // space is the spacing between layers (2 typical)
 func (net *Network) AddDorsalBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (matrixGo, matrixNo, patchD1, patchD2, gpePr, gpeAk, stn, gpi, pf *Layer) {
 	bglay := "DBG"
-	gpi = net.AddGPiLayer4D(prefix+"SNr-GPi", bglay, nPoolsY, nPoolsX, gpNeurY, gpNeurX)
+	gpi = net.AddGPiLayer4D(prefix+"DGPi", bglay, nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpePr = net.AddGPeLayer4D(prefix+"DGPePr", bglay, nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpePr.SetBuildConfig("GPType", "GPePr")
 	gpeAk = net.AddGPeLayer4D(prefix+"DGPeAk", bglay, nPoolsY, nPoolsX, gpNeurY, gpNeurX)

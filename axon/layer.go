@@ -19,6 +19,7 @@ import (
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/tree"
+	"github.com/emer/axon/v2/fsfffb"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/weights"
 )
@@ -480,20 +481,24 @@ func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
 	nvars := ly.UnitVarNum()
 	neurVars := int(CaBins) + NNeuronCaBins
 	layVarSt := nvars - NNeuronLayerVars
+	pi := ly.Params.PoolIndex(NeuronIxs.Value(int(ni), int(NrnSubPool)))
 	if varIndex >= layVarSt {
 		lvi := varIndex - layVarSt
 		switch lvi {
-		case 0:
+		case 0: // DA
 			return GlobalScalars.Value(int(GvDA), int(uint32(di)))
-		case 1:
+		case 1: // ACh
 			return GlobalScalars.Value(int(GvACh), int(uint32(di)))
-		case 2:
+		case 2: // NE
 			return GlobalScalars.Value(int(GvNE), int(uint32(di)))
-		case 3:
+		case 3: // Ser
 			return GlobalScalars.Value(int(GvSer), int(uint32(di)))
-		case 4:
-			pi := ly.Params.PoolIndex(NeuronIxs.Value(int(ni), int(NrnSubPool)))
+		case 4: // Gated
 			return float32(PoolsInt.Value(int(pi), int(di), int(PoolGated)))
+		case 5: // ModAct
+			return Pools.Value(int(pi), int(di), int(fsfffb.ModAct))
+		case 6: // PoolDA
+			return Pools.Value(int(pi), int(di), int(fsfffb.DA))
 		}
 	} else if varIndex >= neurVars {
 		return NeuronAvgs.Value(int(ni), int(NeuronVars(varIndex-neurVars)))

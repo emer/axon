@@ -292,10 +292,10 @@ func (ly *LayerParams) MatrixPostPlus(ctx *Context) {
 			continue
 		}
 		for spi := uint32(1); spi < ly.Indexes.NPools; spi++ {
-			pfact := PoolAvgMax(AMCaPMax, AMCycle, Avg, pf.PoolIndex(spi), di) // todo: right var?
+			pfact := PoolAvgMax(AMCaP, AMCycle, Avg, pf.PoolIndex(spi), di) // must be CaP
 			pfnet := ly.Striatum.BasePF + pfact
-			ptD1act := PoolAvgMax(AMCaD, AMCycle, Avg, patchD1.PoolIndex(spi), di)
-			ptD2act := PoolAvgMax(AMCaD, AMCycle, Avg, patchD2.PoolIndex(spi), di)
+			ptD1act := PoolAvgMax(AMCaP, AMCycle, Avg, patchD1.PoolIndex(spi), di)
+			ptD2act := PoolAvgMax(AMCaP, AMCycle, Avg, patchD2.PoolIndex(spi), di)
 			da := pfnet * ly.Striatum.PatchDA(ptD1act, ptD2act) * ly.Learn.NeuroMod.DASign()
 			pi := ly.PoolIndex(spi)
 			Pools[pi, di, fsfffb.DA] = da
@@ -313,7 +313,7 @@ func (ly *LayerParams) PatchPostPlus(ctx *Context) {
 	pf := Layers[ly.Striatum.PFIndex]
 	for di := uint32(0); di < ctx.NData; di++ {
 		for spi := uint32(1); spi < ly.Indexes.NPools; spi++ {
-			pfact := PoolAvgMax(AMCaPMax, AMCycle, Avg, pf.PoolIndex(spi), di) // todo: right var?
+			pfact := PoolAvgMax(AMCaP, AMCycle, Avg, pf.PoolIndex(spi), di) // must be CaP
 			pfnet := ly.Striatum.BasePF + pfact
 			Pools[ly.PoolIndex(spi), di, fsfffb.ModAct] = pfnet
 		}

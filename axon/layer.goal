@@ -19,6 +19,7 @@ import (
 	"cogentcore.org/core/tree"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/weights"
+	"github.com/emer/axon/v2/fsfffb"
 )
 
 // index naming:
@@ -478,20 +479,24 @@ func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
 	nvars := ly.UnitVarNum()
 	neurVars := int(CaBins) + NNeuronCaBins
 	layVarSt := nvars-NNeuronLayerVars
+	pi := ly.Params.PoolIndex(NeuronIxs[ni, NrnSubPool])
 	if varIndex >= layVarSt {
 		lvi := varIndex - layVarSt
 		switch lvi {
-		case 0:
+		case 0: // DA
 			return GlobalScalars[GvDA, uint32(di)]
-		case 1:
+		case 1: // ACh
 			return GlobalScalars[GvACh, uint32(di)]
-		case 2:
+		case 2: // NE
 			return GlobalScalars[GvNE, uint32(di)]
-		case 3:
+		case 3: // Ser
 			return GlobalScalars[GvSer, uint32(di)]
-		case 4:
-			pi := ly.Params.PoolIndex(NeuronIxs[ni, NrnSubPool])
+		case 4: // Gated
 			return float32(PoolsInt[pi, di, PoolGated])
+		case 5: // ModAct
+			return Pools[pi, di, fsfffb.ModAct]
+		case 6: // PoolDA
+			return Pools[pi, di, fsfffb.DA]
 		}
 	} else if varIndex >= neurVars {
 		return NeuronAvgs[ni, NeuronVars(varIndex-neurVars)]
