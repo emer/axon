@@ -36,7 +36,9 @@ type MatrixPathParams struct {
 	// e.g., for testing cases that do not have GoalMaint.
 	VSRewLearn slbool.Bool `default:"true"`
 
-	pad float32
+	// UseSynPF is a temporary flag for using the synaptic PF instead of direct
+	// activity based, to figure out diffs.
+	UseSynPF slbool.Bool
 }
 
 func (tp *MatrixPathParams) Defaults() {

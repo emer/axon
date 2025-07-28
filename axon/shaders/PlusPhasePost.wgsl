@@ -1375,7 +1375,7 @@ struct MatrixPathParams {
 	Credit: f32,
 	Delta: f32,
 	VSRewLearn: i32,
-	pad: f32,
+	UseSynPF: i32,
 }
 
 //////// import: "pool.go"

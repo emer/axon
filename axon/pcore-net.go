@@ -150,6 +150,17 @@ func (net *Network) AddDorsalBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX,
 	net.ConnectLayers(stn, gpeAk, full, ForwardPath).AddClass(stnclass)
 	net.ConnectLayers(stn, gpi, full, ForwardPath).AddClass(stnclass)
 
+	// todo: temporary while investigating perf diffs:
+	pfm := func(pt *PathParams) {
+		pt.Learn.Learn.SetBool(false)
+		pt.Com.GType = ModulatoryG
+		pt.PathScale.Abs = 1
+	}
+	pt = net.ConnectLayers(pf, matrixGo, p1to1, ForwardPath).AddClass("PFToDMatrix").EmerPath.(*Path)
+	pt.AddDefaultParams(pfm)
+	pt = net.ConnectLayers(pf, matrixNo, p1to1, ForwardPath).AddClass("PFToDMatrix").EmerPath.(*Path)
+	pt.AddDefaultParams(pfm)
+
 	gpePr.PlaceBehind(gpi, space)
 	gpeAk.PlaceRightOf(gpePr, space)
 	stn.PlaceRightOf(gpi, space)

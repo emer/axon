@@ -188,8 +188,8 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.02
 				ly.Inhib.ActAvg.AdaptGi.SetBool(false) // adapt @250
-				ly.Inhib.Layer.Gi = 1.1                // ?
-				ly.Inhib.Pool.Gi = 1.1                 // ?
+				ly.Inhib.Layer.Gi = 1.2                // ?
+				ly.Inhib.Pool.Gi = 1.2                 // ?
 			}},
 
 		//////// V3
@@ -384,7 +384,7 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: "#V2CTToV1mP", Doc: "more?",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 0.5 // 1.0 == 1.2 > higher -- could try 1.2 again
+				pt.PathScale.Abs = 1.0 // 1.0 == 1.2 > higher -- could try 1.2 again
 			}},
 
 		//////// V3
@@ -460,13 +460,13 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".TEOSelfMaint", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 0.2 // 0.2 > 0.1 for categ
+				pt.PathScale.Abs = 0.2 // 0.2 > 0.3 > 0.1 for v1mP with ok categ; TE most important
 				pt.Com.GType = axon.MaintG
 			}},
 		{Sel: ".TEOCTSelf", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 0.1 //
-				pt.PathScale.Abs = 0.1 // not much effect on categ
+				pt.PathScale.Abs = 0.2 // 0.2 == 0.1
 			}},
 		{Sel: "#TEOCTToV4P", Doc: "stronger",
 			Set: func(pt *axon.PathParams) {

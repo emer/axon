@@ -342,6 +342,9 @@ func (pt *PathParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, lpi, pi, di uin
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DTr))
 	} else {
 		pfmod := Pools.Value(int(pi), int(di), int(fsfffb.ModAct))
+		if pt.Matrix.UseSynPF.IsTrue() {
+			pfmod = 0.005 + Neurons.Value(int(ri), int(di), int(GModSyn))
+		}
 		patchDA := Pools.Value(int(pi), int(di), int(fsfffb.DA))
 		rplus := Neurons.Value(int(ri), int(di), int(CaP))
 		rminus := Neurons.Value(int(ri), int(di), int(CaD))

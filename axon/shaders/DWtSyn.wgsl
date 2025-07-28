@@ -1147,6 +1147,9 @@ fn PathParams_DWtSynDSMatrix(pt: PathParams, ctx: Context, syni: u32,si: u32,ri:
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
 	} else {
 		var pfmod = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(ModAct))];
+		if (pt.Matrix.UseSynPF == 1) {
+			pfmod = 0.005 + Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(GModSyn))];
+		}
 		var patchDA = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DA))];
 		var rplus = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaP))];
 		var rminus = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaD))];
@@ -1571,7 +1574,7 @@ struct MatrixPathParams {
 	Credit: f32,
 	Delta: f32,
 	VSRewLearn: i32,
-	pad: f32,
+	UseSynPF: i32,
 }
 
 //////// import: "pool.go"
