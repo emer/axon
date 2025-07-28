@@ -454,7 +454,7 @@ func (ss *Sim) TakeAction(net *axon.Network, mode Modes) {
 	rp := &net.Rubicon
 	ctx := net.Context()
 	curModeDir := ss.Current.Dir(mode.String())
-	mtxLy := net.LayerByName("VMtxGo")
+	mtxLy := net.LayerByName("VMatrixGo")
 	vlly := net.LayerByName("VL")
 	threshold := float32(0.1)
 	ndata := int(ctx.NData)

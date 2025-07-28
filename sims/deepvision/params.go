@@ -384,7 +384,7 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: "#V2CTToV1mP", Doc: "more?",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 0.8 // 1.0 == 1.2 > higher -- could try 1.2 again
+				pt.PathScale.Abs = 0.5 // 1.0 == 1.2 > higher -- could try 1.2 again
 			}},
 
 		//////// V3

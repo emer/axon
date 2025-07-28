@@ -204,15 +204,15 @@ var PathParams = axon.PathSheets{
 				pt.PathScale.Rel = 0.1 // 0.1 def
 				pt.PathScale.Abs = 1   // 1.5def
 			}},
-		{Sel: "#OFCposToVMtxGo", Doc: "specific best go signal",
+		{Sel: "#OFCposToVMatrixGo", Doc: "specific best go signal",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 3
 			}},
-		{Sel: "#ILposToVMtxGo", Doc: "specific best go signal",
+		{Sel: "#ILposToVMatrixGo", Doc: "specific best go signal",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 3
 			}},
-		{Sel: "#ACCcostToVMtxGo", Doc: "costs..",
+		{Sel: "#ACCcostToVMatrixGo", Doc: "costs..",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 3
 			}},

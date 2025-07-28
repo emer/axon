@@ -64,7 +64,7 @@
       Tweak = "-"
 
 [[Base]]
-  Sel = "#UrgencyToVMtxGo"
+  Sel = "#UrgencyToVMatrixGo"
   Desc = "strong urgency factor"
   [Base.Params]
     "Path.Learn.Learn" = "false"
@@ -84,7 +84,7 @@
     "Path.PathScale.Abs" = "3.0"
 
 [[Base]]
-  Sel = ".ACCToVMtx"
+  Sel = ".ACCToVMatrix"
   Desc = ""
   [Base.Params]
     "Path.PathScale.Abs" = "1.5"
@@ -93,7 +93,7 @@
       Tweak = "-"
 
 [[Base]]
-  Sel = "#VMtxNoToVMtxGo"
+  Sel = "#VMatrixNoToVMatrixGo"
   Desc = ""
   [Base.Params]
     "Path.Learn.Learn" = "false"

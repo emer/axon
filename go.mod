@@ -3,7 +3,7 @@ module github.com/emer/axon/v2
 go 1.23.4
 
 require (
-	cogentcore.org/core v0.3.12
+	cogentcore.org/core v0.3.13-0.20250724000930-74c72927e235
 	cogentcore.org/lab v0.1.3-0.20250722024402-3159fa00aebf
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/chewxy/math32 v1.10.1

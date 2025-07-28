@@ -218,19 +218,19 @@
     "Path.PathScale.Rel" = "0.1"
 
 [[Base]]
-  Sel = "#OFCposToVMtxGo"
+  Sel = "#OFCposToVMatrixGo"
   Desc = "specific best go signal"
   [Base.Params]
     "Path.PathScale.Abs" = "3"
 
 [[Base]]
-  Sel = "#ILposToVMtxGo"
+  Sel = "#ILposToVMatrixGo"
   Desc = "specific best go signal"
   [Base.Params]
     "Path.PathScale.Abs" = "3"
 
 [[Base]]
-  Sel = "#ACCcostToVMtxGo"
+  Sel = "#ACCcostToVMatrixGo"
   Desc = "costs.."
   [Base.Params]
     "Path.PathScale.Abs" = "3"

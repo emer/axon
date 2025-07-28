@@ -3,10 +3,11 @@
 package yaegiaxon
 
 import (
-	"github.com/emer/axon/v2/axon"
 	"go/constant"
 	"go/token"
 	"reflect"
+
+	"github.com/emer/axon/v2/axon"
 )
 
 func init() {
@@ -412,7 +413,7 @@ func init() {
 		"PoolPoolGi":                   reflect.ValueOf(axon.PoolPoolGi),
 		"PoolTestValues":               reflect.ValueOf(axon.PoolTestValues),
 		"PoolVarName":                  reflect.ValueOf(axon.PoolVarName),
-		"PoolVarsN":                    reflect.ValueOf(axon.PoolVarsN),
+		"PoolVarsTotal":                reflect.ValueOf(axon.PoolVarsTotal),
 		"Pools":                        reflect.ValueOf(&axon.Pools).Elem(),
 		"PoolsInt":                     reflect.ValueOf(&axon.PoolsInt).Elem(),
 		"PoolsIntVar":                  reflect.ValueOf(axon.PoolsIntVar),
@@ -722,7 +723,7 @@ func init() {
 		"LearnCaParams":     reflect.ValueOf((*axon.LearnCaParams)(nil)),
 		"LearnNeuronParams": reflect.ValueOf((*axon.LearnNeuronParams)(nil)),
 		"LearnSynParams":    reflect.ValueOf((*axon.LearnSynParams)(nil)),
-		"MatrixParams":      reflect.ValueOf((*axon.MatrixParams)(nil)),
+		"StriatumParams":    reflect.ValueOf((*axon.StriatumParams)(nil)),
 		"MatrixPathParams":  reflect.ValueOf((*axon.MatrixPathParams)(nil)),
 		"NetViewUpdate":     reflect.ValueOf((*axon.NetViewUpdate)(nil)),
 		"Network":           reflect.ValueOf((*axon.Network)(nil)),

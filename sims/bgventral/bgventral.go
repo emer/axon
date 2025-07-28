@@ -232,11 +232,11 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mtxGo.SetBuildConfig("ThalLay1Name", accPosVM.Name)
 	mtxNo.SetBuildConfig("ThalLay1Name", accPosVM.Name)
 
-	net.ConnectToVSMatrix(accPos, mtxGo, full).AddClass("ACCToVMtx")
-	net.ConnectToVSMatrix(accNeg, mtxNo, full).AddClass("ACCToVMtx")
+	net.ConnectToVSMatrix(accPos, mtxGo, full).AddClass("ACCToVMatrix")
+	net.ConnectToVSMatrix(accNeg, mtxNo, full).AddClass("ACCToVMatrix")
 	// cross connections:
-	net.ConnectToVSMatrix(accPos, mtxNo, full).AddClass("ACCToVMtx")
-	net.ConnectToVSMatrix(accNeg, mtxGo, full).AddClass("ACCToVMtx")
+	net.ConnectToVSMatrix(accPos, mtxNo, full).AddClass("ACCToVMatrix")
+	net.ConnectToVSMatrix(accNeg, mtxGo, full).AddClass("ACCToVMatrix")
 
 	net.ConnectToVSMatrix(urge, mtxGo, full)
 
@@ -433,7 +433,7 @@ func (ss *Sim) SetRew(rew float32, di uint32) {
 func (ss *Sim) GatedAction(mode Modes) {
 	ctx := ss.Net.Context()
 	curModeDir := ss.Current.Dir(mode.String())
-	mtxly := ss.Net.LayerByName("VMtxGo")
+	mtxly := ss.Net.LayerByName("VMatrixGo")
 	vmly := ss.Net.LayerByName("ACCPosVM")
 	vmlpi := vmly.Params.PoolIndex(0)
 	mtxlpi := mtxly.Params.PoolIndex(0)
@@ -456,7 +456,7 @@ func (ss *Sim) GatedAction(mode Modes) {
 		cycavg := float64(axon.PoolAvgMax(axon.AMCaPMax, axon.AMCycle, axon.Avg, vmlpi, uint32(di)))
 		curModeDir.Float32("ACCPosVM_ActAvg", ndata).SetFloat1D(cycavg, di)
 		cycavg = float64(axon.PoolAvgMax(axon.AMCaPMax, axon.AMCycle, axon.Avg, mtxlpi, uint32(di)))
-		curModeDir.Float32("VMtxGo_ActAvg", ndata).SetFloat1D(cycavg, di)
+		curModeDir.Float32("VMatrixGo_ActAvg", ndata).SetFloat1D(cycavg, di)
 	}
 }
 
@@ -582,7 +582,7 @@ func (ss *Sim) ConfigStats() {
 
 	// up to a point, it is good to use loops over stats in one function,
 	// to reduce repetition of boilerplate.
-	statNames := []string{"ACCPos", "ACCNeg", "Gated", "Should", "Match", "Rew", "ACCPosVM_RT", "ACCPosVM_ActAvg", "VMtxGo_ActAvg"}
+	statNames := []string{"ACCPos", "ACCNeg", "Gated", "Should", "Match", "Rew", "ACCPosVM_RT", "ACCPosVM_ActAvg", "VMatrixGo_ActAvg"}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		for si, name := range statNames {
 			modeDir := ss.Stats.Dir(mode.String())
@@ -620,7 +620,7 @@ func (ss *Sim) ConfigStats() {
 						stat = num.FromBool[float32](ev.Match)
 					case "Rew":
 						stat = ev.Rew
-					case "ACCPosVM_RT", "ACCPosVM_ActAvg", "VMtxGo_ActAvg":
+					case "ACCPosVM_RT", "ACCPosVM_ActAvg", "VMatrixGo_ActAvg":
 						stat = float32(curModeDir.Float32(name, ndata).Float1D(di))
 					}
 					curModeDir.Float32(name, ndata).SetFloat1D(float64(stat), di)

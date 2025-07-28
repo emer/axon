@@ -23,8 +23,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Pool.On.SetBool(false)
 				ly.Inhib.Layer.Gi = 0.5 // 0.5 needed for differentiated reps
 				ly.Inhib.ActAvg.Nominal = 0.25
-				ly.Matrix.GateThr = 0.05         // todo: .01 should be new default
-				ly.Matrix.IsVS.SetBool(true)     // key for resetting urgency
+				ly.Striatum.GateThr = 0.05       // todo: .01 should be new default
+				ly.Striatum.IsVS.SetBool(true)   // key for resetting urgency
 				ly.Learn.RLRate.On.SetBool(true) // only used for non-rew trials -- key
 				ly.Learn.RLRate.Diff.SetBool(false)
 				ly.Learn.RLRate.SigmoidMin = 0.01 // 0.01 better than .05
@@ -69,7 +69,7 @@ var PathParams = axon.PathSheets{
 				pt.Matrix.VSRewLearn.SetBool(false) // significantly cleaner
 				pt.SWts.Adapt.On.SetBool(false)     // not much diff: false >= true
 			}},
-		{Sel: "#UrgencyToVMtxGo", Doc: "strong urgency factor",
+		{Sel: "#UrgencyToVMatrixGo", Doc: "strong urgency factor",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 0.1 // don't dilute from others
 				pt.PathScale.Abs = 1
@@ -83,11 +83,11 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 3.0 // was 4
 			}},
-		{Sel: ".ACCToVMtx", Doc: "",
+		{Sel: ".ACCToVMatrix", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 1.5 // 1.5 good; 1.8 causes some breakthrough
 			}},
-		{Sel: "#VMtxNoToVMtxGo", Doc: "",
+		{Sel: "#VMatrixNoToVMatrixGo", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 0.05
 				pt.PathScale.Abs = 1
@@ -110,7 +110,7 @@ var ParamSetsDefs = params.Sets{
 				ly.Inhib.Pool.On =              "false",
 				ly.Inhib.Layer.Gi =             "0.5",
 				ly.Inhib.Layer.FB =             "0",
-				ly.Matrix.GateThr =             "0.05", // .05 default
+				ly.Striatum.GateThr =             "0.05", // .05 default
 				ly.Acts.Kir.Gbar =              "10",   // 10 > 5 > 20
 				ly.Acts.GabaB.Gk =            "0",
 				ly.Acts.NMDA.Ge =             "0.006", // 0.006 default, necessary (0 very bad)
@@ -161,14 +161,14 @@ var ParamSetsDefs = params.Sets{
 			Hypers: params.Hypers{
 				ly.Acts.Init.GeBase = {"Tweak = "-"},
 			}},
-		{Sel: ".VGPeAkToVMtx", Doc: "go disinhibition",
+		{Sel: ".VGPeAkToVMatrix", Doc: "go disinhibition",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = "3", // 3 >= 2, 4
 			},
 			Hypers: params.Hypers{
 				pt.PathScale.Abs = {"Tweak = "-"},
 			}},
-		{Sel: "#VMtxGoToVGPeAk", Doc: "go inhibition",
+		{Sel: "#VMatrixGoToVGPeAk", Doc: "go inhibition",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = ".5", // stronger = more binary
 			},
@@ -196,7 +196,7 @@ var ParamSetsDefs = params.Sets{
 			Hypers: params.Hypers{
 				pt.PathScale.Abs = {"Tweak = "-"},
 			}},
-		{Sel: "#VMtxNoToVGPePr", Doc: "proto = primary classical NoGo pathway",
+		{Sel: "#VMatrixNoToVGPePr", Doc: "proto = primary classical NoGo pathway",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = "1", // 1 fully inhibits Pr
 			},
@@ -217,7 +217,7 @@ var ParamSetsDefs = params.Sets{
 			Hypers: params.Hypers{
 				pt.PathScale.Abs = {"Tweak = "-"},
 			}},
-		{Sel: "#VMtxGoToVGPi", Doc: "go influence on gating",
+		{Sel: "#VMatrixGoToVGPi", Doc: "go influence on gating",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = ".2", // .1 too weak
 			},
