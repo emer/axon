@@ -66,6 +66,14 @@ const (
 	// FFAvgPrv is the previous theta cycle FFAvg value, for the FFPrv factor.
 	// Updated in the Decay function that is called at start of new State / Trial.
 	FFAvgPrv
+
+	//////// following are additional misc pool-level variables:
+
+	// ModAct is a pool-specific modulation activity value (e.g., PF = parafasciculus in BG)
+	ModAct
+
+	// DA is a pool-specific dopamine value
+	DA
 )
 
 //gosl:end

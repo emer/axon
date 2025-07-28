@@ -10,14 +10,14 @@ import (
 
 // AddVentralBG adds Ventral Basal Ganglia layers, using the PCore Pallidal Core
 // framework where GPe plays a central role.
-// Returns VMtxGo, VMtxNo, VGPePr, VGPeAk, VSTN, VGPi layers,
+// Returns VMatrixGo, VMatrixNo, VGPePr, VGPeAk, VSTN, VGPi layers,
 // with given optional prefix.
 // Only the Matrix has pool-based 4D shape by default -- use pool for "role" like
 // elements where matches need to be detected.
 // All GP / STN layers have gpNeur neurons.
 // Appropriate connections are made between layers, using standard styles.
 // space is the spacing between layers (2 typical).
-func (net *Network) AddVentralBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpePr, gpeAk, stn, gpi *Layer) {
+func (net *Network) AddVentralBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (matrixGo, matrixNo, gpePr, gpeAk, stn, gpi *Layer) {
 	bglay := "VBG"
 	gpi = net.AddGPiLayer2D(prefix+"VGPi", bglay, gpNeurY, gpNeurX)
 	gpePr = net.AddGPeLayer2D(prefix+"VGPePr", bglay, gpNeurY, gpNeurX)
@@ -25,25 +25,25 @@ func (net *Network) AddVentralBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX
 	gpeAk = net.AddGPeLayer2D(prefix+"VGPeAk", bglay, gpNeurY, gpNeurX)
 	gpeAk.SetBuildConfig("GPType", "GPeAk")
 	stn = net.AddSTNLayer2D(prefix+"VSTN", "VSTNLayer", gpNeurY, gpNeurX)
-	mtxGo = net.AddVMatrixLayer(prefix+"VMtxGo", nPoolsY, nPoolsX, nNeurY, nNeurX, D1Mod)
-	mtxNo = net.AddVMatrixLayer(prefix+"VMtxNo", nPoolsY, nPoolsX, nNeurY, nNeurX, D2Mod)
+	matrixGo = net.AddVMatrixLayer(prefix+"VMatrixGo", nPoolsY, nPoolsX, nNeurY, nNeurX, D1Mod)
+	matrixNo = net.AddVMatrixLayer(prefix+"VMatrixNo", nPoolsY, nPoolsX, nNeurY, nNeurX, D2Mod)
 
-	mtxGo.SetBuildConfig("OtherMatrixName", mtxNo.Name)
-	mtxNo.SetBuildConfig("OtherMatrixName", mtxGo.Name)
+	matrixGo.SetBuildConfig("OtherName", matrixNo.Name)
+	matrixNo.SetBuildConfig("OtherName", matrixGo.Name)
 
 	mp := func(ly *LayerParams) {
-		ly.Matrix.IsVS.SetBool(true)
+		ly.Striatum.IsVS.SetBool(true)
 		ly.Inhib.ActAvg.Nominal = 0.1 / float32(nPoolsX*nPoolsY)
 		ly.Acts.Dend.ModACh.SetBool(true)
 	}
-	mtxGo.AddDefaultParams(mp)
-	mtxNo.AddDefaultParams(mp)
+	matrixGo.AddDefaultParams(mp)
+	matrixNo.AddDefaultParams(mp)
 
 	full := paths.NewFull()
 	p1to1 := paths.NewPoolOneToOne()
 
-	net.ConnectLayers(mtxNo, gpePr, full, InhibPath)
-	pt := net.ConnectLayers(mtxNo, mtxGo, p1to1, InhibPath)
+	net.ConnectLayers(matrixNo, gpePr, full, InhibPath)
+	pt := net.ConnectLayers(matrixNo, matrixGo, p1to1, InhibPath)
 	pt.AddDefaultParams(func(pt *PathParams) {
 		pt.Learn.Learn.SetBool(false)
 		pt.PathScale.Rel = 0.05
@@ -54,12 +54,12 @@ func (net *Network) AddVentralBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX
 	net.ConnectLayers(gpePr, gpeAk, full, InhibPath).AddClass(bgclass)
 	net.ConnectLayers(gpePr, stn, full, InhibPath).AddClass(bgclass)
 	net.ConnectLayers(gpePr, gpi, full, InhibPath).AddClass(bgclass)
-	net.ConnectLayers(mtxGo, gpi, full, InhibPath).AddClass(bgclass)
-	net.ConnectLayers(mtxGo, gpeAk, full, InhibPath).AddClass(bgclass)
+	net.ConnectLayers(matrixGo, gpi, full, InhibPath).AddClass(bgclass)
+	net.ConnectLayers(matrixGo, gpeAk, full, InhibPath).AddClass(bgclass)
 	// this doesn't make that much diff -- bit cleaner RT without:
-	// net.ConnectLayers(mtxGo, gpePr, full, InhibPath).AddClass(bgclass)
-	net.ConnectLayers(gpeAk, mtxGo, full, InhibPath).AddClass(bgclass)
-	net.ConnectLayers(gpeAk, mtxNo, full, InhibPath).AddClass(bgclass)
+	// net.ConnectLayers(matrixGo, gpePr, full, InhibPath).AddClass(bgclass)
+	net.ConnectLayers(gpeAk, matrixGo, full, InhibPath).AddClass(bgclass)
+	net.ConnectLayers(gpeAk, matrixNo, full, InhibPath).AddClass(bgclass)
 
 	stnclass := "VSTNExcite"
 	net.ConnectLayers(stn, gpePr, full, ForwardPath).AddClass(stnclass)
@@ -69,30 +69,37 @@ func (net *Network) AddVentralBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX
 	gpeAk.PlaceBehind(gpi, space)
 	gpePr.PlaceRightOf(gpeAk, space)
 	stn.PlaceRightOf(gpi, space)
-	mtxGo.PlaceBehind(gpePr, space)
-	mtxNo.PlaceRightOf(mtxGo, space)
+	matrixGo.PlaceBehind(gpePr, space)
+	matrixNo.PlaceRightOf(matrixGo, space)
 
 	return
 }
 
+// TODO: need to integrate Patch into net signal, send that to corresponding dorsal pools.
+// The PF signal as GModSyn is also probably pretty variable relative to actual activity --
+// would be good to have longer time-average signal.
+// Probably just put in Pool directly instead of having these synaptic signals, or trying to
+// stick them onto global.
+
 // AddDorsalBG adds Dorsal Basal Ganglia layers, using the PCore Pallidal Core
 // framework where GPe plays a central role.
-// Returns DMtxGo, DMtxNo, DGPePr, DGPeAk, DSTN, DGPi, PF layers, with given optional prefix.
+// Returns DMatrixGo, DMatrixNo, DGPePr, DGPeAk, DSTN, DGPi, PF layers, with given optional prefix.
 // Makes 4D pools throughout the GP layers, with Pools representing separable
 // gating domains, i.e., action domains.
 // All GP / STN layers have gpNeur neurons.
 // Appropriate PoolOneToOne connections are made between layers, using standard styles.
 // space is the spacing between layers (2 typical)
-func (net *Network) AddDorsalBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpePr, gpeAk, stn, gpi, pf *Layer) {
+func (net *Network) AddDorsalBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (matrixGo, matrixNo, patchD1, patchD2, gpePr, gpeAk, stn, gpi, pf *Layer) {
 	bglay := "DBG"
-	gpi = net.AddGPiLayer4D(prefix+"DGPi", bglay, nPoolsY, nPoolsX, gpNeurY, gpNeurX)
+	gpi = net.AddGPiLayer4D(prefix+"SNr-GPi", bglay, nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpePr = net.AddGPeLayer4D(prefix+"DGPePr", bglay, nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpePr.SetBuildConfig("GPType", "GPePr")
 	gpeAk = net.AddGPeLayer4D(prefix+"DGPeAk", bglay, nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpeAk.SetBuildConfig("GPType", "GPeAk")
 	stn = net.AddSTNLayer2D(prefix+"DSTN", "DSTNLayer", gpNeurY, gpNeurX)
-	mtxGo = net.AddDMatrixLayer(prefix+"DMtxGo", nPoolsY, nPoolsX, nNeurY, nNeurX, D1Mod)
-	mtxNo = net.AddDMatrixLayer(prefix+"DMtxNo", nPoolsY, nPoolsX, nNeurY, nNeurX, D2Mod)
+	matrixGo = net.AddDMatrixLayer(prefix+"DMatrixGo", nPoolsY, nPoolsX, nNeurY, nNeurX, D1Mod)
+	matrixNo = net.AddDMatrixLayer(prefix+"DMatrixNo", nPoolsY, nPoolsX, nNeurY, nNeurX, D2Mod)
+	patchD1, patchD2 = net.AddDSPatchLayers(prefix, nPoolsY, nPoolsX, nNeurY, nNeurX, space)
 
 	pfp := func(ly *LayerParams) {
 		ly.Inhib.Layer.On.SetBool(false)
@@ -101,14 +108,25 @@ func (net *Network) AddDorsalBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX,
 	pf = net.AddLayer4D(prefix+"PF", SuperLayer, nPoolsY, nPoolsX, nNeurY, 1)
 	pf.AddDefaultParams(pfp)
 
-	mtxGo.SetBuildConfig("OtherMatrixName", mtxNo.Name)
-	mtxNo.SetBuildConfig("OtherMatrixName", mtxGo.Name)
+	matrixGo.SetBuildConfig("OtherName", matrixNo.Name)
+	matrixNo.SetBuildConfig("OtherName", matrixGo.Name)
+	matrixGo.SetBuildConfig("PFName", pf.Name)
+	matrixNo.SetBuildConfig("PFName", pf.Name)
+	matrixGo.SetBuildConfig("PatchD1Name", patchD1.Name)
+	matrixGo.SetBuildConfig("PatchD2Name", patchD2.Name)
+	matrixNo.SetBuildConfig("PatchD1Name", patchD1.Name)
+	matrixNo.SetBuildConfig("PatchD2Name", patchD2.Name)
+
+	patchD1.SetBuildConfig("OtherName", patchD2.Name)
+	patchD2.SetBuildConfig("OtherName", patchD1.Name)
+	patchD1.SetBuildConfig("PFName", pf.Name)
+	patchD2.SetBuildConfig("PFName", pf.Name)
 
 	p1to1 := paths.NewPoolOneToOne()
 	full := paths.NewFull()
 
-	net.ConnectLayers(mtxNo, gpePr, p1to1, InhibPath)
-	pt := net.ConnectLayers(mtxNo, mtxGo, p1to1, InhibPath)
+	net.ConnectLayers(matrixNo, gpePr, p1to1, InhibPath)
+	pt := net.ConnectLayers(matrixNo, matrixGo, p1to1, InhibPath)
 	pt.AddDefaultParams(func(pt *PathParams) {
 		pt.Learn.Learn.SetBool(false)
 		pt.PathScale.Rel = 0.1
@@ -119,12 +137,12 @@ func (net *Network) AddDorsalBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX,
 	net.ConnectLayers(gpePr, gpeAk, p1to1, InhibPath).AddClass(bgclass)
 	net.ConnectLayers(gpePr, stn, full, InhibPath).AddClass(bgclass)
 	net.ConnectLayers(gpePr, gpi, p1to1, InhibPath).AddClass(bgclass)
-	net.ConnectLayers(mtxGo, gpi, p1to1, InhibPath).AddClass(bgclass)
-	net.ConnectLayers(mtxGo, gpeAk, p1to1, InhibPath).AddClass(bgclass)
+	net.ConnectLayers(matrixGo, gpi, p1to1, InhibPath).AddClass(bgclass)
+	net.ConnectLayers(matrixGo, gpeAk, p1to1, InhibPath).AddClass(bgclass)
 	// not much diff with this: basically is an offset that can be learned
-	// net.ConnectLayers(mtxGo, gpePr, full, InhibPath).AddClass(bgclass)
-	net.ConnectLayers(gpeAk, mtxGo, p1to1, InhibPath).AddClass(bgclass)
-	net.ConnectLayers(gpeAk, mtxNo, p1to1, InhibPath).AddClass(bgclass)
+	// net.ConnectLayers(matrixGo, gpePr, full, InhibPath).AddClass(bgclass)
+	net.ConnectLayers(gpeAk, matrixGo, p1to1, InhibPath).AddClass(bgclass)
+	net.ConnectLayers(gpeAk, matrixNo, p1to1, InhibPath).AddClass(bgclass)
 	net.ConnectLayers(gpi, pf, p1to1, InhibPath).AddClass(bgclass)
 
 	stnclass := "DSTNExcite"
@@ -132,22 +150,13 @@ func (net *Network) AddDorsalBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX,
 	net.ConnectLayers(stn, gpeAk, full, ForwardPath).AddClass(stnclass)
 	net.ConnectLayers(stn, gpi, full, ForwardPath).AddClass(stnclass)
 
-	pfm := func(pt *PathParams) {
-		pt.Learn.Learn.SetBool(false)
-		pt.Com.GType = ModulatoryG
-		pt.PathScale.Abs = 1
-	}
-	pt = net.ConnectLayers(pf, mtxGo, p1to1, ForwardPath).AddClass("PFToDMtx").EmerPath.(*Path)
-	pt.AddDefaultParams(pfm)
-	pt = net.ConnectLayers(pf, mtxNo, p1to1, ForwardPath).AddClass("PFToDMtx").EmerPath.(*Path)
-	pt.AddDefaultParams(pfm)
-
 	gpePr.PlaceBehind(gpi, space)
 	gpeAk.PlaceRightOf(gpePr, space)
 	stn.PlaceRightOf(gpi, space)
 
-	mtxGo.PlaceBehind(gpePr, space)
-	mtxNo.PlaceRightOf(mtxGo, space)
+	matrixGo.PlaceBehind(gpePr, space)
+	matrixNo.PlaceRightOf(matrixGo, space)
+	patchD1.PlaceBehind(matrixGo, space)
 
 	return
 }
@@ -195,9 +204,16 @@ func (net *Network) ConnectToVSMatrix(send, recv *Layer, pat paths.Pattern) *Pat
 	return net.ConnectLayers(send, recv, pat, VSMatrixPath)
 }
 
-// ConnectToDSMatrix adds a DSMatrixPath from given sending layer to a matrix layer
-func (net *Network) ConnectToDSMatrix(send, recv *Layer, pat paths.Pattern) *Path {
-	return net.ConnectLayers(send, recv, pat, DSMatrixPath)
+// ConnectToDSMatrix adds a DSMatrixPath from given sending layer
+// to matrix Go, No layers, adding given classes if present.
+func (net *Network) ConnectToDSMatrix(send, matrixGo, matrixNo *Layer, pat paths.Pattern, class ...string) (*Path, *Path) {
+	gp := net.ConnectLayers(send, matrixGo, pat, DSMatrixPath)
+	np := net.ConnectLayers(send, matrixNo, pat, DSMatrixPath)
+	if len(class) > 0 {
+		gp.AddClass(class...)
+		np.AddClass(class...)
+	}
+	return gp, np
 }
 
 // AddGPLayer2D adds a GPLayer of given size, with given name.
@@ -208,9 +224,10 @@ func (net *Network) AddGPeLayer2D(name, class string, nNeurY, nNeurX int) *Layer
 	return ly
 }
 
-// AddGPiLayer2D adds a GPiLayer of given size, with given name.
+// AddGPiLayer2D adds an SNr / GPiLayer of given size, with given name.
 func (net *Network) AddGPiLayer2D(name, class string, nNeurY, nNeurX int) *Layer {
 	ly := net.AddLayer2D(name, GPLayer, nNeurY, nNeurX)
+	ly.Doc = "SNr (substantia nigra pars reticulata) / GPi (globus pallidus interna) are the major output pathways from BG, with tonic levels of activity that can be inhibited to disinhibit the downstream targets of BG output"
 	ly.SetBuildConfig("GPType", "GPi")
 	ly.AddClass(class)
 	return ly
@@ -235,6 +252,7 @@ func (net *Network) AddGPeLayer4D(name, class string, nPoolsY, nPoolsX, nNeurY, 
 // Makes a 4D structure with Pools representing separable gating domains.
 func (net *Network) AddGPiLayer4D(name, class string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
 	ly := net.AddLayer4D(name, GPLayer, nPoolsY, nPoolsX, nNeurY, nNeurX)
+	ly.Doc = "SNr (substantia nigra pars reticulata) / GPi (globus pallidus interna) are the major output pathways from BG, with tonic levels of activity that can be inhibited to disinhibit the downstream targets of BG output"
 	ly.SetBuildConfig("GPType", "GPi")
 	ly.AddClass(class)
 	return ly
@@ -253,4 +271,31 @@ func (net *Network) AddSTNLayer4D(name, class string, nPoolsY, nPoolsX, nNeurY, 
 func (net *Network) AddVSGatedLayer(prefix string, nYunits int) *Layer {
 	ly := net.AddLayer4D(prefix+"VSGated", VSGatedLayer, 1, 2, nYunits, 1)
 	return ly
+}
+
+// AddDSPatchLayers adds DSPatch (Pos, D1, D2)
+func (nt *Network) AddDSPatchLayers(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX int, space float32) (d1, d2 *Layer) {
+	d1 = nt.AddLayer4D(prefix+"DSPatchD1", DSPatchLayer, nPoolsY, nPoolsX, nNeurY, nNeurX)
+	d1.SetBuildConfig("DAMod", "D1Mod")
+	d1.SetBuildConfig("Valence", "Positive")
+	d1.Doc = "DSPatch are dorsal striatum patch (striosome) neurons that provide a local critic reward-prediction-error (RPE) signal for the corresponding pool of Matrix neurons. D1 = learns from DA bursts."
+	d2 = nt.AddLayer4D(prefix+"DSPatchD2", DSPatchLayer, nPoolsY, nPoolsX, nNeurY, nNeurX)
+	d2.SetBuildConfig("DAMod", "D2Mod")
+	d2.SetBuildConfig("Valence", "Positive")
+	d2.Doc = "DSPatch are dorsal striatum patch (striosome) neurons that provide a local critic reward-prediction-error (RPE) signal for the corresponding pool of Matrix neurons. D2 = learns from DA dips."
+
+	d2.PlaceBehind(d1, space)
+	return
+}
+
+// ConnectToDSPatch adds a DSPatchPath from given sending layer
+// to DSPatchD1, D2 layers, adding given classes if present.
+func (nt *Network) ConnectToDSPatch(send, dspD1, dspD2 *Layer, pat paths.Pattern, class ...string) (*Path, *Path) {
+	d1 := nt.ConnectLayers(send, dspD1, pat, DSPatchPath)
+	d2 := nt.ConnectLayers(send, dspD2, pat, DSPatchPath)
+	if len(class) > 0 {
+		d1.AddClass(class...)
+		d2.AddClass(class...)
+	}
+	return d1, d2
 }

@@ -6,7 +6,7 @@ package axon
 
 import "cogentcore.org/lab/gosl/slbool"
 
-//gosl:start pcore_paths
+//gosl:start
 
 // MatrixPathParams for trace-based learning in the MatrixPath.
 // A trace of synaptic co-activity is formed, and then modulated by dopamine
@@ -20,12 +20,6 @@ type MatrixPathParams struct {
 	// relative to the delta factor which is generally going to be smaller
 	// because it is an activity difference.
 	Credit float32 `default:"0.6"`
-
-	// baseline amount of PF activity that modulates credit assignment learning,
-	// for neurons with zero PF modulatory activity.
-	// These were not part of the actual motor action, but can still get some
-	// smaller amount of credit learning.
-	BasePF float32 `default:"0.005"`
 
 	// weight for trace activity that is a function of the minus-plus delta
 	// activity signal on the receiving MSN neuron, independent of PF modulation.
@@ -41,11 +35,12 @@ type MatrixPathParams struct {
 	// Otherwise, only uses accumulated trace but doesn't include rew-time activity,
 	// e.g., for testing cases that do not have GoalMaint.
 	VSRewLearn slbool.Bool `default:"true"`
+
+	pad float32
 }
 
 func (tp *MatrixPathParams) Defaults() {
 	tp.Credit = 0.6
-	tp.BasePF = 0.005
 	tp.Delta = 1
 	tp.VSRewLearn.SetBool(true)
 }
@@ -53,7 +48,7 @@ func (tp *MatrixPathParams) Defaults() {
 func (tp *MatrixPathParams) Update() {
 }
 
-//gosl:end pcore_pjrns
+//gosl:end
 
 func (pj *PathParams) MatrixDefaults() {
 	pj.SWts.Adapt.On.SetBool(false)

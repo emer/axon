@@ -84,12 +84,16 @@ const (
 	// prediction layers, and other layers that require predictive dynamic
 	PTPredLayer
 
-	//////// PCORE Basal Ganglia (BG)
+	//////// PCore Basal Ganglia (BG)
 
-	// MatrixLayer represents the matrisome medium spiny neurons (MSNs)
+	// MatrixLayer represents the matrisome spiny projection neurons (SPNs, MSNs)
 	// that are the main Go / NoGo gating units in BG.
-	// These are strongly modulated by phasic dopamine: D1 = Go, D2 = NoGo.
+	// These are modulated by phasic dopamine: D1 = Go, D2 = NoGo.
 	MatrixLayer
+
+	// DSPatchLayer represents the dorsolateral striosomal spiny neurons
+	// that modulate the activity of SNc dopamine to a given Pool.
+	DSPatchLayer
 
 	// STNLayer represents subthalamic nucleus neurons, with two subtypes:
 	// STNp are more strongly driven and get over bursting threshold, driving strong,
@@ -102,13 +106,13 @@ const (
 	STNLayer
 
 	// GPLayer represents a globus pallidus layer in the BG, including:
-	// GPeOut, GPePr, GPeAk (arkypallidal), and GPi.
-	// Typically just a single unit per Pool representing a given stripe.
+	// GPePr, GPeAk (arkypallidal), and GPi / SNr.
+	// Has intrinsic activity.
 	GPLayer
 
 	// BGThalLayer represents a BG gated thalamic layer,
 	// which receives BG gating in the form of an
-	// inhibitory pathway from GPi.  Located
+	// inhibitory pathway from GPi. Located
 	// mainly in the Ventral thalamus: VA / VM / VL,
 	// and also parts of MD mediodorsal thalamus.
 	BGThalLayer

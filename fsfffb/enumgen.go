@@ -6,20 +6,20 @@ import (
 	"cogentcore.org/core/enums"
 )
 
-var _InhibVarsValues = []InhibVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}
+var _InhibVarsValues = []InhibVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17}
 
 // InhibVarsN is the highest valid value for type InhibVars, plus one.
 //
 //gosl:start
-const InhibVarsN InhibVars = 16
+const InhibVarsN InhibVars = 18
 
 //gosl:end
 
-var _InhibVarsValueMap = map[string]InhibVars{`FFsRaw`: 0, `FBsRaw`: 1, `GeExtRaw`: 2, `FFs`: 3, `FBs`: 4, `GeExts`: 5, `FSi`: 6, `SSi`: 7, `SSf`: 8, `FSGi`: 9, `SSGi`: 10, `TotalGi`: 11, `GiOrig`: 12, `LayGi`: 13, `FFAvg`: 14, `FFAvgPrv`: 15}
+var _InhibVarsValueMap = map[string]InhibVars{`FFsRaw`: 0, `FBsRaw`: 1, `GeExtRaw`: 2, `FFs`: 3, `FBs`: 4, `GeExts`: 5, `FSi`: 6, `SSi`: 7, `SSf`: 8, `FSGi`: 9, `SSGi`: 10, `TotalGi`: 11, `GiOrig`: 12, `LayGi`: 13, `FFAvg`: 14, `FFAvgPrv`: 15, `ModAct`: 16, `DA`: 17}
 
-var _InhibVarsDescMap = map[InhibVars]string{0: `FFsRaw is the raw aggregation of all feedforward incoming spikes into neurons in this pool. It is integrated using FFsRawInt in InhibIntVars.`, 1: `FBsRaw is the raw aggregation of all feedback outgoing spikes generated from neurons in this pool. It is integrated using FBsRawInt in InhibIntVars.`, 2: `GeExtRaw is the raw aggregation of all extra GeExt conductances added to neurons. It is integrated using GeExtRawInt in InhibIntVars.`, 3: `FFs is all feedforward incoming spikes into neurons in this pool, normalized by pool size.`, 4: `FBs is all feedback outgoing spikes generated from neurons in this pool, normalized by pool size.`, 5: `GeExts is all extra GeExt conductances added to neurons, normalized by pool size.`, 6: `FSi is the fast spiking PV+ fast integration of FFs feedforward spikes.`, 7: `SSi is the slow spiking SST+ integration of FBs feedback spikes.`, 8: `SSf is the slow spiking facilitation factor, representing facilitating effects of recent activity.`, 9: `FSGi is the overall fast-spiking inhibitory conductance.`, 10: `SSGi is the overall slow-spiking inhibitory conductance.`, 11: `TotalGi is the overall inhibitory conductance = FSGi + SSGi.`, 12: `GiOrig is the original value of the inhibition (before pool or other effects).`, 13: `LayGi is the layer-level inhibition that is MAX&#39;d with the pool-level inhibition to produce the net inhibition, only for sub-pools.`, 14: `FFAvg is the longer time scale running average FF drive, used for FFAvgPrv.`, 15: `FFAvgPrv is the previous theta cycle FFAvg value, for the FFPrv factor. Updated in the Decay function that is called at start of new State / Trial.`}
+var _InhibVarsDescMap = map[InhibVars]string{0: `FFsRaw is the raw aggregation of all feedforward incoming spikes into neurons in this pool. It is integrated using FFsRawInt in InhibIntVars.`, 1: `FBsRaw is the raw aggregation of all feedback outgoing spikes generated from neurons in this pool. It is integrated using FBsRawInt in InhibIntVars.`, 2: `GeExtRaw is the raw aggregation of all extra GeExt conductances added to neurons. It is integrated using GeExtRawInt in InhibIntVars.`, 3: `FFs is all feedforward incoming spikes into neurons in this pool, normalized by pool size.`, 4: `FBs is all feedback outgoing spikes generated from neurons in this pool, normalized by pool size.`, 5: `GeExts is all extra GeExt conductances added to neurons, normalized by pool size.`, 6: `FSi is the fast spiking PV+ fast integration of FFs feedforward spikes.`, 7: `SSi is the slow spiking SST+ integration of FBs feedback spikes.`, 8: `SSf is the slow spiking facilitation factor, representing facilitating effects of recent activity.`, 9: `FSGi is the overall fast-spiking inhibitory conductance.`, 10: `SSGi is the overall slow-spiking inhibitory conductance.`, 11: `TotalGi is the overall inhibitory conductance = FSGi + SSGi.`, 12: `GiOrig is the original value of the inhibition (before pool or other effects).`, 13: `LayGi is the layer-level inhibition that is MAX&#39;d with the pool-level inhibition to produce the net inhibition, only for sub-pools.`, 14: `FFAvg is the longer time scale running average FF drive, used for FFAvgPrv.`, 15: `FFAvgPrv is the previous theta cycle FFAvg value, for the FFPrv factor. Updated in the Decay function that is called at start of new State / Trial.`, 16: `ModAct is a pool-specific modulation activity value (e.g., PF = parafasciculus in BG)`, 17: `DA is a pool-specific dopamine value`}
 
-var _InhibVarsMap = map[InhibVars]string{0: `FFsRaw`, 1: `FBsRaw`, 2: `GeExtRaw`, 3: `FFs`, 4: `FBs`, 5: `GeExts`, 6: `FSi`, 7: `SSi`, 8: `SSf`, 9: `FSGi`, 10: `SSGi`, 11: `TotalGi`, 12: `GiOrig`, 13: `LayGi`, 14: `FFAvg`, 15: `FFAvgPrv`}
+var _InhibVarsMap = map[InhibVars]string{0: `FFsRaw`, 1: `FBsRaw`, 2: `GeExtRaw`, 3: `FFs`, 4: `FBs`, 5: `GeExts`, 6: `FSi`, 7: `SSi`, 8: `SSf`, 9: `FSGi`, 10: `SSGi`, 11: `TotalGi`, 12: `GiOrig`, 13: `LayGi`, 14: `FFAvg`, 15: `FFAvgPrv`, 16: `ModAct`, 17: `DA`}
 
 // String returns the string representation of this InhibVars value.
 func (i InhibVars) String() string { return enums.String(i, _InhibVarsMap) }

@@ -178,13 +178,18 @@ var LayerParams = axon.LayerSheets{
 		{Sel: ".V2", Doc: "pool inhib, sparse activity",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.02
-				ly.Inhib.ActAvg.Offset = 0.008        // key for CT vs. 0.028
-				ly.Inhib.ActAvg.AdaptGi.SetBool(true) // CT needs adapt
 				ly.Inhib.Pool.On.SetBool(true)
 				ly.Inhib.Layer.FB = 1
 				ly.Inhib.Pool.FB = 4
 				ly.Inhib.Layer.Gi = 1.0 // 1
 				ly.Inhib.Pool.Gi = 1.05 // 1.05 > others
+			}},
+		{Sel: "#V2CT", Doc: "more activity",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.02
+				ly.Inhib.ActAvg.AdaptGi.SetBool(false) // adapt @250
+				ly.Inhib.Layer.Gi = 1.1                // ?
+				ly.Inhib.Pool.Gi = 1.1                 // ?
 			}},
 
 		//////// V3
@@ -202,6 +207,7 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: "#V3CT", Doc: "more activity",
 			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.04
 				ly.Inhib.Layer.Gi = 1.1 // 1.1 > 1.2 > 1
 				ly.Inhib.Pool.Gi = 1.1  // 1.1 > 1.2 > 1
 			}},
@@ -220,8 +226,9 @@ var LayerParams = axon.LayerSheets{
 		{Sel: "#DPCT", Doc: "more activity",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.04 // 0.04 better but needs stronger V1mP output
-				ly.Inhib.Layer.Gi = 1.1        // 1.1
-				ly.Inhib.Pool.Gi = 1.1         // 1.1
+				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
+				ly.Inhib.Layer.Gi = 1.1 // 1.1 > 1.2
+				ly.Inhib.Pool.Gi = 1.1  // 1.1 > 1.2
 			}},
 
 		//////// V4
@@ -237,7 +244,7 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: "#V4CT", Doc: "more activity",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.04 // 0.04 better but needs stronger V1mP output
+				ly.Inhib.ActAvg.Nominal = 0.05 // 0.04 better but needs stronger V1mP output
 				ly.Inhib.Layer.Gi = 1.1        // 1.1
 				ly.Inhib.Pool.Gi = 1.1         // 1.1
 			}},
@@ -276,8 +283,9 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: "#TECT", Doc: "more activity",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.Layer.Gi = 1.25 // ?
-				ly.Inhib.Pool.Gi = 1.25  // ?
+				ly.Inhib.ActAvg.Nominal = 0.05 // was .04
+				ly.Inhib.Layer.Gi = 1.25       // ?
+				ly.Inhib.Pool.Gi = 1.25        // ?
 			}},
 	},
 }
@@ -391,6 +399,7 @@ var PathParams = axon.PathSheets{
 		{Sel: "#V3CTToV1mP", Doc: "less",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 0.2 // 0.2 > 0.1 > 0.5+
+				pt.PathScale.Abs = 1   // 1 > 1.5
 			}},
 		// {Sel: "#V3ToLIP", Doc: "less?",
 		// 	Set: func(pt *axon.PathParams) {
@@ -425,15 +434,19 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 1.2 // 1.2 > 1.0
 			}},
+		// {Sel: "#V4ToV2", Doc: "", // no benefit
+		// 	Set: func(pt *axon.PathParams) {
+		// 		pt.PathScale.Rel = 0.2
+		// 	}},
 		{Sel: "#V4CTToV1mP", Doc: "expt",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 1.0 // 1 > .5; .05 still not great for impact
+				pt.PathScale.Rel = 1.0 // 1 > .5: improves V1mP sig
 				pt.PathScale.Abs = 1.5 // 1.5 > 1
 			}},
 		{Sel: ".V4CTSelf", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.1 //
-				pt.PathScale.Abs = 0.1 //
+				pt.PathScale.Rel = 0.1 // 0.1 > 0.2
+				pt.PathScale.Abs = 0.2 //
 			}},
 
 		//////// TEO
@@ -447,13 +460,13 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".TEOSelfMaint", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 0.3 // 0.2 > 0.1 for categ
+				pt.PathScale.Abs = 0.2 // 0.2 > 0.1 for categ
 				pt.Com.GType = axon.MaintG
 			}},
 		{Sel: ".TEOCTSelf", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 0.1 //
-				pt.PathScale.Abs = 0.2 // 0.2 > 0.1 for categ
+				pt.PathScale.Abs = 0.1 // not much effect on categ
 			}},
 		{Sel: "#TEOCTToV4P", Doc: "stronger",
 			Set: func(pt *axon.PathParams) {
@@ -471,7 +484,7 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".TESelfMaint", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 0.3 // 0.25 > others for categ
+				pt.PathScale.Abs = 0.3 // 0.3 for categ
 				pt.Com.GType = axon.MaintG
 			}},
 		{Sel: ".TECTSelf", Doc: "",

@@ -757,7 +757,7 @@ func (nt *Network) Build() error { //types:add
 	nt.PathParams = make([]PathParams, totPaths)
 
 	nt.LayerStates.SetShapeSizes(nLayers, maxData, int(LayerVarsN))
-	nt.Pools.SetShapeSizes(totPools, maxData, int(PoolVarsN))
+	nt.Pools.SetShapeSizes(totPools, maxData, int(PoolVarsTotal))
 	nt.PoolIxs.SetShapeSizes(totPools, int(PoolIndexVarsN))
 	nt.PoolsInt.SetShapeSizes(totPools, maxData, int(PoolIntVarsTot))
 	nt.Neurons.SetShapeSizes(totNeurons, maxData, int(NeuronVarsN)+int(maxBins))

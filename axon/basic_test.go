@@ -267,7 +267,7 @@ func TestSpikeProp(t *testing.T) {
 
 // poolValues adds pool vals to given vals map
 func poolValues(pi uint32, di int, vals map[string]float32, key string) {
-	for i := range uint32(PoolVarsN) {
+	for i := range uint32(PoolVarsTotal) {
 		kk := key + fmt.Sprintf("\t%s", PoolVarName(i))
 		vals[kk] = Pools.Value(int(pi), int(di), int(i))
 	}

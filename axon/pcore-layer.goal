@@ -8,59 +8,117 @@ import (
 	"log"
 	"strings"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/num"
 	"cogentcore.org/lab/gosl/slbool"
+	"github.com/emer/axon/v2/fsfffb"
 )
 
 //gosl:start
 
-// MatrixParams has parameters for BG Striatum Matrix MSN layers
-// These are the main Go / NoGo gating units in BG.
+// StriatumParams has parameters for BG Striatum layers including
+// MatrixLayer and DSPatchLayer.
 // DA, ACh learning rate modulation is pre-computed on the recv neuron
-// RLRate variable via NeuroMod.  Also uses Pool.Gated for InvertNoGate,
+// RLRate variable via NeuroMod. Also uses Pool.Gated for InvertNoGate,
 // updated in PlusPhase prior to DWt call.
 // Must set Learn.NeuroMod.DAMod = D1Mod or D2Mod via SetBuildConfig("DAMod").
-type MatrixParams struct {
+type StriatumParams struct {
 
 	// GateThr is the threshold on layer Avg CaPMax for Matrix Go and BG Thal
 	// layers to count as having gated.
 	GateThr float32 `default:"0.05"`
+
+	// baseline amount of PF activity that modulates credit assignment learning,
+	// for neurons with zero PF modulatory activity.
+	// These were not part of the actual motor action, but can still get some
+	// smaller amount of credit learning.
+	BasePF float32 `default:"0.005"`
+
+	// NovelDA is the maximum positive dopamine magnitude associated with novel firing
+	// of a matrix pool, which is shunted / discounted by the patchD1 projection to SNc.
+	NovelDA float32 `default:"0.01"`
+
+	// MaxPatchD1 is the maximum PatchD1 CaD value for discounting NovelDA.
+	MaxPatchD1 float32 `default:"0.5"`
+
+	// BadPatchDA is the maximum negative dopamine magnitude that can be driven by patchD2
+	// activity for given pool, reflecting patchD2 to LHb dipping.
+	BadPatchDA float32 `default:"0.01"`
+
+	// PatchD2Thr is the threshold for PatchD2 activity to drive dipping: below
+	// this level, nothing happens.
+	PatchD2Thr float32 `default:"0.2"`
 
 	// IsVS is this a ventral striatum (VS) matrix layer? If true, the gating
 	// status of this layer is recorded in the Global state,
 	// and used for updating effort and other factors.
 	IsVS slbool.Bool
 
-	// index of other matrix (Go if we are NoGo and vice-versa). Set during Build from BuildConfig OtherMatrixName
-	OtherMatrixIndex int32 `edit:"-"`
+	// Index of other layer (D2 if we are D1 and vice-versa).
+	// Set during Build from BuildConfig OtherName.
+	OtherIndex int32 `edit:"-"`
 
-	// index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay1Name if present -- -1 if not used
+	// Index of PF parafasciculus layer to get gating output state from.
+	// Set during Build from BuildConfig PFName.
+	PFIndex int32 `edit:"-"`
+
+	// Index of PatchD1 layer to get striosome modulation state from.
+	// Set during Build from BuildConfig PatchD1Name.
+	PatchD1Index int32 `edit:"-"`
+
+	// Index of PatchD2 layer to get striosome modulation state from.
+	// Set during Build from BuildConfig PatchD2Name.
+	PatchD2Index int32 `edit:"-"`
+
+	// Index of thalamus layer that we gate. needed to get gating information.
+	// Set during Build from BuildConfig ThalLay1Name if present -- -1 if not used
 	ThalLay1Index int32 `edit:"-"`
 
-	// index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay2Name if present -- -1 if not used
+	// Index of thalamus layer that we gate. needed to get gating information.
+	// Set during Build from BuildConfig ThalLay1Name if present -- -1 if not used
 	ThalLay2Index int32 `edit:"-"`
 
-	// index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay3Name if present -- -1 if not used
+	// Index of thalamus layer that we gate. needed to get gating information.
+	// Set during Build from BuildConfig ThalLay1Name if present -- -1 if not used
 	ThalLay3Index int32 `edit:"-"`
 
-	// index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay4Name if present -- -1 if not used
+	// Index of thalamus layer that we gate. needed to get gating information.
+	// Set during Build from BuildConfig ThalLay1Name if present -- -1 if not used
 	ThalLay4Index int32 `edit:"-"`
 
-	// index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay5Name if present -- -1 if not used
+	// Index of thalamus layer that we gate. needed to get gating information.
+	// Set during Build from BuildConfig ThalLay1Name if present -- -1 if not used
 	ThalLay5Index int32 `edit:"-"`
 
-	// index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay6Name if present -- -1 if not used
+	// Index of thalamus layer that we gate. needed to get gating information.
+	// Set during Build from BuildConfig ThalLay1Name if present -- -1 if not used
 	ThalLay6Index int32 `edit:"-"`
 
 	pad, pad1, pad2 int32
 }
 
-func (mp *MatrixParams) Defaults() {
+func (mp *StriatumParams) Defaults() {
 	mp.GateThr = 0.05
+	mp.BasePF = 0.005
+	mp.NovelDA = 0.01
+	mp.MaxPatchD1 = 0.5
+	mp.BadPatchDA = 0.01
+	mp.PatchD2Thr = 0.2
 }
 
-func (mp *MatrixParams) Update() {
+func (mp *StriatumParams) Update() {
 }
+
+// PatchDA computes the dopamine signal due to the given patch activations.
+func (mp *StriatumParams) PatchDA(patchD1, patchD2 float32) float32 {
+	pD1 := min(patchD1, mp.MaxPatchD1)
+	pD2 := max(patchD2-mp.PatchD2Thr, 0.0)
+	posDA := mp.NovelDA * (mp.MaxPatchD1 - pD1)
+	negDA := mp.BadPatchDA * pD2
+	return posDA - negDA
+}
+
+//////// GP
 
 // GPLayerTypes is a GPLayer axon-specific layer type enum.
 type GPLayerTypes int32 //enums:enum
@@ -96,12 +154,12 @@ func (gp *GPParams) Defaults() {
 func (gp *GPParams) Update() {
 }
 
-// MatrixGated is called after std PlusPhase, has Pool info
-// downloaded from GPU, to set Gated flag based on CaPMax activity
+// MatrixGated is called after std PlusPhase
+// Uses Pool state to set Gated flag based on CaPMax activity.
 func (ly *LayerParams) MatrixGated(ctx *Context) {
 	lpi := ly.PoolIndex(0)
 	if ly.Learn.NeuroMod.DAMod != D1Mod {
-		oly := Layers[ly.Matrix.OtherMatrixIndex]
+		oly := Layers[ly.Striatum.OtherIndex]
 		olpi := oly.PoolSt
 		// note: NoGo layers don't track gating at the sub-pool level!
 		for di := uint32(0); di < ctx.NData; di++ {
@@ -112,38 +170,38 @@ func (ly *LayerParams) MatrixGated(ctx *Context) {
 	for di := uint32(0); di < ctx.NData; di++ {
 		mtxGated := PoolsInt[lpi, di, PoolGated] > 0
 		thalGated := false
-		if ly.Matrix.ThalLay1Index >= 0 {
-			tly := Layers[ly.Matrix.ThalLay1Index]
+		if ly.Striatum.ThalLay1Index >= 0 {
+			tly := Layers[ly.Striatum.ThalLay1Index]
 			tlpi := tly.PoolSt
 			gt := PoolsInt[tlpi, di, PoolGated]
 			thalGated = thalGated || gt > 0
 		}
-		if ly.Matrix.ThalLay2Index >= 0 {
-			tly := Layers[ly.Matrix.ThalLay2Index]
+		if ly.Striatum.ThalLay2Index >= 0 {
+			tly := Layers[ly.Striatum.ThalLay2Index]
 			tlpi := tly.PoolSt
 			gt := PoolsInt[tlpi, di, PoolGated]
 			thalGated = thalGated || gt > 0
 		}
-		if ly.Matrix.ThalLay3Index >= 0 {
-			tly := Layers[ly.Matrix.ThalLay3Index]
+		if ly.Striatum.ThalLay3Index >= 0 {
+			tly := Layers[ly.Striatum.ThalLay3Index]
 			tlpi := tly.PoolSt
 			gt := PoolsInt[tlpi, di, PoolGated]
 			thalGated = thalGated || gt > 0
 		}
-		if ly.Matrix.ThalLay4Index >= 0 {
-			tly := Layers[ly.Matrix.ThalLay4Index]
+		if ly.Striatum.ThalLay4Index >= 0 {
+			tly := Layers[ly.Striatum.ThalLay4Index]
 			tlpi := tly.PoolSt
 			gt := PoolsInt[tlpi, di, PoolGated]
 			thalGated = thalGated || gt > 0
 		}
-		if ly.Matrix.ThalLay5Index >= 0 {
-			tly := Layers[ly.Matrix.ThalLay5Index]
+		if ly.Striatum.ThalLay5Index >= 0 {
+			tly := Layers[ly.Striatum.ThalLay5Index]
 			tlpi := tly.PoolSt
 			gt := PoolsInt[tlpi, di, PoolGated]
 			thalGated = thalGated || gt > 0
 		}
-		if ly.Matrix.ThalLay6Index >= 0 {
-			tly := Layers[ly.Matrix.ThalLay6Index]
+		if ly.Striatum.ThalLay6Index >= 0 {
+			tly := Layers[ly.Striatum.ThalLay6Index]
 			tlpi := tly.PoolSt
 			gt := PoolsInt[tlpi, di, PoolGated]
 			thalGated = thalGated || gt > 0
@@ -163,7 +221,7 @@ func (ly *LayerParams) MatrixGated(ctx *Context) {
 				PoolsInt[pi, di, PoolGated] = 0
 			}
 		}
-		if ctx.PlusPhase.IsTrue() && ly.Matrix.IsVS.IsTrue() {
+		if ctx.PlusPhase.IsTrue() && ly.Striatum.IsVS.IsTrue() {
 			GlobalScalars[GvVSMatrixJustGated, di] = num.FromBool[float32](mtxGated)
 			if mtxGated {
 				poolIndex := int32(-1)
@@ -186,7 +244,7 @@ func (ly *LayerParams) MatrixGated(ctx *Context) {
 func (ly *LayerParams) GatedFromCaPMax(ctx *Context, di uint32) {
 	anyGated := false
 	lpi := ly.PoolIndex(0)
-	thr := ly.Matrix.GateThr
+	thr := ly.Striatum.GateThr
 	if ly.Indexes.NPools > 1 {
 		for spi := uint32(1); spi < ly.Indexes.NPools; spi++ {
 			pi := ly.PoolIndex(spi)
@@ -219,6 +277,49 @@ func (ly *LayerParams) AnyGated(di uint32) bool {
 	return PoolsInt[lpi, di, PoolGated] > 0
 }
 
+// MatrixPostPlus is called after std PlusPhase,
+// sets pool-specific DA dopamine signal based on patch modulation of SNc.
+// Only for non-reward trials.
+func (ly *LayerParams) MatrixPostPlus(ctx *Context) {
+	if ly.Striatum.IsVS.IsTrue() || ly.Indexes.NPools == 1 {
+		return
+	}
+	pf := Layers[ly.Striatum.PFIndex]
+	patchD1 := Layers[ly.Striatum.PatchD1Index]
+	patchD2 := Layers[ly.Striatum.PatchD2Index]
+	for di := uint32(0); di < ctx.NData; di++ {
+		if (GlobalScalars[GvHasRew, di]) > 0 { // has rew, do nothing
+			continue
+		}
+		for spi := uint32(1); spi < ly.Indexes.NPools; spi++ {
+			pfact := PoolAvgMax(AMCaPMax, AMCycle, Avg, pf.PoolIndex(spi), di) // todo: right var?
+			pfnet := ly.Striatum.BasePF + pfact
+			ptD1act := PoolAvgMax(AMCaD, AMCycle, Avg, patchD1.PoolIndex(spi), di)
+			ptD2act := PoolAvgMax(AMCaD, AMCycle, Avg, patchD2.PoolIndex(spi), di)
+			da := pfnet * ly.Striatum.PatchDA(ptD1act, ptD2act) * ly.Learn.NeuroMod.DASign()
+			pi := ly.PoolIndex(spi)
+			Pools[pi, di, fsfffb.DA] = da
+			Pools[pi, di, fsfffb.ModAct] = pfnet
+		}
+	}
+}
+
+// PatchPostPlus is called after std PlusPhase,
+// sets pool-specific DA dopamine signal based on PF activity and DA.
+func (ly *LayerParams) PatchPostPlus(ctx *Context) {
+	if ly.Indexes.NPools == 1 {
+		return
+	}
+	pf := Layers[ly.Striatum.PFIndex]
+	for di := uint32(0); di < ctx.NData; di++ {
+		for spi := uint32(1); spi < ly.Indexes.NPools; spi++ {
+			pfact := PoolAvgMax(AMCaPMax, AMCycle, Avg, pf.PoolIndex(spi), di) // todo: right var?
+			pfnet := ly.Striatum.BasePF + pfact
+			Pools[ly.PoolIndex(spi), di, fsfffb.ModAct] = pfnet
+		}
+	}
+}
+
 //gosl:end
 
 func (ly *Layer) MatrixDefaults() {
@@ -247,14 +348,14 @@ func (ly *Layer) MatrixDefaults() {
 
 	if ly.Class == "VSMatrixLayer" {
 		ly.Params.Inhib.Layer.On.SetBool(true)
-		ly.Params.Matrix.IsVS.SetBool(true)
+		ly.Params.Striatum.IsVS.SetBool(true)
 		ly.Params.Acts.Dend.ModBase = 0
 		ly.Params.Acts.Dend.ModGain = 2 // for VS case -- otherwise irrelevant
 		ly.Params.Learn.NeuroMod.AChDisInhib = 5
 		ly.Params.Learn.NeuroMod.BurstGain = 1
 	} else {
 		ly.Params.Inhib.Layer.On.SetBool(false)
-		ly.Params.Matrix.IsVS.SetBool(false)
+		ly.Params.Striatum.IsVS.SetBool(false)
 		ly.Params.Acts.Dend.ModBase = 1
 		ly.Params.Acts.Dend.ModGain = 0
 		ly.Params.Learn.NeuroMod.AChDisInhib = 0
@@ -280,26 +381,43 @@ func (ly *Layer) MatrixDefaults() {
 }
 
 func (ly *Layer) MatrixPostBuild() {
-	ly.Params.Matrix.ThalLay1Index = ly.BuildConfigFindLayer("ThalLay1Name", false) // optional
-	ly.Params.Matrix.ThalLay2Index = ly.BuildConfigFindLayer("ThalLay2Name", false) // optional
-	ly.Params.Matrix.ThalLay3Index = ly.BuildConfigFindLayer("ThalLay3Name", false) // optional
-	ly.Params.Matrix.ThalLay4Index = ly.BuildConfigFindLayer("ThalLay4Name", false) // optional
-	ly.Params.Matrix.ThalLay5Index = ly.BuildConfigFindLayer("ThalLay5Name", false) // optional
-	ly.Params.Matrix.ThalLay6Index = ly.BuildConfigFindLayer("ThalLay6Name", false) // optional
+	ly.Params.Striatum.ThalLay1Index = ly.BuildConfigFindLayer("ThalLay1Name", false) // optional
+	ly.Params.Striatum.ThalLay2Index = ly.BuildConfigFindLayer("ThalLay2Name", false) // optional
+	ly.Params.Striatum.ThalLay3Index = ly.BuildConfigFindLayer("ThalLay3Name", false) // optional
+	ly.Params.Striatum.ThalLay4Index = ly.BuildConfigFindLayer("ThalLay4Name", false) // optional
+	ly.Params.Striatum.ThalLay5Index = ly.BuildConfigFindLayer("ThalLay5Name", false) // optional
+	ly.Params.Striatum.ThalLay6Index = ly.BuildConfigFindLayer("ThalLay6Name", false) // optional
 
-	ly.Params.Matrix.OtherMatrixIndex = ly.BuildConfigFindLayer("OtherMatrixName", true)
+	ly.Params.Striatum.OtherIndex = ly.BuildConfigFindLayer("OtherName", true)
+
+	isDorsal := !ly.Params.Striatum.IsVS.Bool()
+
+	if isDorsal {
+		ly.Params.Striatum.PFIndex = ly.BuildConfigFindLayer("PFName", true)
+		ly.Params.Striatum.PatchD1Index = ly.BuildConfigFindLayer("PatchD1Name", true)
+		ly.Params.Striatum.PatchD2Index = ly.BuildConfigFindLayer("PatchD2Name", true)
+	}
 
 	dm, err := ly.BuildConfigByName("DAMod")
 	if err == nil {
-		err = ly.Params.Learn.NeuroMod.DAMod.SetString(dm)
-		if err != nil {
-			log.Println(err)
-		}
+		errors.Log(ly.Params.Learn.NeuroMod.DAMod.SetString(dm))
 	}
 }
 
-////////////////////////////////////////////////////////////////////
-//  GP
+func (ly *Layer) PatchDefaults() {
+	ly.Params.VSPatchDefaults()
+}
+
+func (ly *Layer) PatchPostBuild() {
+	ly.Params.Striatum.OtherIndex = ly.BuildConfigFindLayer("OtherName", true)
+	ly.Params.Striatum.PFIndex = ly.BuildConfigFindLayer("PFName", true)
+	dm, err := ly.BuildConfigByName("DAMod")
+	if err == nil {
+		errors.Log(ly.Params.Learn.NeuroMod.DAMod.SetString(dm))
+	}
+}
+
+////////  GP
 
 func (ly *Layer) GPDefaults() {
 	// GP is tonically self-active and has no FFFB inhibition
@@ -385,8 +503,7 @@ func (ly *Layer) GPPostBuild() {
 	}
 }
 
-////////////////////////////////////////////////////////////////////
-//  STN
+////////  STN
 
 func (ly *Layer) STNDefaults() {
 	// STN is tonically self-active and has no FFFB inhibition
@@ -429,8 +546,7 @@ func (ly *Layer) STNDefaults() {
 	}
 }
 
-////////////////////////////////////////////////////////////////////
-//  BGThal
+////////  BGThal
 
 func (ly *Layer) BGThalDefaults() {
 	// note: not tonically active
@@ -457,8 +573,7 @@ func (ly *Layer) BGThalDefaults() {
 	}
 }
 
-////////////////////////////////////////////////////////////////////
-//  VSGated
+////////  VSGated
 
 func (ly *LayerParams) VSGatedDefaults() {
 	ly.Inhib.ActAvg.Nominal = 0.5

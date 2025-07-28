@@ -374,10 +374,10 @@ func (nt *Network) AddPVPulvLayers(nNeurY, nNeurX int, rel relpos.Relations, spa
 
 // AddVSPatchLayers adds VSPatch (Pos, D1, D2)
 func (nt *Network) AddVSPatchLayers(prefix string, nUs, nNeurY, nNeurX int, space float32) (d1, d2 *Layer) {
-	d1 = nt.AddLayer4D(prefix+"VsPatchD1", VSPatchLayer, 1, nUs, nNeurY, nNeurX)
+	d1 = nt.AddLayer4D(prefix+"VSPatchD1", VSPatchLayer, 1, nUs, nNeurY, nNeurX)
 	d1.SetBuildConfig("DAMod", "D1Mod")
 	d1.SetBuildConfig("Valence", "Positive")
-	d2 = nt.AddLayer4D(prefix+"VsPatchD2", VSPatchLayer, 1, nUs, nNeurY, nNeurX)
+	d2 = nt.AddLayer4D(prefix+"VSPatchD2", VSPatchLayer, 1, nUs, nNeurY, nNeurX)
 	d2.SetBuildConfig("DAMod", "D2Mod")
 	d2.SetBuildConfig("Valence", "Positive")
 	d2.PlaceBehind(d1, space)

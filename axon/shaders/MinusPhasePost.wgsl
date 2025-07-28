@@ -485,7 +485,7 @@ const PathGTypesN: PathGTypes = 5;
 const GlobalScalarVarsN: GlobalScalarVars = 58;
 const GlobalVectorVarsN: GlobalVectorVars = 10;
 const GPUVarsN: GPUVars = 23;
-const LayerTypesN: LayerTypes = 30;
+const LayerTypesN: LayerTypes = 31;
 const LayerVarsN: LayerVars = 12;
 const ViewTimesN: ViewTimes = 7;
 const DAModTypesN: DAModTypes = 4;
@@ -494,7 +494,7 @@ const NeuronFlagsN: NeuronFlags = 9;
 const NeuronVarsN: NeuronVars = 85;
 const NeuronAvgVarsN: NeuronAvgVars = 7;
 const NeuronIndexVarsN: NeuronIndexVars = 3;
-const PathTypesN: PathTypes = 12;
+const PathTypesN: PathTypes = 13;
 const GPLayerTypesN: GPLayerTypes = 3;
 const PoolIndexVarsN: PoolIndexVars = 4;
 const PoolIntVarsN: PoolIntVars = 6;
@@ -506,7 +506,7 @@ const SynapseTraceVarsN: SynapseTraceVars = 3;
 const SynapseIndexVarsN: SynapseIndexVars = 3;
 
 //////// import: "fsfffb-enumgen.go"
-const InhibVarsN: InhibVars = 16;
+const InhibVarsN: InhibVars = 18;
 
 //////// import: "fsfffb-fsfffb.go"
 struct GiParams {
@@ -546,6 +546,8 @@ const  GiOrig: InhibVars = 12;
 const  LayGi: InhibVars = 13;
 const  FFAvg: InhibVars = 14;
 const  FFAvgPrv: InhibVars = 15;
+const  ModAct: InhibVars = 16;
+const  DA: InhibVars = 17;
 
 //////// import: "globals.go"
 alias GlobalScalarVars = i32; //enums:enum
@@ -703,7 +705,7 @@ struct LayerParams {
 	Bursts: BurstParams,
 	CT: CTParams,
 	Pulv: PulvParams,
-	Matrix: MatrixParams,
+	Striatum: StriatumParams,
 	GP: GPParams,
 	LDT: LDTParams,
 	VTA: VTAParams,
@@ -729,26 +731,27 @@ const  TRNLayer: LayerTypes = 6;
 const  PTMaintLayer: LayerTypes = 7;
 const  PTPredLayer: LayerTypes = 8;
 const  MatrixLayer: LayerTypes = 9;
-const  STNLayer: LayerTypes = 10;
-const  GPLayer: LayerTypes = 11;
-const  BGThalLayer: LayerTypes = 12;
-const  VSGatedLayer: LayerTypes = 13;
-const  BLALayer: LayerTypes = 14;
-const  CeMLayer: LayerTypes = 15;
-const  VSPatchLayer: LayerTypes = 16;
-const  LHbLayer: LayerTypes = 17;
-const  DrivesLayer: LayerTypes = 18;
-const  UrgencyLayer: LayerTypes = 19;
-const  USLayer: LayerTypes = 20;
-const  PVLayer: LayerTypes = 21;
-const  LDTLayer: LayerTypes = 22;
-const  VTALayer: LayerTypes = 23;
-const  RewLayer: LayerTypes = 24;
-const  RWPredLayer: LayerTypes = 25;
-const  RWDaLayer: LayerTypes = 26;
-const  TDPredLayer: LayerTypes = 27;
-const  TDIntegLayer: LayerTypes = 28;
-const  TDDaLayer: LayerTypes = 29;
+const  DSPatchLayer: LayerTypes = 10;
+const  STNLayer: LayerTypes = 11;
+const  GPLayer: LayerTypes = 12;
+const  BGThalLayer: LayerTypes = 13;
+const  VSGatedLayer: LayerTypes = 14;
+const  BLALayer: LayerTypes = 15;
+const  CeMLayer: LayerTypes = 16;
+const  VSPatchLayer: LayerTypes = 17;
+const  LHbLayer: LayerTypes = 18;
+const  DrivesLayer: LayerTypes = 19;
+const  UrgencyLayer: LayerTypes = 20;
+const  USLayer: LayerTypes = 21;
+const  PVLayer: LayerTypes = 22;
+const  LDTLayer: LayerTypes = 23;
+const  VTALayer: LayerTypes = 24;
+const  RewLayer: LayerTypes = 25;
+const  RWPredLayer: LayerTypes = 26;
+const  RWDaLayer: LayerTypes = 27;
+const  TDPredLayer: LayerTypes = 28;
+const  TDIntegLayer: LayerTypes = 29;
+const  TDDaLayer: LayerTypes = 30;
 
 //////// import: "layervars.go"
 alias LayerVars = i32; //enums:enum
@@ -1107,15 +1110,24 @@ const  RWPath: PathTypes = 5;
 const  TDPredPath: PathTypes = 6;
 const  BLAPath: PathTypes = 7;
 const  HipPath: PathTypes = 8;
-const  VSPatchPath: PathTypes = 9;
-const  VSMatrixPath: PathTypes = 10;
-const  DSMatrixPath: PathTypes = 11;
+const  DSPatchPath: PathTypes = 9;
+const  VSPatchPath: PathTypes = 10;
+const  VSMatrixPath: PathTypes = 11;
+const  DSMatrixPath: PathTypes = 12;
 
 //////// import: "pcore-layer.go"
-struct MatrixParams {
+struct StriatumParams {
 	GateThr: f32,
+	BasePF: f32,
+	NovelDA: f32,
+	MaxPatchD1: f32,
+	BadPatchDA: f32,
+	PatchD2Thr: f32,
 	IsVS: i32,
-	OtherMatrixIndex: i32,
+	OtherIndex: i32,
+	PFIndex: i32,
+	PatchD1Index: i32,
+	PatchD2Index: i32,
 	ThalLay1Index: i32,
 	ThalLay2Index: i32,
 	ThalLay3Index: i32,
@@ -1139,7 +1151,7 @@ struct GPParams {
 fn LayerParams_MatrixGated(ly: LayerParams, ctx: Context) {
 	var lpi = LayerParams_PoolIndex(ly, u32(u32(0)));
 	if (ly.Learn.NeuroMod.DAMod != D1Mod) {
-		var oly = Layers[ly.Matrix.OtherMatrixIndex];
+		var oly = Layers[ly.Striatum.OtherIndex];
 		var olpi = oly.PoolSt;
 		for (var di = u32(0); di < ctx.NData; di++) {
 			PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(lpi), u32(di), u32(PoolGated))] = PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(olpi), u32(di), u32(PoolGated))];
@@ -1148,38 +1160,38 @@ fn LayerParams_MatrixGated(ly: LayerParams, ctx: Context) {
 	for (var di = u32(0); di < ctx.NData; di++) {
 		var mtxGated = PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(lpi), u32(di), u32(PoolGated))] > 0;
 		var thalGated = false;
-		if (ly.Matrix.ThalLay1Index >= 0) {
-			var tly = Layers[ly.Matrix.ThalLay1Index];
+		if (ly.Striatum.ThalLay1Index >= 0) {
+			var tly = Layers[ly.Striatum.ThalLay1Index];
 			var tlpi = tly.PoolSt;
 			var gt = PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(tlpi), u32(di), u32(PoolGated))];
 			thalGated = thalGated || gt > 0;
 		}
-		if (ly.Matrix.ThalLay2Index >= 0) {
-			var tly = Layers[ly.Matrix.ThalLay2Index];
+		if (ly.Striatum.ThalLay2Index >= 0) {
+			var tly = Layers[ly.Striatum.ThalLay2Index];
 			var tlpi = tly.PoolSt;
 			var gt = PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(tlpi), u32(di), u32(PoolGated))];
 			thalGated = thalGated || gt > 0;
 		}
-		if (ly.Matrix.ThalLay3Index >= 0) {
-			var tly = Layers[ly.Matrix.ThalLay3Index];
+		if (ly.Striatum.ThalLay3Index >= 0) {
+			var tly = Layers[ly.Striatum.ThalLay3Index];
 			var tlpi = tly.PoolSt;
 			var gt = PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(tlpi), u32(di), u32(PoolGated))];
 			thalGated = thalGated || gt > 0;
 		}
-		if (ly.Matrix.ThalLay4Index >= 0) {
-			var tly = Layers[ly.Matrix.ThalLay4Index];
+		if (ly.Striatum.ThalLay4Index >= 0) {
+			var tly = Layers[ly.Striatum.ThalLay4Index];
 			var tlpi = tly.PoolSt;
 			var gt = PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(tlpi), u32(di), u32(PoolGated))];
 			thalGated = thalGated || gt > 0;
 		}
-		if (ly.Matrix.ThalLay5Index >= 0) {
-			var tly = Layers[ly.Matrix.ThalLay5Index];
+		if (ly.Striatum.ThalLay5Index >= 0) {
+			var tly = Layers[ly.Striatum.ThalLay5Index];
 			var tlpi = tly.PoolSt;
 			var gt = PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(tlpi), u32(di), u32(PoolGated))];
 			thalGated = thalGated || gt > 0;
 		}
-		if (ly.Matrix.ThalLay6Index >= 0) {
-			var tly = Layers[ly.Matrix.ThalLay6Index];
+		if (ly.Striatum.ThalLay6Index >= 0) {
+			var tly = Layers[ly.Striatum.ThalLay6Index];
 			var tlpi = tly.PoolSt;
 			var gt = PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(tlpi), u32(di), u32(PoolGated))];
 			thalGated = thalGated || gt > 0;
@@ -1191,7 +1203,7 @@ fn LayerParams_MatrixGated(ly: LayerParams, ctx: Context) {
 				PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(PoolGated))] = 0;
 			}
 		}
-		if (ctx.PlusPhase == 1 && ly.Matrix.IsVS == 1) {
+		if (ctx.PlusPhase == 1 && ly.Striatum.IsVS == 1) {
 			GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvVSMatrixJustGated), u32(di))] = f32(mtxGated);
 			if (mtxGated) {
 				var poolIndex = i32(-1);
@@ -1212,9 +1224,9 @@ fn LayerParams_MatrixGated(ly: LayerParams, ctx: Context) {
 //////// import: "pcore-path.go"
 struct MatrixPathParams {
 	Credit: f32,
-	BasePF: f32,
 	Delta: f32,
 	VSRewLearn: i32,
+	pad: f32,
 }
 
 //////// import: "pool.go"
@@ -1247,7 +1259,7 @@ const  AMGeInt: AvgMaxVars = 4;
 const  AMGiInt: AvgMaxVars = 5;
 const  AMAvgDif: AvgMaxVars = 6;
 const  poolFloatAvgMaxStart = InhibVarsN;
-const  PoolVarsN = poolFloatAvgMaxStart + InhibVars(i32(AvgMaxVarsN)*i32(AvgMaxN)*i32(AvgMaxPhasesN));
+const  PoolVarsTotal = poolFloatAvgMaxStart + InhibVars(i32(AvgMaxVarsN)*i32(AvgMaxN)*i32(AvgMaxPhasesN));
 const  PoolIntVarsTot = PoolIntAvgMaxStart + PoolIntVars(i32(AvgMaxVarsN)*i32(AvgMaxN));
 const avgMaxToNeuron = array(CaP, CaD, CaPMax, Act, GeInt, GiInt);
 

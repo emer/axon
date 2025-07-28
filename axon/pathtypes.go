@@ -64,6 +64,12 @@ const (
 
 	HipPath
 
+	// DSPatchPath implements the DSPatch learning rule:
+	// dW = ACh * DA * X * Y
+	// where DA is D1 vs. D2 modulated DA level, X = sending activity factor,
+	// Y = receiving activity factor, and ACh provides overall modulation.
+	DSPatchPath
+
 	// VSPatchPath implements the VSPatch learning rule:
 	// dW = ACh * DA * X * Y
 	// where DA is D1 vs. D2 modulated DA level, X = sending activity factor,

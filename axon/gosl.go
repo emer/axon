@@ -230,6 +230,7 @@ func GPUInit() {
 		pl.AddVarUsed(1, "NeuronIxs")
 		pl.AddVarUsed(2, "Neurons")
 		pl.AddVarUsed(0, "Paths")
+		pl.AddVarUsed(2, "Pools")
 		pl.AddVarUsed(1, "SynapseIxs")
 		pl.AddVarUsed(3, "SynapseTraces0")
 		pl.AddVarUsed(3, "SynapseTraces1")

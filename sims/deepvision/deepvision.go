@@ -352,7 +352,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(lip, v3, pts.PT2x2Skp2, axon.BackPath)
 
 	net.ConnectLayers(v1m, v3, rndcut, axon.ForwardPath).AddClass("V1SC")   // shortcut!
-	net.ConnectLayers(v1m, v3CT, rndcut, axon.ForwardPath).AddClass("V1SC") // shortcut!
+	net.ConnectLayers(v1m, v3CT, rndcut, axon.ForwardPath).AddClass("V1SC") // shortcut! // CT def good
 
 	v3.PlaceRightOf(v2, space)
 
@@ -394,7 +394,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		// net.ConnectLayers(dpCT, v3CT, full, axon.BackPath)
 
 		net.ConnectLayers(v1m, dp, rndcut, axon.ForwardPath).AddClass("V1SC")   // shortcut!
-		net.ConnectLayers(v1m, dpCT, rndcut, axon.ForwardPath).AddClass("V1SC") // shortcut!
+		net.ConnectLayers(v1m, dpCT, rndcut, axon.ForwardPath).AddClass("V1SC") // shortcut! // CT good
 
 		v3P.PlaceBehind(v3CT, space)
 		dp.PlaceBehind(v3P, space)
@@ -409,7 +409,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	sample2(v4CT)
 
 	net.ConnectToPulv(v4, v4CT, v1mP, pts.PT4x4Skp2Recip, pts.PT4x4Skp2, "FromV1mP") // 3x3 >> p1to1??
-	// no V4 -> v1mP
+	// no V4 -> v1mP: sig worse overall
 	// net.ConnectLayers(v1mP, v4, pts.PT4x4Skp2, axon.BackPath).AddClass("FromPulv", "FromV1mP")
 	// net.ConnectLayers(v1mP, v4CT, pts.PT4x4Skp2, axon.BackPath).AddClass("FromPulv", "FromV1mP")
 
@@ -421,7 +421,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(v2, v4, pts.PT4x4Skp2, axon.ForwardPath)
 	net.ConnectLayers(v4, v2, pts.PT4x4Skp2Recip, axon.BackPath)
 
-	net.ConnectLayers(v4, v3, pts.PT3x3Skp1, axon.BackPath) // v4 -> v3 but not v3 -> v4
+	// not useful:
+	// net.ConnectLayers(v4, v3, pts.PT3x3Skp1, axon.BackPath) // v4 -> v3 but not v3 -> v4
 
 	// no V4 <-> LIP
 	// no FF CT -> CT?
@@ -637,10 +638,10 @@ func (ss *Sim) ConfigLoops() {
 
 	trainEpoch.OnStart.Add("TurnOnAdaptGi", func() {
 		epc := trainEpoch.Counter.Cur
-		if epc != 200 {
+		if epc != 250 {
 			return
 		}
-		lays := []string{"V4CT", "TEOCT", "TECT"}
+		lays := ss.Net.LayersByType(axon.CTLayer)
 		for _, lnm := range lays {
 			ly := ss.Net.LayerByName(lnm)
 			if ly == nil {
@@ -715,6 +716,7 @@ func (ss *Sim) NewRun() {
 		ss.Envs.ByModeDi(Test, di).Init(0)
 	}
 	ctx.Reset()
+	ss.ApplyParams() // must reapply due to changes @250
 	ss.Net.InitWeights()
 	if ss.Config.Run.StartWeights != "" {
 		ss.Net.OpenWeightsJSON(core.Filename(ss.Config.Run.StartWeights))

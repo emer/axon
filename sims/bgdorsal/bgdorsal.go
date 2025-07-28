@@ -225,8 +225,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mtxRandPath.PCon = 0.5
 	_ = mtxRandPath
 
-	mtxGo, mtxNo, gpePr, gpeAk, stn, gpi, pf := net.AddDorsalBG("", 1, nAct, nuY, nuX, nuY, nuX, space)
-	_, _ = gpePr, gpeAk
+	matrixGo, matrixNo, patchD1, patchD2, gpePr, gpeAk, stn, gpi, pf := net.AddDorsalBG("", 1, nAct, nuY, nuX, nuY, nuX, space)
+	_, _, _, _ = patchD1, patchD2, gpePr, gpeAk
 
 	snc := net.AddLayer2D("SNc", axon.InputLayer, 1, 1)
 	_ = snc
@@ -274,23 +274,23 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectLayers(gpi, m1VM, full, axon.InhibPath).AddClass("DBGInhib")
 
-	mtxGo.SetBuildConfig("ThalLay1Name", m1VM.Name)
-	mtxNo.SetBuildConfig("ThalLay1Name", m1VM.Name)
+	matrixGo.SetBuildConfig("ThalLay1Name", m1VM.Name)
+	matrixNo.SetBuildConfig("ThalLay1Name", m1VM.Name)
 
-	toMtx := full
-	// toMtx := mtxRandPath // works, but not as reliably
-	net.ConnectToDSMatrix(state, mtxGo, toMtx).AddClass("StateToMtx FmState")
-	net.ConnectToDSMatrix(state, mtxNo, toMtx).AddClass("StateToMtx FmState")
-	net.ConnectToDSMatrix(s1, mtxNo, toMtx).AddClass("S1ToMtx")
-	net.ConnectToDSMatrix(s1, mtxGo, toMtx).AddClass("S1ToMtx")
+	toMatrix := full
+	// toMatrix := mtxRandPath // works, but not as reliably
+	net.ConnectToDSMatrix(state, matrixGo, matrixNo, toMatrix, "StateToMatrix", "FmState")
+	net.ConnectToDSMatrix(s1, matrixGo, matrixNo, toMatrix, "S1ToMatrix")
+	net.ConnectToDSMatrix(m1, matrixGo, matrixNo, toMatrix, "M1ToMatrix")
 
-	net.ConnectToDSMatrix(m1, mtxGo, toMtx).AddClass("M1ToMtx")
-	net.ConnectToDSMatrix(m1, mtxNo, toMtx).AddClass("M1ToMtx")
+	net.ConnectToDSPatch(state, patchD1, patchD2, toMatrix, "StateToPatch", "FmState")
+	net.ConnectToDSPatch(s1, patchD1, patchD2, toMatrix, "S1ToPatch")
+	net.ConnectToDSPatch(m1, patchD1, patchD2, toMatrix, "M1ToPatch")
 
 	// note: just using direct pathways here -- theoretically through CL
 	// not working! -- need to make these modulatory in the right way.
-	// net.ConnectToDSMatrix(motor, mtxGo, p1to1).AddClass("CLToMtx")
-	// net.ConnectToDSMatrix(motor, mtxNo, p1to1).AddClass("CLToMtx")
+	// net.ConnectToDSMatrix(motor, matrixGo, p1to1).AddClass("CLToMatrix")
+	// net.ConnectToDSMatrix(motor, matrixNo, p1to1).AddClass("CLToMatrix")
 
 	pf.PlaceRightOf(gpi, space)
 	snc.PlaceBehind(stn, space)
@@ -301,9 +301,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	gpeAk.PlaceBehind(gpePr, space)
 	stn.PlaceRightOf(gpePr, space)
-	mtxGo.PlaceAbove(gpi)
-	mtxNo.PlaceBehind(mtxGo, space)
-	state.PlaceAbove(mtxGo)
+	matrixGo.PlaceAbove(gpi)
+	matrixNo.PlaceBehind(matrixGo, space)
+	patchD1.PlaceBehind(matrixNo, space)
+	state.PlaceAbove(matrixGo)
 	s1.PlaceRightOf(state, space)
 
 	m1.PlaceRightOf(s1, space)
@@ -336,8 +337,8 @@ func (ss *Sim) ApplyParams() {
 
 func (ss *Sim) TurnOffTheNoise() {
 	return // not doing this now -- not better
-	mtxGo := ss.Net.LayerByName("MtxGo")
-	if mtxGo.Params.Acts.Noise.On.IsFalse() {
+	matrixGo := ss.Net.LayerByName("MatrixGo")
+	if matrixGo.Params.Acts.Noise.On.IsFalse() {
 		return
 	}
 	ss.Params.ApplySheet(ss.Net, "NoiseOff")

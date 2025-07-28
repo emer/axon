@@ -166,6 +166,8 @@ func (ly *Layer) Defaults() { //types:add
 
 	case MatrixLayer:
 		ly.MatrixDefaults()
+	case DSPatchLayer:
+		ly.PatchDefaults()
 	case GPLayer:
 		ly.GPDefaults()
 	case STNLayer:
@@ -431,6 +433,8 @@ func (ly *Layer) PostBuild() {
 
 	case MatrixLayer:
 		ly.MatrixPostBuild()
+	case DSPatchLayer:
+		ly.PatchPostBuild()
 	case GPLayer:
 		ly.GPPostBuild()
 	}

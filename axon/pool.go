@@ -127,7 +127,7 @@ const (
 	// poolFloatAvgMaxStart is the starting index for AvgMax float32 variables.
 	poolFloatAvgMaxStart = fsfffb.InhibVarsN
 
-	PoolVarsN = poolFloatAvgMaxStart + fsfffb.InhibVars(int32(AvgMaxVarsN)*int32(AvgMaxN)*int32(AvgMaxPhasesN))
+	PoolVarsTotal = poolFloatAvgMaxStart + fsfffb.InhibVars(int32(AvgMaxVarsN)*int32(AvgMaxN)*int32(AvgMaxPhasesN))
 
 	PoolIntVarsTot = PoolIntAvgMaxStart + PoolIntVars(int32(AvgMaxVarsN)*int32(AvgMaxN))
 )

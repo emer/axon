@@ -114,9 +114,10 @@ type LayerParams struct {
 	// neuron Burst activation (or CaP if not Super).
 	Pulv PulvParams `display:"inline"`
 
-	// Matrix has parameters for BG Striatum Matrix MSN layers, which are
-	// the main Go / NoGo gating units in BG. GateThr also used in BGThal.
-	Matrix MatrixParams `display:"inline"`
+	// Striatum has parameters for BG Striatum layers, for SPN / MSN
+	// direct and indirect pathways and Patch / Striosome layers.
+	// GateThr also used in BGThal.
+	Striatum StriatumParams `display:"inline"`
 
 	// GP has params for GP (globus pallidus) of the BG layers.
 	GP GPParams `display:"inline"`
@@ -190,7 +191,7 @@ func (ly *LayerParams) Update() {
 	ly.CT.Update()
 	ly.Pulv.Update()
 
-	ly.Matrix.Update()
+	ly.Striatum.Update()
 	ly.GP.Update()
 
 	ly.LDT.Update()
@@ -214,7 +215,7 @@ func (ly *LayerParams) Defaults() {
 	ly.CT.Defaults()
 	ly.Pulv.Defaults()
 
-	ly.Matrix.Defaults()
+	ly.Striatum.Defaults()
 	ly.GP.Defaults()
 
 	ly.LDT.Defaults()
@@ -234,8 +235,8 @@ func (ly *LayerParams) ShouldDisplay(field string) bool {
 		return ly.Type == CTLayer || ly.Type == PTPredLayer || ly.Type == BLALayer
 	case "Pulv":
 		return ly.Type == PulvinarLayer
-	case "Matrix":
-		return ly.Type == MatrixLayer || ly.Type == BGThalLayer
+	case "Striatum":
+		return ly.Type == MatrixLayer || ly.Type == DSPatchLayer || ly.Type == BGThalLayer
 	case "GP":
 		return ly.Type == GPLayer
 	case "LDT":
@@ -282,8 +283,8 @@ func (ly *LayerParams) ParamsString(nonDefault bool) string {
 			return ltyp == CTLayer || ltyp == PTPredLayer || ltyp == BLALayer
 		case "Pulv":
 			return ltyp == PulvinarLayer
-		case "Matrix":
-			return ltyp == MatrixLayer || ltyp == BGThalLayer
+		case "Striatum":
+			return ltyp == MatrixLayer || ltyp == DSPatchLayer || ltyp == BGThalLayer
 		case "GP":
 			return ltyp == GPLayer
 		case "LDT":

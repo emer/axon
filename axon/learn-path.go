@@ -8,6 +8,7 @@ package axon
 
 import (
 	"cogentcore.org/core/math32"
+	"github.com/emer/axon/v2/fsfffb"
 )
 
 //gosl:start
@@ -34,6 +35,8 @@ func (pt *PathParams) DWtSyn(ctx *Context, rlay *LayerParams, syni, si, ri, di u
 		pt.DWtSynDSMatrix(ctx, syni, si, ri, lpi, pi, di)
 	case VSPatchPath:
 		pt.DWtSynVSPatch(ctx, syni, si, ri, lpi, pi, di)
+	case DSPatchPath:
+		pt.DWtSynDSPatch(ctx, syni, si, ri, lpi, pi, di)
 	case BLAPath:
 		pt.DWtSynBLA(ctx, syni, si, ri, lpi, pi, di)
 	case HipPath:
@@ -327,7 +330,8 @@ func (pt *PathParams) DWtSynVSMatrix(ctx *Context, syni, si, ri, lpi, pi, di uin
 // DWtSynDSMatrix computes the weight change (learning) at given synapse,
 // for the DSMatrixPath type.
 func (pt *PathParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, lpi, pi, di uint32) {
-	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
+	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in,
+	// at time of reward, and otherwise is just the sig deriv mod.
 
 	rlr := Neurons.Value(int(ri), int(di), int(RLRate))
 	if GlobalScalars.Value(int(GvHasRew), int(di)) > 0 { // US time -- use DA and current recv activity
@@ -337,12 +341,13 @@ func (pt *PathParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, lpi, pi, di uin
 		SynapseTraces.Set(0.0, int(syni), int(di), int(Tr))
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DTr))
 	} else {
-		pfmod := pt.Matrix.BasePF + Neurons.Value(int(ri), int(di), int(GModSyn))
+		pfmod := Pools.Value(int(pi), int(di), int(fsfffb.ModAct))
+		patchDA := Pools.Value(int(pi), int(di), int(fsfffb.DA))
 		rplus := Neurons.Value(int(ri), int(di), int(CaP))
 		rminus := Neurons.Value(int(ri), int(di), int(CaD))
 		sact := Neurons.Value(int(si), int(di), int(CaD))
-		dtr := rlr * (pt.Matrix.Delta * sact * (rplus - rminus))
-		if rminus > pt.Learn.DWt.LearnThr { // key: prevents learning if < threshold
+		dtr := rlr * (pt.Matrix.Delta*sact*(rplus-rminus) + patchDA) // no pf mod here
+		if rminus > pt.Learn.DWt.LearnThr {                          // key: prevents learning if < threshold
 			dtr += rlr * (pt.Matrix.Credit * pfmod * sact * rminus)
 		}
 		SynapseTraces.Set(dtr, int(syni), int(di), int(DTr))
@@ -361,6 +366,21 @@ func (pt *PathParams) DWtSynVSPatch(ctx *Context, syni, si, ri, lpi, pi, di uint
 	// and also the logic that non-positive DA leads to weight decreases.
 	sact := Neurons.Value(int(si), int(di), int(CaDPrev)) // t-1
 	dwt := Neurons.Value(int(ri), int(di), int(RLRate)) * pt.Learn.LRate.Eff * sact * ract
+	SynapseTraces.Set(dwt, int(syni), int(di), int(DiDWt))
+}
+
+// DWtSynDSPatch computes the weight change (learning) at given synapse,
+// for the DSPatchPath type. Conditioned on PF modulatory inputs.
+func (pt *PathParams) DWtSynDSPatch(ctx *Context, syni, si, ri, lpi, pi, di uint32) {
+	ract := Neurons.Value(int(ri), int(di), int(CaDPrev)) // t-1
+	if ract < pt.Learn.DWt.LearnThr {
+		ract = 0
+	}
+	pfmod := Pools.Value(int(pi), int(di), int(fsfffb.ModAct))
+	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
+	// and also the logic that non-positive DA leads to weight decreases.
+	sact := Neurons.Value(int(si), int(di), int(CaDPrev)) // t-1
+	dwt := pfmod * Neurons.Value(int(ri), int(di), int(RLRate)) * pt.Learn.LRate.Eff * sact * ract
 	SynapseTraces.Set(dwt, int(syni), int(di), int(DiDWt))
 }
 

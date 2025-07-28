@@ -41,13 +41,16 @@ var LayerParams = axon.LayerSheets{
 				// ly.Acts.NMDA.Tau = 100                       // 100 def >> 200
 				// ly.Learn.LearnNMDA.Tau = 100                 // 100 def >> 200
 			}},
-		{Sel: ".MatrixLayer", Doc: "all mtx",
+		{Sel: ".MatrixLayer", Doc: "all matrix",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.Pool.Gi = 0.5                     // 0.5 > others
 				ly.Learn.NeuroMod.BurstGain = 0.1          // 0.1 == 0.2 > 0.05 > 0.5 -- key lrate modulator
 				ly.Learn.NeuroMod.DAModGain = 0.2          // 0.2 >= 0.5 (orig) > 0
 				ly.Learn.RLRate.On.SetBool(true)           // note: applied for tr update trials
 				ly.Learn.TrgAvgAct.RescaleOn.SetBool(true) // true > false
+				ly.Striatum.BasePF = 0.005                 // 0.005 > 0.01, 0.002 etc
+				ly.Striatum.NovelDA = 0                    // todo
+				ly.Striatum.BadPatchDA = 0
 			}},
 		{Sel: ".DSTNLayer", Doc: "all STN",
 			Set: func(ly *axon.LayerParams) {
@@ -147,12 +150,12 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".DSMatrixPath", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1.8          // 1.8 > others
-				pt.Learn.LRate.Base = 0.02      // rlr sig: .02 > .015 .025
-				pt.Learn.DWt.LearnThr = 0.1     // 0.1  > 0.2
-				pt.Matrix.Credit = 0.6          // key param, 0.6 > 0.5, 0.4, 0.7, 1 with pf modulation
-				pt.Matrix.BasePF = 0.005        // 0.005 > 0.01, 0.002 etc
-				pt.Matrix.Delta = 1             // should always be 1 except for testing; adjust lrate to compensate
+				pt.PathScale.Abs = 1.8      // 1.8 > others
+				pt.Learn.LRate.Base = 0.02  // rlr sig: .02 > .015 .025
+				pt.Learn.DWt.LearnThr = 0.1 // 0.1  > 0.2
+				pt.Matrix.Credit = 0.6      // key param, 0.6 > 0.5, 0.4, 0.7, 1 with pf modulation
+				pt.Matrix.Delta = 1         // verified essential v0.2.40
+				// Delta should always be 1 except for testing; adjust lrate to compensate
 				pt.SWts.Adapt.On.SetBool(false) // false > true here
 			}},
 		{Sel: ".SuperToPT", Doc: "one-to-one from super",
@@ -249,20 +252,20 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 1.5 // 1.5 > 1, 2, 2.5
 			}},
-		{Sel: "#DMtxNoToDMtxGo", Doc: "weakish no->go inhibition is beneficial",
+		{Sel: "#DMatrixNoToDMatrixGo", Doc: "weakish no->go inhibition is beneficial",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 0.1        // 0.1 > 0.05
 				pt.Learn.Learn.SetBool(false) // no-learn better than learn
 			}},
-		{Sel: "#DGPeAkToDMtxNo", Doc: "go disinhibition",
+		{Sel: "#DGPeAkToDMatrixNo", Doc: "go disinhibition",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 6
 			}},
-		// {Sel: ".StateToDMtx", Doc: "",
+		// {Sel: ".StateToDMatrix", Doc: "",
 		// 	Set: func(pt *axon.PathParams) {
 		// 		pt.PathScale.Abs = 1.5 // 1.8 def
 		// 	}},
-		// {Sel: ".CLToDMtx", Doc: "",
+		// {Sel: ".CLToDMatrix", Doc: "",
 		// 	Set: func(pt *axon.PathParams) {
 		// 		pt.Learn.Learn =   false
 		// 		pt.PathScale.Rel = 0.001
@@ -278,7 +281,7 @@ var PathParams = axon.PathSheets{
 // and have informed the default values in the first place.
 var ParamSetsDefs = params.Sets{
 	"Defaults": {
-		{Sel: ".MatrixLayer", Doc: "all mtx",
+		{Sel: ".MatrixLayer", Doc: "all matrix",
 			Params: params.Params{
 				ly.Inhib.Layer.On =             "true",
 				ly.Inhib.Pool.On =              "true",
@@ -324,15 +327,15 @@ var ParamSetsDefs = params.Sets{
 				ly.Acts.Init.GeBase = "0.3", // 0.3 > 0.2, 0.1
 				ly.Acts.Init.GeVar =  "0.1",
 			},
-		{Sel: "#DGPeAkToDMtxGo", Doc: "go disinhibition",
+		{Sel: "#DGPeAkToDMatrixGo", Doc: "go disinhibition",
 			Params: params.Params{
 				pt.PathScale.Abs = "3",
 			},
-		{Sel: "#DMtxGoToDGPeAk", Doc: "go inhibition",
+		{Sel: "#DMatrixGoToDGPeAk", Doc: "go inhibition",
 			Params: params.Params{
 				pt.PathScale.Abs = ".5", // stronger = more binary
 			},
-		{Sel: "#DMtxNoToDGPePr", Doc: "proto = primary classical NoGo pathway",
+		{Sel: "#DMatrixNoToDGPePr", Doc: "proto = primary classical NoGo pathway",
 			Params: params.Params{
 				pt.PathScale.Abs = "1", // 1 fully inhibits Pr
 			},
@@ -340,7 +343,7 @@ var ParamSetsDefs = params.Sets{
 			Params: params.Params{
 				pt.PathScale.Abs = "1",
 			},
-		{Sel: "#DMtxGoToDGPi", Doc: "go influence on gating -- slightly weaker than integrated GPePr",
+		{Sel: "#DMatrixGoToDGPi", Doc: "go influence on gating -- slightly weaker than integrated GPePr",
 			Params: params.Params{
 				pt.PathScale.Abs = "1", // 1 > 1.1, .9 and lower (not huge diffs)
 			},
@@ -372,7 +375,7 @@ var ParamSetsDefs = params.Sets{
 			Params: params.Params{
 				pt.PathScale.Abs = ".2",
 			},
-		{Sel: ".PFToDMtx", Doc: "",
+		{Sel: ".PFToDMatrix", Doc: "",
 			Params: params.Params{
 				pt.Learn.Learn =   "false",
 				pt.Com.GType =     "ModulatoryG",
