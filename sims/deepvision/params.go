@@ -184,12 +184,12 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Layer.Gi = 1.0 // 1
 				ly.Inhib.Pool.Gi = 1.05 // 1.05 > others
 			}},
-		{Sel: "#V2CT", Doc: "more activity",
+		{Sel: "#V2CT", Doc: "more inhibition",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.02
 				ly.Inhib.ActAvg.AdaptGi.SetBool(false) // adapt @250
-				ly.Inhib.Layer.Gi = 1.2                // ?
-				ly.Inhib.Pool.Gi = 1.2                 // ?
+				ly.Inhib.Layer.Gi = 1.2                // 1.2 == 1.15 > lower
+				ly.Inhib.Pool.Gi = 1.2                 // 1.2 == 1.15 > lower
 			}},
 
 		//////// V3
@@ -265,8 +265,8 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.05 // 0.05 > 0.04 but needs stronger V4P output
 				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
-				ly.Inhib.Layer.Gi = 1.25 // ?
-				ly.Inhib.Pool.Gi = 1.25  // ?
+				ly.Inhib.Layer.Gi = 1.25 // 1.25 > lower
+				ly.Inhib.Pool.Gi = 1.25  // 1.25 > lower
 			}},
 
 		//////// TE
@@ -284,8 +284,8 @@ var LayerParams = axon.LayerSheets{
 		{Sel: "#TECT", Doc: "more activity",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.05 // was .04
-				ly.Inhib.Layer.Gi = 1.25       // ?
-				ly.Inhib.Pool.Gi = 1.25        // ?
+				ly.Inhib.Layer.Gi = 1.25       // 1.25 > lower
+				ly.Inhib.Pool.Gi = 1.25        // 1.25 > lower
 			}},
 	},
 }
@@ -484,13 +484,13 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".TESelfMaint", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 0.3 // 0.3 for categ
+				pt.PathScale.Abs = 0.3 // 0.3 for categ -- this is most important
 				pt.Com.GType = axon.MaintG
 			}},
 		{Sel: ".TECTSelf", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 0.1 //
-				pt.PathScale.Abs = 0.2 // 0.25 > others for categ
+				pt.PathScale.Abs = 0.2 // 0.2
 			}},
 		{Sel: "#TECTToTEOP", Doc: "stronger",
 			Set: func(pt *axon.PathParams) {

@@ -8,7 +8,12 @@ import (
 	"fmt"
 	"strconv"
 
+	"cogentcore.org/core/base/errors"
+	"cogentcore.org/core/base/fsx"
 	"cogentcore.org/core/cli"
+	"cogentcore.org/lab/stats/stats"
+	"cogentcore.org/lab/table"
+	"cogentcore.org/lab/tensor"
 )
 
 // Sim is the overall sim.
@@ -66,6 +71,7 @@ func RunSim(sim *Sim) error {
 	env.NUnitsPer = 1
 	env.Config(0)
 
+	epcs := tensor.NewFloat64(sim.Runs)
 	for run := range sim.Runs {
 		td.Init()
 		env.Init(run)
@@ -104,10 +110,26 @@ func RunSim(sim *Sim) error {
 				break
 			}
 		}
+		epcs.Set(float64(finalEpoch), run)
 		fmt.Printf("%02d\tNEpochs: %d\tRew: %7.4f\n", run, finalEpoch, finalRew)
 		if debug {
 			fmt.Println("Final Q Weights:\n", td.Q.String())
 		}
 	}
+	mean := stats.Mean(epcs).Float(0)
+	sem := stats.Sem(epcs).Float(0)
+	fmt.Printf("Epochs: %7.2f\tSEM: %7.2f\n", mean, sem)
+
+	simfile := "BGDorsal_Base_000_train_run.tsv"
+	if !errors.Log1(fsx.FileExists(simfile)) {
+		return nil
+	}
+	dt := table.New()
+	dt.OpenCSV(fsx.Filename(simfile), tensor.Tab)
+	sepcs := dt.Column("EpochsToCrit")
+	smean := stats.Mean(sepcs).Float(0)
+	ssem := stats.Sem(sepcs).Float(0)
+	fmt.Printf("Sim Epochs: %7.2f\tSEM: %7.2f\n", smean, ssem)
+
 	return nil
 }

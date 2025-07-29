@@ -28,6 +28,7 @@ import (
 	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/stats/stats"
+	"cogentcore.org/lab/tensorcore"
 	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/decoder"
@@ -695,6 +696,7 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 		}
 	}
 	net.ApplyExts()
+	ss.UpdateImage()
 }
 
 // NewRun intializes a new Run level of the model.
@@ -1008,7 +1010,23 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	// nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
 
 	ss.StatsInit()
+
+	trn := ss.Envs.ByMode(Train).(*ImagesEnv)
+	img := &trn.Img.Tsr
+	tensorcore.AddGridStylerTo(img, func(s *tensorcore.GridStyle) {
+		s.Image = true
+	})
+	ss.GUI.Tabs.TensorGrid("Image", img)
+
+	ss.GUI.Tabs.SelectTabIndex(0)
 	ss.GUI.FinalizeGUI(false)
+}
+
+func (ss *Sim) UpdateImage() {
+	if !ss.Config.GUI {
+		return
+	}
+	ss.GUI.Tabs.TabUpdateRender("Image")
 }
 
 func (ss *Sim) MakeToolbar(p *tree.Plan) {
