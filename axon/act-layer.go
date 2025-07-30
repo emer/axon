@@ -1028,9 +1028,11 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32) {
 			dlr = 0 // first pool is novelty / curiosity -- no learn
 		}
 	case DSPatchLayer:
-		// note: modlr is further modulated by PF in PatchPostPlus
-		modlr = ly.Learn.NeuroMod.LRMod(da, ach)
-		mlr = ly.Learn.RLRate.RLRateSigDeriv(Neurons.Value(int(ni), int(di), int(CaDPrev)), 1) // note: don't have proper max here
+		if hasRew { // reward time
+			mlr = 1 // don't use sig deriv
+		} else {
+			modlr = 1 // don't use mod
+		}
 	case VSPatchLayer:
 		da = GlobalScalars.Value(int(GvVSPatchPosRPE), int(di)) // our own personal
 		modlr = ly.Learn.NeuroMod.LRMod(da, ach)

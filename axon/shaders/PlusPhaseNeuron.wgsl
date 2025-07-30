@@ -66,9 +66,11 @@ fn LayerParams_PlusPhaseNeuron(ly: LayerParams, ctx: Context, ni: u32,di: u32) {
 		}
 	}
 	case DSPatchLayer: {
-		modlr = NeuroModParams_LRMod(ly.Learn.NeuroMod, da, ach);
-		mlr = RLRateParams_RLRateSigDeriv(ly.Learn.RLRate, Neurons[Index3D(TensorStrides[70], TensorStrides[71], // note: don't have proper max here
-		TensorStrides[72], u32(ni), u32(di), u32(CaDPrev))], f32(f32(1)));
+		if (hasRew) { // reward time
+			mlr = f32(1); // don't use sig deriv
+		} else {
+			modlr = f32(1); // don't use mod
+		}
 	}
 	case VSPatchLayer: {
 		da = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], // our own personal
@@ -1180,9 +1182,8 @@ const  DSMatrixPath: PathTypes = 12;
 struct StriatumParams {
 	GateThr: f32,
 	BasePF: f32,
-	NovelDA: f32,
-	MaxPatchD1: f32,
-	BadPatchDA: f32,
+	PatchD2Scale: f32,
+	PatchD1Max: f32,
 	PatchD2Thr: f32,
 	IsVS: i32,
 	OtherIndex: i32,
@@ -1195,9 +1196,6 @@ struct StriatumParams {
 	ThalLay4Index: i32,
 	ThalLay5Index: i32,
 	ThalLay6Index: i32,
-	pad: i32,
-	pad1: i32,
-	pad2: i32,
 }
 alias GPLayerTypes = i32; //enums:enum
 const  GPePr: GPLayerTypes = 0;
@@ -1214,8 +1212,12 @@ struct GPParams {
 struct MatrixPathParams {
 	Credit: f32,
 	Delta: f32,
+	PatchDA: f32,
 	VSRewLearn: i32,
 	UseSynPF: i32,
+	pad: f32,
+	pad1: f32,
+	pad2: f32,
 }
 
 //////// import: "pool.go"

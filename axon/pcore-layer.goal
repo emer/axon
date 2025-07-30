@@ -34,16 +34,11 @@ type StriatumParams struct {
 	// smaller amount of credit learning.
 	BasePF float32 `default:"0.005"`
 
-	// NovelDA is the maximum positive dopamine magnitude associated with novel firing
-	// of a matrix pool, which is shunted / discounted by the patchD1 projection to SNc.
-	NovelDA float32 `default:"0.01"`
+	// PatchD2Scale is the scaling of PatchD2 relative to D1 (which is 1).
+	PatchD2Scale float32 `default:"1"`
 
-	// MaxPatchD1 is the maximum PatchD1 CaD value for discounting NovelDA.
-	MaxPatchD1 float32 `default:"0.5"`
-
-	// BadPatchDA is the maximum negative dopamine magnitude that can be driven by patchD2
-	// activity for given pool, reflecting patchD2 to LHb dipping.
-	BadPatchDA float32 `default:"0.01"`
+	// PatchD1Max is the maximum PatchD1 CaP value for discounting NovelDA.
+	PatchD1Max float32 `default:"0.3"`
 
 	// PatchD2Thr is the threshold for PatchD2 activity to drive dipping: below
 	// this level, nothing happens.
@@ -93,16 +88,13 @@ type StriatumParams struct {
 	// Index of thalamus layer that we gate. needed to get gating information.
 	// Set during Build from BuildConfig ThalLay1Name if present -- -1 if not used
 	ThalLay6Index int32 `edit:"-"`
-
-	pad, pad1, pad2 int32
 }
 
 func (mp *StriatumParams) Defaults() {
 	mp.GateThr = 0.05
 	mp.BasePF = 0.005
-	mp.NovelDA = 0.01
-	mp.MaxPatchD1 = 0.5
-	mp.BadPatchDA = 0.01
+	mp.PatchD2Scale = 1
+	mp.PatchD1Max = 0.3
 	mp.PatchD2Thr = 0.2
 }
 
@@ -111,10 +103,10 @@ func (mp *StriatumParams) Update() {
 
 // PatchDA computes the dopamine signal due to the given patch activations.
 func (mp *StriatumParams) PatchDA(patchD1, patchD2 float32) float32 {
-	pD1 := min(patchD1, mp.MaxPatchD1)
+	pD1 := min(patchD1, mp.PatchD1Max)
 	pD2 := max(patchD2-mp.PatchD2Thr, 0.0)
-	posDA := mp.NovelDA * (mp.MaxPatchD1 - pD1)
-	negDA := mp.BadPatchDA * pD2
+	posDA := mp.PatchD1Max - pD1
+	negDA := mp.PatchD2Scale * pD2
 	return posDA - negDA
 }
 
@@ -296,7 +288,7 @@ func (ly *LayerParams) MatrixPostPlus(ctx *Context) {
 			pfnet := ly.Striatum.BasePF + pfact
 			ptD1act := PoolAvgMax(AMCaP, AMCycle, Avg, patchD1.PoolIndex(spi), di)
 			ptD2act := PoolAvgMax(AMCaP, AMCycle, Avg, patchD2.PoolIndex(spi), di)
-			da := pfnet * ly.Striatum.PatchDA(ptD1act, ptD2act) * ly.Learn.NeuroMod.DASign()
+			da := ly.Striatum.PatchDA(ptD1act, ptD2act) * ly.Learn.NeuroMod.DASign()
 			pi := ly.PoolIndex(spi)
 			Pools[pi, di, fsfffb.DA] = da
 			Pools[pi, di, fsfffb.ModAct] = pfnet

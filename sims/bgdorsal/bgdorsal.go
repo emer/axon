@@ -11,8 +11,10 @@ package bgdorsal
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"reflect"
+	"strings"
 
 	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/base/num"
@@ -30,6 +32,7 @@ import (
 	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/axon/v2/axon"
+	"github.com/emer/axon/v2/fsfffb"
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/looper"
@@ -851,6 +854,86 @@ func (ss *Sim) ConfigStats() {
 			}
 		}
 	})
+
+	patchStats := []string{"PPD1Cor", "PPD1Err", "PPD2Cor", "PPD2Err", "PPDACor", "PPDAErr"}
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		if level < Trial {
+			return
+		}
+		pd1 := ss.Net.LayerByName("DSPatchD1").Params
+		pd2 := ss.Net.LayerByName("DSPatchD2").Params
+		mtx := ss.Net.LayerByName("DMatrixGo").Params
+		nActs := ss.Config.Env.NActions
+		for _, name := range patchStats {
+			modeDir := ss.Stats.Dir(mode.String())
+			curModeDir := ss.Current.Dir(mode.String())
+			levelDir := modeDir.Dir(level.String())
+			subDir := modeDir.Dir((level - 1).String()) // note: will fail for Cycle
+			tsr := levelDir.Float64(name)
+			ndata := int(ss.Net.Context().NData)
+			var stat float64
+			if phase == Start {
+				tsr.SetNumRows(0)
+				plot.SetFirstStyler(tsr, func(s *plot.Style) {
+					s.Range.SetMin(0).SetMax(1)
+					if strings.Contains(name, "Cor") {
+						s.On = true
+					}
+				})
+				continue
+			}
+			switch level {
+			case Trial:
+				for di := range ndata {
+					diu := uint32(di)
+					ev := ss.Envs.ByModeDi(mode, di).(*MotorSeqEnv)
+					trg := uint32(ev.Target)
+					if ev.Trial.Cur == 0 {
+						stat = math.NaN()
+						tsr.AppendRowFloat(stat)
+					} else {
+						d1cor := float64(axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pd1.PoolIndex(1+trg), diu))
+						d2cor := float64(axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pd2.PoolIndex(1+trg), diu))
+						dacor := float64(axon.Pools.Float(int(mtx.PoolIndex(1+trg)), di, int(fsfffb.DA)))
+						switch name {
+						case "PPD1Cor":
+							stat = d1cor
+						case "PPD2Cor":
+							stat = d2cor
+						case "PPD1Err":
+							lsum := axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pd1.PoolIndex(0), diu) * float32(nActs)
+							stat = (float64(lsum) - d1cor) / float64(nActs-1)
+						case "PPD2Err":
+							lsum := axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pd2.PoolIndex(0), diu) * float32(nActs)
+							stat = (float64(lsum) - d2cor) / float64(nActs-1)
+						case "PPDACor":
+							stat = dacor
+						case "PPDAErr":
+							lsum := 0.0
+							for ai := range uint32(nActs) {
+								lsum += float64(axon.Pools.Float(int(mtx.PoolIndex(1+ai)), di, int(fsfffb.DA)))
+							}
+							stat = (float64(lsum) - dacor) / float64(nActs-1)
+						}
+					}
+					curModeDir.Float32(name, ndata).SetFloat1D(float64(stat), di)
+					tsr.AppendRowFloat(stat)
+				}
+			case Sequence:
+				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
+				for range ndata {
+					tsr.AppendRowFloat(stat)
+				}
+			case Run:
+				stat = stats.StatFinal.Call(subDir.Value(name)).Float1D(0)
+				tsr.AppendRowFloat(stat)
+			default:
+				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
+				tsr.AppendRowFloat(stat)
+			}
+		}
+	})
+
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		if level <= Epoch {
 			return
@@ -944,7 +1027,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 		return counters
 	}
 	counters += fmt.Sprintf(" TrialName: %s", curModeDir.StringValue("TrialName").String1D(di))
-	statNames := []string{"Action", "Target", "Correct", "RT"}
+	statNames := []string{"Action", "Target", "Correct", "RT", "PPD1Cor", "PPD1Err", "PPDACor", "PPDAErr"} // "PPD2Cor", "PPD2Err"}
 	if level == Cycle || curModeDir.Node(statNames[0]) == nil {
 		return counters
 	}

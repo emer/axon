@@ -27,6 +27,9 @@ type MatrixPathParams struct {
 	// relative to it, and the overall learning rate.
 	Delta float32 `default:"1"`
 
+	// PatchDA is a multiplier on the Patch dopamine applied to the Matrix.
+	PatchDA float32 `default:"0.01"`
+
 	// for ventral striatum, learn based on activity at time of reward,
 	// in inverse proportion to the GoalMaint activity: i.e., if there was no
 	// goal maintenance, learn at reward to encourage goal engagement next time,
@@ -39,11 +42,14 @@ type MatrixPathParams struct {
 	// UseSynPF is a temporary flag for using the synaptic PF instead of direct
 	// activity based, to figure out diffs.
 	UseSynPF slbool.Bool
+
+	pad, pad1, pad2 float32
 }
 
 func (tp *MatrixPathParams) Defaults() {
 	tp.Credit = 0.6
 	tp.Delta = 1
+	tp.PatchDA = 0.01
 	tp.VSRewLearn.SetBool(true)
 }
 

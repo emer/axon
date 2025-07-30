@@ -1173,9 +1173,8 @@ const  DSMatrixPath: PathTypes = 12;
 struct StriatumParams {
 	GateThr: f32,
 	BasePF: f32,
-	NovelDA: f32,
-	MaxPatchD1: f32,
-	BadPatchDA: f32,
+	PatchD2Scale: f32,
+	PatchD1Max: f32,
 	PatchD2Thr: f32,
 	IsVS: i32,
 	OtherIndex: i32,
@@ -1188,9 +1187,6 @@ struct StriatumParams {
 	ThalLay4Index: i32,
 	ThalLay5Index: i32,
 	ThalLay6Index: i32,
-	pad: i32,
-	pad1: i32,
-	pad2: i32,
 }
 alias GPLayerTypes = i32; //enums:enum
 const  GPePr: GPLayerTypes = 0;
@@ -1207,8 +1203,12 @@ struct GPParams {
 struct MatrixPathParams {
 	Credit: f32,
 	Delta: f32,
+	PatchDA: f32,
 	VSRewLearn: i32,
 	UseSynPF: i32,
+	pad: f32,
+	pad1: f32,
+	pad2: f32,
 }
 
 //////// import: "pool.go"

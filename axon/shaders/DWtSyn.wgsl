@@ -1150,7 +1150,7 @@ fn PathParams_DWtSynDSMatrix(pt: PathParams, ctx: Context, syni: u32,si: u32,ri:
 		if (pt.Matrix.UseSynPF == 1) {
 			pfmod = 0.005 + Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(GModSyn))];
 		}
-		var patchDA = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DA))];
+		var patchDA = pt.Matrix.PatchDA * Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DA))];
 		var rplus = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaP))];
 		var rminus = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaD))];
 		var sact = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(CaD))];
@@ -1176,19 +1176,30 @@ fn PathParams_DWtSynVSPatch(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: 
 	TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));
 }
 fn PathParams_DWtSynDSPatch(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
-	var ract = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // t-1
-	TensorStrides[72], u32(ri), u32(di), u32(CaDPrev))];
+	var ract = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // t? // todo t-1?
+	TensorStrides[72], u32(ri), u32(di), u32(CaD))];
 	if (ract < pt.Learn.DWt.LearnThr) {
 		ract = f32(0);
 	}
-	var pfmod = Pools[Index3D(TensorStrides[130], TensorStrides[131],
-	TensorStrides[132], u32(pi), u32(di), u32(ModAct))];
-	var sact = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // t-1
-	TensorStrides[72], u32(si), u32(di), u32(CaDPrev))];
-	var dwt = pfmod * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(RLRate))] * pt.Learn.LRate.Eff * sact * ract;
-	SynapseTracesSet(dwt, Index3D(TensorStrides[180], TensorStrides[181],
-	TensorStrides[182],
-	u32(syni), u32(di), u32(DiDWt)));
+	var rlr = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(RLRate))];
+	if (GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], // US time -- use DA * tr
+	u32(GvHasRew), u32(di))] > 0) {
+		var tr = SynapseTracesGet(Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
+		var dwt = rlr * pt.Learn.LRate.Eff * tr;
+		SynapseTracesSet(dwt, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));
+		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
+		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
+	} else {
+		var pfmod = Pools[Index3D(TensorStrides[130], TensorStrides[131], // todo: syn?
+		TensorStrides[132], u32(pi), u32(di), u32(ModAct))];
+		var sact = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // t?
+		TensorStrides[72], u32(si), u32(di), u32(CaD))];
+		var dtr = pfmod * rlr * sact * ract;
+		SynapseTracesSet(dtr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
+		SynapseTracesSetAdd(dtr, Index3D(TensorStrides[180], TensorStrides[181],
+		TensorStrides[182],
+		u32(syni), u32(di), u32(Tr)));
+	}
 }
 
 //////// import: "learn.go"
@@ -1539,9 +1550,8 @@ const  DSMatrixPath: PathTypes = 12;
 struct StriatumParams {
 	GateThr: f32,
 	BasePF: f32,
-	NovelDA: f32,
-	MaxPatchD1: f32,
-	BadPatchDA: f32,
+	PatchD2Scale: f32,
+	PatchD1Max: f32,
 	PatchD2Thr: f32,
 	IsVS: i32,
 	OtherIndex: i32,
@@ -1554,9 +1564,6 @@ struct StriatumParams {
 	ThalLay4Index: i32,
 	ThalLay5Index: i32,
 	ThalLay6Index: i32,
-	pad: i32,
-	pad1: i32,
-	pad2: i32,
 }
 alias GPLayerTypes = i32; //enums:enum
 const  GPePr: GPLayerTypes = 0;
@@ -1573,8 +1580,12 @@ struct GPParams {
 struct MatrixPathParams {
 	Credit: f32,
 	Delta: f32,
+	PatchDA: f32,
 	VSRewLearn: i32,
 	UseSynPF: i32,
+	pad: f32,
+	pad1: f32,
+	pad2: f32,
 }
 
 //////// import: "pool.go"

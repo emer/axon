@@ -34,7 +34,7 @@ type MotorSeqEnv struct {
 	// number of distinct actions represented: determines the difficulty
 	// of learning in terms of the size of the space that must be searched.
 	// effective size = NActions ^ SeqLen
-	// 4^4 = 256 or 10^3 = 1000 are reliably solved
+	// 6^4 = 1296 or 10^3 = 1000 are reliably solved
 	NActions int
 
 	// learning rate for reward prediction

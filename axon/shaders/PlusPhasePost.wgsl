@@ -1224,9 +1224,8 @@ const  DSMatrixPath: PathTypes = 12;
 struct StriatumParams {
 	GateThr: f32,
 	BasePF: f32,
-	NovelDA: f32,
-	MaxPatchD1: f32,
-	BadPatchDA: f32,
+	PatchD2Scale: f32,
+	PatchD1Max: f32,
 	PatchD2Thr: f32,
 	IsVS: i32,
 	OtherIndex: i32,
@@ -1239,15 +1238,12 @@ struct StriatumParams {
 	ThalLay4Index: i32,
 	ThalLay5Index: i32,
 	ThalLay6Index: i32,
-	pad: i32,
-	pad1: i32,
-	pad2: i32,
 }
 fn StriatumParams_PatchDA(mp: StriatumParams, patchD1: f32,patchD2: f32) -> f32 {
-	var pD1 = min(patchD1, mp.MaxPatchD1);
+	var pD1 = min(patchD1, mp.PatchD1Max);
 	var pD2 = max(patchD2-mp.PatchD2Thr, 0.0);
-	var posDA = mp.NovelDA * (mp.MaxPatchD1 - pD1);
-	var negDA = mp.BadPatchDA * pD2;return posDA - negDA;
+	var posDA = mp.PatchD1Max - pD1;
+	var negDA = mp.PatchD2Scale * pD2;return posDA - negDA;
 }
 alias GPLayerTypes = i32; //enums:enum
 const  GPePr: GPLayerTypes = 0;
@@ -1348,7 +1344,7 @@ fn LayerParams_MatrixPostPlus(ly: LayerParams, ctx: Context) {
 			var pfnet = ly.Striatum.BasePF + pfact;
 			var ptD1act = PoolAvgMax(AMCaP, AMCycle, Avg, LayerParams_PoolIndex(patchD1, spi), di);
 			var ptD2act = PoolAvgMax(AMCaP, AMCycle, Avg, LayerParams_PoolIndex(patchD2, spi), di);
-			var da = pfnet * StriatumParams_PatchDA(ly.Striatum, ptD1act, ptD2act) * NeuroModParams_DASign(ly.Learn.NeuroMod);
+			var da = StriatumParams_PatchDA(ly.Striatum, ptD1act, ptD2act) * NeuroModParams_DASign(ly.Learn.NeuroMod);
 			var pi = LayerParams_PoolIndex(ly, spi);
 			Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DA))] = da;
 			Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132],
@@ -1374,8 +1370,12 @@ fn LayerParams_PatchPostPlus(ly: LayerParams, ctx: Context) {
 struct MatrixPathParams {
 	Credit: f32,
 	Delta: f32,
+	PatchDA: f32,
 	VSRewLearn: i32,
 	UseSynPF: i32,
+	pad: f32,
+	pad1: f32,
+	pad2: f32,
 }
 
 //////// import: "pool.go"
