@@ -349,9 +349,9 @@ func (pt *PathParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, lpi, pi, di uin
 		rplus := Neurons.Value(int(ri), int(di), int(CaP))
 		rminus := Neurons.Value(int(ri), int(di), int(CaD))
 		sact := Neurons.Value(int(si), int(di), int(CaD))
-		dtr := rlr * (pt.Matrix.Delta*sact*(rplus-rminus) + patchDA) // no pf mod here
-		if rminus > pt.Learn.DWt.LearnThr {                          // key: prevents learning if < threshold
-			dtr += rlr * (pt.Matrix.Credit * pfmod * sact * rminus)
+		dtr := rlr * (pt.Matrix.Delta * sact * (rplus - rminus)) // no pf mod here
+		if rminus > pt.Learn.DWt.LearnThr {                      // key: prevents learning if < threshold
+			dtr += rlr * (pt.Matrix.Credit*pfmod*sact*rminus + pfmod*patchDA)
 		}
 		SynapseTraces.Set(dtr, int(syni), int(di), int(DTr))
 		SynapseTraces.SetAdd(dtr, int(syni), int(di), int(Tr))

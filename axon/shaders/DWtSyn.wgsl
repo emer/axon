@@ -1154,9 +1154,9 @@ fn PathParams_DWtSynDSMatrix(pt: PathParams, ctx: Context, syni: u32,si: u32,ri:
 		var rplus = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaP))];
 		var rminus = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaD))];
 		var sact = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(CaD))];
-		var dtr = rlr * (pt.Matrix.Delta*sact*(rplus-rminus) + patchDA); // no pf mod here
-		if (rminus > pt.Learn.DWt.LearnThr) {                            // key: prevents learning if < threshold
-			dtr += rlr * (pt.Matrix.Credit * pfmod * sact * rminus);
+		var dtr = rlr * (pt.Matrix.Delta * sact * (rplus - rminus)); // no pf mod here
+		if (rminus > pt.Learn.DWt.LearnThr) {                        // key: prevents learning if < threshold
+			dtr += rlr * (pt.Matrix.Credit*pfmod*sact*rminus + pfmod*patchDA);
 		}
 		SynapseTracesSet(dtr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
 		SynapseTracesSetAdd(dtr, Index3D(TensorStrides[180], TensorStrides[181],

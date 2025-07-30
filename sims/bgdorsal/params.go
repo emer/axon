@@ -51,6 +51,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Striatum.BasePF = 0.005                 // 0.005 > 0.01, 0.002 etc
 				ly.Striatum.PatchD2Scale = 1
 				ly.Striatum.PatchD1Max = .3
+				ly.Striatum.PatchD2Thr = .2
 			}},
 		{Sel: ".DSTNLayer", Doc: "all STN",
 			Set: func(ly *axon.LayerParams) {
