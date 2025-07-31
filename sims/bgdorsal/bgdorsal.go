@@ -286,21 +286,20 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToDSMatrix(s1, matrixGo, matrixNo, toMatrix, "S1ToMatrix")
 	net.ConnectToDSMatrix(m1, matrixGo, matrixNo, toMatrix, "M1ToMatrix")
 
-	net.ConnectToDSMatrix(m1PT, matrixGo, matrixNo, toMatrix, "M1PTToMatrix")
-	net.ConnectToDSMatrix(m1PTp, matrixGo, matrixNo, toMatrix, "M1PTpToMatrix")
+	// better without:
+	// net.ConnectToDSMatrix(m1PT, matrixGo, matrixNo, toMatrix, "M1PTToMatrix")
+	// net.ConnectToDSMatrix(m1PTp, matrixGo, matrixNo, toMatrix, "M1PTpToMatrix")
 
 	net.ConnectToDSPatch(state, patchD1, patchD2, toMatrix, "StateToPatch", "FmState")
 	net.ConnectToDSPatch(s1, patchD1, patchD2, toMatrix, "S1ToPatch")
 	net.ConnectToDSPatch(m1, patchD1, patchD2, toMatrix, "M1ToPatch")
 
-	net.ConnectToDSPatch(m1PT, patchD1, patchD2, toMatrix, "M1PTToPatch") // testing
-	net.ConnectToDSPatch(m1PTp, patchD1, patchD2, toMatrix, "M1PTpToPatch")
-
-	// net.ConnectLayers(patchD1, matrixGo, p1to1, axon.ForwardPath).AddClass("PatchToMatrix")
-	// net.ConnectLayers(patchD2, matrixNo, p1to1, axon.ForwardPath).AddClass("PatchToMatrix")
+	// better without:
+	// net.ConnectToDSPatch(m1PT, patchD1, patchD2, toMatrix, "M1PTToPatch")
+	// net.ConnectToDSPatch(m1PTp, patchD1, patchD2, toMatrix, "M1PTpToPatch")
 
 	// note: just using direct pathways here -- theoretically through CL
-	// not working! -- need to make these modulatory in the right way.
+	// TODO: not working! -- need to make these modulatory in the right way.
 	// net.ConnectToDSMatrix(motor, matrixGo, p1to1).AddClass("CLToMatrix")
 	// net.ConnectToDSMatrix(motor, matrixNo, p1to1).AddClass("CLToMatrix")
 

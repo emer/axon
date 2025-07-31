@@ -1,3 +1,5 @@
+* add DSMatrixLayer, VSMatrixLayer instead of IsVS -- sufficiently distinct now..
+
 * More etrace param search
 * Sahp vs. KNa -- do we really need all these variations of the same thing?  yes!
 * KNa is essential in Lvis .05 should be new std though?

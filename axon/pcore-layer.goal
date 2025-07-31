@@ -17,6 +17,11 @@ import (
 
 //gosl:start
 
+// todo: split striatum params into StriatumIndexes for connectivity indexes
+// and other actual parameters. May want to have PF mechanism for VS too
+// when scaling up, but initially not.
+// make a separate DSMatrixLayer and VSMatrixLayer
+
 // StriatumParams has parameters for BG Striatum layers including
 // MatrixLayer and DSPatchLayer.
 // DA, ACh learning rate modulation is pre-computed on the recv neuron
@@ -282,8 +287,7 @@ func (ly *LayerParams) CyclePostDSMatrixLayer(ctx *Context, pi, di uint32, spi i
 	ptD1act := PoolAvgMax(AMCaP, AMCycle, Avg, patchD1.PoolIndex(uint32(spi)), di)
 	ptD2act := PoolAvgMax(AMCaP, AMCycle, Avg, patchD2.PoolIndex(uint32(spi)), di)
 	Pools[pi, di, fsfffb.DAD1] = ly.Striatum.PatchD1Range.NormValue(ptD1act)
-	Pools[pi, di, fsfffb.DAD2] = ly.Striatum.PatchD1Range.NormValue(ptD2act)
-	// da := ly.Striatum.PatchDA(ptD1act, ptD2act) * ly.Learn.NeuroMod.DASign() // D2 = -
+	Pools[pi, di, fsfffb.DAD2] = ly.Striatum.PatchD2Range.NormValue(ptD2act)
 	Pools[pi, di, fsfffb.ModAct] = pfnet
 }
 
@@ -309,7 +313,6 @@ func (ly *Layer) MatrixDefaults() {
 	ly.Params.Learn.NeuroMod.DALRateSign.SetBool(true) // critical
 	ly.Params.Learn.NeuroMod.DALRateMod = 1
 	ly.Params.Learn.NeuroMod.AChLRateMod = 0
-	ly.Params.Learn.NeuroMod.DAModGain = 0
 	ly.Params.Learn.NeuroMod.BurstGain = 0.1
 	ly.Params.Learn.RLRate.SigmoidMin = 0.001
 
@@ -326,6 +329,7 @@ func (ly *Layer) MatrixDefaults() {
 		ly.Params.Acts.Dend.ModBase = 1
 		ly.Params.Acts.Dend.ModGain = 0
 		ly.Params.Learn.NeuroMod.AChDisInhib = 0
+		ly.Params.Learn.NeuroMod.DAModGain = 0.01 // DS
 	}
 
 	// important: user needs to adjust wt scale of some PFC inputs vs others:

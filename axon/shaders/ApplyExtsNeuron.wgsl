@@ -1108,10 +1108,10 @@ struct MatrixPathParams {
 	Credit: f32,
 	Delta: f32,
 	OffTrace: f32,
+	PFSignFlip: i32,
 	BasePF: f32,
 	VSRewLearn: i32,
 	pad: f32,
-	pad1: f32,
 }
 
 //////// import: "pool.go"

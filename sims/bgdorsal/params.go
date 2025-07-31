@@ -45,11 +45,11 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.Pool.Gi = 0.5                     // 0.5 > others
 				ly.Learn.NeuroMod.BurstGain = 0.1          // 0.1 == 0.2 > 0.05 > 0.5 -- key lrate modulator
-				ly.Learn.NeuroMod.DAModGain = 0.2          // 0.2 >= 0.5 (orig) > 0
+				ly.Learn.NeuroMod.DAModGain = 0.01         // 0.01 > 0.1 > 0
 				ly.Learn.RLRate.On.SetBool(true)           // note: applied for tr update trials
 				ly.Learn.TrgAvgAct.RescaleOn.SetBool(true) // true > false
 				ly.Striatum.BasePF = 0.005                 // 0.005 > 0.01, 0.002 etc
-				ly.Striatum.PatchD1Range.Set(0.1, 0.3)
+				ly.Striatum.PatchD1Range.Set(0.1, 0.3)     // max .3 > .35
 				ly.Striatum.PatchD2Range.Set(0.1, 0.3)
 			}},
 		{Sel: ".DSPatchLayer", Doc: "all matrix",
@@ -154,18 +154,19 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".DSPatchPath", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.LRate.Base = 0.04
+				pt.Learn.LRate.Base = 0.04 // 0.04 std best
 			}},
 		{Sel: ".DSMatrixPath", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 1.8      // 1.8 > others
 				pt.Learn.LRate.Base = 0.02  // rlr sig: .02 > .015 .025
 				pt.Learn.DWt.LearnThr = 0.1 // 0.1  > 0.2
-				pt.Matrix.PatchDA = 0.5
-				pt.Matrix.Credit = 0.6 // key param, 0.6 > 0.5, 0.4, 0.7, 1 with pf modulation
-				pt.Matrix.Delta = 1    // verified essential v0.2.40
+				pt.Matrix.PatchDA = 0.5     // 0.5 > 0.8 >> 0.2
+				pt.Matrix.Credit = 0.6      // key param, 0.6 > 0.5, 0.4, 0.7, 1 with pf modulation
+				pt.Matrix.Delta = 1         // verified essential v0.2.40
 				// Delta should always be 1 except for testing; adjust lrate to compensate
-				pt.Matrix.OffTrace = 0
+				pt.Matrix.OffTrace = 0.1 // 0.1 > 0.2, 0.5 > 0.05 > 0
+				pt.Matrix.PFSignFlip.SetBool(true)
 				pt.SWts.Adapt.On.SetBool(false) // false > true here
 			}},
 		{Sel: ".SuperToPT", Doc: "one-to-one from super",

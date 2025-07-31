@@ -8,6 +8,8 @@ import "cogentcore.org/lab/gosl/slbool"
 
 //gosl:start
 
+// TODO: separate DSMatrixPathParams vs. VSMatrixPathParams
+
 // MatrixPathParams for trace-based learning in the MatrixPath.
 // A trace of synaptic co-activity is formed, and then modulated by dopamine
 // whenever it occurs.  This bridges the temporal gap between gating activity
@@ -15,7 +17,7 @@ import "cogentcore.org/lab/gosl/slbool"
 // Trace is applied to DWt and reset at the time of reward.
 type MatrixPathParams struct {
 
-	// PatchDA is what proportion of Credit trace factor for learning
+	// PatchDA is proportion of Credit trace factor for learning
 	// to modulate by PatchDA versus just standard s*r activity factor.
 	PatchDA float32 `default:"0.5"`
 
@@ -25,7 +27,7 @@ type MatrixPathParams struct {
 	// associated with subsequent reward or not.
 	Credit float32 `default:"0.6"`
 
-	// weight for trace activity that is a function of the minus-plus delta
+	// Delta is weight for trace activity that is a function of the minus-plus delta
 	// activity signal on the receiving MSN neuron, independent of PF modulation.
 	// This should always be 1 except for testing disabling: adjust NonDelta
 	// relative to it, and the overall learning rate.
@@ -34,6 +36,9 @@ type MatrixPathParams struct {
 	// OffTrace is a multiplier on trace contribution when action output
 	// communicated by PF is not above threshold.
 	OffTrace float32 `default:"0.1"`
+
+	// PFSignFlip testing for flipping sign on NoPF case.
+	PFSignFlip slbool.Bool `default:"true"`
 
 	// BasePF is the baseline amount of PF activity that modulates credit
 	// assignment learning, for neurons with zero PF modulatory activity.
@@ -50,15 +55,16 @@ type MatrixPathParams struct {
 	// e.g., for testing cases that do not have GoalMaint.
 	VSRewLearn slbool.Bool `default:"true"`
 
-	pad, pad1 float32
+	pad float32
 }
 
 func (tp *MatrixPathParams) Defaults() {
 	tp.PatchDA = 0.5
 	tp.Credit = 0.6
 	tp.Delta = 1
-	tp.OffTrace = 0.01
+	tp.OffTrace = 0.1
 	tp.BasePF = 0.005
+	tp.PFSignFlip.SetBool(true)
 	tp.VSRewLearn.SetBool(true)
 }
 

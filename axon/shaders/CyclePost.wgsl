@@ -1267,7 +1267,7 @@ fn LayerParams_CyclePostDSMatrixLayer(ly: LayerParams, ctx: Context, pi: u32,di:
 	var ptD1act = PoolAvgMax(AMCaP, AMCycle, Avg, LayerParams_PoolIndex(patchD1, u32(spi)), di);
 	var ptD2act = PoolAvgMax(AMCaP, AMCycle, Avg, LayerParams_PoolIndex(patchD2, u32(spi)), di);
 	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DAD1))] = F32_NormValue(ly.Striatum.PatchD1Range, ptD1act);
-	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DAD2))] = F32_NormValue(ly.Striatum.PatchD1Range, ptD2act);
+	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DAD2))] = F32_NormValue(ly.Striatum.PatchD2Range, ptD2act);
 	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(ModAct))] = pfnet;
 }
 
@@ -1277,10 +1277,10 @@ struct MatrixPathParams {
 	Credit: f32,
 	Delta: f32,
 	OffTrace: f32,
+	PFSignFlip: i32,
 	BasePF: f32,
 	VSRewLearn: i32,
 	pad: f32,
-	pad1: f32,
 }
 
 //////// import: "pool.go"

@@ -1162,7 +1162,11 @@ fn PathParams_DWtSynDSMatrix(pt: PathParams, ctx: Context, syni: u32,si: u32,ri:
 			if (pfmod > pt.Learn.DWt.LearnThr) {              // we were active in output
 				dtr += pfmod * pt.Matrix.PatchDA * ((1.0 - patchDAD1) + patchDAD2) * act;
 			} else { // not active; we have no role in the outcome
-				dtr += pt.Matrix.PatchDA * pt.Matrix.OffTrace * (patchDAD2 - patchDAD1) * act;
+				if (pt.Matrix.PFSignFlip == 1) {
+					dtr += pt.Matrix.OffTrace * pt.Matrix.PatchDA * (patchDAD2 - patchDAD1) * act;
+				} else {
+					dtr += pt.Matrix.OffTrace * pt.Matrix.PatchDA * (patchDAD1 - patchDAD2) * act;
+				}
 			}
 		}
 		SynapseTracesSet(dtr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
@@ -1591,10 +1595,10 @@ struct MatrixPathParams {
 	Credit: f32,
 	Delta: f32,
 	OffTrace: f32,
+	PFSignFlip: i32,
 	BasePF: f32,
 	VSRewLearn: i32,
 	pad: f32,
-	pad1: f32,
 }
 
 //////// import: "pool.go"
