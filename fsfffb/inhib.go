@@ -72,8 +72,11 @@ const (
 	// ModAct is a pool-specific modulation activity value (e.g., PF = parafasciculus in BG)
 	ModAct
 
-	// DA is a pool-specific dopamine value
-	DA
+	// DAD1 is a pool-specific dopamine D1 value
+	DAD1
+
+	// DAD2 is a pool-specific dopamine D2 value
+	DAD2
 )
 
 //gosl:end

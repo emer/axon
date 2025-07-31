@@ -46,11 +46,11 @@ type MotorSeqEnv struct {
 	// minimum rewpred value
 	RewPredMin float32 `default:"0.1"`
 
-	//	give reward with probability in proportion to number of
-	// correct actions in sequence, above given threshold.  If 0, don't use
+	// give reward with probability in proportion to number of
+	// correct actions in sequence, above given threshold. If 0, don't use
 	PartialCreditAt int
 
-	//	if doing partial credit, also make the reward value graded (weaker for fewer)
+	// if doing partial credit, also make the reward value graded (weaker for fewer)
 	PartialGraded bool
 
 	// sequence map from sequence index to target motor action

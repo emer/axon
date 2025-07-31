@@ -12,6 +12,7 @@ import (
 
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/num"
+	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/lab/gosl/slbool"
 	"github.com/emer/axon/v2/fsfffb"
 )
@@ -30,26 +31,24 @@ type StriatumParams struct {
 	// layers to count as having gated.
 	GateThr float32 `default:"0.05"`
 
-	// baseline amount of PF activity that modulates credit assignment learning,
-	// for neurons with zero PF modulatory activity.
+	// BasePF is the baseline amount of PF activity that modulates credit
+	// assignment learning, for neurons with zero PF modulatory activity.
 	// These were not part of the actual motor action, but can still get some
 	// smaller amount of credit learning.
 	BasePF float32 `default:"0.005"`
-
-	// PatchD2Scale is the scaling of PatchD2 relative to D1 (which is 1).
-	PatchD2Scale float32 `default:"1"`
-
-	// PatchD1Max is the maximum PatchD1 CaP value for discounting NovelDA.
-	PatchD1Max float32 `default:"0.3"`
-
-	// PatchD2Thr is the threshold for PatchD2 activity to drive dipping: below
-	// this level, nothing happens.
-	PatchD2Thr float32 `default:"0.2"`
 
 	// IsVS is this a ventral striatum (VS) matrix layer? If true, the gating
 	// status of this layer is recorded in the Global state,
 	// and used for updating effort and other factors.
 	IsVS slbool.Bool
+
+	pad float32
+
+	// PatchD1Range is the range of PatchD1 values to normalize into effective value.
+	PatchD1Range minmax.F32 `default:"{'Min':0.1,'Max':0.3}" display:"inline"`
+
+	// PatchD2Range is the range of PatchD2 values to normalize into effective value.
+	PatchD2Range minmax.F32 `default:"{'Min':0.1,'Max':0.3}" display:"inline"`
 
 	// Index of other layer (D2 if we are D1 and vice-versa).
 	// Set during Build from BuildConfig OtherName.
@@ -90,26 +89,18 @@ type StriatumParams struct {
 	// Index of thalamus layer that we gate. needed to get gating information.
 	// Set during Build from BuildConfig ThalLay1Name if present -- -1 if not used
 	ThalLay6Index int32 `edit:"-"`
+
+	pad1, pad2 float32
 }
 
 func (mp *StriatumParams) Defaults() {
 	mp.GateThr = 0.05
 	mp.BasePF = 0.005
-	mp.PatchD2Scale = 1
-	mp.PatchD1Max = 0.3
-	mp.PatchD2Thr = 0.2
+	mp.PatchD1Range.Set(0.1, 0.3)
+	mp.PatchD2Range.Set(0.1, 0.3)
 }
 
 func (mp *StriatumParams) Update() {
-}
-
-// PatchDA computes the dopamine signal due to the given patch activations.
-func (mp *StriatumParams) PatchDA(patchD1, patchD2 float32) float32 {
-	pD1 := min(patchD1, mp.PatchD1Max)
-	pD2 := max(patchD2-mp.PatchD2Thr, 0.0)
-	posDA := mp.PatchD1Max - pD1
-	negDA := mp.PatchD2Scale * pD2
-	return posDA - negDA
 }
 
 //////// GP
@@ -271,47 +262,31 @@ func (ly *LayerParams) AnyGated(di uint32) bool {
 	return PoolsInt.Value(int(lpi), int(di), int(PoolGated)) > 0
 }
 
-// MatrixPostPlus is called after std PlusPhase,
-// sets pool-specific DA dopamine signal based on patch modulation of SNc.
-// Only for non-reward trials.
-func (ly *LayerParams) MatrixPostPlus(ctx *Context) {
-	if ly.Striatum.IsVS.IsTrue() || ly.Indexes.NPools == 1 {
+// CyclePostDSPatchLayer grabs PF activation
+func (ly *LayerParams) CyclePostDSPatchLayer(ctx *Context, pi, di uint32, spi int32) {
+	pf := Layers[ly.Striatum.PFIndex]
+	pfact := PoolAvgMax(AMCaP, AMCycle, Avg, pf.PoolIndex(uint32(spi)), di) // must be CaP, not CaD
+	pfnet := ly.Striatum.BasePF + pfact
+	Pools.Set(pfnet, int(pi), int(di), int(fsfffb.ModAct))
+}
+
+// CyclePostDSMatrixLayer sets pool-specific DA dopamine signal based on PF
+// activity and DSPatch
+func (ly *LayerParams) CyclePostDSMatrixLayer(ctx *Context, pi, di uint32, spi int32) {
+	if ly.Striatum.IsVS.IsTrue() {
 		return
 	}
 	pf := Layers[ly.Striatum.PFIndex]
 	patchD1 := Layers[ly.Striatum.PatchD1Index]
 	patchD2 := Layers[ly.Striatum.PatchD2Index]
-	for di := uint32(0); di < ctx.NData; di++ {
-		if (GlobalScalars.Value(int(GvHasRew), int(di))) > 0 { // has rew, do nothing
-			continue
-		}
-		for spi := uint32(1); spi < ly.Indexes.NPools; spi++ {
-			pfact := PoolAvgMax(AMCaP, AMCycle, Avg, pf.PoolIndex(spi), di) // must be CaP
-			pfnet := ly.Striatum.BasePF + pfact
-			ptD1act := PoolAvgMax(AMCaP, AMCycle, Avg, patchD1.PoolIndex(spi), di)
-			ptD2act := PoolAvgMax(AMCaP, AMCycle, Avg, patchD2.PoolIndex(spi), di)
-			da := ly.Striatum.PatchDA(ptD1act, ptD2act) * ly.Learn.NeuroMod.DASign()
-			pi := ly.PoolIndex(spi)
-			Pools.Set(da, int(pi), int(di), int(fsfffb.DA))
-			Pools.Set(pfnet, int(pi), int(di), int(fsfffb.ModAct))
-		}
-	}
-}
-
-// PatchPostPlus is called after std PlusPhase,
-// sets pool-specific DA dopamine signal based on PF activity and DA.
-func (ly *LayerParams) PatchPostPlus(ctx *Context) {
-	if ly.Indexes.NPools == 1 {
-		return
-	}
-	pf := Layers[ly.Striatum.PFIndex]
-	for di := uint32(0); di < ctx.NData; di++ {
-		for spi := uint32(1); spi < ly.Indexes.NPools; spi++ {
-			pfact := PoolAvgMax(AMCaP, AMCycle, Avg, pf.PoolIndex(spi), di) // must be CaP
-			pfnet := ly.Striatum.BasePF + pfact
-			Pools.Set(pfnet, int(ly.PoolIndex(spi)), int(di), int(fsfffb.ModAct))
-		}
-	}
+	pfact := PoolAvgMax(AMCaP, AMCycle, Avg, pf.PoolIndex(uint32(spi)), di) // must be CaP
+	pfnet := ly.Striatum.BasePF + pfact
+	ptD1act := PoolAvgMax(AMCaP, AMCycle, Avg, patchD1.PoolIndex(uint32(spi)), di)
+	ptD2act := PoolAvgMax(AMCaP, AMCycle, Avg, patchD2.PoolIndex(uint32(spi)), di)
+	Pools.Set(ly.Striatum.PatchD1Range.NormValue(ptD1act), int(pi), int(di), int(fsfffb.DAD1))
+	Pools.Set(ly.Striatum.PatchD1Range.NormValue(ptD2act), int(pi), int(di), int(fsfffb.DAD2))
+	// da := ly.Striatum.PatchDA(ptD1act, ptD2act) * ly.Learn.NeuroMod.DASign() // D2 = -
+	Pools.Set(pfnet, int(pi), int(di), int(fsfffb.ModAct))
 }
 
 //gosl:end
@@ -398,8 +373,9 @@ func (ly *Layer) MatrixPostBuild() {
 	}
 }
 
-func (ly *Layer) PatchDefaults() {
+func (ly *Layer) DSPatchDefaults() {
 	ly.Params.VSPatchDefaults()
+	// ly.Learn.NeuroMod.AChLRateMod = 0.8 // ACh now active for extinction, so this is ok
 }
 
 func (ly *Layer) PatchPostBuild() {

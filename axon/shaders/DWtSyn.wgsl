@@ -582,7 +582,7 @@ const SynapseTraceVarsN: SynapseTraceVars = 3;
 const SynapseIndexVarsN: SynapseIndexVars = 3;
 
 //////// import: "fsfffb-enumgen.go"
-const InhibVarsN: InhibVars = 18;
+const InhibVarsN: InhibVars = 19;
 
 //////// import: "fsfffb-fsfffb.go"
 struct GiParams {
@@ -623,7 +623,8 @@ const  LayGi: InhibVars = 13;
 const  FFAvg: InhibVars = 14;
 const  FFAvgPrv: InhibVars = 15;
 const  ModAct: InhibVars = 16;
-const  DA: InhibVars = 17;
+const  DAD1: InhibVars = 17;
+const  DAD2: InhibVars = 18;
 
 //////// import: "globals.go"
 alias GlobalScalarVars = i32; //enums:enum
@@ -1144,19 +1145,25 @@ fn PathParams_DWtSynDSMatrix(pt: PathParams, ctx: Context, syni: u32,si: u32,ri:
 		var dwt = rlr * pt.Learn.LRate.Eff * tr;
 		SynapseTracesSet(dwt, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
-		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
+		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181],
+		TensorStrides[182], u32(syni), u32(di), u32(DTr)));
 	} else {
-		var pfmod = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(ModAct))];
-		if (pt.Matrix.UseSynPF == 1) {
-			pfmod = 0.005 + Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(GModSyn))];
-		}
-		var patchDA = pt.Matrix.PatchDA * Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DA))];
+		var pfmod = pt.Matrix.BasePF + Neurons[Index3D(TensorStrides[70], TensorStrides[71], // syn value is always better
+		TensorStrides[72], u32(ri), u32(di), u32(GModSyn))];
+		var patchDAD1 = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DAD1))];
+		var patchDAD2 = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DAD2))];
 		var rplus = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaP))];
 		var rminus = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaD))];
 		var sact = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(CaD))];
-		var dtr = rlr * (pt.Matrix.Delta * sact * (rplus - rminus)); // no pf mod here
+		var dtr = rlr * (pt.Matrix.Delta * sact * (rplus - rminus)); // always delta
 		if (rminus > pt.Learn.DWt.LearnThr) {                        // key: prevents learning if < threshold
-			dtr += rlr * (pt.Matrix.Credit*pfmod*sact*rminus + pfmod*patchDA);
+			var act = pt.Matrix.Credit * rlr * sact * rminus; // rlr is sig deriv
+			dtr += (1.0 - pt.Matrix.PatchDA) * pfmod * act;   // std credit
+			if (pfmod > pt.Learn.DWt.LearnThr) {              // we were active in output
+				dtr += pfmod * pt.Matrix.PatchDA * ((1.0 - patchDAD1) + patchDAD2) * act;
+			} else { // not active; we have no role in the outcome
+				dtr += pt.Matrix.PatchDA * pt.Matrix.OffTrace * (patchDAD2 - patchDAD1) * act;
+			}
 		}
 		SynapseTracesSet(dtr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
 		SynapseTracesSetAdd(dtr, Index3D(TensorStrides[180], TensorStrides[181],
@@ -1550,10 +1557,10 @@ const  DSMatrixPath: PathTypes = 12;
 struct StriatumParams {
 	GateThr: f32,
 	BasePF: f32,
-	PatchD2Scale: f32,
-	PatchD1Max: f32,
-	PatchD2Thr: f32,
 	IsVS: i32,
+	pad: f32,
+	PatchD1Range: F32,
+	PatchD2Range: F32,
 	OtherIndex: i32,
 	PFIndex: i32,
 	PatchD1Index: i32,
@@ -1564,6 +1571,8 @@ struct StriatumParams {
 	ThalLay4Index: i32,
 	ThalLay5Index: i32,
 	ThalLay6Index: i32,
+	pad1: f32,
+	pad2: f32,
 }
 alias GPLayerTypes = i32; //enums:enum
 const  GPePr: GPLayerTypes = 0;
@@ -1578,14 +1587,14 @@ struct GPParams {
 
 //////// import: "pcore-path.go"
 struct MatrixPathParams {
+	PatchDA: f32,
 	Credit: f32,
 	Delta: f32,
-	PatchDA: f32,
+	OffTrace: f32,
+	BasePF: f32,
 	VSRewLearn: i32,
-	UseSynPF: i32,
 	pad: f32,
 	pad1: f32,
-	pad2: f32,
 }
 
 //////// import: "pool.go"

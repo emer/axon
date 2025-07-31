@@ -99,7 +99,14 @@ fn LayerParams_GInteg(ly: LayerParams, ctx: Context, pi: u32,ni: u32,di: u32) {
 	var saveVal = LayerParams_SpecialPreGs(ly, ctx, pi, ni, di, drvGe, nonDrivePct);
 	LayerParams_GFromRawSyn(ly, ctx, ni, di);
 	LayerParams_GiInteg(ly, ctx, pi, ni, di);
-	LayerParams_GNeuroMod(ly, ctx, ni, di);
+	if (ly.Type == MatrixLayer && ly.Striatum.IsVS == 1) {
+		var nda = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DAD1))] - Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DAD2))];
+		var ggain = NeuroModParams_GGain(ly.Learn.NeuroMod, nda);
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Ge))] *= ggain;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Gi))] *= ggain;
+	} else {
+		LayerParams_GNeuroMod(ly, ctx, ni, di);
+	}
 	LayerParams_SpecialPostGs(ly, ctx, ni, di, saveVal);
 }
 fn LayerParams_SpecialPreGs(ly: LayerParams, ctx: Context, pi: u32,ni: u32,di: u32, drvGe: f32, nonDrivePct: f32) -> f32 {
@@ -251,9 +258,14 @@ fn LayerParams_SpecialPostGs(ly: LayerParams, ctx: Context, ni: u32,di: u32, sav
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeExt))] = saveVal;
 		var orig = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CtxtGeOrig))];
 		if (orig < 0.05) {
-			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
-			u32(ni), u32(di), u32(Ge))] = 0.0;
+			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Ge))] = 0.0;
 		}
+	}
+	case MatrixLayer: {
+		var ggain = NeuroModParams_GGain(ly.Learn.NeuroMod, GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvDA), u32(di))] + GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvDAtonic), u32(di))]);
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Ge))] *= ggain;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
+		u32(ni), u32(di), u32(Gi))] *= ggain;
 	}
 	default: {
 	}
@@ -1243,7 +1255,7 @@ const SynapseTraceVarsN: SynapseTraceVars = 3;
 const SynapseIndexVarsN: SynapseIndexVars = 3;
 
 //////// import: "fsfffb-enumgen.go"
-const InhibVarsN: InhibVars = 18;
+const InhibVarsN: InhibVars = 19;
 
 //////// import: "fsfffb-fsfffb.go"
 struct GiParams {
@@ -1284,7 +1296,8 @@ const  LayGi: InhibVars = 13;
 const  FFAvg: InhibVars = 14;
 const  FFAvgPrv: InhibVars = 15;
 const  ModAct: InhibVars = 16;
-const  DA: InhibVars = 17;
+const  DAD1: InhibVars = 17;
+const  DAD2: InhibVars = 18;
 
 //////// import: "globals.go"
 alias GlobalScalarVars = i32; //enums:enum
@@ -1956,10 +1969,10 @@ const  DSMatrixPath: PathTypes = 12;
 struct StriatumParams {
 	GateThr: f32,
 	BasePF: f32,
-	PatchD2Scale: f32,
-	PatchD1Max: f32,
-	PatchD2Thr: f32,
 	IsVS: i32,
+	pad: f32,
+	PatchD1Range: F32,
+	PatchD2Range: F32,
 	OtherIndex: i32,
 	PFIndex: i32,
 	PatchD1Index: i32,
@@ -1970,6 +1983,8 @@ struct StriatumParams {
 	ThalLay4Index: i32,
 	ThalLay5Index: i32,
 	ThalLay6Index: i32,
+	pad1: f32,
+	pad2: f32,
 }
 alias GPLayerTypes = i32; //enums:enum
 const  GPePr: GPLayerTypes = 0;
@@ -1984,14 +1999,14 @@ struct GPParams {
 
 //////// import: "pcore-path.go"
 struct MatrixPathParams {
+	PatchDA: f32,
 	Credit: f32,
 	Delta: f32,
-	PatchDA: f32,
+	OffTrace: f32,
+	BasePF: f32,
 	VSRewLearn: i32,
-	UseSynPF: i32,
 	pad: f32,
 	pad1: f32,
-	pad2: f32,
 }
 
 //////// import: "pool.go"

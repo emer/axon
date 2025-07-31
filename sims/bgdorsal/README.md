@@ -43,6 +43,24 @@ The learned weights to the BG clearly show that it is disinhibiting the appropri
 
 # Param search notes
 
+## 07/30/2025: patch
+
+Key logic:
+
+* PatchD1, D2 accumulates PF action output across sequence, learns final DA modulation.  At each point in time, signals the expected positive vs. negative.
+
+* Patch should provide a useful signal to Matrix about what works -- use to modulate DA.
+
+* 
+
+* if PF == same stripe as Patch (i.e., selected), Patch discounts learning.
+* if PF != same, then sign flips -- counterfactual. is this already built in?
+* But it always biases learning in same direction as self.
+
+Discount: 
+
+* for trace, D1
+
 ## 01/14/2025: after fixes
 
 * PF looks weaker in new vs. old; unclear why. Fixed PF weights not helpful (but not too bad either).

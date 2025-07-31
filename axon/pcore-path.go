@@ -15,10 +15,14 @@ import "cogentcore.org/lab/gosl/slbool"
 // Trace is applied to DWt and reset at the time of reward.
 type MatrixPathParams struct {
 
-	// proportion of trace activity driven by the basic credit assignment factor
-	// based on the PF modulatory inputs and activity of the receiving neuron,
-	// relative to the delta factor which is generally going to be smaller
-	// because it is an activity difference.
+	// PatchDA is what proportion of Credit trace factor for learning
+	// to modulate by PatchDA versus just standard s*r activity factor.
+	PatchDA float32 `default:"0.5"`
+
+	// Credit is proportion of trace activity driven by the credit assignment factor
+	// based on the PF modulatory inputs, synaptic activity (send * recv),
+	// and Patch DA, which indicates extent to which gating at this time is net
+	// associated with subsequent reward or not.
 	Credit float32 `default:"0.6"`
 
 	// weight for trace activity that is a function of the minus-plus delta
@@ -27,8 +31,15 @@ type MatrixPathParams struct {
 	// relative to it, and the overall learning rate.
 	Delta float32 `default:"1"`
 
-	// PatchDA is a multiplier on the Patch dopamine applied to the Matrix.
-	PatchDA float32 `default:"0.01"`
+	// OffTrace is a multiplier on trace contribution when action output
+	// communicated by PF is not above threshold.
+	OffTrace float32 `default:"0.1"`
+
+	// BasePF is the baseline amount of PF activity that modulates credit
+	// assignment learning, for neurons with zero PF modulatory activity.
+	// These were not part of the actual motor action, but can still get some
+	// smaller amount of credit learning.
+	BasePF float32 `default:"0.005"`
 
 	// for ventral striatum, learn based on activity at time of reward,
 	// in inverse proportion to the GoalMaint activity: i.e., if there was no
@@ -39,17 +50,15 @@ type MatrixPathParams struct {
 	// e.g., for testing cases that do not have GoalMaint.
 	VSRewLearn slbool.Bool `default:"true"`
 
-	// UseSynPF is a temporary flag for using the synaptic PF instead of direct
-	// activity based, to figure out diffs.
-	UseSynPF slbool.Bool
-
-	pad, pad1, pad2 float32
+	pad, pad1 float32
 }
 
 func (tp *MatrixPathParams) Defaults() {
+	tp.PatchDA = 0.5
 	tp.Credit = 0.6
 	tp.Delta = 1
-	tp.PatchDA = 0.01
+	tp.OffTrace = 0.01
+	tp.BasePF = 0.005
 	tp.VSRewLearn.SetBool(true)
 }
 

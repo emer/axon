@@ -406,7 +406,7 @@ const SynapseTraceVarsN: SynapseTraceVars = 3;
 const SynapseIndexVarsN: SynapseIndexVars = 3;
 
 //////// import: "fsfffb-enumgen.go"
-const InhibVarsN: InhibVars = 18;
+const InhibVarsN: InhibVars = 19;
 
 //////// import: "fsfffb-fsfffb.go"
 struct GiParams {
@@ -447,7 +447,8 @@ const  LayGi: InhibVars = 13;
 const  FFAvg: InhibVars = 14;
 const  FFAvgPrv: InhibVars = 15;
 const  ModAct: InhibVars = 16;
-const  DA: InhibVars = 17;
+const  DAD1: InhibVars = 17;
+const  DAD2: InhibVars = 18;
 
 //////// import: "globals.go"
 alias GlobalScalarVars = i32; //enums:enum
@@ -1016,10 +1017,10 @@ const  DSMatrixPath: PathTypes = 12;
 struct StriatumParams {
 	GateThr: f32,
 	BasePF: f32,
-	PatchD2Scale: f32,
-	PatchD1Max: f32,
-	PatchD2Thr: f32,
 	IsVS: i32,
+	pad: f32,
+	PatchD1Range: F32,
+	PatchD2Range: F32,
 	OtherIndex: i32,
 	PFIndex: i32,
 	PatchD1Index: i32,
@@ -1030,6 +1031,8 @@ struct StriatumParams {
 	ThalLay4Index: i32,
 	ThalLay5Index: i32,
 	ThalLay6Index: i32,
+	pad1: f32,
+	pad2: f32,
 }
 alias GPLayerTypes = i32; //enums:enum
 const  GPePr: GPLayerTypes = 0;
@@ -1044,14 +1047,14 @@ struct GPParams {
 
 //////// import: "pcore-path.go"
 struct MatrixPathParams {
+	PatchDA: f32,
 	Credit: f32,
 	Delta: f32,
-	PatchDA: f32,
+	OffTrace: f32,
+	BasePF: f32,
 	VSRewLearn: i32,
-	UseSynPF: i32,
 	pad: f32,
 	pad1: f32,
-	pad2: f32,
 }
 
 //////// import: "pool.go"

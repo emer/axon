@@ -50,6 +50,10 @@ fn LayerParams_CyclePost(ly: LayerParams, ctx: Context, di: u32) {
 	switch (ly.Type) {
 	case MatrixLayer, BGThalLayer: {
 		LayerParams_GatedFromCaPMax(ly, ctx, di);
+		for (var spi = u32(1); spi < ly.Indexes.NPools; spi++) {
+			var pi = LayerParams_PoolIndex(ly, spi);
+			LayerParams_CyclePostDSMatrixLayer(ly, ctx, pi, di, i32(spi));
+		}
 	}
 	case CeMLayer: {
 		LayerParams_CyclePostCeMLayer(ly, ctx, lpi, di);
@@ -58,6 +62,12 @@ fn LayerParams_CyclePost(ly: LayerParams, ctx: Context, di: u32) {
 		for (var spi = u32(1); spi < ly.Indexes.NPools; spi++) {
 			var pi = LayerParams_PoolIndex(ly, spi);
 			LayerParams_CyclePostVSPatchLayer(ly, ctx, pi, di, i32(spi));
+		}
+	}
+	case DSPatchLayer: {
+		for (var spi = u32(1); spi < ly.Indexes.NPools; spi++) {
+			var pi = LayerParams_PoolIndex(ly, spi);
+			LayerParams_CyclePostDSPatchLayer(ly, ctx, pi, di, i32(spi));
 		}
 	}
 	case LDTLayer: {
@@ -547,7 +557,7 @@ const SynapseTraceVarsN: SynapseTraceVars = 3;
 const SynapseIndexVarsN: SynapseIndexVars = 3;
 
 //////// import: "fsfffb-enumgen.go"
-const InhibVarsN: InhibVars = 18;
+const InhibVarsN: InhibVars = 19;
 
 //////// import: "fsfffb-fsfffb.go"
 struct GiParams {
@@ -588,7 +598,8 @@ const  LayGi: InhibVars = 13;
 const  FFAvg: InhibVars = 14;
 const  FFAvgPrv: InhibVars = 15;
 const  ModAct: InhibVars = 16;
-const  DA: InhibVars = 17;
+const  DAD1: InhibVars = 17;
+const  DAD2: InhibVars = 18;
 
 //////// import: "globals.go"
 alias GlobalScalarVars = i32; //enums:enum
@@ -946,6 +957,27 @@ struct F32 {
 	pad: i32,
 	pad1: i32, // for gpu use
 }
+fn F32_Range(mr: F32) -> f32 {
+	return mr.Max - mr.Min;
+}
+fn F32_Scale(mr: F32) -> f32 {
+	var r = F32_Range(mr);
+	if (r != 0) {
+		return 1.0 / r;
+	}return f32(
+0);
+}
+fn F32_NormValue(mr: F32, val: f32) -> f32 {
+	return (F32_ClampValue(mr, val) - mr.Min) * F32_Scale(mr);
+}
+fn F32_ClampValue(mr: F32, val: f32) -> f32 {
+	if (val < mr.Min) {
+		return mr.Min;
+	}
+	if (val > mr.Max) {
+		return mr.Max;
+	}return val;
+}
 
 //////// import: "network.go"
 struct NetworkIndexes {
@@ -1160,10 +1192,10 @@ const  DSMatrixPath: PathTypes = 12;
 struct StriatumParams {
 	GateThr: f32,
 	BasePF: f32,
-	PatchD2Scale: f32,
-	PatchD1Max: f32,
-	PatchD2Thr: f32,
 	IsVS: i32,
+	pad: f32,
+	PatchD1Range: F32,
+	PatchD2Range: F32,
 	OtherIndex: i32,
 	PFIndex: i32,
 	PatchD1Index: i32,
@@ -1174,6 +1206,8 @@ struct StriatumParams {
 	ThalLay4Index: i32,
 	ThalLay5Index: i32,
 	ThalLay6Index: i32,
+	pad1: f32,
+	pad2: f32,
 }
 alias GPLayerTypes = i32; //enums:enum
 const  GPePr: GPLayerTypes = 0;
@@ -1214,17 +1248,39 @@ fn LayerParams_GatedFromCaPMax(ly: LayerParams, ctx: Context, di: u32) {
 		u32(lpi), u32(di), u32(PoolGated))] = 0;
 	}
 }
+fn LayerParams_CyclePostDSPatchLayer(ly: LayerParams, ctx: Context, pi: u32,di: u32, spi: i32) {
+	var pf = Layers[ly.Striatum.PFIndex];
+	var pfact = PoolAvgMax(AMCaP, AMCycle, Avg, LayerParams_PoolIndex(pf, u32(spi)), di); // must be CaP, not CaD
+	var pfnet = ly.Striatum.BasePF + pfact;
+	Pools[Index3D(TensorStrides[130], TensorStrides[131],
+	TensorStrides[132], u32(pi), u32(di), u32(ModAct))] = pfnet;
+}
+fn LayerParams_CyclePostDSMatrixLayer(ly: LayerParams, ctx: Context, pi: u32,di: u32, spi: i32) {
+	if (ly.Striatum.IsVS == 1) {
+		return;
+	}
+	var pf = Layers[ly.Striatum.PFIndex];
+	var patchD1 = Layers[ly.Striatum.PatchD1Index];
+	var patchD2 = Layers[ly.Striatum.PatchD2Index];
+	var pfact = PoolAvgMax(AMCaP, AMCycle, Avg, LayerParams_PoolIndex(pf, u32(spi)), di); // must be CaP
+	var pfnet = ly.Striatum.BasePF + pfact;
+	var ptD1act = PoolAvgMax(AMCaP, AMCycle, Avg, LayerParams_PoolIndex(patchD1, u32(spi)), di);
+	var ptD2act = PoolAvgMax(AMCaP, AMCycle, Avg, LayerParams_PoolIndex(patchD2, u32(spi)), di);
+	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DAD1))] = F32_NormValue(ly.Striatum.PatchD1Range, ptD1act);
+	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DAD2))] = F32_NormValue(ly.Striatum.PatchD1Range, ptD2act);
+	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(ModAct))] = pfnet;
+}
 
 //////// import: "pcore-path.go"
 struct MatrixPathParams {
+	PatchDA: f32,
 	Credit: f32,
 	Delta: f32,
-	PatchDA: f32,
+	OffTrace: f32,
+	BasePF: f32,
 	VSRewLearn: i32,
-	UseSynPF: i32,
 	pad: f32,
 	pad1: f32,
-	pad2: f32,
 }
 
 //////// import: "pool.go"

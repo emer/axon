@@ -341,17 +341,31 @@ func (pt *PathParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, lpi, pi, di uin
 		SynapseTraces.Set(0.0, int(syni), int(di), int(Tr))
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DTr))
 	} else {
-		pfmod := Pools.Value(int(pi), int(di), int(fsfffb.ModAct))
-		if pt.Matrix.UseSynPF.IsTrue() {
-			pfmod = 0.005 + Neurons.Value(int(ri), int(di), int(GModSyn))
-		}
-		patchDA := pt.Matrix.PatchDA * Pools.Value(int(pi), int(di), int(fsfffb.DA))
+		// pfmod := Pools[pi, di, fsfffb.ModAct]
+		pfmod := pt.Matrix.BasePF + Neurons.Value(int(ri), int(di), int(GModSyn)) // syn value is always better
+		patchDAD1 := Pools.Value(int(pi), int(di), int(fsfffb.DAD1))
+		patchDAD2 := Pools.Value(int(pi), int(di), int(fsfffb.DAD2))
 		rplus := Neurons.Value(int(ri), int(di), int(CaP))
 		rminus := Neurons.Value(int(ri), int(di), int(CaD))
 		sact := Neurons.Value(int(si), int(di), int(CaD))
-		dtr := rlr * (pt.Matrix.Delta * sact * (rplus - rminus)) // no pf mod here
+		dtr := rlr * (pt.Matrix.Delta * sact * (rplus - rminus)) // always delta
 		if rminus > pt.Learn.DWt.LearnThr {                      // key: prevents learning if < threshold
-			dtr += rlr * (pt.Matrix.Credit*pfmod*sact*rminus + pfmod*patchDA)
+			act := pt.Matrix.Credit * rlr * sact * rminus  // rlr is sig deriv
+			dtr += (1.0 - pt.Matrix.PatchDA) * pfmod * act // std credit
+			if pfmod > pt.Learn.DWt.LearnThr {             // we were active in output
+				// D1 dopamine discounts to the extent we are the correct action at this time: shunting
+				// if reward is positive at end, this doesn't overtrain; if reward is negative because
+				// _other_ actions were bad, this insulates the correct one.
+				// if reward is negative because this action is bad, patchD2 adds to get more blame,
+				dtr += pfmod * pt.Matrix.PatchDA * ((1.0 - patchDAD1) + patchDAD2) * act
+			} else { // not active; we have no role in the outcome
+				// if the actual outcome is good, it is good for us to stay off
+				// but if it is bad, then we should actually turn on.
+				// so the sign should flip.
+				// how does patch factor into that? If it thinks this is good,
+				// but it wasn't activated, then go up, and vice-versa..
+				dtr += pt.Matrix.PatchDA * pt.Matrix.OffTrace * (patchDAD2 - patchDAD1) * act
+			}
 		}
 		SynapseTraces.Set(dtr, int(syni), int(di), int(DTr))
 		SynapseTraces.SetAdd(dtr, int(syni), int(di), int(Tr))

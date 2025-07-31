@@ -90,9 +90,6 @@ fn LayerParams_PlusPhasePost(ly: LayerParams, ctx: Context) {
 	}
 	if (ly.Type == MatrixLayer) {
 		LayerParams_MatrixGated(ly, ctx);
-		LayerParams_MatrixPostPlus(ly, ctx);
-	} else if (ly.Type == DSPatchLayer) {
-		LayerParams_PatchPostPlus(ly, ctx);
 	}
 }
 fn LayerParams_PlusPhaseActAvg(ly: LayerParams, ctx: Context) {
@@ -567,7 +564,7 @@ const SynapseTraceVarsN: SynapseTraceVars = 3;
 const SynapseIndexVarsN: SynapseIndexVars = 3;
 
 //////// import: "fsfffb-enumgen.go"
-const InhibVarsN: InhibVars = 18;
+const InhibVarsN: InhibVars = 19;
 
 //////// import: "fsfffb-fsfffb.go"
 struct GiParams {
@@ -608,7 +605,8 @@ const  LayGi: InhibVars = 13;
 const  FFAvg: InhibVars = 14;
 const  FFAvgPrv: InhibVars = 15;
 const  ModAct: InhibVars = 16;
-const  DA: InhibVars = 17;
+const  DAD1: InhibVars = 17;
+const  DAD2: InhibVars = 18;
 
 //////// import: "globals.go"
 alias GlobalScalarVars = i32; //enums:enum
@@ -1046,11 +1044,6 @@ struct NeuroModParams {
 	pad1: f32,
 	pad2: f32,
 }
-fn NeuroModParams_DASign(nm: NeuroModParams) -> f32 {
-	if (nm.DAMod == D2Mod) {
-		return -1.0;
-	}return f32(1.0);
-}
 
 //////// import: "neuron.go"
 alias NeuronFlags = i32; //enums:enum
@@ -1224,10 +1217,10 @@ const  DSMatrixPath: PathTypes = 12;
 struct StriatumParams {
 	GateThr: f32,
 	BasePF: f32,
-	PatchD2Scale: f32,
-	PatchD1Max: f32,
-	PatchD2Thr: f32,
 	IsVS: i32,
+	pad: f32,
+	PatchD1Range: F32,
+	PatchD2Range: F32,
 	OtherIndex: i32,
 	PFIndex: i32,
 	PatchD1Index: i32,
@@ -1238,12 +1231,8 @@ struct StriatumParams {
 	ThalLay4Index: i32,
 	ThalLay5Index: i32,
 	ThalLay6Index: i32,
-}
-fn StriatumParams_PatchDA(mp: StriatumParams, patchD1: f32,patchD2: f32) -> f32 {
-	var pD1 = min(patchD1, mp.PatchD1Max);
-	var pD2 = max(patchD2-mp.PatchD2Thr, 0.0);
-	var posDA = mp.PatchD1Max - pD1;
-	var negDA = mp.PatchD2Scale * pD2;return posDA - negDA;
+	pad1: f32,
+	pad2: f32,
 }
 alias GPLayerTypes = i32; //enums:enum
 const  GPePr: GPLayerTypes = 0;
@@ -1327,55 +1316,17 @@ fn LayerParams_MatrixGated(ly: LayerParams, ctx: Context) {
 		}
 	}
 }
-fn LayerParams_MatrixPostPlus(ly: LayerParams, ctx: Context) {
-	if (ly.Striatum.IsVS == 1 || ly.Indexes.NPools == 1) {
-		return;
-	}
-	var pf = Layers[ly.Striatum.PFIndex];
-	var patchD1 = Layers[ly.Striatum.PatchD1Index];
-	var patchD2 = Layers[ly.Striatum.PatchD2Index];
-	for (var di = u32(0); di < ctx.NData; di++) {
-		if ((GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], // has rew, do nothing
-		u32(GvHasRew), u32(di))]) > 0) {
-			continue;
-		}
-		for (var spi = u32(1); spi < ly.Indexes.NPools; spi++) {
-			var pfact = PoolAvgMax(AMCaP, AMCycle, Avg, LayerParams_PoolIndex(pf, spi), di); // must be CaP
-			var pfnet = ly.Striatum.BasePF + pfact;
-			var ptD1act = PoolAvgMax(AMCaP, AMCycle, Avg, LayerParams_PoolIndex(patchD1, spi), di);
-			var ptD2act = PoolAvgMax(AMCaP, AMCycle, Avg, LayerParams_PoolIndex(patchD2, spi), di);
-			var da = StriatumParams_PatchDA(ly.Striatum, ptD1act, ptD2act) * NeuroModParams_DASign(ly.Learn.NeuroMod);
-			var pi = LayerParams_PoolIndex(ly, spi);
-			Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DA))] = da;
-			Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132],
-			u32(pi), u32(di), u32(ModAct))] = pfnet;
-		}
-	}
-}
-fn LayerParams_PatchPostPlus(ly: LayerParams, ctx: Context) {
-	if (ly.Indexes.NPools == 1) {
-		return;
-	}
-	var pf = Layers[ly.Striatum.PFIndex];
-	for (var di = u32(0); di < ctx.NData; di++) {
-		for (var spi = u32(1); spi < ly.Indexes.NPools; spi++) {
-			var pfact = PoolAvgMax(AMCaP, AMCycle, Avg, LayerParams_PoolIndex(pf, spi), di); // must be CaP
-			var pfnet = ly.Striatum.BasePF + pfact;
-			Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(LayerParams_PoolIndex(ly, spi)), u32(di), u32(ModAct))] = pfnet;
-		}
-	}
-}
 
 //////// import: "pcore-path.go"
 struct MatrixPathParams {
+	PatchDA: f32,
 	Credit: f32,
 	Delta: f32,
-	PatchDA: f32,
+	OffTrace: f32,
+	BasePF: f32,
 	VSRewLearn: i32,
-	UseSynPF: i32,
 	pad: f32,
 	pad1: f32,
-	pad2: f32,
 }
 
 //////// import: "pool.go"

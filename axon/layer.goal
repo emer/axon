@@ -166,7 +166,7 @@ func (ly *Layer) Defaults() { //types:add
 	case MatrixLayer:
 		ly.MatrixDefaults()
 	case DSPatchLayer:
-		ly.PatchDefaults()
+		ly.DSPatchDefaults()
 	case GPLayer:
 		ly.GPDefaults()
 	case STNLayer:
@@ -495,8 +495,10 @@ func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
 			return float32(PoolsInt[pi, di, PoolGated])
 		case 5: // ModAct
 			return Pools[pi, di, fsfffb.ModAct]
-		case 6: // PoolDA
-			return Pools[pi, di, fsfffb.DA]
+		case 6: // PoolDAD1
+			return Pools[pi, di, fsfffb.DAD1]
+		case 7: // PoolDAD2
+			return Pools[pi, di, fsfffb.DAD2]
 		}
 	} else if varIndex >= neurVars {
 		return NeuronAvgs[ni, NeuronVars(varIndex-neurVars)]

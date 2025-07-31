@@ -269,7 +269,14 @@ func (ly *LayerParams) GInteg(ctx *Context, pi, ni, di uint32) {
 
 	ly.GFromRawSyn(ctx, ni, di)
 	ly.GiInteg(ctx, pi, ni, di)
-	ly.GNeuroMod(ctx, ni, di)
+	if ly.Type == MatrixLayer && ly.Striatum.IsVS.IsTrue() {
+		nda := Pools.Value(int(pi), int(di), int(fsfffb.DAD1)) - Pools.Value(int(pi), int(di), int(fsfffb.DAD2))
+		ggain := ly.Learn.NeuroMod.GGain(nda)
+		Neurons.SetMul(ggain, int(ni), int(di), int(Ge))
+		Neurons.SetMul(ggain, int(ni), int(di), int(Gi))
+	} else {
+		ly.GNeuroMod(ctx, ni, di)
+	}
 
 	ly.SpecialPostGs(ctx, ni, di, saveVal)
 }
@@ -418,6 +425,11 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni, di uint32, saveVal float3
 		if orig < 0.05 {
 			Neurons.Set(0.0, int(ni), int(di), int(Ge))
 		}
+	case MatrixLayer:
+		ggain := ly.Learn.NeuroMod.GGain(GlobalScalars.Value(int(GvDA), int(di)) + GlobalScalars.Value(int(GvDAtonic), int(di)))
+		Neurons.SetMul(ggain, int(ni), int(di), int(Ge))
+		Neurons.SetMul(ggain, int(ni), int(di), int(Gi))
+
 	default:
 	}
 }
@@ -703,12 +715,21 @@ func (ly *LayerParams) CyclePost(ctx *Context, di uint32) {
 	switch ly.Type {
 	case MatrixLayer, BGThalLayer:
 		ly.GatedFromCaPMax(ctx, di)
+		for spi := uint32(1); spi < ly.Indexes.NPools; spi++ {
+			pi := ly.PoolIndex(spi)
+			ly.CyclePostDSMatrixLayer(ctx, pi, di, int32(spi))
+		}
 	case CeMLayer:
 		ly.CyclePostCeMLayer(ctx, lpi, di)
 	case VSPatchLayer:
 		for spi := uint32(1); spi < ly.Indexes.NPools; spi++ {
 			pi := ly.PoolIndex(spi)
 			ly.CyclePostVSPatchLayer(ctx, pi, di, int32(spi))
+		}
+	case DSPatchLayer:
+		for spi := uint32(1); spi < ly.Indexes.NPools; spi++ {
+			pi := ly.PoolIndex(spi)
+			ly.CyclePostDSPatchLayer(ctx, pi, di, int32(spi))
 		}
 	case LDTLayer:
 		srcLay1Act := ly.LDTSrcLayAct(ly.LDT.SrcLay1Index, di)
@@ -1038,7 +1059,7 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32) {
 		modlr = ly.Learn.NeuroMod.LRMod(da, ach)
 		mlr = ly.Learn.RLRate.RLRateSigDeriv(Neurons.Value(int(ni), int(di), int(CaDPrev)), 1) // note: don't have proper max here
 	case MatrixLayer:
-		// note: modlr is further modulated by PF in PatchPostPlus
+		// note: modlr is further modulated by PF in PostPlus
 		if hasRew { // reward time
 			mlr = 1 // don't use sig deriv
 		} else {
@@ -1088,9 +1109,6 @@ func (ly *LayerParams) PlusPhasePost(ctx *Context) {
 	}
 	if ly.Type == MatrixLayer {
 		ly.MatrixGated(ctx)
-		ly.MatrixPostPlus(ctx)
-	} else if ly.Type == DSPatchLayer {
-		ly.PatchPostPlus(ctx)
 	}
 }
 
