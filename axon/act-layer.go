@@ -421,16 +421,16 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni, di uint32, saveVal float3
 			Neurons.Set(0.0, int(ni), int(di), int(Ge))
 		}
 	case DSMatrixLayer:
-		// if GlobalScalars[GvHasRew, di] > 0 {
-		ly.GNeuroMod(ctx, ni, di)
-		ly.GNeuroMod(ctx, ni, di)
-	// } else {
-	// pi := ly.PoolIndex(NeuronIxs[ni, NrnSubPool])
-	// nda := Pools[pi, di, fsfffb.DAD1] - Pools[pi, di, fsfffb.DAD2]
-	// ggain := ly.Learn.NeuroMod.GGain(nda)
-	// Neurons[ni, di, Ge] *= ggain
-	// Neurons[ni, di, Gi] *= ggain
-	// }
+		if GlobalScalars.Value(int(GvHasRew), int(di)) > 0 {
+			ly.GNeuroMod(ctx, ni, di)
+			ly.GNeuroMod(ctx, ni, di)
+		} else {
+			pi := ly.PoolIndex(NeuronIxs.Value(int(ni), int(NrnSubPool)))
+			nda := Pools.Value(int(pi), int(di), int(fsfffb.DAD1)) - Pools.Value(int(pi), int(di), int(fsfffb.DAD2))
+			ggain := ly.Learn.NeuroMod.GGain(nda)
+			Neurons.SetMul(ggain, int(ni), int(di), int(Ge))
+			Neurons.SetMul(ggain, int(ni), int(di), int(Gi))
+		}
 	default:
 	}
 }

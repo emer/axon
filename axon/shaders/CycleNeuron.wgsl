@@ -257,8 +257,17 @@ fn LayerParams_SpecialPostGs(ly: LayerParams, ctx: Context, ni: u32,di: u32, sav
 		}
 	}
 	case DSMatrixLayer: {
-		LayerParams_GNeuroMod(ly, ctx, ni, di);
-		LayerParams_GNeuroMod(ly, ctx, ni, di);
+		if (GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvHasRew), u32(di))] > 0) {
+			LayerParams_GNeuroMod(ly, ctx, ni, di);
+			LayerParams_GNeuroMod(ly, ctx, ni, di);
+		} else {
+			var pi = LayerParams_PoolIndex(ly, NeuronIxs[Index2D(TensorStrides[10], TensorStrides[11], u32(ni), u32(NrnSubPool))]);
+			var nda = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DAD1))] - Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DAD2))];
+			var ggain = NeuroModParams_GGain(ly.Learn.NeuroMod, nda);
+			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Ge))] *= ggain;
+			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
+			u32(ni), u32(di), u32(Gi))] *= ggain;
+		}
 	}
 	default: {
 	}
