@@ -561,7 +561,7 @@ const PathGTypesN: PathGTypes = 5;
 const GlobalScalarVarsN: GlobalScalarVars = 58;
 const GlobalVectorVarsN: GlobalVectorVars = 10;
 const GPUVarsN: GPUVars = 23;
-const LayerTypesN: LayerTypes = 31;
+const LayerTypesN: LayerTypes = 32;
 const LayerVarsN: LayerVars = 12;
 const ViewTimesN: ViewTimes = 7;
 const DAModTypesN: DAModTypes = 4;
@@ -782,6 +782,7 @@ struct LayerParams {
 	Bursts: BurstParams,
 	CT: CTParams,
 	Pulv: PulvParams,
+	DSMatrix: DSMatrixParams,
 	Striatum: StriatumParams,
 	GP: GPParams,
 	LDT: LDTParams,
@@ -807,28 +808,29 @@ const  PulvinarLayer: LayerTypes = 5;
 const  TRNLayer: LayerTypes = 6;
 const  PTMaintLayer: LayerTypes = 7;
 const  PTPredLayer: LayerTypes = 8;
-const  MatrixLayer: LayerTypes = 9;
-const  DSPatchLayer: LayerTypes = 10;
-const  STNLayer: LayerTypes = 11;
-const  GPLayer: LayerTypes = 12;
-const  BGThalLayer: LayerTypes = 13;
-const  VSGatedLayer: LayerTypes = 14;
-const  BLALayer: LayerTypes = 15;
-const  CeMLayer: LayerTypes = 16;
-const  VSPatchLayer: LayerTypes = 17;
-const  LHbLayer: LayerTypes = 18;
-const  DrivesLayer: LayerTypes = 19;
-const  UrgencyLayer: LayerTypes = 20;
-const  USLayer: LayerTypes = 21;
-const  PVLayer: LayerTypes = 22;
-const  LDTLayer: LayerTypes = 23;
-const  VTALayer: LayerTypes = 24;
-const  RewLayer: LayerTypes = 25;
-const  RWPredLayer: LayerTypes = 26;
-const  RWDaLayer: LayerTypes = 27;
-const  TDPredLayer: LayerTypes = 28;
-const  TDIntegLayer: LayerTypes = 29;
-const  TDDaLayer: LayerTypes = 30;
+const  DSMatrixLayer: LayerTypes = 9;
+const  VSMatrixLayer: LayerTypes = 10;
+const  DSPatchLayer: LayerTypes = 11;
+const  STNLayer: LayerTypes = 12;
+const  GPLayer: LayerTypes = 13;
+const  BGThalLayer: LayerTypes = 14;
+const  VSGatedLayer: LayerTypes = 15;
+const  BLALayer: LayerTypes = 16;
+const  CeMLayer: LayerTypes = 17;
+const  VSPatchLayer: LayerTypes = 18;
+const  LHbLayer: LayerTypes = 19;
+const  DrivesLayer: LayerTypes = 20;
+const  UrgencyLayer: LayerTypes = 21;
+const  USLayer: LayerTypes = 22;
+const  PVLayer: LayerTypes = 23;
+const  LDTLayer: LayerTypes = 24;
+const  VTALayer: LayerTypes = 25;
+const  RewLayer: LayerTypes = 26;
+const  RWPredLayer: LayerTypes = 27;
+const  RWDaLayer: LayerTypes = 28;
+const  TDPredLayer: LayerTypes = 29;
+const  TDIntegLayer: LayerTypes = 30;
+const  TDDaLayer: LayerTypes = 31;
 
 //////// import: "layervars.go"
 alias LayerVars = i32; //enums:enum
@@ -1162,11 +1164,7 @@ fn PathParams_DWtSynDSMatrix(pt: PathParams, ctx: Context, syni: u32,si: u32,ri:
 			if (pfmod > pt.Learn.DWt.LearnThr) {              // we were active in output
 				dtr += pfmod * pt.Matrix.PatchDA * ((1.0 - patchDAD1) + patchDAD2) * act;
 			} else { // not active; we have no role in the outcome
-				if (pt.Matrix.PFSignFlip == 1) {
-					dtr += pt.Matrix.OffTrace * pt.Matrix.PatchDA * (patchDAD2 - patchDAD1) * act;
-				} else {
-					dtr += pt.Matrix.OffTrace * pt.Matrix.PatchDA * (patchDAD1 - patchDAD2) * act;
-				}
+				dtr += pt.Matrix.OffTrace * pt.Matrix.PatchDA * (patchDAD1 - patchDAD2) * act;
 			}
 		}
 		SynapseTracesSet(dtr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
@@ -1558,23 +1556,25 @@ const  VSMatrixPath: PathTypes = 11;
 const  DSMatrixPath: PathTypes = 12;
 
 //////// import: "pcore-layer.go"
-struct StriatumParams {
-	GateThr: f32,
-	BasePF: f32,
-	IsVS: i32,
-	pad: f32,
+struct DSMatrixParams {
 	PatchD1Range: F32,
 	PatchD2Range: F32,
-	OtherIndex: i32,
-	PFIndex: i32,
+	BasePF: f32,
 	PatchD1Index: i32,
 	PatchD2Index: i32,
+	pad2: f32,
+}
+struct StriatumParams {
+	GateThr: f32,
+	OtherIndex: i32,
+	PFIndex: i32,
 	ThalLay1Index: i32,
 	ThalLay2Index: i32,
 	ThalLay3Index: i32,
 	ThalLay4Index: i32,
 	ThalLay5Index: i32,
 	ThalLay6Index: i32,
+	pad: f32,
 	pad1: f32,
 	pad2: f32,
 }

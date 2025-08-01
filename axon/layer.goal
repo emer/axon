@@ -163,8 +163,10 @@ func (ly *Layer) Defaults() { //types:add
 	case PVLayer:
 		ly.Params.PVDefaults()
 
-	case MatrixLayer:
-		ly.MatrixDefaults()
+	case DSMatrixLayer:
+		ly.DSMatrixDefaults()
+	case VSMatrixLayer:
+		ly.VSMatrixDefaults()
 	case DSPatchLayer:
 		ly.DSPatchDefaults()
 	case GPLayer:
@@ -430,8 +432,10 @@ func (ly *Layer) PostBuild() {
 	case BLALayer, CeMLayer, USLayer, PVLayer, VSPatchLayer:
 		ly.RubiconPostBuild()
 
-	case MatrixLayer:
-		ly.MatrixPostBuild()
+	case DSMatrixLayer:
+		ly.DSMatrixPostBuild()
+	case VSMatrixLayer:
+		ly.VSMatrixPostBuild()
 	case DSPatchLayer:
 		ly.PatchPostBuild()
 	case GPLayer:

@@ -32,7 +32,6 @@ func (net *Network) AddVentralBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX
 	matrixNo.SetBuildConfig("OtherName", matrixGo.Name)
 
 	mp := func(ly *LayerParams) {
-		ly.Striatum.IsVS.SetBool(true)
 		ly.Inhib.ActAvg.Nominal = 0.1 / float32(nPoolsX*nPoolsY)
 		ly.Acts.Dend.ModACh.SetBool(true)
 	}
@@ -194,7 +193,7 @@ func (net *Network) AddBGThalLayer2D(name string, nNeurY, nNeurX int) *Layer {
 // Assumes that a 4D structure will be used, with Pools representing separable gating domains.
 // da gives the DaReceptor type (D1R = Go, D2R = NoGo)
 func (net *Network) AddVMatrixLayer(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, da DAModTypes) *Layer {
-	ly := net.AddLayer4D(name, MatrixLayer, nPoolsY, nPoolsX, nNeurY, nNeurX)
+	ly := net.AddLayer4D(name, VSMatrixLayer, nPoolsY, nPoolsX, nNeurY, nNeurX)
 	ly.SetBuildConfig("DAMod", da.String())
 	ly.AddClass("VSMatrixLayer")
 	return ly
@@ -204,7 +203,7 @@ func (net *Network) AddVMatrixLayer(name string, nPoolsY, nPoolsX, nNeurY, nNeur
 // Assumes that a 4D structure will be used, with Pools representing separable gating domains.
 // da gives the DaReceptor type (D1R = Go, D2R = NoGo)
 func (net *Network) AddDMatrixLayer(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, da DAModTypes) *Layer {
-	ly := net.AddLayer4D(name, MatrixLayer, nPoolsY, nPoolsX, nNeurY, nNeurX)
+	ly := net.AddLayer4D(name, DSMatrixLayer, nPoolsY, nPoolsX, nNeurY, nNeurX)
 	ly.SetBuildConfig("DAMod", da.String())
 	ly.AddClass("DSMatrixLayer")
 	return ly

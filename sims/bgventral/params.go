@@ -18,13 +18,12 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Dend.ModACh.SetBool(true)
 			}},
-		{Sel: ".MatrixLayer", Doc: "all mtx",
+		{Sel: ".VSMatrixLayer", Doc: "all mtx",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.Pool.On.SetBool(false)
 				ly.Inhib.Layer.Gi = 0.5 // 0.5 needed for differentiated reps
 				ly.Inhib.ActAvg.Nominal = 0.25
 				ly.Striatum.GateThr = 0.05       // todo: .01 should be new default
-				ly.Striatum.IsVS.SetBool(true)   // key for resetting urgency
 				ly.Learn.RLRate.On.SetBool(true) // only used for non-rew trials -- key
 				ly.Learn.RLRate.Diff.SetBool(false)
 				ly.Learn.RLRate.SigmoidMin = 0.01 // 0.01 better than .05

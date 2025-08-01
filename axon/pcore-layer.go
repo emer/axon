@@ -13,7 +13,6 @@ import (
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/num"
 	"cogentcore.org/core/math32/minmax"
-	"cogentcore.org/lab/gosl/slbool"
 	"github.com/emer/axon/v2/fsfffb"
 )
 
@@ -24,30 +23,11 @@ import (
 // when scaling up, but initially not.
 // make a separate DSMatrixLayer and VSMatrixLayer
 
-// StriatumParams has parameters for BG Striatum layers including
-// MatrixLayer and DSPatchLayer.
+// DSMatrixParams has parameters for DSMatrixLayer.
 // DA, ACh learning rate modulation is pre-computed on the recv neuron
-// RLRate variable via NeuroMod. Also uses Pool.Gated for InvertNoGate,
-// updated in PlusPhase prior to DWt call.
+// RLRate variable via NeuroMod.
 // Must set Learn.NeuroMod.DAMod = D1Mod or D2Mod via SetBuildConfig("DAMod").
-type StriatumParams struct {
-
-	// GateThr is the threshold on layer Avg CaPMax for Matrix Go and BG Thal
-	// layers to count as having gated.
-	GateThr float32 `default:"0.05"`
-
-	// BasePF is the baseline amount of PF activity that modulates credit
-	// assignment learning, for neurons with zero PF modulatory activity.
-	// These were not part of the actual motor action, but can still get some
-	// smaller amount of credit learning.
-	BasePF float32 `default:"0.005"`
-
-	// IsVS is this a ventral striatum (VS) matrix layer? If true, the gating
-	// status of this layer is recorded in the Global state,
-	// and used for updating effort and other factors.
-	IsVS slbool.Bool
-
-	pad float32
+type DSMatrixParams struct {
 
 	// PatchD1Range is the range of PatchD1 values to normalize into effective value.
 	PatchD1Range minmax.F32 `default:"{'Min':0.1,'Max':0.3}" display:"inline"`
@@ -55,13 +35,11 @@ type StriatumParams struct {
 	// PatchD2Range is the range of PatchD2 values to normalize into effective value.
 	PatchD2Range minmax.F32 `default:"{'Min':0.1,'Max':0.3}" display:"inline"`
 
-	// Index of other layer (D2 if we are D1 and vice-versa).
-	// Set during Build from BuildConfig OtherName.
-	OtherIndex int32 `edit:"-"`
-
-	// Index of PF parafasciculus layer to get gating output state from.
-	// Set during Build from BuildConfig PFName.
-	PFIndex int32 `edit:"-"`
+	// BasePF is the baseline amount of PF activity that modulates credit
+	// assignment learning, for neurons with zero PF modulatory activity.
+	// These were not part of the actual motor action, but can still get some
+	// smaller amount of credit learning.
+	BasePF float32 `default:"0.005"`
 
 	// Index of PatchD1 layer to get striosome modulation state from.
 	// Set during Build from BuildConfig PatchD1Name.
@@ -70,6 +48,34 @@ type StriatumParams struct {
 	// Index of PatchD2 layer to get striosome modulation state from.
 	// Set during Build from BuildConfig PatchD2Name.
 	PatchD2Index int32 `edit:"-"`
+
+	pad2 float32
+}
+
+func (mp *DSMatrixParams) Defaults() {
+	mp.BasePF = 0.005
+	mp.PatchD1Range.Set(0.1, 0.3)
+	mp.PatchD2Range.Set(0.1, 0.3)
+}
+
+func (mp *DSMatrixParams) Update() {
+}
+
+// StriatumParams has params and indexes for BG Striatum layers including
+// DSMatrixLayer, VSMatrixLayer, and DSPatchLayer.
+type StriatumParams struct {
+
+	// GateThr is the threshold on layer Avg CaPMax for Matrix Go and BG Thal
+	// layers to count as having gated.
+	GateThr float32 `default:"0.05"`
+
+	// Index of other layer (D2 if we are D1 and vice-versa).
+	// Set during Build from BuildConfig OtherName.
+	OtherIndex int32 `edit:"-"`
+
+	// Index of PF parafasciculus layer to get gating output state from.
+	// Set during Build from BuildConfig PFName.
+	PFIndex int32 `edit:"-"`
 
 	// Index of thalamus layer that we gate. needed to get gating information.
 	// Set during Build from BuildConfig ThalLay1Name if present -- -1 if not used
@@ -95,14 +101,11 @@ type StriatumParams struct {
 	// Set during Build from BuildConfig ThalLay1Name if present -- -1 if not used
 	ThalLay6Index int32 `edit:"-"`
 
-	pad1, pad2 float32
+	pad, pad1, pad2 float32
 }
 
 func (mp *StriatumParams) Defaults() {
 	mp.GateThr = 0.05
-	mp.BasePF = 0.005
-	mp.PatchD1Range.Set(0.1, 0.3)
-	mp.PatchD2Range.Set(0.1, 0.3)
 }
 
 func (mp *StriatumParams) Update() {
@@ -211,7 +214,7 @@ func (ly *LayerParams) MatrixGated(ctx *Context) {
 				PoolsInt.Set(0, int(pi), int(di), int(PoolGated))
 			}
 		}
-		if ctx.PlusPhase.IsTrue() && ly.Striatum.IsVS.IsTrue() {
+		if ctx.PlusPhase.IsTrue() && ly.Type == VSMatrixLayer {
 			GlobalScalars.Set(num.FromBool[float32](mtxGated), int(GvVSMatrixJustGated), int(di))
 			if mtxGated {
 				poolIndex := int32(-1)
@@ -271,25 +274,22 @@ func (ly *LayerParams) AnyGated(di uint32) bool {
 func (ly *LayerParams) CyclePostDSPatchLayer(ctx *Context, pi, di uint32, spi int32) {
 	pf := Layers[ly.Striatum.PFIndex]
 	pfact := PoolAvgMax(AMCaP, AMCycle, Avg, pf.PoolIndex(uint32(spi)), di) // must be CaP, not CaD
-	pfnet := ly.Striatum.BasePF + pfact
-	Pools.Set(pfnet, int(pi), int(di), int(fsfffb.ModAct))
+	// pfnet := pfact                                                          // ly.Striatum.BasePF + pfact
+	Pools.Set(0.005+pfact, int(pi), int(di), int(fsfffb.ModAct))
 }
 
 // CyclePostDSMatrixLayer sets pool-specific DA dopamine signal based on PF
 // activity and DSPatch
 func (ly *LayerParams) CyclePostDSMatrixLayer(ctx *Context, pi, di uint32, spi int32) {
-	if ly.Striatum.IsVS.IsTrue() {
-		return
-	}
 	pf := Layers[ly.Striatum.PFIndex]
-	patchD1 := Layers[ly.Striatum.PatchD1Index]
-	patchD2 := Layers[ly.Striatum.PatchD2Index]
+	patchD1 := Layers[ly.DSMatrix.PatchD1Index]
+	patchD2 := Layers[ly.DSMatrix.PatchD2Index]
 	pfact := PoolAvgMax(AMCaP, AMCycle, Avg, pf.PoolIndex(uint32(spi)), di) // must be CaP
-	pfnet := ly.Striatum.BasePF + pfact
+	pfnet := ly.DSMatrix.BasePF + pfact
 	ptD1act := PoolAvgMax(AMCaP, AMCycle, Avg, patchD1.PoolIndex(uint32(spi)), di)
 	ptD2act := PoolAvgMax(AMCaP, AMCycle, Avg, patchD2.PoolIndex(uint32(spi)), di)
-	Pools.Set(ly.Striatum.PatchD1Range.NormValue(ptD1act), int(pi), int(di), int(fsfffb.DAD1))
-	Pools.Set(ly.Striatum.PatchD2Range.NormValue(ptD2act), int(pi), int(di), int(fsfffb.DAD2))
+	Pools.Set(ly.DSMatrix.PatchD1Range.NormValue(ptD1act), int(pi), int(di), int(fsfffb.DAD1))
+	Pools.Set(ly.DSMatrix.PatchD2Range.NormValue(ptD2act), int(pi), int(di), int(fsfffb.DAD2))
 	Pools.Set(pfnet, int(pi), int(di), int(fsfffb.ModAct))
 }
 
@@ -318,22 +318,6 @@ func (ly *Layer) MatrixDefaults() {
 	ly.Params.Learn.NeuroMod.BurstGain = 0.1
 	ly.Params.Learn.RLRate.SigmoidMin = 0.001
 
-	if ly.Class == "VSMatrixLayer" {
-		ly.Params.Inhib.Layer.On.SetBool(true)
-		ly.Params.Striatum.IsVS.SetBool(true)
-		ly.Params.Acts.Dend.ModBase = 0
-		ly.Params.Acts.Dend.ModGain = 2 // for VS case -- otherwise irrelevant
-		ly.Params.Learn.NeuroMod.AChDisInhib = 5
-		ly.Params.Learn.NeuroMod.BurstGain = 1
-	} else {
-		ly.Params.Inhib.Layer.On.SetBool(false)
-		ly.Params.Striatum.IsVS.SetBool(false)
-		ly.Params.Acts.Dend.ModBase = 1
-		ly.Params.Acts.Dend.ModGain = 0
-		ly.Params.Learn.NeuroMod.AChDisInhib = 0
-		ly.Params.Learn.NeuroMod.DAModGain = 0.01 // DS
-	}
-
 	// important: user needs to adjust wt scale of some PFC inputs vs others:
 	// drivers vs. modulators
 
@@ -344,13 +328,34 @@ func (ly *Layer) MatrixDefaults() {
 			pj.Params.PathScale.Abs = 3
 			pj.Params.SWts.Init.Mean = 0.75
 			pj.Params.SWts.Init.Var = 0.0
-			if ly.Class == "DSMatrixLayer" {
-				if strings.Contains(ly.Name, "No") {
-					pj.Params.PathScale.Abs = 6
-				}
+		}
+	}
+}
+
+func (ly *Layer) DSMatrixDefaults() {
+	ly.MatrixDefaults()
+	ly.Params.Inhib.Layer.On.SetBool(false)
+	ly.Params.Acts.Dend.ModBase = 1
+	ly.Params.Acts.Dend.ModGain = 0
+	ly.Params.Learn.NeuroMod.AChDisInhib = 0
+	ly.Params.Learn.NeuroMod.DAModGain = 0.01 // DS
+
+	for _, pj := range ly.RecvPaths {
+		if pj.Send.Type == GPLayer { // GPeAkToMtx
+			if strings.Contains(ly.Name, "No") {
+				pj.Params.PathScale.Abs = 6
 			}
 		}
 	}
+}
+
+func (ly *Layer) VSMatrixDefaults() {
+	ly.MatrixDefaults()
+	ly.Params.Inhib.Layer.On.SetBool(true)
+	ly.Params.Acts.Dend.ModBase = 0
+	ly.Params.Acts.Dend.ModGain = 2 // for VS case -- otherwise irrelevant
+	ly.Params.Learn.NeuroMod.AChDisInhib = 5
+	ly.Params.Learn.NeuroMod.BurstGain = 1
 }
 
 func (ly *Layer) MatrixPostBuild() {
@@ -363,18 +368,21 @@ func (ly *Layer) MatrixPostBuild() {
 
 	ly.Params.Striatum.OtherIndex = ly.BuildConfigFindLayer("OtherName", true)
 
-	isDorsal := !ly.Params.Striatum.IsVS.Bool()
-
-	if isDorsal {
-		ly.Params.Striatum.PFIndex = ly.BuildConfigFindLayer("PFName", true)
-		ly.Params.Striatum.PatchD1Index = ly.BuildConfigFindLayer("PatchD1Name", true)
-		ly.Params.Striatum.PatchD2Index = ly.BuildConfigFindLayer("PatchD2Name", true)
-	}
-
 	dm, err := ly.BuildConfigByName("DAMod")
 	if err == nil {
 		errors.Log(ly.Params.Learn.NeuroMod.DAMod.SetString(dm))
 	}
+}
+
+func (ly *Layer) DSMatrixPostBuild() {
+	ly.MatrixPostBuild()
+	ly.Params.Striatum.PFIndex = ly.BuildConfigFindLayer("PFName", true)
+	ly.Params.DSMatrix.PatchD1Index = ly.BuildConfigFindLayer("PatchD1Name", true)
+	ly.Params.DSMatrix.PatchD2Index = ly.BuildConfigFindLayer("PatchD2Name", true)
+}
+
+func (ly *Layer) VSMatrixPostBuild() {
+	ly.MatrixPostBuild()
 }
 
 func (ly *Layer) DSPatchDefaults() {
@@ -419,7 +427,7 @@ func (ly *Layer) GPDefaults() {
 		switch ly.Params.GP.GPType {
 		case GPePr:
 			switch pj.Send.Type {
-			case MatrixLayer:
+			case VSMatrixLayer, DSMatrixLayer:
 				pj.Params.PathScale.Abs = 1 // MtxNoToGPePr -- primary NoGo pathway
 			case GPLayer:
 				pj.Params.PathScale.Abs = 4 // 4 best for DS; GPePrToGPePr -- must be very strong
@@ -428,7 +436,7 @@ func (ly *Layer) GPDefaults() {
 			}
 		case GPeAk:
 			switch pj.Send.Type {
-			case MatrixLayer:
+			case VSMatrixLayer, DSMatrixLayer:
 				pj.Params.PathScale.Abs = 0.5 // MtxGoToGPeAk
 			case GPLayer:
 				pj.Params.PathScale.Abs = 1 // GPePrToGPeAk
@@ -451,14 +459,12 @@ func (ly *Layer) GPiDefaults() {
 
 	for _, pj := range ly.RecvPaths {
 		pj.Params.SetFixedWts()
-		pj.Params.SWts.Init.Mean = 0.75  // 0.75  see above
-		pj.Params.SWts.Init.Var = 0.25   // 0.25
-		if pj.Send.Type == MatrixLayer { // MtxGoToGPi
-			if pj.Send.Class == "VSMatrixLayer" {
-				pj.Params.PathScale.Abs = 0.2
-			} else {
-				pj.Params.PathScale.Abs = 1
-			}
+		pj.Params.SWts.Init.Mean = 0.75    // 0.75  see above
+		pj.Params.SWts.Init.Var = 0.25     // 0.25
+		if pj.Send.Type == VSMatrixLayer { // MatrixGoToGPi
+			pj.Params.PathScale.Abs = 0.2
+		} else if pj.Send.Type == DSMatrixLayer {
+			pj.Params.PathScale.Abs = 1
 		} else if pj.Send.Type == GPLayer { // GPePrToGPi
 			pj.Params.PathScale.Abs = 1
 		} else if pj.Send.Type == STNLayer { // STNToGPi

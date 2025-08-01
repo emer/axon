@@ -114,9 +114,11 @@ type LayerParams struct {
 	// neuron Burst activation (or CaP if not Super).
 	Pulv PulvParams `display:"inline"`
 
-	// Striatum has parameters for BG Striatum layers, for SPN / MSN
-	// direct and indirect pathways and Patch / Striosome layers.
-	// GateThr also used in BGThal.
+	// DSMatrixParams has parameters for dorsal Matrix layers, for SPN / MSN
+	// direct and indirect pathways.
+	DSMatrix DSMatrixParams `display:"inline"`
+
+	// Striatum has params and indexes for striatum layers: DSMatrix, VSMatrix, DSPatch.
 	Striatum StriatumParams `display:"inline"`
 
 	// GP has params for GP (globus pallidus) of the BG layers.
@@ -191,6 +193,7 @@ func (ly *LayerParams) Update() {
 	ly.CT.Update()
 	ly.Pulv.Update()
 
+	ly.DSMatrix.Update()
 	ly.Striatum.Update()
 	ly.GP.Update()
 
@@ -215,6 +218,7 @@ func (ly *LayerParams) Defaults() {
 	ly.CT.Defaults()
 	ly.Pulv.Defaults()
 
+	ly.DSMatrix.Defaults()
 	ly.Striatum.Defaults()
 	ly.GP.Defaults()
 
@@ -235,8 +239,10 @@ func (ly *LayerParams) ShouldDisplay(field string) bool {
 		return ly.Type == CTLayer || ly.Type == PTPredLayer || ly.Type == BLALayer
 	case "Pulv":
 		return ly.Type == PulvinarLayer
+	case "DSMatrix":
+		return ly.Type == DSMatrixLayer
 	case "Striatum":
-		return ly.Type == MatrixLayer || ly.Type == DSPatchLayer || ly.Type == BGThalLayer
+		return ly.Type == VSMatrixLayer || ly.Type == DSMatrixLayer || ly.Type == DSPatchLayer
 	case "GP":
 		return ly.Type == GPLayer
 	case "LDT":
@@ -283,8 +289,10 @@ func (ly *LayerParams) ParamsString(nonDefault bool) string {
 			return ltyp == CTLayer || ltyp == PTPredLayer || ltyp == BLALayer
 		case "Pulv":
 			return ltyp == PulvinarLayer
+		case "DSMatrix":
+			return ltyp == DSMatrixLayer
 		case "Striatum":
-			return ltyp == MatrixLayer || ltyp == DSPatchLayer || ltyp == BGThalLayer
+			return ltyp == DSMatrixLayer || ltyp == VSMatrixLayer || ltyp == DSPatchLayer
 		case "GP":
 			return ltyp == GPLayer
 		case "LDT":

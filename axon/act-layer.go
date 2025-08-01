@@ -269,15 +269,6 @@ func (ly *LayerParams) GInteg(ctx *Context, pi, ni, di uint32) {
 
 	ly.GFromRawSyn(ctx, ni, di)
 	ly.GiInteg(ctx, pi, ni, di)
-	if ly.Type == MatrixLayer && ly.Striatum.IsVS.IsTrue() {
-		nda := Pools.Value(int(pi), int(di), int(fsfffb.DAD1)) - Pools.Value(int(pi), int(di), int(fsfffb.DAD2))
-		ggain := ly.Learn.NeuroMod.GGain(nda)
-		Neurons.SetMul(ggain, int(ni), int(di), int(Ge))
-		Neurons.SetMul(ggain, int(ni), int(di), int(Gi))
-	} else {
-		ly.GNeuroMod(ctx, ni, di)
-	}
-
 	ly.SpecialPostGs(ctx, ni, di, saveVal)
 }
 
@@ -416,6 +407,10 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, pi, ni, di uint32, drvGe float
 // after the standard updates in GFromRawSyn.
 // It is passed the saveVal from SpecialPreGs
 func (ly *LayerParams) SpecialPostGs(ctx *Context, ni, di uint32, saveVal float32) {
+	if ly.Type != DSMatrixLayer {
+		ly.GNeuroMod(ctx, ni, di)
+	}
+
 	switch ly.Type {
 	case PulvinarLayer, PTMaintLayer, CTLayer, BLALayer:
 		Neurons.Set(saveVal, int(ni), int(di), int(GeExt))
@@ -425,11 +420,17 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni, di uint32, saveVal float3
 		if orig < 0.05 {
 			Neurons.Set(0.0, int(ni), int(di), int(Ge))
 		}
-	case MatrixLayer:
-		ggain := ly.Learn.NeuroMod.GGain(GlobalScalars.Value(int(GvDA), int(di)) + GlobalScalars.Value(int(GvDAtonic), int(di)))
-		Neurons.SetMul(ggain, int(ni), int(di), int(Ge))
-		Neurons.SetMul(ggain, int(ni), int(di), int(Gi))
-
+	case DSMatrixLayer:
+		// if GlobalScalars[GvHasRew, di] > 0 {
+		ly.GNeuroMod(ctx, ni, di)
+		ly.GNeuroMod(ctx, ni, di)
+	// } else {
+	// pi := ly.PoolIndex(NeuronIxs[ni, NrnSubPool])
+	// nda := Pools[pi, di, fsfffb.DAD1] - Pools[pi, di, fsfffb.DAD2]
+	// ggain := ly.Learn.NeuroMod.GGain(nda)
+	// Neurons[ni, di, Ge] *= ggain
+	// Neurons[ni, di, Gi] *= ggain
+	// }
 	default:
 	}
 }
@@ -713,7 +714,9 @@ func (ly *LayerParams) CyclePost(ctx *Context, di uint32) {
 	lpi := ly.PoolIndex(0)
 	ly.CyclePostLayer(ctx, lpi, di)
 	switch ly.Type {
-	case MatrixLayer, BGThalLayer:
+	case VSMatrixLayer, BGThalLayer:
+		ly.GatedFromCaPMax(ctx, di)
+	case DSMatrixLayer:
 		ly.GatedFromCaPMax(ctx, di)
 		for spi := uint32(1); spi < ly.Indexes.NPools; spi++ {
 			pi := ly.PoolIndex(spi)
@@ -1000,7 +1003,7 @@ func (ly *LayerParams) MinusPhaseNeuron(ctx *Context, ni, di uint32) {
 // MinusPhasePost does special algorithm processing at end of minus
 func (ly *LayerParams) MinusPhasePost(ctx *Context) {
 	switch ly.Type {
-	case MatrixLayer:
+	case VSMatrixLayer, DSMatrixLayer:
 		ly.MatrixGated(ctx) // need gated state for decisions about action processing, so do in minus too
 	case PulvinarLayer:
 		ly.DecayStateNeuronsAll(ctx, 1, 1, 0)
@@ -1058,7 +1061,7 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32) {
 		da = GlobalScalars.Value(int(GvVSPatchPosRPE), int(di)) // our own personal
 		modlr = ly.Learn.NeuroMod.LRMod(da, ach)
 		mlr = ly.Learn.RLRate.RLRateSigDeriv(Neurons.Value(int(ni), int(di), int(CaDPrev)), 1) // note: don't have proper max here
-	case MatrixLayer:
+	case VSMatrixLayer, DSMatrixLayer:
 		// note: modlr is further modulated by PF in PostPlus
 		if hasRew { // reward time
 			mlr = 1 // don't use sig deriv
@@ -1107,7 +1110,7 @@ func (ly *LayerParams) PlusPhasePost(ctx *Context) {
 			}
 		}
 	}
-	if ly.Type == MatrixLayer {
+	if ly.Type == VSMatrixLayer || ly.Type == DSMatrixLayer {
 		ly.MatrixGated(ctx)
 	}
 }

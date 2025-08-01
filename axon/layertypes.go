@@ -86,10 +86,21 @@ const (
 
 	//////// PCore Basal Ganglia (BG)
 
-	// MatrixLayer represents the matrisome spiny projection neurons (SPNs, MSNs)
-	// that are the main Go / NoGo gating units in BG.
-	// These are modulated by phasic dopamine: D1 = Go, D2 = NoGo.
-	MatrixLayer
+	// DSMatrixLayer represents the matrisome spiny projection neurons
+	// (SPNs, MSNs) that are the main Go / No gating units in BG,
+	// and are modulated by phasic dopamine: D1 = Go, D2 = No.
+	// These are for dorsal striatum, which interact with matrisomes and
+	// receive PF (parafasciculus) feedback signals.
+	DSMatrixLayer
+
+	// VSMatrixLayer represents the matrisome spiny projection neurons
+	// (SPNs, MSNs) that are the main Go / No gating units in BG,
+	// and are modulated by phasic dopamine: D1 = Go, D2 = No.
+	// These are for ventral striatum, which drive goal-selection
+	// gating signals through the MD thalamus, and activate instinctive
+	// behaviors based on learned inputs projecting to various output
+	// pathways.
+	VSMatrixLayer
 
 	// DSPatchLayer represents the dorsolateral striosomal spiny neurons
 	// that modulate the activity of SNc dopamine to a given Pool.

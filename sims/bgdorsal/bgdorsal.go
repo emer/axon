@@ -294,9 +294,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToDSPatch(s1, patchD1, patchD2, toMatrix, "S1ToPatch")
 	net.ConnectToDSPatch(m1, patchD1, patchD2, toMatrix, "M1ToPatch")
 
-	// better without:
-	// net.ConnectToDSPatch(m1PT, patchD1, patchD2, toMatrix, "M1PTToPatch")
-	// net.ConnectToDSPatch(m1PTp, patchD1, patchD2, toMatrix, "M1PTpToPatch")
+	// better with:
+	net.ConnectToDSPatch(m1PT, patchD1, patchD2, toMatrix, "M1PTToPatch")
+	net.ConnectToDSPatch(m1PTp, patchD1, patchD2, toMatrix, "M1PTpToPatch")
 
 	// note: just using direct pathways here -- theoretically through CL
 	// TODO: not working! -- need to make these modulatory in the right way.

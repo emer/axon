@@ -99,14 +99,6 @@ fn LayerParams_GInteg(ly: LayerParams, ctx: Context, pi: u32,ni: u32,di: u32) {
 	var saveVal = LayerParams_SpecialPreGs(ly, ctx, pi, ni, di, drvGe, nonDrivePct);
 	LayerParams_GFromRawSyn(ly, ctx, ni, di);
 	LayerParams_GiInteg(ly, ctx, pi, ni, di);
-	if (ly.Type == MatrixLayer && ly.Striatum.IsVS == 1) {
-		var nda = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DAD1))] - Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DAD2))];
-		var ggain = NeuroModParams_GGain(ly.Learn.NeuroMod, nda);
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Ge))] *= ggain;
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Gi))] *= ggain;
-	} else {
-		LayerParams_GNeuroMod(ly, ctx, ni, di);
-	}
 	LayerParams_SpecialPostGs(ly, ctx, ni, di, saveVal);
 }
 fn LayerParams_SpecialPreGs(ly: LayerParams, ctx: Context, pi: u32,ni: u32,di: u32, drvGe: f32, nonDrivePct: f32) -> f32 {
@@ -250,6 +242,9 @@ fn LayerParams_SpecialPreGs(ly: LayerParams, ctx: Context, pi: u32,ni: u32,di: u
 	}return saveVal;
 }
 fn LayerParams_SpecialPostGs(ly: LayerParams, ctx: Context, ni: u32,di: u32, saveVal: f32) {
+	if (ly.Type != DSMatrixLayer) {
+		LayerParams_GNeuroMod(ly, ctx, ni, di);
+	}
 	switch (ly.Type) {
 	case PulvinarLayer, PTMaintLayer, CTLayer, BLALayer: {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeExt))] = saveVal;
@@ -261,11 +256,9 @@ fn LayerParams_SpecialPostGs(ly: LayerParams, ctx: Context, ni: u32,di: u32, sav
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Ge))] = 0.0;
 		}
 	}
-	case MatrixLayer: {
-		var ggain = NeuroModParams_GGain(ly.Learn.NeuroMod, GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvDA), u32(di))] + GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvDAtonic), u32(di))]);
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Ge))] *= ggain;
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
-		u32(ni), u32(di), u32(Gi))] *= ggain;
+	case DSMatrixLayer: {
+		LayerParams_GNeuroMod(ly, ctx, ni, di);
+		LayerParams_GNeuroMod(ly, ctx, ni, di);
 	}
 	default: {
 	}
@@ -1234,7 +1227,7 @@ const PathGTypesN: PathGTypes = 5;
 const GlobalScalarVarsN: GlobalScalarVars = 58;
 const GlobalVectorVarsN: GlobalVectorVars = 10;
 const GPUVarsN: GPUVars = 23;
-const LayerTypesN: LayerTypes = 31;
+const LayerTypesN: LayerTypes = 32;
 const LayerVarsN: LayerVars = 12;
 const ViewTimesN: ViewTimes = 7;
 const DAModTypesN: DAModTypes = 4;
@@ -1467,6 +1460,7 @@ struct LayerParams {
 	Bursts: BurstParams,
 	CT: CTParams,
 	Pulv: PulvParams,
+	DSMatrix: DSMatrixParams,
 	Striatum: StriatumParams,
 	GP: GPParams,
 	LDT: LDTParams,
@@ -1492,28 +1486,29 @@ const  PulvinarLayer: LayerTypes = 5;
 const  TRNLayer: LayerTypes = 6;
 const  PTMaintLayer: LayerTypes = 7;
 const  PTPredLayer: LayerTypes = 8;
-const  MatrixLayer: LayerTypes = 9;
-const  DSPatchLayer: LayerTypes = 10;
-const  STNLayer: LayerTypes = 11;
-const  GPLayer: LayerTypes = 12;
-const  BGThalLayer: LayerTypes = 13;
-const  VSGatedLayer: LayerTypes = 14;
-const  BLALayer: LayerTypes = 15;
-const  CeMLayer: LayerTypes = 16;
-const  VSPatchLayer: LayerTypes = 17;
-const  LHbLayer: LayerTypes = 18;
-const  DrivesLayer: LayerTypes = 19;
-const  UrgencyLayer: LayerTypes = 20;
-const  USLayer: LayerTypes = 21;
-const  PVLayer: LayerTypes = 22;
-const  LDTLayer: LayerTypes = 23;
-const  VTALayer: LayerTypes = 24;
-const  RewLayer: LayerTypes = 25;
-const  RWPredLayer: LayerTypes = 26;
-const  RWDaLayer: LayerTypes = 27;
-const  TDPredLayer: LayerTypes = 28;
-const  TDIntegLayer: LayerTypes = 29;
-const  TDDaLayer: LayerTypes = 30;
+const  DSMatrixLayer: LayerTypes = 9;
+const  VSMatrixLayer: LayerTypes = 10;
+const  DSPatchLayer: LayerTypes = 11;
+const  STNLayer: LayerTypes = 12;
+const  GPLayer: LayerTypes = 13;
+const  BGThalLayer: LayerTypes = 14;
+const  VSGatedLayer: LayerTypes = 15;
+const  BLALayer: LayerTypes = 16;
+const  CeMLayer: LayerTypes = 17;
+const  VSPatchLayer: LayerTypes = 18;
+const  LHbLayer: LayerTypes = 19;
+const  DrivesLayer: LayerTypes = 20;
+const  UrgencyLayer: LayerTypes = 21;
+const  USLayer: LayerTypes = 22;
+const  PVLayer: LayerTypes = 23;
+const  LDTLayer: LayerTypes = 24;
+const  VTALayer: LayerTypes = 25;
+const  RewLayer: LayerTypes = 26;
+const  RWPredLayer: LayerTypes = 27;
+const  RWDaLayer: LayerTypes = 28;
+const  TDPredLayer: LayerTypes = 29;
+const  TDIntegLayer: LayerTypes = 30;
+const  TDDaLayer: LayerTypes = 31;
 
 //////// import: "layervars.go"
 alias LayerVars = i32; //enums:enum
@@ -1966,23 +1961,25 @@ const  VSMatrixPath: PathTypes = 11;
 const  DSMatrixPath: PathTypes = 12;
 
 //////// import: "pcore-layer.go"
-struct StriatumParams {
-	GateThr: f32,
-	BasePF: f32,
-	IsVS: i32,
-	pad: f32,
+struct DSMatrixParams {
 	PatchD1Range: F32,
 	PatchD2Range: F32,
-	OtherIndex: i32,
-	PFIndex: i32,
+	BasePF: f32,
 	PatchD1Index: i32,
 	PatchD2Index: i32,
+	pad2: f32,
+}
+struct StriatumParams {
+	GateThr: f32,
+	OtherIndex: i32,
+	PFIndex: i32,
 	ThalLay1Index: i32,
 	ThalLay2Index: i32,
 	ThalLay3Index: i32,
 	ThalLay4Index: i32,
 	ThalLay5Index: i32,
 	ThalLay6Index: i32,
+	pad: f32,
 	pad1: f32,
 	pad2: f32,
 }
