@@ -45,7 +45,7 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.Pool.Gi = 0.5                     // 0.5 > others
 				ly.Learn.NeuroMod.BurstGain = 0.1          // 0.1 == 0.2 > 0.05 > 0.5 -- key lrate modulator
-				ly.Learn.NeuroMod.DAModGain = 0            // 0.01 > 0.1 > 0
+				ly.Learn.NeuroMod.DAModGain = 0.01         // 0.01 > 0.1 > 0
 				ly.Learn.RLRate.On.SetBool(true)           // note: applied for tr update trials
 				ly.Learn.TrgAvgAct.RescaleOn.SetBool(true) // true > false
 				ly.DSMatrix.BasePF = 0.005                 // 0.005 > 0.01, 0.002 etc

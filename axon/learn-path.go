@@ -364,7 +364,7 @@ func (pt *PathParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, lpi, pi, di uin
 				// so the sign should flip.
 				// how does patch factor into that? If it thinks this is good,
 				// but it wasn't activated, then go up, and vice-versa..
-				dtr += pt.Matrix.OffTrace * pt.Matrix.PatchDA * (patchDAD1 - patchDAD2) * act
+				dtr += pt.Matrix.OffTrace * pt.Matrix.PatchDA * (patchDAD2 - patchDAD1) * act
 			}
 		}
 		SynapseTraces.Set(dtr, int(syni), int(di), int(DTr))
