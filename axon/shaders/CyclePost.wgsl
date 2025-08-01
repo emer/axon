@@ -1172,7 +1172,8 @@ struct PathParams {
 	Learn: LearnSynParams,
 	GScale: GScaleValues,
 	RLPred: RLPredPathParams,
-	Matrix: MatrixPathParams,
+	VSMatrix: VSMatrixPathParams,
+	DSMatrix: DSMatrixPathParams,
 	BLA: BLAPathParams,
 	Hip: HipPathParams,
 }
@@ -1197,10 +1198,10 @@ const  DSMatrixPath: PathTypes = 12;
 struct DSMatrixParams {
 	PatchD1Range: F32,
 	PatchD2Range: F32,
-	BasePF: f32,
 	PatchD1Index: i32,
 	PatchD2Index: i32,
-	pad2: f32,
+	pad: f32,
+	pad1: f32,
 }
 struct StriatumParams {
 	GateThr: f32,
@@ -1258,32 +1259,37 @@ fn LayerParams_GatedFromCaPMax(ly: LayerParams, ctx: Context, di: u32) {
 fn LayerParams_CyclePostDSPatchLayer(ly: LayerParams, ctx: Context, pi: u32,di: u32, spi: i32) {
 	var pf = Layers[ly.Striatum.PFIndex];
 	var pfact = PoolAvgMax(AMCaP, AMCycle, Avg, LayerParams_PoolIndex(pf, u32(spi)), di); // must be CaP, not CaD
-	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132],
-	u32(pi), u32(di), u32(ModAct))] = 0.005 + pfact;
+	Pools[Index3D(TensorStrides[130], TensorStrides[131],
+	TensorStrides[132], u32(pi), u32(di), u32(ModAct))] = pfact;
 }
 fn LayerParams_CyclePostDSMatrixLayer(ly: LayerParams, ctx: Context, pi: u32,di: u32, spi: i32) {
 	var pf = Layers[ly.Striatum.PFIndex];
 	var patchD1 = Layers[ly.DSMatrix.PatchD1Index];
 	var patchD2 = Layers[ly.DSMatrix.PatchD2Index];
 	var pfact = PoolAvgMax(AMCaP, AMCycle, Avg, LayerParams_PoolIndex(pf, u32(spi)), di); // must be CaP
-	var pfnet = ly.DSMatrix.BasePF + pfact;
 	var ptD1act = PoolAvgMax(AMCaP, AMCycle, Avg, LayerParams_PoolIndex(patchD1, u32(spi)), di);
 	var ptD2act = PoolAvgMax(AMCaP, AMCycle, Avg, LayerParams_PoolIndex(patchD2, u32(spi)), di);
 	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DAD1))] = F32_NormValue(ly.DSMatrix.PatchD1Range, ptD1act);
 	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DAD2))] = F32_NormValue(ly.DSMatrix.PatchD2Range, ptD2act);
-	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(ModAct))] = pfnet;
+	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(ModAct))] = pfact;
 }
 
 //////// import: "pcore-path.go"
-struct MatrixPathParams {
+struct DSMatrixPathParams {
 	PatchDA: f32,
 	Credit: f32,
 	Delta: f32,
+	D2Scale: f32,
 	OffTrace: f32,
-	PFSignFlip: i32,
-	BasePF: f32,
-	VSRewLearn: i32,
 	pad: f32,
+	pad1: f32,
+	pad2: f32,
+}
+struct VSMatrixPathParams {
+	RewActLearn: i32,
+	pad: f32,
+	pad1: f32,
+	pad2: f32,
 }
 
 //////// import: "pool.go"

@@ -1,4 +1,5 @@
-* add DSMatrixLayer, VSMatrixLayer instead of IsVS -- sufficiently distinct now..
+* special VS, DS etc learning rules that involve pre-post synaptic activity factor could use CaSyn?
+However, the SPNs are phasically active in ways that then don't make sense according.
 
 * More etrace param search
 * Sahp vs. KNa -- do we really need all these variations of the same thing?  yes!

@@ -18,11 +18,6 @@ import (
 
 //gosl:start
 
-// todo: split striatum params into StriatumIndexes for connectivity indexes
-// and other actual parameters. May want to have PF mechanism for VS too
-// when scaling up, but initially not.
-// make a separate DSMatrixLayer and VSMatrixLayer
-
 // DSMatrixParams has parameters for DSMatrixLayer.
 // DA, ACh learning rate modulation is pre-computed on the recv neuron
 // RLRate variable via NeuroMod.
@@ -35,12 +30,6 @@ type DSMatrixParams struct {
 	// PatchD2Range is the range of PatchD2 values to normalize into effective value.
 	PatchD2Range minmax.F32 `default:"{'Min':0.1,'Max':0.3}" display:"inline"`
 
-	// BasePF is the baseline amount of PF activity that modulates credit
-	// assignment learning, for neurons with zero PF modulatory activity.
-	// These were not part of the actual motor action, but can still get some
-	// smaller amount of credit learning.
-	BasePF float32 `default:"0.005"`
-
 	// Index of PatchD1 layer to get striosome modulation state from.
 	// Set during Build from BuildConfig PatchD1Name.
 	PatchD1Index int32 `edit:"-"`
@@ -49,11 +38,10 @@ type DSMatrixParams struct {
 	// Set during Build from BuildConfig PatchD2Name.
 	PatchD2Index int32 `edit:"-"`
 
-	pad2 float32
+	pad, pad1 float32
 }
 
 func (mp *DSMatrixParams) Defaults() {
-	mp.BasePF = 0.005
 	mp.PatchD1Range.Set(0.1, 0.3)
 	mp.PatchD2Range.Set(0.1, 0.3)
 }
@@ -274,8 +262,7 @@ func (ly *LayerParams) AnyGated(di uint32) bool {
 func (ly *LayerParams) CyclePostDSPatchLayer(ctx *Context, pi, di uint32, spi int32) {
 	pf := Layers[ly.Striatum.PFIndex]
 	pfact := PoolAvgMax(AMCaP, AMCycle, Avg, pf.PoolIndex(uint32(spi)), di) // must be CaP, not CaD
-	// pfnet := pfact                                                          // ly.Striatum.BasePF + pfact
-	Pools.Set(0.005+pfact, int(pi), int(di), int(fsfffb.ModAct))
+	Pools.Set(pfact, int(pi), int(di), int(fsfffb.ModAct))
 }
 
 // CyclePostDSMatrixLayer sets pool-specific DA dopamine signal based on PF
@@ -285,12 +272,11 @@ func (ly *LayerParams) CyclePostDSMatrixLayer(ctx *Context, pi, di uint32, spi i
 	patchD1 := Layers[ly.DSMatrix.PatchD1Index]
 	patchD2 := Layers[ly.DSMatrix.PatchD2Index]
 	pfact := PoolAvgMax(AMCaP, AMCycle, Avg, pf.PoolIndex(uint32(spi)), di) // must be CaP
-	pfnet := ly.DSMatrix.BasePF + pfact
 	ptD1act := PoolAvgMax(AMCaP, AMCycle, Avg, patchD1.PoolIndex(uint32(spi)), di)
 	ptD2act := PoolAvgMax(AMCaP, AMCycle, Avg, patchD2.PoolIndex(uint32(spi)), di)
 	Pools.Set(ly.DSMatrix.PatchD1Range.NormValue(ptD1act), int(pi), int(di), int(fsfffb.DAD1))
 	Pools.Set(ly.DSMatrix.PatchD2Range.NormValue(ptD2act), int(pi), int(di), int(fsfffb.DAD2))
-	Pools.Set(pfnet, int(pi), int(di), int(fsfffb.ModAct))
+	Pools.Set(pfact, int(pi), int(di), int(fsfffb.ModAct))
 }
 
 //gosl:end

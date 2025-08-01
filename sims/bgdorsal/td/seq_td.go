@@ -14,6 +14,7 @@ import (
 	"cogentcore.org/lab/stats/stats"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
+	"cogentcore.org/lab/tensorfs"
 )
 
 // Sim is the overall sim.
@@ -116,20 +117,23 @@ func RunSim(sim *Sim) error {
 			fmt.Println("Final Q Weights:\n", td.Q.String())
 		}
 	}
-	mean := stats.Mean(epcs).Float(0)
-	sem := stats.Sem(epcs).Float(0)
-	fmt.Printf("Epochs: %7.2f\tSEM: %7.2f\n", mean, sem)
+	dir, _ := tensorfs.NewDir("Desc")
+	stats.Describe(dir, epcs)
+	dt := tensorfs.DirTable(dir, nil)
+	fmt.Println(dt)
 
 	simfile := "BGDorsal_Base_000_train_run.tsv"
 	if !errors.Log1(fsx.FileExists(simfile)) {
 		return nil
 	}
-	dt := table.New()
-	dt.OpenCSV(fsx.Filename(simfile), tensor.Tab)
-	sepcs := dt.Column("EpochsToCrit")
-	smean := stats.Mean(sepcs).Float(0)
-	ssem := stats.Sem(sepcs).Float(0)
-	fmt.Printf("Sim Epochs: %7.2f\tSEM: %7.2f\n", smean, ssem)
+	simdt := table.New()
+	simdt.OpenCSV(fsx.Filename(simfile), tensor.Tab)
+	sepcs := simdt.Column("EpochsToCrit")
+	dir, _ = tensorfs.NewDir("Desc")
+	stats.Describe(dir, sepcs)
+	fmt.Println("Sim:")
+	dt = tensorfs.DirTable(dir, nil)
+	fmt.Println(dt)
 
 	return nil
 }

@@ -1119,13 +1119,13 @@ fn PathParams_DWtSynVSMatrix(pt: PathParams, ctx: Context, syni: u32,si: u32,ri:
 	var rplus = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaP))];
 	var rminus = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaD))];
 	var sact = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(CaD))];
-	var dtr = ach * (pt.Matrix.Delta * sact * (rplus - rminus));
+	var dtr = ach * (pt.DSMatrix.Delta * sact * (rplus - rminus));
 	if (rminus > pt.Learn.DWt.LearnThr) { // key: prevents learning if < threshold
-		dtr += ach * (pt.Matrix.Credit * sact * rminus);
+		dtr += ach * (pt.DSMatrix.Credit * sact * rminus);
 	}
 	if (hasRew) {
 		var tr = SynapseTracesGet(Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
-		if (pt.Matrix.VSRewLearn == 1) {
+		if (pt.VSMatrix.RewActLearn == 1) {
 			tr += (1 - GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvGoalMaint), u32(di))]) * dtr;
 		}
 		var dwt = rlr * pt.Learn.LRate.Eff * tr;
@@ -1150,21 +1150,21 @@ fn PathParams_DWtSynDSMatrix(pt: PathParams, ctx: Context, syni: u32,si: u32,ri:
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181],
 		TensorStrides[182], u32(syni), u32(di), u32(DTr)));
 	} else {
-		var pfmod = pt.Matrix.BasePF + Neurons[Index3D(TensorStrides[70], TensorStrides[71], // syn value is always better
+		var pfmod = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // syn value is always better
 		TensorStrides[72], u32(ri), u32(di), u32(GModSyn))];
 		var patchDAD1 = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DAD1))];
-		var patchDAD2 = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DAD2))];
+		var patchDAD2 = pt.DSMatrix.D2Scale * Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DAD2))];
 		var rplus = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaP))];
 		var rminus = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaD))];
 		var sact = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(CaD))];
-		var dtr = rlr * (pt.Matrix.Delta * sact * (rplus - rminus)); // always delta
-		if (rminus > pt.Learn.DWt.LearnThr) {                        // key: prevents learning if < threshold
-			var act = pt.Matrix.Credit * rlr * sact * rminus; // rlr is sig deriv
-			dtr += (1.0 - pt.Matrix.PatchDA) * pfmod * act;   // std credit
-			if (pfmod > pt.Learn.DWt.LearnThr) {              // we were active in output
-				dtr += pfmod * pt.Matrix.PatchDA * ((1.0 - patchDAD1) + patchDAD2) * act;
+		var dtr = rlr * (pt.DSMatrix.Delta * sact * (rplus - rminus)); // always delta
+		if (rminus > pt.Learn.DWt.LearnThr) {                          // key: prevents learning if < threshold
+			var act = pt.DSMatrix.Credit * rlr * sact * rminus; // rlr is sig deriv -- todo: CaSyn??
+			dtr += (1.0 - pt.DSMatrix.PatchDA) * pfmod * act;   // std credit
+			if (pfmod > pt.Learn.DWt.LearnThr) {                // we were active in output
+				dtr += pfmod * pt.DSMatrix.PatchDA * ((1.0 - patchDAD1) + patchDAD2) * act;
 			} else { // not active; we have no role in the outcome
-				dtr += pt.Matrix.OffTrace * pt.Matrix.PatchDA * (patchDAD2 - patchDAD1) * act;
+				dtr += pt.DSMatrix.OffTrace * pt.DSMatrix.PatchDA * (patchDAD2 - patchDAD1) * act;
 			}
 		}
 		SynapseTracesSet(dtr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
@@ -1185,8 +1185,7 @@ fn PathParams_DWtSynVSPatch(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: 
 	TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));
 }
 fn PathParams_DWtSynDSPatch(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
-	var ract = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // t? // todo t-1?
-	TensorStrides[72], u32(ri), u32(di), u32(CaD))];
+	var ract = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaD))];
 	if (ract < pt.Learn.DWt.LearnThr) {
 		ract = f32(0);
 	}
@@ -1199,11 +1198,10 @@ fn PathParams_DWtSynDSPatch(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: 
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
 	} else {
-		var pfmod = Pools[Index3D(TensorStrides[130], TensorStrides[131], // todo: syn?
-		TensorStrides[132], u32(pi), u32(di), u32(ModAct))];
-		var sact = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // t?
+		var pfmod = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(ModAct))];
+		var sact = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // todo: use CaSyn instead of sact * ract? But BG is transient, so no?
 		TensorStrides[72], u32(si), u32(di), u32(CaD))];
-		var dtr = pfmod * rlr * sact * ract;
+		var dtr = pfmod * rlr * sact * ract; // rlr is just sig deriv
 		SynapseTracesSet(dtr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
 		SynapseTracesSetAdd(dtr, Index3D(TensorStrides[180], TensorStrides[181],
 		TensorStrides[182],
@@ -1534,7 +1532,8 @@ struct PathParams {
 	Learn: LearnSynParams,
 	GScale: GScaleValues,
 	RLPred: RLPredPathParams,
-	Matrix: MatrixPathParams,
+	VSMatrix: VSMatrixPathParams,
+	DSMatrix: DSMatrixPathParams,
 	BLA: BLAPathParams,
 	Hip: HipPathParams,
 }
@@ -1559,10 +1558,10 @@ const  DSMatrixPath: PathTypes = 12;
 struct DSMatrixParams {
 	PatchD1Range: F32,
 	PatchD2Range: F32,
-	BasePF: f32,
 	PatchD1Index: i32,
 	PatchD2Index: i32,
-	pad2: f32,
+	pad: f32,
+	pad1: f32,
 }
 struct StriatumParams {
 	GateThr: f32,
@@ -1590,15 +1589,21 @@ struct GPParams {
 }
 
 //////// import: "pcore-path.go"
-struct MatrixPathParams {
+struct DSMatrixPathParams {
 	PatchDA: f32,
 	Credit: f32,
 	Delta: f32,
+	D2Scale: f32,
 	OffTrace: f32,
-	PFSignFlip: i32,
-	BasePF: f32,
-	VSRewLearn: i32,
 	pad: f32,
+	pad1: f32,
+	pad2: f32,
+}
+struct VSMatrixPathParams {
+	RewActLearn: i32,
+	pad: f32,
+	pad1: f32,
+	pad2: f32,
 }
 
 //////// import: "pool.go"

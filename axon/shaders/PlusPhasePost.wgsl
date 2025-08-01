@@ -1194,7 +1194,8 @@ struct PathParams {
 	Learn: LearnSynParams,
 	GScale: GScaleValues,
 	RLPred: RLPredPathParams,
-	Matrix: MatrixPathParams,
+	VSMatrix: VSMatrixPathParams,
+	DSMatrix: DSMatrixPathParams,
 	BLA: BLAPathParams,
 	Hip: HipPathParams,
 }
@@ -1219,10 +1220,10 @@ const  DSMatrixPath: PathTypes = 12;
 struct DSMatrixParams {
 	PatchD1Range: F32,
 	PatchD2Range: F32,
-	BasePF: f32,
 	PatchD1Index: i32,
 	PatchD2Index: i32,
-	pad2: f32,
+	pad: f32,
+	pad1: f32,
 }
 struct StriatumParams {
 	GateThr: f32,
@@ -1322,15 +1323,21 @@ fn LayerParams_MatrixGated(ly: LayerParams, ctx: Context) {
 }
 
 //////// import: "pcore-path.go"
-struct MatrixPathParams {
+struct DSMatrixPathParams {
 	PatchDA: f32,
 	Credit: f32,
 	Delta: f32,
+	D2Scale: f32,
 	OffTrace: f32,
-	PFSignFlip: i32,
-	BasePF: f32,
-	VSRewLearn: i32,
 	pad: f32,
+	pad1: f32,
+	pad2: f32,
+}
+struct VSMatrixPathParams {
+	RewActLearn: i32,
+	pad: f32,
+	pad1: f32,
+	pad2: f32,
 }
 
 //////// import: "pool.go"

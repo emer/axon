@@ -307,13 +307,13 @@ func (pt *PathParams) DWtSynVSMatrix(ctx *Context, syni, si, ri, lpi, pi, di uin
 	rplus := Neurons.Value(int(ri), int(di), int(CaP))
 	rminus := Neurons.Value(int(ri), int(di), int(CaD))
 	sact := Neurons.Value(int(si), int(di), int(CaD))
-	dtr := ach * (pt.Matrix.Delta * sact * (rplus - rminus))
+	dtr := ach * (pt.DSMatrix.Delta * sact * (rplus - rminus))
 	if rminus > pt.Learn.DWt.LearnThr { // key: prevents learning if < threshold
-		dtr += ach * (pt.Matrix.Credit * sact * rminus)
+		dtr += ach * (pt.DSMatrix.Credit * sact * rminus)
 	}
 	if hasRew {
 		tr := SynapseTraces.Value(int(syni), int(di), int(Tr))
-		if pt.Matrix.VSRewLearn.IsTrue() {
+		if pt.VSMatrix.RewActLearn.IsTrue() {
 			tr += (1 - GlobalScalars.Value(int(GvGoalMaint), int(di))) * dtr
 		}
 		dwt := rlr * pt.Learn.LRate.Eff * tr
@@ -342,29 +342,31 @@ func (pt *PathParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, lpi, pi, di uin
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DTr))
 	} else {
 		// pfmod := Pools[pi, di, fsfffb.ModAct]
-		pfmod := pt.Matrix.BasePF + Neurons.Value(int(ri), int(di), int(GModSyn)) // syn value is always better
+		pfmod := Neurons.Value(int(ri), int(di), int(GModSyn)) // syn value is always better
 		patchDAD1 := Pools.Value(int(pi), int(di), int(fsfffb.DAD1))
-		patchDAD2 := Pools.Value(int(pi), int(di), int(fsfffb.DAD2))
+		patchDAD2 := pt.DSMatrix.D2Scale * Pools.Value(int(pi), int(di), int(fsfffb.DAD2))
 		rplus := Neurons.Value(int(ri), int(di), int(CaP))
 		rminus := Neurons.Value(int(ri), int(di), int(CaD))
 		sact := Neurons.Value(int(si), int(di), int(CaD))
-		dtr := rlr * (pt.Matrix.Delta * sact * (rplus - rminus)) // always delta
-		if rminus > pt.Learn.DWt.LearnThr {                      // key: prevents learning if < threshold
-			act := pt.Matrix.Credit * rlr * sact * rminus  // rlr is sig deriv
-			dtr += (1.0 - pt.Matrix.PatchDA) * pfmod * act // std credit
-			if pfmod > pt.Learn.DWt.LearnThr {             // we were active in output
+		dtr := rlr * (pt.DSMatrix.Delta * sact * (rplus - rminus)) // always delta
+		if rminus > pt.Learn.DWt.LearnThr {                        // key: prevents learning if < threshold
+			act := pt.DSMatrix.Credit * rlr * sact * rminus  // rlr is sig deriv -- todo: CaSyn??
+			dtr += (1.0 - pt.DSMatrix.PatchDA) * pfmod * act // std credit
+			if pfmod > pt.Learn.DWt.LearnThr {               // we were active in output
 				// D1 dopamine discounts to the extent we are the correct action at this time: shunting
 				// if reward is positive at end, this doesn't overtrain; if reward is negative because
 				// _other_ actions were bad, this insulates the correct one.
 				// if reward is negative because this action is bad, patchD2 adds to get more blame,
-				dtr += pfmod * pt.Matrix.PatchDA * ((1.0 - patchDAD1) + patchDAD2) * act
+				dtr += pfmod * pt.DSMatrix.PatchDA * ((1.0 - patchDAD1) + patchDAD2) * act
 			} else { // not active; we have no role in the outcome
 				// if the actual outcome is good, it is good for us to stay off
 				// but if it is bad, then we should actually turn on.
 				// so the sign should flip.
 				// how does patch factor into that? If it thinks this is good,
 				// but it wasn't activated, then go up, and vice-versa..
-				dtr += pt.Matrix.OffTrace * pt.Matrix.PatchDA * (patchDAD2 - patchDAD1) * act
+				// note: despite similarities with active case above, neither eq works
+				// as well as the one eq: modulation by PF = much better learning
+				dtr += pt.DSMatrix.OffTrace * pt.DSMatrix.PatchDA * (patchDAD2 - patchDAD1) * act
 			}
 		}
 		SynapseTraces.Set(dtr, int(syni), int(di), int(DTr))
@@ -389,14 +391,12 @@ func (pt *PathParams) DWtSynVSPatch(ctx *Context, syni, si, ri, lpi, pi, di uint
 // DWtSynDSPatch computes the weight change (learning) at given synapse,
 // for the DSPatchPath type. Conditioned on PF modulatory inputs.
 func (pt *PathParams) DWtSynDSPatch(ctx *Context, syni, si, ri, lpi, pi, di uint32) {
-	ract := Neurons.Value(int(ri), int(di), int(CaD)) // t? // todo t-1?
+	ract := Neurons.Value(int(ri), int(di), int(CaD))
 	if ract < pt.Learn.DWt.LearnThr {
 		ract = 0
 	}
-	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
-	// and also the logic that non-positive DA leads to weight decreases.
-
-	// todo: local trace should be basically same as damod so it trains itself.
+	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in,
+	// at time of reward; otherwise is just sig deriv.
 
 	rlr := Neurons.Value(int(ri), int(di), int(RLRate))
 	if GlobalScalars.Value(int(GvHasRew), int(di)) > 0 { // US time -- use DA * tr
@@ -406,9 +406,9 @@ func (pt *PathParams) DWtSynDSPatch(ctx *Context, syni, si, ri, lpi, pi, di uint
 		SynapseTraces.Set(0.0, int(syni), int(di), int(Tr))
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DTr))
 	} else {
-		pfmod := Pools.Value(int(pi), int(di), int(fsfffb.ModAct)) // todo: syn?
-		sact := Neurons.Value(int(si), int(di), int(CaD))          // t?
-		dtr := pfmod * rlr * sact * ract
+		pfmod := Pools.Value(int(pi), int(di), int(fsfffb.ModAct))
+		sact := Neurons.Value(int(si), int(di), int(CaD)) // todo: use CaSyn instead of sact * ract? But BG is transient, so no?
+		dtr := pfmod * rlr * sact * ract                  // rlr is just sig deriv
 		SynapseTraces.Set(dtr, int(syni), int(di), int(DTr))
 		SynapseTraces.SetAdd(dtr, int(syni), int(di), int(Tr))
 	}
