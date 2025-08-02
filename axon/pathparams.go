@@ -153,7 +153,7 @@ type PathParams struct {
 	// Lower lrate applies for opposite cases.  Weights are positive-only.
 	RLPred RLPredPathParams `display:"inline"`
 
-	// VSMatrix has parameters for trace-based learning in the MatrixPath.
+	// VSMatrix has parameters for trace-based learning in the VSMatrixPath.
 	// A trace of synaptic co-activity is formed, and then modulated by
 	// dopamine whenever it occurs.
 	// This bridges the temporal gap between gating activity and subsequent activity,
@@ -161,13 +161,18 @@ type PathParams struct {
 	// DSPatch provides modulation of trace activity based on local critic signal.
 	VSMatrix VSMatrixPathParams `display:"inline"`
 
-	// DSMatrix has parameters for trace-based learning in the MatrixPath.
+	// DSMatrix has parameters for trace-based learning in the DSMatrixPath.
 	// A trace of synaptic co-activity is formed, and then modulated by
 	// dopamine whenever it occurs.
 	// This bridges the temporal gap between gating activity and subsequent activity,
 	// and is based biologically on synaptic tags.
 	// DSPatch provides modulation of trace activity based on local critic signal.
 	DSMatrix DSMatrixPathParams `display:"inline"`
+
+	// DSPatch has parameters for trace-based learning in the DSPatchPath.
+	// A trace of synaptic co-activity modulated by PF -> CIN activity is
+	// then modulated by dopamine whenever it occurs to drive synaptic changes.
+	DSPatch DSPatchPathParams `display:"inline"`
 
 	// Basolateral Amygdala pathway parameters.
 	BLA BLAPathParams `display:"inline"`
@@ -222,6 +227,7 @@ func (pt *PathParams) Defaults() {
 	pt.RLPred.Defaults()
 	pt.VSMatrix.Defaults()
 	pt.DSMatrix.Defaults()
+	pt.DSPatch.Defaults()
 	pt.BLA.Defaults()
 	pt.Hip.Defaults()
 }
@@ -234,6 +240,7 @@ func (pt *PathParams) Update() {
 	pt.RLPred.Update()
 	pt.VSMatrix.Update()
 	pt.DSMatrix.Update()
+	pt.DSPatch.Update()
 	pt.BLA.Update()
 	pt.Hip.Update()
 
@@ -250,6 +257,8 @@ func (pt *PathParams) ShouldDisplay(field string) bool {
 		return pt.Type == VSMatrixPath
 	case "DSMatrix":
 		return pt.Type == DSMatrixPath
+	case "DSPatch":
+		return pt.Type == DSPatchPath
 	case "BLA":
 		return pt.Type == BLAPath
 	case "Hip":
@@ -281,8 +290,12 @@ func (pt *PathParams) ParamsString(nonDefault bool) string {
 		switch path {
 		case "RLPred":
 			return ptyp == RWPath || ptyp == TDPredPath
-		case "Matrix":
-			return ptyp == VSMatrixPath || ptyp == DSMatrixPath
+		case "VSMatrix":
+			return ptyp == VSMatrixPath
+		case "DSMatrix":
+			return ptyp == DSMatrixPath
+		case "DSPatch":
+			return ptyp == DSPatchPath
 		case "BLA":
 			return ptyp == BLAPath
 		case "Hip":

@@ -1016,6 +1016,7 @@ struct PathParams {
 	RLPred: RLPredPathParams,
 	VSMatrix: VSMatrixPathParams,
 	DSMatrix: DSMatrixPathParams,
+	DSPatch: DSPatchPathParams,
 	BLA: BLAPathParams,
 	Hip: HipPathParams,
 }
@@ -1086,6 +1087,12 @@ struct VSMatrixPathParams {
 	pad: f32,
 	pad1: f32,
 	pad2: f32,
+}
+struct DSPatchPathParams {
+	PFSyn: i32,
+	BasePF: f32,
+	pad: f32,
+	pad1: f32,
 }
 
 //////// import: "pool.go"
