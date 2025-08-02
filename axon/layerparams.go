@@ -266,7 +266,6 @@ func (ly *LayerParams) ShouldDisplay(field string) bool {
 // pathways within the layer. If nonDefault is true, only report those
 // not at their default values.
 func (ly *LayerParams) ParamsString(nonDefault bool) string {
-	ltyp := ly.Type
 	return params.PrintStruct(ly, 1, func(path string, ft reflect.StructField, fv any) bool {
 		if ft.Tag.Get("display") == "-" {
 			return false
@@ -282,33 +281,7 @@ func (ly *LayerParams) ParamsString(nonDefault bool) string {
 				}
 			}
 		}
-		switch path {
-		case "Bursts":
-			return ltyp == SuperLayer
-		case "CT":
-			return ltyp == CTLayer || ltyp == PTPredLayer || ltyp == BLALayer
-		case "Pulv":
-			return ltyp == PulvinarLayer
-		case "DSMatrix":
-			return ltyp == DSMatrixLayer
-		case "Striatum":
-			return ltyp == DSMatrixLayer || ltyp == VSMatrixLayer || ltyp == DSPatchLayer
-		case "GP":
-			return ltyp == GPLayer
-		case "LDT":
-			return ltyp == LDTLayer
-		case "VTA":
-			return ltyp == VTALayer
-		case "RWPred":
-			return ltyp == RWPredLayer
-		case "RWDa":
-			return ltyp == RWDaLayer
-		case "TDInteg":
-			return ltyp == TDIntegLayer
-		case "TDDa":
-			return ltyp == TDDaLayer
-		}
-		return true
+		return ly.ShouldDisplay(path)
 	},
 		func(path string, ft reflect.StructField, fv any) string {
 			if nonDefault {

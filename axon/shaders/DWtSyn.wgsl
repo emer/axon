@@ -1198,11 +1198,8 @@ fn PathParams_DWtSynDSPatch(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: 
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
 	} else {
-		var pfmod = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(ModAct))];
-		if (pt.DSPatch.PFSyn == 1) {
-			pfmod = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(GModSyn))];
-		}
-		pfmod += pt.DSPatch.BasePF;
+		var pfmod = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // so much better! todo: why!?
+		TensorStrides[72], u32(ri), u32(di), u32(GModSyn))];
 		var sact = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // todo: use CaSyn instead of sact * ract? But BG is transient, so no?
 		TensorStrides[72], u32(si), u32(di), u32(CaD))];
 		var dtr = pfmod * rlr * sact * ract; // rlr is just sig deriv
@@ -1538,7 +1535,6 @@ struct PathParams {
 	RLPred: RLPredPathParams,
 	VSMatrix: VSMatrixPathParams,
 	DSMatrix: DSMatrixPathParams,
-	DSPatch: DSPatchPathParams,
 	BLA: BLAPathParams,
 	Hip: HipPathParams,
 }
@@ -1609,12 +1605,6 @@ struct VSMatrixPathParams {
 	pad: f32,
 	pad1: f32,
 	pad2: f32,
-}
-struct DSPatchPathParams {
-	PFSyn: i32,
-	BasePF: f32,
-	pad: f32,
-	pad1: f32,
 }
 
 //////// import: "pool.go"

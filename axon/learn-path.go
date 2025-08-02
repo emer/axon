@@ -406,11 +406,8 @@ func (pt *PathParams) DWtSynDSPatch(ctx *Context, syni, si, ri, lpi, pi, di uint
 		SynapseTraces.Set(0.0, int(syni), int(di), int(Tr))
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DTr))
 	} else {
-		pfmod := Pools.Value(int(pi), int(di), int(fsfffb.ModAct))
-		if pt.DSPatch.PFSyn.IsTrue() {
-			pfmod = Neurons.Value(int(ri), int(di), int(GModSyn))
-		}
-		pfmod += pt.DSPatch.BasePF
+		pfmod := Neurons.Value(int(ri), int(di), int(GModSyn)) // so much better! todo: why!?
+		// pfmod := Pools[pi, di, fsfffb.ModAct]
 		sact := Neurons.Value(int(si), int(di), int(CaD)) // todo: use CaSyn instead of sact * ract? But BG is transient, so no?
 		dtr := pfmod * rlr * sact * ract                  // rlr is just sig deriv
 		SynapseTraces.Set(dtr, int(syni), int(di), int(DTr))

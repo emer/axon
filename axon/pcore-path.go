@@ -80,33 +80,6 @@ func (tp *VSMatrixPathParams) Defaults() {
 func (tp *VSMatrixPathParams) Update() {
 }
 
-// DSPatchPathParams for trace-based learning in the DSPatchPath,
-// for ventral striatum paths.
-// A trace of synaptic co-activity is formed, and then modulated by dopamine
-// whenever it occurs.  This bridges the temporal gap between gating activity
-// and subsequent activity, and is based biologically on synaptic tags.
-// Trace is applied to DWt and reset at the time of reward.
-type DSPatchPathParams struct {
-
-	// PFSyn uses modulatory synapse-level version of PF activation
-	// (representing ACh from CINs) instead of layer-level
-	PFSyn slbool.Bool `default:"true"`
-
-	// BasePF is the baseline level of PF (ACh) activity, providing a baseline
-	// level of trace learning even for pools not driven by PF output.
-	BasePF float32 `default:"0.005"`
-
-	pad, pad1 float32
-}
-
-func (tp *DSPatchPathParams) Defaults() {
-	tp.PFSyn.SetBool(false)
-	tp.BasePF = 0.005
-}
-
-func (tp *DSPatchPathParams) Update() {
-}
-
 //gosl:end
 
 func (pj *PathParams) MatrixDefaults() {

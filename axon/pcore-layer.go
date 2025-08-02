@@ -28,7 +28,7 @@ type DSMatrixParams struct {
 	PatchD1Range minmax.F32 `default:"{'Min':0.1,'Max':0.3}" display:"inline"`
 
 	// PatchD2Range is the range of PatchD2 values to normalize into effective value.
-	PatchD2Range minmax.F32 `default:"{'Min':0.1,'Max':0.3}" display:"inline"`
+	PatchD2Range minmax.F32 `default:"{'Min':0.05,'Max':0.25}" display:"inline"`
 
 	// PatchDAModGain is a separate NeuroMod.DAModGain factor applying
 	// to DA performance gain effects from the Patch-based DA values.
@@ -386,7 +386,9 @@ func (ly *Layer) VSMatrixPostBuild() {
 
 func (ly *Layer) DSPatchDefaults() {
 	ly.Params.VSPatchDefaults()
-	// ly.Learn.NeuroMod.AChLRateMod = 0.8 // ACh now active for extinction, so this is ok
+	ly.Params.Acts.Dend.ModBase = 1
+	ly.Params.Acts.Dend.ModGain = 0
+	ly.Params.Learn.NeuroMod.AChLRateMod = 1
 }
 
 func (ly *Layer) PatchPostBuild() {

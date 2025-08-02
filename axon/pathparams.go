@@ -169,11 +169,6 @@ type PathParams struct {
 	// DSPatch provides modulation of trace activity based on local critic signal.
 	DSMatrix DSMatrixPathParams `display:"inline"`
 
-	// DSPatch has parameters for trace-based learning in the DSPatchPath.
-	// A trace of synaptic co-activity modulated by PF -> CIN activity is
-	// then modulated by dopamine whenever it occurs to drive synaptic changes.
-	DSPatch DSPatchPathParams `display:"inline"`
-
 	// Basolateral Amygdala pathway parameters.
 	BLA BLAPathParams `display:"inline"`
 
@@ -227,7 +222,6 @@ func (pt *PathParams) Defaults() {
 	pt.RLPred.Defaults()
 	pt.VSMatrix.Defaults()
 	pt.DSMatrix.Defaults()
-	pt.DSPatch.Defaults()
 	pt.BLA.Defaults()
 	pt.Hip.Defaults()
 }
@@ -240,7 +234,6 @@ func (pt *PathParams) Update() {
 	pt.RLPred.Update()
 	pt.VSMatrix.Update()
 	pt.DSMatrix.Update()
-	pt.DSPatch.Update()
 	pt.BLA.Update()
 	pt.Hip.Update()
 
@@ -257,8 +250,6 @@ func (pt *PathParams) ShouldDisplay(field string) bool {
 		return pt.Type == VSMatrixPath
 	case "DSMatrix":
 		return pt.Type == DSMatrixPath
-	case "DSPatch":
-		return pt.Type == DSPatchPath
 	case "BLA":
 		return pt.Type == BLAPath
 	case "Hip":
@@ -271,7 +262,6 @@ func (pt *PathParams) ShouldDisplay(field string) bool {
 // ParamsString returns a listing of all parameters in the Pathway.
 // If nonDefault is true, only report those not at their default values.
 func (pt *PathParams) ParamsString(nonDefault bool) string {
-	ptyp := pt.Type
 	return params.PrintStruct(pt, 2, func(path string, ft reflect.StructField, fv any) bool {
 		if ft.Tag.Get("display") == "-" {
 			return false
@@ -287,21 +277,7 @@ func (pt *PathParams) ParamsString(nonDefault bool) string {
 				}
 			}
 		}
-		switch path {
-		case "RLPred":
-			return ptyp == RWPath || ptyp == TDPredPath
-		case "VSMatrix":
-			return ptyp == VSMatrixPath
-		case "DSMatrix":
-			return ptyp == DSMatrixPath
-		case "DSPatch":
-			return ptyp == DSPatchPath
-		case "BLA":
-			return ptyp == BLAPath
-		case "Hip":
-			return ptyp == HipPath
-		}
-		return true
+		return pt.ShouldDisplay(path)
 	},
 		func(path string, ft reflect.StructField, fv any) string {
 			if nonDefault {
