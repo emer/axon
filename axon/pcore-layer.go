@@ -30,6 +30,19 @@ type DSMatrixParams struct {
 	// PatchD2Range is the range of PatchD2 values to normalize into effective value.
 	PatchD2Range minmax.F32 `default:"{'Min':0.1,'Max':0.3}" display:"inline"`
 
+	// PatchDAModGain is a separate NeuroMod.DAModGain factor applying
+	// to DA performance gain effects from the Patch-based DA values.
+	// The standard NeuroMod parameters apply only to the final outcome-based
+	// dopamine values.
+	PatchDAModGain float32 `default:"0.02"`
+
+	// PatchBurstGain is a separate NeuroMod.BurstGain-like factor applying
+	// to DA performance gain effects from the Patch-based DA values.
+	// The standard NeuroMod parameters apply only to the final outcome-based
+	// dopamine values, which do not drive performance DA effects in dorsal striatum.
+	// NeuroMod.DAModGain does control overall performance gain from patch.
+	PatchBurstGain float32 `default:"0.1"`
+
 	// Index of PatchD1 layer to get striosome modulation state from.
 	// Set during Build from BuildConfig PatchD1Name.
 	PatchD1Index int32 `edit:"-"`
@@ -37,13 +50,13 @@ type DSMatrixParams struct {
 	// Index of PatchD2 layer to get striosome modulation state from.
 	// Set during Build from BuildConfig PatchD2Name.
 	PatchD2Index int32 `edit:"-"`
-
-	pad, pad1 float32
 }
 
 func (mp *DSMatrixParams) Defaults() {
+	mp.PatchDAModGain = 0.02
+	mp.PatchBurstGain = 0.1
 	mp.PatchD1Range.Set(0.1, 0.3)
-	mp.PatchD2Range.Set(0.1, 0.3)
+	mp.PatchD2Range.Set(0.05, 0.25)
 }
 
 func (mp *DSMatrixParams) Update() {

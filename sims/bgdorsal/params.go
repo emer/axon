@@ -43,13 +43,15 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".DSMatrixLayer", Doc: "all matrix",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.Pool.Gi = 0.5                     // 0.5 > others
-				ly.Learn.NeuroMod.BurstGain = 0.1          // 0.1 == 0.2 > 0.05 > 0.5 -- key lrate modulator
-				ly.Learn.NeuroMod.DAModGain = 0.02         // 0.02 but not much diff..
-				ly.Learn.RLRate.On.SetBool(true)           // note: applied for tr update trials
-				ly.Learn.TrgAvgAct.RescaleOn.SetBool(true) // true > false
+				ly.Inhib.Pool.Gi = 0.5             // 0.5 > others
+				ly.Learn.NeuroMod.BurstGain = 0.1  // 0.1 == 0.2 > 0.05 > 0.5 -- key lrate modulator
+				ly.Learn.NeuroMod.DAModGain = 0.02 // 0.02 but not much diff..
+				ly.DSMatrix.PatchBurstGain = 0.1
+				ly.DSMatrix.PatchDAModGain = 0.02
 				ly.DSMatrix.PatchD1Range.Set(0.1, 0.3)     //
 				ly.DSMatrix.PatchD2Range.Set(0.05, 0.25)   // 0.05, 0.25 > 0.1, 0.3?
+				ly.Learn.RLRate.On.SetBool(true)           // note: applied for tr update trials
+				ly.Learn.TrgAvgAct.RescaleOn.SetBool(true) // true > false
 			}},
 		{Sel: ".DSPatchLayer", Doc: "all matrix",
 			Set: func(ly *axon.LayerParams) {

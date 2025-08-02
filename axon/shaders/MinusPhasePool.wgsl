@@ -1040,10 +1040,10 @@ const  DSMatrixPath: PathTypes = 12;
 struct DSMatrixParams {
 	PatchD1Range: F32,
 	PatchD2Range: F32,
+	PatchDAModGain: f32,
+	PatchBurstGain: f32,
 	PatchD1Index: i32,
 	PatchD2Index: i32,
-	pad: f32,
-	pad1: f32,
 }
 struct StriatumParams {
 	GateThr: f32,

@@ -259,11 +259,10 @@ fn LayerParams_SpecialPostGs(ly: LayerParams, ctx: Context, ni: u32,di: u32, sav
 	case DSMatrixLayer: {
 		if (GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvHasRew), u32(di))] > 0) {
 			LayerParams_GNeuroMod(ly, ctx, ni, di);
-			LayerParams_GNeuroMod(ly, ctx, ni, di);
 		} else {
 			var pi = LayerParams_PoolIndex(ly, NeuronIxs[Index2D(TensorStrides[10], TensorStrides[11], u32(ni), u32(NrnSubPool))]);
-			var nda = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DAD1))] - Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DAD2))];
-			var ggain = NeuroModParams_GGain(ly.Learn.NeuroMod, nda);
+			var nda = ly.DSMatrix.PatchBurstGain*Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DAD1))] - Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(DAD2))];
+			var ggain = 1.0 + NeuroModParams_DASign(ly.Learn.NeuroMod)*ly.DSMatrix.PatchDAModGain*nda;
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Ge))] *= ggain;
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
 			u32(ni), u32(di), u32(Gi))] *= ggain;
@@ -1767,6 +1766,11 @@ fn NeuroModParams_IsBLAExt(nm: NeuroModParams) -> bool {
 	return (nm.Valence == Positive && nm.DAMod == D2Mod) ||
 		(nm.Valence == Negative && nm.DAMod == D1Mod);
 }
+fn NeuroModParams_DASign(nm: NeuroModParams) -> f32 {
+	if (nm.DAMod == D2Mod) {
+		return -1.0;
+	}return f32(1.0);
+}
 fn NeuroModParams_GGain(nm: NeuroModParams, da: f32) -> f32 {
 	var ada = da;
 	if (da > 0) {
@@ -1974,10 +1978,10 @@ const  DSMatrixPath: PathTypes = 12;
 struct DSMatrixParams {
 	PatchD1Range: F32,
 	PatchD2Range: F32,
+	PatchDAModGain: f32,
+	PatchBurstGain: f32,
 	PatchD1Index: i32,
 	PatchD2Index: i32,
-	pad: f32,
-	pad1: f32,
 }
 struct StriatumParams {
 	GateThr: f32,

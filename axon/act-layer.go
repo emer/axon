@@ -423,11 +423,10 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni, di uint32, saveVal float3
 	case DSMatrixLayer:
 		if GlobalScalars.Value(int(GvHasRew), int(di)) > 0 {
 			ly.GNeuroMod(ctx, ni, di)
-			ly.GNeuroMod(ctx, ni, di)
 		} else {
 			pi := ly.PoolIndex(NeuronIxs.Value(int(ni), int(NrnSubPool)))
-			nda := Pools.Value(int(pi), int(di), int(fsfffb.DAD1)) - Pools.Value(int(pi), int(di), int(fsfffb.DAD2))
-			ggain := ly.Learn.NeuroMod.GGain(nda)
+			nda := ly.DSMatrix.PatchBurstGain*Pools.Value(int(pi), int(di), int(fsfffb.DAD1)) - Pools.Value(int(pi), int(di), int(fsfffb.DAD2))
+			ggain := 1.0 + ly.Learn.NeuroMod.DASign()*ly.DSMatrix.PatchDAModGain*nda
 			Neurons.SetMul(ggain, int(ni), int(di), int(Ge))
 			Neurons.SetMul(ggain, int(ni), int(di), int(Gi))
 		}
