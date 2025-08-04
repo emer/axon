@@ -7,7 +7,6 @@
 package axon
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -15,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
@@ -304,8 +304,7 @@ func (ly *Layer) BuildConfigByName(nm string) (string, error) {
 	cfg, ok := ly.BuildConfig[nm]
 	if !ok {
 		err := fmt.Errorf("Layer: %s does not have BuildConfig: %s set -- error in ConfigNet", ly.Name, nm)
-		log.Println(err)
-		return cfg, err
+		return cfg, errors.Log(err)
 	}
 	return cfg, nil
 }
@@ -324,8 +323,7 @@ func (ly *Layer) BuildConfigFindLayer(nm string, mustName bool) int32 {
 		}
 	} else {
 		if mustName {
-			err := fmt.Errorf("Layer: %s does not have BuildConfig: %s set -- error in ConfigNet", ly.Name, nm)
-			log.Println(err)
+			errors.Log(fmt.Errorf("Layer: %s does not have BuildConfig: %s set -- error in ConfigNet", ly.Name, nm))
 		}
 	}
 	return idx

@@ -6,12 +6,12 @@ package lvis
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	"path/filepath"
 	"sort"
 	"strings"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/fsx"
 )
 
@@ -88,8 +88,7 @@ func (im *Images) OpenDirs() error {
 	nc := len(im.Cats)
 	if nc == 0 {
 		err := fmt.Errorf("Images.OpenDirs() -- no directories for categories in: %s", im.Path)
-		log.Println(err)
-		return err
+		return errors.Log(err)
 	}
 	im.ImagesAll = make([][]string, nc)
 	for ci := nc - 1; ci >= 0; ci-- {
@@ -138,8 +137,7 @@ func (im *Images) OpenNames() error {
 	nf := len(fls)
 	if nf == 0 {
 		err := fmt.Errorf("Images.OpenNames() -- no image files in: %s", im.Path)
-		log.Println(err)
-		return err
+		return errors.Log(err)
 	}
 	sort.Strings(fls)
 	im.ImagesAll = make([][]string, 0)

@@ -537,7 +537,7 @@ func (vw *GUI) GrabEyeImg() {
 	vw.Camera.FOV = 90
 	err := vw.View3D.RenderOffNode(vw.EyeR, &vw.Camera)
 	if err != nil {
-		// log.Println(err)
+		// errors.Log(err)
 		return
 	}
 	img, err := vw.View3D.Image()
@@ -545,20 +545,20 @@ func (vw *GUI) GrabEyeImg() {
 		vw.EyeRFullImage.SetImage(img)
 		vw.EyeRFullImage.NeedsRender()
 	} else {
-		// log.Println(err)
+		// errors.Log(err)
 	}
 
 	vw.Camera.FOV = 10
 	err = vw.View3D.RenderOffNode(vw.EyeR, &vw.Camera)
 	if err != nil {
-		// log.Println(err)
+		// errors.Log(err)
 		return
 	}
 	img, err = vw.View3D.Image()
 	if err == nil && img != nil {
 		vw.EyeRFovImage.SetImage(img)
 	} else {
-		// log.Println(err)
+		// errors.Log(err)
 	}
 
 	// depth, err := vw.View3D.DepthImage()

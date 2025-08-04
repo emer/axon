@@ -5,7 +5,7 @@
 package axon
 
 import (
-	"log"
+	"log/slog"
 	"sync/atomic"
 	"cogentcore.org/lab/base/atomicx"
 	"cogentcore.org/core/math32"
@@ -223,7 +223,7 @@ func PoolAvgMaxCalcVar(vr AvgMaxVars, pi, di uint32) {
 	sum := PoolsInt[pi, di, vis] 
 	if sum < 0 {
 		//gosl:end
-		log.Println("PoolAvgMaxCalc overflow in Sum", "pi:", pi, "di:", di, "sum:", sum)
+		slog.Warn("PoolAvgMaxCalc overflow in Sum", "pi:", pi, "di:", di, "sum:", sum)
 		//gosl:start
 		sum = int32(uint32(1) << 20)
 	}
@@ -233,7 +233,7 @@ func PoolAvgMaxCalcVar(vr AvgMaxVars, pi, di uint32) {
 	mx := PoolsInt[pi, di, vim] 
 	if mx < 0 {
 		//gosl:end
-		log.Println("PoolAvgMaxCalc overflow in Max", "pi:", pi, "di:", di, "max:", mx)
+		slog.Warn("PoolAvgMaxCalc overflow in Max", "pi:", pi, "di:", di, "max:", mx)
 		//gosl:start
 		mx = int32(uint32(1) << 20)
 	}

@@ -5,9 +5,9 @@
 package axon
 
 import (
-	"log"
 	"strings"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/gosl/slbool"
 )
@@ -205,17 +205,11 @@ func (ly *Layer) BLADefaults() {
 func (ly *Layer) RubiconPostBuild() {
 	dm, err := ly.BuildConfigByName("DAMod")
 	if err == nil {
-		err = ly.Params.Learn.NeuroMod.DAMod.SetString(dm)
-		if err != nil {
-			log.Println(err)
-		}
+		errors.Log(ly.Params.Learn.NeuroMod.DAMod.SetString(dm))
 	}
 	vl, err := ly.BuildConfigByName("Valence")
 	if err == nil {
-		err = ly.Params.Learn.NeuroMod.Valence.SetString(vl)
-		if err != nil {
-			log.Println(err)
-		}
+		errors.Log(ly.Params.Learn.NeuroMod.Valence.SetString(vl))
 	}
 }
 

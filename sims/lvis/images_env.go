@@ -7,7 +7,6 @@ package lvis
 import (
 	"fmt"
 	"image"
-	"log"
 	"path/filepath"
 	"sort"
 
@@ -379,10 +378,7 @@ func (ev *ImagesEnv) OpenImage() error {
 	fnm := filepath.Join(ev.Images.Path, img)
 	var err error
 	ev.Image, _, err = imagex.Open(fnm)
-	if err != nil {
-		log.Println(err)
-	}
-	return err
+	return errors.Log(err)
 }
 
 // RandTransforms generates random transforms

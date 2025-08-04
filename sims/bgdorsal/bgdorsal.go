@@ -16,6 +16,7 @@ import (
 	"reflect"
 	"strings"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/base/num"
 	"cogentcore.org/core/base/reflectx"
@@ -1140,4 +1141,20 @@ func (ss *Sim) RunNoGUI() {
 
 	axon.CloseLogFiles(ss.Loops, ss.Stats, Cycle)
 	axon.GPURelease()
+}
+
+// ParamSearch applies param search values for given index (in [0..n) range),
+// saving a `job.label` file with the param value.
+func (ss *Sim) ParamSearch(paramIndex int) error {
+	lbl, err := axon.ApplyPathSearch(ss.Net, PSearch, paramIndex)
+	if err != nil {
+		return errors.Log(err)
+	}
+	err = os.WriteFile("job.label", []byte(lbl), 0666)
+	if err != nil {
+		errors.Log(err)
+	} else {
+		fmt.Println("Running Search:", lbl)
+	}
+	return nil
 }

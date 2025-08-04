@@ -223,11 +223,15 @@ var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/axon.LayerSheet
 
 var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/axon.LayerSel", IDName: "layer-sel", Doc: "LayerSel is one Layer parameter Selector."})
 
+var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/axon.LayerSearches", IDName: "layer-searches", Doc: "LayerSearches is a list of parameter Search elements."})
+
 var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/axon.PathSheets", IDName: "path-sheets", Doc: "PathSheets contains Path parameter Sheets."})
 
 var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/axon.PathSheet", IDName: "path-sheet", Doc: "PathSheet is one Path parameter Sheet."})
 
 var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/axon.PathSel", IDName: "path-sel", Doc: "PathSel is one Path parameter Selector."})
+
+var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/axon.PathSearches", IDName: "path-searches", Doc: "PathSearches is a list of parameter Search elements."})
 
 var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/axon.Params", IDName: "params", Doc: "Params contains the [LayerParams] and [PathParams] parameter setting functions\nprovided by the [emergent] [params] package.", Fields: []types.Field{{Name: "Layer", Doc: "Layer has the parameters to apply to the [LayerParams] for layers."}, {Name: "Path", Doc: "Path has the parameters to apply to the [PathParams] for paths."}, {Name: "ExtraSheets", Doc: "ExtraSheets has optional additional sheets of parameters to apply\nafter the default Base sheet. Use \"Script\" for default Script sheet.\nMultiple names separated by spaces can be used (don't put spaces in Sheet names!)"}, {Name: "Tag", Doc: "Tag is an optional additional tag to add to log file names to identify\na specific run of the model (typically set by a config file or args)."}, {Name: "Script", Doc: "Script is a parameter setting script, which adds to the Layer and Path sheets\ntypically using the \"Script\" set name."}, {Name: "Interp", Doc: "Interp is the yaegi interpreter for running the script."}}})
 

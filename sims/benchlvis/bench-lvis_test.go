@@ -3,7 +3,7 @@ package benchlvis
 import (
 	"flag"
 	"fmt"
-	"log"
+	"log/slog"
 	"math/rand"
 	"os"
 	"runtime"
@@ -45,7 +45,7 @@ func BenchmarkBenchNetFull(b *testing.B) {
 	ctx := axon.NewContext()
 	net := axon.NewNetwork("LVisBench")
 	ConfigNet(ctx, net, *inputNeurs, *inputPools, *pathways, *hiddenNeurs, *outputDim, *threads, *ndata, *verbose)
-	log.Println(net.SizeReport(false))
+	slog.Info(net.SizeReport(false))
 
 	pats := table.New()
 	ConfigPats(pats, *numPats, inputShape, outputShape)
@@ -76,7 +76,7 @@ func TestGPUSynCa(t *testing.T) {
 	ctx := axon.NewContext()
 	net := axon.NewNetwork("")
 	ConfigNet(ctx, net, *inputNeurs, *inputPools, *pathways, *hiddenNeurs, *outputDim, *threads, *ndata, *verbose)
-	log.Println(net.SizeReport(false))
+	slog.Info(net.SizeReport(false))
 
 	axon.GPUInit()
 	axon.UseGPU = true

@@ -3,7 +3,7 @@ package bench
 import (
 	"flag"
 	"fmt"
-	"log"
+	"log/slog"
 	"math"
 	"math/rand"
 	"runtime"
@@ -48,7 +48,7 @@ func BenchmarkBenchNetFull(b *testing.B) {
 	net := axon.NewNetwork("BenchNet")
 	ConfigNet(net, ctx, *threads, *numUnits, *verbose)
 	if *verbose {
-		log.Println(net.SizeReport(false))
+		slog.Info(net.SizeReport(false))
 	}
 
 	pats := table.New()

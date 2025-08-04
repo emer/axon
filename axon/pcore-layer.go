@@ -7,7 +7,6 @@
 package axon
 
 import (
-	"log"
 	"strings"
 
 	"cogentcore.org/core/base/errors"
@@ -477,10 +476,7 @@ func (ly *Layer) GPiDefaults() {
 func (ly *Layer) GPPostBuild() {
 	gpnm, err := ly.BuildConfigByName("GPType")
 	if err == nil {
-		err = ly.Params.GP.GPType.SetString(gpnm)
-		if err != nil {
-			log.Println(err)
-		}
+		errors.Log(ly.Params.GP.GPType.SetString(gpnm))
 	}
 }
 

@@ -7,7 +7,7 @@
 package axon
 
 import (
-	"log"
+	"log/slog"
 	"sync/atomic"
 
 	"cogentcore.org/core/math32"
@@ -282,11 +282,11 @@ func PoolInhibIntToRaw(pi, di uint32) {
 	//gosl:end
 	floatToInt := int32(1) << 24
 	if ffs < 0 {
-		log.Println("PoolInhibIntToRaw overflow in FFsRawInt", "pi:", pi, "di:", di, "val:", ffs)
+		slog.Warn("PoolInhibIntToRaw overflow in FFsRawInt", "pi:", pi, "di:", di, "val:", ffs)
 		ffs = floatToInt
 	}
 	if geExt < 0 {
-		log.Println("PoolInhibIntToRaw overflow in GeExtRawInt", "pi:", pi, "di:", di, "val:", geExt)
+		slog.Warn("PoolInhibIntToRaw overflow in GeExtRawInt", "pi:", pi, "di:", di, "val:", geExt)
 		geExt = floatToInt
 	}
 	//gosl:start

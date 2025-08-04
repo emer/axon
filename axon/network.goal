@@ -10,7 +10,6 @@ import (
 	"crypto/md5"
 	"encoding/binary"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -22,6 +21,7 @@ import (
 	"time"
 
 	"cogentcore.org/core/base/datasize"
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/iox/tomlx"
 	"cogentcore.org/core/base/slicesx"
 	"cogentcore.org/core/base/timer"
@@ -480,7 +480,7 @@ func (nt *Network) SaveParamsSnapshot(cfg any, good bool) error {
 	dir := "params_" + date
 	err := os.Mkdir(dir, 0775)
 	if err != nil {
-		log.Println(err) // notify but OK if it exists
+		errors.Log(err) // notify but OK if it exists
 	}
 	fmt.Println("Saving params to:", dir)
 	tomlx.Save(cfg, filepath.Join(dir, "config.toml"))
@@ -495,10 +495,7 @@ func (nt *Network) SaveParamsSnapshot(cfg any, good bool) error {
 func (nt *Network) SaveAllLayerInhibs(filename core.Filename) error {
 	str := nt.AllLayerInhibs()
 	err := os.WriteFile(string(filename), []byte(str), 0666)
-	if err != nil {
-		log.Println(err)
-	}
-	return err
+	return errors.Log(err)
 }
 
 // SavePathScales saves a listing of all PathScale parameters in the Network
@@ -508,10 +505,7 @@ func (nt *Network) SaveAllLayerInhibs(filename core.Filename) error {
 func (nt *Network) SaveAllPathScales(filename core.Filename) error {
 	str := nt.AllPathScales()
 	err := os.WriteFile(string(filename), []byte(str), 0666)
-	if err != nil {
-		log.Println(err)
-	}
-	return err
+	return errors.Log(err)
 }
 
 // AllGlobals returns a listing of all Global variables and values.

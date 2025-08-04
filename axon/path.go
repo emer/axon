@@ -7,13 +7,13 @@
 package axon
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"log"
 	"strconv"
 	"strings"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/indent"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
@@ -166,7 +166,7 @@ func (pt *Path) Validate(logmsg bool) error {
 	if emsg != "" {
 		err := errors.New(emsg)
 		if logmsg {
-			log.Println(emsg)
+			errors.Log(err)
 		}
 		return err
 	}

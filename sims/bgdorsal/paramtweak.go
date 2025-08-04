@@ -5,10 +5,6 @@
 package bgdorsal
 
 import (
-	"fmt"
-	"os"
-
-	"cogentcore.org/core/base/errors"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/params"
 )
@@ -19,25 +15,71 @@ var (
 )
 
 var PSearch = axon.PathSearches{
-	{Sel: "#DGPiToM1VM", Set: func(pt *axon.PathParams, val float32) {
-		pt.PathScale.Abs = val
-	}, Vals: func() []float32 {
-		return params.TweakPct(2, defTweakPct)
-	}},
-}
+	// {Sel: "#DGPiToM1VM", Set: func(pt *axon.PathParams, val float32) {
+	// 	pt.PathScale.Abs = val
+	// }, Vals: func() []float32 {
+	// 	return params.TweakPct(2, defTweakPct)
+	// }},
 
-// ParamSearch applies param search values for given index (in [0..n) range),
-// saving a `job.label` file with the param value.
-func (ss *Sim) ParamSearch(paramIndex int) error {
-	lbl, err := axon.ApplyPathSearch(ss.Net, PSearch, paramIndex)
-	if err != nil {
-		return errors.Log(err)
-	}
-	err = os.WriteFile("job.label", []byte(lbl), 0666)
-	if err != nil {
-		errors.Log(err)
-	} else {
-		fmt.Println("Running Search:", lbl)
-	}
-	return nil
+	// {Sel: "#DGPiToMotorBS", Set: func(pt *axon.PathParams, val float32) {
+	// 	pt.PathScale.Abs = val
+	// }, Vals: func() []float32 {
+	// 	return params.TweakPct(3, defTweakPct)
+	// }},
+
+	// {Sel: "#DGPiToPF", Set: func(pt *axon.PathParams, val float32) {
+	// 	pt.PathScale.Abs = val
+	// }, Vals: func() []float32 {
+	// 	// return params.TweakPct(0.5, .1)
+	// 	return []float32{0.6, 0.7}
+	// }},
+
+	// {Sel: "#StateToM1", Set: func(pt *axon.PathParams, val float32) {
+	// 	pt.PathScale.Abs = val
+	// }, Vals: func() []float32 {
+	// 	return params.TweakPct(1, defTweakPct)
+	// }},
+
+	// {Sel: "#MotorBSToPF", Set: func(pt *axon.PathParams, val float32) {
+	// 	pt.PathScale.Abs = val
+	// }, Vals: func() []float32 {
+	// 	return params.TweakPct(1, defTweakPct)
+	// }},
+
+	// {Sel: ".M1ToMotorBS", Set: func(pt *axon.PathParams, val float32) {
+	// 	pt.PathScale.Abs = val
+	// }, Vals: func() []float32 {
+	// 	return params.TweakPct(2, defTweakPct)
+	// }},
+
+	// {Sel: "#M1PTToMotorBS", Set: func(pt *axon.PathParams, val float32) {
+	// 	pt.PathScale.Abs = val
+	// }, Vals: func() []float32 {
+	// 	return params.TweakPct(2, defTweakPct)
+	// }},
+
+	// {Sel: "#M1PTToVL", Set: func(pt *axon.PathParams, val float32) {
+	// 	pt.PathScale.Abs = val
+	// }, Vals: func() []float32 {
+	// 	return params.TweakPct(1, defTweakPct)
+	// }},
+
+	// {Sel: "#M1ToMotorBS", Set: func(pt *axon.PathParams, val float32) {
+	// 	pt.PathScale.Abs = val
+	// }, Vals: func() []float32 {
+	// 	return params.TweakPct(1.5, defTweakPct)
+	// }},
+
+	// {Sel: "#DMatrixNoToDMatrixGo", Set: func(pt *axon.PathParams, val float32) {
+	// 	pt.PathScale.Rel = val
+	// }, Vals: func() []float32 {
+	// 	return params.TweakPct(0.1, defTweakPct)
+	// }},
+
+	// {Sel: "#DGPeAkToDMatrixNo", Set: func(pt *axon.PathParams, val float32) {
+	// 	pt.PathScale.Abs = val
+	// }, Vals: func() []float32 {
+	// 	return []float32{3, 2}
+	// 	// .TweakPct(5, defTweakPct)
+	// }},
 }

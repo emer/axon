@@ -11,10 +11,10 @@ package pvlv
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"reflect"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/num"
 	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/core"
@@ -423,10 +423,7 @@ func (ss *Sim) LoadCondWeights(cond string) {
 		return
 	}
 	wfn := "wts/" + cond + ".wts.gz"
-	err := ss.Net.OpenWeightsJSON(core.Filename(wfn))
-	if err != nil {
-		log.Println(err)
-	}
+	errors.Log(ss.Net.OpenWeightsJSON(core.Filename(wfn)))
 }
 
 // SaveCondWeights saves weights based on current condition, in wts/cond.wts.gz
@@ -437,10 +434,8 @@ func (ss *Sim) SaveCondWeights() {
 		return
 	}
 	wfn := "wts/" + cnm + ".wts.gz"
-	err := ss.Net.SaveWeightsJSON(core.Filename(wfn))
-	if err != nil {
-		log.Println(err)
-	} else {
+	err := errors.Log(ss.Net.SaveWeightsJSON(core.Filename(wfn)))
+	if err == nil {
 		fmt.Printf("Saved weights to: %s\n", wfn)
 	}
 }

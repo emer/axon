@@ -207,24 +207,24 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: "#DGPiToM1VM", Doc: "final inhibition",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 2 // 2
+				pt.PathScale.Abs = 2 // 2 > 1.6, 2.4
 				// learn = false by default
 			}},
 		{Sel: "#DGPiToMotorBS", Doc: "final inhibition",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 3       // 3 > 2.5, 3.5
+				pt.PathScale.Abs = 3       // 3 >= 3.5 > 2.5
 				pt.Learn.LRate.Base = 0.04 // 0.04 > 0.02 > 0.0005 with STN 150
 				// pt.Learn.SynCaBin.Envelope = kinase.Env10
 				// pt.Learn.DWt.CaPScale = 1 // tbd in Env
 			}},
 		{Sel: "#DGPiToPF", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 0.4     // 0.4 >= 0.5, 0.3, 0.2 >> higher
+				pt.PathScale.Abs = 0.5     // 0.6 >= 0.5 > 0.3, 0.3, 0.2 >> higher
 				pt.Learn.LRate.Base = 0.04 // 0.4 prev default
 			}},
 		{Sel: "#StateToM1", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1 // 1 > 1.5, 2, 0.5 etc
+				pt.PathScale.Abs = 1 // 1.2 >= 1 > 0.8
 			}},
 		{Sel: "#MotorBSToPF", Doc: "",
 			Set: func(pt *axon.PathParams) {
@@ -236,25 +236,29 @@ var PathParams = axon.PathSheets{
 				// pt.SWts.Init.Mean = 0.8
 				// pt.SWts.Init.Var = 0.0
 			}},
-		{Sel: ".PFToDMatrix", Doc: "",
-			Set: func(pt *axon.PathParams) {
-				// std random sig better
-				// pt.SWts.Init.Mean = 0.5
-				// pt.SWts.Init.Var = 0.0
-			}},
+		// {Sel: ".PFToDMatrix", Doc: "",
+		// 	Set: func(pt *axon.PathParams) {
+		// 		// std random sig better
+		// 		// pt.SWts.Init.Mean = 0.5
+		// 		// pt.SWts.Init.Var = 0.0
+		// 	}},
 		{Sel: ".M1ToMotorBS", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 2 // 2 > 1.5, 2.5
 			}},
+		{Sel: "#M1ToMotorBS", Doc: "weaker; note: this is a proxy for cerebellum etc inputs",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1.5 // 1.5 > 1.2, 1.8, 1, 2, 2.5 sensitive
+			}},
 		{Sel: "#M1PTToMotorBS", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 2 // 2
+				pt.PathScale.Abs = 2 // 2 > 1.6, 2.4 sensitive
 				pt.PathScale.Rel = 1 // 1
 				// note: lr = 0.04 in orig
 			}},
 		{Sel: "#M1PTToVL", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1   // 1
+				pt.PathScale.Abs = 1   // 1 > 0.8, 1.2
 				pt.PathScale.Rel = 0.1 // 0.1 > 0.2, .05, 0
 			}},
 		{Sel: "#M1PTToM1PT", Doc: "self path",
@@ -266,18 +270,14 @@ var PathParams = axon.PathSheets{
 		// 		pt.PathScale.Abs = 2
 		// 		pt.PathScale.Rel = 1
 		// 	}},
-		{Sel: "#M1ToMotorBS", Doc: "weaker; note: this is a proxy for cerebellum etc inputs",
-			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1.5 // 1.5 > 1, 2, 2.5
-			}},
 		{Sel: "#DMatrixNoToDMatrixGo", Doc: "weakish no->go inhibition is beneficial",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.1        // 0.1 > 0.05
+				pt.PathScale.Rel = 0.1        // 0.1 > 0.08, 0.12 > 0.05 not too sensitive
 				pt.Learn.Learn.SetBool(false) // no-learn better than learn
 			}},
 		{Sel: "#DGPeAkToDMatrixNo", Doc: "go disinhibition",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 6
+				pt.PathScale.Abs = 4 // 4 > 5 > 6
 			}},
 		// {Sel: ".StateToDMatrix", Doc: "",
 		// 	Set: func(pt *axon.PathParams) {

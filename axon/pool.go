@@ -10,7 +10,7 @@ import (
 	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/base/atomicx"
 	"github.com/emer/axon/v2/fsfffb"
-	"log"
+	"log/slog"
 	"sync/atomic"
 )
 
@@ -225,7 +225,7 @@ func PoolAvgMaxCalcVar(vr AvgMaxVars, pi, di uint32) {
 	sum := PoolsInt.Value(int(pi), int(di), int(vis))
 	if sum < 0 {
 		//gosl:end
-		log.Println("PoolAvgMaxCalc overflow in Sum", "pi:", pi, "di:", di, "sum:", sum)
+		slog.Warn("PoolAvgMaxCalc overflow in Sum", "pi:", pi, "di:", di, "sum:", sum)
 		//gosl:start
 		sum = int32(uint32(1) << 20)
 	}
@@ -235,7 +235,7 @@ func PoolAvgMaxCalcVar(vr AvgMaxVars, pi, di uint32) {
 	mx := PoolsInt.Value(int(pi), int(di), int(vim))
 	if mx < 0 {
 		//gosl:end
-		log.Println("PoolAvgMaxCalc overflow in Max", "pi:", pi, "di:", di, "max:", mx)
+		slog.Warn("PoolAvgMaxCalc overflow in Max", "pi:", pi, "di:", di, "max:", mx)
 		//gosl:start
 		mx = int32(uint32(1) << 20)
 	}

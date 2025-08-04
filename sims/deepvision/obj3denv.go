@@ -7,7 +7,6 @@ package deepvision
 import (
 	"fmt"
 	"image"
-	"log"
 	"path/filepath"
 
 	"cogentcore.org/core/base/errors"
@@ -174,10 +173,7 @@ func (ev *Obj3DSacEnv) OpenImage() error {
 	fnm := filepath.Join(ev.Path, ifnm)
 	var err error
 	ev.Image, _, err = imagex.Open(fnm)
-	if err != nil {
-		log.Println(err)
-	}
-	return err
+	return errors.Log(err)
 }
 
 // FilterImage opens and filters current image
