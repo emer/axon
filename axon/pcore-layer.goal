@@ -39,7 +39,7 @@ type DSMatrixParams struct {
 	// The standard NeuroMod parameters apply only to the final outcome-based
 	// dopamine values, which do not drive performance DA effects in dorsal striatum.
 	// NeuroMod.DAModGain does control overall performance gain from patch.
-	PatchBurstGain float32 `default:"0.1"`
+	PatchBurstGain float32 `default:"1.0"`
 
 	// Index of PatchD1 layer to get striosome modulation state from.
 	// Set during Build from BuildConfig PatchD1Name.

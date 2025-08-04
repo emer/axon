@@ -63,9 +63,20 @@ type ParamConfig struct {
 	// This can be done prior to making a new release after all tests are passing.
 	// Add results to git to provide a full diff record of all params over level.
 	Good bool `nest:"+"`
+
+	// SearchN causes the sim app to print the total number of search params.
+	// The simmer search function will call this at the start of a search.
+	// If Debug flag is set, then this only prints all the searches and does
+	// not apply them.
+	SearchN bool
+
+	// SearchAt runs parameter search job for given parameter index.
+	// Using [1..N] (inclusive of N) range of numbers, so that the
+	// non-zero value here indicates to use parameter search.
+	SearchAt int
 }
 
-func (pc *ParamConfig) CoreFieldValue(field string) core.Value {
+func (pc *ParamConfig) FieldWidget(field string) core.Value {
 	if field == "Script" {
 		return textcore.NewEditor()
 	}

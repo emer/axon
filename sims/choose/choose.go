@@ -744,7 +744,7 @@ func (ss *Sim) ConfigStats() {
 	// 		}
 	// 	}
 	// })
-	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer, axon.PTMaintLayer, axon.PTPredLayer, axon.GPLayer, axon.STNLayer, axon.MatrixLayer, axon.BGThalLayer, axon.UrgencyLayer)
+	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer, axon.PTMaintLayer, axon.PTPredLayer, axon.GPLayer, axon.STNLayer, axon.VSMatrixLayer, axon.BGThalLayer, axon.UrgencyLayer)
 	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		actGeFunc(mode, level, phase == Start)

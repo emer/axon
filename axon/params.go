@@ -26,6 +26,9 @@ type (
 	// LayerSel is one Layer parameter Selector.
 	LayerSel = params.Sel[*LayerParams]
 
+	// LayerSearches is a list of parameter Search elements.
+	LayerSearches = params.Searches[*LayerParams]
+
 	// PathSheets contains Path parameter Sheets.
 	PathSheets = params.Sheets[*PathParams]
 
@@ -34,6 +37,9 @@ type (
 
 	// PathSel is one Path parameter Selector.
 	PathSel = params.Sel[*PathParams]
+
+	// PathSearches is a list of parameter Search elements.
+	PathSearches = params.Searches[*PathParams]
 )
 
 // Params contains the [LayerParams] and [PathParams] parameter setting functions
@@ -176,6 +182,8 @@ func (pr *Params) ApplySheet(net *Network, sheetName string) error {
 	psheet.SelMatchReset()
 
 	ApplyParamSheets(net, lsheet, psheet)
+	lsheet.SelNoMatchWarn(sheetName, net.Name)
+	psheet.SelNoMatchWarn(sheetName, net.Name)
 	return nil
 }
 
@@ -187,7 +195,8 @@ func ApplyParamSheets(net *Network, layer *params.Sheet[*LayerParams], path *par
 	return appl || appp
 }
 
-// ApplyLayerSheet applies Layer parameters from given sheet, returning true if any applied.
+// ApplyLayerSheet applies Layer parameters from given sheet,
+// returning true if any applied.
 func ApplyLayerSheet(net *Network, sheet *params.Sheet[*LayerParams]) bool {
 	applied := false
 	for _, ly := range net.Layers {
@@ -200,7 +209,8 @@ func ApplyLayerSheet(net *Network, sheet *params.Sheet[*LayerParams]) bool {
 	return applied
 }
 
-// ApplyPathSheet applies Path parameters from given sheet, returning true if any applied.
+// ApplyPathSheet applies Path parameters from given sheet,
+// returning true if any applied.
 func ApplyPathSheet(net *Network, sheet *params.Sheet[*PathParams]) bool {
 	applied := false
 	for _, ly := range net.Layers {
@@ -213,4 +223,52 @@ func ApplyPathSheet(net *Network, sheet *params.Sheet[*PathParams]) bool {
 		}
 	}
 	return applied
+}
+
+// ApplyLayerSearch applies Layer [params.Searches] to network
+// for parameter at given param index within that search,
+// returning error for invalid index, and if no matching selections.
+// Returns string descriptor for parameter to record in job.label.
+func ApplyLayerSearch(net *Network, sr params.Searches[*LayerParams], paramIndex int) (string, error) {
+	ps, val, lbl, err := sr.SearchValue(paramIndex)
+	if err != nil {
+		return lbl, err
+	}
+	applied := false
+	for _, ly := range net.Layers {
+		app := ps.Apply(ly.Params, val)
+		ly.UpdateParams()
+		if app {
+			applied = true
+		}
+	}
+	if !applied {
+		return lbl, fmt.Errorf("No matches for Layer parameter search: %s", lbl)
+	}
+	return lbl, nil
+}
+
+// ApplyPathSearch applies Path [params.Searches] to network
+// for parameter at given param index within that search,
+// returning error for invalid index, and if no matching selections.
+// Returns string descriptor for parameter to record in job.label.
+func ApplyPathSearch(net *Network, sr params.Searches[*PathParams], paramIndex int) (string, error) {
+	ps, val, lbl, err := sr.SearchValue(paramIndex)
+	if err != nil {
+		return lbl, err
+	}
+	applied := false
+	for _, ly := range net.Layers {
+		for _, pt := range ly.RecvPaths {
+			app := ps.Apply(pt.Params, val)
+			pt.UpdateParams()
+			if app {
+				applied = true
+			}
+		}
+	}
+	if !applied {
+		return lbl, fmt.Errorf("No matches for Path parameter search: %s", lbl)
+	}
+	return lbl, nil
 }

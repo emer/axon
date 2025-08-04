@@ -1113,6 +1113,21 @@ func (ss *Sim) RunNoGUI() {
 		mpi.Printf("Saving final weights per run\n")
 	}
 
+	if ss.Config.Params.SearchN {
+		n := PSearch.NumParams()
+		fmt.Println(n)
+		axon.GPURelease()
+		return
+	}
+
+	if ss.Config.Params.SearchAt > 0 {
+		err := ss.ParamSearch(ss.Config.Params.SearchAt - 1)
+		if err != nil {
+			axon.GPURelease()
+			return
+		}
+	}
+
 	runName := ss.SetRunName()
 	netName := ss.Net.Name
 	cfg := &ss.Config.Log
