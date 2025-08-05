@@ -9,7 +9,7 @@ require (
 	github.com/chewxy/math32 v1.10.1
 	github.com/cogentcore/yaegi v0.0.0-20250622201820-b7838bdd95eb
 	github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250804171546-85b6ef7a8688
-	github.com/emer/v1vision v0.1.1-0.20241223003153-dd6818448b3b
+	github.com/emer/v1vision v0.1.1-0.20250804212602-0de846185bf5
 	github.com/stretchr/testify v1.10.0
 	gitlab.com/gomidi/midi/v2 v2.0.30
 	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948

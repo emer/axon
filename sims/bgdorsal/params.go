@@ -219,7 +219,7 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: "#DGPiToPF", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 0.5     // 0.6 >= 0.5 > 0.3, 0.3, 0.2 >> higher
+				pt.PathScale.Abs = 0.7     // 0.7 >= 0.6 >= 0.5 > lower
 				pt.Learn.LRate.Base = 0.04 // 0.4 prev default
 			}},
 		{Sel: "#StateToM1", Doc: "",
@@ -275,9 +275,21 @@ var PathParams = axon.PathSheets{
 				pt.PathScale.Rel = 0.1        // 0.1 > 0.08, 0.12 > 0.05 not too sensitive
 				pt.Learn.Learn.SetBool(false) // no-learn better than learn
 			}},
+		{Sel: "#DMatrixGoToDGPeAk", Doc: "go inhibition",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 0.6 // 0.6 > 0.5 > 0.4 > 0.7
+			}},
 		{Sel: "#DGPeAkToDMatrixNo", Doc: "go disinhibition",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 4 // 4 > 5 > 6
+				pt.PathScale.Abs = 4 // 4 > 5 > 6 > 3 >> 2
+			}},
+		{Sel: "#DGPePrToDGPePr", Doc: "self-inhib -- only source of self reg",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 4.5 // 4.5 >= 4 >= 4.8 >> 3.2
+			}},
+		{Sel: "#DGPePrToDSTN", Doc: "enough to kick off the ping-pong dynamics for STN.",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 0.4 // 0.4 >= 0.5 > 0.6
 			}},
 		// {Sel: ".StateToDMatrix", Doc: "",
 		// 	Set: func(pt *axon.PathParams) {
@@ -293,113 +305,131 @@ var PathParams = axon.PathSheets{
 
 /////////
 
-/*
-
-// ParamSetsDefs contains the full set of parameters, many of which are at default values
-// and have informed the default values in the first place.
-var ParamSetsDefs = params.Sets{
-	"Defaults": {
-		{Sel: ".MatrixLayer", Doc: "all matrix",
-			Params: params.Params{
-				ly.Inhib.Layer.On =             "true",
-				ly.Inhib.Pool.On =              "true",
-				ly.Inhib.Pool.FB =              "0",
-				ly.Inhib.Pool.Gi =              "0.5",  // 0.5 > others
-				ly.Matrix.GateThr =             "0.05", // .05 default
-				ly.Acts.Kir.Gbar =              "10",   // 10 > 5 > 20
-				ly.Acts.GabaB.Gk =            "0",
-				ly.Acts.NMDA.Ge =             "0.006", // 0.006 default, necessary (0 very bad)
-				ly.Acts.Dend.ModBase =          "1",
-				ly.Acts.Dend.ModGain =          "0",   // has no effect
-				ly.Learn.NeuroMod.AChLRateMod = "0",   // dorsal should not use
-				ly.Learn.NeuroMod.BurstGain =   "0.1", // 0.1 == 0.2 > 0.05 > 0.5 -- key lrate modulator
-				ly.Learn.NeuroMod.AChDisInhib = "0",
-			},
+// LayerParamsDefs has builtin default values.
+var LayerParamsDefs = axon.LayerSheets{
+	"Base": {
+		{Sel: ".DSMatrixLayer", Doc: "all matrix",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.Layer.On.SetBool(true)
+				ly.Inhib.Pool.On.SetBool(true)
+				ly.Inhib.Pool.FB = 0
+				ly.Inhib.Pool.Gi = 0.5     // 0.5 > others
+				ly.Striatum.GateThr = 0.05 // .05 default
+				ly.Acts.Kir.Gk = 10        // 10 > 5 > 20
+				ly.Acts.GabaB.Gk = 0
+				ly.Acts.NMDA.Ge = 0.006 // 0.006 default, necessary (0 very bad)
+				ly.Acts.Dend.ModBase = 1
+				ly.Acts.Dend.ModGain = 0          // has no effect
+				ly.Learn.NeuroMod.AChLRateMod = 0 // dorsal should not use
+				ly.Learn.NeuroMod.BurstGain = 0.1 // 0.1 == 0.2 > 0.05 > 0.5 -- key lrate modulator
+				ly.Learn.NeuroMod.AChDisInhib = 0
+			}},
 		{Sel: ".DSTNLayer", Doc: "all STN",
-			Params: params.Params{
-				ly.Acts.Init.GeBase =           "0.1",
-				ly.Acts.Kir.Gbar =              "10",   // 10 > 5  > 2 -- key for pause
-				ly.Acts.SKCa.Gk =             "2",    // 2 > 5 >> 1 (for Kir = 10)
-				ly.Inhib.Layer.On =             "true", // actually needs this
-				ly.Inhib.Layer.Gi =             "0.5",
-				ly.Inhib.Layer.FB =             "0",
-				ly.Learn.NeuroMod.AChDisInhib = "0",
-			},
+			Set: func(ly *axon.LayerParams) {
+				ly.Acts.Init.GeBase = 0.1
+				ly.Acts.Kir.Gk = 10             // 10 > 5  > 2 -- key for pause
+				ly.Acts.SKCa.Gk = 2             // 2 > 5 >> 1 (for Kir = 10)
+				ly.Inhib.Layer.On.SetBool(true) // actually needs this
+				ly.Inhib.Layer.Gi = 0.5
+				ly.Inhib.Layer.FB = 0
+				ly.Learn.NeuroMod.AChDisInhib = 0
+			}},
 		{Sel: "#PF", Doc: "",
-			Params: params.Params{
-				ly.Inhib.Layer.On = "false",
-				ly.Inhib.Pool.On =  "false",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.Layer.On.SetBool(false)
+				ly.Inhib.Pool.On.SetBool(false)
 			}},
 		{Sel: "#DGPePr", Doc: "prototypical",
-			Params: params.Params{
-				ly.Acts.Init.GeBase = "0.4", // 0.4 > 0.3, 0.5
-				ly.Acts.Init.GeVar =  "0.2",
-			},
+			Set: func(ly *axon.LayerParams) {
+				ly.Acts.Init.GeBase = 0.4 // 0.4 > 0.3, 0.5
+				ly.Acts.Init.GeVar = 0.2
+			}},
 		{Sel: "#DGPeAk", Doc: "arkypallidal",
-			Params: params.Params{
-				ly.Acts.Init.GeBase = "0.2", // 0.2 > 0.3, 0.1
-				ly.Acts.Init.GeVar =  "0.1", // 0.1 == 0.2 > 0.05
-			},
+			Set: func(ly *axon.LayerParams) {
+				ly.Acts.Init.GeBase = 0.2 // 0.2 > 0.3, 0.1
+				ly.Acts.Init.GeVar = 0.1  // 0.1 == 0.2 > 0.05
+			}},
 		{Sel: "#DGPi", Doc: "",
-			Params: params.Params{
-				ly.Acts.Init.GeBase = "0.3", // 0.3 > 0.2, 0.1
-				ly.Acts.Init.GeVar =  "0.1",
-			},
-		{Sel: "#DGPeAkToDMatrixGo", Doc: "go disinhibition",
-			Params: params.Params{
-				pt.PathScale.Abs = "3",
-			},
-		{Sel: "#DMatrixGoToDGPeAk", Doc: "go inhibition",
-			Params: params.Params{
-				pt.PathScale.Abs = ".5", // stronger = more binary
-			},
-		{Sel: "#DMatrixNoToDGPePr", Doc: "proto = primary classical NoGo pathway",
-			Params: params.Params{
-				pt.PathScale.Abs = "1", // 1 fully inhibits Pr
-			},
-		{Sel: ".ToDSTN", Doc: "excitatory inputs",
-			Params: params.Params{
-				pt.PathScale.Abs = "1",
-			},
-		{Sel: "#DMatrixGoToDGPi", Doc: "go influence on gating -- slightly weaker than integrated GPePr",
-			Params: params.Params{
-				pt.PathScale.Abs = "1", // 1 > 1.1, .9 and lower (not huge diffs)
-			},
-		{Sel: "#DGPePrToDSTN", Doc: "enough to kick off the ping-pong dynamics for STN.",
-			Params: params.Params{
-				pt.PathScale.Abs = "0.5",
-			},
-		{Sel: "#DSTNToDGPePr", Doc: "stronger STN -> DGPePr to kick it high at start",
-			Params: params.Params{
-				pt.PathScale.Abs = "0.5",
-			},
-		{Sel: "#DSTNToDGPeAk", Doc: "this is weak biologically -- could try 0",
-			Params: params.Params{
-				pt.PathScale.Abs = "0.1",
-			},
-		{Sel: "#DGPePrToDGPePr", Doc: "self-inhib -- only source of self reg",
-			Params: params.Params{
-				pt.PathScale.Abs = "4",
-			},
-		{Sel: "#DGPePrToDGPeAk", Doc: "just enough to knock down in baseline state",
-			Params: params.Params{
-				pt.PathScale.Abs = "1",
-			},
-		{Sel: "#DGPePrToDGPi", Doc: "nogo influence on gating -- decreasing produces more graded function of Go",
-			Params: params.Params{
-				pt.PathScale.Abs = "1", // 1 >> 2
-			},
-		{Sel: "#DSTNToDGPi", Doc: "strong initial phasic activation",
-			Params: params.Params{
-				pt.PathScale.Abs = ".2",
-			},
-		{Sel: ".PFToDMatrix", Doc: "",
-			Params: params.Params{
-				pt.Learn.Learn =   "false",
-				pt.Com.GType =     "ModulatoryG",
-				pt.PathScale.Abs = "1",
+			Set: func(ly *axon.LayerParams) {
+				ly.Acts.Init.GeBase = 0.3 // 0.3 > 0.2, 0.1
+				ly.Acts.Init.GeVar = 0.1
 			}},
 	},
 }
 
-*/
+// PathParamsDefs are builtin default params
+var PathParamsDefs = axon.PathSheets{
+	"Base": {
+		{Sel: "#DGPePrToDGPi", Doc: "nogo influence on gating -- decreasing produces more graded function of Go",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1 // 1 > 0.8, 1.2
+			}},
+		{Sel: "#DMatrixGoToDGPi", Doc: "go influence on gating -- slightly weaker than integrated GPePr",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1 // 1 >> 1.2, 0.8
+			}},
+		{Sel: "#DSTNToDGPi", Doc: "strong initial phasic activation",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = .2 // .2 >= .16 >> .24
+			}},
+
+		{Sel: "#DMatrixNoToDGPePr", Doc: "proto = primary classical NoGo pathway",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1 // 1 > 0.8, 1.2
+			}},
+		{Sel: "#DGPePrToDGPePr", Doc: "self-inhib -- only source of self reg",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 4 // 4 >= 4.8 >> 3.2 // todo: try 4.5
+			}},
+		{Sel: "#DSTNToDGPePr", Doc: "stronger STN -> DGPePr to kick it high at start",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 0.5 // 0.5 > 0.4 >> 0.6
+			}},
+
+		{Sel: "#DGPePrToDGPeAk", Doc: "just enough to knock down in baseline state",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1 // 1 > 1.2 >> 0.8
+			}},
+		{Sel: "#DMatrixGoToDGPeAk", Doc: "go inhibition",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 0.6 // 0.6 > 0.5 > 0.4 -- todo: set 0.6 and try higher
+			}},
+		{Sel: "#DSTNToDGPeAk", Doc: "this is weak biologically -- but relatively sensitive..",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 0.1 // 0.1 > 0.12 >> 0.08
+			}},
+
+		{Sel: ".ToDSTN", Doc: "excitatory inputs",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 2
+			}},
+		{Sel: "#DGPePrToDSTN", Doc: "enough to kick off the ping-pong dynamics for STN.",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 0.4 // 0.4 > 0.5 > 0.6 -- todo: try 0.4
+			}},
+		{Sel: "#StateToDSTN", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 2 // 2 > 1.6, 2.4
+			}},
+		{Sel: "#S1ToDSTN", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 2 // 2 >= 2.4 > 1.6
+			}},
+
+		{Sel: "#DMatrixNoToDMatrixGo", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1 // 1 > 0.8 >> 1.2
+			}},
+		{Sel: "#DGPeAkToDMatrixGo", Doc: "go disinhibition",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 3 // 3 > 2.4, 3.6
+			}},
+
+		{Sel: ".PFToDMatrix", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.Learn.Learn.SetBool(false)
+				pt.Com.GType = axon.ModulatoryG
+				pt.PathScale.Abs = 1
+			}},
+	},
+}
