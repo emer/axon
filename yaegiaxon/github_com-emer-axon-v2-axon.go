@@ -3,11 +3,10 @@
 package yaegiaxon
 
 import (
+	"github.com/emer/axon/v2/axon"
 	"go/constant"
 	"go/token"
 	"reflect"
-
-	"github.com/emer/axon/v2/axon"
 )
 
 func init() {
@@ -32,8 +31,10 @@ func init() {
 		"AdaptGiLayer":                 reflect.ValueOf(axon.AdaptGiLayer),
 		"Alpha":                        reflect.ValueOf(axon.Alpha),
 		"ApplyExtsNeuron":              reflect.ValueOf(axon.ApplyExtsNeuron),
+		"ApplyLayerSearch":             reflect.ValueOf(axon.ApplyLayerSearch),
 		"ApplyLayerSheet":              reflect.ValueOf(axon.ApplyLayerSheet),
 		"ApplyParamSheets":             reflect.ValueOf(axon.ApplyParamSheets),
+		"ApplyPathSearch":              reflect.ValueOf(axon.ApplyPathSearch),
 		"ApplyPathSheet":               reflect.ValueOf(axon.ApplyPathSheet),
 		"Avg":                          reflect.ValueOf(axon.Avg),
 		"AvgDif":                       reflect.ValueOf(axon.AvgDif),
@@ -91,7 +92,10 @@ func init() {
 		"D2Mod":                        reflect.ValueOf(axon.D2Mod),
 		"DAModTypesN":                  reflect.ValueOf(axon.DAModTypesN),
 		"DAModTypesValues":             reflect.ValueOf(axon.DAModTypesValues),
+		"DSMatrixLayer":                reflect.ValueOf(axon.DSMatrixLayer),
 		"DSMatrixPath":                 reflect.ValueOf(axon.DSMatrixPath),
+		"DSPatchLayer":                 reflect.ValueOf(axon.DSPatchLayer),
+		"DSPatchPath":                  reflect.ValueOf(axon.DSPatchPath),
 		"DSWt":                         reflect.ValueOf(axon.DSWt),
 		"DTr":                          reflect.ValueOf(axon.DTr),
 		"DTrgAvg":                      reflect.ValueOf(axon.DTrgAvg),
@@ -293,8 +297,6 @@ func init() {
 		"LooperUpdateNetView":          reflect.ValueOf(axon.LooperUpdateNetView),
 		"MahpN":                        reflect.ValueOf(axon.MahpN),
 		"MaintG":                       reflect.ValueOf(axon.MaintG),
-		"VSMatrixLayer":                reflect.ValueOf(axon.VSMatrixLayer),
-		"DSMatrixLayer":                reflect.ValueOf(axon.DSMatrixLayer),
 		"Max":                          reflect.ValueOf(axon.Max),
 		"MaxGlobalVecN":                reflect.ValueOf(constant.MakeFromLiteral("16", token.INT, 0)),
 		"MinusPhaseNeuron":             reflect.ValueOf(axon.MinusPhaseNeuron),
@@ -658,6 +660,7 @@ func init() {
 		"UrgencyLayer":                 reflect.ValueOf(axon.UrgencyLayer),
 		"UseGPU":                       reflect.ValueOf(&axon.UseGPU).Elem(),
 		"VSGatedLayer":                 reflect.ValueOf(axon.VSGatedLayer),
+		"VSMatrixLayer":                reflect.ValueOf(axon.VSMatrixLayer),
 		"VSMatrixPath":                 reflect.ValueOf(axon.VSMatrixPath),
 		"VSPatchLayer":                 reflect.ValueOf(axon.VSPatchLayer),
 		"VSPatchPath":                  reflect.ValueOf(axon.VSPatchPath),
@@ -694,6 +697,8 @@ func init() {
 		"ClampParams":        reflect.ValueOf((*axon.ClampParams)(nil)),
 		"Context":            reflect.ValueOf((*axon.Context)(nil)),
 		"DAModTypes":         reflect.ValueOf((*axon.DAModTypes)(nil)),
+		"DSMatrixParams":     reflect.ValueOf((*axon.DSMatrixParams)(nil)),
+		"DSMatrixPathParams": reflect.ValueOf((*axon.DSMatrixPathParams)(nil)),
 		"DWtParams":          reflect.ValueOf((*axon.DWtParams)(nil)),
 		"DecayParams":        reflect.ValueOf((*axon.DecayParams)(nil)),
 		"DendParams":         reflect.ValueOf((*axon.DendParams)(nil)),
@@ -719,14 +724,15 @@ func init() {
 		"LayerIndexes":       reflect.ValueOf((*axon.LayerIndexes)(nil)),
 		"LayerInhibIndexes":  reflect.ValueOf((*axon.LayerInhibIndexes)(nil)),
 		"LayerParams":        reflect.ValueOf((*axon.LayerParams)(nil)),
+		"LayerSearches":      reflect.ValueOf((*axon.LayerSearches)(nil)),
+		"LayerSel":           reflect.ValueOf((*axon.LayerSel)(nil)),
+		"LayerSheet":         reflect.ValueOf((*axon.LayerSheet)(nil)),
+		"LayerSheets":        reflect.ValueOf((*axon.LayerSheets)(nil)),
 		"LayerTypes":         reflect.ValueOf((*axon.LayerTypes)(nil)),
 		"LayerVars":          reflect.ValueOf((*axon.LayerVars)(nil)),
 		"LearnCaParams":      reflect.ValueOf((*axon.LearnCaParams)(nil)),
 		"LearnNeuronParams":  reflect.ValueOf((*axon.LearnNeuronParams)(nil)),
 		"LearnSynParams":     reflect.ValueOf((*axon.LearnSynParams)(nil)),
-		"StriatumParams":     reflect.ValueOf((*axon.StriatumParams)(nil)),
-		"VSMatrixPathParams": reflect.ValueOf((*axon.VSMatrixPathParams)(nil)),
-		"DSMatrixPathParams": reflect.ValueOf((*axon.DSMatrixPathParams)(nil)),
 		"NetViewUpdate":      reflect.ValueOf((*axon.NetViewUpdate)(nil)),
 		"Network":            reflect.ValueOf((*axon.Network)(nil)),
 		"NetworkIndexes":     reflect.ValueOf((*axon.NetworkIndexes)(nil)),
@@ -741,6 +747,10 @@ func init() {
 		"PathIndexes":        reflect.ValueOf((*axon.PathIndexes)(nil)),
 		"PathParams":         reflect.ValueOf((*axon.PathParams)(nil)),
 		"PathScaleParams":    reflect.ValueOf((*axon.PathScaleParams)(nil)),
+		"PathSearches":       reflect.ValueOf((*axon.PathSearches)(nil)),
+		"PathSel":            reflect.ValueOf((*axon.PathSel)(nil)),
+		"PathSheet":          reflect.ValueOf((*axon.PathSheet)(nil)),
+		"PathSheets":         reflect.ValueOf((*axon.PathSheets)(nil)),
 		"PathTypes":          reflect.ValueOf((*axon.PathTypes)(nil)),
 		"PoolIndexVars":      reflect.ValueOf((*axon.PoolIndexVars)(nil)),
 		"PoolIntVars":        reflect.ValueOf((*axon.PoolIntVars)(nil)),
@@ -759,6 +769,7 @@ func init() {
 		"SpikeNoiseParams":   reflect.ValueOf((*axon.SpikeNoiseParams)(nil)),
 		"SpikeParams":        reflect.ValueOf((*axon.SpikeParams)(nil)),
 		"StartN":             reflect.ValueOf((*axon.StartN)(nil)),
+		"StriatumParams":     reflect.ValueOf((*axon.StriatumParams)(nil)),
 		"SynComParams":       reflect.ValueOf((*axon.SynComParams)(nil)),
 		"SynapseIndexVars":   reflect.ValueOf((*axon.SynapseIndexVars)(nil)),
 		"SynapseTraceVars":   reflect.ValueOf((*axon.SynapseTraceVars)(nil)),
@@ -768,6 +779,7 @@ func init() {
 		"TrgAvgActParams":    reflect.ValueOf((*axon.TrgAvgActParams)(nil)),
 		"USParams":           reflect.ValueOf((*axon.USParams)(nil)),
 		"UrgencyParams":      reflect.ValueOf((*axon.UrgencyParams)(nil)),
+		"VSMatrixPathParams": reflect.ValueOf((*axon.VSMatrixPathParams)(nil)),
 		"VTAParams":          reflect.ValueOf((*axon.VTAParams)(nil)),
 		"ValenceTypes":       reflect.ValueOf((*axon.ValenceTypes)(nil)),
 		"ViewTimes":          reflect.ValueOf((*axon.ViewTimes)(nil)),

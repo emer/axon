@@ -19,6 +19,7 @@ func init() {
 		"LevelsValues":     reflect.ValueOf(bgdorsal.LevelsValues),
 		"ModesN":           reflect.ValueOf(bgdorsal.ModesN),
 		"ModesValues":      reflect.ValueOf(bgdorsal.ModesValues),
+		"PSearch":          reflect.ValueOf(&bgdorsal.PSearch).Elem(),
 		"PathParams":       reflect.ValueOf(&bgdorsal.PathParams).Elem(),
 		"Run":              reflect.ValueOf(bgdorsal.Run),
 		"Sequence":         reflect.ValueOf(bgdorsal.Sequence),

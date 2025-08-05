@@ -10,6 +10,8 @@ import (
 func init() {
 	Symbols["github.com/emer/axon/v2/fsfffb/fsfffb"] = map[string]reflect.Value{
 		// function, constant and variable definitions
+		"DAD1":            reflect.ValueOf(fsfffb.DAD1),
+		"DAD2":            reflect.ValueOf(fsfffb.DAD2),
 		"FBs":             reflect.ValueOf(fsfffb.FBs),
 		"FBsRaw":          reflect.ValueOf(fsfffb.FBsRaw),
 		"FFAvg":           reflect.ValueOf(fsfffb.FFAvg),
@@ -24,6 +26,7 @@ func init() {
 		"InhibVarsN":      reflect.ValueOf(fsfffb.InhibVarsN),
 		"InhibVarsValues": reflect.ValueOf(fsfffb.InhibVarsValues),
 		"LayGi":           reflect.ValueOf(fsfffb.LayGi),
+		"ModAct":          reflect.ValueOf(fsfffb.ModAct),
 		"SSGi":            reflect.ValueOf(fsfffb.SSGi),
 		"SSf":             reflect.ValueOf(fsfffb.SSf),
 		"SSi":             reflect.ValueOf(fsfffb.SSi),
