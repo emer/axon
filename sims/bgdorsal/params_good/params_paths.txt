@@ -1,41 +1,57 @@
 
 Layer: DGPi
          DGPePr       Inhib  Abs:	  1.00	Rel:	  1.00	GScale:	  0.01	Rel:	  0.50	LRate:	  0.04
-         DMtxGo       Inhib  Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:	  0.50	LRate:	  0.04
+      DMatrixGo       Inhib  Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:	  0.50	LRate:	  0.04
            DSTN     Forward  Abs:	  0.20	Rel:	  1.00	GScale:	  0.04	Rel:	  1.00	LRate:	  0.04
 
 Layer: DGPePr
-         DMtxNo       Inhib  Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:	  0.50	LRate:	  0.04
-         DGPePr       Inhib  Abs:	  4.00	Rel:	  1.00	GScale:	  0.01	Rel:	  0.50	LRate:	  0.04
+      DMatrixNo       Inhib  Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:	  0.50	LRate:	  0.04
+         DGPePr       Inhib  Abs:	  4.50	Rel:	  1.00	GScale:	  0.01	Rel:	  0.50	LRate:	  0.04
            DSTN     Forward  Abs:	  0.50	Rel:	  1.00	GScale:	  0.10	Rel:	  1.00	LRate:	  0.04
 
 Layer: DGPeAk
          DGPePr       Inhib  Abs:	  1.00	Rel:	  1.00	GScale:	  0.01	Rel:	  0.50	LRate:	  0.04
-         DMtxGo       Inhib  Abs:	  0.50	Rel:	  1.00	GScale:	  0.02	Rel:	  0.50	LRate:	  0.04
+      DMatrixGo       Inhib  Abs:	  0.60	Rel:	  1.00	GScale:	  0.03	Rel:	  0.50	LRate:	  0.04
            DSTN     Forward  Abs:	  0.10	Rel:	  1.00	GScale:	  0.02	Rel:	  1.00	LRate:	  0.04
 
 Layer: DSTN
-         DGPePr       Inhib  Abs:	  0.50	Rel:	  1.00	GScale:	  0.00	Rel:	  1.00	LRate:	  0.04
+         DGPePr       Inhib  Abs:	  0.40	Rel:	  1.00	GScale:	  0.00	Rel:	  1.00	LRate:	  0.04
           State     Forward  Abs:	  2.00	Rel:	  1.00	GScale:	  0.33	Rel:	  0.50	LRate:	  0.04
              S1     Forward  Abs:	  2.00	Rel:	  1.00	GScale:	  0.33	Rel:	  0.50	LRate:	  0.04
 
-Layer: DMtxGo
-         DMtxNo       Inhib  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.09	LRate:	  0.04
+Layer: DMatrixGo
+      DMatrixNo       Inhib  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.09	LRate:	  0.04
          DGPeAk       Inhib  Abs:	  3.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.91	LRate:	  0.04
              PF     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:	  1.00	LRate:	  0.04
           State    DSMatrix  Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:	  0.33	LRate:	  0.02
              S1    DSMatrix  Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:	  0.33	LRate:	  0.02
              M1    DSMatrix  Abs:	  1.80	Rel:	  1.00	GScale:	  0.15	Rel:	  0.33	LRate:	  0.02
 
-Layer: DMtxNo
-         DGPeAk       Inhib  Abs:	  6.00	Rel:	  1.00	GScale:	  0.17	Rel:	  1.00	LRate:	  0.04
+Layer: DMatrixNo
+         DGPeAk       Inhib  Abs:	  4.00	Rel:	  1.00	GScale:	  0.11	Rel:	  1.00	LRate:	  0.04
              PF     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:	  1.00	LRate:	  0.04
           State    DSMatrix  Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:	  0.33	LRate:	  0.02
              S1    DSMatrix  Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:	  0.33	LRate:	  0.02
              M1    DSMatrix  Abs:	  1.80	Rel:	  1.00	GScale:	  0.15	Rel:	  0.33	LRate:	  0.02
 
+Layer: DSPatchD1
+             PF     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:	  1.00	LRate:	  0.04
+          State     DSPatch  Abs:	  1.00	Rel:	  1.00	GScale:	  0.07	Rel:	  0.20	LRate:	  0.04
+             S1     DSPatch  Abs:	  1.00	Rel:	  1.00	GScale:	  0.07	Rel:	  0.20	LRate:	  0.04
+             M1     DSPatch  Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:	  0.20	LRate:	  0.04
+           M1PT     DSPatch  Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:	  0.20	LRate:	  0.04
+          M1PTp     DSPatch  Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:	  0.20	LRate:	  0.04
+
+Layer: DSPatchD2
+             PF     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:	  1.00	LRate:	  0.04
+          State     DSPatch  Abs:	  1.00	Rel:	  1.00	GScale:	  0.07	Rel:	  0.20	LRate:	  0.04
+             S1     DSPatch  Abs:	  1.00	Rel:	  1.00	GScale:	  0.07	Rel:	  0.20	LRate:	  0.04
+             M1     DSPatch  Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:	  0.20	LRate:	  0.04
+           M1PT     DSPatch  Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:	  0.20	LRate:	  0.04
+          M1PTp     DSPatch  Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:	  0.20	LRate:	  0.04
+
 Layer: PF
-           DGPi       Inhib  Abs:	  0.40	Rel:	  1.00	GScale:	  0.01	Rel:	  1.00	LRate:	  0.04
+           DGPi       Inhib  Abs:	  0.70	Rel:	  1.00	GScale:	  0.02	Rel:	  1.00	LRate:	  0.04
         MotorBS     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:	  1.00	LRate:	  0.04
 
 Layer: SNc

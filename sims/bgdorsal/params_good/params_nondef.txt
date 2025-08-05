@@ -9,7 +9,7 @@
       Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
       Adapt { SigGain: 1 [6] }
     }
-  ////////  Path: DMtxGoToDGPi
+  ////////  Path: DMatrixGoToDGPi
     SWts      {
       Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
       Adapt { SigGain: 1 [6] }
@@ -26,13 +26,13 @@
     Decay     { Glong: 1 [0,0.6] }
     Clamp     { Ge: 1 [0.8,1.5] }
   }
-  ////////  Path: DMtxNoToDGPePr
+  ////////  Path: DMatrixNoToDGPePr
     SWts      {
       Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
       Adapt { SigGain: 1 [6] }
     }
   ////////  Path: DGPePrToDGPePr
-    PathScale { Abs: 4 [1] }
+    PathScale { Abs: 4.5 [1] }
     SWts      {
       Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
       Adapt { SigGain: 1 [6] }
@@ -54,8 +54,8 @@
       Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
       Adapt { SigGain: 1 [6] }
     }
-  ////////  Path: DMtxGoToDGPeAk
-    PathScale { Abs: 0.5 [1] }
+  ////////  Path: DMatrixGoToDGPeAk
+    PathScale { Abs: 0.6 [1] }
     SWts      {
       Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
       Adapt { SigGain: 1 [6] }
@@ -78,7 +78,7 @@
     Pool   { Gi: 0.5 [1,1.1,0.75,0.9], FB: 0 [0.5,1,4] }
   }
   ////////  Path: DGPePrToDSTN
-    PathScale { Abs: 0.5 [1] }
+    PathScale { Abs: 0.4 [1] }
     SWts      {
       Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
       Adapt { SigGain: 1 [6] }
@@ -95,7 +95,7 @@
       Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
       Adapt { SigGain: 1 [6] }
     }
-////////  Layer: DMtxGo
+////////  Layer: DMatrixGo
   Acts     {
     Decay     { Glong: 1 [0,0.6] }
     Clamp     { Ge: 1 [0.8,1.5] }
@@ -109,15 +109,15 @@
     RLRate    { SigmoidMin: 0.001 [0.05,1] }
     NeuroMod  { BurstGain: 0.1 [1] }
   }
-  ////////  Path: DMtxNoToDMtxGo
-  ////////  Path: DGPeAkToDMtxGo
+  ////////  Path: DMatrixNoToDMatrixGo
+  ////////  Path: DGPeAkToDMatrixGo
     PathScale { Abs: 3 [1] }
     SWts      {
       Init  { Mean: 0.75 [0.5,0.4], Var: 0 [0.25], Sym: false [true] }
       Adapt { SigGain: 1 [6] }
     }
-  ////////  Path: PFToDMtxGo
-  ////////  Path: StateToDMtxGo
+  ////////  Path: PFToDMatrixGo
+  ////////  Path: StateToDMatrixGo
     PathScale { Abs: 1.8 [1] }
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
@@ -125,7 +125,7 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: S1ToDMtxGo
+  ////////  Path: S1ToDMatrixGo
     PathScale { Abs: 1.8 [1] }
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
@@ -133,7 +133,7 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: M1ToDMtxGo
+  ////////  Path: M1ToDMatrixGo
     PathScale { Abs: 1.8 [1] }
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
@@ -141,7 +141,7 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-////////  Layer: DMtxNo
+////////  Layer: DMatrixNo
   Acts     {
     Decay     { Glong: 1 [0,0.6] }
     Clamp     { Ge: 1 [0.8,1.5] }
@@ -155,14 +155,14 @@
     RLRate    { SigmoidMin: 0.001 [0.05,1] }
     NeuroMod  { BurstGain: 0.1 [1] }
   }
-  ////////  Path: DGPeAkToDMtxNo
-    PathScale { Abs: 6 [1] }
+  ////////  Path: DGPeAkToDMatrixNo
+    PathScale { Abs: 4 [1] }
     SWts      {
       Init  { Mean: 0.75 [0.5,0.4], Var: 0 [0.25], Sym: false [true] }
       Adapt { SigGain: 1 [6] }
     }
-  ////////  Path: PFToDMtxNo
-  ////////  Path: StateToDMtxNo
+  ////////  Path: PFToDMatrixNo
+  ////////  Path: StateToDMatrixNo
     PathScale { Abs: 1.8 [1] }
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
@@ -170,7 +170,7 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: S1ToDMtxNo
+  ////////  Path: S1ToDMatrixNo
     PathScale { Abs: 1.8 [1] }
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
@@ -178,7 +178,7 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: M1ToDMtxNo
+  ////////  Path: M1ToDMatrixNo
     PathScale { Abs: 1.8 [1] }
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
@@ -186,12 +186,50 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
+////////  Layer: DSPatchD1
+  Acts     {
+    Decay     { Glong: 1 [0,0.6], LearnCa: 1 [0] }
+    Clamp     { Ge: 1 [0.8,1.5] }
+  }
+  Inhib    {
+    Layer  { Gi: 0.5 [1,1.1,0.75,0.9], FB: 0 [0.5,1,4] }
+    Pool   { Gi: 0.5 [1,1.1,0.75,0.9], FB: 0 [0.5,1,4] }
+  }
+  Learn    {
+    TrgAvgAct { GiBaseInit: 0.5 [0], RescaleOn: false [true] }
+    RLRate    { SigmoidMin: 0.01 [0.05,1] }
+  }
+  ////////  Path: PFToDSPatchD1
+  ////////  Path: StateToDSPatchD1
+  ////////  Path: S1ToDSPatchD1
+  ////////  Path: M1ToDSPatchD1
+  ////////  Path: M1PTToDSPatchD1
+  ////////  Path: M1PTpToDSPatchD1
+////////  Layer: DSPatchD2
+  Acts     {
+    Decay     { Glong: 1 [0,0.6], LearnCa: 1 [0] }
+    Clamp     { Ge: 1 [0.8,1.5] }
+  }
+  Inhib    {
+    Layer  { Gi: 0.5 [1,1.1,0.75,0.9], FB: 0 [0.5,1,4] }
+    Pool   { Gi: 0.5 [1,1.1,0.75,0.9], FB: 0 [0.5,1,4] }
+  }
+  Learn    {
+    TrgAvgAct { GiBaseInit: 0.5 [0], RescaleOn: false [true] }
+    RLRate    { SigmoidMin: 0.01 [0.05,1] }
+  }
+  ////////  Path: PFToDSPatchD2
+  ////////  Path: StateToDSPatchD2
+  ////////  Path: S1ToDSPatchD2
+  ////////  Path: M1ToDSPatchD2
+  ////////  Path: M1PTToDSPatchD2
+  ////////  Path: M1PTpToDSPatchD2
 ////////  Layer: PF
   Acts     {
     Clamp     { Ge: 1 [0.8,1.5] }
   }
   ////////  Path: DGPiToPF
-    PathScale { Abs: 0.4 [1] }
+    PathScale { Abs: 0.7 [1] }
   ////////  Path: MotorBSToPF
 ////////  Layer: SNc
   Acts     {
@@ -251,6 +289,7 @@
 ////////  Layer: M1
   Acts     {
     Clamp     { Ge: 1 [0.8,1.5] }
+    Mahp      { Gk: 0.05 [0.02] }
   }
   Learn    {
     NeuroMod  { DipGain: 0 [1] }
@@ -265,7 +304,7 @@
 ////////  Layer: M1CT
   Acts     {
     Clamp     { Ge: 1 [0.8,1.5] }
-    Sahp      { Gk: 1 [0.05,0.1] }
+    Mahp      { Gk: 0.05 [0.02] }
     NMDA      { Ge: 0.008 [0.006,0.007,0] }
     GabaB     { Gk: 0.009 [0.015,0.012,0] }
   }
@@ -286,7 +325,7 @@
 ////////  Layer: M1PT
   Acts     {
     Clamp     { Ge: 1 [0.8,1.5] }
-    Sahp      { Gk: 0.01 [0.05,0.1] }
+    Mahp      { Gk: 0.05 [0.02] }
     GabaB     { Gk: 0.01 [0.015,0.012,0] }
   }
   Inhib    {
@@ -341,6 +380,7 @@
 ////////  Layer: M1PTp
   Acts     {
     Clamp     { Ge: 1 [0.8,1.5] }
+    Mahp      { Gk: 0.05 [0.02] }
   }
   Inhib    {
     Layer  { Gi: 0.8 [1,1.1,0.75,0.9] }

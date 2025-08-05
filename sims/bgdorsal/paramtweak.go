@@ -109,12 +109,12 @@ var PSearch = axon.PathSearches{
 	// }, Vals: func() []float32 {
 	// 	return params.TweakPct(1, defTweakPct)
 	// }},
-	{Sel: "#DMatrixGoToDGPeAk", Set: func(pt *axon.PathParams, val float32) {
-		pt.PathScale.Abs = val
-	}, Vals: func() []float32 {
-		return []float32{0.7, 0.8}
-		// params.TweakPct(0.5, defTweakPct)
-	}},
+	// {Sel: "#DMatrixGoToDGPeAk", Set: func(pt *axon.PathParams, val float32) {
+	// 	pt.PathScale.Abs = val
+	// }, Vals: func() []float32 {
+	// 	return []float32{0.7, 0.8}
+	// 	// params.TweakPct(0.5, defTweakPct)
+	// }},
 	// {Sel: "#DSTNToDGPeAk", Set: func(pt *axon.PathParams, val float32) {
 	// 	pt.PathScale.Abs = val
 	// }, Vals: func() []float32 {
