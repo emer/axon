@@ -8,11 +8,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"cogentcore.org/core/base/errors"
-	"cogentcore.org/core/base/fsx"
 	"cogentcore.org/core/cli"
 	"cogentcore.org/lab/stats/stats"
-	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensorfs"
 )
@@ -120,19 +117,6 @@ func RunSim(sim *Sim) error {
 	dir, _ := tensorfs.NewDir("Desc")
 	stats.Describe(dir, epcs)
 	dt := tensorfs.DirTable(dir, nil)
-	fmt.Println(dt)
-
-	simfile := "BGDorsal_Base_000_train_run.tsv"
-	if !errors.Log1(fsx.FileExists(simfile)) {
-		return nil
-	}
-	simdt := table.New()
-	simdt.OpenCSV(fsx.Filename(simfile), tensor.Tab)
-	sepcs := simdt.Column("EpochsToCrit")
-	dir, _ = tensorfs.NewDir("Desc")
-	stats.Describe(dir, sepcs)
-	fmt.Println("Sim:")
-	dt = tensorfs.DirTable(dir, nil)
 	fmt.Println(dt)
 
 	return nil

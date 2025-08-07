@@ -745,14 +745,12 @@ func (ss *Sim) ConfigStats() {
 
 	ss.SetRunName()
 
-	// note: Trial level is not recorded, only the sequence
-
 	// last arg(s) are levels to exclude
-	counterFunc := axon.StatLoopCounters(ss.Stats, ss.Current, ss.Loops, net, Sequence, Cycle)
+	counterFunc := axon.StatLoopCounters(ss.Stats, ss.Current, ss.Loops, net, Trial, Cycle)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		counterFunc(mode, level, phase == Start)
 	})
-	runNameFunc := axon.StatRunName(ss.Stats, ss.Current, ss.Loops, net, Sequence, Cycle)
+	runNameFunc := axon.StatRunName(ss.Stats, ss.Current, ss.Loops, net, Trial, Cycle)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		runNameFunc(mode, level, phase == Start)
 	})
@@ -929,7 +927,7 @@ func (ss *Sim) ConfigStats() {
 		runAllFunc(mode, level, phase == Start)
 	})
 
-	patchStats := []string{"PPD1Cor", "PPD1Err", "PPD2Cor", "PPD2Err", "PPDAD1Cor", "PPDAD1Err", "PPDAD2Cor", "PPDAD2Err"}
+	patchStats := []string{"PPD1Cor", "PPD1Err", "PPD2Cor", "PPD2Err", "PPDAD1Cor", "PPDAD1Err", "PPDAD2Cor", "PPDAD2Err", "PPDAD1Cur", "PPDAD2Cur"}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		if level < Trial {
 			return
@@ -950,7 +948,7 @@ func (ss *Sim) ConfigStats() {
 				tsr.SetNumRows(0)
 				plot.SetFirstStyler(tsr, func(s *plot.Style) {
 					s.Range.SetMin(0).SetMax(1)
-					if strings.Contains(name, "Cor") {
+					if name[:4] == "PPDA" && strings.Contains(name, "Cor") {
 						s.On = true
 					}
 				})
@@ -962,9 +960,11 @@ func (ss *Sim) ConfigStats() {
 					diu := uint32(di)
 					ev := ss.Envs.ByModeDi(mode, di).(*MotorSeqEnv)
 					trg := uint32(ev.Target)
+					act := uint32(ev.CurAction)
 					if ev.Trial.Cur == 0 {
 						stat = math.NaN()
 						tsr.AppendRowFloat(stat)
+						continue
 					} else {
 						d1cor := float64(axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pd1.PoolIndex(1+trg), diu))
 						d2cor := float64(axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pd2.PoolIndex(1+trg), diu))
@@ -997,6 +997,10 @@ func (ss *Sim) ConfigStats() {
 								lsum += float64(axon.Pools.Float(int(mtx.PoolIndex(1+ai)), di, int(fsfffb.DAD2)))
 							}
 							stat = (float64(lsum) - dad2cor) / float64(nActs-1)
+						case "PPDAD1Cur":
+							stat = float64(axon.Pools.Float(int(mtx.PoolIndex(1+act)), di, int(fsfffb.DAD1)))
+						case "PPDAD2Cur":
+							stat = float64(axon.Pools.Float(int(mtx.PoolIndex(1+act)), di, int(fsfffb.DAD2)))
 						}
 					}
 					curModeDir.Float32(name, ndata).SetFloat1D(float64(stat), di)

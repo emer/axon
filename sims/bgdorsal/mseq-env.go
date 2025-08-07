@@ -28,14 +28,14 @@ type MotorSeqEnv struct {
 	// trial counter for index into sequence
 	Trial env.Counter
 
-	// sequence length.
-	SeqLen int
-
 	// number of distinct actions represented: determines the difficulty
 	// of learning in terms of the size of the space that must be searched.
 	// effective size = NActions ^ SeqLen
-	// 6^4 = 1296 or 10^3 = 1000 are reliably solved
+	// 5^5 = 3,125 is base test, reliably, quickly solved
 	NActions int
+
+	// sequence length.
+	SeqLen int
 
 	// learning rate for reward prediction
 	RewPredLRate float32 `default:"0.01"`
@@ -48,10 +48,10 @@ type MotorSeqEnv struct {
 
 	// give reward with probability in proportion to number of
 	// correct actions in sequence, above given threshold. If 0, don't use
-	PartialCreditAt int
+	PartialCredit bool `default:"true"`
 
 	// if doing partial credit, also make the reward value graded (weaker for fewer)
-	PartialGraded bool
+	PartialGraded bool `default:"true"`
 
 	// sequence map from sequence index to target motor action
 	SeqMap []int
@@ -102,9 +102,9 @@ type MotorSeqEnv struct {
 func (ev *MotorSeqEnv) Label() string { return ev.Name }
 
 func (ev *MotorSeqEnv) Defaults() {
-	ev.SeqLen = 3           // 2x5 is easily solved, 3x5 is 100% with 49u
-	ev.NActions = 5         // 2x7 good test
-	ev.PartialCreditAt = 1  // 1 default: critical for seq len = 3
+	ev.NActions = 5
+	ev.SeqLen = 5
+	ev.PartialCredit = true // critical for seq len = 3+
 	ev.PartialGraded = true // key for seq 3
 	ev.RewPredLRate = 0.01  // GPU 16 0.01 > 0.02 >> 0.05 > 0.1, 0.2 for partial, seq3
 	ev.RewPredLRateUp = 1
@@ -234,7 +234,7 @@ func (ev *MotorSeqEnv) Action(action string, nop tensor.Values) {
 func (ev *MotorSeqEnv) ComputeReward() {
 	ev.Rew = 0
 	// fmt.Println("rew, ncor:", ev.NCorrect, ev.SeqLen)
-	if ev.PartialCreditAt > 0 {
+	if ev.PartialCredit {
 		prew := float32(ev.NCorrect) / float32(ev.SeqLen)
 		doRew := randx.BoolP32(prew, &ev.Rand)
 		if doRew {

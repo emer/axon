@@ -1236,9 +1236,9 @@ struct DSMatrixPathParams {
 }
 struct VSMatrixPathParams {
 	RewActLearn: i32,
+	Delta: f32,
+	Credit: f32,
 	pad: f32,
-	pad1: f32,
-	pad2: f32,
 }
 
 //////// import: "pool.go"

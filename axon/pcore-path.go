@@ -26,7 +26,7 @@ type DSMatrixPathParams struct {
 	Credit float32 `default:"0.6"`
 
 	// Delta is weight for trace activity that is a function of the minus-plus delta
-	// activity signal on the receiving MSN neuron, independent of PF modulation.
+	// activity signal on the receiving SPN neuron, independent of PF modulation.
 	// This should always be 1 except for testing disabling: adjust NonDelta
 	// relative to it, and the overall learning rate.
 	Delta float32 `default:"1"`
@@ -70,11 +70,25 @@ type VSMatrixPathParams struct {
 	// e.g., for testing cases that do not have GoalMaint.
 	RewActLearn slbool.Bool `default:"true"`
 
-	pad, pad1, pad2 float32
+	// Delta is weight for trace activity that is a function of the minus-plus delta
+	// activity signal on the receiving SPN neuron, independent of PF modulation.
+	// This should always be 1 except for testing disabling: adjust NonDelta
+	// relative to it, and the overall learning rate.
+	Delta float32 `default:"1"`
+
+	// Credit is proportion of trace activity driven by the credit assignment factor
+	// based on the PF modulatory inputs, synaptic activity (send * recv),
+	// and Patch DA, which indicates extent to which gating at this time is net
+	// associated with subsequent reward or not.
+	Credit float32 `default:"0.6"`
+
+	pad float32
 }
 
 func (tp *VSMatrixPathParams) Defaults() {
 	tp.RewActLearn.SetBool(true)
+	tp.Delta = 1
+	tp.Credit = 0.6
 }
 
 func (tp *VSMatrixPathParams) Update() {

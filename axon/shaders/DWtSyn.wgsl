@@ -1119,9 +1119,9 @@ fn PathParams_DWtSynVSMatrix(pt: PathParams, ctx: Context, syni: u32,si: u32,ri:
 	var rplus = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaP))];
 	var rminus = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaD))];
 	var sact = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(CaD))];
-	var dtr = ach * (pt.DSMatrix.Delta * sact * (rplus - rminus));
+	var dtr = ach * (pt.VSMatrix.Delta * sact * (rplus - rminus));
 	if (rminus > pt.Learn.DWt.LearnThr) { // key: prevents learning if < threshold
-		dtr += ach * (pt.DSMatrix.Credit * sact * rminus);
+		dtr += ach * (pt.VSMatrix.Credit * sact * rminus);
 	}
 	if (hasRew) {
 		var tr = SynapseTracesGet(Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
@@ -1602,9 +1602,9 @@ struct DSMatrixPathParams {
 }
 struct VSMatrixPathParams {
 	RewActLearn: i32,
+	Delta: f32,
+	Credit: f32,
 	pad: f32,
-	pad1: f32,
-	pad2: f32,
 }
 
 //////// import: "pool.go"

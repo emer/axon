@@ -307,9 +307,9 @@ func (pt *PathParams) DWtSynVSMatrix(ctx *Context, syni, si, ri, lpi, pi, di uin
 	rplus := Neurons.Value(int(ri), int(di), int(CaP))
 	rminus := Neurons.Value(int(ri), int(di), int(CaD))
 	sact := Neurons.Value(int(si), int(di), int(CaD))
-	dtr := ach * (pt.DSMatrix.Delta * sact * (rplus - rminus))
+	dtr := ach * (pt.VSMatrix.Delta * sact * (rplus - rminus))
 	if rminus > pt.Learn.DWt.LearnThr { // key: prevents learning if < threshold
-		dtr += ach * (pt.DSMatrix.Credit * sact * rminus)
+		dtr += ach * (pt.VSMatrix.Credit * sact * rminus)
 	}
 	if hasRew {
 		tr := SynapseTraces.Value(int(syni), int(di), int(Tr))

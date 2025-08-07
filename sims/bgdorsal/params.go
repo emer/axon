@@ -13,17 +13,16 @@ var LayerParams = axon.LayerSheets{
 	"Base": {
 		{Sel: "Layer", Doc: "clamp gain makes big diff on overall excitation, gating propensity",
 			Set: func(ly *axon.LayerParams) {
-				ly.Acts.Clamp.Ge = 1.0 // 1.5 is def, was 0.6 (too low)
-				ly.Acts.Noise.On.SetBool(true)
-				ly.Acts.Noise.Ge = 0.0001                    // 0.0001 > others; could just be noise ;)
-				ly.Acts.Noise.Gi = 0.0001                    // 0.0001 perhaps better than others
-				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // false >> true; orig = true
+				ly.Acts.Clamp.Ge = 1.0         // 1.5 is def, was 0.6 (too low)
+				ly.Acts.Noise.On.SetBool(true) // true >= false (minor)
+				ly.Acts.Noise.Ge = 0.0001      // 0.0001 > others; could just be noise ;)
+				ly.Acts.Noise.Gi = 0.0001      // 0.0001 perhaps better than others
 			}},
 		{Sel: ".PFCLayer", Doc: "pfc",
 			Set: func(ly *axon.LayerParams) {
-				ly.Learn.NeuroMod.DAMod = axon.NoDAMod       // NoDAMod > D1Mod
-				ly.Learn.NeuroMod.DAModGain = 0.005          // 0.005 > higher
-				ly.Learn.NeuroMod.DipGain = 0                // 0 > higher
+				// ly.Learn.NeuroMod.DAMod = axon.NoDAMod       // NoDAMod > D1Mod
+				// ly.Learn.NeuroMod.DAModGain = 0.005          // 0.005 > higher
+				// ly.Learn.NeuroMod.DipGain = 0                // 0 > higher
 				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // false >> true; orig = true
 
 				ly.Acts.Decay.Glong = 0                   // 0 ==? 0.1; > higher
@@ -34,8 +33,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.KNa.On.SetBool(true)
 				ly.Acts.KNa.Med.Max = 0.2 // 0.2 > 0.1 > 0.05
 				ly.Acts.KNa.Slow.Max = 0.2
-				ly.Acts.Mahp.Gk = 0.05  // 0.02 def; 0.05 might compensate for lack of KNa?
-				ly.Acts.Sahp.Gk = 0.05  // 0.05 def
+				ly.Acts.Mahp.Gk = 0.05  // 0.05
+				ly.Acts.Sahp.Gk = 0.05  // 0.05
 				ly.Acts.Sahp.CaTau = 10 // 10 (def) > 5?
 
 				// ly.Acts.NMDA.Tau = 100                       // 100 def >> 200
@@ -47,10 +46,11 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.NeuroMod.BurstGain = 0.1          // 0.1 > 0.2 still v53
 				ly.Learn.NeuroMod.DAModGain = 0            // 0 > higher?
 				ly.DSMatrix.PatchBurstGain = 1.0           // 1 > others
-				ly.DSMatrix.PatchDAModGain = 0.02          // .02 > .01 > .05 > 0 but 0 not that much worse.
-				ly.DSMatrix.PatchD1Range.Set(0.1, 0.3)     //
+				ly.DSMatrix.PatchDAModGain = 0.02          // .02 > .01 > .05 > 0; 0 not that bad
+				ly.DSMatrix.PatchD1Range.Set(0.1, 0.3)     // 0.3 > 0.35, .4
 				ly.DSMatrix.PatchD2Range.Set(0.05, 0.25)   // 0.05, 0.25 > 0.1, 0.3
 				ly.Learn.RLRate.On.SetBool(true)           // note: applied for tr update trials
+				ly.Learn.RLRate.SigmoidMin = 0.001         // 0.001 >= 0.01 -- minor
 				ly.Learn.TrgAvgAct.RescaleOn.SetBool(true) // true > false
 			}},
 		{Sel: ".DSPatchLayer", Doc: "all matrix",
@@ -60,11 +60,11 @@ var LayerParams = axon.LayerSheets{
 		{Sel: ".DSTNLayer", Doc: "all STN",
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Init.GeBase = 0.1
-				ly.Acts.Kir.Gk = 10             // 10 > 5  > 2 -- key for pause
-				ly.Acts.SKCa.Gk = 2             // 2 > 5 >> 1 (for Kir = 10)
-				ly.Acts.SKCa.CaRDecayTau = 150  // 150 > 180 > 200 > 130 >> 80 def -- key param!
+				ly.Acts.Kir.Gk = 10             // 10 >= 8 > 12 > 5  > 2 -- key for pause
+				ly.Acts.SKCa.Gk = 2             // 2 > 1.8 >> 2.5 >> 3 >> 1 (for Kir = 10)
+				ly.Acts.SKCa.CaRDecayTau = 150  // 150 >= 140 >= 160 > 180 > 200 > 130 >> 80 def -- key param!
 				ly.Inhib.Layer.On.SetBool(true) // actually needs this
-				ly.Inhib.Layer.Gi = 0.5
+				ly.Inhib.Layer.Gi = 0.5         // 0.5 > 0.4 >> 0.6
 				ly.Learn.NeuroMod.AChDisInhib = 0
 			}},
 		{Sel: "#M1VM", Doc: "",
@@ -73,31 +73,32 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".PTMaintLayer", Doc: "time integration params",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.Layer.Gi = 2.4           // 2.4 def > 1.4
+				ly.Inhib.Layer.Gi = 2.4           // 2.4 >= 2.2, 2.6
 				ly.Inhib.ActAvg.Nominal = 0.3     // 0.3 def -- key but wrong!
 				ly.Acts.Decay.OnRew.SetBool(true) // true def -- seems better?
 				ly.Acts.Dend.ModGain = 1.0        // 1.5 def
 				ly.Acts.Kir.Gk = 0                // no real diff here over range 0-10
-				ly.Acts.MaintNMDA.Ge = 0.007      // 0.007 default
+				ly.Acts.MaintNMDA.Ge = 0.007      // 0.007 >= 0.006 > 0.005 > 0.004 > 0.008
+				ly.Acts.MaintNMDA.Tau = 200       // 200 > 250, 180
 			}},
 		{Sel: ".PTPredLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.Layer.Gi = 0.8 // 0.8 def
-				ly.CT.GeGain = 0.05     // 0.05 def
-				ly.CT.DecayTau = 100    // was 100 -- 50 in orig -- OFCposPT ??
+				ly.Inhib.Layer.Gi = 0.8 // 0.8 > 0.9, 0.7
+				ly.CT.GeGain = 0.05     // 0.05 >= 0.07 > 0.03
+				ly.CT.DecayTau = 100    // 100 >= 120, 80
 			}},
 		{Sel: ".CTLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.Layer.Gi = 1.4 // 0.8 def
-				ly.CT.GeGain = 5        // 2 def
-				ly.CT.DecayTau = 100    // was 100 -- 50 in orig -- OFCposPT ??
+				ly.Inhib.Layer.Gi = 1.4 // 1.4 > 1.2 >= 1.6
+				ly.CT.GeGain = 5        // 5 > 3, 8
+				ly.CT.DecayTau = 100    // 100 > 120 >> 80
 			}},
 		{Sel: "#MotorBS", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.Layer.On.SetBool(true)
 				ly.Inhib.Pool.On.SetBool(false)
-				ly.Inhib.Layer.Gi = 0.2 // 0.2 def
-				ly.Acts.Clamp.Ge = 2    // 2 > 1.5, >> 1 -- absolutely critical given GPi inhib
+				ly.Inhib.Layer.Gi = 0.2 // 0.2 > 0.3 > 0.1
+				ly.Acts.Clamp.Ge = 2.0  // 2 > 2.5 > 2.2 > 1.5, >> 1 -- absolutely critical given GPi inhib
 				// ly.Learn.RLRate.Diff.SetBool(false) // true > false
 				// ly.Learn.RLRate.SigmoidLinear.SetBool(false) // false >> true; orig = true
 				// ly.Learn.RLRate.SigmoidMin = 0.05 // 0.05 def > 0.1 > 0.2 > 0.02
@@ -110,8 +111,8 @@ var LayerParams = axon.LayerSheets{
 		// 	}},
 		{Sel: "#DGPeAk", Doc: "arkypallidal",
 			Set: func(ly *axon.LayerParams) {
-				ly.Acts.Init.GeBase = 0.2 // 0.2 > 0.3, 0.1
-				ly.Acts.Init.GeVar = 0.1  // 0.1 == 0.2 > 0.05
+				ly.Acts.Init.GeBase = 0.2 // 0.2 >= 0.15 >> 0.25 0.3
+				ly.Acts.Init.GeVar = 0.1  // 0.1 > 0.15 > 0.2 > 0.05
 			}},
 	},
 	"NoiseOff": {

@@ -18,17 +18,35 @@ Once the dust settles, a summary of the biology and implementation in the model 
 
 # Results
 
-Key overall point about performance: it is a very "self organizing" kind of learning and thus susceptible to random effects. Must run large numbers of runs (now 50) and even then there is considerable variation in performance. For example, the original 2024-04-05 can fail 4/25 times vs. 1/25 with same random seed.
-
-As of 2024-02-29, the default parameters with 49 units (7x7) per layer result in:
-
-* 22/25 learn on SeqLen=4, NActions=5, which has 5^4 = 625 total space to be searched
-* 24/25 learn 10^3 = 1000 total space
-* 25/25 learn on SeqLen=3, NActions=5 (5^3 = 125) with 25 units, very quickly and reliably (most in 3-5 epochs; ~5 avg).
-
 The params have been relatively thoroughly "tweaked" at this point: see paramtweak.go for tweaking code.
 
 The learned weights to the BG clearly show that it is disinhibiting the appropriate action at each step in the sequence.
+
+
+## Combinatorics
+
+| Act ^ Len | N       | Notes          |
+|-----------|---------|----------------|
+| 10^3      |   1,000 | acts = harder  |
+| 6^4       |   1,296 | easy           |
+| 5^5       |   3,125 | easy, std test |
+| 6^5       |   7,776 | still quick    |
+| 7^5       |  16,807 | some fail      |
+| 8^5       |  32,768 | ?              |
+| 9^5       |  59,049 | ?              |
+| 10^5      | 100,000 | ?              |
+| 6^6       |  46,656 | ~50% learn     |
+| 7^6       | 117,649 | ?              |
+
+## Aug 6, 2025
+
+| Act ^ Len | Fail | Mean  | SDev | Min  | Q1  | Median | Q3   | Max   | Job no |
+|-----------|------|-------|------|------|-----|--------|------|-------|--------| 
+| 5^5       |    0 |  7.6  |  5.6 | 2    | 4   | 5      | 10   | 28    | 504    |
+| 6^5       |    0 | 13.8  | 13.6 | 3    | 5   | 8.5    | 15   | 59    | 510    |
+| 7^5       |    8 | 43.7  | 70   | 3    | 6   | 12.5   | 30.7 | 200   | 519    |
+| 10^3      |      |       |      |      |     |        |      |       |        |
+
 
 # TODO:
 
