@@ -1,0 +1,386 @@
+<svg
+  viewBox="0 0 0 0"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  xmlns="http://www.w3.org/2000/svg">
+  <g
+    id="group-0">
+    <g
+      id="group-0">
+      <rect
+        id="rect-0"
+        style="fill:#FAF8FD;"
+        x="0"
+        y="0"
+        width="1329"
+        height="1091" />
+      <g
+        id="group-1">
+        <text
+          id="text-0"
+          style="stroke:none;text-decoration:none;direction:ltr;select-color:#D8E2FF;y:65.203125;fill:#191B22;font-size:16.2px;highlight-color:#FFE17B;x:339.5;"
+          x="339.5"
+          y="65.203125">Patch DA over Training</text>
+      </g>
+      <g
+        id="group-2">
+        <text
+          id="text-0"
+          style="fill:#191B22;text-decoration:none;highlight-color:#FFE17B;y:1076.5156;stroke:none;font-size:16.2px;direction:ltr;select-color:#D8E2FF;x:692;"
+          x="692"
+          y="1076.5156">Epoch</text>
+      </g>
+      <g
+        id="group-3">
+        <text
+          id="text-0"
+          style="fill:#191B22;font-size:16.2px;text-decoration:none;highlight-color:#FFE17B;x:165;stroke:none;direction:ltr;select-color:#D8E2FF;y:1005.7656;"
+          x="165"
+          y="1005.7656">0.00</text>
+      </g>
+      <g
+        id="group-4">
+        <text
+          id="text-0"
+          style="font-size:16.2px;direction:ltr;highlight-color:#FFE17B;x:419.31818;stroke:none;fill:#191B22;text-decoration:none;select-color:#D8E2FF;y:1005.7656;"
+          x="419.31818"
+          y="1005.7656">2.50</text>
+      </g>
+      <g
+        id="group-5">
+        <text
+          id="text-0"
+          style="font-size:16.2px;select-color:#D8E2FF;y:1005.7656;stroke:none;text-decoration:none;direction:ltr;highlight-color:#FFE17B;x:673.63635;fill:#191B22;"
+          x="673.63635"
+          y="1005.7656">5.00</text>
+      </g>
+      <g
+        id="group-6">
+        <text
+          id="text-0"
+          style="fill:#191B22;select-color:#D8E2FF;highlight-color:#FFE17B;stroke:none;font-size:16.2px;text-decoration:none;direction:ltr;x:927.9545;y:1005.7656;"
+          x="927.9545"
+          y="1005.7656">7.50</text>
+      </g>
+      <g
+        id="group-7">
+        <text
+          id="text-0"
+          style="highlight-color:#FFE17B;x:1170.7727;stroke:none;font-size:16.2px;direction:ltr;select-color:#D8E2FF;y:1005.7656;fill:#191B22;text-decoration:none;"
+          x="1170.7727"
+          y="1005.7656">10.00</text>
+      </g>
+      <path
+        id="path-8"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M206 961V916" />
+      <path
+        id="path-9"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M460.3182 961V916" />
+      <path
+        id="path-10"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M714.6364 961V916" />
+      <path
+        id="path-11"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M968.9545 961V916" />
+      <path
+        id="path-12"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M1223.273 961V916" />
+      <path
+        id="path-13"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M256.8636 938.5V916" />
+      <path
+        id="path-14"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M307.7273 938.5V916" />
+      <path
+        id="path-15"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M358.5909 938.5V916" />
+      <path
+        id="path-16"
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        d="M409.4546 938.5V916" />
+      <path
+        id="path-17"
+        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        d="M511.1818 938.5V916" />
+      <path
+        id="path-18"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M562.0455 938.5V916" />
+      <path
+        id="path-19"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M612.9091 938.5V916" />
+      <path
+        id="path-20"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M663.7727 938.5V916" />
+      <path
+        id="path-21"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M765.5 938.5V916" />
+      <path
+        id="path-22"
+        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        d="M816.3636 938.5V916" />
+      <path
+        id="path-23"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M867.2272 938.5V916" />
+      <path
+        id="path-24"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M918.0909 938.5V916" />
+      <path
+        id="path-25"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M1019.818 938.5V916" />
+      <path
+        id="path-26"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M1070.682 938.5V916" />
+      <path
+        id="path-27"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M1121.545 938.5V916" />
+      <path
+        id="path-28"
+        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        d="M1172.409 938.5V916" />
+      <path
+        id="path-29"
+        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        d="M1274.136 938.5V916" />
+      <path
+        id="path-30"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M1325 938.5V916" />
+      <path
+        id="path-31"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M206 916H1325" />
+      <g
+        id="group-32">
+        <text
+          id="text-0"
+          style="text-decoration:none;direction:ltr;highlight-color:#FFE17B;x:0;y:728.0156;stroke:#191B22;stroke-width:1pt;fill:#191B22;select-color:#D8E2FF;font-size:16.2px;"
+          transform="matrix(-4.371139e-08,-1,1,-4.371139e-08,-673.5,673.5)"
+          x="0"
+          y="728.0156">Patch D1 Error</text>
+      </g>
+      <g
+        id="group-33">
+        <text
+          id="text-0"
+          style="stroke:#191B22;font-size:16.2px;highlight-color:#FFE17B;x:72;y:930.3281;stroke-width:1pt;fill:#191B22;text-decoration:none;direction:ltr;select-color:#D8E2FF;"
+          x="72"
+          y="930.3281">0.00</text>
+      </g>
+      <g
+        id="group-34">
+        <text
+          id="text-0"
+          style="highlight-color:#FFE17B;x:72;y:722.8281;stroke:#191B22;stroke-width:1pt;fill:#191B22;font-size:16.2px;text-decoration:none;select-color:#D8E2FF;direction:ltr;"
+          x="72"
+          y="722.8281">0.25</text>
+      </g>
+      <g
+        id="group-35">
+        <text
+          id="text-0"
+          style="fill:#191B22;select-color:#D8E2FF;x:72;y:515.3281;stroke:#191B22;stroke-width:1pt;font-size:16.2px;text-decoration:none;direction:ltr;highlight-color:#FFE17B;"
+          x="72"
+          y="515.3281">0.50</text>
+      </g>
+      <g
+        id="group-36">
+        <text
+          id="text-0"
+          style="select-color:#D8E2FF;stroke:#191B22;font-size:16.2px;direction:ltr;highlight-color:#FFE17B;x:72;y:307.82812;stroke-width:1pt;fill:#191B22;text-decoration:none;"
+          x="72"
+          y="307.82812">0.75</text>
+      </g>
+      <g
+        id="group-37">
+        <text
+          id="text-0"
+          style="x:72;y:100.328125;stroke:#191B22;stroke-width:1pt;fill:#191B22;direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;font-size:16.2px;text-decoration:none;"
+          x="72"
+          y="100.328125">1.00</text>
+      </g>
+      <path
+        id="path-38"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M157 914H202" />
+      <path
+        id="path-39"
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        d="M157 706.5H202" />
+      <path
+        id="path-40"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M157 499H202" />
+      <path
+        id="path-41"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M157 291.5H202" />
+      <path
+        id="path-42"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M157 84H202" />
+      <path
+        id="path-43"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M179.5 872.5H202" />
+      <path
+        id="path-44"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M179.5 831H202" />
+      <path
+        id="path-45"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M179.5 789.5H202" />
+      <path
+        id="path-46"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M179.5 748H202" />
+      <path
+        id="path-47"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M179.5 665H202" />
+      <path
+        id="path-48"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M179.5 623.5H202" />
+      <path
+        id="path-49"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M179.5 582H202" />
+      <path
+        id="path-50"
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        d="M179.5 540.5H202" />
+      <path
+        id="path-51"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M179.5 457.5H202" />
+      <path
+        id="path-52"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M179.5 416H202" />
+      <path
+        id="path-53"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M179.5 374.5H202" />
+      <path
+        id="path-54"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M179.5 333H202" />
+      <path
+        id="path-55"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M179.5 250H202" />
+      <path
+        id="path-56"
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        d="M179.5 208.5H202" />
+      <path
+        id="path-57"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M179.5 167H202" />
+      <path
+        id="path-58"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M179.5 125.5H202" />
+      <path
+        id="path-59"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M202 84V914" />
+      <g
+        id="group-60">
+        <path
+          id="path-0"
+          style="stroke:#0000FF;stroke-width:1pt;fill:none;"
+          d="M206 812.8438L307.7273 806.3594L409.4546 496.4062L511.1818 348.5625L612.9091 374.5L714.6364 333L816.3636 405.625L918.0909 386.1719L1019.818 395.25L1121.545 534.0156L1223.273 111.2344L1325 85.29688" />
+        <path
+          id="path-1"
+          style="fill:none;stroke:#0000FF;stroke-width:1pt;"
+          d="M206 812.8438L307.7273 806.3594L409.4546 496.4062L511.1818 348.5625L612.9091 374.5L714.6364 333L816.3636 405.625L918.0909 386.1719L1019.818 395.25L1121.545 534.0156L1223.273 111.2344L1325 85.29688" />
+        <path
+          id="path-2"
+          style="stroke:#00E563;stroke-width:1pt;fill:none;"
+          d="M206 537.7466L307.7273 467.3849L409.4546 375.8626L511.1818 270.1761L612.9091 257.5665L714.6364 248.6741L816.3636 234.4761L918.0909 229.9523L1019.818 226.0803L1121.545 232.1833L1223.273 188.6454L1325 175.9336" />
+        <path
+          id="path-3"
+          style="stroke-width:1pt;fill:none;stroke:#00E563;"
+          d="M206 537.7466L307.7273 467.3849L409.4546 375.8626L511.1818 270.1761L612.9091 257.5665L714.6364 248.6741L816.3636 234.4761L918.0909 229.9523L1019.818 226.0803L1121.545 232.1833L1223.273 188.6454L1325 175.9336" />
+        <path
+          id="path-4"
+          style="stroke:#FF0000;stroke-width:1pt;fill:none;"
+          d="M206 705.698L307.7273 699.4747L409.4546 667.3322L511.1818 608.1975L612.9091 605.7892L714.6364 599.9854L816.3636 589.8522L918.0909 581.2714L1019.818 575.7462L1121.545 611.6343L1223.273 626.3423L1325 613.3411" />
+        <path
+          id="path-5"
+          style="stroke:#FF0000;stroke-width:1pt;fill:none;"
+          d="M206 705.698L307.7273 699.4747L409.4546 667.3322L511.1818 608.1975L612.9091 605.7892L714.6364 599.9854L816.3636 589.8522L918.0909 581.2714L1019.818 575.7462L1121.545 611.6343L1223.273 626.3423L1325 613.3411" />
+        <rect
+          id="rect-6"
+          style="fill:#FAF9FEBF;"
+          x="812"
+          y="691"
+          width="515"
+          height="225" />
+        <g
+          id="group-7">
+          <path
+            id="path-0"
+            style="stroke:#0000FF;stroke-width:1pt;fill:none;"
+            d="M1215 728.5H1327" />
+        </g>
+        <g
+          id="group-8">
+          <text
+            id="text-0"
+            style="stroke:#0000FF;stroke-width:1pt;font-size:16.2px;text-decoration:none;direction:ltr;y:745.5156;fill:#191B22;select-color:#D8E2FF;highlight-color:#FFE17B;x:812;"
+            x="812"
+            y="745.5156">Reward</text>
+        </g>
+        <g
+          id="group-9">
+          <path
+            id="path-0"
+            style="stroke:#00E563;stroke-width:1pt;fill:none;"
+            d="M1215 803.5H1327" />
+        </g>
+        <g
+          id="group-10">
+          <text
+            id="text-0"
+            style="direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;x:812;stroke-width:1pt;fill:#191B22;y:820.5156;stroke:#00E563;font-size:16.2px;text-decoration:none;"
+            x="812"
+            y="820.5156">Patch D1 Correct</text>
+        </g>
+        <g
+          id="group-11">
+          <path
+            id="path-0"
+            style="stroke:#FF0000;stroke-width:1pt;fill:none;"
+            d="M1215 878.5H1327" />
+        </g>
+        <g
+          id="group-12">
+          <text
+            id="text-0"
+            style="stroke:#FF0000;stroke-width:1pt;fill:#191B22;text-decoration:none;select-color:#D8E2FF;x:812;font-size:16.2px;direction:ltr;highlight-color:#FFE17B;y:895.5156;"
+            x="812"
+            y="895.5156">Patch D1 Error</text>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>
