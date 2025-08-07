@@ -34,8 +34,14 @@ type EnvConfig struct {
 // ParamConfig has config parameters related to sim params.
 type ParamConfig struct {
 
-	// NUnits is the number of units per X,Y dim, for cortex and BG.
+	// NActionPools is the number of pools per action (Y axis of pools)
+	NActionPools int `default:"1"`
+
+	// NUnits is the number of units per X,Y dim, for BG.
 	NUnits int `default:"6"`
+
+	// NCortexUnits is the number of units per X,Y dim, for cortex.
+	NCortexUnits int `default:"6"`
 
 	// Script is an interpreted script that is run to set parameters in Layer and Path
 	// sheets, by default using the "Script" set name.

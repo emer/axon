@@ -211,16 +211,18 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	nu := ss.Config.Params.NUnits
 	nuPer := ev.NUnitsPer
 	nAct := ev.NActions
+	nActPool := ss.Config.Params.NActionPools
 	nSeq := ev.SeqLen
 	maxSeqAct := max(nAct, nSeq) // layer size
 
 	nuX := nu
 	nuY := nu
-	nuCtxY := nu
-	nuCtxX := nu
+	nuCtxY := ss.Config.Params.NCortexUnits
+	nuCtxX := ss.Config.Params.NCortexUnits
 	space := float32(2)
 
 	p1to1 := paths.NewPoolOneToOne()
+	_ = p1to1
 	one2one := paths.NewOneToOne()
 	_ = one2one
 	full := paths.NewFull()
@@ -228,8 +230,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mtxRandPath := paths.NewUniformRand()
 	mtxRandPath.PCon = 0.5
 	_ = mtxRandPath
+	actPath := paths.NewPoolRect()
+	actPath.Size.Set(1, nActPool)
+	actPath.AutoScale = true
+	motorPFPath := paths.NewRect() // does wrap
+	motorPFPath.Size.Set(1, 1)
 
-	matrixGo, matrixNo, patchD1, patchD2, gpePr, gpeAk, stn, gpi, pf := net.AddDorsalBG("", 1, nAct, nuY, nuX, nuY, nuX, space)
+	matrixGo, matrixNo, patchD1, patchD2, gpePr, gpeAk, stn, gpi, pf := net.AddDorsalBG("", nActPool, nAct, nuY, nuX, nuY, nuX, space)
 	_, _, _, _ = patchD1, patchD2, gpePr, gpeAk
 
 	snc := net.AddLayer2D("SNc", axon.InputLayer, 1, 1)
@@ -241,7 +248,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	targ := net.AddLayer2D("Target", axon.InputLayer, nuPer, nAct) // Target: just for vis
 
 	motor := net.AddLayer4D("MotorBS", axon.TargetLayer, 1, nAct, nuPer, 1)
-	pf.Shape.CopyFrom(&motor.Shape)
+	pf.Shape.SetShapeSizes(nActPool, nAct, nuPer, 1)
 
 	vl := net.AddPulvLayer4D("VL", 1, nAct, nuPer, 1) // VL predicts brainstem Action
 	vl.SetBuildConfig("DriveLayName", motor.Name)
@@ -264,12 +271,12 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// these pathways are *essential* -- must get current state here
 	net.ConnectLayers(m1, vl, full, axon.ForwardPath).AddClass("VLM1")
 
-	net.ConnectLayers(gpi, motor, p1to1, axon.InhibPath).AddClass("FmGPI")
+	net.ConnectLayers(gpi, motor, actPath, axon.InhibPath).AddClass("FmGPI")
 	net.ConnectLayers(m1PT, motor, full, axon.ForwardPath).AddClass("M1ToMotorBS ToMotor")
 	// net.ConnectLayers(m1PTp, motor, full, axon.ForwardPath).AddClass("M1ToMotorBS")
 	net.ConnectLayers(m1, motor, full, axon.ForwardPath).AddClass("M1ToMotorBS ToMotor")
 
-	net.ConnectLayers(motor, pf, one2one, axon.ForwardPath)
+	net.ConnectLayers(motor, pf, motorPFPath, axon.ForwardPath)
 
 	net.ConnectLayers(state, stn, full, axon.ForwardPath).AddClass("ToDSTN FmState")
 	net.ConnectLayers(state, m1, full, axon.ForwardPath).AddClass("ToM1 FmState")
