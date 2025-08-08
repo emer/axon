@@ -60,11 +60,13 @@ var LayerParams = axon.LayerSheets{
 		{Sel: ".DSTNLayer", Doc: "all STN",
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Init.GeBase = 0.1
-				ly.Acts.Kir.Gk = 10             // 10 >= 8 > 12 > 5  > 2 -- key for pause
-				ly.Acts.SKCa.Gk = 2             // 2 > 1.8 >> 2.5 >> 3 >> 1 (for Kir = 10)
-				ly.Acts.SKCa.CaRDecayTau = 150  // 150 >= 140 >= 160 > 180 > 200 > 130 >> 80 def -- key param!
-				ly.Inhib.Layer.On.SetBool(true) // actually needs this
-				ly.Inhib.Layer.Gi = 0.5         // 0.5 > 0.4 >> 0.6
+				ly.Acts.Kir.Gk = 10            // 10 >= 8 > 12 > 5  > 2 -- key for pause
+				ly.Acts.SKCa.Gk = 2            // 2 > 1.8 >> 2.5 >> 3 >> 1 (for Kir = 10)
+				ly.Acts.SKCa.CaRDecayTau = 150 // 150 >= 140 >= 160 > 180 > 200 > 130 >> 80 def -- key param!
+				// ly.Inhib.Layer.On.SetBool(true) // actually needs this
+				// ly.Inhib.Layer.Gi = 0.5         // 0.5 > 0.4 >> 0.6
+				ly.Inhib.Pool.On.SetBool(true) // actually needs this
+				ly.Inhib.Pool.Gi = 0.5         // 0.5 > 0.4 >> 0.6
 				ly.Learn.NeuroMod.AChDisInhib = 0
 			}},
 		{Sel: "#M1VM", Doc: "",

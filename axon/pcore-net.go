@@ -88,14 +88,18 @@ func (net *Network) AddVentralBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX
 // All GP / STN layers have gpNeur neurons.
 // Appropriate PoolOneToOne connections are made between layers, using standard styles.
 // space is the spacing between layers (2 typical)
-func (net *Network) AddDorsalBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (matrixGo, matrixNo, patchD1, patchD2, gpePr, gpeAk, stn, gpi, pf *Layer) {
+func (net *Network) AddDorsalBG(prefix string, poolSTN bool, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (matrixGo, matrixNo, patchD1, patchD2, gpePr, gpeAk, stn, gpi, pf *Layer) {
 	bglay := "DBG"
 	gpi = net.AddGPiLayer4D(prefix+"DGPi", bglay, nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpePr = net.AddGPeLayer4D(prefix+"DGPePr", bglay, nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpePr.SetBuildConfig("GPType", "GPePr")
 	gpeAk = net.AddGPeLayer4D(prefix+"DGPeAk", bglay, nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpeAk.SetBuildConfig("GPType", "GPeAk")
-	stn = net.AddSTNLayer2D(prefix+"DSTN", "DSTNLayer", gpNeurY, gpNeurX)
+	if poolSTN {
+		stn = net.AddSTNLayer4D(prefix+"DSTN", "DSTNLayer", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
+	} else {
+		stn = net.AddSTNLayer2D(prefix+"DSTN", "DSTNLayer", gpNeurY, gpNeurX)
+	}
 	matrixGo = net.AddDMatrixLayer(prefix+"DMatrixGo", nPoolsY, nPoolsX, nNeurY, nNeurX, D1Mod)
 	matrixNo = net.AddDMatrixLayer(prefix+"DMatrixNo", nPoolsY, nPoolsX, nNeurY, nNeurX, D2Mod)
 	patchD1, patchD2 = net.AddDSPatchLayers(prefix, nPoolsY, nPoolsX, nNeurY, nNeurX, space)
@@ -123,6 +127,12 @@ func (net *Network) AddDorsalBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX,
 
 	p1to1 := paths.NewPoolOneToOne()
 	full := paths.NewFull()
+	var stnPath paths.Pattern
+	if poolSTN {
+		stnPath = p1to1
+	} else {
+		stnPath = full
+	}
 
 	net.ConnectLayers(matrixNo, gpePr, p1to1, InhibPath)
 	pt := net.ConnectLayers(matrixNo, matrixGo, p1to1, InhibPath)
@@ -134,7 +144,7 @@ func (net *Network) AddDorsalBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX,
 	bgclass := "DBGInhib"
 	net.ConnectLayers(gpePr, gpePr, full, InhibPath).AddClass(bgclass)
 	net.ConnectLayers(gpePr, gpeAk, p1to1, InhibPath).AddClass(bgclass)
-	net.ConnectLayers(gpePr, stn, full, InhibPath).AddClass(bgclass)
+	net.ConnectLayers(gpePr, stn, stnPath, InhibPath).AddClass(bgclass)
 	net.ConnectLayers(gpePr, gpi, p1to1, InhibPath).AddClass(bgclass)
 	net.ConnectLayers(matrixGo, gpi, p1to1, InhibPath).AddClass(bgclass)
 	net.ConnectLayers(matrixGo, gpeAk, p1to1, InhibPath).AddClass(bgclass)
@@ -145,9 +155,9 @@ func (net *Network) AddDorsalBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX,
 	net.ConnectLayers(gpi, pf, p1to1, InhibPath).AddClass(bgclass)
 
 	stnclass := "DSTNExcite"
-	net.ConnectLayers(stn, gpePr, full, ForwardPath).AddClass(stnclass)
-	net.ConnectLayers(stn, gpeAk, full, ForwardPath).AddClass(stnclass)
-	net.ConnectLayers(stn, gpi, full, ForwardPath).AddClass(stnclass)
+	net.ConnectLayers(stn, gpePr, stnPath, ForwardPath).AddClass(stnclass)
+	net.ConnectLayers(stn, gpeAk, stnPath, ForwardPath).AddClass(stnclass)
+	net.ConnectLayers(stn, gpi, stnPath, ForwardPath).AddClass(stnclass)
 
 	// direct pf better..
 	pfm := func(pt *PathParams) {

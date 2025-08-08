@@ -236,7 +236,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	motorPFPath := paths.NewRect() // does wrap
 	motorPFPath.Size.Set(1, 1)
 
-	matrixGo, matrixNo, patchD1, patchD2, gpePr, gpeAk, stn, gpi, pf := net.AddDorsalBG("", nActPool, nAct, nuY, nuX, nuY, nuX, space)
+	matrixGo, matrixNo, patchD1, patchD2, gpePr, gpeAk, stn, gpi, pf := net.AddDorsalBG("", ss.Config.Params.STNPools, nActPool, nAct, nuY, nuX, nuY, nuX, space)
 	_, _, _, _ = patchD1, patchD2, gpePr, gpeAk
 
 	snc := net.AddLayer2D("SNc", axon.InputLayer, 1, 1)
