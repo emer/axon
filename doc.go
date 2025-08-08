@@ -17,7 +17,7 @@ in the context of noisy spiking activation. The spiking function of the
 axon is what was previously missing from Leabra.
 
 Axon is used to develop large-scale systems-neuroscience models
-of the brain, and full documentation is available at CompCogNeuro.org,
+of the brain, and full documentation is available at compcogneuro.org,
 including running examples of simulations in this package, and the
 Rubicon model of goal-driven, motivated cognition.
 */

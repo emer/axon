@@ -2,7 +2,7 @@
 
 This is a test of the PCore model of basal ganglia (BG) function, in the **dorsolateral striatum** (DLS) and associated BG circuits. See also the [bgventral](../bgventral) for the simpler ventromedial striatum (VMS) model.
 
-Full documentation is at [CompCogNeuro](https://CompCogNeuro.org/bg-dorsal-simulation) and the [basal ganglia](https://CompCogNeuro.org/basal-ganglia) page there. 
+Full documentation is at [CompCogNeuro](https://compcogneuro.org/bg-dorsal-simulation) and the [basal ganglia](https://compcogneuro.org/basal-ganglia) page there. 
 
 # Results
 
