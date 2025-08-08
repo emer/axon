@@ -1,6 +1,6 @@
 # Introduction
 
-This is adapted from [CCN Sims](https://github.com/CompCogNeuro/sims).
+This is adapted from [CCN Sims](https://github.com/compcogneuro/sims).
 
 Note: see `config_example.toml` for an example config file -- copy to `config.toml` to use.
 
@@ -80,7 +80,7 @@ A more intuitive (but somewhat inaccurate in the details) way of understanding t
 
 # Roles of Feedforward and Feedback Inhibition
 
-Next we assess the importance and properties of the feedforward versus feedback inhibitory pathways by manipulating their relative strengths. The control panel has two parameters that determine the relative contribution of the feedforward and feedback inhibitory pathways: `FFinhibWtScale` applies to the feedforward weights from the input to the inhibitory units, and `FBinhibWtScale` applies to the feedback weights from the hidden layer to the inhibitory units. These parameters (specifically the .rel components of them) uniformly scale the strengths of an entire pathway of connections from one layer to another, and are the arbitrary `WtScale.Rel` (r_k) relative scaling parameters described in *Net Input Detail* Appendix in [CCN Textbook](https://github.com/CompCogNeuro/book).
+Next we assess the importance and properties of the feedforward versus feedback inhibitory pathways by manipulating their relative strengths. The control panel has two parameters that determine the relative contribution of the feedforward and feedback inhibitory pathways: `FFinhibWtScale` applies to the feedforward weights from the input to the inhibitory units, and `FBinhibWtScale` applies to the feedback weights from the hidden layer to the inhibitory units. These parameters (specifically the .rel components of them) uniformly scale the strengths of an entire pathway of connections from one layer to another, and are the arbitrary `WtScale.Rel` (r_k) relative scaling parameters described in *Net Input Detail* Appendix in [CCN Textbook](https://github.com/compcogneuro/book).
 
 * Set `FFInhibWtScale` to 0, effectively eliminating the feedforward excitatory inputs to the inhibitory neurons from the input layer (i.e., eliminating feedforward inhibition). 
 
@@ -94,7 +94,7 @@ These exercises should help you to see that a combination of both feedforward an
 
 ## Time Constants and Feedforward Anticipation
 
-We just saw that feedforward inhibition is important for anticipating and offsetting the excitation coming from the inputs to the hidden layer. In addition to this feedforward inhibitory connectivity, the anticipatory effect depends on a difference between excitatory and inhibitory neurons in their rate of updating, which is controlled by the `Dt.GTau` parameters `HiddenGTau` and `InhibGTau` in the control panel (see [CCN Textbook](https://github.com/CompCogNeuro/book), Chapter 2). As you can see, the excitatory neurons are updated at tau of 40 (slower), while the inhibitory are at 20 (faster) -- these numbers correspond roughly to how many cycles it takes for a substantial amount of change happen. The faster updating of the inhibitory neurons allows them to more quickly become activated by the feedforward input, and send anticipatory inhibition to the excitatory hidden units before they actually get activated.
+We just saw that feedforward inhibition is important for anticipating and offsetting the excitation coming from the inputs to the hidden layer. In addition to this feedforward inhibitory connectivity, the anticipatory effect depends on a difference between excitatory and inhibitory neurons in their rate of updating, which is controlled by the `Dt.GTau` parameters `HiddenGTau` and `InhibGTau` in the control panel (see [CCN Textbook](https://github.com/compcogneuro/book), Chapter 2). As you can see, the excitatory neurons are updated at tau of 40 (slower), while the inhibitory are at 20 (faster) -- these numbers correspond roughly to how many cycles it takes for a substantial amount of change happen. The faster updating of the inhibitory neurons allows them to more quickly become activated by the feedforward input, and send anticipatory inhibition to the excitatory hidden units before they actually get activated.
 
 * To verify this, click on Defaults, set `InhibGTau` to 40 (instead of the 20 default), and then Run. 
 
@@ -148,7 +148,7 @@ This reduces the amount of inhibition on the excitatory neurons. Note that this 
 
 # Exploration of FFFB Inhibition
 
-You should run this section after having read the *FFFB Inhibition Function* section of the [CCN Textbook](https://github.com/CompCogNeuro/book).
+You should run this section after having read the *FFFB Inhibition Function* section of the [CCN Textbook](https://github.com/compcogneuro/book).
 
 * Reset the parameters to their default values using the `Defaults` button, click the `BidirNet` on to use that, and then Test to get the initial state of the network. This should reproduce the standard activation graph for the case with actual inhibitory neurons.
 

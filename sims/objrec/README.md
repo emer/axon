@@ -1,6 +1,6 @@
 # Objrec
 
-This network is the axon version of the CCN sims [objrec](https://github.com/CompCogNeuro/sims/tree/main/ch6/objrec) model.
+This network is the axon version of the CCN sims [objrec](https://github.com/compcogneuro/sims/tree/main/ch6/objrec) model.
 
 # Parameter notes
 
