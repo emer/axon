@@ -218,8 +218,8 @@ func (ly *LayerParams) PTPredDefaults() {
 	ly.Acts.Decay.Glong = 0.6
 	ly.Acts.Decay.AHP = 0
 	ly.Acts.Decay.OnRew.SetBool(true)
-	ly.Acts.Sahp.Gk = 0.1      // more
-	ly.Acts.KNa.Slow.Max = 0.2 // todo: more?
+	ly.Acts.Sahp.Gk = 0.1     // more
+	ly.Acts.KNa.Slow.Gk = 0.2 // todo: more?
 	ly.Inhib.Layer.Gi = 0.8
 	ly.Inhib.Pool.Gi = 0.8
 	ly.CT.GeGain = 0.05

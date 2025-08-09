@@ -53,7 +53,7 @@ func (pl *MahpPlot) Config(parent *tensorfs.Node, tabs lab.Tabber) {
 	pl.Tabs = tabs
 
 	pl.Mahp.Defaults()
-	pl.Mahp.Gk = 1
+	pl.Mahp.Gk = 0.1
 	pl.Vstart = -100
 	pl.Vend = 100
 	pl.Vstep = 1

@@ -234,9 +234,9 @@ struct KirParams {
 //////// import: "chans-kna.go"
 struct KNaParams {
 	On: i32,
+	Gk: f32,
 	Rise: f32,
 	Decay: f32,
-	Max: f32,
 	DtRise: f32,
 	DtDecay: f32,
 	pad: i32,

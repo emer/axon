@@ -935,7 +935,7 @@ func (ac *ActParams) Defaults() {
 	ac.Noise.Defaults()
 	ac.VmRange.Set(-100, 0)
 	ac.Mahp.Defaults()
-	ac.Mahp.Gk = 0.02
+	ac.Mahp.Gk = 0.05
 	ac.Sahp.Defaults()
 	ac.Sahp.Gk = 0.05
 	ac.Sahp.CaTau = 5
@@ -1305,7 +1305,7 @@ func (ac *ActParams) GkFromVm(ctx *Context, ni, di uint32) {
 // KNaNewState does TrialSlow version of KNa during NewState if option is set
 func (ac *ActParams) KNaNewState(ctx *Context, ni, di uint32) {
 	if ac.KNa.On.IsTrue() && ac.KNa.TrialSlow.IsTrue() {
-		Neurons.SetAdd(ac.KNa.Slow.Max*Neurons.Value(int(ni), int(di), int(CaDPrev)), int(ni), int(di), int(GknaSlow))
+		Neurons.SetAdd(ac.KNa.Slow.Gk*Neurons.Value(int(ni), int(di), int(CaDPrev)), int(ni), int(di), int(GknaSlow))
 	}
 }
 

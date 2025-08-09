@@ -424,7 +424,7 @@ func (nt *Network) AddSCLayer2D(prefix string, nNeurY, nNeurX int) *Layer {
 		ly.Acts.Decay.LearnCa = 1.0 // uses CaD as a readout -- clear
 		ly.Acts.Decay.OnRew.SetBool(true)
 		ly.Acts.KNa.TrialSlow.SetBool(true)
-		ly.Acts.KNa.Slow.Max = 0.05 // 0.1 enough to fully inhibit over several trials
+		ly.Acts.KNa.Slow.Gk = 0.05 // 0.1 enough to fully inhibit over several trials
 	})
 	sc.AddClass("SC")
 	return sc
@@ -448,7 +448,7 @@ func (nt *Network) AddSCLayer4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX 
 		ly.Acts.Decay.LearnCa = 1.0 // uses CaD as a readout -- clear
 		ly.Acts.Decay.OnRew.SetBool(true)
 		ly.Acts.KNa.TrialSlow.SetBool(true)
-		ly.Acts.KNa.Slow.Max = 1
+		ly.Acts.KNa.Slow.Gk = 1
 	})
 	sc.AddClass("SC")
 	return sc

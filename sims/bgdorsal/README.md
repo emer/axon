@@ -37,8 +37,6 @@ The learned weights to the BG clearly show that it is disinhibiting the appropri
 
 # TODO:
 
-* STN pool-based instead of shared full
-
 * Set number of cycles per trial in terms of BG motor gating timing: constant offset from onset of VM gating timing, with a cutoff for "nothing happening" trials.
     * Attempted an impl but is difficult with CaBins -- tried shifting bins but awk..
 

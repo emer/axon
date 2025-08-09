@@ -30,7 +30,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.NMDA.MgC = 1.2    // 1.2 > 1.4 here
 				ly.Acts.NMDA.Voff = 0     // 5 == 0 for trace
 				ly.Acts.NMDA.Tau = 100    // 100 def -- 50 is sig worse
-				ly.Acts.Mahp.Gk = 0.02    // 0.05 works..
+				ly.Acts.Mahp.Gk = 0.05    // 0.05 works..
 				ly.Acts.Sahp.Gk = 0.05    //
 				ly.Acts.Sahp.Off = 0.8    //
 				ly.Acts.Sahp.Slope = 0.02 //

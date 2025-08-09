@@ -17,6 +17,10 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Noise.On.SetBool(true) // true >= false (minor)
 				ly.Acts.Noise.Ge = 0.0001      // 0.0001 > others; could just be noise ;)
 				ly.Acts.Noise.Gi = 0.0001      // 0.0001 perhaps better than others
+				ly.Acts.KNa.Med.Gk = 0.1       // 0.2 > 0.1 > 0.05
+				ly.Acts.KNa.Slow.Gk = 0.1
+				ly.Acts.Mahp.Gk = 0.05 // 0.05
+				ly.Acts.Sahp.Gk = 0.05 // 0.05
 			}},
 		{Sel: ".PFCLayer", Doc: "pfc",
 			Set: func(ly *axon.LayerParams) {
@@ -31,8 +35,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.CaLearn.ETraceScale = 0.02       // 0 == 0.02 >= 0.05 > 0.1 -- todo..
 
 				ly.Acts.KNa.On.SetBool(true)
-				ly.Acts.KNa.Med.Max = 0.2 // 0.2 > 0.1 > 0.05
-				ly.Acts.KNa.Slow.Max = 0.2
+				ly.Acts.KNa.Med.Gk = 0.2 // 0.2 > 0.1 > 0.05
+				ly.Acts.KNa.Slow.Gk = 0.2
 				ly.Acts.Mahp.Gk = 0.05  // 0.05
 				ly.Acts.Sahp.Gk = 0.05  // 0.05
 				ly.Acts.Sahp.CaTau = 10 // 10 (def) > 5?
@@ -60,13 +64,13 @@ var LayerParams = axon.LayerSheets{
 		{Sel: ".DSTNLayer", Doc: "all STN",
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Init.GeBase = 0.1
-				ly.Acts.Kir.Gk = 10            // 10 >= 8 > 12 > 5  > 2 -- key for pause
-				ly.Acts.SKCa.Gk = 2            // 2 > 1.8 >> 2.5 >> 3 >> 1 (for Kir = 10)
-				ly.Acts.SKCa.CaRDecayTau = 150 // 150 >= 140 >= 160 > 180 > 200 > 130 >> 80 def -- key param!
-				// ly.Inhib.Layer.On.SetBool(true) // actually needs this
-				// ly.Inhib.Layer.Gi = 0.5         // 0.5 > 0.4 >> 0.6
-				ly.Inhib.Pool.On.SetBool(true) // actually needs this
-				ly.Inhib.Pool.Gi = 0.5         // 0.5 > 0.4 >> 0.6
+				ly.Acts.Kir.Gk = 10             // 10 >= 8 > 12 > 5  > 2 -- key for pause
+				ly.Acts.SKCa.Gk = 2             // 2 > 1.8 >> 2.5 >> 3 >> 1 (for Kir = 10)
+				ly.Acts.SKCa.CaRDecayTau = 150  // 150 >= 140 >= 160 > 180 > 200 > 130 >> 80 def -- key param!
+				ly.Inhib.Layer.On.SetBool(true) // actually needs this
+				ly.Inhib.Layer.Gi = 0.5         // 0.5 > 0.4 >> 0.6
+				ly.Inhib.Pool.On.SetBool(true)  // actually needs this
+				ly.Inhib.Pool.Gi = 0.5          // 0.5 > 0.4 >> 0.6
 				ly.Learn.NeuroMod.AChDisInhib = 0
 			}},
 		{Sel: "#M1VM", Doc: "",

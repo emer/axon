@@ -38,8 +38,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Sahp.Gk = 0.1        // 0.1 > 0.05 def
 				ly.Acts.Sahp.CaTau = 10      // 10 (def) > 5?
 				ly.Acts.KNa.On.SetBool(true) // false > true
-				ly.Acts.KNa.Med.Max = 0.05   // 0.05 > 0.2 def
-				ly.Acts.KNa.Slow.Max = 0.05
+				ly.Acts.KNa.Med.Gk = 0.05    // 0.05 > 0.2 def
+				ly.Acts.KNa.Slow.Gk = 0.05
 
 				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // false > true
 				ly.Learn.CaLearn.Dt.MTau = 2                 // 2 > 5 actually

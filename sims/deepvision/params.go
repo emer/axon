@@ -43,13 +43,13 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.VGCC.Ca = 25   // 25 / 10tau same as SpkVGCC
 
 				ly.Acts.Mahp.Gk = 0.05       // 0.05 > lower, higher; but still needs kna
-				ly.Acts.Sahp.Gk = 0.1        // was 0.1, 0.05 def
+				ly.Acts.Sahp.Gk = 0.05       // was 0.1, 0.05 def
 				ly.Acts.Sahp.Off = 0.8       //
 				ly.Acts.Sahp.Slope = 0.02    //
 				ly.Acts.Sahp.CaTau = 5       // 5 ok -- not tested
 				ly.Acts.KNa.On.SetBool(true) // true, .05 > false
-				ly.Acts.KNa.Med.Max = 0.05   // 0.1 > 0.05 -- 0.05 blows up in lvis
-				ly.Acts.KNa.Slow.Max = 0.05
+				ly.Acts.KNa.Med.Gk = 0.1     // 0.1 > 0.05 -- 0.05 blows up in lvis
+				ly.Acts.KNa.Slow.Gk = 0.1
 
 				ly.Learn.CaLearn.Dt.MTau = 2 // 2 == 5?
 

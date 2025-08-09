@@ -18,16 +18,16 @@ type KNaParams struct {
 	// On enables this component of KNa adaptation.
 	On slbool.Bool
 
+	// Gk is the maximum potential conductance contribution to Gk(t)
+	// (which is then multiplied by Gbar.K that provides pA unit scaling).
+	Gk float32 `default:"0.1"`
+
 	// Rise is the time constant in ms for increase in conductance based on Na
 	// concentration due to spiking.
 	Rise float32
 
 	// Decay is the time constant in ms for decay of conductance.
 	Decay float32
-
-	// Max is the maximum potential conductance contribution to Gk(t)
-	// (which is then multiplied by Gbar.K that provides pA unit scaling).
-	Max float32
 
 	// Dt = 1/Tau rate constant.
 	DtRise float32 `display:"-"`
@@ -42,7 +42,7 @@ func (ka *KNaParams) Defaults() {
 	ka.On.SetBool(true)
 	ka.Rise = 50
 	ka.Decay = 100
-	ka.Max = 0.2
+	ka.Gk = 0.1
 	ka.Update()
 }
 
@@ -64,7 +64,7 @@ func (ka *KNaParams) ShouldDisplay(field string) bool {
 func (ka *KNaParams) GcFromSpike(gKNa *float32, spike bool) {
 	if ka.On.IsTrue() {
 		if spike {
-			*gKNa += ka.DtRise * (ka.Max - *gKNa)
+			*gKNa += ka.DtRise * (ka.Gk - *gKNa)
 		} else {
 			*gKNa -= ka.DtDecay * *gKNa
 		}
@@ -82,7 +82,7 @@ type KNaMedSlow struct {
 	On slbool.Bool
 
 	// TrialSlow engages an optional version of Slow that discretely turns on at
-	// the start of new trial (NewState): nrn.GknaSlow += Slow.Max * nrn.CaDPrev.
+	// the start of new trial (NewState): nrn.GknaSlow += Slow.Gk * nrn.CaDPrev.
 	// This achieves a strong form of adaptation.
 	TrialSlow slbool.Bool
 
@@ -100,10 +100,10 @@ func (ka *KNaMedSlow) Defaults() {
 	ka.Slow.Defaults()
 	ka.Med.Rise = 50
 	ka.Med.Decay = 200
-	ka.Med.Max = 0.2
+	ka.Med.Gk = 0.1
 	ka.Slow.Rise = 1000
 	ka.Slow.Decay = 1000
-	ka.Slow.Max = 0.2
+	ka.Slow.Gk = 0.1
 	ka.Update()
 }
 

@@ -65,12 +65,7 @@ var LayerParams = axon.LayerSheets{
 // PathParams sets the minimal non-default params.
 // Base is always applied, and others can be optionally selected to apply on top of that.
 var PathParams = axon.PathSheets{
-	"Base": {
-		{Sel: "Path", Doc: "no learning",
-			Set: func(pt *axon.PathParams) {
-				pt.Learn.Learn.SetBool(false)
-			}},
-	},
+	"Base": {},
 }
 
 // Sim encapsulates the entire simulation model, and we define all the

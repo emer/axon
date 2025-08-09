@@ -79,7 +79,7 @@ var LayerParams = axon.LayerSheets{
 		// 	}},
 		{Sel: "#SC", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Acts.KNa.Slow.Max = 0.5 // .5 needed to shut off
+				ly.Acts.KNa.Slow.Gk = 0.5 // .5 needed to shut off
 			}},
 		{Sel: "#CostP", Doc: "",
 			Set: func(ly *axon.LayerParams) {

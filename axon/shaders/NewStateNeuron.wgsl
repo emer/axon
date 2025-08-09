@@ -292,7 +292,7 @@ fn ActParams_DecayState(ac: ActParams, ctx: Context, ni: u32,di: u32, decay: f32
 }
 fn ActParams_KNaNewState(ac: ActParams, ctx: Context, ni: u32,di: u32) {
 	if (ac.KNa.On == 1 && ac.KNa.TrialSlow == 1) {
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GknaSlow))] += ac.KNa.Slow.Max * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaDPrev))];
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GknaSlow))] += ac.KNa.Slow.Gk * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaDPrev))];
 	}
 }
 
@@ -347,9 +347,9 @@ struct KirParams {
 //////// import: "chans-kna.go"
 struct KNaParams {
 	On: i32,
+	Gk: f32,
 	Rise: f32,
 	Decay: f32,
-	Max: f32,
 	DtRise: f32,
 	DtDecay: f32,
 	pad: i32,

@@ -35,7 +35,7 @@ type EnvConfig struct {
 type ParamConfig struct {
 
 	// STNPools makes separate pools for STN (else one layer).
-	STNPools bool
+	STNPools bool `default:"false"` // not better, maybe bit worse
 
 	// NActionPools is the number of pools per action (Y axis of pools)
 	NActionPools int `default:"1"`
