@@ -20,7 +20,7 @@ type MahpParams struct {
 
 	// Gk is the strength of mAHP conductance as contribution to Gk(t) factor
 	// (which is then multiplied by Gbar.K that provides pA unit scaling).
-	Gk float32 `default:"0.02"`
+	Gk float32 `default:"0.05"`
 
 	// Off is the voltage offset (threshold) in biological units for infinite time
 	// N gating function: where the gate is at 50% strength.
@@ -46,7 +46,7 @@ type MahpParams struct {
 
 // Defaults sets the parameters
 func (mp *MahpParams) Defaults() {
-	mp.Gk = 0.02
+	mp.Gk = 0.05
 	mp.Off = -30
 	mp.Slope = 9
 	mp.TauMax = 1000

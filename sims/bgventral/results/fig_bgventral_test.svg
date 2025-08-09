@@ -17,7 +17,7 @@
         id="group-1">
         <text
           id="text-0"
-          style="stroke:none;font-size:16.2px;y:38.484375;select-color:#D8E2FF;highlight-color:#FFE17B;x:352;fill:#191B22;text-decoration:none;direction:ltr;"
+          style="fill:#191B22;text-decoration:none;direction:ltr;select-color:#D8E2FF;y:38.484375;font-size:16.2px;highlight-color:#FFE17B;x:352;stroke:none;"
           x="352"
           y="38.484375">Ventral BG Positive vs. Negative Test</text>
       </g>
@@ -25,7 +25,7 @@
         id="group-2">
         <text
           id="text-0"
-          style="fill:#191B22;select-color:#D8E2FF;y:589.0625;stroke:none;font-size:16.2px;text-decoration:none;direction:ltr;highlight-color:#FFE17B;x:645;"
+          style="highlight-color:#FFE17B;x:645;stroke:none;text-decoration:none;select-color:#D8E2FF;y:589.0625;fill:#191B22;font-size:16.2px;direction:ltr;"
           x="645"
           y="589.0625">Trial</text>
       </g>
@@ -33,7 +33,7 @@
         id="group-3">
         <text
           id="text-0"
-          style="x:116;y:546.6188;stroke:none;select-color:#D8E2FF;highlight-color:#FFE17B;direction:ltr;fill:#191B22;font-size:16.2px;text-decoration:none;"
+          style="stroke:none;direction:ltr;x:116;fill:#191B22;font-size:16.2px;text-decoration:none;select-color:#D8E2FF;highlight-color:#FFE17B;y:546.6188;"
           x="116"
           y="546.6188">0</text>
       </g>
@@ -41,7 +41,7 @@
         id="group-4">
         <text
           id="text-0"
-          style="highlight-color:#FFE17B;x:385;stroke:none;font-size:16.2px;text-decoration:none;direction:ltr;fill:#191B22;select-color:#D8E2FF;y:546.6188;"
+          style="direction:ltr;highlight-color:#FFE17B;y:546.6188;stroke:none;fill:#191B22;text-decoration:none;select-color:#D8E2FF;x:385;font-size:16.2px;"
           x="385"
           y="546.6188">30</text>
       </g>
@@ -49,7 +49,7 @@
         id="group-5">
         <text
           id="text-0"
-          style="text-decoration:none;select-color:#D8E2FF;highlight-color:#FFE17B;x:661;stroke:none;fill:#191B22;font-size:16.2px;direction:ltr;y:546.6188;"
+          style="select-color:#D8E2FF;x:661;y:546.6188;stroke:none;text-decoration:none;highlight-color:#FFE17B;fill:#191B22;font-size:16.2px;direction:ltr;"
           x="661"
           y="546.6188">60</text>
       </g>
@@ -57,7 +57,7 @@
         id="group-6">
         <text
           id="text-0"
-          style="x:937;y:546.6188;stroke:none;fill:#191B22;font-size:16.2px;text-decoration:none;select-color:#D8E2FF;highlight-color:#FFE17B;direction:ltr;"
+          style="fill:#191B22;direction:ltr;select-color:#D8E2FF;stroke:none;font-size:16.2px;text-decoration:none;highlight-color:#FFE17B;x:937;y:546.6188;"
           x="937"
           y="546.6188">90</text>
       </g>
@@ -65,17 +65,17 @@
         id="group-7">
         <text
           id="text-0"
-          style="y:546.6188;font-size:16.2px;direction:ltr;select-color:#D8E2FF;x:1206;stroke:none;fill:#191B22;text-decoration:none;highlight-color:#FFE17B;"
+          style="fill:#191B22;font-size:16.2px;highlight-color:#FFE17B;y:546.6188;stroke:none;text-decoration:none;direction:ltr;select-color:#D8E2FF;x:1206;"
           x="1206"
           y="546.6188">120</text>
       </g>
       <path
         id="path-8"
-        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
         d="M123 520V493" />
       <path
         id="path-9"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
         d="M399 520V493" />
       <path
         id="path-10"
@@ -91,7 +91,7 @@
         d="M1227 520V493" />
       <path
         id="path-13"
-        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
         d="M215 506.5V493" />
       <path
         id="path-14"
@@ -99,7 +99,7 @@
         d="M307 506.5V493" />
       <path
         id="path-15"
-        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
         d="M491 506.5V493" />
       <path
         id="path-16"
@@ -115,7 +115,7 @@
         d="M859 506.5V493" />
       <path
         id="path-19"
-        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
         d="M1043 506.5V493" />
       <path
         id="path-20"
@@ -123,13 +123,13 @@
         d="M1135 506.5V493" />
       <path
         id="path-21"
-        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
         d="M123 493H1227" />
       <g
         id="group-22">
         <text
           id="text-0"
-          style="stroke:#191B22;stroke-width:1pt;fill:#191B22;text-decoration:none;direction:ltr;x:0;font-size:16.2px;select-color:#D8E2FF;highlight-color:#FFE17B;y:321.0625;"
+          style="x:0;stroke-width:1pt;fill:#191B22;font-size:16.2px;text-decoration:none;direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;y:321.0625;stroke:#191B22;"
           transform="matrix(-4.371139e-08,-1,1,-4.371139e-08,-289,289)"
           x="0"
           y="321.0625">RT</text>
@@ -138,7 +138,7 @@
         id="group-23">
         <text
           id="text-0"
-          style="font-size:16.2px;direction:ltr;select-color:#D8E2FF;x:42;stroke:#191B22;fill:#191B22;text-decoration:none;highlight-color:#FFE17B;y:500.15625;stroke-width:1pt;"
+          style="x:42;stroke-width:1pt;fill:#191B22;select-color:#D8E2FF;y:500.15625;stroke:#191B22;font-size:16.2px;text-decoration:none;direction:ltr;highlight-color:#FFE17B;"
           x="42"
           y="500.15625">0.00</text>
       </g>
@@ -146,7 +146,7 @@
         id="group-24">
         <text
           id="text-0"
-          style="y:390.15625;fill:#191B22;font-size:16.2px;text-decoration:none;select-color:#D8E2FF;highlight-color:#FFE17B;x:42;stroke:#191B22;stroke-width:1pt;direction:ltr;"
+          style="stroke:#191B22;stroke-width:1pt;text-decoration:none;direction:ltr;y:390.15625;fill:#191B22;font-size:16.2px;select-color:#D8E2FF;highlight-color:#FFE17B;x:42;"
           x="42"
           y="390.15625">0.25</text>
       </g>
@@ -154,7 +154,7 @@
         id="group-25">
         <text
           id="text-0"
-          style="direction:ltr;highlight-color:#FFE17B;y:280.15625;font-size:16.2px;stroke-width:1pt;fill:#191B22;text-decoration:none;select-color:#D8E2FF;x:42;stroke:#191B22;"
+          style="y:280.15625;font-size:16.2px;text-decoration:none;select-color:#D8E2FF;stroke:#191B22;stroke-width:1pt;fill:#191B22;direction:ltr;highlight-color:#FFE17B;x:42;"
           x="42"
           y="280.15625">0.50</text>
       </g>
@@ -162,7 +162,7 @@
         id="group-26">
         <text
           id="text-0"
-          style="fill:#191B22;text-decoration:none;highlight-color:#FFE17B;x:42;stroke:#191B22;stroke-width:1pt;font-size:16.2px;direction:ltr;select-color:#D8E2FF;y:170.15625;"
+          style="stroke:#191B22;fill:#191B22;font-size:16.2px;text-decoration:none;direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;x:42;stroke-width:1pt;y:170.15625;"
           x="42"
           y="170.15625">0.75</text>
       </g>
@@ -170,13 +170,13 @@
         id="group-27">
         <text
           id="text-0"
-          style="stroke:#191B22;font-size:16.2px;select-color:#D8E2FF;highlight-color:#FFE17B;x:42;y:60.15625;stroke-width:1pt;fill:#191B22;text-decoration:none;direction:ltr;"
+          style="stroke:#191B22;fill:#191B22;font-size:16.2px;text-decoration:none;select-color:#D8E2FF;highlight-color:#FFE17B;x:42;y:60.15625;stroke-width:1pt;direction:ltr;"
           x="42"
           y="60.15625">1.00</text>
       </g>
       <path
         id="path-28"
-        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
         d="M92 491H119" />
       <path
         id="path-29"
@@ -184,7 +184,7 @@
         d="M92 381H119" />
       <path
         id="path-30"
-        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
         d="M92 271H119" />
       <path
         id="path-31"
@@ -192,15 +192,15 @@
         d="M92 161H119" />
       <path
         id="path-32"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
         d="M92 51H119" />
       <path
         id="path-33"
-        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
         d="M105.5 469H119" />
       <path
         id="path-34"
-        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
         d="M105.5 447H119" />
       <path
         id="path-35"
@@ -212,15 +212,15 @@
         d="M105.5 403H119" />
       <path
         id="path-37"
-        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
         d="M105.5 359H119" />
       <path
         id="path-38"
-        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
         d="M105.5 337H119" />
       <path
         id="path-39"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
         d="M105.5 315H119" />
       <path
         id="path-40"
@@ -236,7 +236,7 @@
         d="M105.5 227H119" />
       <path
         id="path-43"
-        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
         d="M105.5 205H119" />
       <path
         id="path-44"
@@ -244,11 +244,11 @@
         d="M105.5 183H119" />
       <path
         id="path-45"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
         d="M105.5 139H119" />
       <path
         id="path-46"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
         d="M105.5 117H119" />
       <path
         id="path-47"
@@ -260,13 +260,13 @@
         d="M105.5 73.00001H119" />
       <path
         id="path-49"
-        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
         d="M119 51V491" />
       <g
         id="group-50">
         <text
           id="text-0"
-          style="text-decoration:none;highlight-color:#FFE17B;stroke:#191B22;font-size:16.2px;direction:ltr;select-color:#D8E2FF;x:1316;y:240.0625;stroke-width:1pt;fill:#191B22;"
+          style="stroke-width:1pt;fill:#191B22;select-color:#D8E2FF;highlight-color:#FFE17B;x:1316;y:240.0625;stroke:#191B22;font-size:16.2px;text-decoration:none;direction:ltr;"
           transform="matrix(-4.371139e-08,1,-1,-4.371139e-08,1524,-1108)"
           x="1316"
           y="240.0625">Negative</text>
@@ -275,7 +275,7 @@
         id="group-51">
         <text
           id="text-0"
-          style="text-decoration:none;highlight-color:#FFE17B;x:1260;y:500.15625;stroke-width:1pt;fill:#191B22;font-size:16.2px;direction:ltr;select-color:#D8E2FF;stroke:#191B22;"
+          style="stroke-width:1pt;fill:#191B22;font-size:16.2px;text-decoration:none;direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;y:500.15625;stroke:#191B22;x:1260;"
           x="1260"
           y="500.15625">0</text>
       </g>
@@ -283,7 +283,7 @@
         id="group-52">
         <text
           id="text-0"
-          style="stroke:#191B22;text-decoration:none;direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;y:390.15625;stroke-width:1pt;fill:#191B22;font-size:16.2px;x:1260;"
+          style="fill:#191B22;text-decoration:none;select-color:#D8E2FF;x:1260;y:390.15625;stroke:#191B22;font-size:16.2px;direction:ltr;highlight-color:#FFE17B;stroke-width:1pt;"
           x="1260"
           y="390.15625">1</text>
       </g>
@@ -291,7 +291,7 @@
         id="group-53">
         <text
           id="text-0"
-          style="stroke:#191B22;stroke-width:1pt;font-size:16.2px;select-color:#D8E2FF;highlight-color:#FFE17B;x:1260;fill:#191B22;text-decoration:none;direction:ltr;y:280.15625;"
+          style="text-decoration:none;highlight-color:#FFE17B;x:1260;y:280.15625;direction:ltr;select-color:#D8E2FF;stroke:#191B22;stroke-width:1pt;fill:#191B22;font-size:16.2px;"
           x="1260"
           y="280.15625">2</text>
       </g>
@@ -299,7 +299,7 @@
         id="group-54">
         <text
           id="text-0"
-          style="stroke-width:1pt;text-decoration:none;direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;x:1260;y:170.15625;stroke:#191B22;fill:#191B22;font-size:16.2px;"
+          style="stroke:#191B22;stroke-width:1pt;fill:#191B22;font-size:16.2px;direction:ltr;select-color:#D8E2FF;x:1260;text-decoration:none;highlight-color:#FFE17B;y:170.15625;"
           x="1260"
           y="170.15625">3</text>
       </g>
@@ -307,7 +307,7 @@
         id="group-55">
         <text
           id="text-0"
-          style="stroke:#191B22;fill:#191B22;font-size:16.2px;direction:ltr;highlight-color:#FFE17B;stroke-width:1pt;text-decoration:none;select-color:#D8E2FF;x:1260;y:60.15625;"
+          style="direction:ltr;select-color:#D8E2FF;x:1260;stroke:#191B22;font-size:16.2px;highlight-color:#FFE17B;y:60.15625;stroke-width:1pt;fill:#191B22;text-decoration:none;"
           x="1260"
           y="60.15625">4</text>
       </g>
@@ -317,7 +317,7 @@
         d="M1231 491H1258" />
       <path
         id="path-57"
-        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
         d="M1231 381H1258" />
       <path
         id="path-58"
@@ -329,7 +329,7 @@
         d="M1231 161H1258" />
       <path
         id="path-60"
-        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
         d="M1231 51H1258" />
       <path
         id="path-61"
@@ -341,7 +341,7 @@
         d="M1231 447H1244.5" />
       <path
         id="path-63"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
         d="M1231 425H1244.5" />
       <path
         id="path-64"
@@ -353,7 +353,7 @@
         d="M1231 359H1244.5" />
       <path
         id="path-66"
-        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
         d="M1231 337H1244.5" />
       <path
         id="path-67"
@@ -361,7 +361,7 @@
         d="M1231 315H1244.5" />
       <path
         id="path-68"
-        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
         d="M1231 293H1244.5" />
       <path
         id="path-69"
@@ -373,23 +373,23 @@
         d="M1231 227H1244.5" />
       <path
         id="path-71"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
         d="M1231 205H1244.5" />
       <path
         id="path-72"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
         d="M1231 183H1244.5" />
       <path
         id="path-73"
-        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
         d="M1231 139H1244.5" />
       <path
         id="path-74"
-        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
         d="M1231 117H1244.5" />
       <path
         id="path-75"
-        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
         d="M1231 95.00001H1244.5" />
       <path
         id="path-76"
@@ -403,15 +403,15 @@
         id="group-78">
         <path
           id="path-0"
-          style="stroke:#46B137;stroke-width:1pt;fill:none;"
+          style="stroke-width:1pt;fill:none;stroke:#4DB83D;"
           d="M123 491H215L224.2 480H316.2L325.4 469H417.4L426.6 458H518.6L527.8 447H619.8L629 436H721L730.2 425H822.2L831.4 414H923.4L932.6 403H1024.6L1033.8 392H1125.8L1135 381H1227" />
         <path
           id="path-1"
-          style="stroke:#46B137;stroke-width:1pt;fill:none;"
+          style="stroke:#4DB83D;stroke-width:1pt;fill:none;"
           d="M123 491H215L224.2 480H316.2L325.4 469H417.4L426.6 458H518.6L527.8 447H619.8L629 436H721L730.2 425H822.2L831.4 414H923.4L932.6 403H1024.6L1033.8 392H1125.8L1135 381H1227" />
         <path
           id="path-2"
-          style="stroke-width:1pt;fill:none;stroke:#F53C35;"
+          style="stroke:#F53C35;stroke-width:1pt;fill:none;"
           d="M123 491L141.4 469L150.6 458L187.4 414L196.6 403L215 381L224.2 491L233.4 480L261 447L270.2 436L279.4 425L288.6 414L297.8 403L307 392L316.2 381L325.4 491L343.8 469L353 458L362.2 447L371.4 436L380.6 425L389.8 414L399 403L408.2 392L417.4 381L426.6 491L435.8 480L454.2 458L463.4 447L472.6 436L481.8 425L500.2 403L518.6 381L527.8 491L564.6 447L573.8 436L601.4 403L610.6 392L619.8 381L629 491L638.2 480L647.4 469L684.2 425L693.4 414L702.6 403L711.8 392L721 381L730.2 491L739.4 480L748.6 469L767 447L776.2 436L785.4 425L794.6 414L803.8 403L822.2 381L831.4 491L840.6 480L849.8 469L859 458L877.4 436L886.6 425L905 403L914.2 392L923.4 381L932.6 491L941.8 480L960.2 458L969.4 447L978.6 436L987.8 425L997 414L1015.4 392L1024.6 381L1033.8 491L1043 480L1052.2 469L1061.4 458L1070.6 447L1079.8 436L1098.2 414L1107.4 403L1116.6 392L1125.8 381L1135 491L1144.2 480L1171.8 447L1181 436L1190.2 425L1199.4 414L1208.6 403L1217.8 392L1227 381" />
         <path
           id="path-3"
@@ -419,20 +419,20 @@
           d="M123 491L141.4 469L150.6 458L187.4 414L196.6 403L215 381L224.2 491L233.4 480L261 447L270.2 436L279.4 425L288.6 414L297.8 403L307 392L316.2 381L325.4 491L343.8 469L353 458L362.2 447L371.4 436L380.6 425L389.8 414L399 403L408.2 392L417.4 381L426.6 491L435.8 480L454.2 458L463.4 447L472.6 436L481.8 425L500.2 403L518.6 381L527.8 491L564.6 447L573.8 436L601.4 403L610.6 392L619.8 381L629 491L638.2 480L647.4 469L684.2 425L693.4 414L702.6 403L711.8 392L721 381L730.2 491L739.4 480L748.6 469L767 447L776.2 436L785.4 425L794.6 414L803.8 403L822.2 381L831.4 491L840.6 480L849.8 469L859 458L877.4 436L886.6 425L905 403L914.2 392L923.4 381L932.6 491L941.8 480L960.2 458L969.4 447L978.6 436L987.8 425L997 414L1015.4 392L1024.6 381L1033.8 491L1043 480L1052.2 469L1061.4 458L1070.6 447L1079.8 436L1098.2 414L1107.4 403L1116.6 392L1125.8 381L1135 491L1144.2 480L1171.8 447L1181 436L1190.2 425L1199.4 414L1208.6 403L1217.8 392L1227 381" />
         <path
           id="path-4"
-          style="fill:none;stroke:#0000FF;stroke-width:1pt;"
-          d="M123 188.5L132.2 51L141.4 284.75L150.6 491H215L224.2 202.25L233.4 64.75L242.6 422.25L251.8 491H316.2L325.4 64.75L334.6 51L343.8 92.25L353 491H417.4L426.6 51H445L454.2 491H518.6L527.8 51H555.4L564.6 436L573.8 491H619.8L629 51H665.8L675 422.25L684.2 491H721L730.2 51H776.2L785.4 298.5L794.6 491H822.2L831.4 51H886.6L895.8 491H914.2L923.4 477.25L932.6 51H997L1006.2 422.25L1015.4 491L1024.6 243.5L1033.8 51H1098.2L1107.4 119.75L1116.6 312.25L1125.8 51H1199.4L1208.6 271L1217.8 463.5L1227 106" />
+          style="stroke:#0000FF;stroke-width:1pt;fill:none;"
+          d="M123 119.75L132.2 51L141.4 422.25L150.6 449.75L159.8 491H215L224.2 312.25L233.4 284.75L242.6 477.25L251.8 491H316.2L325.4 147.25L334.6 51L343.8 92.25L353 463.5L362.2 491H417.4L426.6 51H445L454.2 449.75L463.4 491H518.6L527.8 51H555.4L564.6 422.25L573.8 491H619.8L629 51H665.8L675 394.75L684.2 491H721L730.2 51H776.2L785.4 436L794.6 491H822.2L831.4 51H877.4L886.6 78.5L895.8 491H923.4L932.6 51H997L1006.2 381L1015.4 491L1024.6 449.75L1033.8 51H1107.4L1116.6 271L1125.8 188.5L1135 51H1199.4L1208.6 408.5L1217.8 491L1227 477.25" />
         <path
           id="path-5"
           style="stroke:#0000FF;stroke-width:1pt;fill:none;"
-          d="M123 188.5L132.2 51L141.4 284.75L150.6 491H215L224.2 202.25L233.4 64.75L242.6 422.25L251.8 491H316.2L325.4 64.75L334.6 51L343.8 92.25L353 491H417.4L426.6 51H445L454.2 491H518.6L527.8 51H555.4L564.6 436L573.8 491H619.8L629 51H665.8L675 422.25L684.2 491H721L730.2 51H776.2L785.4 298.5L794.6 491H822.2L831.4 51H886.6L895.8 491H914.2L923.4 477.25L932.6 51H997L1006.2 422.25L1015.4 491L1024.6 243.5L1033.8 51H1098.2L1107.4 119.75L1116.6 312.25L1125.8 51H1199.4L1208.6 271L1217.8 463.5L1227 106" />
+          d="M123 119.75L132.2 51L141.4 422.25L150.6 449.75L159.8 491H215L224.2 312.25L233.4 284.75L242.6 477.25L251.8 491H316.2L325.4 147.25L334.6 51L343.8 92.25L353 463.5L362.2 491H417.4L426.6 51H445L454.2 449.75L463.4 491H518.6L527.8 51H555.4L564.6 422.25L573.8 491H619.8L629 51H665.8L675 394.75L684.2 491H721L730.2 51H776.2L785.4 436L794.6 491H822.2L831.4 51H877.4L886.6 78.5L895.8 491H923.4L932.6 51H997L1006.2 381L1015.4 491L1024.6 449.75L1033.8 51H1107.4L1116.6 271L1125.8 188.5L1135 51H1199.4L1208.6 408.5L1217.8 491L1227 477.25" />
         <path
           id="path-6"
           style="stroke:#FD8F00;stroke-width:1pt;fill:none;"
-          d="M123 225.9L132.2 252.1625L141.4 203.856L150.6 491H215L224.2 218.1267L233.4 234.9484L242.6 149.34L251.8 491H316.2L325.4 260.0688L334.6 247.625L343.8 191.269L353 491H417.4L426.6 278.975L435.8 277.05L445 231.8125L454.2 161L463.4 491H518.6L527.8 290.25L537 291.2812L546.2 270.175L555.4 225.2812L564.6 233.9143L573.8 491H619.8L629 300.975L638.2 302.7625L647.4 297.8813L656.6 281.5187L665.8 269.4188L675 167.8L684.2 491H711.8L721 231.4L730.2 311.7L739.4 305.5125L748.6 293.1375L757.8 297.4688L767 297.1938L776.2 269.5562L785.4 217.5889L794.6 491H813L822.2 200.6L831.4 311.15L840.6 305.1688L849.8 297.125L859 300.2188L868.2 301.0437L877.4 291.8312L886.6 254.4312L895.8 119.2L905 491H914.2L923.4 172.275L932.6 315.3438L941.8 307.025L951 302.4188L960.2 302.2125L969.4 300.6313L978.6 292.5875L987.8 295.5438L997 239.1L1006.2 155.0286L1015.4 104.7429L1024.6 217.2941L1033.8 309.3625L1043 305.9937L1052.2 301.3188L1061.4 301.25L1070.6 304.275L1079.8 294.5125L1089 292.6562L1098.2 271.3438L1107.4 220.3241L1116.6 195.32L1125.8 259.1063L1135 312.25L1144.2 307.025L1153.4 299.1875L1162.6 297.0562L1171.8 297.5375L1181 298.5L1190.2 283.7875L1199.4 244.9438L1208.6 206.936L1217.8 197.85L1227 227.5677" />
+          d="M123 235.7313L132.2 232.8438L141.4 212.0783L150.6 196.8286L159.8 167.6L169 491H215L224.2 219.8867L233.4 222.05L242.6 207.9333L251.8 491H316.2L325.4 243.3625L334.6 245.4938L343.8 211.6L353 184.1L362.2 491H417.4L426.6 276.1562L435.8 270.3125L445 237.8625L454.2 205L463.4 491H518.6L527.8 290.1125L537 290.7312L546.2 284.2687L555.4 251.1313L564.6 235.8L573.8 491H619.8L629 296.575L638.2 296.1625L647.4 294.3062L656.6 281.5187L665.8 269.4875L675 210.94L684.2 491H721L730.2 310.8062L739.4 307.7812L748.6 295.2L757.8 300.6313L767 290.1125L776.2 268.1812L785.4 233.2857L794.6 491H822.2L831.4 309.6375L840.6 309.0875L849.8 304L859 302.7625L868.2 295.9563L877.4 282.1375L886.6 235.25L895.8 194L905 491H923.4L932.6 311.4937L941.8 306.1313L951 304.6187L960.2 302.8313L969.4 297.8125L978.6 291.075L987.8 273.4062L997 240.475L1006.2 192.8L1015.4 491L1024.6 214.5333L1033.8 305.9937L1043 306.475L1052.2 300.15L1061.4 301.1812L1070.6 299.3938L1079.8 288.2563L1089 279.8L1098.2 269.6938L1107.4 239.5125L1116.6 216.55L1125.8 222.4952L1135 310.1187L1144.2 304.55L1153.4 300.2875L1162.6 294.7188L1171.8 292.45L1181 281.725L1190.2 268.5938L1199.4 243.2937L1208.6 211.1286L1217.8 491L1227 212.0714" />
         <path
           id="path-7"
           style="stroke:#FD8F00;stroke-width:1pt;fill:none;"
-          d="M123 225.9L132.2 252.1625L141.4 203.856L150.6 491H215L224.2 218.1267L233.4 234.9484L242.6 149.34L251.8 491H316.2L325.4 260.0688L334.6 247.625L343.8 191.269L353 491H417.4L426.6 278.975L435.8 277.05L445 231.8125L454.2 161L463.4 491H518.6L527.8 290.25L537 291.2812L546.2 270.175L555.4 225.2812L564.6 233.9143L573.8 491H619.8L629 300.975L638.2 302.7625L647.4 297.8813L656.6 281.5187L665.8 269.4188L675 167.8L684.2 491H711.8L721 231.4L730.2 311.7L739.4 305.5125L748.6 293.1375L757.8 297.4688L767 297.1938L776.2 269.5562L785.4 217.5889L794.6 491H813L822.2 200.6L831.4 311.15L840.6 305.1688L849.8 297.125L859 300.2188L868.2 301.0437L877.4 291.8312L886.6 254.4312L895.8 119.2L905 491H914.2L923.4 172.275L932.6 315.3438L941.8 307.025L951 302.4188L960.2 302.2125L969.4 300.6313L978.6 292.5875L987.8 295.5438L997 239.1L1006.2 155.0286L1015.4 104.7429L1024.6 217.2941L1033.8 309.3625L1043 305.9937L1052.2 301.3188L1061.4 301.25L1070.6 304.275L1079.8 294.5125L1089 292.6562L1098.2 271.3438L1107.4 220.3241L1116.6 195.32L1125.8 259.1063L1135 312.25L1144.2 307.025L1153.4 299.1875L1162.6 297.0562L1171.8 297.5375L1181 298.5L1190.2 283.7875L1199.4 244.9438L1208.6 206.936L1217.8 197.85L1227 227.5677" />
+          d="M123 235.7313L132.2 232.8438L141.4 212.0783L150.6 196.8286L159.8 167.6L169 491H215L224.2 219.8867L233.4 222.05L242.6 207.9333L251.8 491H316.2L325.4 243.3625L334.6 245.4938L343.8 211.6L353 184.1L362.2 491H417.4L426.6 276.1562L435.8 270.3125L445 237.8625L454.2 205L463.4 491H518.6L527.8 290.1125L537 290.7312L546.2 284.2687L555.4 251.1313L564.6 235.8L573.8 491H619.8L629 296.575L638.2 296.1625L647.4 294.3062L656.6 281.5187L665.8 269.4875L675 210.94L684.2 491H721L730.2 310.8062L739.4 307.7812L748.6 295.2L757.8 300.6313L767 290.1125L776.2 268.1812L785.4 233.2857L794.6 491H822.2L831.4 309.6375L840.6 309.0875L849.8 304L859 302.7625L868.2 295.9563L877.4 282.1375L886.6 235.25L895.8 194L905 491H923.4L932.6 311.4937L941.8 306.1313L951 304.6187L960.2 302.8313L969.4 297.8125L978.6 291.075L987.8 273.4062L997 240.475L1006.2 192.8L1015.4 491L1024.6 214.5333L1033.8 305.9937L1043 306.475L1052.2 300.15L1061.4 301.1812L1070.6 299.3938L1079.8 288.2563L1089 279.8L1098.2 269.6938L1107.4 239.5125L1116.6 216.55L1125.8 222.4952L1135 310.1187L1144.2 304.55L1153.4 300.2875L1162.6 294.7188L1171.8 292.45L1181 281.725L1190.2 268.5938L1199.4 243.2937L1208.6 211.1286L1217.8 491L1227 212.0714" />
         <rect
           id="rect-8"
           style="fill:#FAF9FEBF;"
@@ -444,14 +444,14 @@
           id="group-9">
           <path
             id="path-0"
-            style="fill:none;stroke:#46B137;stroke-width:1pt;"
+            style="stroke:#4DB83D;stroke-width:1pt;fill:none;"
             d="M1162 71H1229" />
         </g>
         <g
           id="group-10">
           <text
             id="text-0"
-            style="y:81.0625;fill:#191B22;text-decoration:none;direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;x:1036;stroke:#46B137;stroke-width:1pt;font-size:16.2px;"
+            style="stroke-width:1pt;fill:#191B22;select-color:#D8E2FF;stroke:#4DB83D;font-size:16.2px;text-decoration:none;direction:ltr;highlight-color:#FFE17B;x:1036;y:81.0625;"
             x="1036"
             y="81.0625">Positive</text>
         </g>
@@ -466,7 +466,7 @@
           id="group-12">
           <text
             id="text-0"
-            style="stroke:#F53C35;font-size:16.2px;highlight-color:#FFE17B;stroke-width:1pt;fill:#191B22;text-decoration:none;direction:ltr;select-color:#D8E2FF;x:1036;y:125.0625;"
+            style="x:1036;y:125.0625;stroke:#F53C35;stroke-width:1pt;text-decoration:none;fill:#191B22;font-size:16.2px;direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;"
             x="1036"
             y="125.0625">Negative</text>
         </g>
@@ -474,14 +474,14 @@
           id="group-13">
           <path
             id="path-0"
-            style="stroke-width:1pt;fill:none;stroke:#0000FF;"
+            style="fill:none;stroke:#0000FF;stroke-width:1pt;"
             d="M1162 159H1229" />
         </g>
         <g
           id="group-14">
           <text
             id="text-0"
-            style="stroke:#0000FF;font-size:16.2px;select-color:#D8E2FF;highlight-color:#FFE17B;x:1036;y:169.0625;stroke-width:1pt;fill:#191B22;text-decoration:none;direction:ltr;"
+            style="fill:#191B22;font-size:16.2px;text-decoration:none;select-color:#D8E2FF;highlight-color:#FFE17B;x:1036;stroke:#0000FF;stroke-width:1pt;direction:ltr;y:169.0625;"
             x="1036"
             y="169.0625">Gated</text>
         </g>
@@ -496,7 +496,7 @@
           id="group-16">
           <text
             id="text-0"
-            style="x:1036;stroke:#FD8F00;stroke-width:1pt;font-size:16.2px;direction:ltr;highlight-color:#FFE17B;fill:#191B22;text-decoration:none;select-color:#D8E2FF;y:213.0625;"
+            style="y:213.0625;stroke:#FD8F00;stroke-width:1pt;fill:#191B22;font-size:16.2px;select-color:#D8E2FF;x:1036;text-decoration:none;direction:ltr;highlight-color:#FFE17B;"
             x="1036"
             y="213.0625">RT</text>
         </g>
