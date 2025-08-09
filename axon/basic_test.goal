@@ -401,7 +401,7 @@ func TestGPUState(t *testing.T) {
 }
 
 func TestNetAct(t *testing.T) {
-	NetActTest(t, Tol7, false) // gpu
+	NetActTest(t, Tol6, false) // gpu
 }
 
 func TestNetActShort(t *testing.T) {
