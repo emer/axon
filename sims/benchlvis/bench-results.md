@@ -14,6 +14,42 @@ Lvis:	 Neurons: 47,872	 NeurMem: 16.8 MB 	 Syns: 31,316,128 	 SynMem: 2.2 GB
 
 and performance is roughly similar.
 
+# V2.0.0-dev0.2.57
+
+This has the new finer-grained SynCa computation so it is a bit slower.
+
+`go test -gpu -verbose=false -epochs=5 -ndata=1 -bench=. -run not`
+
+## MacBook Pro M3
+
+### webgpu 25.0.2.1 epochs=5
+
+* ndata=1: 17.4 -- about 20% faster than 23!
+* ndata=2: 23.1
+* ndata=4: 31.3
+* ndata=8: 49.5  (2.9 GB, now supported)
+* ndata=16: 89.5  (5.8 GB)
+
+### webgpu 23.pr441 epochs=5
+
+* ndata=1: 20.5
+* ndata=2: 27.4
+* ndata=4: 37.7
+* ndata=8: 54.7
+* ndata=16: 97.4
+
+## VP NVIDIA H100 80GB HBM3
+
+### webgpu 25.0.2.1 epochs=5
+
+* ndata=1: 23.4
+* ndata=2: 27.0
+* ndata=4: 36.5
+* ndata=8: 
+* ndata=16: 
+
+### webgpu 23.pr441 epochs=5
+
 # V2.0.0-dev0.2.3 webgpu 23.pr441 epochs=1
 
 This removes the use of pointers to fields in GPU code, so it actually works on NVIDIA / linux now!

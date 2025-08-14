@@ -17,10 +17,6 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Noise.On.SetBool(true) // true >= false (minor)
 				ly.Acts.Noise.Ge = 0.0001      // 0.0001 > others; could just be noise ;)
 				ly.Acts.Noise.Gi = 0.0001      // 0.0001 perhaps better than others
-				ly.Acts.KNa.Med.Gk = 0.1       // 0.2 > 0.1 > 0.05
-				ly.Acts.KNa.Slow.Gk = 0.1
-				ly.Acts.Mahp.Gk = 0.05 // 0.05
-				ly.Acts.Sahp.Gk = 0.05 // 0.05
 			}},
 		{Sel: ".PFCLayer", Doc: "pfc",
 			Set: func(ly *axon.LayerParams) {
@@ -35,8 +31,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.CaLearn.ETraceScale = 0.02       // 0 == 0.02 >= 0.05 > 0.1 -- todo..
 
 				ly.Acts.KNa.On.SetBool(true)
-				ly.Acts.KNa.Med.Gk = 0.2 // 0.2 > 0.1 > 0.05
-				ly.Acts.KNa.Slow.Gk = 0.2
+				ly.Acts.KNa.Med.Gk = 0.1 // 0.2 > 0.1 > 0.05
+				ly.Acts.KNa.Slow.Gk = 0.1
 				ly.Acts.Mahp.Gk = 0.05  // 0.05
 				ly.Acts.Sahp.Gk = 0.05  // 0.05
 				ly.Acts.Sahp.CaTau = 10 // 10 (def) > 5?

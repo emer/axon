@@ -42,7 +42,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.VGCC.Ca = 25   // 25 / 10tau same as SpkVGCC
 
 				ly.Acts.Mahp.Gk = 0.05       // 0.05 > lower, higher; but still needs kna
-				ly.Acts.Sahp.Gk = 0.05       // was 0.1, 0.05 def
+				ly.Acts.Sahp.Gk = 0.1        // 0.1 >= 0.05
 				ly.Acts.Sahp.Off = 0.8       //
 				ly.Acts.Sahp.Slope = 0.02    //
 				ly.Acts.Sahp.CaTau = 5       // 5 ok -- not tested

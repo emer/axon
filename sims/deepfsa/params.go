@@ -35,11 +35,11 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.GabaB.Gk = 0.015 // 0.015 def -- makes no diff down to 0.008
 
 				ly.Acts.Mahp.Gk = 0.05       // 0.05 > 0.02
-				ly.Acts.Sahp.Gk = 0.1        // 0.1 > 0.05 def
+				ly.Acts.Sahp.Gk = 0.05       // 0.05 > 0.05 def with kna .1
 				ly.Acts.Sahp.CaTau = 10      // 10 (def) > 5?
 				ly.Acts.KNa.On.SetBool(true) // false > true
-				ly.Acts.KNa.Med.Gk = 0.05    // 0.05 > 0.2 def
-				ly.Acts.KNa.Slow.Gk = 0.05
+				ly.Acts.KNa.Med.Gk = 0.1     // 0.05 >= 0.1 but not worth nonstandard
+				ly.Acts.KNa.Slow.Gk = 0.1
 
 				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // false > true
 				ly.Learn.CaLearn.Dt.MTau = 2                 // 2 > 5 actually

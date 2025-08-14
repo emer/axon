@@ -45,163 +45,163 @@ fn Index2D(s0: u32, s1: u32, i0: u32, i1: u32) -> u32 {
 }
 
 fn SynapseTracesGet(ix: u32) -> f32 {
-	let ii = ix / 536870912;
+	let ii = ix / 536870904;
 	switch ii {
 	case u32(0): {
 		return SynapseTraces0[ix];
 	}
 	case u32(1): {
-		return SynapseTraces1[ix - 536870912];
+		return SynapseTraces1[ix - 536870904];
 	}
 	case u32(2): {
-		return SynapseTraces2[ix - 1073741824];
+		return SynapseTraces2[ix - 1073741808];
 	}
 	case u32(3): {
-		return SynapseTraces3[ix - 1610612736];
+		return SynapseTraces3[ix - 1610612712];
 	}
 	case u32(4): {
-		return SynapseTraces4[ix - 2147483648];
+		return SynapseTraces4[ix - 2147483616];
 	}
 	case u32(5): {
-		return SynapseTraces5[ix - 2684354560];
+		return SynapseTraces5[ix - 2684354520];
 	}
 	default: {
-		return SynapseTraces6[ix - 3221225472];
+		return SynapseTraces6[ix - 3221225424];
 	}
 	}
 }
 
 fn SynapseTracesSet(vl: f32, ix: u32) {
-	let ii = ix / 536870912;
+	let ii = ix / 536870904;
 	switch ii {
 	case u32(0): {
 		SynapseTraces0[ix] = vl;
 	}
 	case u32(1): {
-		SynapseTraces1[ix - 536870912] = vl;
+		SynapseTraces1[ix - 536870904] = vl;
 	}
 	case u32(2): {
-		SynapseTraces2[ix - 1073741824] = vl;
+		SynapseTraces2[ix - 1073741808] = vl;
 	}
 	case u32(3): {
-		SynapseTraces3[ix - 1610612736] = vl;
+		SynapseTraces3[ix - 1610612712] = vl;
 	}
 	case u32(4): {
-		SynapseTraces4[ix - 2147483648] = vl;
+		SynapseTraces4[ix - 2147483616] = vl;
 	}
 	case u32(5): {
-		SynapseTraces5[ix - 2684354560] = vl;
+		SynapseTraces5[ix - 2684354520] = vl;
 	}
 	default: {
-		SynapseTraces6[ix - 3221225472] = vl;
+		SynapseTraces6[ix - 3221225424] = vl;
 	}
 	}
 }
 
 fn SynapseTracesSetAdd(vl: f32, ix: u32) {
-	let ii = ix / 536870912;
+	let ii = ix / 536870904;
 	switch ii {
 	case u32(0): {
 		SynapseTraces0[ix] += vl;
 	}
 	case u32(1): {
-		SynapseTraces1[ix - 536870912] += vl;
+		SynapseTraces1[ix - 536870904] += vl;
 	}
 	case u32(2): {
-		SynapseTraces2[ix - 1073741824] += vl;
+		SynapseTraces2[ix - 1073741808] += vl;
 	}
 	case u32(3): {
-		SynapseTraces3[ix - 1610612736] += vl;
+		SynapseTraces3[ix - 1610612712] += vl;
 	}
 	case u32(4): {
-		SynapseTraces4[ix - 2147483648] += vl;
+		SynapseTraces4[ix - 2147483616] += vl;
 	}
 	case u32(5): {
-		SynapseTraces5[ix - 2684354560] += vl;
+		SynapseTraces5[ix - 2684354520] += vl;
 	}
 	default: {
-		SynapseTraces6[ix - 3221225472] += vl;
+		SynapseTraces6[ix - 3221225424] += vl;
 	}
 	}
 }
 
 fn SynapseTracesSetSub(vl: f32, ix: u32) {
-	let ii = ix / 536870912;
+	let ii = ix / 536870904;
 	switch ii {
 	case u32(0): {
 		SynapseTraces0[ix] -= vl;
 	}
 	case u32(1): {
-		SynapseTraces1[ix - 536870912] -= vl;
+		SynapseTraces1[ix - 536870904] -= vl;
 	}
 	case u32(2): {
-		SynapseTraces2[ix - 1073741824] -= vl;
+		SynapseTraces2[ix - 1073741808] -= vl;
 	}
 	case u32(3): {
-		SynapseTraces3[ix - 1610612736] -= vl;
+		SynapseTraces3[ix - 1610612712] -= vl;
 	}
 	case u32(4): {
-		SynapseTraces4[ix - 2147483648] -= vl;
+		SynapseTraces4[ix - 2147483616] -= vl;
 	}
 	case u32(5): {
-		SynapseTraces5[ix - 2684354560] -= vl;
+		SynapseTraces5[ix - 2684354520] -= vl;
 	}
 	default: {
-		SynapseTraces6[ix - 3221225472] -= vl;
+		SynapseTraces6[ix - 3221225424] -= vl;
 	}
 	}
 }
 
 fn SynapseTracesSetMul(vl: f32, ix: u32) {
-	let ii = ix / 536870912;
+	let ii = ix / 536870904;
 	switch ii {
 	case u32(0): {
 		SynapseTraces0[ix] *= vl;
 	}
 	case u32(1): {
-		SynapseTraces1[ix - 536870912] *= vl;
+		SynapseTraces1[ix - 536870904] *= vl;
 	}
 	case u32(2): {
-		SynapseTraces2[ix - 1073741824] *= vl;
+		SynapseTraces2[ix - 1073741808] *= vl;
 	}
 	case u32(3): {
-		SynapseTraces3[ix - 1610612736] *= vl;
+		SynapseTraces3[ix - 1610612712] *= vl;
 	}
 	case u32(4): {
-		SynapseTraces4[ix - 2147483648] *= vl;
+		SynapseTraces4[ix - 2147483616] *= vl;
 	}
 	case u32(5): {
-		SynapseTraces5[ix - 2684354560] *= vl;
+		SynapseTraces5[ix - 2684354520] *= vl;
 	}
 	default: {
-		SynapseTraces6[ix - 3221225472] *= vl;
+		SynapseTraces6[ix - 3221225424] *= vl;
 	}
 	}
 }
 
 fn SynapseTracesSetDiv(vl: f32, ix: u32) {
-	let ii = ix / 536870912;
+	let ii = ix / 536870904;
 	switch ii {
 	case u32(0): {
 		SynapseTraces0[ix] /= vl;
 	}
 	case u32(1): {
-		SynapseTraces1[ix - 536870912] /= vl;
+		SynapseTraces1[ix - 536870904] /= vl;
 	}
 	case u32(2): {
-		SynapseTraces2[ix - 1073741824] /= vl;
+		SynapseTraces2[ix - 1073741808] /= vl;
 	}
 	case u32(3): {
-		SynapseTraces3[ix - 1610612736] /= vl;
+		SynapseTraces3[ix - 1610612712] /= vl;
 	}
 	case u32(4): {
-		SynapseTraces4[ix - 2147483648] /= vl;
+		SynapseTraces4[ix - 2147483616] /= vl;
 	}
 	case u32(5): {
-		SynapseTraces5[ix - 2684354560] /= vl;
+		SynapseTraces5[ix - 2684354520] /= vl;
 	}
 	default: {
-		SynapseTraces6[ix - 3221225472] /= vl;
+		SynapseTraces6[ix - 3221225424] /= vl;
 	}
 	}
 }

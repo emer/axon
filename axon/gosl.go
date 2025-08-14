@@ -1827,7 +1827,7 @@ func ToGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(3, "Synapses", 0)
 			gpu.SetValueFrom(v, Synapses.Values)
 		case SynapseTracesVar:
-			bsz := 536870912
+			bsz := 536870904
 			n := SynapseTraces.Len()
 			nb := int(math.Ceil(float64(n) / float64(bsz)))
 			for bi := range nb {
@@ -1978,7 +1978,7 @@ func ReadFromGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(3, "Synapses", 0)
 			v.GPUToRead(sy.CommandEncoder)
 		case SynapseTracesVar:
-			bsz := 536870912
+			bsz := 536870904
 			n := SynapseTraces.Len()
 			nb := int(math.Ceil(float64(n) / float64(bsz)))
 			for bi := range nb {
@@ -2084,7 +2084,7 @@ func SyncFromGPU(vars ...GPUVars) {
 			v.ReadSync()
 			gpu.ReadToBytes(v, Synapses.Values)
 		case SynapseTracesVar:
-			bsz := 536870912
+			bsz := 536870904
 			n := SynapseTraces.Len()
 			nb := int(math.Ceil(float64(n) / float64(bsz)))
 			for bi := range nb {

@@ -6,7 +6,7 @@ package axon
 
 import "cogentcore.org/lab/tensor"
 
-//go:generate gosl -exclude=Update,UpdateParams,Defaults,AllParams,ShouldDisplay
+//go:generate gosl -exclude=Update,UpdateParams,Defaults,AllParams,ShouldDisplay -max-buffer-size=2147483616
 
 // CurrentNetwork is set in [Network.SetAsCurrent] method, which sets all
 // global variables to point to the current network to be processed.

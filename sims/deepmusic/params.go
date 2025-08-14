@@ -25,10 +25,12 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.NMDA.Ge = 0.006
 				ly.Acts.GabaB.Gk = 0.015 // 0.015 > 0.012 lower
 
-				ly.Acts.Mahp.Gk = 0.05        // 0.05 > 0.02, esp with kna = false
-				ly.Acts.Sahp.Gk = 0.1         // 0.05 > 0.1? todo retest
-				ly.Acts.Sahp.CaTau = 5        // 5 > 10 verfied
-				ly.Acts.KNa.On.SetBool(false) // false and Mahp = 0.05 is better
+				ly.Acts.Mahp.Gk = 0.05       // 0.05 > 0.02, esp with kna = false
+				ly.Acts.Sahp.Gk = 0.1        // 0.05 > 0.1? todo retest
+				ly.Acts.Sahp.CaTau = 5       // 5 > 10 verfied
+				ly.Acts.KNa.On.SetBool(true) // false and Mahp = 0.05 is better
+				ly.Acts.KNa.Med.Gk = 0.1     // 0.05 >= 0.1 but not worth nonstandard
+				ly.Acts.KNa.Slow.Gk = 0.1
 
 				ly.Learn.CaLearn.Dt.MTau = 2 // 2 > 5 actually
 				ly.Learn.CaLearn.ETraceAct.SetBool(false)

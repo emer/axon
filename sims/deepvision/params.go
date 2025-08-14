@@ -42,8 +42,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.VGCC.Ge = 0.02 // non nmda: 0.15 good, 0.3 blows up, nmda: .02 best
 				ly.Acts.VGCC.Ca = 25   // 25 / 10tau same as SpkVGCC
 
-				ly.Acts.Mahp.Gk = 0.05       // 0.05 > lower, higher; but still needs kna
-				ly.Acts.Sahp.Gk = 0.05       // was 0.1, 0.05 def
+				ly.Acts.Mahp.Gk = 0.05       // 0.05 def
+				ly.Acts.Sahp.Gk = 0.05       // 0.05 > 0.1
 				ly.Acts.Sahp.Off = 0.8       //
 				ly.Acts.Sahp.Slope = 0.02    //
 				ly.Acts.Sahp.CaTau = 5       // 5 ok -- not tested
@@ -407,10 +407,10 @@ var PathParams = axon.PathSheets{
 		// 	}},
 
 		//////// DP
-		{Sel: "#V2ToDP", Doc: "ge is weakish",
-			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1.2 // 1.2 >= 1 > 1.5
-			}},
+		// {Sel: "#V2ToDP", Doc: "ge is weakish",
+		// 	Set: func(pt *axon.PathParams) {
+		// 		pt.PathScale.Abs = 1.2 // 1.2 >= 1 > 1.5
+		// 	}},
 		{Sel: "#V3ToDP", Doc: "ge is weakish",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 1
