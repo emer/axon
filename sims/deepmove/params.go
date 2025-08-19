@@ -56,7 +56,6 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Layer.Gi = 2.0        // 2.0 is fine -- was 1.4
 				ly.CT.GeGain = 1.0             // 1 == 1.5 > 0.5 except depth
 				ly.CT.DecayTau = 0             // decay is very bad
-				ly.Acts.Dend.SSGi = 0          // 0 > higher -- kills nmda maint!
 				ly.Acts.Decay.Act = 0.0
 				ly.Acts.Decay.Glong = 0.0
 				ly.Acts.GabaB.Gk = 0.015 // 0.015 standard gaba

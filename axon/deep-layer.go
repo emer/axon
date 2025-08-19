@@ -121,7 +121,7 @@ func (ly *LayerParams) CTDefaults() {
 	ly.Acts.Decay.Act = 0 // deep doesn't decay!
 	ly.Acts.Decay.Glong = 0
 	ly.Acts.Decay.AHP = 0
-	ly.Acts.Dend.SSGi = 0   // key: otherwise interferes with NMDA maint!
+	ly.Acts.Dend.SSGi = 2   // 2 > 0 for sure
 	ly.Inhib.Layer.Gi = 2.2 // higher inhib for more NMDA, recurrents.
 	ly.Inhib.Pool.Gi = 2.2
 	// these are for longer temporal integration:
@@ -183,7 +183,7 @@ func (ly *Layer) CTDefaultParamsLong() {
 		ly.Acts.NMDA.Tau = 300
 		ly.Acts.Decay.Act = 0.0
 		ly.Acts.Decay.Glong = 0.0
-		ly.Acts.Dend.SSGi = 0 // else kills nmda
+		ly.Acts.Dend.SSGi = 2 // 2 > 0 for sure
 		ly.Acts.Sahp.Gk = 1.0
 	})
 }

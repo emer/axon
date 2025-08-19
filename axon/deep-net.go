@@ -462,7 +462,6 @@ func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, 
 		ly.Inhib.Layer.Gi = 2.2
 		ly.Inhib.Pool.On.SetBool(true)
 		ly.Inhib.Pool.Gi = 0.8
-		ly.Acts.Dend.SSGi = 0
 		ly.Learn.TrgAvgAct.SynScaleRate = 0.0002
 	}
 	pfc.AddDefaultParams(pfcParams)
@@ -543,7 +542,6 @@ func (net *Network) AddPFC2D(name, thalSuffix string, nNeurY, nNeurX int, decayO
 		ly.Inhib.Layer.On.SetBool(true)
 		ly.Inhib.Layer.Gi = 0.9
 		ly.Inhib.Pool.On.SetBool(false)
-		ly.Acts.Dend.SSGi = 0
 	}
 	pfc.AddDefaultParams(pfcParams)
 
