@@ -105,7 +105,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.ActAvg.Nominal = 0.12 // CT in general more active
 				ly.CT.GeGain = 1.0             // 1 > 1.5
 				ly.CT.DecayTau = 0             // 0 >> 100
-				ly.Acts.Dend.SSGi = 0          // 0 > higher -- kills nmda maint!
+				ly.Acts.Dend.SSGi = 2          // 0 > higher -- kills nmda maint!
 				ly.Acts.Decay.Act = 0.0
 				ly.Acts.Decay.Glong = 0.0 // 0 > 0.1
 				ly.Acts.GabaB.Gk = 0.015  // 0.015 standard gaba
@@ -158,7 +158,7 @@ var LayerParams = axon.LayerSheets{
 		{Sel: "#LIPCT", Doc: "pool inhib",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.04 // 0.03 initial, goes up to .04..
-				// ly.Inhib.ActAvg.AdaptGi.SetBool(false) // not neded
+				// ly.Inhib.ActAvg.AdaptGi.SetBool(false) // not needed
 				// note: tried layer, pool Gi independent of LIP and same values are best here.
 			}},
 		{Sel: ".MTpos", Doc: "layer inhib",

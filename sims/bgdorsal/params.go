@@ -25,10 +25,9 @@ var LayerParams = axon.LayerSheets{
 				// ly.Learn.NeuroMod.DipGain = 0                // 0 > higher
 				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // false >> true; orig = true
 
-				ly.Acts.Decay.Glong = 0                   // 0 ==? 0.1; > higher
-				ly.Learn.CaLearn.ETraceAct.SetBool(false) // false > true: act not beneficial
-				ly.Learn.CaLearn.ETraceTau = 4            // 4 > 3?
-				ly.Learn.CaLearn.ETraceScale = 0.02       // 0 == 0.02 >= 0.05 > 0.1 -- todo..
+				ly.Acts.Decay.Glong = 0             // 0 ==? 0.1; > higher
+				ly.Learn.CaLearn.ETraceTau = 4      // 4 > 3?
+				ly.Learn.CaLearn.ETraceScale = 0.02 // 0 == 0.02 >= 0.05 > 0.1 -- todo..
 
 				ly.Acts.KNa.On.SetBool(true)
 				ly.Acts.KNa.Med.Gk = 0.1 // 0.2 > 0.1 > 0.05

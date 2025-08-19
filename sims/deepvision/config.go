@@ -137,6 +137,9 @@ type RunConfig struct {
 
 	// StartWeights is the name of weights file to load at start of first run.
 	StartWeights string
+
+	// Epoch counter to set when loading start weights.
+	StartEpoch int
 }
 
 // LogConfig has config parameters related to logging data.

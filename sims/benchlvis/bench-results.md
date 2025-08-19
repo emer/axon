@@ -24,7 +24,7 @@ This has the new finer-grained SynCa computation so it is a bit slower.
 
 ### webgpu 25.0.2.1 epochs=5
 
-* ndata=1: 17.4 -- about 20% faster than 23!
+* ndata=1: 17.4 -- 20% faster than 23!
 * ndata=2: 23.1
 * ndata=4: 31.3
 * ndata=8: 49.5  (2.9 GB, now supported)
@@ -42,13 +42,19 @@ This has the new finer-grained SynCa computation so it is a bit slower.
 
 ### webgpu 25.0.2.1 epochs=5
 
-* ndata=1: 23.4
+* ndata=1: 23.4 -- 20% SLOWER than 23! :(
 * ndata=2: 27.0
-* ndata=4: 36.5
-* ndata=8: 
-* ndata=16: 
+* ndata=4: 34.0
+* ndata=8: 48.27 -- does better with larger mem
+* ndata=16: 73.9 -- "
 
 ### webgpu 23.pr441 epochs=5
+
+* ndata=1: 19.0
+* ndata=2: 22.5
+* ndata=4: 29.6
+* ndata=8: 43.7
+* ndata=16: 70.0
 
 # V2.0.0-dev0.2.3 webgpu 23.pr441 epochs=1
 

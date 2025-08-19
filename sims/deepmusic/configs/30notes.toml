@@ -4,4 +4,9 @@
 [Run]
 	Trials = 128
 	Epochs = 400
+	Runs = 25
 
+[Params]	
+	Hid2 = false # 30note: false
+	NUnitsY = 10
+	

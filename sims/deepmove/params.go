@@ -31,7 +31,6 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.KNa.On.SetBool(true) // true, Maph=0.02 > false, .04, .05
 
 				ly.Learn.CaLearn.Dt.MTau = 2
-				ly.Learn.CaLearn.ETraceAct.SetBool(false)
 				ly.Learn.CaLearn.ETraceTau = 4
 				ly.Learn.CaLearn.ETraceScale = 0.1 // 0.1 = 0.2 > others
 			}},

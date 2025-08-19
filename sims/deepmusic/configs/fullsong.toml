@@ -4,4 +4,9 @@
 [Run]
 	Trials = 768  # number of rows in song
 	Epochs = 500
+	Runs = 10
+
+[Params]	
+	Hid2 = true # full: true > false
+	NUnitsY = 15 # 15 > 20 > 10 for Hid2 = true
 	

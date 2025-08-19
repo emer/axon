@@ -25,15 +25,13 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.NMDA.Ge = 0.006
 				ly.Acts.GabaB.Gk = 0.015 // 0.015 > 0.012 lower
 
-				ly.Acts.Mahp.Gk = 0.05       // 0.05 > 0.02, esp with kna = false
-				ly.Acts.Sahp.Gk = 0.1        // 0.05 > 0.1? todo retest
-				ly.Acts.Sahp.CaTau = 5       // 5 > 10 verfied
-				ly.Acts.KNa.On.SetBool(true) // false and Mahp = 0.05 is better
-				ly.Acts.KNa.Med.Gk = 0.1     // 0.05 >= 0.1 but not worth nonstandard
+				ly.Acts.Mahp.Gk = 0.05   // 0.05 > 0.02
+				ly.Acts.Sahp.Gk = 0.1    // 0.1 > 0.05 for sure
+				ly.Acts.Sahp.CaTau = 5   // 5 > 10 verfied
+				ly.Acts.KNa.Med.Gk = 0.1 // 0.05 > 0.1 for 30note, 0.1 > 0.05 full
 				ly.Acts.KNa.Slow.Gk = 0.1
 
 				ly.Learn.CaLearn.Dt.MTau = 2 // 2 > 5 actually
-				ly.Learn.CaLearn.ETraceAct.SetBool(false)
 				ly.Learn.CaLearn.ETraceTau = 4
 				ly.Learn.CaLearn.ETraceScale = 0.05 // 0.05 >= 0.1, 0.2 etc
 			}},
@@ -50,15 +48,16 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".CTLayer", Doc: "CT NMDA gbar factor is key",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.12 // CT in general more active
-				ly.Inhib.Layer.Gi = 2.2        // 2.2 >= 2.4 > 2.8
-				ly.CT.GeGain = 1.0             // 1.0 >= 1.5 > 2.0 (very bad) > 0.5
-				ly.Acts.Dend.SSGi = 0          // 0 > higher -- kills nmda maint!
+				ly.Inhib.ActAvg.Nominal = 0.1 // 0.12 > lower, higher; actual ~.18, and MaxGeM is high, but anything > .12 fails -- needs strong self cons.
+				ly.Inhib.Layer.Gi = 2.1       // 2.1 with SSGi = 2
+				ly.Inhib.Layer.FB = 1         // 1 > 1.5
+				ly.CT.GeGain = 1.0            // 1.0 >= 1.5 > 2.0 (very bad) > 0.5
+				ly.Acts.Dend.SSGi = 2         // 2 def is good w/ lower Gi
 				ly.Acts.Decay.Act = 0.0
 				ly.Acts.Decay.Glong = 0.0
 				ly.Acts.MaintNMDA.Ge = 0.007    // 0.007 > 0.008 -- same w/ reg better than not
 				ly.Acts.MaintNMDA.Tau = 300     // 300 > 200
-				ly.Acts.NMDA.Ge = 0.007         // 0.007?
+				ly.Acts.NMDA.Ge = 0.007         // 0.007 >> 0.006 -- interesting
 				ly.Acts.NMDA.Tau = 300          // 300 > 200
 				ly.Acts.GabaB.Gk = 0.015        // 0.015 def
 				ly.Acts.Noise.On.SetBool(false) // todo?
@@ -67,8 +66,9 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".PulvinarLayer", Doc: "Pulv = Pulvinar",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.Layer.Gi = 1.0    // 1.0 > 1.1 >> 1.2
-				ly.Pulv.DriveScale = 0.1   // 0.1 > 0.15 > 0.2; .05 doesn't work at all
+				ly.Inhib.Layer.Gi = 1.0    // 1.0 > 1.05, 0.9
+				ly.Inhib.Layer.FB = 4      // 4 >> 1 in full, 1 > 4 in 30
+				ly.Pulv.DriveScale = 0.12  // 0.12 min w/ CT->P=2, 30note
 				ly.Pulv.FullDriveAct = 0.6 // 0.6 def
 				ly.Acts.Decay.Act = 0.0
 				ly.Acts.Decay.Glong = 0.0        // clear long
@@ -76,31 +76,43 @@ var LayerParams = axon.LayerSheets{
 			}},
 	},
 	"Hid2": {
-		{Sel: "#Hidden2CT", Doc: "CT NMDA gbar factor is key",
-			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.12 // 2 even more active -- maybe try higher inhib
-				ly.Acts.GabaB.Gk = 0.3
-				ly.Acts.NMDA.Ge = 0.3   // higher layer has more nmda..
-				ly.Acts.NMDA.Tau = 300  // 300 > 200
-				ly.Acts.Sahp.CaTau = 10 // todo
-			}},
-		// {Sel: "#HiddenP", Doc: "distributed hidden-layer pulvinar",
+		// {Sel: "#Hidden2CT", Doc: "same as CT1 actually",
 		// 	Set: func(ly *axon.LayerParams) {
-		// 		ly.Inhib.Layer.Gi =  0.9  // 0.9 > 0.8 > 1
-		// 		ly.Pulv.DriveScale = 0.05 // 0.05 > .1
-		// 		ly.Acts.NMDA.Ge =  0.1
+		// 		ly.Inhib.ActAvg.Nominal = 0.1
 		// 	}},
+		{Sel: ".CTLayer", Doc: "gi?",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.Layer.Gi = 2.1
+			}},
+		{Sel: "#Hidden2", Doc: "",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.Layer.Gi = 1.0
+			}},
 	},
 	"30Notes": {
 		{Sel: ".InLay", Doc: "input layers need more inhibition",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.05 // 0.08 for 18 notes -- 30 rows
 			}},
+		{Sel: ".PulvinarLayer", Doc: "less FB inhib",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.Layer.FB = 1     // 1 > 4
+				ly.Pulv.DriveScale = 0.12 // 0.12 > higher, min for CT->P 2.0
+			}},
+		{Sel: ".CTLayer", Doc: "30 needs less inhib, smaller layer",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.Layer.Gi = 1.9
+			}},
 	},
 	"FullSong": {
 		{Sel: ".InLay", Doc: "input layers need more inhibition",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.025 // 0.025 for full song
+			}},
+		{Sel: ".PulvinarLayer", Doc: "more FB inhib",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.Layer.FB = 4     // 4 >> 1
+				ly.Pulv.DriveScale = 0.11 // 0.11 > 0.1, 0.12+
 			}},
 	},
 }
@@ -109,14 +121,13 @@ var LayerParams = axon.LayerSheets{
 // Base is always applied, and others can be optionally selected to apply on top of that.
 var PathParams = axon.PathSheets{
 	"Base": {
-		// Pathways below
 		{Sel: "Path", Doc: "std",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.LRate.Base = 0.002        // full song and 30n: 0.002 > 0.005, 0.001 in the end
-				pt.Learn.DWt.SubMean = 0           // 0 > 1 -- doesn't work at all with 1
-				pt.SWts.Adapt.LRate = 0.0001       // 0.01 == 0.0001 but 0.001 not as good..
-				pt.SWts.Adapt.HiMeanDecay = 0      // 0 > 0.0008 (lvis best)
-				pt.SWts.Adapt.HiMeanThr = 0.5      // 0.5, 0.0008 goes the distance
+				pt.Learn.LRate.Base = 0.002   // full song and 30n: 0.002 > 0.005, 0.001 in the end
+				pt.Learn.DWt.SubMean = 0      // 0 > 1 -- doesn't work at all with 1
+				pt.SWts.Adapt.LRate = 0.0001  // 0.01 == 0.0001 but 0.001 not as good..
+				pt.SWts.Adapt.HiMeanDecay = 0 // 0 > 0.0008 (lvis best)
+				pt.SWts.Adapt.HiMeanThr = 0.5
 				pt.SWts.Init.SPct = 1.0            // 1 works fine here -- .5 also ok
 				pt.Learn.DWt.CaPScale = 0.95       // 0.95 def >> 1
 				pt.Learn.DWt.SynCa20.SetBool(true) // 20 > 10; 25 was even better before
@@ -153,9 +164,21 @@ var PathParams = axon.PathSheets{
 				pt.Com.GType = axon.MaintG
 				pt.SWts.Init.Sym.SetBool(true) // no effect?  not sure why
 			}},
-		{Sel: "#HiddenCTToInputP", Doc: "differential contributions",
+		{Sel: "#HiddenCTToInputP", Doc: "amp up P",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 1.0 // .5 is almost as good as 1, .1 is a bit worse
+				pt.PathScale.Abs = 2.0 // P is weak; interacts with DriveScale
+			}},
+	},
+	"30Notes": {
+		{Sel: "#HiddenCTToInputP", Doc: "amp up P",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 2 // 2 > 1.5 > 1
+			}},
+	},
+	"FullSong": {
+		{Sel: "#HiddenCTToInputP", Doc: "amp up P",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 2.0
 			}},
 	},
 	"Hid2": {
@@ -165,13 +188,15 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: "#HiddenToHidden2", Doc: "jack up fwd pathway",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 2.0 // this mostly serves to get Hidden2 active -- but why is it so low?
+				pt.PathScale.Abs = 1.5 // 1.5 fine
 			}},
-		{Sel: "#Hidden2CTToInputP", Doc: "differential contributions",
+		{Sel: "#HiddenCTToInputP", Doc: "amp up P",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1.0 // 1 is best..
+				pt.PathScale.Abs = 2.0 // ?
+			}},
+		{Sel: "#Hidden2CTToInputP", Doc: "amp up P",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 2.0 // ?
 			}},
 	},
-	"30Notes":  {},
-	"FullSong": {},
 }

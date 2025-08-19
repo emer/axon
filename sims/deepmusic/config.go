@@ -31,9 +31,15 @@ type EnvConfig struct {
 // ParamConfig has config parameters related to sim params.
 type ParamConfig struct { //types:add
 
-	// Hid2 use a second hidden layer that predicts the first.
-	// Is not beneficial for this simple markovian task.
+	// Hid2 makes a second hidden layer on top of the first,
+	// which has independent projections into same InputP
+	// pulvinar layer. It does not need to predict the first
+	// hidden layer to be useful.
 	Hid2 bool
+
+	// NUnitsY is Y dimension for number of units per hidden / CT layer,
+	// with X = 20. Full song, Hid2 is better with 15, 30Notes = 10
+	NUnitsY int `default:"15"`
 
 	// Script is an interpreted script that is run to set parameters in Layer and Path
 	// sheets, by default using the "Script" set name.

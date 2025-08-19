@@ -35,7 +35,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.GabaB.Gk = 0.015 // 0.015 def -- makes no diff down to 0.008
 
 				ly.Acts.Mahp.Gk = 0.05       // 0.05 > 0.02
-				ly.Acts.Sahp.Gk = 0.05       // 0.05 > 0.05 def with kna .1
+				ly.Acts.Sahp.Gk = 0.05       // 0.05 > 0.1 def with kna .1
 				ly.Acts.Sahp.CaTau = 10      // 10 (def) > 5?
 				ly.Acts.KNa.On.SetBool(true) // false > true
 				ly.Acts.KNa.Med.Gk = 0.1     // 0.05 >= 0.1 but not worth nonstandard
@@ -43,9 +43,8 @@ var LayerParams = axon.LayerSheets{
 
 				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // false > true
 				ly.Learn.CaLearn.Dt.MTau = 2                 // 2 > 5 actually
-				ly.Learn.CaLearn.ETraceAct.SetBool(false)
-				ly.Learn.CaLearn.ETraceTau = 4     // 4 == 5
-				ly.Learn.CaLearn.ETraceScale = 0.1 // 0.1 > 0.05, 0.2 etc
+				ly.Learn.CaLearn.ETraceTau = 4               // 4 == 5
+				ly.Learn.CaLearn.ETraceScale = 0.1           // 0.1 > 0.05, 0.2 etc
 
 				// ly.Learn.CaSpike.SpikeCaSyn = 8 // vs 12 in lvis -- 12 does NOT work here
 			}},
@@ -62,9 +61,9 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".CTLayer", Doc: "CT NMDA gbar factor is key",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.Layer.Gi = 2.2 // 2.2 > others
+				ly.Inhib.Layer.Gi = 2.1 // 2.1 > others for SSGi = 2
 				ly.Inhib.Layer.FB = 1
-				ly.Acts.Dend.SSGi = 0 // 0 > higher -- kills nmda maint!
+				ly.Acts.Dend.SSGi = 2 // 0 > higher -- kills nmda maint!
 				ly.CT.GeGain = 2.0    // 2.0 > 1.5 for sure (v0.2.1+)
 				ly.CT.DecayTau = 50   // 100 for Cycles=300 TODO: revisit!
 				ly.Acts.Decay.Act = 0.0

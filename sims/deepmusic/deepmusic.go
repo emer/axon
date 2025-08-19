@@ -156,16 +156,14 @@ func (ss *Sim) ConfigEnv() {
 	// maxRows := 60 // 30 is good benchmark, 25 it almost fully solves
 	// have to push it to 60 to get an effect of Tau=4 vs. 1
 	maxRows := 32
-	if ss.Config.Params.Hid2 {
-		ss.Params.ExtraSheets = "Hid2 "
-	} else {
-		ss.Params.ExtraSheets = ""
-	}
 	if ss.Config.Env.FullSong {
 		maxRows = 0 // full thing
-		ss.Params.ExtraSheets += "FullSong"
+		ss.Params.ExtraSheets = "FullSong"
 	} else {
-		ss.Params.ExtraSheets += "30Notes"
+		ss.Params.ExtraSheets = "30Notes"
+	}
+	if ss.Config.Params.Hid2 {
+		ss.Params.ExtraSheets += " Hid2"
 	}
 	track := 0
 	wrapNotes := false // does a bit better with false for short lengths (30)
@@ -216,10 +214,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	space := float32(5)
 
-	nUnits := 10
-	if ev.MaxSteps == 0 {
-		nUnits = 20
-	}
+	nUnits := ss.Config.Params.NUnitsY
 
 	in, inPulv := net.AddInputPulv4D("Input", 1, nnotes, ss.Config.Env.UnitsPer, 1, space)
 	in.AddClass("InLay")
@@ -367,6 +362,20 @@ func (ss *Sim) ConfigLoops() {
 		axon.SaveWeightsIfConfigSet(ss.Net, ss.Config.Log.SaveWeights, ctrString, ss.RunName())
 	})
 
+	// note: network just recalibrates weights down to low level..
+	// trainEpoch.OnStart.Add("TurnUpWts", func() {
+	// 	epc := trainEpoch.Counter.Cur
+	// 	if epc != 100 {
+	// 		return
+	// 	}
+	// 	ly := ss.Net.LayerByName("InputP")
+	// 	pt := ly.RecvPaths[0]
+	// 	pt.Params.PathScale.Abs = 5
+	// 	ss.Net.InitGScale()
+	// 	axon.ToGPUParams()
+	// 	fmt.Println("At epoch:", epc, "turned up PathScale.Abs to InputP")
+	// })
+
 	if ss.Config.GUI {
 		axon.LooperUpdateNetView(ls, Cycle, Trial, ss.NetViewUpdater)
 
@@ -418,6 +427,7 @@ func (ss *Sim) NewRun() {
 	ss.Envs.ByMode(Train).Init(0)
 	ss.Envs.ByMode(Test).Init(0)
 	ctx.Reset()
+	ss.ApplyParams()
 	ss.Net.InitWeights()
 	if ss.Config.Run.StartWeights != "" { // this is just for testing -- not usually needed
 		ss.Net.OpenWeightsJSON(core.Filename(ss.Config.Run.StartWeights))
@@ -652,7 +662,7 @@ func (ss *Sim) ConfigStats() {
 		prevCorFunc(mode, level, phase == Start)
 	})
 
-	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
+	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer, axon.PulvinarLayer)
 	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		actGeFunc(mode, level, phase == Start)
@@ -684,7 +694,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 		return counters
 	}
 	counters += fmt.Sprintf(" TrialName: %s", curModeDir.StringValue("TrialName").String1D(di))
-	statNames := []string{"InputP_CorSim"}
+	statNames := []string{"InputP_CorSim", "Err"}
 	if level == Cycle || curModeDir.Node(statNames[0]) == nil {
 		return counters
 	}
