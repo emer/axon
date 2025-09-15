@@ -84,14 +84,14 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".PTPredLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.Layer.Gi = 0.75 // 0.8 > 0.9, 0.7
-				ly.CT.GeGain = 0.05      // 0.05 >= 0.07 > 0.03
-				ly.CT.DecayTau = 100     // 100 >= 120, 80
-				ly.Acts.Dend.SSGi = 2    // 2 new default
+				ly.Inhib.Layer.Gi = 0.7 // 0.7 > 0.8 > 0.9 with SSGi=2
+				ly.CT.GeGain = 0.05     // 0.05 >= 0.07 > 0.03
+				ly.CT.DecayTau = 100    // 100 >= 120, 80
+				ly.Acts.Dend.SSGi = 2   // 2 new default
 			}},
 		{Sel: ".CTLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.Layer.Gi = 1.4 // 1.4 > 1.2 >= 1.6
+				ly.Inhib.Layer.Gi = 1.2 // 1.2 > 1.4 > 1.6 with SSGi=2
 				ly.CT.GeGain = 5        // 5 > 3, 8
 				ly.CT.DecayTau = 100    // 100 > 120 >> 80
 				ly.Acts.Dend.SSGi = 2   // 2 new default

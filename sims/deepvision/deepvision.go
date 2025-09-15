@@ -420,7 +420,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectCTSelf(v4CT, pts.PT3x3Skp1, "V4CTSelf")
 
 	net.ConnectLayers(v2, v4, pts.PT4x4Skp2, axon.ForwardPath)
-	net.ConnectLayers(v4, v2, pts.PT4x4Skp2Recip, axon.BackPath)
+	net.ConnectLayers(v4, v2, pts.PT4x4Skp2Recip, axon.BackPath) // actually beneficial on v2, v1 pred
 
 	// not useful:
 	// net.ConnectLayers(v4, v3, pts.PT3x3Skp1, axon.BackPath) // v4 -> v3 but not v3 -> v4
@@ -433,10 +433,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectLayers(v4CT, v2CT, pts.PT4x4Skp2Recip, axon.BackPath) // tiny bit worse
 
 	// leak from super to CT:
-	net.ConnectLayers(v4, v2CT, pts.PT2x2Skp2Recip, axon.BackPath) // strong .5 in orig
+	net.ConnectLayers(v4, v2CT, pts.PT2x2Skp2Recip, axon.BackPath) // likely beneficial.
 
-	net.ConnectLayers(v1m, v4, rndcut, axon.ForwardPath).AddClass("V1SC")   // shortcut!
-	net.ConnectLayers(v1m, v4CT, rndcut, axon.ForwardPath).AddClass("V1SC") // shortcut!
+	net.ConnectLayers(v1m, v4, rndcut, axon.ForwardPath).AddClass("V1SC")   // shortcut, not IT
+	net.ConnectLayers(v1m, v4CT, rndcut, axon.ForwardPath).AddClass("V1SC") // shortcut, not IT
 
 	v4.PlaceRightOf(v3, space)
 
@@ -472,8 +472,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectLayers(teo, v3CT, pts.PT3x3Skp1, axon.BackPath)
 	// net.ConnectLayers(teo, v4CT, pts.PT3x3Skp1, axon.BackPath) // no diff really
 
-	net.ConnectLayers(v1m, teo, rndcut, axon.ForwardPath).AddClass("V1SC")   // shortcut!
-	net.ConnectLayers(v1m, teoCT, rndcut, axon.ForwardPath).AddClass("V1SC") // shortcut!
+	net.ConnectLayers(v1m, teo, rndcut, axon.ForwardPath).AddClass("V1SCIT")   // shortcut!
+	net.ConnectLayers(v1m, teoCT, rndcut, axon.ForwardPath).AddClass("V1SCIT") // shortcut!
 
 	v4P.PlaceBehind(v4CT, space)
 	teo.PlaceRightOf(eyepos, space)
@@ -502,8 +502,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	teoP = net.AddPulvForLayer(teo, space).AddClass("TEO")
 	net.ConnectToPulv(te, teCT, teoP, full, full, "FromTEOP")
 
-	net.ConnectLayers(v1m, te, rndcut, axon.ForwardPath).AddClass("V1SC")   // shortcut!
-	net.ConnectLayers(v1m, teCT, rndcut, axon.ForwardPath).AddClass("V1SC") // shortcut!
+	net.ConnectLayers(v1m, te, rndcut, axon.ForwardPath).AddClass("V1SCIT")   // shortcut!
+	net.ConnectLayers(v1m, teCT, rndcut, axon.ForwardPath).AddClass("V1SCIT") // shortcut!
 
 	teoP.PlaceBehind(teoCT, space)
 	te.PlaceRightOf(teo, space)

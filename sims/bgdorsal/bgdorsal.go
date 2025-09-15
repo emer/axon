@@ -242,6 +242,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	snc := net.AddLayer2D("SNc", axon.InputLayer, 1, 1)
 	_ = snc
 
+	// this doesn't have much effect -- slightly worse
+	// pt := errors.Log1(gpePr.RecvPathBySendName("DGPePr")).(*axon.Path)
+	// pt.Pattern = p1to1
+
 	state := net.AddLayer4D("State", axon.InputLayer, 1, np, nuPer, maxSeqAct)
 	s1 := net.AddLayer4D("S1", axon.InputLayer, 1, np, nuPer, nAct+1)
 
@@ -1028,7 +1032,7 @@ func (ss *Sim) ConfigStats() {
 		}
 	})
 
-	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
+	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.PTMaintLayer, axon.PTPredLayer, axon.TargetLayer)
 	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		actGeFunc(mode, level, phase == Start)
