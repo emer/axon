@@ -805,14 +805,14 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1.4, 2.6)
 	nv.SceneXYZ().Camera.LookAt(math32.Vector3{}, math32.Vec3(0, 1, 0))
 
-	ss.StatsInit()
-
+	evtab, _ := ss.GUI.Tabs.NewTab("Maze")
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*armaze.Env)
 	ss.EnvGUI = &armaze.GUI{}
-	eb := ss.EnvGUI.ConfigWorldGUI(ev)
-	eb.RunWindow()
-	ss.GUI.Body.RunMainWindow()
+	ss.EnvGUI.ConfigWorldGUI(ev, evtab)
 
+	ss.StatsInit()
+
+	ss.GUI.Tabs.SelectTabIndex(0)
 	ss.GUI.FinalizeGUI(false)
 }
 

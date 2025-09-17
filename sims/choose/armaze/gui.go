@@ -173,7 +173,7 @@ type GUI struct {
 
 // ConfigWorldGUI configures all the world view GUI elements
 // pass an initial env to use for configuring
-func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
+func (vw *GUI) ConfigWorldGUI(ev *Env, b core.Widget) {
 	vw.Disp = true
 	vw.Env = ev
 	vw.EnvName = ev.Name
@@ -193,18 +193,17 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 	}
 	vw.MatColors = []string{"blue", "orange", "red", "violet", "navy", "brown", "pink", "purple", "olive", "chartreuse", "cyan", "magenta", "salmon", "goldenrod", "SykBlue"}
 
-	b := core.NewBody("armaze").SetTitle("Arm Maze")
-
+	core.NewToolbar(b).Maker(vw.MakeToolbar)
 	split := core.NewSplits(b)
 
-	svfr := core.NewFrame(split)
-	svfr.SetName("svfr")
-	svfr.Styler(func(s *styles.Style) {
+	fr := core.NewFrame(split)
+	fr.Styler(func(s *styles.Style) {
 		s.Direction = styles.Column
 	})
 
-	vw.EnvForm = core.NewForm(svfr).SetStruct(vw)
-	imfr := core.NewFrame(svfr)
+	// vw.EnvForm = core.NewForm(fr).SetStruct(vw)
+	core.Bind(&vw.Disp, core.NewSwitch(fr).SetText("Display"))
+	imfr := core.NewFrame(fr)
 	imfr.Styler(func(s *styles.Style) {
 		s.Display = styles.Grid
 		s.Columns = 2
@@ -223,14 +222,14 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 
 	wd := float32(420)
 	ht := float32(120)
-	vw.USposPlot = plotcore.NewEditor(svfr)
+	vw.USposPlot = plotcore.NewEditor(fr)
 	vw.USposPlot.Name = "us-pos"
 	vw.USposPlot.Styler(func(s *styles.Style) {
 		s.Max.X.Px(wd)
 		s.Max.Y.Px(ht)
 	})
 
-	vw.USnegPlot = plotcore.NewEditor(svfr)
+	vw.USnegPlot = plotcore.NewEditor(fr)
 	vw.USnegPlot.Name = "us-neg"
 	vw.USnegPlot.Styler(func(s *styles.Style) {
 		s.Max.X.Px(wd)
@@ -238,14 +237,7 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 	})
 	vw.ConfigUSPlots()
 
-	tv := core.NewTabs(split)
-	vw.WorldTabs = tv
-
-	scfr, _ := tv.NewTab("3D View")
-
-	////////    3D Scene
-
-	vw.SceneEditor = xyzcore.NewSceneEditor(scfr)
+	vw.SceneEditor = xyzcore.NewSceneEditor(split)
 	vw.SceneEditor.UpdateWidget()
 	sc := vw.SceneEditor.SceneXYZ()
 	vw.MakeWorld(sc)
@@ -259,25 +251,7 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 	sc.SaveCamera("1")
 	sc.SaveCamera("default")
 
-	//////////////////////////////////////////
-	//    2D Scene
-
-	twov := core.NewSVG(twofr)
-	twov.Name = "sceneview"
-	twov.Styler(func(s *styles.Style) {
-		twov.SVG.Root.ViewBox.Size.Set(vw.Geom.Width+4, vw.Geom.Depth+4)
-		twov.SVG.Root.ViewBox.Min.Set(-0.5*(vw.Geom.Width+4), -0.5*(vw.Geom.Depth+4))
-		twov.SetReadOnly(false)
-	})
-
-	////////    Toolbar
-
 	split.SetSplits(.4, .6)
-
-	b.AddTopBar(func(bar *core.Frame) {
-		core.NewToolbar(bar).Maker(vw.MakeToolbar)
-	})
-	return b
 }
 
 func (vw *GUI) MakeToolbar(p *tree.Plan) {
