@@ -1,10 +1,11 @@
 Name = 'VSPatch'
 Title = 'Ventral Striatum Patch'
-URL = 'https'
+URL = 'https://github.com/emer/axon/blob/main/sims/vspatch/README.md'
 Doc = 'This project simulates the Ventral Striatum (VS) Patch (striosome) neurons that predict reward to generate an RPE (reward prediction error). It is a testbed for learning the quantitative value representations needed for this.'
 Includes = []
 GUI = false
 Debug = false
+GPU = true
 
 [Env]
 
@@ -20,7 +21,6 @@ Debug = false
   Good = true
 
 [Run]
-  GPU = true
   GPUDevice = 0
   NData = 16
   NThreads = 0

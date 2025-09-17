@@ -2,7 +2,7 @@
   Acts     {
     Clamp     { Ge: 1 [0.8,1.5] }
   }
-////////  Layer: VsPatchD1
+////////  Layer: VSPatchD1
   Acts     {
     Decay     { Glong: 1 [0,0.6], LearnCa: 1 [0] }
     Clamp     { Ge: 1 [0.8,1.5] }
@@ -14,7 +14,7 @@
   Learn    {
     TrgAvgAct { RescaleOn: false [true] }
   }
-  ////////  Path: StateToVsPatchD1
+  ////////  Path: StateToVSPatchD1
     PathScale { Abs: 2 [1] }
     SWts      {
       Init  { Sym: false [true] }
@@ -23,7 +23,7 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-////////  Layer: VsPatchD2
+////////  Layer: VSPatchD2
   Acts     {
     Decay     { Glong: 1 [0,0.6], LearnCa: 1 [0] }
     Clamp     { Ge: 1 [0.8,1.5] }
@@ -35,7 +35,7 @@
   Learn    {
     TrgAvgAct { RescaleOn: false [true] }
   }
-  ////////  Path: StateToVsPatchD2
+  ////////  Path: StateToVSPatchD2
     PathScale { Abs: 2 [1] }
     SWts      {
       Init  { Sym: false [true] }

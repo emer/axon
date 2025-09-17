@@ -1,10 +1,10 @@
 ////////  Layer: Depth
   Acts     {
-    Mahp      { Gk: 0.04 [0.02] }
+    Mahp      { Gk: 0.02 [0.05] }
   }
 ////////  Layer: DepthP
   Acts     {
-    Mahp      { Gk: 0.04 [0.02] }
+    Mahp      { Gk: 0.02 [0.05] }
   }
   Inhib    {
     Layer  { Gi: 0.8 [1,1.1,0.75,0.9] }
@@ -15,11 +15,11 @@
     }
 ////////  Layer: HeadDir
   Acts     {
-    Mahp      { Gk: 0.04 [0.02] }
+    Mahp      { Gk: 0.02 [0.05] }
   }
 ////////  Layer: HeadDirP
   Acts     {
-    Mahp      { Gk: 0.04 [0.02] }
+    Mahp      { Gk: 0.02 [0.05] }
   }
   Inhib    {
     Layer  { Gi: 0.8 [1,1.1,0.75,0.9] }
@@ -30,11 +30,11 @@
     }
 ////////  Layer: Action
   Acts     {
-    Mahp      { Gk: 0.04 [0.02] }
+    Mahp      { Gk: 0.02 [0.05] }
   }
 ////////  Layer: DepthHid
   Acts     {
-    Mahp      { Gk: 0.04 [0.02] }
+    Mahp      { Gk: 0.02 [0.05] }
   }
   Inhib    {
     Layer  { Gi: 1.2 [1,1.1,0.75,0.9] }
@@ -53,7 +53,7 @@
     }
 ////////  Layer: DepthHidCT
   Acts     {
-    Mahp      { Gk: 0.04 [0.02] }
+    Mahp      { Gk: 0.02 [0.05] }
   }
   Inhib    {
     Layer  { Gi: 2.6 [1,1.1,0.75,0.9] }
@@ -70,7 +70,7 @@
     }
 ////////  Layer: HeadDirHid
   Acts     {
-    Mahp      { Gk: 0.04 [0.02] }
+    Mahp      { Gk: 0.02 [0.05] }
   }
   ////////  Path: HeadDirPToHeadDirHid
     Learn     {
@@ -86,7 +86,7 @@
     }
 ////////  Layer: HeadDirHidCT
   Acts     {
-    Mahp      { Gk: 0.04 [0.02] }
+    Mahp      { Gk: 0.02 [0.05] }
   }
   Inhib    {
     Layer  { Gi: 2 [1,1.1,0.75,0.9] }

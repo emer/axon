@@ -1,10 +1,11 @@
 Name = 'DeepMove'
 Title = 'DeepAxon Move Prediction'
-URL = 'https'
+URL = 'https://github.com/emer/axon/blob/main/sims/deepmove/README.md'
 Doc = 'This demonstrates a basic deep predictive learning Axon model that learns to predict the effects of movement on visual inputs.'
 Includes = []
 GUI = false
 Debug = false
+GPU = true
 
 [Env]
   UnitsPer = 4
@@ -22,12 +23,11 @@ Debug = false
   Good = true
 
 [Run]
-  GPU = true
   GPUDevice = 0
   NData = 16
   NThreads = 0
   Run = 0
-  Runs = 5
+  Runs = 2
   Epochs = 100
   Trials = 196
   Cycles = 200
@@ -39,6 +39,7 @@ Debug = false
 [Log]
   SaveWeights = false
   Train = [
+    'Expt',
     'Run',
     'Epoch'
   ]

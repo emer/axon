@@ -17,7 +17,7 @@
     }
 ////////  Layer: HiddenCT
   Inhib    {
-    Layer  { Gi: 2.2 [1,1.1,0.75,0.9] }
+    Layer  { Gi: 2.1 [1,1.1,0.75,0.9] }
     Pool   { Gi: 2.2 [1,1.1,0.75,0.9] }
   }
   ////////  Path: HiddenToHiddenCT

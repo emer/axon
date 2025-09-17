@@ -1,16 +1,17 @@
 Name = 'Inhib'
 Title = 'Axon inhibition test'
-URL = 'https'
-Doc = 'This explores how inhibitory interneurons can dynamically control overall activity levels within the network'
+URL = 'https://github.com/emer/axon/blob/main/sims/inhib/README.md'
+Doc = 'This explores how inhibitory interneurons can dynamically control overall activity levels within the network, by providing both feedforward and feedback inhibition to excitatory pyramidal neurons, with different time scales provided by PV neurons (fast spiking) and SST neurons (slow spiking).'
 Includes = []
 GUI = false
 Debug = false
+GPU = true
 
 [Params]
   InputPct = 15.0
   NLayers = 2
   Script = ''
-  Sheet = 'FSFFFB Trained'
+  Sheet = ''
   Tag = ''
   Note = ''
   SaveAll = false
@@ -21,7 +22,6 @@ Debug = false
     Y = 10
 
 [Run]
-  GPU = false
   GPUDevice = 0
   Trials = 10
   Cycles = 200

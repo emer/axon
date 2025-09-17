@@ -60,17 +60,17 @@ Layer: Urgency
 
 Layer: VGPi
          VGPePr       Inhib  Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:	  0.50	LRate:	  0.04
-         VMtxGo       Inhib  Abs:	  0.20	Rel:	  1.00	GScale:	  0.03	Rel:	  0.50	LRate:	  0.04
+      VMatrixGo       Inhib  Abs:	  0.20	Rel:	  1.00	GScale:	  0.03	Rel:	  0.50	LRate:	  0.04
            VSTN     Forward  Abs:	  0.20	Rel:	  1.00	GScale:	  0.05	Rel:	  1.00	LRate:	  0.04
 
 Layer: VGPePr
-         VMtxNo       Inhib  Abs:	  1.00	Rel:	  1.00	GScale:	  0.17	Rel:	  0.50	LRate:	  0.04
+      VMatrixNo       Inhib  Abs:	  1.00	Rel:	  1.00	GScale:	  0.17	Rel:	  0.50	LRate:	  0.04
          VGPePr       Inhib  Abs:	  4.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.50	LRate:	  0.04
            VSTN     Forward  Abs:	  0.50	Rel:	  1.00	GScale:	  0.12	Rel:	  1.00	LRate:	  0.04
 
 Layer: VGPeAk
          VGPePr       Inhib  Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:	  0.50	LRate:	  0.04
-         VMtxGo       Inhib  Abs:	  0.50	Rel:	  1.00	GScale:	  0.08	Rel:	  0.50	LRate:	  0.04
+      VMatrixGo       Inhib  Abs:	  0.50	Rel:	  1.00	GScale:	  0.08	Rel:	  0.50	LRate:	  0.04
            VSTN     Forward  Abs:	  0.10	Rel:	  1.00	GScale:	  0.03	Rel:	  1.00	LRate:	  0.04
 
 Layer: VSTN
@@ -80,8 +80,8 @@ Layer: VSTN
          OFCpos     Forward  Abs:	  2.00	Rel:	  1.00	GScale:	  0.10	Rel:	  0.25	LRate:	  0.04
           ILpos     Forward  Abs:	  2.00	Rel:	  1.00	GScale:	  0.12	Rel:	  0.25	LRate:	  0.04
 
-Layer: VMtxGo
-         VMtxNo       Inhib  Abs:	  1.00	Rel:	  0.05	GScale:	  0.02	Rel:	  0.05	LRate:	  0.04
+Layer: VMatrixGo
+      VMatrixNo       Inhib  Abs:	  1.00	Rel:	  0.05	GScale:	  0.02	Rel:	  0.05	LRate:	  0.04
          VGPeAk       Inhib  Abs:	  3.00	Rel:	  1.00	GScale:	  0.11	Rel:	  0.95	LRate:	  0.04
           USpos    VSMatrix  Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:	  0.14	LRate:	  0.01
     BLAposAcqD1    VSMatrix  Abs:	  4.00	Rel:	  1.00	GScale:	  0.19	Rel:	  0.14	LRate:	  0.01
@@ -92,7 +92,7 @@ Layer: VMtxGo
           ILneg    VSMatrix  Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:	  0.14	LRate:	  0.01
         ACCcost    VSMatrix  Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:	  0.14	LRate:	  0.01
 
-Layer: VMtxNo
+Layer: VMatrixNo
          VGPeAk       Inhib  Abs:	  3.00	Rel:	  1.00	GScale:	  0.12	Rel:	  1.00	LRate:	  0.04
           ILneg    VSMatrix  Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:	  0.11	LRate:	  0.01
     BLAposAcqD1    VSMatrix  Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:	  0.11	LRate:	  0.01
@@ -107,7 +107,7 @@ Layer: VMtxNo
 
 Layer: VSGated
 
-Layer: VsPatchD1
+Layer: VSPatchD1
        ILnegPTp     VSPatch  Abs:	  3.00	Rel:	  1.00	GScale:	  0.11	Rel:	  0.14	LRate:	  0.02
          Drives     VSPatch  Abs:	  3.00	Rel:	  1.00	GScale:	  3.00	Rel:	  1.00	LRate:	  0.02
       OFCposPTp     VSPatch  Abs:	  3.00	Rel:	  1.00	GScale:	  0.14	Rel:	  0.14	LRate:	  0.02
@@ -117,7 +117,7 @@ Layer: VsPatchD1
          PVposP     VSPatch  Abs:	  3.00	Rel:	  1.00	GScale:	  0.14	Rel:	  0.14	LRate:	  0.02
              CS     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.07	Rel:	  0.14	LRate:	  0.04
 
-Layer: VsPatchD2
+Layer: VSPatchD2
        ILnegPTp     VSPatch  Abs:	  3.00	Rel:	  1.00	GScale:	  0.11	Rel:	  0.14	LRate:	  0.02
          Drives     VSPatch  Abs:	  3.00	Rel:	  1.00	GScale:	  3.00	Rel:	  1.00	LRate:	  0.02
       OFCposPTp     VSPatch  Abs:	  3.00	Rel:	  1.00	GScale:	  0.14	Rel:	  0.14	LRate:	  0.02

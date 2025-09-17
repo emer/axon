@@ -3,21 +3,21 @@ Layer: Layer0
 
 Layer: Layer1
          Layer0     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.83	LRate:	  0.04
-         Inhib1       Inhib  Abs:	  0.00	Rel:	  1.00	GScale:	  0.00	Rel:	  1.00	LRate:	  0.04
+         Inhib1       Inhib  Abs:	  0.80	Rel:	  1.00	GScale:	  0.08	Rel:	  1.00	LRate:	  0.04
          Layer2        Back  Abs:	  1.00	Rel:	  0.20	GScale:	  0.02	Rel:	  0.17	LRate:	  0.04
 
 Layer: Inhib1
-         Layer0     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:	  0.45	LRate:	  0.04
-         Layer1        Back  Abs:	  1.00	Rel:	  0.20	GScale:	  0.01	Rel:	  0.09	LRate:	  0.04
-         Inhib1       Inhib  Abs:	  0.00	Rel:	  1.00	GScale:	  0.00	Rel:	  1.00	LRate:	  0.04
-         Layer2     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:	  0.45	LRate:	  0.04
+         Layer0     Forward  Abs:	  5.00	Rel:	  1.00	GScale:	  0.17	Rel:	  0.33	LRate:	  0.04
+         Layer1        Back  Abs:	  5.00	Rel:	  1.00	GScale:	  0.17	Rel:	  0.33	LRate:	  0.04
+         Inhib1       Inhib  Abs:	  0.80	Rel:	  1.00	GScale:	  0.08	Rel:	  1.00	LRate:	  0.04
+         Layer2     Forward  Abs:	  5.00	Rel:	  1.00	GScale:	  0.17	Rel:	  0.33	LRate:	  0.04
 
 Layer: Layer2
          Layer1     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:	  0.50	LRate:	  0.04
          Layer1     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:	  0.50	LRate:	  0.04
-         Inhib2       Inhib  Abs:	  0.00	Rel:	  1.00	GScale:	  0.00	Rel:	  1.00	LRate:	  0.04
+         Inhib2       Inhib  Abs:	  0.80	Rel:	  1.00	GScale:	  0.08	Rel:	  1.00	LRate:	  0.04
 
 Layer: Inhib2
-         Layer1     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.83	LRate:	  0.04
-         Layer2        Back  Abs:	  1.00	Rel:	  0.20	GScale:	  0.02	Rel:	  0.17	LRate:	  0.04
-         Inhib2       Inhib  Abs:	  0.00	Rel:	  1.00	GScale:	  0.00	Rel:	  1.00	LRate:	  0.04
+         Layer1     Forward  Abs:	  5.00	Rel:	  1.00	GScale:	  0.25	Rel:	  0.50	LRate:	  0.04
+         Layer2        Back  Abs:	  5.00	Rel:	  1.00	GScale:	  0.25	Rel:	  0.50	LRate:	  0.04
+         Inhib2       Inhib  Abs:	  0.80	Rel:	  1.00	GScale:	  0.08	Rel:	  1.00	LRate:	  0.04

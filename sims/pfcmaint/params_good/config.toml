@@ -1,10 +1,11 @@
 Name = 'PFCMaintS'
 Title = 'Prefrontal Cortex Maintenance'
-URL = 'https'
-Doc = 'This project tests prefrontal cortex (PFC) active maintenance mechanisms supported by the pyramidal tract (PT) neurons'
+URL = 'https://github.com/emer/axon/blob/main/sims/pfcmaint/README.md'
+Doc = 'This project tests prefrontal cortex (PFC) active maintenance mechanisms supported by the pyramidal tract (PT) neurons, in the PTMaint layer type.'
 Includes = []
 GUI = false
 Debug = false
+GPU = true
 
 [Env]
   [Env.Env]
@@ -25,7 +26,6 @@ Debug = false
   Good = true
 
 [Run]
-  GPU = true
   GPUDevice = 0
   NData = 8
   NThreads = 0

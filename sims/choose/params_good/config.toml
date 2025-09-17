@@ -1,13 +1,14 @@
 Name = 'Choose'
 Title = 'Choose Maze Arms'
-URL = 'https'
+URL = 'https://github.com/emer/axon/blob/main/sims/choose/README.md'
 Doc = 'This project tests the Rubicon framework making cost-benefit based choices.'
 Includes = []
 GUI = false
 Debug = false
+GPU = true
 
 [Env]
-  Config = '02_us_probability.toml'
+  Config = ''
   NDrives = 4
   PctCortexStEpc = 50
   PctCortexNEpc = 1
@@ -23,7 +24,6 @@ Debug = false
   Good = true
 
 [Run]
-  GPU = true
   GPUDevice = 0
   NData = 8
   NThreads = 0
@@ -38,6 +38,7 @@ Debug = false
 [Log]
   SaveWeights = false
   Train = [
+    'Expt',
     'Run',
     'Epoch'
   ]

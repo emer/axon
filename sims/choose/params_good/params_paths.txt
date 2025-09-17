@@ -15,17 +15,17 @@ Layer: CostFin
       ACCcostPT     Forward  Abs:	  0.20	Rel:	  1.00	GScale:	  0.20	Rel:	  1.00	LRate:	  0.04
 
 Layer: USposP
-       OFCposCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.11	Rel:	  0.33	LRate:	  0.01
+       OFCposCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.11	Rel:	  0.33	LRate:	  0.04
        OFCposPT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.11	Rel:	  0.33	LRate:	  0.01
       OFCposPTp     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.06	Rel:	  0.33	LRate:	  0.01
 
 Layer: USnegP
-       OFCnegCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:	  0.33	LRate:	  0.01
+       OFCnegCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:	  0.33	LRate:	  0.04
        OFCnegPT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:	  0.33	LRate:	  0.01
       OFCnegPTp     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.33	LRate:	  0.01
 
 Layer: CostP
-      ACCcostCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.25	Rel:	  0.50	LRate:	  0.01
+      ACCcostCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.25	Rel:	  0.50	LRate:	  0.04
      ACCcostPTp     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.50	LRate:	  0.01
 
 Layer: PVpos
@@ -37,40 +37,40 @@ Layer: PVneg
         ILnegPT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.12	Rel:	  0.50	LRate:	  0.04
 
 Layer: PVposP
-       OFCposCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:	  0.20	LRate:	  0.01
+       OFCposCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:	  0.20	LRate:	  0.04
       OFCposPTp     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.01	Rel:	  0.20	LRate:	  0.01
-        ILposCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:	  0.20	LRate:	  0.01
+        ILposCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:	  0.20	LRate:	  0.04
        ILposPTp     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:	  0.20	LRate:	  0.01
        ILposPTp     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:	  0.20	LRate:	  0.01
 
 Layer: PVnegP
-       OFCnegCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.20	Rel:	  0.20	LRate:	  0.01
+       OFCnegCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.20	Rel:	  0.20	LRate:	  0.04
       OFCnegPTp     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:	  0.20	LRate:	  0.01
-        ILnegCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:	  0.20	LRate:	  0.01
+        ILnegCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:	  0.20	LRate:	  0.04
        ILnegPTp     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:	  0.20	LRate:	  0.01
        ILnegPTp     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:	  0.20	LRate:	  0.01
 
 Layer: Drives
 
 Layer: DrivesP
-       OFCposCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.17	Rel:	  0.50	LRate:	  0.01
+       OFCposCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.17	Rel:	  0.50	LRate:	  0.04
       OFCposPTp     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.50	LRate:	  0.01
 
 Layer: Urgency
 
 Layer: VGPi
          VGPePr       Inhib  Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:	  0.50	LRate:	  0.04
-         VMtxGo       Inhib  Abs:	  0.20	Rel:	  1.00	GScale:	  0.03	Rel:	  0.50	LRate:	  0.04
+      VMatrixGo       Inhib  Abs:	  0.20	Rel:	  1.00	GScale:	  0.03	Rel:	  0.50	LRate:	  0.04
            VSTN     Forward  Abs:	  0.20	Rel:	  1.00	GScale:	  0.05	Rel:	  1.00	LRate:	  0.04
 
 Layer: VGPePr
-         VMtxNo       Inhib  Abs:	  1.00	Rel:	  1.00	GScale:	  0.17	Rel:	  0.50	LRate:	  0.04
+      VMatrixNo       Inhib  Abs:	  1.00	Rel:	  1.00	GScale:	  0.17	Rel:	  0.50	LRate:	  0.04
          VGPePr       Inhib  Abs:	  4.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.50	LRate:	  0.04
            VSTN     Forward  Abs:	  0.50	Rel:	  1.00	GScale:	  0.12	Rel:	  1.00	LRate:	  0.04
 
 Layer: VGPeAk
          VGPePr       Inhib  Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:	  0.50	LRate:	  0.04
-         VMtxGo       Inhib  Abs:	  0.50	Rel:	  1.00	GScale:	  0.08	Rel:	  0.50	LRate:	  0.04
+      VMatrixGo       Inhib  Abs:	  0.50	Rel:	  1.00	GScale:	  0.08	Rel:	  0.50	LRate:	  0.04
            VSTN     Forward  Abs:	  0.10	Rel:	  1.00	GScale:	  0.03	Rel:	  1.00	LRate:	  0.04
 
 Layer: VSTN
@@ -80,8 +80,8 @@ Layer: VSTN
          OFCpos     Forward  Abs:	  2.00	Rel:	  1.00	GScale:	  0.10	Rel:	  0.25	LRate:	  0.04
           ILpos     Forward  Abs:	  2.00	Rel:	  1.00	GScale:	  0.12	Rel:	  0.25	LRate:	  0.04
 
-Layer: VMtxGo
-         VMtxNo       Inhib  Abs:	  1.00	Rel:	  0.05	GScale:	  0.02	Rel:	  0.05	LRate:	  0.04
+Layer: VMatrixGo
+      VMatrixNo       Inhib  Abs:	  1.00	Rel:	  0.05	GScale:	  0.02	Rel:	  0.05	LRate:	  0.04
          VGPeAk       Inhib  Abs:	  3.00	Rel:	  1.00	GScale:	  0.11	Rel:	  0.95	LRate:	  0.04
           USpos    VSMatrix  Abs:	  1.50	Rel:	  1.00	GScale:	  0.19	Rel:	  0.38	LRate:	  0.02
     BLAposAcqD1    VSMatrix  Abs:	  4.00	Rel:	  1.00	GScale:	  0.51	Rel:	  0.38	LRate:	  0.02
@@ -93,7 +93,7 @@ Layer: VMtxGo
         ACCcost    VSMatrix  Abs:	  3.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.04	LRate:	  0.02
          PLutil    VSMatrix  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.04	LRate:	  0.02
 
-Layer: VMtxNo
+Layer: VMatrixNo
          VGPeAk       Inhib  Abs:	  3.00	Rel:	  1.00	GScale:	  0.12	Rel:	  1.00	LRate:	  0.04
           ILneg    VSMatrix  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.03	LRate:	  0.02
     BLAposAcqD1    VSMatrix  Abs:	  1.50	Rel:	  1.00	GScale:	  0.14	Rel:	  0.27	LRate:	  0.02
@@ -109,7 +109,7 @@ Layer: VMtxNo
 
 Layer: VSGated
 
-Layer: VsPatchD1
+Layer: VSPatchD1
        ILnegPTp     VSPatch  Abs:	  4.00	Rel:	  1.00	GScale:	  0.14	Rel:	  0.14	LRate:	  0.02
          Drives     VSPatch  Abs:	  4.00	Rel:	  1.00	GScale:	  4.00	Rel:	  1.00	LRate:	  0.02
       OFCposPTp     VSPatch  Abs:	  4.00	Rel:	  1.00	GScale:	  0.10	Rel:	  0.14	LRate:	  0.02
@@ -119,7 +119,7 @@ Layer: VsPatchD1
          PVposP     VSPatch  Abs:	  4.00	Rel:	  1.00	GScale:	  0.19	Rel:	  0.14	LRate:	  0.02
       PLutilPTp     VSPatch  Abs:	  4.00	Rel:	  1.00	GScale:	  0.14	Rel:	  0.14	LRate:	  0.02
 
-Layer: VsPatchD2
+Layer: VSPatchD2
        ILnegPTp     VSPatch  Abs:	  4.00	Rel:	  1.00	GScale:	  0.14	Rel:	  0.14	LRate:	  0.02
          Drives     VSPatch  Abs:	  4.00	Rel:	  1.00	GScale:	  4.00	Rel:	  1.00	LRate:	  0.02
       OFCposPTp     VSPatch  Abs:	  4.00	Rel:	  1.00	GScale:	  0.10	Rel:	  0.14	LRate:	  0.02
@@ -172,26 +172,26 @@ Layer: BLANovelCS
 
 Layer: OFCpos
     BLAposAcqD1     Forward  Abs:	  1.50	Rel:	  1.00	GScale:	  0.23	Rel:	  0.45	LRate:	  0.01
-         Drives     Forward  Abs:	  1.00	Rel:	  0.20	GScale:	  0.09	Rel:	  0.09	LRate:	  0.04
+         Drives     Forward  Abs:	  1.00	Rel:	  0.20	GScale:	  0.09	Rel:	  0.09	LRate:	  0.01
           PVpos        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.05	LRate:	  0.01
           USpos        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.05	LRate:	  0.01
-        DrivesP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.05	Rel:	  0.05	LRate:	  0.01
-         USposP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.05	LRate:	  0.01
-         PVposP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.05	LRate:	  0.01
+        DrivesP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.05	Rel:	  0.05	LRate:	  0.04
+         USposP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.05	LRate:	  0.04
+         PVposP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.05	LRate:	  0.04
           ILpos        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.05	LRate:	  0.01
              CS        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.05	Rel:	  0.05	LRate:	  0.04
-            CSP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.05	Rel:	  0.05	LRate:	  0.01
+            CSP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.05	Rel:	  0.05	LRate:	  0.04
            Dist        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.05	LRate:	  0.04
-          DistP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.05	LRate:	  0.01
+          DistP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.05	LRate:	  0.04
 
 Layer: OFCposCT
-         OFCpos      CTCtxt  Abs:	  1.00	Rel:	  1.00	GScale:	  0.40	Rel:	  0.40	LRate:	  0.01
+         OFCpos      CTCtxt  Abs:	  1.00	Rel:	  1.00	GScale:	  0.40	Rel:	  0.40	LRate:	  0.04
        OFCposPT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.13	Rel:	  0.40	LRate:	  0.04
-        DrivesP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.04	Rel:	  0.04	LRate:	  0.01
-         USposP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.04	LRate:	  0.01
-         PVposP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.04	LRate:	  0.01
-            CSP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.04	Rel:	  0.04	LRate:	  0.01
-          DistP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.04	LRate:	  0.01
+        DrivesP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.04	Rel:	  0.04	LRate:	  0.04
+         USposP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.04	LRate:	  0.04
+         PVposP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.04	LRate:	  0.04
+            CSP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.04	Rel:	  0.04	LRate:	  0.04
+          DistP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.04	LRate:	  0.04
 
 Layer: OFCposPT
        OFCposMD        Back  Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:	  1.00	LRate:	  0.01
@@ -217,21 +217,21 @@ Layer: OFCneg
     BLAnegAcqD2     Forward  Abs:	  2.00	Rel:	  1.00	GScale:	  0.71	Rel:	  0.36	LRate:	  0.01
           PVneg        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.04	LRate:	  0.01
           USneg        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.04	Rel:	  0.04	LRate:	  0.01
-         USnegP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.04	Rel:	  0.04	LRate:	  0.01
-         PVnegP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.04	LRate:	  0.01
+         USnegP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.04	Rel:	  0.04	LRate:	  0.04
+         PVnegP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.04	LRate:	  0.04
           ILneg        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.04	LRate:	  0.01
              CS        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.04	Rel:	  0.04	LRate:	  0.04
-            CSP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.04	Rel:	  0.04	LRate:	  0.01
+            CSP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.04	Rel:	  0.04	LRate:	  0.04
            Dist     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.18	Rel:	  0.36	LRate:	  0.04
-          DistP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.04	LRate:	  0.01
+          DistP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.04	LRate:	  0.04
 
 Layer: OFCnegCT
-         OFCneg      CTCtxt  Abs:	  1.00	Rel:	  1.00	GScale:	  0.42	Rel:	  0.42	LRate:	  0.01
+         OFCneg      CTCtxt  Abs:	  1.00	Rel:	  1.00	GScale:	  0.42	Rel:	  0.42	LRate:	  0.04
        OFCnegPT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.42	Rel:	  0.42	LRate:	  0.04
-         USnegP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.04	Rel:	  0.04	LRate:	  0.01
-         PVnegP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.04	LRate:	  0.01
-            CSP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.04	Rel:	  0.04	LRate:	  0.01
-          DistP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.04	LRate:	  0.01
+         USnegP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.04	Rel:	  0.04	LRate:	  0.04
+         PVnegP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.04	LRate:	  0.04
+            CSP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.04	Rel:	  0.04	LRate:	  0.04
+          DistP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.04	LRate:	  0.04
 
 Layer: OFCnegPT
        OFCnegMD        Back  Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:	  1.00	LRate:	  0.01
@@ -255,16 +255,16 @@ Layer: OFCnegPTp
 Layer: ILpos
          OFCpos     Forward  Abs:	  3.00	Rel:	  1.00	GScale:	  0.25	Rel:	  0.42	LRate:	  0.01
           PVpos     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.14	Rel:	  0.42	LRate:	  0.04
-         PVposP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.04	LRate:	  0.01
+         PVposP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.04	LRate:	  0.04
          PLutil        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.04	LRate:	  0.04
            Dist        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.04	LRate:	  0.04
-          DistP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.04	LRate:	  0.01
+          DistP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.04	LRate:	  0.04
 
 Layer: ILposCT
-          ILpos      CTCtxt  Abs:	  1.00	Rel:	  1.00	GScale:	  0.45	Rel:	  0.45	LRate:	  0.01
+          ILpos      CTCtxt  Abs:	  1.00	Rel:	  1.00	GScale:	  0.45	Rel:	  0.45	LRate:	  0.04
         ILposPT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.11	Rel:	  0.45	LRate:	  0.04
-         PVposP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.05	LRate:	  0.01
-          DistP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.05	LRate:	  0.01
+         PVposP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.05	LRate:	  0.04
+          DistP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.05	LRate:	  0.04
 
 Layer: ILposPT
         ILposMD        Back  Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:	  1.00	LRate:	  0.01
@@ -289,16 +289,16 @@ Layer: ILneg
          OFCneg     Forward  Abs:	  3.00	Rel:	  1.00	GScale:	  0.17	Rel:	  0.23	LRate:	  0.01
         ACCcost     Forward  Abs:	  3.00	Rel:	  1.00	GScale:	  0.10	Rel:	  0.23	LRate:	  0.01
           PVneg     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.23	LRate:	  0.04
-         PVnegP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.02	LRate:	  0.01
+         PVnegP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.02	LRate:	  0.04
          PLutil        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.02	LRate:	  0.04
            Dist     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.12	Rel:	  0.23	LRate:	  0.04
-          DistP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.02	LRate:	  0.01
+          DistP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.02	LRate:	  0.04
 
 Layer: ILnegCT
-          ILneg      CTCtxt  Abs:	  1.00	Rel:	  1.00	GScale:	  0.45	Rel:	  0.45	LRate:	  0.01
+          ILneg      CTCtxt  Abs:	  1.00	Rel:	  1.00	GScale:	  0.45	Rel:	  0.45	LRate:	  0.04
         ILnegPT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.11	Rel:	  0.45	LRate:	  0.04
-         PVnegP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.05	LRate:	  0.01
-          DistP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.05	LRate:	  0.01
+         PVnegP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.05	LRate:	  0.04
+          DistP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.05	LRate:	  0.04
 
 Layer: ILnegPT
         ILnegMD        Back  Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:	  1.00	LRate:	  0.01
@@ -322,16 +322,16 @@ Layer: ILnegPTp
 Layer: ACCcost
           PVneg        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.04	LRate:	  0.01
            Cost        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.04	LRate:	  0.01
-          CostP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.04	LRate:	  0.01
+          CostP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.04	LRate:	  0.04
           ILneg        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.04	LRate:	  0.01
          PLutil        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.04	LRate:	  0.04
              M1     Forward  Abs:	  3.00	Rel:	  1.00	GScale:	  0.30	Rel:	  0.40	LRate:	  0.04
             ALM     Forward  Abs:	  3.00	Rel:	  1.00	GScale:	  0.30	Rel:	  0.40	LRate:	  0.04
 
 Layer: ACCcostCT
-        ACCcost      CTCtxt  Abs:	  1.00	Rel:	  1.00	GScale:	  0.48	Rel:	  0.48	LRate:	  0.01
+        ACCcost      CTCtxt  Abs:	  1.00	Rel:	  1.00	GScale:	  0.48	Rel:	  0.48	LRate:	  0.04
       ACCcostPT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.48	Rel:	  0.48	LRate:	  0.04
-          CostP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.05	LRate:	  0.01
+          CostP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.05	LRate:	  0.04
 
 Layer: ACCcostPT
       ACCcostMD        Back  Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:	  1.00	LRate:	  0.01
@@ -348,34 +348,34 @@ Layer: ACCcostPTp
           CostP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.05	LRate:	  0.01
 
 Layer: ILposP
-       PLutilCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.33	LRate:	  0.01
+       PLutilCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.33	LRate:	  0.04
        PLutilPT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.33	LRate:	  0.01
       PLutilPTp     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.33	LRate:	  0.01
 
 Layer: ILnegP
-       PLutilCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.33	LRate:	  0.01
+       PLutilCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.33	LRate:	  0.04
        PLutilPT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.33	LRate:	  0.01
       PLutilPTp     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.33	LRate:	  0.01
 
 Layer: ACCcostP
-       PLutilCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.33	LRate:	  0.01
+       PLutilCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.33	LRate:	  0.04
        PLutilPT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.33	LRate:	  0.01
       PLutilPTp     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.33	LRate:	  0.01
 
 Layer: PLutil
           ILpos     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.30	LRate:	  0.04
-         ILposP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.03	LRate:	  0.01
+         ILposP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.03	LRate:	  0.04
           ILneg     Forward  Abs:	  3.00	Rel:	  1.00	GScale:	  0.23	Rel:	  0.30	LRate:	  0.04
-         ILnegP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.03	LRate:	  0.01
+         ILnegP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.03	LRate:	  0.04
         ACCcost     Forward  Abs:	  3.00	Rel:	  1.00	GScale:	  0.13	Rel:	  0.30	LRate:	  0.04
-       ACCcostP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.00	Rel:	  0.03	LRate:	  0.01
+       ACCcostP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.00	Rel:	  0.03	LRate:	  0.04
 
 Layer: PLutilCT
-         PLutil      CTCtxt  Abs:	  1.00	Rel:	  1.00	GScale:	  0.43	Rel:	  0.43	LRate:	  0.01
+         PLutil      CTCtxt  Abs:	  1.00	Rel:	  1.00	GScale:	  0.43	Rel:	  0.43	LRate:	  0.04
        PLutilPT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.11	Rel:	  0.43	LRate:	  0.04
-         ILposP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.04	LRate:	  0.01
-         ILnegP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.04	LRate:	  0.01
-       ACCcostP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.04	LRate:	  0.01
+         ILposP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.04	LRate:	  0.04
+         ILnegP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.04	LRate:	  0.04
+       ACCcostP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.04	LRate:	  0.04
 
 Layer: PLutilPT
        PLutilMD        Back  Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:	  1.00	LRate:	  0.01
@@ -399,29 +399,29 @@ Layer: PLutilPTp
 Layer: CS
 
 Layer: CSP
-       OFCposCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:	  0.17	LRate:	  0.01
+       OFCposCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:	  0.17	LRate:	  0.04
        OFCposPT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:	  0.17	LRate:	  0.01
       OFCposPTp     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.01	Rel:	  0.17	LRate:	  0.01
-       OFCnegCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.17	Rel:	  0.17	LRate:	  0.01
+       OFCnegCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.17	Rel:	  0.17	LRate:	  0.04
        OFCposPT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:	  0.17	LRate:	  0.01
       OFCnegPTp     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:	  0.17	LRate:	  0.01
 
 Layer: Dist
 
 Layer: DistP
-       OFCposCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.01	Rel:	  0.07	LRate:	  0.01
+       OFCposCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.01	Rel:	  0.07	LRate:	  0.04
        OFCposPT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:	  0.07	LRate:	  0.01
       OFCposPTp     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.00	Rel:	  0.07	LRate:	  0.01
-        ILposCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:	  0.07	LRate:	  0.01
+        ILposCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:	  0.07	LRate:	  0.04
         ILposPT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:	  0.07	LRate:	  0.01
        ILposPTp     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:	  0.07	LRate:	  0.01
-       OFCnegCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.07	Rel:	  0.07	LRate:	  0.01
+       OFCnegCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.07	Rel:	  0.07	LRate:	  0.04
        OFCnegPT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.07	Rel:	  0.07	LRate:	  0.01
       OFCnegPTp     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:	  0.07	LRate:	  0.01
-        ILnegCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:	  0.07	LRate:	  0.01
+        ILnegCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:	  0.07	LRate:	  0.04
         ILnegPT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:	  0.07	LRate:	  0.01
        ILnegPTp     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:	  0.07	LRate:	  0.01
-          ALMCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:	  0.07	LRate:	  0.01
+          ALMCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:	  0.07	LRate:	  0.04
           ALMPT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:	  0.07	LRate:	  0.01
          ALMPTp     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:	  0.07	LRate:	  0.01
 
@@ -429,7 +429,7 @@ Layer: Act
 
 Layer: VL
            M1CT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:	  0.17	LRate:	  0.01
-          ALMCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:	  0.17	LRate:	  0.01
+          ALMCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:	  0.17	LRate:	  0.04
           ALMPT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:	  0.17	LRate:	  0.01
          ALMPTp     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:	  0.17	LRate:	  0.01
              M1     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:	  0.17	LRate:	  0.04
@@ -447,24 +447,24 @@ Layer: M1CT
              VL        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.05	Rel:	  0.09	LRate:	  0.01
 
 Layer: M1P
-          ALMCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.33	LRate:	  0.01
+          ALMCT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.33	LRate:	  0.04
           ALMPT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.33	LRate:	  0.01
          ALMPTp     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.33	LRate:	  0.01
 
 Layer: ALM
              M1     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.30	LRate:	  0.04
-            M1P        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.03	LRate:	  0.01
-             VL        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.03	LRate:	  0.01
+            M1P        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.03	LRate:	  0.04
+             VL        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.03	LRate:	  0.04
            Dist     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.15	Rel:	  0.30	LRate:	  0.04
-          DistP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.03	LRate:	  0.01
+          DistP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.03	LRate:	  0.04
       PLutilPTp     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:	  0.30	LRate:	  0.04
 
 Layer: ALMCT
-            ALM      CTCtxt  Abs:	  1.00	Rel:	  1.00	GScale:	  0.43	Rel:	  0.43	LRate:	  0.01
+            ALM      CTCtxt  Abs:	  1.00	Rel:	  1.00	GScale:	  0.43	Rel:	  0.43	LRate:	  0.04
           ALMPT     Forward  Abs:	  1.00	Rel:	  1.00	GScale:	  0.11	Rel:	  0.43	LRate:	  0.04
-            M1P        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.04	LRate:	  0.01
-             VL        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.04	LRate:	  0.01
-          DistP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.04	LRate:	  0.01
+            M1P        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:	  0.04	LRate:	  0.04
+             VL        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.04	LRate:	  0.04
+          DistP        Back  Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:	  0.04	LRate:	  0.04
 
 Layer: ALMPT
           ALMMD        Back  Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:	  1.00	LRate:	  0.01

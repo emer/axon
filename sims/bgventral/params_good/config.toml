@@ -1,10 +1,11 @@
 Name = 'PCoreVS'
 Title = 'Pallidal Core (GPe) Ventral Striatum'
-URL = 'https'
-Doc = 'This project simulates the Ventral Basal Ganglia'
+URL = 'https://github.com/emer/axon/blob/main/sims/bgventral/README.md'
+Doc = 'This project simulates the Ventral Basal Ganglia, starting with the Ventral Striatum, centered on the Pallidum Core (GPe) areas that drive Go vs. No engagement in a goal.'
 Includes = []
 GUI = false
 Debug = false
+GPU = true
 
 [Env]
   ZeroTest = false
@@ -21,7 +22,6 @@ Debug = false
   Good = true
 
 [Run]
-  GPU = true
   GPUDevice = 0
   NData = 16
   NThreads = 0

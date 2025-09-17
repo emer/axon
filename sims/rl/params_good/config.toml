@@ -1,11 +1,12 @@
 Name = 'RL'
 Title = 'Reinforcement learning'
-URL = 'https'
+URL = 'https://github.com/emer/axon/blob/main/sims/rl/README.md'
 Doc = 'rl explores the temporal differences (TD) reinforcement learning algorithm under some basic Pavlovian conditioning environments.'
 Includes = []
-RW = false
 GUI = false
 Debug = false
+GPU = true
+RW = false
 
 [Env]
 
@@ -18,7 +19,6 @@ Debug = false
   Good = true
 
 [Run]
-  GPU = false
   GPUDevice = 0
   NData = 1
   NThreads = 0

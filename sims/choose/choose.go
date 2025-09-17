@@ -28,6 +28,7 @@ import (
 	"github.com/emer/axon/v2/sims/choose/armaze"
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/env"
+	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/paths"
 )
@@ -438,6 +439,9 @@ func (ss *Sim) ConfigLoops() {
 		axon.LooperUpdateNetView(ls, Cycle, Trial, ss.NetViewUpdater)
 
 		ls.Stacks[Train].OnInit.Add("GUI-Init", ss.GUI.UpdateWindow)
+		ls.Loop(Train, Trial).OnEnd.Add("UpdateWorldGUI", func() {
+			ss.UpdateEnvGUI(Train)
+		})
 	}
 
 	if ss.Config.Debug {
@@ -802,6 +806,13 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	nv.SceneXYZ().Camera.LookAt(math32.Vector3{}, math32.Vec3(0, 1, 0))
 
 	ss.StatsInit()
+
+	ev := ss.Envs.ByModeDi(etime.Train, 0).(*armaze.Env)
+	ss.EnvGUI = &armaze.GUI{}
+	eb := ss.EnvGUI.ConfigWorldGUI(ev)
+	eb.RunWindow()
+	ss.GUI.Body.RunMainWindow()
+
 	ss.GUI.FinalizeGUI(false)
 }
 
@@ -827,6 +838,51 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 			core.TheApp.OpenURL(ss.Config.URL)
 		},
 	})
+}
+
+func (ss *Sim) UpdateEnvGUI(mode Modes) {
+	vu := ss.NetViewUpdater(mode)
+	if vu == nil || vu.View == nil {
+		return
+	}
+	curModeDir := ss.Current.Dir(mode.String())
+	ctx := ss.Net.Context()
+	ndata := int(ctx.NData)
+	di := vu.View.Di
+	ev := ss.Envs.ByModeDi(mode, di).(*armaze.Env)
+	net := ss.Net
+	rp := &net.Rubicon
+	dp := ss.EnvGUI.USposData
+	ofcPosUS := net.LayerByName("OFCposPT")
+	ofcmul := float32(1)
+	np := int(rp.NPosUSs)
+	dp.SetNumRows(np)
+	for i := 0; i < np; i++ {
+		drv := axon.GlobalVectors.Value(int(axon.GvDrives), i, di)
+		us := axon.GlobalVectors.Value(int(axon.GvUSpos), i, di)
+		lpi := ofcPosUS.Params.PoolIndex(uint32(i + 1))
+		ofc := axon.PoolAvgMax(axon.AMCaD, axon.AMPlus, axon.Avg, lpi, uint32(di)) * ofcmul
+		dp.Column("Drive").SetFloat(float64(drv), i)
+		dp.Column("USin").SetFloat(float64(us), i)
+		dp.Column("OFC").SetFloat(float64(ofc), i)
+	}
+	dn := ss.EnvGUI.USnegData
+	ofcNegUS := net.LayerByName("OFCnegPT")
+	nn := int(rp.NNegUSs)
+	dn.SetNumRows(nn)
+	for i := 0; i < nn; i++ {
+		us := axon.GlobalVectors.Value(int(axon.GvUSneg), i, di)
+		lpi := ofcNegUS.Params.PoolIndex(uint32(i + 1))
+		ofc := axon.PoolAvgMax(axon.AMCaD, axon.AMPlus, axon.Avg, lpi, uint32(di)) * ofcmul
+		dn.Column("USin").SetFloat(float64(us), i)
+		dn.Column("OFC").SetFloat(float64(ofc), i)
+	}
+	ss.EnvGUI.USposPlot.GoUpdatePlot()
+	ss.EnvGUI.USnegPlot.GoUpdatePlot()
+	trSt := curModeDir.Int("TraceStateInt", ndata).Int1D(di)
+	ss.EnvGUI.SceneEditor.AsyncLock()
+	defer ss.EnvGUI.SceneEditor.AsyncUnlock()
+	ss.EnvGUI.UpdateWorld(ctx, ev, net, armaze.TraceStates(trSt))
 }
 
 func (ss *Sim) RunNoGUI() {

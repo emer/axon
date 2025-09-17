@@ -1,3 +1,3 @@
           State	          Input	Nominal:   0.20	Layer.Gi:     0.90
-      VsPatchD1	        VSPatch	Nominal:   0.20	Layer.Gi:     0.50	  D1Mod	Positive
-      VsPatchD2	        VSPatch	Nominal:   0.20	Layer.Gi:     0.50	  D2Mod	Positive
+      VSPatchD1	        VSPatch	Nominal:   0.20	Layer.Gi:     0.50	  D1Mod	Positive
+      VSPatchD2	        VSPatch	Nominal:   0.20	Layer.Gi:     0.50	  D2Mod	Positive

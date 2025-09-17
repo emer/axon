@@ -56,9 +56,6 @@
     Pool   { Gi: 0.5 [1,1.1,0.75,0.9] }
   }
   ////////  Path: OFCposCTToUSposP
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: OFCposPTToUSposP
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
@@ -72,9 +69,6 @@
     Pool   { Gi: 0.5 [1,1.1,0.75,0.9] }
   }
   ////////  Path: OFCnegCTToUSnegP
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: OFCnegPTToUSnegP
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
@@ -88,9 +82,6 @@
     Pool   { Gi: 0.5 [1,1.1,0.75,0.9] }
   }
   ////////  Path: ACCcostCTToCostP
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: ACCcostPTpToCostP
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
@@ -120,17 +111,11 @@
     Layer  { Gi: 0.5 [1,1.1,0.75,0.9] }
   }
   ////////  Path: OFCposCTToPVposP
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: OFCposPTpToPVposP
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
     }
   ////////  Path: ILposCTToPVposP
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: ILposPTpToPVposP
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
@@ -144,17 +129,11 @@
     Layer  { Gi: 0.5 [1,1.1,0.75,0.9] }
   }
   ////////  Path: OFCnegCTToPVnegP
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: OFCnegPTpToPVnegP
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
     }
   ////////  Path: ILnegCTToPVnegP
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: ILnegPTpToPVnegP
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
@@ -179,9 +158,6 @@
     Pool   { Gi: 0.5 [1,1.1,0.75,0.9] }
   }
   ////////  Path: OFCposCTToDrivesP
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: OFCposPTpToDrivesP
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
@@ -207,7 +183,7 @@
       Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
       Adapt { SigGain: 1 [6] }
     }
-  ////////  Path: VMtxGoToVGPi
+  ////////  Path: VMatrixGoToVGPi
     PathScale { Abs: 0.2 [1] }
     SWts      {
       Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
@@ -224,7 +200,7 @@
     Init      { GeBase: 0.4 [0], GeVar: 0.2 [0], GiVar: 0.1 [0] }
     Decay     { Glong: 1 [0,0.6] }
   }
-  ////////  Path: VMtxNoToVGPePr
+  ////////  Path: VMatrixNoToVGPePr
     SWts      {
       Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
       Adapt { SigGain: 1 [6] }
@@ -251,7 +227,7 @@
       Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
       Adapt { SigGain: 1 [6] }
     }
-  ////////  Path: VMtxGoToVGPeAk
+  ////////  Path: VMatrixGoToVGPeAk
     PathScale { Abs: 0.5 [1] }
     SWts      {
       Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
@@ -304,7 +280,7 @@
       Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
       Adapt { SigGain: 1 [6] }
     }
-////////  Layer: VMtxGo
+////////  Layer: VMatrixGo
   Acts     {
     Decay     { Glong: 1 [0,0.6] }
     Kir       { Gk: 2 [0.012,0.015,0] }
@@ -317,14 +293,14 @@
     TrgAvgAct { RescaleOn: false [true] }
     RLRate    { SigmoidMin: 0.001 [0.05,1] }
   }
-  ////////  Path: VMtxNoToVMtxGo
-  ////////  Path: VGPeAkToVMtxGo
+  ////////  Path: VMatrixNoToVMatrixGo
+  ////////  Path: VGPeAkToVMatrixGo
     PathScale { Abs: 3 [1] }
     SWts      {
       Init  { Mean: 0.75 [0.5,0.4], Var: 0 [0.25], Sym: false [true] }
       Adapt { SigGain: 1 [6] }
     }
-  ////////  Path: USposToVMtxGo
+  ////////  Path: USposToVMatrixGo
     PathScale { Abs: 1.5 [1] }
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
@@ -332,7 +308,7 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: BLAposAcqD1ToVMtxGo
+  ////////  Path: BLAposAcqD1ToVMatrixGo
     PathScale { Abs: 4 [1] }
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
@@ -340,14 +316,14 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: DrivesToVMtxGo
+  ////////  Path: DrivesToVMatrixGo
     SWts      {
       Init  { Mean: 0.8 [0.5,0.4], Var: 0 [0.25], Sym: false [true] }
     }
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: OFCposToVMtxGo
+  ////////  Path: OFCposToVMatrixGo
     PathScale { Abs: 3 [1] }
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
@@ -355,7 +331,7 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: ILposToVMtxGo
+  ////////  Path: ILposToVMatrixGo
     PathScale { Abs: 3 [1] }
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
@@ -363,21 +339,21 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: OFCnegToVMtxGo
+  ////////  Path: OFCnegToVMatrixGo
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
     }
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: ILnegToVMtxGo
+  ////////  Path: ILnegToVMatrixGo
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
     }
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: ACCcostToVMtxGo
+  ////////  Path: ACCcostToVMatrixGo
     PathScale { Abs: 3 [1] }
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
@@ -385,14 +361,14 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: PLutilToVMtxGo
+  ////////  Path: PLutilToVMatrixGo
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
     }
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-////////  Layer: VMtxNo
+////////  Layer: VMatrixNo
   Acts     {
     Decay     { Glong: 1 [0,0.6] }
     Kir       { Gk: 2 [0.012,0.015,0] }
@@ -405,20 +381,20 @@
     TrgAvgAct { RescaleOn: false [true] }
     RLRate    { SigmoidMin: 0.001 [0.05,1] }
   }
-  ////////  Path: VGPeAkToVMtxNo
+  ////////  Path: VGPeAkToVMatrixNo
     PathScale { Abs: 3 [1] }
     SWts      {
       Init  { Mean: 0.75 [0.5,0.4], Var: 0 [0.25], Sym: false [true] }
       Adapt { SigGain: 1 [6] }
     }
-  ////////  Path: ILnegToVMtxNo
+  ////////  Path: ILnegToVMatrixNo
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
     }
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: BLAposAcqD1ToVMtxNo
+  ////////  Path: BLAposAcqD1ToVMatrixNo
     PathScale { Abs: 1.5 [1] }
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
@@ -426,7 +402,7 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: BLAnegAcqD2ToVMtxNo
+  ////////  Path: BLAnegAcqD2ToVMatrixNo
     PathScale { Abs: 4 [1] }
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
@@ -434,7 +410,7 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: BLAposExtD2ToVMtxNo
+  ////////  Path: BLAposExtD2ToVMatrixNo
     PathScale { Abs: 1.5 [1] }
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
@@ -442,49 +418,49 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: DrivesToVMtxNo
+  ////////  Path: DrivesToVMatrixNo
     SWts      {
       Init  { Mean: 0.8 [0.5,0.4], Var: 0 [0.25], Sym: false [true] }
     }
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: OFCposToVMtxNo
+  ////////  Path: OFCposToVMatrixNo
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
     }
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: ILposToVMtxNo
+  ////////  Path: ILposToVMatrixNo
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
     }
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: OFCnegToVMtxNo
+  ////////  Path: OFCnegToVMatrixNo
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
     }
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: ILnegToVMtxNo
+  ////////  Path: ILnegToVMatrixNo
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
     }
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: ACCcostToVMtxNo
+  ////////  Path: ACCcostToVMatrixNo
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
     }
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: PLutilToVMtxNo
+  ////////  Path: PLutilToVMatrixNo
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
     }
@@ -495,7 +471,7 @@
   Acts     {
     Decay     { Glong: 1 [0,0.6] }
   }
-////////  Layer: VsPatchD1
+////////  Layer: VSPatchD1
   Acts     {
     Decay     { Glong: 1 [0,0.6], LearnCa: 1 [0] }
   }
@@ -507,7 +483,7 @@
     TrgAvgAct { RescaleOn: false [true] }
     RLRate    { SigmoidMin: 0.01 [0.05,1] }
   }
-  ////////  Path: ILnegPTpToVsPatchD1
+  ////////  Path: ILnegPTpToVSPatchD1
     PathScale { Abs: 4 [1] }
     SWts      {
       Init  { Sym: false [true] }
@@ -516,7 +492,7 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: DrivesToVsPatchD1
+  ////////  Path: DrivesToVSPatchD1
     PathScale { Abs: 4 [1] }
     SWts      {
       Init  { Mean: 0.8 [0.5,0.4], Var: 0 [0.25], Sym: false [true] }
@@ -525,7 +501,7 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: OFCposPTpToVsPatchD1
+  ////////  Path: OFCposPTpToVSPatchD1
     PathScale { Abs: 4 [1] }
     SWts      {
       Init  { Sym: false [true] }
@@ -534,7 +510,7 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: ILposPTpToVsPatchD1
+  ////////  Path: ILposPTpToVSPatchD1
     PathScale { Abs: 4 [1] }
     SWts      {
       Init  { Sym: false [true] }
@@ -543,7 +519,7 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: OFCnegPTpToVsPatchD1
+  ////////  Path: OFCnegPTpToVSPatchD1
     PathScale { Abs: 4 [1] }
     SWts      {
       Init  { Sym: false [true] }
@@ -552,7 +528,7 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: ILnegPTpToVsPatchD1
+  ////////  Path: ILnegPTpToVSPatchD1
     PathScale { Abs: 4 [1] }
     SWts      {
       Init  { Sym: false [true] }
@@ -561,7 +537,7 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: PVposPToVsPatchD1
+  ////////  Path: PVposPToVSPatchD1
     PathScale { Abs: 4 [1] }
     SWts      {
       Init  { Sym: false [true] }
@@ -570,7 +546,7 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: PLutilPTpToVsPatchD1
+  ////////  Path: PLutilPTpToVSPatchD1
     PathScale { Abs: 4 [1] }
     SWts      {
       Init  { Sym: false [true] }
@@ -579,7 +555,7 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-////////  Layer: VsPatchD2
+////////  Layer: VSPatchD2
   Acts     {
     Decay     { Glong: 1 [0,0.6], LearnCa: 1 [0] }
   }
@@ -591,7 +567,7 @@
     TrgAvgAct { RescaleOn: false [true] }
     RLRate    { SigmoidMin: 0.01 [0.05,1] }
   }
-  ////////  Path: ILnegPTpToVsPatchD2
+  ////////  Path: ILnegPTpToVSPatchD2
     PathScale { Abs: 4 [1] }
     SWts      {
       Init  { Sym: false [true] }
@@ -600,7 +576,7 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: DrivesToVsPatchD2
+  ////////  Path: DrivesToVSPatchD2
     PathScale { Abs: 4 [1] }
     SWts      {
       Init  { Mean: 0.8 [0.5,0.4], Var: 0 [0.25], Sym: false [true] }
@@ -609,7 +585,7 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: OFCposPTpToVsPatchD2
+  ////////  Path: OFCposPTpToVSPatchD2
     PathScale { Abs: 4 [1] }
     SWts      {
       Init  { Sym: false [true] }
@@ -618,7 +594,7 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: ILposPTpToVsPatchD2
+  ////////  Path: ILposPTpToVSPatchD2
     PathScale { Abs: 4 [1] }
     SWts      {
       Init  { Sym: false [true] }
@@ -627,7 +603,7 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: OFCnegPTpToVsPatchD2
+  ////////  Path: OFCnegPTpToVSPatchD2
     PathScale { Abs: 4 [1] }
     SWts      {
       Init  { Sym: false [true] }
@@ -636,7 +612,7 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: ILnegPTpToVsPatchD2
+  ////////  Path: ILnegPTpToVSPatchD2
     PathScale { Abs: 4 [1] }
     SWts      {
       Init  { Sym: false [true] }
@@ -645,7 +621,7 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: PVposPToVsPatchD2
+  ////////  Path: PVposPToVSPatchD2
     PathScale { Abs: 4 [1] }
     SWts      {
       Init  { Sym: false [true] }
@@ -654,7 +630,7 @@
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
     }
-  ////////  Path: PLutilPTpToVsPatchD2
+  ////////  Path: PLutilPTpToVSPatchD2
     PathScale { Abs: 4 [1] }
     SWts      {
       Init  { Sym: false [true] }
@@ -666,6 +642,7 @@
 ////////  Layer: SC
   Acts     {
     Decay     { LearnCa: 1 [0] }
+    KNa       { Slow: { Gk: 0.8 [0.1] } }
   }
   Inhib    {
     Layer  { Gi: 1.2 [1,1.1,0.75,0.9] }
@@ -898,6 +875,9 @@
       LRate { Base: 0.01 [0.04,0.1,0.2] }
     }
   ////////  Path: DrivesToOFCpos
+    Learn     {
+      LRate { Base: 0.01 [0.04,0.1,0.2] }
+    }
   ////////  Path: PVposToOFCpos
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
@@ -907,31 +887,16 @@
       LRate { Base: 0.01 [0.04,0.1,0.2] }
     }
   ////////  Path: DrivesPToOFCpos
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: USposPToOFCpos
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: PVposPToOFCpos
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: ILposToOFCpos
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
     }
   ////////  Path: CSToOFCpos
   ////////  Path: CSPToOFCpos
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: DistToOFCpos
   ////////  Path: DistPToOFCpos
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
 ////////  Layer: OFCposCT
   Acts     {
     Sahp      { Gk: 1 [0.05,0.1] }
@@ -943,30 +908,12 @@
     Pool   { Gi: 1.2 [1,1.1,0.75,0.9] }
   }
   ////////  Path: OFCposToOFCposCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: OFCposPTToOFCposCT
   ////////  Path: DrivesPToOFCposCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: USposPToOFCposCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: PVposPToOFCposCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: CSPToOFCposCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: DistPToOFCposCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
 ////////  Layer: OFCposPT
   Acts     {
     Sahp      { Gk: 0.01 [0.05,0.1] }
@@ -1025,6 +972,9 @@
       Adapt { SigGain: 1 [6] }
     }
 ////////  Layer: OFCposPTp
+  Acts     {
+    KNa       { Slow: { Gk: 0.2 [0.1] } }
+  }
   Inhib    {
     Layer  { Gi: 1.2 [1,1.1,0.75,0.9] }
     Pool   { Gi: 1.4 [1,1.1,0.75,0.9] }
@@ -1083,27 +1033,15 @@
       LRate { Base: 0.01 [0.04,0.1,0.2] }
     }
   ////////  Path: USnegPToOFCneg
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: PVnegPToOFCneg
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: ILnegToOFCneg
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
     }
   ////////  Path: CSToOFCneg
   ////////  Path: CSPToOFCneg
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: DistToOFCneg
   ////////  Path: DistPToOFCneg
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
 ////////  Layer: OFCnegCT
   Acts     {
     Sahp      { Gk: 1 [0.05,0.1] }
@@ -1115,26 +1053,11 @@
     Pool   { Gi: 1.2 [1,1.1,0.75,0.9] }
   }
   ////////  Path: OFCnegToOFCnegCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: OFCnegPTToOFCnegCT
   ////////  Path: USnegPToOFCnegCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: PVnegPToOFCnegCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: CSPToOFCnegCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: DistPToOFCnegCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
 ////////  Layer: OFCnegPT
   Acts     {
     Sahp      { Gk: 0.01 [0.05,0.1] }
@@ -1193,6 +1116,9 @@
       Adapt { SigGain: 1 [6] }
     }
 ////////  Layer: OFCnegPTp
+  Acts     {
+    KNa       { Slow: { Gk: 0.2 [0.1] } }
+  }
   Inhib    {
     Layer  { Gi: 1.2 [1,1.1,0.75,0.9] }
     Pool   { Gi: 1.4 [1,1.1,0.75,0.9] }
@@ -1234,15 +1160,9 @@
     }
   ////////  Path: PVposToILpos
   ////////  Path: PVposPToILpos
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: PLutilToILpos
   ////////  Path: DistToILpos
   ////////  Path: DistPToILpos
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
 ////////  Layer: ILposCT
   Acts     {
     Sahp      { Gk: 1 [0.05,0.1] }
@@ -1254,18 +1174,9 @@
     Pool   { Gi: 2.2 [1,1.1,0.75,0.9] }
   }
   ////////  Path: ILposToILposCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: ILposPTToILposCT
   ////////  Path: PVposPToILposCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: DistPToILposCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
 ////////  Layer: ILposPT
   Acts     {
     Sahp      { Gk: 0.01 [0.05,0.1] }
@@ -1325,6 +1236,9 @@
       Adapt { SigGain: 1 [6] }
     }
 ////////  Layer: ILposPTp
+  Acts     {
+    KNa       { Slow: { Gk: 0.2 [0.1] } }
+  }
   Inhib    {
     Layer  { Gi: 1.2 [1,1.1,0.75,0.9] }
     Pool   { Gi: 0.8 [1,1.1,0.75,0.9] }
@@ -1367,15 +1281,9 @@
     }
   ////////  Path: PVnegToILneg
   ////////  Path: PVnegPToILneg
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: PLutilToILneg
   ////////  Path: DistToILneg
   ////////  Path: DistPToILneg
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
 ////////  Layer: ILnegCT
   Acts     {
     Sahp      { Gk: 1 [0.05,0.1] }
@@ -1387,18 +1295,9 @@
     Pool   { Gi: 2.2 [1,1.1,0.75,0.9] }
   }
   ////////  Path: ILnegToILnegCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: ILnegPTToILnegCT
   ////////  Path: PVnegPToILnegCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: DistPToILnegCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
 ////////  Layer: ILnegPT
   Acts     {
     Sahp      { Gk: 0.01 [0.05,0.1] }
@@ -1458,6 +1357,9 @@
       Adapt { SigGain: 1 [6] }
     }
 ////////  Layer: ILnegPTp
+  Acts     {
+    KNa       { Slow: { Gk: 0.2 [0.1] } }
+  }
   Inhib    {
     Layer  { Gi: 1.2 [1,1.1,0.75,0.9] }
     Pool   { Gi: 0.8 [1,1.1,0.75,0.9] }
@@ -1500,9 +1402,6 @@
       LRate { Base: 0.01 [0.04,0.1,0.2] }
     }
   ////////  Path: CostPToACCcost
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: ILnegToACCcost
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
@@ -1523,14 +1422,8 @@
     Pool   { Gi: 1.8 [1,1.1,0.75,0.9] }
   }
   ////////  Path: ACCcostToACCcostCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: ACCcostPTToACCcostCT
   ////////  Path: CostPToACCcostCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
 ////////  Layer: ACCcostPT
   Acts     {
     Sahp      { Gk: 0.01 [0.05,0.1] }
@@ -1589,6 +1482,9 @@
       Adapt { SigGain: 1 [6] }
     }
 ////////  Layer: ACCcostPTp
+  Acts     {
+    KNa       { Slow: { Gk: 0.2 [0.1] } }
+  }
   Inhib    {
     Layer  { Gi: 1.2 [1,1.1,0.75,0.9] }
     Pool   { Gi: 1.2 [1,1.1,0.75,0.9] }
@@ -1608,9 +1504,6 @@
     }
 ////////  Layer: ILposP
   ////////  Path: PLutilCTToILposP
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: PLutilPTToILposP
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
@@ -1621,9 +1514,6 @@
     }
 ////////  Layer: ILnegP
   ////////  Path: PLutilCTToILnegP
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: PLutilPTToILnegP
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
@@ -1634,9 +1524,6 @@
     }
 ////////  Layer: ACCcostP
   ////////  Path: PLutilCTToACCcostP
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: PLutilPTToACCcostP
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
@@ -1648,21 +1535,12 @@
 ////////  Layer: PLutil
   ////////  Path: ILposToPLutil
   ////////  Path: ILposPToPLutil
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: ILnegToPLutil
     PathScale { Abs: 3 [1] }
   ////////  Path: ILnegPToPLutil
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: ACCcostToPLutil
     PathScale { Abs: 3 [1] }
   ////////  Path: ACCcostPToPLutil
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
 ////////  Layer: PLutilCT
   Acts     {
     Sahp      { Gk: 1 [0.05,0.1] }
@@ -1674,22 +1552,10 @@
     Pool   { Gi: 2.2 [1,1.1,0.75,0.9] }
   }
   ////////  Path: PLutilToPLutilCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: PLutilPTToPLutilCT
   ////////  Path: ILposPToPLutilCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: ILnegPToPLutilCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: ACCcostPToPLutilCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
 ////////  Layer: PLutilPT
   Acts     {
     Sahp      { Gk: 0.01 [0.05,0.1] }
@@ -1748,6 +1614,9 @@
       Adapt { SigGain: 1 [6] }
     }
 ////////  Layer: PLutilPTp
+  Acts     {
+    KNa       { Slow: { Gk: 0.2 [0.1] } }
+  }
   Inhib    {
     Layer  { Gi: 0.8 [1,1.1,0.75,0.9] }
     Pool   { Gi: 0.8 [1,1.1,0.75,0.9] }
@@ -1782,9 +1651,6 @@
 ////////  Layer: CS
 ////////  Layer: CSP
   ////////  Path: OFCposCTToCSP
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: OFCposPTToCSP
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
@@ -1794,9 +1660,6 @@
       LRate { Base: 0.01 [0.04,0.1,0.2] }
     }
   ////////  Path: OFCnegCTToCSP
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: OFCposPTToCSP
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
@@ -1808,9 +1671,6 @@
 ////////  Layer: Dist
 ////////  Layer: DistP
   ////////  Path: OFCposCTToDistP
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: OFCposPTToDistP
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
@@ -1820,9 +1680,6 @@
       LRate { Base: 0.01 [0.04,0.1,0.2] }
     }
   ////////  Path: ILposCTToDistP
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: ILposPTToDistP
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
@@ -1832,9 +1689,6 @@
       LRate { Base: 0.01 [0.04,0.1,0.2] }
     }
   ////////  Path: OFCnegCTToDistP
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: OFCnegPTToDistP
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
@@ -1844,9 +1698,6 @@
       LRate { Base: 0.01 [0.04,0.1,0.2] }
     }
   ////////  Path: ILnegCTToDistP
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: ILnegPTToDistP
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
@@ -1856,9 +1707,6 @@
       LRate { Base: 0.01 [0.04,0.1,0.2] }
     }
   ////////  Path: ALMCTToDistP
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: ALMPTToDistP
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
@@ -1874,9 +1722,6 @@
       LRate { Base: 0.01 [0.04,0.1,0.2] }
     }
   ////////  Path: ALMCTToVL
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: ALMPTToVL
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
@@ -1911,9 +1756,6 @@
     }
 ////////  Layer: M1P
   ////////  Path: ALMCTToM1P
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: ALMPTToM1P
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
@@ -1925,18 +1767,9 @@
 ////////  Layer: ALM
   ////////  Path: M1ToALM
   ////////  Path: M1PToALM
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: VLToALM
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: DistToALM
   ////////  Path: DistPToALM
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: PLutilPTpToALM
 ////////  Layer: ALMCT
   Acts     {
@@ -1949,22 +1782,10 @@
     Pool   { Gi: 2.2 [1,1.1,0.75,0.9] }
   }
   ////////  Path: ALMToALMCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: ALMPTToALMCT
   ////////  Path: M1PToALMCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: VLToALMCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
   ////////  Path: DistPToALMCT
-    Learn     {
-      LRate { Base: 0.01 [0.04,0.1,0.2] }
-    }
 ////////  Layer: ALMPT
   Acts     {
     Sahp      { Gk: 0.01 [0.05,0.1] }
@@ -2023,6 +1844,9 @@
       Adapt { SigGain: 1 [6] }
     }
 ////////  Layer: ALMPTp
+  Acts     {
+    KNa       { Slow: { Gk: 0.2 [0.1] } }
+  }
   Inhib    {
     Layer  { Gi: 0.8 [1,1.1,0.75,0.9] }
     Pool   { Gi: 0.8 [1,1.1,0.75,0.9] }

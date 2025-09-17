@@ -5,7 +5,7 @@ func RunInSims(fun func(d string)) {
 	ex := fsx.Dirs("sims")
 	cwd := $pwd$
 	for _, d := range ex {
-		if d[0] == '_' || d == "equations" || d == "kinasesim" {
+		if d[0] == '_' || d == "equations" || d == "kinasesim" || strings.Contains(d, "bench") {
 			continue
 		}
 		fd := filepath.Join(cwd, "sims", d)
@@ -32,9 +32,11 @@ command test_long {
 
 command params_good {
 	RunInSims(func(d string) {
+		cd {d}
 		[goal build -v]
-		cmd := "./" + d
-		[{cmd} -nogui -save-all -good]
+		cd ../
+		cmd := "./" + d + "/" + d
+		[{cmd} -nogui -params-save-all -params-good]
 	})
 }
 

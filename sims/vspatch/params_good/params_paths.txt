@@ -1,8 +1,8 @@
 
 Layer: State
 
-Layer: VsPatchD1
+Layer: VSPatchD1
           State     VSPatch  Abs:	  2.00	Rel:	  1.00	GScale:	  0.40	Rel:	  1.00	LRate:	  0.02
 
-Layer: VsPatchD2
+Layer: VSPatchD2
           State     VSPatch  Abs:	  2.00	Rel:	  1.00	GScale:	  0.40	Rel:	  1.00	LRate:	  0.02

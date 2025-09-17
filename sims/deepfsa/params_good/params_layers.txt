@@ -2,4 +2,4 @@
          InputP	       Pulvinar	Nominal:   0.15	Layer.Gi:     0.75
         Targets	          Input	Nominal:   0.15	Layer.Gi:     0.90
          Hidden	          Super	Nominal:   0.15	Layer.Gi:     1.00
-       HiddenCT	             CT	Nominal:   0.15	Layer.Gi:     2.20
+       HiddenCT	             CT	Nominal:   0.15	Layer.Gi:     2.10

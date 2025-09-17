@@ -1,12 +1,16 @@
 ////////  Layer: Input
-  Acts     {
-    Mahp      { Gk: 0.04 [0.02] }
-  }
 ////////  Layer: InputP
-  Acts     {
-    Mahp      { Gk: 0.04 [0.02] }
-  }
+  Pulv     { DriveScale: 0.11 [0.1] }
   ////////  Path: HiddenCTToInputP
+    PathScale { Abs: 2 [1] }
+    SWts      {
+      Adapt { LRate: 0.0001 [0.1,0.01,0.001,0.0002], HiMeanDecay: 0 [0.0008] }
+    }
+    Learn     {
+      LRate { Base: 0.002 [0.04,0.1,0.2] }
+    }
+  ////////  Path: Hidden2CTToInputP
+    PathScale { Abs: 2 [1] }
     SWts      {
       Adapt { LRate: 0.0001 [0.1,0.01,0.001,0.0002], HiMeanDecay: 0 [0.0008] }
     }
@@ -14,9 +18,6 @@
       LRate { Base: 0.002 [0.04,0.1,0.2] }
     }
 ////////  Layer: Hidden
-  Acts     {
-    Mahp      { Gk: 0.04 [0.02] }
-  }
   ////////  Path: InputPToHidden
     SWts      {
       Adapt { LRate: 0.0001 [0.1,0.01,0.001,0.0002], HiMeanDecay: 0 [0.0008] }
@@ -31,12 +32,16 @@
     Learn     {
       LRate { Base: 0.002 [0.04,0.1,0.2] }
     }
+  ////////  Path: Hidden2ToHidden
+    SWts      {
+      Adapt { LRate: 0.0001 [0.1,0.01,0.001,0.0002], HiMeanDecay: 0 [0.0008] }
+    }
+    Learn     {
+      LRate { Base: 0.002 [0.04,0.1,0.2] }
+    }
 ////////  Layer: HiddenCT
-  Acts     {
-    Mahp      { Gk: 0.04 [0.02] }
-  }
   Inhib    {
-    Layer  { Gi: 2.2 [1,1.1,0.75,0.9] }
+    Layer  { Gi: 2.1 [1,1.1,0.75,0.9] }
     Pool   { Gi: 2.2 [1,1.1,0.75,0.9] }
   }
   ////////  Path: HiddenToHiddenCT
@@ -62,6 +67,63 @@
       LRate { Base: 0.002 [0.04,0.1,0.2] }
     }
   ////////  Path: InputPToHiddenCT
+    SWts      {
+      Adapt { LRate: 0.0001 [0.1,0.01,0.001,0.0002], HiMeanDecay: 0 [0.0008] }
+    }
+    Learn     {
+      LRate { Base: 0.002 [0.04,0.1,0.2] }
+    }
+  ////////  Path: Hidden2CTToHiddenCT
+    SWts      {
+      Adapt { LRate: 0.0001 [0.1,0.01,0.001,0.0002], HiMeanDecay: 0 [0.0008] }
+    }
+    Learn     {
+      LRate { Base: 0.002 [0.04,0.1,0.2] }
+    }
+////////  Layer: Hidden2
+  ////////  Path: InputPToHidden2
+    SWts      {
+      Adapt { LRate: 0.0001 [0.1,0.01,0.001,0.0002], HiMeanDecay: 0 [0.0008] }
+    }
+    Learn     {
+      LRate { Base: 0.002 [0.04,0.1,0.2] }
+    }
+  ////////  Path: HiddenToHidden2
+    PathScale { Abs: 1.5 [1] }
+    SWts      {
+      Adapt { LRate: 0.0001 [0.1,0.01,0.001,0.0002], HiMeanDecay: 0 [0.0008] }
+    }
+    Learn     {
+      LRate { Base: 0.002 [0.04,0.1,0.2] }
+    }
+////////  Layer: Hidden2CT
+  Inhib    {
+    Layer  { Gi: 2.1 [1,1.1,0.75,0.9] }
+    Pool   { Gi: 2.2 [1,1.1,0.75,0.9] }
+  }
+  ////////  Path: Hidden2ToHidden2CT
+    SWts      {
+      Adapt { LRate: 0.0001 [0.1,0.01,0.001,0.0002], HiMeanDecay: 0 [0.0008] }
+    }
+    Learn     {
+      LRate { Base: 0.001 [0.04,0.1,0.2] }
+    }
+  ////////  Path: Hidden2CTToHidden2CT
+    SWts      {
+      Adapt { LRate: 0.0001 [0.1,0.01,0.001,0.0002], HiMeanDecay: 0 [0.0008] }
+    }
+    Learn     {
+      LRate { Base: 0.001 [0.04,0.1,0.2] }
+    }
+  ////////  Path: Hidden2CTToHidden2CT
+    PathScale { Abs: 0.2 [1] }
+    SWts      {
+      Adapt { LRate: 0.0001 [0.1,0.01,0.001,0.0002], HiMeanDecay: 0 [0.0008] }
+    }
+    Learn     {
+      LRate { Base: 0.002 [0.04,0.1,0.2] }
+    }
+  ////////  Path: InputPToHidden2CT
     SWts      {
       Adapt { LRate: 0.0001 [0.1,0.01,0.001,0.0002], HiMeanDecay: 0 [0.0008] }
     }

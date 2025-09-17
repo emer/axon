@@ -164,6 +164,7 @@
 ////////  Layer: PFCPTp
   Acts     {
     Clamp     { Ge: 1 [0.8,1.5] }
+    KNa       { Slow: { Gk: 0.2 [0.1] } }
   }
   Inhib    {
     Layer  { Gi: 0.8 [1,1.1,0.75,0.9] }
@@ -184,7 +185,7 @@
       LRate { Base: 0.01 [0.04,0.1,0.2] }
     }
   ////////  Path: ItemToPFCPTp
-    PathScale { Abs: 4 [1] }
+    PathScale { Abs: 2 [1] }
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
     }
@@ -194,7 +195,7 @@
       LRate { Base: 0.01 [0.04,0.1,0.2] }
     }
   ////////  Path: TimeToPFCPTp
-    PathScale { Abs: 4 [1] }
+    PathScale { Abs: 2 [1] }
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
     }

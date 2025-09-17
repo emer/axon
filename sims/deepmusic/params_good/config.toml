@@ -1,12 +1,13 @@
 Name = 'DeepMusic'
 Title = 'DeepAxon Music Prediction'
-URL = 'https'
+URL = 'https://github.com/emer/axon/blob/main/sims/deepmusic/README.md'
 Doc = 'This demonstrates a basic deep predictive learning Axon model that learns to predict the next note in a song.'
 Includes = [
   'fullsong.toml'
 ]
 GUI = false
 Debug = false
+GPU = true
 
 [Env]
   UnitsPer = 4
@@ -15,7 +16,8 @@ Debug = false
   TestClamp = true
 
 [Params]
-  Hid2 = false
+  Hid2 = true
+  NUnitsY = 15
   Script = ''
   Sheet = ''
   Tag = ''
@@ -24,23 +26,24 @@ Debug = false
   Good = true
 
 [Run]
-  GPU = true
   GPUDevice = 0
   NData = 16
   NThreads = 0
   Run = 0
-  Runs = 5
+  Runs = 10
   Epochs = 500
   Trials = 768
   Cycles = 200
   PlusCycles = 50
+  NZero = 2
   TestInterval = 0
-  PCAInterval = 10
+  PCAInterval = 0
   StartWeights = ''
 
 [Log]
   SaveWeights = false
   Train = [
+    'Expt',
     'Run',
     'Epoch'
   ]

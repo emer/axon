@@ -1,10 +1,11 @@
 Name = 'RA25'
 Title = 'Axon random associator'
-URL = 'https'
+URL = 'https://github.com/emer/axon/blob/main/sims/ra25/README.md'
 Doc = 'This demonstrates a basic Axon model and provides a template for creating new models. It has a random-associator four-layer axon network that uses the standard supervised learning paradigm to learn mappings between 25 random input / output patterns defined over 5x5 input / output layers.'
 Includes = []
 GUI = false
 Debug = false
+GPU = true
 
 [Params]
   Script = "sim.Sim.Params.Layer[\"Script\"] = &axon.LayerSheet{\n\t&axon.LayerSel{Sel:\"Layer\", Set: func(ly *axon.LayerParams) {\n\t\tly.Acts.NMDA.MgC = 1.4\n\t}},\n}\n\nsim.Sim.Params.Path[\"Script\"] = &axon.PathSheet{\n\t&axon.PathSel{Sel:\"Path\", Set: func(pt *axon.PathParams) {\n\t\tpt.Learn.DWt.CaPScale = 0.95\n\t\tpt.Learn.LRate.Base = 0.08 // 0.03 for \n\t\tpt.Learn.DWt.Trace.SetBool(false)\n\t}},\n}\n"
@@ -23,7 +24,6 @@ Debug = false
     Y = 10
 
 [Run]
-  GPU = true
   GPUDevice = 0
   NData = 16
   NThreads = 0
@@ -41,6 +41,7 @@ Debug = false
 [Log]
   SaveWeights = false
   Train = [
+    'Expt',
     'Run',
     'Epoch'
   ]

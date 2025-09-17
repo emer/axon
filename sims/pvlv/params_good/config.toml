@@ -1,10 +1,11 @@
 Name = 'PVLV'
-Title = 'Primary Value'
-URL = 'https'
-Doc = 'Simulates the primary value'
+Title = 'Primary Value, Learned Value'
+URL = 'https://github.com/emer/axon/blob/main/sims/pvlv/README.md'
+Doc = 'Simulates the primary value, learned value model of classical conditioning and phasic dopamine in the amygdala, ventral striatum and associated areas.'
 Includes = []
 GUI = false
 Debug = false
+GPU = true
 
 [Env]
   RunName = 'PosAcq_A100'
@@ -20,7 +21,6 @@ Debug = false
   Good = true
 
 [Run]
-  GPU = false
   GPUDevice = 0
   NThreads = 0
   Run = 0

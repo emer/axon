@@ -1,12 +1,13 @@
 Name = 'Hip'
 Title = 'Axon hippocampus'
-URL = 'https'
+URL = 'https://github.com/emer/axon/blob/main/sims/hip/README.md'
 Doc = 'Simulates the hippocampus on basic AB-AC paired associates task.'
 Includes = [
   'medhip.toml'
 ]
 GUI = false
 Debug = false
+GPU = true
 
 [Hip]
   DGRatio = 2.236
@@ -63,7 +64,6 @@ Debug = false
   Good = true
 
 [Run]
-  GPU = true
   GPUDevice = 0
   NData = 10
   NThreads = 0

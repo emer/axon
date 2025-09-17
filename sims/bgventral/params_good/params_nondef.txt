@@ -9,7 +9,7 @@
       Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
       Adapt { SigGain: 1 [6] }
     }
-  ////////  Path: VMtxGoToVGPi
+  ////////  Path: VMatrixGoToVGPi
     PathScale { Abs: 0.2 [1] }
     SWts      {
       Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
@@ -27,7 +27,7 @@
     Decay     { Glong: 1 [0,0.6] }
     Clamp     { Ge: 1 [0.8,1.5] }
   }
-  ////////  Path: VMtxNoToVGPePr
+  ////////  Path: VMatrixNoToVGPePr
     SWts      {
       Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
       Adapt { SigGain: 1 [6] }
@@ -55,7 +55,7 @@
       Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
       Adapt { SigGain: 1 [6] }
     }
-  ////////  Path: VMtxGoToVGPeAk
+  ////////  Path: VMatrixGoToVGPeAk
     PathScale { Abs: 0.5 [1] }
     SWts      {
       Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
@@ -97,7 +97,7 @@
       Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
       Adapt { SigGain: 1 [6] }
     }
-////////  Layer: VMtxGo
+////////  Layer: VMatrixGo
   Acts     {
     Decay     { Glong: 1 [0,0.6] }
     Clamp     { Ge: 1 [0.8,1.5] }
@@ -111,14 +111,14 @@
     RLRate    { SigmoidMin: 0.01 [0.05,1] }
     NeuroMod  { BurstGain: 0.1 [1] }
   }
-  ////////  Path: VMtxNoToVMtxGo
-  ////////  Path: VGPeAkToVMtxGo
+  ////////  Path: VMatrixNoToVMatrixGo
+  ////////  Path: VGPeAkToVMatrixGo
     PathScale { Abs: 3 [1] }
     SWts      {
       Init  { Mean: 0.75 [0.5,0.4], Var: 0 [0.25], Sym: false [true] }
       Adapt { SigGain: 1 [6] }
     }
-  ////////  Path: ACCPosToVMtxGo
+  ////////  Path: ACCPosToVMatrixGo
     PathScale { Abs: 1.5 [1] }
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
@@ -126,8 +126,8 @@
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
     }
-    Matrix    { VSRewLearn: false [true] }
-  ////////  Path: ACCNegToVMtxGo
+    VSMatrix  { RewActLearn: false [true] }
+  ////////  Path: ACCNegToVMatrixGo
     PathScale { Abs: 1.5 [1] }
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
@@ -135,17 +135,16 @@
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
     }
-    Matrix    { VSRewLearn: false [true] }
-  ////////  Path: UrgencyToVMtxGo
-    PathScale { Abs: 0 [1] }
+    VSMatrix  { RewActLearn: false [true] }
+  ////////  Path: UrgencyToVMatrixGo
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
     }
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
     }
-    Matrix    { VSRewLearn: false [true] }
-////////  Layer: VMtxNo
+    VSMatrix  { RewActLearn: false [true] }
+////////  Layer: VMatrixNo
   Acts     {
     Decay     { Glong: 1 [0,0.6] }
     Clamp     { Ge: 1 [0.8,1.5] }
@@ -159,13 +158,13 @@
     RLRate    { SigmoidMin: 0.01 [0.05,1] }
     NeuroMod  { BurstGain: 0.1 [1] }
   }
-  ////////  Path: VGPeAkToVMtxNo
+  ////////  Path: VGPeAkToVMatrixNo
     PathScale { Abs: 3 [1] }
     SWts      {
       Init  { Mean: 0.75 [0.5,0.4], Var: 0 [0.25], Sym: false [true] }
       Adapt { SigGain: 1 [6] }
     }
-  ////////  Path: ACCNegToVMtxNo
+  ////////  Path: ACCNegToVMatrixNo
     PathScale { Abs: 1.5 [1] }
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
@@ -173,8 +172,8 @@
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
     }
-    Matrix    { VSRewLearn: false [true] }
-  ////////  Path: ACCPosToVMtxNo
+    VSMatrix  { RewActLearn: false [true] }
+  ////////  Path: ACCPosToVMatrixNo
     PathScale { Abs: 1.5 [1] }
     SWts      {
       Init  { Var: 0.4 [0.25], Sym: false [true] }
@@ -182,7 +181,7 @@
     Learn     {
       LRate { Base: 0.01 [0.04,0.1,0.2] }
     }
-    Matrix    { VSRewLearn: false [true] }
+    VSMatrix  { RewActLearn: false [true] }
 ////////  Layer: SNc
   Acts     {
     Clamp     { Ge: 1 [0.8,1.5] }

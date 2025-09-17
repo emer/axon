@@ -1,10 +1,11 @@
 Name = 'Objrec'
 Title = 'Object Recognition'
-URL = 'https'
-Doc = 'This simulation explores how a hierarchy of areas in the ventral stream of visual processing (up to inferotemporal (IT) cortex) can produce robust object recognition that is invariant to changes in position'
+URL = 'https://github.com/emer/axon/blob/main/sims/objrec/README.md'
+Doc = 'This simulation explores how a hierarchy of areas in the ventral stream of visual processing (up to inferotemporal (IT) cortex) can produce robust object recognition that is invariant to changes in position, size, etc of retinal input images.'
 Includes = []
 GUI = false
 Debug = false
+GPU = true
 
 [Env]
   NOutPer = 5
@@ -60,7 +61,6 @@ Debug = false
       Max = 1.0
 
 [Run]
-  GPU = true
   GPUDevice = 0
   NData = 32
   SlowInterval = 200
@@ -80,6 +80,7 @@ Debug = false
 [Log]
   SaveWeights = false
   Train = [
+    'Expt',
     'Run',
     'Epoch'
   ]

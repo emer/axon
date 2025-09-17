@@ -3,12 +3,12 @@ module github.com/emer/axon/v2
 go 1.23.4
 
 require (
-	cogentcore.org/core v0.3.13-0.20250807185047-1bd7b2b389bc
+	cogentcore.org/core v0.3.13-0.20250915075930-2796561c59bb
 	cogentcore.org/lab v0.1.3-0.20250807190249-488f5902d68d
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/chewxy/math32 v1.10.1
 	github.com/cogentcore/yaegi v0.0.0-20250622201820-b7838bdd95eb
-	github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250816213840-88c319e78f67
+	github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250915205413-882f5ba474c4
 	github.com/emer/v1vision v0.1.1-0.20250804212602-0de846185bf5
 	github.com/stretchr/testify v1.10.0
 	gitlab.com/gomidi/midi/v2 v2.0.30
@@ -42,10 +42,9 @@ require (
 	github.com/jinzhu/copier v0.4.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/mattn/go-shellwords v1.0.12 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
-	github.com/muesli/termenv v0.15.2 // indirect
+	github.com/muesli/termenv v0.16.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.2-0.20240227203013-2b69615b5d55 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect

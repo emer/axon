@@ -9,7 +9,7 @@
     }
   ////////  Path: Inhib1ToLayer1
     Com       { Delay: 0 [2] }
-    PathScale { Abs: 0 [1] }
+    PathScale { Abs: 0.8 [1] }
     SWts      {
       Init  { Var: 0 [0.25], Sym: false [true] }
     }
@@ -24,16 +24,19 @@
   }
   ////////  Path: Layer0ToInhib1
     Com       { Delay: 1 [2] }
+    PathScale { Abs: 5 [1] }
   ////////  Path: Layer1ToInhib1
     Com       { Delay: 1 [2] }
+    PathScale { Abs: 5 [1] }
   ////////  Path: Inhib1ToInhib1
     Com       { Delay: 0 [2] }
-    PathScale { Abs: 0 [1] }
+    PathScale { Abs: 0.8 [1] }
     SWts      {
       Init  { Var: 0 [0.25], Sym: false [true] }
     }
   ////////  Path: Layer2ToInhib1
     Com       { Delay: 1 [2] }
+    PathScale { Abs: 5 [1] }
 ////////  Layer: Layer2
   ////////  Path: Layer1ToLayer2
     SWts      {
@@ -45,7 +48,7 @@
     }
   ////////  Path: Inhib2ToLayer2
     Com       { Delay: 0 [2] }
-    PathScale { Abs: 0 [1] }
+    PathScale { Abs: 0.8 [1] }
     SWts      {
       Init  { Var: 0 [0.25], Sym: false [true] }
     }
@@ -56,11 +59,13 @@
   }
   ////////  Path: Layer1ToInhib2
     Com       { Delay: 1 [2] }
+    PathScale { Abs: 5 [1] }
   ////////  Path: Layer2ToInhib2
     Com       { Delay: 1 [2] }
+    PathScale { Abs: 5 [1] }
   ////////  Path: Inhib2ToInhib2
     Com       { Delay: 0 [2] }
-    PathScale { Abs: 0 [1] }
+    PathScale { Abs: 0.8 [1] }
     SWts      {
       Init  { Var: 0 [0.25], Sym: false [true] }
     }

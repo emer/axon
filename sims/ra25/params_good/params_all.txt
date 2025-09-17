@@ -12,16 +12,16 @@
     Clamp     { Ge: 1.5, Add: false, ErrThr: 0.5 }
     Noise     { On: false, GeHz: 100, Ge: 0.001, GiHz: 200, Gi: 0.001, MaintGe: false }
     VmRange   { Min: -100, Max: 0 }
-    Mahp      { Gk: 0.02, Voff: -30, Vslope: 9, TauMax: 1000 }
+    Mahp      { Gk: 0.05, Off: -30, Slope: 9, TauMax: 1000 }
     Sahp      { Gk: 0.05, CaTau: 5, Off: 0.8, Slope: 0.02, TauMax: 1 }
-    KNa       { On: true, TrialSlow: false, Med: { On: true, Rise: 0.02, Max: 0.2, Tau: 200 }, Slow: { On: true, Rise: 0.001, Max: 0.2, Tau: 1000 } }
+    KNa       { On: true, TrialSlow: false, Med: { On: true, Gk: 0.1, Rise: 50, Decay: 200 }, Slow: { On: true, Gk: 0.1, Rise: 1000, Decay: 1000 } }
     Kir       { Gk: 0, MinfOff: -102, MinfTau: 13, RiseOff: -60, RiseTau: 14, DecayOff: -31, DecayTau: 23, Mrest: 0.078599066 }
     NMDA      { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.2, Voff: 0 }
     MaintNMDA { Ge: 0.007, Tau: 200, ITau: 1, MgC: 1.4, Voff: 0 }
-    GabaB     { Gk: 0.015, RiseTau: 45, DecayTau: 50, Gbase: 0.2, GiSpike: 10, MaxTime: 47.41225 }
-    VGCC      { Ge: 0.02, Ca: 0.25 }
+    GabaB     { Gk: 0.015, Rise: 45, Decay: 50, Gbase: 0.2, GiSpike: 10, MaxTime: 47.41225 }
+    VGCC      { Ge: 0, Ca: 0.25 }
     AK        { Gk: 0.1, Hf: 0.076, Mf: 0.075, Voff: 2, Vmax: -37 }
-    SKCa      { Gk: 0, C50: 0.5, ActTau: 15, DeTau: 30, KCaR: 0.8, CaRDecayTau: 150, CaInThr: 0.01, CaInTau: 50 }
+    SKCa      { Gk: 0, C50: 0.5, Rise: 15, Decay: 30, KCaR: 0.8, CaRDecayTau: 150, CaInThr: 0.01, CaInTau: 50 }
     SMaint    { On: false, NNeurons: 10, Ge: 0.2, Inhib: 1, ISI: { Min: 1, Max: 20 } }
     PopCode   { On: false, Ge: 0.1, Min: -0.1, Max: 1.1, MinAct: 1, MinSigma: 0.1, MaxSigma: 0.1, Clip: true }
   }
@@ -32,7 +32,7 @@
   }
   LayInhib { Index1: -1, Index2: -1, Index3: -1, Index4: -1 }
   Learn    {
-    CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
+    CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, ETraceTau: 4, ETraceScale: 0, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
     CaSpike   { SpikeCaM: 8, SpikeCaSyn: 8, CaSynTau: 30, Dt: { MTau: 5, PTau: 40, DTau: 40 } }
     LearnNMDA { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
     TrgAvgAct { GiBaseInit: 0, RescaleOn: true, ErrLRate: 0.02, SynScaleRate: 0.005, SubMean: 0, Permute: true, Pool: true, TrgRange: { Min: 0.5, Max: 2 } }
@@ -53,16 +53,16 @@
     Clamp     { Ge: 0.8, Add: false, ErrThr: 0.5 }
     Noise     { On: false, GeHz: 100, Ge: 0.001, GiHz: 200, Gi: 0.001, MaintGe: false }
     VmRange   { Min: -100, Max: 0 }
-    Mahp      { Gk: 0.02, Voff: -30, Vslope: 9, TauMax: 1000 }
+    Mahp      { Gk: 0.05, Off: -30, Slope: 9, TauMax: 1000 }
     Sahp      { Gk: 0.05, CaTau: 5, Off: 0.8, Slope: 0.02, TauMax: 1 }
-    KNa       { On: true, TrialSlow: false, Med: { On: true, Rise: 0.02, Max: 0.2, Tau: 200 }, Slow: { On: true, Rise: 0.001, Max: 0.2, Tau: 1000 } }
+    KNa       { On: true, TrialSlow: false, Med: { On: true, Gk: 0.1, Rise: 50, Decay: 200 }, Slow: { On: true, Gk: 0.1, Rise: 1000, Decay: 1000 } }
     Kir       { Gk: 0, MinfOff: -102, MinfTau: 13, RiseOff: -60, RiseTau: 14, DecayOff: -31, DecayTau: 23, Mrest: 0.078599066 }
     NMDA      { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.2, Voff: 0 }
     MaintNMDA { Ge: 0.007, Tau: 200, ITau: 1, MgC: 1.4, Voff: 0 }
-    GabaB     { Gk: 0.015, RiseTau: 45, DecayTau: 50, Gbase: 0.2, GiSpike: 10, MaxTime: 47.41225 }
-    VGCC      { Ge: 0.02, Ca: 0.25 }
+    GabaB     { Gk: 0.015, Rise: 45, Decay: 50, Gbase: 0.2, GiSpike: 10, MaxTime: 47.41225 }
+    VGCC      { Ge: 0, Ca: 0.25 }
     AK        { Gk: 0.1, Hf: 0.076, Mf: 0.075, Voff: 2, Vmax: -37 }
-    SKCa      { Gk: 0, C50: 0.5, ActTau: 15, DeTau: 30, KCaR: 0.8, CaRDecayTau: 150, CaInThr: 0.01, CaInTau: 50 }
+    SKCa      { Gk: 0, C50: 0.5, Rise: 15, Decay: 30, KCaR: 0.8, CaRDecayTau: 150, CaInThr: 0.01, CaInTau: 50 }
     SMaint    { On: false, NNeurons: 10, Ge: 0.2, Inhib: 1, ISI: { Min: 1, Max: 20 } }
     PopCode   { On: false, Ge: 0.1, Min: -0.1, Max: 1.1, MinAct: 1, MinSigma: 0.1, MaxSigma: 0.1, Clip: true }
   }
@@ -73,7 +73,7 @@
   }
   LayInhib { Index1: -1, Index2: -1, Index3: -1, Index4: -1 }
   Learn    {
-    CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
+    CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, ETraceTau: 4, ETraceScale: 0, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
     CaSpike   { SpikeCaM: 8, SpikeCaSyn: 8, CaSynTau: 30, Dt: { MTau: 5, PTau: 40, DTau: 40 } }
     LearnNMDA { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
     TrgAvgAct { GiBaseInit: 0, RescaleOn: true, ErrLRate: 0.02, SynScaleRate: 0.005, SubMean: 1, Permute: true, Pool: true, TrgRange: { Min: 0.5, Max: 2 } }
@@ -94,7 +94,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.06, Sched: 1, Mod: 1, Eff: 0.06 }
-      DWt   { Trace: true, Tau: 1, SynCa20: false, CaPScale: 1, SubMean: 0, LearnThr: 0 }
+      DWt   { SynCa20: false, CaPScale: 1, SubMean: 0, SynTraceTau: 1, LearnThr: 0.1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.1923077, Rel: 0.7692308 }
@@ -111,7 +111,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.06, Sched: 1, Mod: 1, Eff: 0.06 }
-      DWt   { Trace: true, Tau: 1, SynCa20: false, CaPScale: 1, SubMean: 0, LearnThr: 0 }
+      DWt   { SynCa20: false, CaPScale: 1, SubMean: 0, SynTraceTau: 1, LearnThr: 0.1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.038461544, Rel: 0.23076925 }
@@ -129,16 +129,16 @@
     Clamp     { Ge: 0.8, Add: false, ErrThr: 0.5 }
     Noise     { On: false, GeHz: 100, Ge: 0.001, GiHz: 200, Gi: 0.001, MaintGe: false }
     VmRange   { Min: -100, Max: 0 }
-    Mahp      { Gk: 0.02, Voff: -30, Vslope: 9, TauMax: 1000 }
+    Mahp      { Gk: 0.05, Off: -30, Slope: 9, TauMax: 1000 }
     Sahp      { Gk: 0.05, CaTau: 5, Off: 0.8, Slope: 0.02, TauMax: 1 }
-    KNa       { On: true, TrialSlow: false, Med: { On: true, Rise: 0.02, Max: 0.2, Tau: 200 }, Slow: { On: true, Rise: 0.001, Max: 0.2, Tau: 1000 } }
+    KNa       { On: true, TrialSlow: false, Med: { On: true, Gk: 0.1, Rise: 50, Decay: 200 }, Slow: { On: true, Gk: 0.1, Rise: 1000, Decay: 1000 } }
     Kir       { Gk: 0, MinfOff: -102, MinfTau: 13, RiseOff: -60, RiseTau: 14, DecayOff: -31, DecayTau: 23, Mrest: 0.078599066 }
     NMDA      { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.2, Voff: 0 }
     MaintNMDA { Ge: 0.007, Tau: 200, ITau: 1, MgC: 1.4, Voff: 0 }
-    GabaB     { Gk: 0.015, RiseTau: 45, DecayTau: 50, Gbase: 0.2, GiSpike: 10, MaxTime: 47.41225 }
-    VGCC      { Ge: 0.02, Ca: 0.25 }
+    GabaB     { Gk: 0.015, Rise: 45, Decay: 50, Gbase: 0.2, GiSpike: 10, MaxTime: 47.41225 }
+    VGCC      { Ge: 0, Ca: 0.25 }
     AK        { Gk: 0.1, Hf: 0.076, Mf: 0.075, Voff: 2, Vmax: -37 }
-    SKCa      { Gk: 0, C50: 0.5, ActTau: 15, DeTau: 30, KCaR: 0.8, CaRDecayTau: 150, CaInThr: 0.01, CaInTau: 50 }
+    SKCa      { Gk: 0, C50: 0.5, Rise: 15, Decay: 30, KCaR: 0.8, CaRDecayTau: 150, CaInThr: 0.01, CaInTau: 50 }
     SMaint    { On: false, NNeurons: 10, Ge: 0.2, Inhib: 1, ISI: { Min: 1, Max: 20 } }
     PopCode   { On: false, Ge: 0.1, Min: -0.1, Max: 1.1, MinAct: 1, MinSigma: 0.1, MaxSigma: 0.1, Clip: true }
   }
@@ -149,7 +149,7 @@
   }
   LayInhib { Index1: -1, Index2: -1, Index3: -1, Index4: -1 }
   Learn    {
-    CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
+    CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, ETraceTau: 4, ETraceScale: 0, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
     CaSpike   { SpikeCaM: 8, SpikeCaSyn: 8, CaSynTau: 30, Dt: { MTau: 5, PTau: 40, DTau: 40 } }
     LearnNMDA { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
     TrgAvgAct { GiBaseInit: 0, RescaleOn: true, ErrLRate: 0.02, SynScaleRate: 0.005, SubMean: 1, Permute: true, Pool: true, TrgRange: { Min: 0.5, Max: 2 } }
@@ -170,7 +170,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.06, Sched: 1, Mod: 1, Eff: 0.06 }
-      DWt   { Trace: true, Tau: 1, SynCa20: false, CaPScale: 1, SubMean: 0, LearnThr: 0 }
+      DWt   { SynCa20: false, CaPScale: 1, SubMean: 0, SynTraceTau: 1, LearnThr: 0.1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.12820514, Rel: 0.7692308 }
@@ -187,7 +187,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.06, Sched: 1, Mod: 1, Eff: 0.06 }
-      DWt   { Trace: true, Tau: 1, SynCa20: false, CaPScale: 1, SubMean: 0, LearnThr: 0 }
+      DWt   { SynCa20: false, CaPScale: 1, SubMean: 0, SynTraceTau: 1, LearnThr: 0.1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.038461544, Rel: 0.23076925 }
@@ -205,16 +205,16 @@
     Clamp     { Ge: 0.8, Add: false, ErrThr: 0.5 }
     Noise     { On: false, GeHz: 100, Ge: 0.001, GiHz: 200, Gi: 0.001, MaintGe: false }
     VmRange   { Min: -100, Max: 0 }
-    Mahp      { Gk: 0.02, Voff: -30, Vslope: 9, TauMax: 1000 }
+    Mahp      { Gk: 0.05, Off: -30, Slope: 9, TauMax: 1000 }
     Sahp      { Gk: 0.05, CaTau: 5, Off: 0.8, Slope: 0.02, TauMax: 1 }
-    KNa       { On: true, TrialSlow: false, Med: { On: true, Rise: 0.02, Max: 0.2, Tau: 200 }, Slow: { On: true, Rise: 0.001, Max: 0.2, Tau: 1000 } }
+    KNa       { On: true, TrialSlow: false, Med: { On: true, Gk: 0.1, Rise: 50, Decay: 200 }, Slow: { On: true, Gk: 0.1, Rise: 1000, Decay: 1000 } }
     Kir       { Gk: 0, MinfOff: -102, MinfTau: 13, RiseOff: -60, RiseTau: 14, DecayOff: -31, DecayTau: 23, Mrest: 0.078599066 }
     NMDA      { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.2, Voff: 0 }
     MaintNMDA { Ge: 0.007, Tau: 200, ITau: 1, MgC: 1.4, Voff: 0 }
-    GabaB     { Gk: 0.015, RiseTau: 45, DecayTau: 50, Gbase: 0.2, GiSpike: 10, MaxTime: 47.41225 }
-    VGCC      { Ge: 0.02, Ca: 0.25 }
+    GabaB     { Gk: 0.015, Rise: 45, Decay: 50, Gbase: 0.2, GiSpike: 10, MaxTime: 47.41225 }
+    VGCC      { Ge: 0, Ca: 0.25 }
     AK        { Gk: 0.1, Hf: 0.076, Mf: 0.075, Voff: 2, Vmax: -37 }
-    SKCa      { Gk: 0, C50: 0.5, ActTau: 15, DeTau: 30, KCaR: 0.8, CaRDecayTau: 150, CaInThr: 0.01, CaInTau: 50 }
+    SKCa      { Gk: 0, C50: 0.5, Rise: 15, Decay: 30, KCaR: 0.8, CaRDecayTau: 150, CaInThr: 0.01, CaInTau: 50 }
     SMaint    { On: false, NNeurons: 10, Ge: 0.2, Inhib: 1, ISI: { Min: 1, Max: 20 } }
     PopCode   { On: false, Ge: 0.1, Min: -0.1, Max: 1.1, MinAct: 1, MinSigma: 0.1, MaxSigma: 0.1, Clip: true }
   }
@@ -225,7 +225,7 @@
   }
   LayInhib { Index1: -1, Index2: -1, Index3: -1, Index4: -1 }
   Learn    {
-    CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
+    CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, ETraceTau: 4, ETraceScale: 0, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
     CaSpike   { SpikeCaM: 8, SpikeCaSyn: 8, CaSynTau: 30, Dt: { MTau: 5, PTau: 40, DTau: 40 } }
     LearnNMDA { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
     TrgAvgAct { GiBaseInit: 0, RescaleOn: true, ErrLRate: 0.02, SynScaleRate: 0.005, SubMean: 0, Permute: true, Pool: true, TrgRange: { Min: 0.5, Max: 2 } }
@@ -245,7 +245,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.06, Sched: 1, Mod: 1, Eff: 0.06 }
-      DWt   { Trace: true, Tau: 1, SynCa20: false, CaPScale: 1, SubMean: 0, LearnThr: 0 }
+      DWt   { SynCa20: false, CaPScale: 1, SubMean: 0, SynTraceTau: 1, LearnThr: 0.1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.16666667, Rel: 1 }

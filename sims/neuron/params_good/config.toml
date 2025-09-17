@@ -1,23 +1,15 @@
 Name = 'Neuron'
 Title = 'Axon single neuron'
-URL = 'https'
-Doc = 'This simulation demonstrates the basic properties of neural spiking and rate-code activation'
-GeClamp = true
-SpikeHz = 50.0
-Ge = 0.1
-Gi = 0.1
-ErevE = 0.0
-ErevI = -70.0
-Noise = 0.0
-KNaAdapt = true
-MahpGk = 0.05
-NMDAGbar = 0.006
-GABABGbar = 0.015
-VGCCGbar = 0.02
-AKGk = 0.1
+URL = 'https://github.com/emer/axon/blob/main/sims/neuron/README.md'
+Doc = 'This simulation gives an in-depth view inside the processing within an individual neuron, including the various channels that shape its dynamics in important ways.'
 Includes = []
 GUI = false
 Debug = false
+GPU = true
+GeClamp = true
+SpikeHz = 50.0
+VgccGe = 0.02
+AKGk = 0.1
 
 [Params]
   Sheet = ''

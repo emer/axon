@@ -1,10 +1,11 @@
-Name = 'DeepFSA'
-Title = 'DeepAxon Finite State Automaton'
-URL = 'https'
-Doc = 'This demonstrates a basic deep predictive learning Axon model on the Finite State Automaton problem (e.g.'
+Name = 'FSA'
+Title = 'Finite State Automaton'
+URL = 'https://github.com/emer/axon/blob/main/sims/deepfsa/README.md'
+Doc = 'This demonstrates a basic deep predictive learning Axon model on the Finite State Automaton problem (e.g., the Reber grammar). The network learns the underlying grammar that generates partially ambiguous observable state tokens, strictly through errors in predicting the sequences of these tokens.'
 Includes = []
 GUI = false
 Debug = false
+GPU = true
 
 [Env]
   UnitsPer = 1
@@ -36,7 +37,6 @@ Debug = false
   Good = true
 
 [Run]
-  GPU = true
   GPUDevice = 0
   NData = 16
   NThreads = 0
@@ -54,6 +54,7 @@ Debug = false
 [Log]
   SaveWeights = false
   Train = [
+    'Expt',
     'Run',
     'Epoch'
   ]

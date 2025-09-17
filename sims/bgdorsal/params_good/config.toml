@@ -8,7 +8,7 @@ Debug = false
 GPU = true
 
 [Env]
-  SeqLen = 4
+  SeqLen = 5
   NActions = 5
   ActSoftMaxGain = 2.0
 
@@ -17,7 +17,10 @@ GPU = true
     RewPredLRateUp = 0.5
 
 [Params]
+  STNPools = false
+  NActionPools = 1
   NUnits = 6
+  NCortexUnits = 6
   Script = "sim.Sim.Params.Layer[\"Script\"] = &axon.LayerSheet{\n\t&axon.LayerSel{Sel:\".DSMatrixLayer\", Set: func(ly *axon.LayerParams) {\n\t\tly.Learn.NeuroMod.DAModGain = 0.02\n\t\tly.DSMatrix.PatchDAModGain = 0.02\n\t\tly.DSMatrix.PatchBurstGain = 0.1\n\t\tly.DSMatrix.PatchD1Range.Set(0.1, 0.3)\n\t\tly.DSMatrix.PatchD2Range.Set(0.05, 0.25)\n\t}},\n}\nsim.Sim.Params.Path[\"Script\"] = &axon.PathSheet{\n\t&axon.PathSel{Sel:\".DSMatrixPath\", Set: func(pt *axon.PathParams) {\n\t\tpt.Learn.LRate.Base = 0.02  // rlr sig: .02 > .015 .025\n\t\tpt.Learn.DWt.LearnThr = 0.1 // 0.1  > 0.2\n\t\tpt.DSMatrix.PatchDA = 0.5   // 0.5 > 0.8 >> 0.2\n\t\tpt.DSMatrix.Credit = 0.6    // key param, 0.6 > 0.5, 0.4, 0.7, 1 with pf modulation\n\t\tpt.DSMatrix.Delta = 1       // verified essential v0.2.40\n\t\t// Delta should always be 1 except for testing; adjust lrate to compensate\n\t\tpt.DSMatrix.OffTrace = 0.1 // 0.1 > 0.2, 0.5 > 0.05 > 0\n\t\tpt.DSMatrix.D2Scale = 1\n\t}},\n}\n"
   Sheet = ''
   Tag = ''
@@ -33,8 +36,8 @@ GPU = true
   SlowInterval = 200
   NThreads = 0
   Run = 0
-  Runs = 1
-  Epochs = 5
+  Runs = 50
+  Epochs = 200
   Sequences = 128
   Cycles = 300
   PlusCycles = 50
