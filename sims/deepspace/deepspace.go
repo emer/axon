@@ -2,14 +2,15 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// deep_move runs a DeepAxon network predicting the effects of movement
-// on visual inputs.
-package deepmove
+// deepspace simulates deep cerebellar nucleus and deep cortical layer predictive
+// learning on spatial updating from the vestibular and visual systems.
+package deepspace
 
 //go:generate core generate -add-types -add-funcs -gosl
 
 import (
 	"fmt"
+	"image"
 	"os"
 	"reflect"
 
@@ -19,14 +20,15 @@ import (
 	"cogentcore.org/core/gpu"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
-	"cogentcore.org/core/math32/vecint"
 	"cogentcore.org/core/tree"
 	"cogentcore.org/lab/base/mpi"
 	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/axon/v2/axon"
+	"github.com/emer/axon/v2/sims/deepspace/emery"
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/env"
+	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/paths"
@@ -105,6 +107,9 @@ type Sim struct {
 	// GUI manages all the GUI elements
 	GUI egui.GUI `display:"-"`
 
+	// GUI for viewing env.
+	EnvGUI *emery.GUI `display:"-"`
+
 	// RandSeeds is a list of random seeds to use for each run.
 	RandSeeds randx.Seeds `display:"-"`
 }
@@ -143,34 +148,33 @@ func (ss *Sim) ConfigEnv() {
 	newEnv := (len(ss.Envs) == 0)
 
 	for di := 0; di < ss.Config.Run.NData; di++ {
-		var trn, tst *MoveEnv
+		var trn, tst *emery.EmeryEnv
 		if newEnv {
-			trn = &MoveEnv{}
-			tst = &MoveEnv{}
+			trn = &emery.EmeryEnv{}
+			tst = &emery.EmeryEnv{}
 		} else {
-			trn = ss.Envs.ByModeDi(Train, di).(*MoveEnv)
-			tst = ss.Envs.ByModeDi(Test, di).(*MoveEnv)
+			trn = ss.Envs.ByModeDi(Train, di).(*emery.EmeryEnv)
+			tst = ss.Envs.ByModeDi(Test, di).(*emery.EmeryEnv)
 		}
 
 		// note: names must be standard here!
 		trn.Defaults()
 		trn.Name = env.ModeDi(Train, di)
-		trn.Debug = false
 		trn.RandSeed = 73 + int64(di)*73
+		trn.UnitsPer = ss.Config.Env.UnitsPer
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
 		}
-		trn.Config(ss.Config.Env.UnitsPer)
-		trn.Validate()
+		trn.Config()
 
 		tst.Defaults()
 		tst.Name = env.ModeDi(Test, di)
 		tst.RandSeed = 181 + int64(di)*181
+		trn.UnitsPer = ss.Config.Env.UnitsPer
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(tst, ss.Config.Env.Env)
 		}
-		tst.Config(ss.Config.Env.UnitsPer)
-		tst.Validate()
+		tst.Config()
 
 		trn.Init(0)
 		tst.Init(0)
@@ -185,91 +189,84 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.Context().ThetaCycles = int32(ss.Config.Run.Cycles)
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
-	ev := ss.Envs.ByModeDi(Train, 0).(*MoveEnv)
+	ev := ss.Envs.ByModeDi(Train, 0).(*emery.EmeryEnv)
 
 	full := paths.NewFull()
 	full.SelfCon = true // unclear if this makes a diff for self cons at all
 	one2one := paths.NewOneToOne()
 	_ = one2one
 
-	nPerAng := 5 // 30 total > 20 -- small improvement
-	nPerDepth := 2
-	rfDepth := 6
-	rfWidth := 3
-
-	rect := paths.NewRect()
-	rect.Size.Set(rfWidth, rfDepth) // 6 > 8 > smaller
-	rect.Scale.Set(1.0/float32(nPerAng), 1.0/float32(nPerDepth))
-	_ = rect
-
-	rectRecip := paths.NewRectRecip(rect)
-	_ = rectRecip
+	// nPerAng := 5 // 30 total > 20 -- small improvement
+	// nPerDepth := 2
+	// rfDepth := 6
+	// rfWidth := 3
+	//
+	// rect := paths.NewRect()
+	// rect.Size.Set(rfWidth, rfDepth) // 6 > 8 > smaller
+	// rect.Scale.Set(1.0/float32(nPerAng), 1.0/float32(nPerDepth))
+	// _ = rect
+	//
+	// rectRecip := paths.NewRectRecip(rect)
+	// _ = rectRecip
 
 	space := float32(5)
+	eyeSz := image.Point{ev.NextStates["EyeR"].DimSize(1), ev.NextStates["EyeR"].DimSize(0)}
 
-	dpIn, dpInp := net.AddInputPulv4D("Depth", 1, ev.NFOVRays, ev.DepthSize, 1, 2*space)
-	hd, hdp := net.AddInputPulv2D("HeadDir", 1, ev.DepthSize, space)
-	act := net.AddLayer2D("Action", axon.InputLayer, ev.UnitsPer, len(ev.Acts))
+	rotAct := net.AddLayer2D("ActRotate", axon.InputLayer, ev.UnitsPer, ev.LinearUnits)
 
-	dpHidSz := vecint.Vector2i{X: (ev.NFOVRays - (rfWidth - 1)) * nPerAng, Y: (ev.DepthSize - (rfDepth - 1)) * nPerDepth}
-	dpHid, dpHidct := net.AddSuperCT2D("DepthHid", "", dpHidSz.Y, dpHidSz.X, 2*space, one2one) // one2one learn > full
-	// net.ConnectCTSelf(dpHidct, full, "") // self definitely doesn't make sense -- no need for 2-back ct
-	// net.LateralConnectLayer(dpHidct, full).AddClass("CTSelfMaint") // no diff
-	net.ConnectToPulv(dpHid, dpHidct, dpInp, full, rect, "") // fmPulv: rect == full
-	net.ConnectLayers(act, dpHid, full, axon.ForwardPath)
-	net.ConnectLayers(dpIn, dpHid, rect, axon.ForwardPath)
-	// net.ConnectCtxtToCT(act, dpHidct, full) // ct gets direct action copy
+	vvelIn, vvelInp := net.AddInputPulv2D("VNCAngVel", ev.UnitsPer, ev.LinearUnits, space)
 
-	// net.ConnectLayers(dpHidct, dpHid, full, BackPath)
+	eyeLIn, eyeLInp := net.AddInputPulv2D("EyeLeft", eyeSz.Y, eyeSz.X, space)
+	eyeRIn, eyeRInp := net.AddInputPulv2D("EyeRight", eyeSz.Y, eyeSz.X, space)
+	eyeLIn.AddClass("VisIn")
+	eyeLInp.AddClass("VisIn")
+	eyeRIn.AddClass("VisIn")
+	eyeRInp.AddClass("VisIn")
 
-	var dpHid2, dpHid2ct *axon.Layer
-	if ss.Config.Params.Hid2 {
-		// attempt at topo in 2nd hidden -- didn't work -- needs pools basically
-		// rfWidth2 := rfWidth * nPerAng
-		// rfDepth2 := rfDepth * nPerDepth
-		// rect2 := paths.NewRect()
-		// rect2.Size.Set(rfWidth2, rfDepth2)
-		// rect2.Scale.Set(0.5*float32(rfWidth2), 0.5*float32(rfDepth2))
-		// _ = rect2
-		// rect2Recip := paths.NewRectRecip(rect2)
-		// _ = rect2Recip
+	vestHid, vestHidct := net.AddSuperCT2D("VestHidden", "", 10, 10, 2*space, one2one) // one2one learn > full
+	// net.ConnectCTSelf(vestHidct, full, "") // self definitely doesn't make sense -- no need for 2-back ct
+	// net.LateralConnectLayer(vestHidct, full).AddClass("CTSelfMaint") // no diff
+	net.ConnectToPulv(vestHid, vestHidct, vvelInp, full, full, "")
+	net.ConnectLayers(rotAct, vestHid, full, axon.ForwardPath)
+	net.ConnectLayers(vvelIn, vestHid, full, axon.ForwardPath)
 
-		// dpHid2, dpHid2ct = net.AddSuperCT2D("DepthHid2", (2*dpHidSz.Y)/rfDepth2*nPerDepth, (2*dpHidSz.X)/rfWidth2*nPerAng, 2*space, one2one) // one2one learn > full
-		dpHid2, dpHid2ct = net.AddSuperCT2D("DepthHid2", "", 10, 20, 2*space, one2one) // one2one learn > full
+	visHid, visHidct := net.AddSuperCT2D("VisHidden", "", 10, 10, 2*space, one2one) // one2one learn > full
+	// net.ConnectCTSelf(visHidct, full, "") // self definitely doesn't make sense -- no need for 2-back ct
+	// net.LateralConnectLayer(visHidct, full).AddClass("CTSelfMaint") // no diff
+	net.ConnectToPulv(visHid, visHidct, eyeLInp, full, full, "")
+	net.ConnectToPulv(visHid, visHidct, eyeRInp, full, full, "")
+	net.ConnectLayers(rotAct, visHid, full, axon.ForwardPath)
+	net.ConnectLayers(vvelIn, visHid, full, axon.ForwardPath)
 
-		net.ConnectCTSelf(dpHid2ct, full, "")
-		net.ConnectToPulv(dpHid2, dpHid2ct, dpInp, full, full, "")
-		net.ConnectLayers(act, dpHid2, full, axon.ForwardPath)
+	// net.ConnectLayers(visHidct, visHid, full, BackPath)
 
-		// net.ConnectLayers(dpHid, dpHid2, rect2, axon.ForwardPath)
-		// net.ConnectLayers(dpHid2, dpHid, rect2Recip, BackPath)
-
-		net.BidirConnectLayers(dpHid, dpHid2, full)
-		net.ConnectLayers(dpHid2ct, dpHidct, full, axon.BackPath)
-	}
-
-	hdHid, hdHidct := net.AddSuperCT2D("HeadDirHid", "", 10, 10, 2*space, one2one)
-	// net.ConnectCTSelf(hdHidct, full)
-	net.ConnectToPulv(hdHid, hdHidct, hdp, full, full, "") // shortcut top-down
-	net.ConnectLayers(act, hdHid, full, axon.ForwardPath)
-	net.ConnectLayers(hd, hdHid, full, axon.ForwardPath)
-
-	dpIn.AddClass("DepthIn")
-	dpInp.AddClass("DepthIn")
-	hd.AddClass("HeadDirIn")
-	hdp.AddClass("HeadDirIn")
+	// var hid2, hid2ct *axon.Layer
+	// if ss.Config.Params.Hid2 {
+	// 	hid2, hid2ct = net.AddSuperCT2D("DepthHid2", "", 10, 20, 2*space, one2one) // one2one learn > full
+	//
+	// 	net.ConnectCTSelf(hid2ct, full, "")
+	// 	net.ConnectToPulv(hid2, hid2ct, vvelInp, full, full, "")
+	// 	net.ConnectLayers(rotAct, hid2, full, axon.ForwardPath)
+	//
+	// 	// net.ConnectLayers(hid, hid2, rect2, axon.ForwardPath)
+	// 	// net.ConnectLayers(hid2, hid, rect2Recip, BackPath)
+	//
+	// 	net.BidirConnectLayers(hid, hid2, full)
+	// 	net.ConnectLayers(hid2ct, hidct, full, axon.BackPath)
+	// }
 
 	// no benefit from these:
-	// net.ConnectLayers(hdHid, dpHid, full, BackPath)
-	// net.ConnectLayers(hdHidct, dpHidct, full, BackPath)
+	// net.ConnectLayers(hdHid, hid, full, BackPath)
+	// net.ConnectLayers(hdHidct, hidct, full, BackPath)
 
-	hd.PlaceBehind(act, space)
-	act.PlaceRightOf(dpIn, space)
-	dpHid.PlaceAbove(dpIn)
-	hdHid.PlaceRightOf(dpHid, space)
-	if ss.Config.Params.Hid2 {
-		dpHid2.PlaceBehind(hdHidct, 2*space)
-	}
+	vvelIn.PlaceBehind(rotAct, space)
+	eyeLIn.PlaceRightOf(rotAct, space)
+	eyeRIn.PlaceRightOf(eyeLIn, space)
+	vestHid.PlaceAbove(rotAct)
+	visHid.PlaceRightOf(vestHid, space)
+	// if ss.Config.Params.Hid2 {
+	// 	hid2.PlaceBehind(hdHidct, 2*space)
+	// }
 
 	net.Build()
 	net.Defaults()
@@ -364,6 +361,9 @@ func (ss *Sim) ConfigLoops() {
 
 		ls.Stacks[Train].OnInit.Add("GUI-Init", ss.GUI.UpdateWindow)
 		ls.Stacks[Test].OnInit.Add("GUI-Init", ss.GUI.UpdateWindow)
+		ls.Loop(Train, Trial).OnEnd.Add("UpdateEnvGUI", func() {
+			ss.UpdateEnvGUI(Train)
+		})
 	}
 
 	if ss.Config.Debug {
@@ -383,7 +383,7 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 
 	net.InitExt()
 	for di := uint32(0); di < ctx.NData; di++ {
-		ev := ss.Envs.ByModeDi(mode, int(di)).(*MoveEnv)
+		ev := ss.Envs.ByModeDi(mode, int(di)).(*emery.EmeryEnv)
 		ev.Step()
 		for _, lnm := range lays {
 			ly := ss.Net.LayerByName(lnm)
@@ -551,10 +551,10 @@ func (ss *Sim) ConfigStats() {
 		pcaFunc(mode, level, phase == Start, trnEpc)
 	})
 
-	stateFunc := axon.StatLayerState(ss.Stats, net, Test, Trial, true, "ActM", "Depth", "DepthP", "HeadDir", "HeadDirP")
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		stateFunc(mode, level, phase == Start)
-	})
+	// stateFunc := axon.StatLayerState(ss.Stats, net, Test, Trial, true, "ActM", "Depth", "DepthP", "HeadDir", "HeadDirP")
+	// ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+	// 	stateFunc(mode, level, phase == Start)
+	// })
 }
 
 // StatCounters returns counters string to show at bottom of netview.
@@ -606,7 +606,14 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	}
 	ss.ConfigNetView(nv)
 
+	evtab, _ := ss.GUI.Tabs.NewTab("Env")
+	ev := ss.Envs.ByModeDi(etime.Train, 0).(*emery.EmeryEnv)
+	ss.EnvGUI = &emery.GUI{}
+	ss.EnvGUI.ConfigGUI(ev, evtab)
+
 	ss.StatsInit()
+
+	ss.GUI.Tabs.SelectTabIndex(0)
 	ss.GUI.FinalizeGUI(false)
 }
 
@@ -632,6 +639,14 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 			core.TheApp.OpenURL(ss.Config.URL)
 		},
 	})
+}
+
+func (ss *Sim) UpdateEnvGUI(mode Modes) {
+	vu := ss.NetViewUpdater(mode)
+	if vu == nil || vu.View == nil {
+		return
+	}
+	ss.EnvGUI.Update()
 }
 
 func (ss *Sim) RunNoGUI() {

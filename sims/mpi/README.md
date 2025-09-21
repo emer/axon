@@ -71,7 +71,7 @@ In other sims with more complex or interactive environments, it is best to give 
 
 ```go
 	Rand        randx.SysRand `display:"-" desc:"random number generator for the env -- all random calls must use this"`
-	RandSeed     int64         `inactive:"+" desc:"random seed"`
+	RandSeed     int64         `edit:"-" desc:"random seed"`
 ```
 
 The built-in data parallel processing in v1.8 requires coordinating the allocation of inputs across both.  In this example project, there are 24 input patterns, and mpi takes the first cut by allocating subsets of the patterns that each node processes.  Then, the remaining patterns can be learned using data parallel within each node.  It may be important to ensure that these divide the total equally, for example:

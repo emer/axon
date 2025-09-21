@@ -5,8 +5,8 @@
 package main
 
 import (
-	"github.com/emer/axon/v2/sims/deepmove"
+	"github.com/emer/axon/v2/sims/deepspace"
 	"github.com/emer/emergent/v2/egui"
 )
 
-func main() { egui.Run[deepmove.Sim, deepmove.Config]() }
+func main() { egui.Run[deepspace.Sim, deepspace.Config]() }

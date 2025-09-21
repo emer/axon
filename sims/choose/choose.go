@@ -439,7 +439,7 @@ func (ss *Sim) ConfigLoops() {
 		axon.LooperUpdateNetView(ls, Cycle, Trial, ss.NetViewUpdater)
 
 		ls.Stacks[Train].OnInit.Add("GUI-Init", ss.GUI.UpdateWindow)
-		ls.Loop(Train, Trial).OnEnd.Add("UpdateWorldGUI", func() {
+		ls.Loop(Train, Trial).OnEnd.Add("UpdateEnvGUI", func() {
 			ss.UpdateEnvGUI(Train)
 		})
 	}
@@ -808,7 +808,7 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	evtab, _ := ss.GUI.Tabs.NewTab("Maze")
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*armaze.Env)
 	ss.EnvGUI = &armaze.GUI{}
-	ss.EnvGUI.ConfigWorldGUI(ev, evtab)
+	ss.EnvGUI.ConfigGUI(ev, evtab)
 
 	ss.StatsInit()
 

@@ -433,7 +433,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectLayers(v4CT, v2CT, pts.PT4x4Skp2Recip, axon.BackPath) // tiny bit worse
 
 	// leak from super to CT:
-	// net.ConnectLayers(v4, v2CT, pts.PT2x2Skp2Recip, axon.BackPath) // likely beneficial.
+	net.ConnectLayers(v4, v2CT, pts.PT2x2Skp2Recip, axon.BackPath) // fails to run without!?
 
 	net.ConnectLayers(v1m, v4, rndcut, axon.ForwardPath).AddClass("V1SC")   // shortcut, not IT
 	net.ConnectLayers(v1m, v4CT, rndcut, axon.ForwardPath).AddClass("V1SC") // shortcut, not IT

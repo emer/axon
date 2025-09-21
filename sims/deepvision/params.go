@@ -344,12 +344,12 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".V1SC", Doc: "v1 shortcut",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.8          // 1 > .8 > .5 for predicting input
+				pt.PathScale.Rel = 1            // 1 > .8 > .5 for predicting input
 				pt.SWts.Adapt.On.SetBool(false) // seems better
 			}},
 		{Sel: ".V1SCIT", Doc: "v1 shortcut to IT: TEO, TE",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.5          // 0.5 = weaker allows better invariant reps to form
+				pt.PathScale.Rel = 0.3          // 0.5 = weaker allows better invariant reps to form
 				pt.SWts.Adapt.On.SetBool(false) // seems better
 			}},
 

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package deepmove
+package deepspace
 
 import (
 	"github.com/emer/emergent/v2/egui"
@@ -135,8 +135,8 @@ type Config struct {
 }
 
 func (cfg *Config) Defaults() {
-	cfg.Name = "DeepMove"
-	cfg.Title = "DeepAxon Move Prediction"
-	cfg.URL = "https://github.com/emer/axon/blob/main/sims/deepmove/README.md"
-	cfg.Doc = "This demonstrates a basic deep predictive learning Axon model that learns to predict the effects of movement on visual inputs."
+	cfg.Name = "DeepSpace"
+	cfg.Title = "Deep Space"
+	cfg.URL = "https://github.com/emer/axon/blob/main/sims/deepspace/README.md"
+	cfg.Doc = "This simulates deep cerebellar nucleus and deep cortical layer predictive learning on spatial updating from the vestibular and visual systems."
 }

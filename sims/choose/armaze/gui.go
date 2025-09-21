@@ -113,12 +113,6 @@ type GUI struct {
 	// view of the gui obj
 	EnvForm *core.Form `display:"-"`
 
-	// ArmMaze TabView
-	WorldTabs *core.Tabs `display:"-"`
-
-	// ArmMaze is running
-	IsRunning bool `display:"-"`
-
 	// current depth map
 	DepthValues []float32
 
@@ -171,9 +165,9 @@ type GUI struct {
 	Contacts physics.Contacts `display:"-"`
 }
 
-// ConfigWorldGUI configures all the world view GUI elements
+// ConfigGUI configures all the world view GUI elements
 // pass an initial env to use for configuring
-func (vw *GUI) ConfigWorldGUI(ev *Env, b core.Widget) {
+func (vw *GUI) ConfigGUI(ev *Env, b core.Widget) {
 	vw.Disp = true
 	vw.Env = ev
 	vw.EnvName = ev.Name
@@ -573,10 +567,10 @@ func (vw *GUI) UpdateWorld(ctx *axon.Context, ev *Env, net *axon.Network, state 
 		vw.EnvForm.Update()
 	}
 
-	vw.UpdateWorldGUI()
+	vw.UpdateGUI()
 }
 
-func (vw *GUI) UpdateWorldGUI() {
+func (vw *GUI) UpdateGUI() {
 	if vw.SceneEditor == nil || !vw.Disp {
 		return
 	}
@@ -596,7 +590,7 @@ func (vw *GUI) Left() { //types:add
 	ev.InstinctAct(ev.JustGated, ev.HasGated)
 	ev.Action("Left", nil)
 	ev.Step()
-	vw.UpdateWorldGUI()
+	vw.UpdateGUI()
 }
 
 func (vw *GUI) Right() { //types:add
@@ -604,7 +598,7 @@ func (vw *GUI) Right() { //types:add
 	ev.InstinctAct(ev.JustGated, ev.HasGated)
 	ev.Action("Right", nil)
 	ev.Step()
-	vw.UpdateWorldGUI()
+	vw.UpdateGUI()
 }
 
 func (vw *GUI) Forward() { //types:add
@@ -612,7 +606,7 @@ func (vw *GUI) Forward() { //types:add
 	ev.InstinctAct(ev.JustGated, ev.HasGated)
 	ev.Action("Forward", nil)
 	ev.Step()
-	vw.UpdateWorldGUI()
+	vw.UpdateGUI()
 }
 
 func (vw *GUI) Consume() { //types:add
@@ -620,5 +614,5 @@ func (vw *GUI) Consume() { //types:add
 	ev.InstinctAct(ev.JustGated, ev.HasGated)
 	ev.Action("Consume", nil)
 	ev.Step()
-	vw.UpdateWorldGUI()
+	vw.UpdateGUI()
 }

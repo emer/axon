@@ -24,7 +24,7 @@ type ColorVis struct {
 	DoGNames   []string                   `desc:"names of the dog gain sets -- for naming output data"`
 	DoGGains   []float32                  `desc:"overall gain factors, to compensate for diffs in OnGains"`
 	DoGOnGains []float32                  `desc:"OnGain factors -- 1 = perfect balance, otherwise has relative imbalance for capturing main effects"`
-	Geom       vfilter.Geom               `inactive:"+" view:"inline" desc:"geometry of input, output"`
+	Geom       vfilter.Geom               `edit:"-" view:"inline" desc:"geometry of input, output"`
 	KWTA       kwta.KWTA                  `desc:"kwta parameters"`
 	DoGTsr     tensor.Float32             `view:"no-inline" desc:"DoG filter tensor -- has 3 filters (on, off, net)"`
 	DoGTab     table.Table                `view:"no-inline" desc:"DoG filter table (view only)"`
