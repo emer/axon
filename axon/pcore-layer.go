@@ -53,7 +53,7 @@ type DSMatrixParams struct {
 
 func (mp *DSMatrixParams) Defaults() {
 	mp.PatchDAModGain = 0.02
-	mp.PatchBurstGain = 0.1
+	mp.PatchBurstGain = 1.0
 	mp.PatchD1Range.Set(0.1, 0.3)
 	mp.PatchD2Range.Set(0.05, 0.25)
 }
@@ -307,11 +307,12 @@ func (ly *Layer) MatrixDefaults() {
 	ly.Params.Inhib.ActAvg.Nominal = 0.25   // pooled should be lower
 	ly.Params.Learn.RLRate.On.SetBool(true) // key: sig deriv used outside of rew trials
 	ly.Params.Learn.RLRate.Diff.SetBool(false)
-	ly.Params.Learn.TrgAvgAct.RescaleOn.SetBool(false) // major effect
+	ly.Params.Learn.TrgAvgAct.RescaleOn.SetBool(true) // major effect
 
 	// ly.Params.Learn.NeuroMod.DAMod needs to be set via BuildConfig
 	ly.Params.Learn.NeuroMod.DALRateSign.SetBool(true) // critical
 	ly.Params.Learn.NeuroMod.DALRateMod = 1
+	ly.Params.Learn.NeuroMod.DAModGain = 0
 	ly.Params.Learn.NeuroMod.AChLRateMod = 0
 	ly.Params.Learn.NeuroMod.BurstGain = 0.1
 	ly.Params.Learn.RLRate.SigmoidMin = 0.001
@@ -336,12 +337,12 @@ func (ly *Layer) DSMatrixDefaults() {
 	ly.Params.Acts.Dend.ModBase = 1
 	ly.Params.Acts.Dend.ModGain = 0
 	ly.Params.Learn.NeuroMod.AChDisInhib = 0
-	ly.Params.Learn.NeuroMod.DAModGain = 0.01 // DS
+	ly.Params.Learn.NeuroMod.DAModGain = 0.0 // DS
 
 	for _, pj := range ly.RecvPaths {
 		if pj.Send.Type == GPLayer { // GPeAkToMtx
 			if strings.Contains(ly.Name, "No") {
-				pj.Params.PathScale.Abs = 6
+				pj.Params.PathScale.Abs = 4
 			}
 		}
 	}
@@ -430,14 +431,14 @@ func (ly *Layer) GPDefaults() {
 			case VSMatrixLayer, DSMatrixLayer:
 				pj.Params.PathScale.Abs = 1 // MtxNoToGPePr -- primary NoGo pathway
 			case GPLayer:
-				pj.Params.PathScale.Abs = 4 // 4 best for DS; GPePrToGPePr -- must be very strong
+				pj.Params.PathScale.Abs = 4.5 // 4.5 best for DS; GPePrToGPePr -- must be very strong
 			case STNLayer:
 				pj.Params.PathScale.Abs = 0.5 // STNToGPePr
 			}
 		case GPeAk:
 			switch pj.Send.Type {
 			case VSMatrixLayer, DSMatrixLayer:
-				pj.Params.PathScale.Abs = 0.5 // MtxGoToGPeAk
+				pj.Params.PathScale.Abs = 0.6 // MtxGoToGPeAk
 			case GPLayer:
 				pj.Params.PathScale.Abs = 1 // GPePrToGPeAk
 			case STNLayer:
@@ -488,8 +489,8 @@ func (ly *Layer) STNDefaults() {
 	ly.Params.Acts.Init.GeVar = 0.1
 	ly.Params.Acts.Init.GiVar = 0.1
 	ly.Params.Acts.SKCa.Gk = 2
-	ly.Params.Acts.SKCa.CaRDecayTau = 80 // 80 > 150 for longer theta windows
-	ly.Params.Acts.Kir.Gk = 10           // 10 > 5 -- key for pause
+	ly.Params.Acts.SKCa.CaRDecayTau = 150 // 150 > 80 for longer theta windows
+	ly.Params.Acts.Kir.Gk = 10            // 10 > 5 -- key for pause
 	ly.Params.Acts.Decay.Act = 0
 	ly.Params.Acts.Decay.Glong = 0
 	ly.Params.Acts.Decay.LearnCa = 1 // key for non-spaced trials, to refresh immediately
@@ -516,7 +517,7 @@ func (ly *Layer) STNDefaults() {
 		pj.Params.SWts.Init.Mean = 0.75
 		pj.Params.SWts.Init.Var = 0.25
 		if pj.Send.Type == GPLayer { // GPePrToSTN
-			pj.Params.PathScale.Abs = 0.5
+			pj.Params.PathScale.Abs = 0.4
 		} else {
 			pj.Params.PathScale.Abs = 2.0 // pfc inputs
 		}

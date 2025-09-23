@@ -23,6 +23,7 @@ import (
 	"cogentcore.org/core/tree"
 	"cogentcore.org/lab/base/mpi"
 	"cogentcore.org/lab/base/randx"
+	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/axon/v2/sims/deepspace/emery"
@@ -216,8 +217,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	vvelIn, vvelInp := net.AddInputPulv2D("VNCAngVel", ev.UnitsPer, ev.LinearUnits, space)
 
-	eyeLIn, eyeLInp := net.AddInputPulv2D("EyeLeft", eyeSz.Y, eyeSz.X, space)
-	eyeRIn, eyeRInp := net.AddInputPulv2D("EyeRight", eyeSz.Y, eyeSz.X, space)
+	eyeLIn, eyeLInp := net.AddInputPulv2D("EyeL", eyeSz.Y, eyeSz.X, space)
+	eyeRIn, eyeRInp := net.AddInputPulv2D("EyeR", eyeSz.Y, eyeSz.X, space)
 	eyeLIn.AddClass("VisIn")
 	eyeLInp.AddClass("VisIn")
 	eyeRIn.AddClass("VisIn")
@@ -339,6 +340,16 @@ func (ss *Sim) ConfigLoops() {
 		ss.ApplyInputs(mode.(Modes))
 	})
 
+	for mode, st := range ls.Stacks {
+		plusPhase := st.Loops[Cycle].EventByName("MinusPhase:End")
+		plusPhase.OnEvent.InsertBefore("PlusPhase:Start", "TakeAction", func() bool {
+			// note: critical to have this happen *after* MinusPhase:End and *before* PlusPhase:Start
+			// because minus phase end has gated info, and plus phase start applies action input
+			ss.TakeAction(ss.Net, mode.(Modes))
+			return false
+		})
+	}
+
 	ls.Loop(Train, Run).OnStart.Add("NewRun", ss.NewRun)
 
 	trainEpoch := ls.Loop(Train, Epoch)
@@ -395,6 +406,22 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 		curModeDir.StringValue("TrialName", ndata).SetString1D(ev.String(), int(di))
 	}
 	ss.Net.ApplyExts()
+}
+
+// TakeAction takes action for this step, using either decoded cortical
+// or reflexive subcortical action from env.
+// Called at end of minus phase. However, it can still gate sometimes
+// after this point, so that is dealt with at end of plus phase.
+func (ss *Sim) TakeAction(net *axon.Network, mode Modes) {
+	ctx := net.Context()
+	// curModeDir := ss.Current.Dir(mode.String())
+	ndata := int(ctx.NData)
+
+	for di := 0; di < ndata; di++ {
+		ev := ss.Envs.ByModeDi(mode, di).(*emery.EmeryEnv)
+		ang := 2.0 * (ev.Rand.Float32() - 0.5) * ev.MaxRotate
+		ev.Action("Rotate", tensor.NewFloat32FromValues(ang))
+	}
 }
 
 // NewRun intializes a new Run level of the model.
@@ -643,7 +670,7 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 
 func (ss *Sim) UpdateEnvGUI(mode Modes) {
 	vu := ss.NetViewUpdater(mode)
-	if vu == nil || vu.View == nil {
+	if vu == nil || vu.View == nil || ss.EnvGUI == nil {
 		return
 	}
 	ss.EnvGUI.Update()

@@ -128,12 +128,13 @@ func (ev *EmeryEnv) Defaults() {
 	ev.UnitsPer = 4
 	ev.LinearUnits = 16
 	ev.AngleUnits = 16
-	ev.MaxRotate = 45
+	ev.MaxRotate = 15
 	popSigma := float32(0.1)
 	ev.LinearCode.Defaults()
 	ev.LinearCode.SetRange(-1.1, 1.1, popSigma)
 	ev.AngleCode.Defaults()
 	ev.AngleCode.SetRange(0, 1, popSigma)
+	ev.Camera.Defaults()
 	ev.Camera.FOV = 90
 	ev.Camera.Size = image.Point{128, 128}
 	ev.Vis.Defaults()
@@ -160,7 +161,8 @@ func (ev *EmeryEnv) Config() {
 		panic(err)
 	}
 	sc := world.NoDisplayScene(gp, dev)
-	ev.MakeWorld(sc)
+	pw := ev.MakePhysicsWorld()
+	ev.MakeWorld(sc, pw)
 }
 
 func (ev *EmeryEnv) State(element string) tensor.Values {
@@ -250,8 +252,7 @@ func (ev *EmeryEnv) MakeEmery(par *physics.Group, length float32) {
 }
 
 // MakeWorld makes the visual world for physical world
-func (ev *EmeryEnv) MakeWorld(sc *xyz.Scene) {
-	pw := ev.MakePhysicsWorld()
+func (ev *EmeryEnv) MakeWorld(sc *xyz.Scene, pw *physics.Group) {
 	sc.Background = colors.Uniform(colors.FromRGB(230, 230, 255)) // sky blue-ish
 	xyz.NewAmbient(sc, "ambient", 0.3, xyz.DirectSun)
 	xyz.NewDirectional(sc, "dir", 1, xyz.DirectSun).Pos.Set(0, 2, 1)
@@ -263,15 +264,9 @@ func (ev *EmeryEnv) MakeWorld(sc *xyz.Scene) {
 // GrabEyeImg takes a snapshot from the perspective of Emer's right eye
 func (ev *EmeryEnv) GrabEyeImg() {
 	img := ev.World.RenderFromNode(ev.EyeR, &ev.Camera)
-	if img == nil {
-		return
-	}
 	ev.EyeRImage = img
 
 	img = ev.World.RenderFromNode(ev.EyeL, &ev.Camera)
-	if img == nil {
-		return
-	}
 	ev.EyeLImage = img
 
 	// depth, err := em.World.DepthImage()
@@ -351,8 +346,12 @@ func (ev *EmeryEnv) RenderAngle(snm string, val float32) {
 
 // FilterImage does vision filtering on image, storing to given state name.
 func (ev *EmeryEnv) FilterImage(snm string, img image.Image) {
+	if img == nil {
+		return
+	}
 	ev.Vis.Filter(img)
 	ev.NextStates[snm].CopyFrom(&ev.Vis.OutTsr)
+	// fmt.Println("vis out sz:", ev.Vis.OutTsr.ShapeSizes())
 }
 
 // Compile-time check that implements Env interface

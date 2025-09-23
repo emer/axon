@@ -10,6 +10,7 @@ import (
 
 	"github.com/anthonynsimon/bild/transform"
 
+	"cogentcore.org/core/base/iox/imagex"
 	"cogentcore.org/lab/stats/stats"
 	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensor/tmath"
@@ -73,7 +74,7 @@ func (vi *Vis) SetImage(img image.Image) {
 	if vi.ClipToFit && isz.X > insz.X && isz.Y > insz.Y {
 		st := isz.Sub(insz).Div(2).Add(ibd.Min)
 		ed := st.Add(insz)
-		vi.Image = img.(*image.RGBA).SubImage(image.Rectangle{Min: st, Max: ed})
+		vi.Image = imagex.AsRGBA(img).SubImage(image.Rectangle{Min: st, Max: ed})
 		vfilter.RGBToGrey(vi.Image, &vi.ImageTsr, 0, false) // pad for filt, bot zero
 	} else {
 		if isz != vi.ImageSize {

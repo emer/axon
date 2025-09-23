@@ -13,7 +13,6 @@ import (
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/styles"
 	"cogentcore.org/core/tree"
-	"cogentcore.org/core/xyz/physics/world"
 	"cogentcore.org/core/xyz/xyzcore"
 )
 
@@ -33,12 +32,13 @@ type GUI struct {
 }
 
 func (ge *GUI) ConfigGUI(ev *EmeryEnv, b core.Widget) {
+	ge.Env = ev
 	core.NewToolbar(b).Maker(ge.MakeToolbar)
-	split := core.NewSplits(b)
 
-	fr := core.NewFrame(split)
+	fr := core.NewFrame(b)
 	fr.Styler(func(s *styles.Style) {
 		s.Direction = styles.Column
+		s.Grow.Set(1, 1)
 	})
 
 	imfr := core.NewFrame(fr)
@@ -59,10 +59,10 @@ func (ge *GUI) ConfigGUI(ev *EmeryEnv, b core.Widget) {
 	ge.EyeRImageDisp.Name = "eye-r-image"
 	ge.EyeRImageDisp.Image = image.NewRGBA(image.Rectangle{Max: ev.Camera.Size})
 
-	ge.SceneEditor = xyzcore.NewSceneEditor(split)
+	// re-use existing scene!
+	ge.SceneEditor = xyzcore.NewSceneEditorForScene(fr, ev.World.Scene)
 	ge.SceneEditor.UpdateWidget()
 	sc := ge.SceneEditor.SceneXYZ()
-	ev.World = world.NewWorld(ev.World.World, sc) // new one!
 
 	sc.Camera.Pose.Pos = math32.Vec3(0, 29, -4)
 	sc.Camera.LookAt(math32.Vec3(0, 4, -5), math32.Vec3(0, 1, 0))
@@ -72,8 +72,6 @@ func (ge *GUI) ConfigGUI(ev *EmeryEnv, b core.Widget) {
 	sc.Camera.LookAt(math32.Vec3(0, 3.6, 0), math32.Vec3(0, 1, 0))
 	sc.SaveCamera("1")
 	sc.SaveCamera("default")
-
-	split.SetSplits(.4, .6)
 }
 
 func (ge *GUI) Update() {
@@ -81,10 +79,15 @@ func (ge *GUI) Update() {
 		return
 	}
 	ev := ge.Env
-	ge.EyeRImageDisp.SetImage(ev.EyeRImage)
-	ge.EyeRImageDisp.NeedsRender()
-	ge.EyeLImageDisp.SetImage(ev.EyeLImage)
-	ge.EyeLImageDisp.NeedsRender()
+	if ev.EyeRImage != nil {
+		ge.EyeRImageDisp.SetImage(ev.EyeRImage)
+		ge.EyeRImageDisp.NeedsRender()
+	}
+	if ev.EyeLImage != nil {
+		ge.EyeLImageDisp.SetImage(ev.EyeLImage)
+		ge.EyeLImageDisp.NeedsRender()
+	}
+	ge.SceneEditor.NeedsRender()
 }
 
 func (ge *GUI) MakeToolbar(p *tree.Plan) {
