@@ -32,9 +32,9 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.KNa.On.SetBool(true)
 				ly.Acts.KNa.Med.Gk = 0.2 // 0.2 > 0.1 > 0.05
 				ly.Acts.KNa.Slow.Gk = 0.2
-				ly.Acts.Mahp.Gk = 0.05  // 0.05
-				ly.Acts.Sahp.Gk = 0.05  // 0.05
-				ly.Acts.Sahp.CaTau = 10 // 10 (def) > 5?
+				ly.Acts.Mahp.Gk = 0.05 // 0.05
+				ly.Acts.Sahp.Gk = 0.05 // 0.05
+				ly.Acts.Sahp.CaTau = 5 // 5 (def) == 10
 
 				// ly.Acts.NMDA.Tau = 100                       // 100 def >> 200
 				// ly.Learn.LearnNMDA.Tau = 100                 // 100 def >> 200

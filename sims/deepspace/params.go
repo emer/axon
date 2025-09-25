@@ -40,12 +40,12 @@ var LayerParams = axon.LayerSheets{
 				ly.Bursts.ThrRel = 0.1 // no diffs here -- music makes a diff
 				ly.Bursts.ThrAbs = 0.1
 			}},
-		{Sel: ".DepthIn", Doc: "",
+		{Sel: ".VisIn", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.15 // was .13 -- Ge very high b/c of topo path
 				ly.Inhib.Layer.Gi = 0.9        //
 			}},
-		{Sel: ".HeadDirIn", Doc: "",
+		{Sel: ".LinearIn", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.13 // 0.13 > 0.2 -- 0.13 is accurate but Ge is high..
 				ly.Inhib.Layer.Gi = 0.9        //
@@ -64,12 +64,12 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.MaintNMDA.Ge = 0.006 // not relevant -- no CTSelf
 				ly.Acts.MaintNMDA.Tau = 100
 			}},
-		{Sel: "#DepthHid", Doc: "",
-			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.Layer.Gi = 1.2        // 1.2 tiny bit > 1.4
-				ly.Inhib.ActAvg.Nominal = 0.07 // 0.07 actual
-			}},
-		{Sel: "#DepthHidCT", Doc: "",
+		// {Sel: "#DepthHid", Doc: "",
+		// 	Set: func(ly *axon.LayerParams) {
+		// 		ly.Inhib.Layer.Gi = 1.2        // 1.2 tiny bit > 1.4
+		// 		ly.Inhib.ActAvg.Nominal = 0.07 // 0.07 actual
+		// 	}},
+		{Sel: "#VisHidCT", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.Layer.Gi = 2.6        // 2.8 is reasonable; was 2.0
 				ly.Inhib.ActAvg.Nominal = 0.07 // 0.07 reasonable -- actual is closer to .15 but this produces stronger drive on Pulvinar which produces *slightly* better performance.
@@ -85,20 +85,20 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Decay.AHP = 0.0          // clear long
 				ly.Learn.RLRate.SigmoidMin = 1.0 // 1 > .05
 			}},
-		{Sel: "#Action", Doc: "",
+		{Sel: "#ActRotate", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.25 // 0.25 is accurate -- good MaxGe levels
-				ly.Inhib.Layer.Gi = 0.9        //
+				// ly.Inhib.ActAvg.Nominal = 0.25 // 0.25 is accurate -- good MaxGe levels
+				// ly.Inhib.Layer.Gi = 0.9        //
 			}},
 	},
 	"Hid2": {
-		{Sel: "#DepthHidP", Doc: "distributed hidden-layer pulvinar",
+		{Sel: "#VisHidP", Doc: "distributed hidden-layer pulvinar",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.Layer.Gi = 0.9  // 0.9 > 0.8 > 1
 				ly.Pulv.DriveScale = 0.1 // 0.05 > .1
 				ly.Acts.NMDA.Ge = 0.1
 			}},
-		{Sel: "#DepthHid2CT", Doc: "CT NMDA gbar factor is key",
+		{Sel: "#VisHid2CT", Doc: "CT NMDA gbar factor is key",
 			Set: func(ly *axon.LayerParams) {
 				ly.CT.GeGain = 0.8             // 0.8, 50 small benefit
 				ly.CT.DecayTau = 50            // 50 > 0
@@ -166,13 +166,13 @@ var PathParams = axon.PathSheets{
 		// 	Set: func(pt *axon.PathParams) {
 		// 		pt.PathScale.Rel = 0.2 // 0.5 is not better
 		// 	}},
-		{Sel: "#ActionToDepthHid", Doc: "",
-			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 2.0 // 2.0 > 3.0 > 1.0
-			}},
+		// {Sel: "#ActionToVisHid", Doc: "",
+		// 	Set: func(pt *axon.PathParams) {
+		// 		pt.PathScale.Rel = 2.0 // 2.0 > 3.0 > 1.0
+		// 	}},
 	},
 	"Hid2": {
-		{Sel: "#DepthHid2CTToDepthP", Doc: "",
+		{Sel: "#VisHid2CTToVisP", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 0.1 // 0.1 == 0.15 > 0.05
 			}},

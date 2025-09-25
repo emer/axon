@@ -4,16 +4,18 @@
 
 package emery
 
-//go:generate core generate -add-types
+//go:generate core generate -add-types -add-funcs -setters -gosl
 
 import (
 	"fmt"
 	"image"
+	"strconv"
 
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/colors"
 	"cogentcore.org/core/gpu"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/tree"
 	"cogentcore.org/core/xyz"
 	"cogentcore.org/core/xyz/physics"
@@ -36,6 +38,7 @@ const (
 
 // Geom is overall geometry of the space
 type Geom struct {
+
 	// computed total depth, starts at 0 goes deep
 	Depth float32 `edit:"-"`
 
@@ -47,13 +50,37 @@ type Geom struct {
 
 	// half width for centering on 0 X
 	HalfWidth float32 `edit:"-"`
+
+	// ObjWidth is the width of objects (landmarks).
+	ObjWidth minmax.F32
+
+	ObjHeight minmax.F32
+
+	// ObjSpace is the space between objects (landmarks) in degrees.
+	ObjSpace minmax.F32
 }
 
 func (gm *Geom) Defaults() {
-	gm.Depth = 20
-	gm.Width = 20
+	gm.Depth = 5
+	gm.Width = 10
 	gm.Thick = 0.1
 	gm.HalfWidth = gm.Width / 2
+	gm.ObjWidth.Set(1, 2)
+	gm.ObjHeight.Set(5, 10)
+	gm.ObjSpace.Set(15, 35)
+}
+
+// Action represents a single action.
+type Action struct {
+	// Action is the action taken
+	Action Actions
+
+	// Value is the action parameter (e.g., rotation degrees)
+	Value float32
+}
+
+func (a *Action) String() string {
+	return fmt.Sprintf("%s_%g", a.Action.String(), a.Value)
 }
 
 // EmeryEnv is the emery rat environment
@@ -97,11 +124,11 @@ type EmeryEnv struct {
 	// offscreen render camera settings
 	Camera world.Camera
 
-	// LastAct is the last action taken
-	LastAct Actions
+	// NextAct is the next action to be taken.
+	NextAct Action
 
-	// LastActValue is the parameter for last action
-	LastActValue float32
+	// LastAct is the last action taken.
+	LastAct Action
 
 	// CurStates is the current rendered state tensors.
 	CurStates map[string]*tensor.Float32
@@ -154,7 +181,7 @@ func (ev *EmeryEnv) Config() {
 	ev.NextStates["EyeR"] = tensor.NewFloat32(eyeSz.Y, eyeSz.X)
 	ev.NextStates["EyeL"] = tensor.NewFloat32(eyeSz.Y, eyeSz.X)
 
-	ev.CopyNextToCur()
+	ev.CopyNextToCurAll()
 
 	gp, dev, err := gpu.NoDisplayGPU()
 	if err != nil {
@@ -176,7 +203,7 @@ func (ev *EmeryEnv) String() string {
 	}
 	ps := &ev.Emery.Rel
 	ang := math32.RadToDeg(ps.Quat.ToAxisAngle().W)
-	return fmt.Sprintf("Pos_%g_%g_Ang_%g_Act_%s_%g", ps.Pos.X, ps.Pos.Y, ang, ev.LastAct.String(), ev.LastActValue)
+	return fmt.Sprintf("Pos_%g_%g_Ang_%g_Act_%s", ps.Pos.X, ps.Pos.Y, ang, ev.LastAct.String())
 }
 
 // MakePhysicsWorld constructs a new virtual physics world
@@ -185,6 +212,7 @@ func (ev *EmeryEnv) MakePhysicsWorld() *physics.Group {
 	pw.SetName("RoomWorld")
 
 	ev.MakeFloor(pw, "floor")
+	ev.MakeLandmarks(pw, "landmarks")
 	ev.MakeEmery(pw, 1)
 
 	pw.WorldInit()
@@ -200,8 +228,54 @@ func (ev *EmeryEnv) MakeFloor(par *physics.Group, name string) {
 		rm.Maker(func(p *tree.Plan) {
 			tree.AddAt(p, "floor", func(n *physics.Box) {
 				n.SetSize(math32.Vec3(ge.Width, ge.Thick, dp)).
-					SetColor("grey").SetInitPos(math32.Vec3(0, -ge.Thick/2, -ge.Depth/2))
+					SetColor("grey").SetInitPos(math32.Vec3(0, -ge.Thick/2, 0))
 			})
+		})
+	})
+}
+
+// MakeLandmarks
+func (ev *EmeryEnv) MakeLandmarks(par *physics.Group, name string) {
+	ge := &ev.Geom
+	radius := 1.2 * max(ge.Width, ge.Depth)
+
+	sp := func() float32 { return ge.ObjSpace.ProjValue(ev.Rand.Float32()) }
+	wd := func() float32 { return ge.ObjWidth.ProjValue(ev.Rand.Float32()) }
+	ht := func() float32 { return ge.ObjHeight.ProjValue(ev.Rand.Float32()) }
+	var pos math32.Vector2
+
+	colors := []string{"red", "green", "blue", "yellow", "orange", "violet"}
+
+	tree.AddChildAt(par, name, func(rm *physics.Group) {
+		rm.Maker(func(p *tree.Plan) {
+			if rm.NumChildren() > 0 {
+				for _, ci := range rm.Children {
+					tree.AddAt(p, ci.AsTree().Name, func(n *physics.Box) {})
+				}
+				return
+			}
+			deg := float32(0)
+			idx := 0
+			for {
+				deg += sp()
+				if deg > 360 {
+					break
+				}
+				mydeg := deg
+				myidx := idx
+				dnm := strconv.Itoa(idx)
+				idx++
+				tree.AddAt(p, dnm, func(n *physics.Box) {
+					cw := wd()
+					ch := ht()
+					pos.Y = radius * math32.Sin(math32.DegToRad(mydeg))
+					pos.X = radius * math32.Cos(math32.DegToRad(mydeg))
+					// fmt.Println(dnm, pos)
+					clr := colors[myidx%len(colors)]
+					n.SetSize(math32.Vec3(cw, ch, cw)).
+						SetColor(clr).SetInitPos(math32.Vec3(pos.X, ge.Thick/2+ch/2, pos.Y))
+				})
+			}
 		})
 	})
 }
@@ -276,15 +350,21 @@ func (ev *EmeryEnv) GrabEyeImg() {
 	// }
 }
 
-// CopyNextToCur copy next state to current state.
-func (ev *EmeryEnv) CopyNextToCur() {
-	for k, ns := range ev.NextStates {
-		cs, ok := ev.CurStates[k]
-		if !ok {
-			ev.CurStates[k] = ns.Clone().(*tensor.Float32)
-		} else {
-			cs.CopyFrom(ns)
-		}
+// CopyNextToCurAll copy next state to current state.
+func (ev *EmeryEnv) CopyNextToCurAll() {
+	for k := range ev.NextStates {
+		ev.CopyNextToCur(k)
+	}
+}
+
+// CopyNextToCur copy next state to current state for specific state
+func (ev *EmeryEnv) CopyNextToCur(state string) {
+	ns := ev.NextStates[state]
+	cs, ok := ev.CurStates[state]
+	if !ok {
+		ev.CurStates[state] = ns.Clone().(*tensor.Float32)
+	} else {
+		cs.CopyFrom(ns)
 	}
 }
 
@@ -295,7 +375,6 @@ func (ev *EmeryEnv) Init(run int) {
 // Step is called to advance the environment state.
 func (ev *EmeryEnv) Step() bool {
 	// action was already taken
-	ev.CopyNextToCur()
 	pw := ev.World.World
 	pw.Update()
 	pw.WorldRelToAbs()
@@ -307,12 +386,23 @@ func (ev *EmeryEnv) Step() bool {
 	return true
 }
 
+// Action records the next action and its outcomes.
+// Called at end of minus phase, new values will next time.
+// 0- Start --
+// 0+ R0 -> Next
+// 1- R0, R-1 State
+// 1+ R0 -> Cur; R1 -> Next
+// 2- R1, R0 State
+// ...
 func (ev *EmeryEnv) Action(action string, valIn tensor.Values) {
 	a := None
 	errors.Log(a.SetString(action))
 	val := float32(valIn.Float1D(0))
-	ev.LastAct = a
-	ev.LastActValue = val
+
+	ev.LastAct = ev.NextAct
+	ev.NextAct.SetAction(a).SetValue(val)
+
+	ev.CopyNextToCurAll()
 
 	rotVel := float32(0)
 	switch a {
@@ -324,6 +414,8 @@ func (ev *EmeryEnv) Action(action string, valIn tensor.Values) {
 	}
 	ev.RenderLinear("ActRotate", rotVel)
 	ev.RenderLinear("VNCAngVel", rotVel)
+
+	ev.CopyNextToCur("ActRotate") // action needs to be current
 }
 
 // RenderLinear renders linear state.

@@ -37,7 +37,7 @@ type Vis struct {
 	DoGFilter tensor.Float32 `display:"no-inline"`
 
 	// current input image
-	Image image.Image `display:"-"`
+	Image image.Image `display:"-" set:"-"`
 
 	// input image as tensor
 	ImageTsr tensor.Float32 `display:"no-inline"`

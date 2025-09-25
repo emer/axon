@@ -216,6 +216,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	rotAct := net.AddLayer2D("ActRotate", axon.InputLayer, ev.UnitsPer, ev.LinearUnits)
 
 	vvelIn, vvelInp := net.AddInputPulv2D("VNCAngVel", ev.UnitsPer, ev.LinearUnits, space)
+	vvelIn.AddClass("LinearIn")
+	vvelInp.AddClass("LinearIn")
 
 	eyeLIn, eyeLInp := net.AddInputPulv2D("EyeL", eyeSz.Y, eyeSz.X, space)
 	eyeRIn, eyeRInp := net.AddInputPulv2D("EyeR", eyeSz.Y, eyeSz.X, space)
@@ -224,14 +226,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	eyeRIn.AddClass("VisIn")
 	eyeRInp.AddClass("VisIn")
 
-	vestHid, vestHidct := net.AddSuperCT2D("VestHidden", "", 10, 10, 2*space, one2one) // one2one learn > full
+	vestHid, vestHidct := net.AddSuperCT2D("VestHid", "", 10, 10, space, one2one) // one2one learn > full
 	// net.ConnectCTSelf(vestHidct, full, "") // self definitely doesn't make sense -- no need for 2-back ct
 	// net.LateralConnectLayer(vestHidct, full).AddClass("CTSelfMaint") // no diff
 	net.ConnectToPulv(vestHid, vestHidct, vvelInp, full, full, "")
 	net.ConnectLayers(rotAct, vestHid, full, axon.ForwardPath)
 	net.ConnectLayers(vvelIn, vestHid, full, axon.ForwardPath)
 
-	visHid, visHidct := net.AddSuperCT2D("VisHidden", "", 10, 10, 2*space, one2one) // one2one learn > full
+	visHid, visHidct := net.AddSuperCT2D("VisHid", "", 10, 10, space, one2one) // one2one learn > full
 	// net.ConnectCTSelf(visHidct, full, "") // self definitely doesn't make sense -- no need for 2-back ct
 	// net.LateralConnectLayer(visHidct, full).AddClass("CTSelfMaint") // no diff
 	net.ConnectToPulv(visHid, visHidct, eyeLInp, full, full, "")
