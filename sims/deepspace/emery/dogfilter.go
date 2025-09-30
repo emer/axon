@@ -16,16 +16,25 @@ import (
 	"cogentcore.org/lab/tensor/tmath"
 	"cogentcore.org/lab/tensorcore"
 	"github.com/emer/v1vision/dog"
+	"github.com/emer/v1vision/motion"
 	"github.com/emer/v1vision/vfilter"
 )
 
 // Vis does DoG filtering on images
 type Vis struct {
-	// if true, and input image is larger than target image size, central region is clipped out as the input -- otherwise image is sized to target size
+	// if true, and input image is larger than target image size,
+	// central region is clipped out as the input.
+	// otherwise image is sized to target size
 	ClipToFit bool
+
+	// NFrames is number of frames to render for motion.
+	NFrames int
 
 	// LGN DoG filter parameters
 	DoG dog.Filter
+
+	// Motion filter parameters.
+	Motion motion.Params
 
 	// geometry of input, output
 	Geom vfilter.Geom `edit:"-" display:"inline"`
@@ -41,14 +50,13 @@ type Vis struct {
 
 	// input image as tensor
 	ImageTsr tensor.Float32 `display:"no-inline"`
-
-	// DoG filter output tensor
-	OutTsr tensor.Float32 `display:"no-inline"`
 }
 
 func (vi *Vis) Defaults() {
 	vi.ClipToFit = true
+	vi.NFrames = 30
 	vi.DoG.Defaults()
+	vi.Motion.Defaults()
 	sz := 16
 	spc := 2
 	vi.DoG.SetSize(sz, spc)
@@ -87,20 +95,27 @@ func (vi *Vis) SetImage(img image.Image) {
 
 // LGNDoG runs DoG filtering on input image
 // must have valid Image in place to start.
-func (vi *Vis) LGNDoG() {
+func (vi *Vis) LGNDoG(out *tensor.Float32) {
 	flt := vi.DoG.FilterTensor(&vi.DoGFilter, dog.Net)
-	vfilter.Conv1(&vi.Geom, flt, &vi.ImageTsr, &vi.OutTsr, vi.DoG.Gain)
+	vfilter.Conv1(&vi.Geom, flt, &vi.ImageTsr, out, vi.DoG.Gain)
 	// log norm is generally good it seems for dogs
-	n := vi.OutTsr.Len()
+	n := out.Len()
 	for i := range n {
-		vi.OutTsr.SetFloat1D(math.Log(vi.OutTsr.Float1D(i)+1), i)
+		out.SetFloat1D(math.Log(out.Float1D(i)+1), i)
 	}
-	mx := stats.Max(tensor.As1D(&vi.OutTsr))
-	tmath.DivOut(&vi.OutTsr, mx, &vi.OutTsr)
+	mx := stats.Max(tensor.As1D(out))
+	tmath.DivOut(out, mx, out)
 }
 
-// Filter is overall method to run filters on given image
-func (vi *Vis) Filter(img image.Image) {
+// FilterImage runs filters on given image, integrating results for motion.
+func (vi *Vis) FilterImage(img image.Image, dout, slow, fast *tensor.Float32) {
 	vi.SetImage(img)
-	vi.LGNDoG()
+	vi.LGNDoG(dout)
+	vi.Motion.IntegrateFrame(slow, fast, dout)
+}
+
+// FinalFilter runs final motion filters on accumulated results.
+func (vi *Vis) FinalFilter(slow, fast, star, full *tensor.Float32) {
+	vi.Motion.StarMotion(star, slow, fast)
+	vi.Motion.FullField(full, star)
 }

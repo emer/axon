@@ -155,7 +155,7 @@ func (ev *EmeryEnv) Defaults() {
 	ev.UnitsPer = 4
 	ev.LinearUnits = 16
 	ev.AngleUnits = 16
-	ev.MaxRotate = 15
+	ev.MaxRotate = 5
 	popSigma := float32(0.1)
 	ev.LinearCode.Defaults()
 	ev.LinearCode.SetRange(-1.1, 1.1, popSigma)
@@ -174,12 +174,15 @@ func (ev *EmeryEnv) Config() {
 	ev.CurStates = make(map[string]*tensor.Float32)
 	ev.NextStates = make(map[string]*tensor.Float32)
 
-	eyeSz := image.Point{12, 12}
-
 	ev.NextStates["ActRotate"] = tensor.NewFloat32(ev.UnitsPer, ev.LinearUnits) // motor command
 	ev.NextStates["VNCAngVel"] = tensor.NewFloat32(ev.UnitsPer, ev.LinearUnits) // vestib
-	ev.NextStates["EyeR"] = tensor.NewFloat32(eyeSz.Y, eyeSz.X)
-	ev.NextStates["EyeL"] = tensor.NewFloat32(eyeSz.Y, eyeSz.X)
+
+	filters := []string{"DoG", "Slow", "Fast", "Star", "Full"}
+
+	for _, flt := range filters {
+		ev.NextStates["EyeR_"+flt] = tensor.NewFloat32(2, 2)
+		ev.NextStates["EyeL_"+flt] = tensor.NewFloat32(2, 2)
+	}
 
 	ev.CopyNextToCurAll()
 
@@ -310,14 +313,15 @@ func (ev *EmeryEnv) MakeEmery(par *physics.Group, length float32) {
 						ev.EyeL = n
 						n.SetSize(math32.Vec3(eyesz, eyesz*.5, eyesz*.2)).
 							SetColor("green").SetDynamic(true).
-							SetInitPos(math32.Vec3(-hhsz*.6, headsz*.1, -(hhsz + eyesz*.3)))
+							SetInitPos(math32.Vec3(-hhsz*.6, headsz*.1, -(hhsz + eyesz*.3))).
+							SetInitQuat(math32.NewQuatAxisAngle(math32.Vec3(1, 0, 0), math32.DegToRad(15)))
 					})
-					// note: centering this in head for now to get straight-on view
 					tree.AddAt(p, "eye-r", func(n *physics.Box) {
 						ev.EyeR = n
 						n.SetSize(math32.Vec3(eyesz, eyesz*.5, eyesz*.2)).
 							SetColor("green").SetDynamic(true).
-							SetInitPos(math32.Vec3(0, headsz*.1, -(hhsz + eyesz*.3)))
+							SetInitPos(math32.Vec3(hhsz*.6, headsz*.1, -(hhsz + eyesz*.3))).
+							SetInitQuat(math32.NewQuatAxisAngle(math32.Vec3(1, 0, 0), math32.DegToRad(15)))
 					})
 				})
 			})
@@ -374,15 +378,29 @@ func (ev *EmeryEnv) Init(run int) {
 
 // Step is called to advance the environment state.
 func (ev *EmeryEnv) Step() bool {
-	// action was already taken
+	// action was already generated.
 	pw := ev.World.World
-	pw.Update()
-	pw.WorldRelToAbs()
-	ev.World.Update()
-	ev.GrabEyeImg()
-	// new image location
-	ev.FilterImage("EyeL", ev.EyeLImage)
-	ev.FilterImage("EyeR", ev.EyeRImage)
+
+	a := ev.NextAct.Action
+	val := ev.NextAct.Value / float32(ev.Vis.NFrames)
+	for range ev.Vis.NFrames {
+		switch a {
+		case Rotate:
+			ev.Emery.Rel.RotateOnAxis(0, 1, 0, val) // val in deg
+		case Forward:
+		case None:
+		}
+
+		pw.Update()
+		pw.WorldRelToAbs()
+		ev.World.Update()
+		ev.GrabEyeImg()
+		// new image location
+		ev.FilterImage("EyeL", ev.EyeLImage)
+		ev.FilterImage("EyeR", ev.EyeRImage)
+	}
+	ev.FinalFilter("EyeL")
+	ev.FinalFilter("EyeR")
 	return true
 }
 
@@ -404,17 +422,8 @@ func (ev *EmeryEnv) Action(action string, valIn tensor.Values) {
 
 	ev.CopyNextToCurAll()
 
-	rotVel := float32(0)
-	switch a {
-	case Rotate:
-		ev.Emery.Rel.RotateOnAxis(0, 1, 0, val) // val in deg
-		rotVel = val / ev.MaxRotate
-	case Forward:
-	case None:
-	}
-	ev.RenderLinear("ActRotate", rotVel)
-	ev.RenderLinear("VNCAngVel", rotVel)
-
+	ev.RenderLinear("VNCAngVel", val/ev.MaxRotate)
+	ev.RenderLinear("ActRotate", val/ev.MaxRotate)
 	ev.CopyNextToCur("ActRotate") // action needs to be current
 }
 
@@ -441,9 +450,20 @@ func (ev *EmeryEnv) FilterImage(snm string, img image.Image) {
 	if img == nil {
 		return
 	}
-	ev.Vis.Filter(img)
-	ev.NextStates[snm].CopyFrom(&ev.Vis.OutTsr)
+	dout := ev.NextStates[snm+"_DoG"]
+	slow := ev.NextStates[snm+"_Slow"]
+	fast := ev.NextStates[snm+"_Fast"]
+	ev.Vis.FilterImage(img, dout, slow, fast)
 	// fmt.Println("vis out sz:", ev.Vis.OutTsr.ShapeSizes())
+}
+
+// FinalFilter does final vision filtering.
+func (ev *EmeryEnv) FinalFilter(snm string) {
+	slow := ev.NextStates[snm+"_Slow"]
+	fast := ev.NextStates[snm+"_Fast"]
+	star := ev.NextStates[snm+"_Star"]
+	full := ev.NextStates[snm+"_Full"]
+	ev.Vis.FinalFilter(slow, fast, star, full)
 }
 
 // Compile-time check that implements Env interface

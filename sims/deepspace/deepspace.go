@@ -211,7 +211,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// _ = rectRecip
 
 	space := float32(5)
-	eyeSz := image.Point{ev.NextStates["EyeR"].DimSize(1), ev.NextStates["EyeR"].DimSize(0)}
+	eyeSz := image.Point{2, 2}
 
 	rotAct := net.AddLayer2D("ActRotate", axon.InputLayer, ev.UnitsPer, ev.LinearUnits)
 
@@ -240,6 +240,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToPulv(visHid, visHidct, eyeRInp, full, full, "")
 	net.ConnectLayers(rotAct, visHid, full, axon.ForwardPath)
 	net.ConnectLayers(vvelIn, visHid, full, axon.ForwardPath)
+	net.ConnectLayers(eyeLIn, visHid, full, axon.ForwardPath)
+	net.ConnectLayers(eyeRIn, visHid, full, axon.ForwardPath)
 
 	// net.ConnectLayers(visHidct, visHid, full, BackPath)
 
@@ -400,6 +402,9 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 		ev.Step()
 		for _, lnm := range lays {
 			ly := ss.Net.LayerByName(lnm)
+			if lnm == "EyeL" || lnm == "EyeR" {
+				lnm += "_Full"
+			}
 			pats := ev.State(lnm)
 			if pats != nil {
 				ly.ApplyExt(di, pats)

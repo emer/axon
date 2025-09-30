@@ -6,6 +6,7 @@ import (
 	"image"
 
 	"cogentcore.org/core/core"
+	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/types"
 	"cogentcore.org/core/xyz/physics"
 	"cogentcore.org/core/xyz/physics/world"
@@ -14,18 +15,29 @@ import (
 	"cogentcore.org/lab/tensor"
 	"github.com/emer/emergent/v2/popcode"
 	"github.com/emer/v1vision/dog"
+	"github.com/emer/v1vision/motion"
 	"github.com/emer/v1vision/vfilter"
 )
 
-var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Vis", IDName: "vis", Doc: "Vis does DoG filtering on images", Fields: []types.Field{{Name: "ClipToFit", Doc: "if true, and input image is larger than target image size, central region is clipped out as the input -- otherwise image is sized to target size"}, {Name: "DoG", Doc: "LGN DoG filter parameters"}, {Name: "Geom", Doc: "geometry of input, output"}, {Name: "ImageSize", Doc: "target image size to use -- images will be rescaled to this size"}, {Name: "DoGFilter", Doc: "DoG filter tensor -- has 3 filters (on, off, net)"}, {Name: "Image", Doc: "current input image"}, {Name: "ImageTsr", Doc: "input image as tensor"}, {Name: "OutTsr", Doc: "DoG filter output tensor"}}})
+var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Vis", IDName: "vis", Doc: "Vis does DoG filtering on images", Fields: []types.Field{{Name: "ClipToFit", Doc: "if true, and input image is larger than target image size,\ncentral region is clipped out as the input.\notherwise image is sized to target size"}, {Name: "NFrames", Doc: "NFrames is number of frames to render for motion."}, {Name: "DoG", Doc: "LGN DoG filter parameters"}, {Name: "Motion", Doc: "Motion filter parameters."}, {Name: "Geom", Doc: "geometry of input, output"}, {Name: "ImageSize", Doc: "target image size to use -- images will be rescaled to this size"}, {Name: "DoGFilter", Doc: "DoG filter tensor -- has 3 filters (on, off, net)"}, {Name: "Image", Doc: "current input image"}, {Name: "ImageTsr", Doc: "input image as tensor"}}})
 
 // SetClipToFit sets the [Vis.ClipToFit]:
-// if true, and input image is larger than target image size, central region is clipped out as the input -- otherwise image is sized to target size
+// if true, and input image is larger than target image size,
+// central region is clipped out as the input.
+// otherwise image is sized to target size
 func (t *Vis) SetClipToFit(v bool) *Vis { t.ClipToFit = v; return t }
+
+// SetNFrames sets the [Vis.NFrames]:
+// NFrames is number of frames to render for motion.
+func (t *Vis) SetNFrames(v int) *Vis { t.NFrames = v; return t }
 
 // SetDoG sets the [Vis.DoG]:
 // LGN DoG filter parameters
 func (t *Vis) SetDoG(v dog.Filter) *Vis { t.DoG = v; return t }
+
+// SetMotion sets the [Vis.Motion]:
+// Motion filter parameters.
+func (t *Vis) SetMotion(v motion.Params) *Vis { t.Motion = v; return t }
 
 // SetGeom sets the [Vis.Geom]:
 // geometry of input, output
@@ -43,13 +55,9 @@ func (t *Vis) SetDoGFilter(v tensor.Float32) *Vis { t.DoGFilter = v; return t }
 // input image as tensor
 func (t *Vis) SetImageTsr(v tensor.Float32) *Vis { t.ImageTsr = v; return t }
 
-// SetOutTsr sets the [Vis.OutTsr]:
-// DoG filter output tensor
-func (t *Vis) SetOutTsr(v tensor.Float32) *Vis { t.OutTsr = v; return t }
-
 var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Actions", IDName: "actions", Doc: "Actions is a list of mutually exclusive states\nfor tracing the behavior and internal state of Emery"})
 
-var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Geom", IDName: "geom", Doc: "Geom is overall geometry of the space", Fields: []types.Field{{Name: "Depth", Doc: "computed total depth, starts at 0 goes deep"}, {Name: "Width", Doc: "computed total width"}, {Name: "Thick", Doc: "thickness of walls, floor"}, {Name: "HalfWidth", Doc: "half width for centering on 0 X"}}})
+var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Geom", IDName: "geom", Doc: "Geom is overall geometry of the space", Fields: []types.Field{{Name: "Depth", Doc: "computed total depth, starts at 0 goes deep"}, {Name: "Width", Doc: "computed total width"}, {Name: "Thick", Doc: "thickness of walls, floor"}, {Name: "HalfWidth", Doc: "half width for centering on 0 X"}, {Name: "ObjWidth", Doc: "ObjWidth is the width of objects (landmarks)."}, {Name: "ObjHeight"}, {Name: "ObjSpace", Doc: "ObjSpace is the space between objects (landmarks) in degrees."}}})
 
 // SetDepth sets the [Geom.Depth]:
 // computed total depth, starts at 0 goes deep
@@ -66,6 +74,17 @@ func (t *Geom) SetThick(v float32) *Geom { t.Thick = v; return t }
 // SetHalfWidth sets the [Geom.HalfWidth]:
 // half width for centering on 0 X
 func (t *Geom) SetHalfWidth(v float32) *Geom { t.HalfWidth = v; return t }
+
+// SetObjWidth sets the [Geom.ObjWidth]:
+// ObjWidth is the width of objects (landmarks).
+func (t *Geom) SetObjWidth(v minmax.F32) *Geom { t.ObjWidth = v; return t }
+
+// SetObjHeight sets the [Geom.ObjHeight]
+func (t *Geom) SetObjHeight(v minmax.F32) *Geom { t.ObjHeight = v; return t }
+
+// SetObjSpace sets the [Geom.ObjSpace]:
+// ObjSpace is the space between objects (landmarks) in degrees.
+func (t *Geom) SetObjSpace(v minmax.F32) *Geom { t.ObjSpace = v; return t }
 
 var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Action", IDName: "action", Doc: "Action represents a single action.", Fields: []types.Field{{Name: "Action", Doc: "Action is the action taken"}, {Name: "Value", Doc: "Value is the action parameter (e.g., rotation degrees)"}}})
 
