@@ -162,7 +162,7 @@ func (ev *EmeryEnv) Defaults() {
 	ev.AngleCode.Defaults()
 	ev.AngleCode.SetRange(0, 1, popSigma)
 	ev.Camera.Defaults()
-	ev.Camera.FOV = 90
+	ev.Camera.FOV = 100
 	ev.Camera.Size = image.Point{128, 128}
 	ev.Vis.Defaults()
 }
@@ -313,15 +313,15 @@ func (ev *EmeryEnv) MakeEmery(par *physics.Group, length float32) {
 						ev.EyeL = n
 						n.SetSize(math32.Vec3(eyesz, eyesz*.5, eyesz*.2)).
 							SetColor("green").SetDynamic(true).
-							SetInitPos(math32.Vec3(-hhsz*.6, headsz*.1, -(hhsz + eyesz*.3))).
-							SetInitQuat(math32.NewQuatAxisAngle(math32.Vec3(1, 0, 0), math32.DegToRad(15)))
+							SetInitPos(math32.Vec3(-hhsz*.6, headsz*.1, -(hhsz + eyesz*.3))) // .
+						// SetInitQuat(math32.NewQuatAxisAngle(math32.Vec3(1, 0, 0), math32.DegToRad(15)))
 					})
 					tree.AddAt(p, "eye-r", func(n *physics.Box) {
 						ev.EyeR = n
 						n.SetSize(math32.Vec3(eyesz, eyesz*.5, eyesz*.2)).
 							SetColor("green").SetDynamic(true).
-							SetInitPos(math32.Vec3(hhsz*.6, headsz*.1, -(hhsz + eyesz*.3))).
-							SetInitQuat(math32.NewQuatAxisAngle(math32.Vec3(1, 0, 0), math32.DegToRad(15)))
+							SetInitPos(math32.Vec3(hhsz*.6, headsz*.1, -(hhsz + eyesz*.3))) // .
+						// SetInitQuat(math32.NewQuatAxisAngle(math32.Vec3(1, 0, 0), math32.DegToRad(15)))
 					})
 				})
 			})

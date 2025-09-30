@@ -42,8 +42,8 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".VisIn", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.15 // was .13 -- Ge very high b/c of topo path
-				ly.Inhib.Layer.Gi = 0.9        //
+				ly.Inhib.ActAvg.Nominal = 0.25 // .25 effective
+				ly.Inhib.Layer.Gi = 0.7        //
 			}},
 		{Sel: ".LinearIn", Doc: "",
 			Set: func(ly *axon.LayerParams) {
@@ -144,9 +144,17 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Init.Mean = 0.5      // if fixed, 0.8 > 0.5, var = 0
 				pt.SWts.Init.Var = 0.25
 			}},
+		{Sel: "#VestHidToVestHidCT", Doc: "1to1 > full",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 0.5
+			}},
 		{Sel: ".FromPulv", Doc: "defaults to .Back but generally weaker is better",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 0.1 // 0.1 == 0.15 > 0.05
+			}},
+		{Sel: ".FFToHid", Doc: "stronger",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 2
 			}},
 		/* not used
 		{Sel: ".CTSelfCtxt", Doc: "",

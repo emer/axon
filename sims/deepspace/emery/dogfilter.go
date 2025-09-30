@@ -54,9 +54,12 @@ type Vis struct {
 
 func (vi *Vis) Defaults() {
 	vi.ClipToFit = true
-	vi.NFrames = 30
 	vi.DoG.Defaults()
 	vi.Motion.Defaults()
+	vi.NFrames = 10
+	vi.Motion.SlowTau = 8
+	vi.Motion.FastTau = 4
+	vi.Motion.FullGain = 5
 	sz := 16
 	spc := 2
 	vi.DoG.SetSize(sz, spc)

@@ -88,9 +88,6 @@ type Sim struct {
 	// TrainUpdate has Train mode netview update parameters.
 	TrainUpdate axon.NetViewUpdate `display:"inline"`
 
-	// TestUpdate has Test mode netview update parameters.
-	TestUpdate axon.NetViewUpdate `display:"inline"`
-
 	// Root is the root tensorfs directory, where all stats and other misc sim data goes.
 	Root *tensorfs.Node `display:"-"`
 
@@ -149,13 +146,11 @@ func (ss *Sim) ConfigEnv() {
 	newEnv := (len(ss.Envs) == 0)
 
 	for di := 0; di < ss.Config.Run.NData; di++ {
-		var trn, tst *emery.EmeryEnv
+		var trn *emery.EmeryEnv
 		if newEnv {
 			trn = &emery.EmeryEnv{}
-			tst = &emery.EmeryEnv{}
 		} else {
 			trn = ss.Envs.ByModeDi(Train, di).(*emery.EmeryEnv)
-			tst = ss.Envs.ByModeDi(Test, di).(*emery.EmeryEnv)
 		}
 
 		// note: names must be standard here!
@@ -168,20 +163,10 @@ func (ss *Sim) ConfigEnv() {
 		}
 		trn.Config()
 
-		tst.Defaults()
-		tst.Name = env.ModeDi(Test, di)
-		tst.RandSeed = 181 + int64(di)*181
-		trn.UnitsPer = ss.Config.Env.UnitsPer
-		if ss.Config.Env.Env != nil {
-			reflectx.SetFieldsFromMap(tst, ss.Config.Env.Env)
-		}
-		tst.Config()
-
 		trn.Init(0)
-		tst.Init(0)
 
 		// note: names must be in place when adding
-		ss.Envs.Add(trn, tst)
+		ss.Envs.Add(trn)
 	}
 }
 
@@ -230,18 +215,18 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectCTSelf(vestHidct, full, "") // self definitely doesn't make sense -- no need for 2-back ct
 	// net.LateralConnectLayer(vestHidct, full).AddClass("CTSelfMaint") // no diff
 	net.ConnectToPulv(vestHid, vestHidct, vvelInp, full, full, "")
-	net.ConnectLayers(rotAct, vestHid, full, axon.ForwardPath)
-	net.ConnectLayers(vvelIn, vestHid, full, axon.ForwardPath)
+	net.ConnectLayers(rotAct, vestHid, full, axon.ForwardPath).AddClass("FFToHid")
+	net.ConnectLayers(vvelIn, vestHid, full, axon.ForwardPath).AddClass("FFToHid")
 
 	visHid, visHidct := net.AddSuperCT2D("VisHid", "", 10, 10, space, one2one) // one2one learn > full
 	// net.ConnectCTSelf(visHidct, full, "") // self definitely doesn't make sense -- no need for 2-back ct
 	// net.LateralConnectLayer(visHidct, full).AddClass("CTSelfMaint") // no diff
 	net.ConnectToPulv(visHid, visHidct, eyeLInp, full, full, "")
 	net.ConnectToPulv(visHid, visHidct, eyeRInp, full, full, "")
-	net.ConnectLayers(rotAct, visHid, full, axon.ForwardPath)
-	net.ConnectLayers(vvelIn, visHid, full, axon.ForwardPath)
-	net.ConnectLayers(eyeLIn, visHid, full, axon.ForwardPath)
-	net.ConnectLayers(eyeRIn, visHid, full, axon.ForwardPath)
+	net.ConnectLayers(rotAct, visHid, full, axon.ForwardPath).AddClass("FFToHid")
+	net.ConnectLayers(vvelIn, visHid, full, axon.ForwardPath).AddClass("FFToHid")
+	net.ConnectLayers(eyeLIn, visHid, full, axon.ForwardPath).AddClass("FFToHid")
+	net.ConnectLayers(eyeRIn, visHid, full, axon.ForwardPath).AddClass("FFToHid")
 
 	// net.ConnectLayers(visHidct, visHid, full, BackPath)
 
@@ -310,10 +295,7 @@ func (ss *Sim) InitRandSeed(run int) {
 
 // NetViewUpdater returns the NetViewUpdate for given mode.
 func (ss *Sim) NetViewUpdater(mode enums.Enum) *axon.NetViewUpdate {
-	if mode.Int64() == Train.Int64() {
-		return &ss.TrainUpdate
-	}
-	return &ss.TestUpdate
+	return &ss.TrainUpdate
 }
 
 // ConfigLoops configures the control loops: Training, Testing
@@ -328,11 +310,6 @@ func (ss *Sim) ConfigLoops() {
 		AddLevel(Expt, 1).
 		AddLevel(Run, ss.Config.Run.Runs).
 		AddLevel(Epoch, ss.Config.Run.Epochs).
-		AddLevelIncr(Trial, trials, ss.Config.Run.NData).
-		AddLevel(Cycle, cycles)
-
-	ls.AddStack(Test, Trial).
-		AddLevel(Epoch, 1).
 		AddLevelIncr(Trial, trials, ss.Config.Run.NData).
 		AddLevel(Cycle, cycles)
 
@@ -356,13 +333,6 @@ func (ss *Sim) ConfigLoops() {
 
 	ls.Loop(Train, Run).OnStart.Add("NewRun", ss.NewRun)
 
-	trainEpoch := ls.Loop(Train, Epoch)
-	trainEpoch.OnStart.Add("TestAtInterval", func() {
-		if (ss.Config.Run.TestInterval > 0) && ((trainEpoch.Counter.Cur+1)%ss.Config.Run.TestInterval == 0) {
-			ss.TestAll()
-		}
-	})
-
 	ls.AddOnStartToAll("StatsStart", ss.StatsStart)
 	ls.AddOnEndToAll("StatsStep", ss.StatsStep)
 
@@ -375,7 +345,6 @@ func (ss *Sim) ConfigLoops() {
 		axon.LooperUpdateNetView(ls, Cycle, Trial, ss.NetViewUpdater)
 
 		ls.Stacks[Train].OnInit.Add("GUI-Init", ss.GUI.UpdateWindow)
-		ls.Stacks[Test].OnInit.Add("GUI-Init", ss.GUI.UpdateWindow)
 		ls.Loop(Train, Trial).OnEnd.Add("UpdateEnvGUI", func() {
 			ss.UpdateEnvGUI(Train)
 		})
@@ -437,7 +406,6 @@ func (ss *Sim) NewRun() {
 	ss.InitRandSeed(ss.Loops.Loop(Train, Run).Counter.Cur)
 	for di := 0; di < int(ctx.NData); di++ {
 		ss.Envs.ByModeDi(Train, di).Init(0)
-		ss.Envs.ByModeDi(Test, di).Init(0)
 	}
 	ctx.Reset()
 	ss.Net.InitWeights()
@@ -445,16 +413,6 @@ func (ss *Sim) NewRun() {
 		ss.Net.OpenWeightsJSON(core.Filename(ss.Config.Run.StartWeights))
 		mpi.Printf("Starting with initial weights from: %s\n", ss.Config.Run.StartWeights)
 	}
-}
-
-// TestAll runs through the full set of testing items
-func (ss *Sim) TestAll() {
-	ctx := ss.Net.Context()
-	for di := 0; di < int(ctx.NData); di++ {
-		ss.Envs.ByModeDi(Test, di).Init(0)
-	}
-	ss.Loops.ResetAndRun(Test)
-	ss.Loops.Mode = Train // important because this is called from Train Run: go back.
 }
 
 //////// Stats
@@ -530,7 +488,6 @@ func (ss *Sim) StatsInit() {
 		_, idx := tbs.CurrentTab()
 		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Epoch))
 		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Run))
-		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Test, Trial))
 		tbs.SelectTabIndex(idx)
 	}
 }
@@ -573,7 +530,7 @@ func (ss *Sim) ConfigStats() {
 		prevCorFunc(mode, level, phase == Start)
 	})
 
-	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
+	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer, axon.InputLayer)
 	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		actGeFunc(mode, level, phase == Start)
@@ -633,7 +590,6 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	nv.Options.Raster.Max = ss.Config.Run.Cycles
 	nv.SetNet(ss.Net)
 	ss.TrainUpdate.Config(nv, axon.Theta, ss.StatCounters)
-	ss.TestUpdate.Config(nv, axon.Theta, ss.StatCounters)
 	ss.GUI.OnStop = func(mode, level enums.Enum) {
 		vu := ss.NetViewUpdater(mode)
 		vu.UpdateWhenStopped(mode, level)
