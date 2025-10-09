@@ -1,0 +1,209 @@
+<svg
+  viewBox="0 0 0 0"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  xmlns="http://www.w3.org/2000/svg">
+  <g
+    id="group-0">
+    <g
+      id="group-0">
+      <rect
+        id="rect-0"
+        style="fill:#FAF8FD;"
+        x="0"
+        y="0"
+        width="1358"
+        height="892" />
+      <g
+        id="group-1">
+        <text
+          id="text-0"
+          style="stroke:none;text-decoration:none;direction:ltr;highlight-color:#FFE17B;x:350;y:52.375;fill:#191B22;font-size:16.2px;select-color:#D8E2FF;"
+          x="350"
+          y="52.375">Epochs to Learn, 6^5 = 7,776</text>
+      </g>
+      <g
+        id="group-2">
+        <text
+          id="text-0"
+          style="select-color:#D8E2FF;highlight-color:#FFE17B;fill:#191B22;font-size:16.2px;direction:ltr;x:666.5;y:880.8281;stroke:none;text-decoration:none;"
+          x="666.5"
+          y="880.8281">Model</text>
+      </g>
+      <g
+        id="group-3">
+        <text
+          id="text-0"
+          style="text-decoration:none;select-color:#D8E2FF;direction:ltr;highlight-color:#FFE17B;x:495.5;y:824.15314;stroke:none;fill:#191B22;font-size:16.2px;"
+          x="495.5"
+          y="824.15314">BG</text>
+      </g>
+      <g
+        id="group-4">
+        <text
+          id="text-0"
+          style="text-decoration:none;direction:ltr;highlight-color:#FFE17B;y:824.15314;stroke:none;fill:#191B22;font-size:16.2px;select-color:#D8E2FF;x:915;"
+          x="915"
+          y="824.15314">TD</text>
+      </g>
+      <path
+        id="path-5"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M518 789V753" />
+      <path
+        id="path-6"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M936 789V753" />
+      <path
+        id="path-7"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M100 753H1354" />
+      <g
+        id="group-8">
+        <text
+          id="text-0"
+          style="text-decoration:none;stroke-width:1pt;fill:#191B22;direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;x:20.5;y:763.7031;stroke:#191B22;font-size:16.2px;"
+          x="20.5"
+          y="763.7031">0</text>
+      </g>
+      <g
+        id="group-9">
+        <text
+          id="text-0"
+          style="stroke:#191B22;font-size:16.2px;text-decoration:none;y:573.9809;highlight-color:#FFE17B;x:2.5;stroke-width:1pt;fill:#191B22;direction:ltr;select-color:#D8E2FF;"
+          x="2.5"
+          y="573.9809">100</text>
+      </g>
+      <g
+        id="group-10">
+        <text
+          id="text-0"
+          style="text-decoration:none;direction:ltr;select-color:#D8E2FF;highlight-color:#FFE17B;x:2.5;stroke-width:1pt;fill:#191B22;font-size:16.2px;y:384.25867;stroke:#191B22;"
+          x="2.5"
+          y="384.25867">200</text>
+      </g>
+      <g
+        id="group-11">
+        <text
+          id="text-0"
+          style="stroke:#191B22;text-decoration:none;direction:ltr;stroke-width:1pt;fill:#191B22;font-size:16.2px;select-color:#D8E2FF;highlight-color:#FFE17B;x:2.5;y:194.53647;"
+          x="2.5"
+          y="194.53647">300</text>
+      </g>
+      <path
+        id="path-12"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M60 751H96" />
+      <path
+        id="path-13"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M60 561.2778H96" />
+      <path
+        id="path-14"
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        d="M60 371.5555H96" />
+      <path
+        id="path-15"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M60 181.8333H96" />
+      <path
+        id="path-16"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M78 713.0555H96" />
+      <path
+        id="path-17"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M78 675.1111H96" />
+      <path
+        id="path-18"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M78 637.1666H96" />
+      <path
+        id="path-19"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M78 599.2222H96" />
+      <path
+        id="path-20"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M78 523.3333H96" />
+      <path
+        id="path-21"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M78 485.3889H96" />
+      <path
+        id="path-22"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M78 447.4445H96" />
+      <path
+        id="path-23"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M78 409.5H96" />
+      <path
+        id="path-24"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M78 333.6111H96" />
+      <path
+        id="path-25"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M78 295.6667H96" />
+      <path
+        id="path-26"
+        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        d="M78 257.7222H96" />
+      <path
+        id="path-27"
+        style="fill:#000000;stroke:#191B22;stroke-width:1pt;"
+        d="M78 219.7778H96" />
+      <path
+        id="path-28"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M78 143.8889H96" />
+      <path
+        id="path-29"
+        style="stroke-width:1pt;fill:#000000;stroke:#191B22;"
+        d="M78 105.9445H96" />
+      <path
+        id="path-30"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M78 68H96" />
+      <path
+        id="path-31"
+        style="stroke:#191B22;stroke-width:1pt;fill:#000000;"
+        d="M96 68V751" />
+      <g
+        id="group-32">
+        <path
+          id="path-0"
+          style="stroke:#191B22;stroke-width:1pt;fill:#3FA2FF;"
+          d="M350.8 751H685.2V725.3116H350.8z" />
+        <path
+          id="path-1"
+          style="stroke:#191B22;stroke-width:1pt;fill:#3FA2FF;"
+          d="M518 725.3116V722.2761M406.5333 722.2761H629.4667" />
+        <path
+          id="path-2"
+          style="stroke:#191B22;stroke-width:1pt;fill:#3FA2FF;"
+          d="M768.8 751H1103.2V198.9083H768.8z" />
+        <path
+          id="path-3"
+          style="stroke:#191B22;stroke-width:1pt;fill:#3FA2FF;"
+          d="M936 198.9083V172.3472M824.5334 172.3472H1047.467" />
+        <path
+          id="path-4"
+          style="stroke:#191B22;stroke-width:1pt;fill:#3FA2FF;"
+          d="M350.8 751H685.2V725.3116H350.8z" />
+        <path
+          id="path-5"
+          style="fill:#3FA2FF;stroke:#191B22;stroke-width:1pt;"
+          d="M518 725.3116V722.2761M406.5333 722.2761H629.4667" />
+        <path
+          id="path-6"
+          style="stroke:#191B22;stroke-width:1pt;fill:#3FA2FF;"
+          d="M768.8 751H1103.2V198.9083H768.8z" />
+        <path
+          id="path-7"
+          style="fill:#3FA2FF;stroke:#191B22;stroke-width:1pt;"
+          d="M936 198.9083V172.3472M824.5334 172.3472H1047.467" />
+      </g>
+    </g>
+  </g>
+</svg>

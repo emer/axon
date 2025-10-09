@@ -3,8 +3,8 @@ module github.com/emer/axon/v2
 go 1.23.4
 
 require (
-	cogentcore.org/core v0.3.13-0.20250930205535-9066e37d372b
-	cogentcore.org/lab v0.1.3-0.20250917143805-07c473dcb032
+	cogentcore.org/core v0.3.13-0.20251009125244-9993be515523
+	cogentcore.org/lab v0.1.3-0.20251009131026-b81fa706d621
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/chewxy/math32 v1.10.1
 	github.com/cogentcore/yaegi v0.0.0-20250622201820-b7838bdd95eb
@@ -30,6 +30,7 @@ require (
 	github.com/dlclark/regexp2 v1.11.0 // indirect
 	github.com/ericchiang/css v1.3.0 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
+	github.com/go-fonts/latin-modern v0.3.3 // indirect
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20240506104042-037f3cc74f2a // indirect
 	github.com/go-text/typesetting v0.3.1-0.20250402122313-7a0f05577ff5 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
@@ -58,4 +59,7 @@ require (
 	golang.org/x/tools v0.34.0 // indirect
 	gonum.org/v1/gonum v0.15.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	modernc.org/knuth v0.5.4 // indirect
+	modernc.org/token v1.1.0 // indirect
+	star-tex.org/x/tex v0.6.0 // indirect
 )
