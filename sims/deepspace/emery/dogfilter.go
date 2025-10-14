@@ -60,6 +60,7 @@ func (vi *Vis) Defaults() {
 	vi.Motion.SlowTau = 8
 	vi.Motion.FastTau = 4
 	vi.Motion.FullGain = 5
+	vi.Motion.IntegTau = 5
 	sz := 16
 	spc := 2
 	vi.DoG.SetSize(sz, spc)
@@ -111,14 +112,10 @@ func (vi *Vis) LGNDoG(out *tensor.Float32) {
 }
 
 // FilterImage runs filters on given image, integrating results for motion.
-func (vi *Vis) FilterImage(img image.Image, dout, slow, fast *tensor.Float32) {
+func (vi *Vis) FilterImage(img image.Image, dout, slow, fast, star, insta, full *tensor.Float32, visNorm *float32) {
 	vi.SetImage(img)
 	vi.LGNDoG(dout)
-	vi.Motion.IntegrateFrame(slow, fast, dout)
-}
-
-// FinalFilter runs final motion filters on accumulated results.
-func (vi *Vis) FinalFilter(slow, fast, star, full *tensor.Float32) {
+	ve := vi.Motion.IntegrateFrame(slow, fast, dout)
 	vi.Motion.StarMotion(star, slow, fast)
-	vi.Motion.FullField(full, star)
+	vi.Motion.FullField(insta, full, star, ve, visNorm)
 }

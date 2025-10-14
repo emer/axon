@@ -88,6 +88,9 @@ type EmeryEnv struct {
 	// name of this environment
 	Name string
 
+	// LeftEye determines whether to process left eye image or not.
+	LeftEye bool
+
 	// angle population code values, in normalized units
 	AngleCode popcode.Ring
 
@@ -151,6 +154,7 @@ type EmeryEnv struct {
 func (ev *EmeryEnv) Label() string { return ev.Name }
 
 func (ev *EmeryEnv) Defaults() {
+	ev.LeftEye = false
 	ev.Geom.Defaults()
 	ev.UnitsPer = 4
 	ev.LinearUnits = 16
@@ -176,8 +180,10 @@ func (ev *EmeryEnv) Config() {
 
 	ev.NextStates["ActRotate"] = tensor.NewFloat32(ev.UnitsPer, ev.LinearUnits) // motor command
 	ev.NextStates["VNCAngVel"] = tensor.NewFloat32(ev.UnitsPer, ev.LinearUnits) // vestib
+	ev.NextStates["EyeR"] = tensor.NewFloat32(ev.UnitsPer, ev.LinearUnits)      // eye motion bump
+	ev.NextStates["EyeL"] = tensor.NewFloat32(ev.UnitsPer, ev.LinearUnits)      // eye motion bump
 
-	filters := []string{"DoG", "Slow", "Fast", "Star", "Full"}
+	filters := []string{"DoG", "Slow", "Fast", "Star", "Insta", "Full", "Norm"}
 
 	for _, flt := range filters {
 		ev.NextStates["EyeR_"+flt] = tensor.NewFloat32(2, 2)
@@ -344,8 +350,10 @@ func (ev *EmeryEnv) GrabEyeImg() {
 	img := ev.World.RenderFromNode(ev.EyeR, &ev.Camera)
 	ev.EyeRImage = img
 
-	img = ev.World.RenderFromNode(ev.EyeL, &ev.Camera)
-	ev.EyeLImage = img
+	if ev.LeftEye {
+		img = ev.World.RenderFromNode(ev.EyeL, &ev.Camera)
+		ev.EyeLImage = img
+	}
 
 	// depth, err := em.World.DepthImage()
 	// if err == nil && depth != nil {
@@ -379,8 +387,13 @@ func (ev *EmeryEnv) Init(run int) {
 // Step is called to advance the environment state.
 func (ev *EmeryEnv) Step() bool {
 	// action was already generated.
-	pw := ev.World.World
+	ev.VisMotion() // compute motion vectors
+	return true
+}
 
+// VisMotion
+func (ev *EmeryEnv) VisMotion() {
+	pw := ev.World.World
 	a := ev.NextAct.Action
 	val := ev.NextAct.Value / float32(ev.Vis.NFrames)
 	for range ev.Vis.NFrames {
@@ -396,12 +409,21 @@ func (ev *EmeryEnv) Step() bool {
 		ev.World.Update()
 		ev.GrabEyeImg()
 		// new image location
-		ev.FilterImage("EyeL", ev.EyeLImage)
 		ev.FilterImage("EyeR", ev.EyeRImage)
+		if ev.LeftEye {
+			ev.FilterImage("EyeL", ev.EyeLImage)
+		}
 	}
-	ev.FinalFilter("EyeL")
-	ev.FinalFilter("EyeR")
-	return true
+	eyes := []string{"EyeR"}
+	if ev.LeftEye {
+		eyes = append(eyes, "EyeL")
+	}
+
+	for _, eye := range eyes {
+		full := ev.NextStates[eye+"_Full"]
+		eyelv := full.Value1D(1) - full.Value1D(0)
+		ev.RenderLinear(eye, eyelv)
+	}
 }
 
 // Action records the next action and its outcomes.
@@ -453,17 +475,15 @@ func (ev *EmeryEnv) FilterImage(snm string, img image.Image) {
 	dout := ev.NextStates[snm+"_DoG"]
 	slow := ev.NextStates[snm+"_Slow"]
 	fast := ev.NextStates[snm+"_Fast"]
-	ev.Vis.FilterImage(img, dout, slow, fast)
-	// fmt.Println("vis out sz:", ev.Vis.OutTsr.ShapeSizes())
-}
-
-// FinalFilter does final vision filtering.
-func (ev *EmeryEnv) FinalFilter(snm string) {
-	slow := ev.NextStates[snm+"_Slow"]
-	fast := ev.NextStates[snm+"_Fast"]
 	star := ev.NextStates[snm+"_Star"]
+	insta := ev.NextStates[snm+"_Insta"]
 	full := ev.NextStates[snm+"_Full"]
-	ev.Vis.FinalFilter(slow, fast, star, full)
+	norm := ev.NextStates[snm+"_Norm"]
+	norm.SetShapeSizes(1)
+	nv := norm.Value1D(0)
+	ev.Vis.FilterImage(img, dout, slow, fast, star, insta, full, &nv)
+	norm.Set1D(nv, 0)
+	// fmt.Println("vis out sz:", ev.Vis.OutTsr.ShapeSizes())
 }
 
 // Compile-time check that implements Env interface

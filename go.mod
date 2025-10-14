@@ -3,13 +3,13 @@ module github.com/emer/axon/v2
 go 1.23.4
 
 require (
-	cogentcore.org/core v0.3.13-0.20251009125244-9993be515523
-	cogentcore.org/lab v0.1.3-0.20251009131026-b81fa706d621
+	cogentcore.org/core v0.3.13-0.20251014173120-c673b546ed44
+	cogentcore.org/lab v0.1.3-0.20251014144642-a12de9e660c7
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/chewxy/math32 v1.10.1
 	github.com/cogentcore/yaegi v0.0.0-20250622201820-b7838bdd95eb
 	github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250917165214-89adea4c1b2c
-	github.com/emer/v1vision v0.1.1-0.20250930135137-1652ef8c6221
+	github.com/emer/v1vision v0.1.1-0.20251014200524-6e273dea20a0
 	github.com/stretchr/testify v1.10.0
 	gitlab.com/gomidi/midi/v2 v2.0.30
 	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948
@@ -40,6 +40,7 @@ require (
 	github.com/hack-pad/go-indexeddb v0.3.2 // indirect
 	github.com/hack-pad/hackpadfs v0.2.1 // indirect
 	github.com/hack-pad/safejs v0.1.1 // indirect
+	github.com/jeandeaual/go-locale v0.0.0-20250612000132-0ef82f21eade // indirect
 	github.com/jinzhu/copier v0.4.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect

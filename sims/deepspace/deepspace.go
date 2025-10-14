@@ -10,7 +10,6 @@ package deepspace
 
 import (
 	"fmt"
-	"image"
 	"os"
 	"reflect"
 
@@ -196,7 +195,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// _ = rectRecip
 
 	space := float32(5)
-	eyeSz := image.Point{2, 2}
+	// eyeSz := image.Point{2, 1}
 
 	rotAct := net.AddLayer2D("ActRotate", axon.InputLayer, ev.UnitsPer, ev.LinearUnits)
 
@@ -204,12 +203,15 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	vvelIn.AddClass("LinearIn")
 	vvelInp.AddClass("LinearIn")
 
-	eyeLIn, eyeLInp := net.AddInputPulv2D("EyeL", eyeSz.Y, eyeSz.X, space)
-	eyeRIn, eyeRInp := net.AddInputPulv2D("EyeR", eyeSz.Y, eyeSz.X, space)
-	eyeLIn.AddClass("VisIn")
-	eyeLInp.AddClass("VisIn")
-	eyeRIn.AddClass("VisIn")
-	eyeRInp.AddClass("VisIn")
+	eyeRIn, eyeRInp := net.AddInputPulv2D("EyeR", ev.UnitsPer, ev.LinearUnits, space)
+	eyeRIn.AddClass("LinearIn")
+	eyeRInp.AddClass("LinearIn")
+	var eyeLIn, eyeLInp *axon.Layer
+	if ev.LeftEye {
+		eyeLIn, eyeLInp = net.AddInputPulv2D("EyeL", ev.UnitsPer, ev.LinearUnits, space)
+		eyeLIn.AddClass("LinearIn")
+		eyeLInp.AddClass("LinearIn")
+	}
 
 	vestHid, vestHidct := net.AddSuperCT2D("VestHid", "", 10, 10, space, one2one) // one2one learn > full
 	// net.ConnectCTSelf(vestHidct, full, "") // self definitely doesn't make sense -- no need for 2-back ct
@@ -221,37 +223,22 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	visHid, visHidct := net.AddSuperCT2D("VisHid", "", 10, 10, space, one2one) // one2one learn > full
 	// net.ConnectCTSelf(visHidct, full, "") // self definitely doesn't make sense -- no need for 2-back ct
 	// net.LateralConnectLayer(visHidct, full).AddClass("CTSelfMaint") // no diff
-	net.ConnectToPulv(visHid, visHidct, eyeLInp, full, full, "")
 	net.ConnectToPulv(visHid, visHidct, eyeRInp, full, full, "")
-	net.ConnectLayers(rotAct, visHid, full, axon.ForwardPath).AddClass("FFToHid")
-	net.ConnectLayers(vvelIn, visHid, full, axon.ForwardPath).AddClass("FFToHid")
-	net.ConnectLayers(eyeLIn, visHid, full, axon.ForwardPath).AddClass("FFToHid")
 	net.ConnectLayers(eyeRIn, visHid, full, axon.ForwardPath).AddClass("FFToHid")
 
-	// net.ConnectLayers(visHidct, visHid, full, BackPath)
+	net.ConnectLayers(rotAct, visHid, full, axon.ForwardPath).AddClass("FFToHid")
+	net.ConnectLayers(vvelIn, visHid, full, axon.ForwardPath).AddClass("FFToHid")
 
-	// var hid2, hid2ct *axon.Layer
-	// if ss.Config.Params.Hid2 {
-	// 	hid2, hid2ct = net.AddSuperCT2D("DepthHid2", "", 10, 20, 2*space, one2one) // one2one learn > full
-	//
-	// 	net.ConnectCTSelf(hid2ct, full, "")
-	// 	net.ConnectToPulv(hid2, hid2ct, vvelInp, full, full, "")
-	// 	net.ConnectLayers(rotAct, hid2, full, axon.ForwardPath)
-	//
-	// 	// net.ConnectLayers(hid, hid2, rect2, axon.ForwardPath)
-	// 	// net.ConnectLayers(hid2, hid, rect2Recip, BackPath)
-	//
-	// 	net.BidirConnectLayers(hid, hid2, full)
-	// 	net.ConnectLayers(hid2ct, hidct, full, axon.BackPath)
-	// }
-
-	// no benefit from these:
-	// net.ConnectLayers(hdHid, hid, full, BackPath)
-	// net.ConnectLayers(hdHidct, hidct, full, BackPath)
+	if ev.LeftEye {
+		net.ConnectToPulv(visHid, visHidct, eyeLInp, full, full, "")
+		net.ConnectLayers(eyeLIn, visHid, full, axon.ForwardPath).AddClass("FFToHid")
+	}
 
 	vvelIn.PlaceBehind(rotAct, space)
-	eyeLIn.PlaceRightOf(rotAct, space)
-	eyeRIn.PlaceRightOf(eyeLIn, space)
+	eyeRIn.PlaceRightOf(rotAct, space)
+	if ev.LeftEye {
+		eyeLIn.PlaceRightOf(eyeRIn, space)
+	}
 	vestHid.PlaceAbove(rotAct)
 	visHid.PlaceRightOf(vestHid, space)
 	// if ss.Config.Params.Hid2 {
@@ -371,9 +358,9 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 		ev.Step()
 		for _, lnm := range lays {
 			ly := ss.Net.LayerByName(lnm)
-			if lnm == "EyeL" || lnm == "EyeR" {
-				lnm += "_Full"
-			}
+			// if lnm == "EyeL" || lnm == "EyeR" {
+			// 	lnm += "_Lateral"
+			// }
 			pats := ev.State(lnm)
 			if pats != nil {
 				ly.ApplyExt(di, pats)

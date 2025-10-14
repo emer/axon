@@ -40,11 +40,11 @@ var LayerParams = axon.LayerSheets{
 				ly.Bursts.ThrRel = 0.1 // no diffs here -- music makes a diff
 				ly.Bursts.ThrAbs = 0.1
 			}},
-		{Sel: ".VisIn", Doc: "",
-			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.25 // .25 effective
-				ly.Inhib.Layer.Gi = 0.7        //
-			}},
+		// {Sel: ".VisIn", Doc: "",
+		// 	Set: func(ly *axon.LayerParams) {
+		// 		ly.Inhib.ActAvg.Nominal = 0.25 // .25 effective
+		// 		ly.Inhib.Layer.Gi = 0.7        //
+		// 	}},
 		{Sel: ".LinearIn", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.13 // 0.13 > 0.2 -- 0.13 is accurate but Ge is high..

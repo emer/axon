@@ -47,8 +47,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Sahp.Slope = 0.02    //
 				ly.Acts.Sahp.CaTau = 5       // 5 ok -- not tested
 				ly.Acts.KNa.On.SetBool(true) // true, .05 > false
-				ly.Acts.KNa.Med.Gk = 0.1     // 0.1 > 0.05 without adapt in TE/TEO
-				ly.Acts.KNa.Slow.Gk = 0.1    // 0.1 > 0.05 " med is more impairing than slow
+				ly.Acts.KNa.Med.Gk = 0.05    // 0.1 > 0.05 without adapt in TE/TEO
+				ly.Acts.KNa.Slow.Gk = 0.05   // 0.1 > 0.05 " med is more impairing than slow
 
 				ly.Learn.CaLearn.Norm = 80               // 80 def; 60 makes CaLearnMax closer to 1
 				ly.Learn.CaLearn.SpikeVGCC.SetBool(true) // sig better..
@@ -329,7 +329,7 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.001 //
 				// pt.Learn.Learn.SetBool(false)
-				pt.PathScale.Rel = 0.5          // .5 > .8 > 1 > .4 > .3 etc
+				pt.PathScale.Rel = 1.0          // .8, .9, 1 > .6, .5
 				pt.SWts.Adapt.On.SetBool(false) // seems better
 				// "apt.SWts.Init.Var =   0.05
 			}},

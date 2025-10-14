@@ -1,7 +1,7 @@
-cogentcore.org/core v0.3.13-0.20251009125244-9993be515523 h1:vbmBkuQJcMoKyxa+yH/BMT0p7ikX3Zz9paQ2ySzGizE=
-cogentcore.org/core v0.3.13-0.20251009125244-9993be515523/go.mod h1:bVZvk2HinEs96r3d16y4BlxS/K6jN/SJlkR5MGjOVLY=
-cogentcore.org/lab v0.1.3-0.20251009131026-b81fa706d621 h1:0Itxb8CjZQ02jCMpMRinWfOWKYOHJoJ3MMbqL8o534o=
-cogentcore.org/lab v0.1.3-0.20251009131026-b81fa706d621/go.mod h1:rDUbYdRbrWdyVWeXJgMKaqJ71gyGtIiKQ71Iv7V72Og=
+cogentcore.org/core v0.3.13-0.20251014173120-c673b546ed44 h1:/hU67kAZ0Io9YQqCuoxX1nn6CVXhlWKoe++p7qIiack=
+cogentcore.org/core v0.3.13-0.20251014173120-c673b546ed44/go.mod h1:eDHnTCy1sBhAKN9NPsSCnBW3VAnwQBNA9nbGMo9r+Xs=
+cogentcore.org/lab v0.1.3-0.20251014144642-a12de9e660c7 h1:il1qQnBsNNZEEuxtCgvbczAbuefo7vriDtL3DQRsHkQ=
+cogentcore.org/lab v0.1.3-0.20251014144642-a12de9e660c7/go.mod h1:0fJ6n1CfFj1ijpUq6zCx9UsQpx5lBMkDsVEmnCy238A=
 github.com/Bios-Marcel/wastebasket/v2 v2.0.3 h1:TkoDPcSqluhLGE+EssHu7UGmLgUEkWg7kNyHyyJ3Q9g=
 github.com/Bios-Marcel/wastebasket/v2 v2.0.3/go.mod h1:769oPCv6eH7ugl90DYIsWwjZh4hgNmMS3Zuhe1bH6KU=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
@@ -44,8 +44,8 @@ github.com/dlclark/regexp2 v1.11.0 h1:G/nrcoOa7ZXlpoa/91N3X7mM3r8eIlMBBJZvsz/mxK
 github.com/dlclark/regexp2 v1.11.0/go.mod h1:DHkYz0B9wPfa6wondMfaivmHpzrQ3v9q8cnmRbL6yW8=
 github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250917165214-89adea4c1b2c h1:p381v/q/s0OtlRuV54b8BD8JULzrU3cIJz8InHuINwQ=
 github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250917165214-89adea4c1b2c/go.mod h1:YKMUU2BIT2qt8+IFjf5agjyKswPaJP2AvNSTKn6txlc=
-github.com/emer/v1vision v0.1.1-0.20250930135137-1652ef8c6221 h1:umV1nrJ/2TnVqLrqVOXW2NsXhIrAmLhSGJP+56gJ71Y=
-github.com/emer/v1vision v0.1.1-0.20250930135137-1652ef8c6221/go.mod h1:OdUqNZc5MKM8YcyVk5igULz9fHJwFKMlJP1tyMbNXL4=
+github.com/emer/v1vision v0.1.1-0.20251014200524-6e273dea20a0 h1:gYCT4dZrIILSfQ8hASy1YOzsJ8Or7r2sKxq08P/LTEk=
+github.com/emer/v1vision v0.1.1-0.20251014200524-6e273dea20a0/go.mod h1:ESM4D1fHjeZQgbr/HqyRNM2+7fKW9JtSoldFHEUjJSo=
 github.com/ericchiang/css v1.3.0 h1:e0vS+vpujMjtT3/SYu7qTHn1LVzXWcLCCDjlfq3YlLY=
 github.com/ericchiang/css v1.3.0/go.mod h1:sVSdL+MFR9Q4cKJMQzpIkHIDOLiK+7Wmjjhq7D+MubA=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
@@ -80,6 +80,8 @@ github.com/hashicorp/hcl v1.0.0/go.mod h1:E5yfLk+7swimpb2L/Alb/PJmXilQ/rhwaUYs4T
 github.com/hexops/gotextdiff v1.0.3 h1:gitA9+qJrrTCsiCl7+kh75nPqQt1cx4ZkudSTLoUqJM=
 github.com/hexops/gotextdiff v1.0.3/go.mod h1:pSWU5MAI3yDq+fZBTazCSJysOMbxWL1BSow5/V2vxeg=
 github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANytuPF1OarO4DADm73n8=
+github.com/jeandeaual/go-locale v0.0.0-20250612000132-0ef82f21eade h1:FmusiCI1wHw+XQbvL9M+1r/C3SPqKrmBaIOYwVfQoDE=
+github.com/jeandeaual/go-locale v0.0.0-20250612000132-0ef82f21eade/go.mod h1:ZDXo8KHryOWSIqnsb/CiDq7hQUYryCgdVnxbj8tDG7o=
 github.com/jinzhu/copier v0.4.0 h1:w3ciUoD19shMCRargcpm0cm91ytaBhDvuRpz1ODO/U8=
 github.com/jinzhu/copier v0.4.0/go.mod h1:DfbEm0FYsaqBcKcFuvmOZb218JkPGtvSHsKg8S8hyyg=
 github.com/kr/pretty v0.3.1 h1:flRD4NNwYAUpkphVc1HcthR4KEIFJ65n8Mw5qdRn3LE=
