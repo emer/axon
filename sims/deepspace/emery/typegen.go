@@ -57,7 +57,7 @@ func (t *Vis) SetImageTsr(v tensor.Float32) *Vis { t.ImageTsr = v; return t }
 
 var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Actions", IDName: "actions", Doc: "Actions is a list of mutually exclusive states\nfor tracing the behavior and internal state of Emery"})
 
-var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Geom", IDName: "geom", Doc: "Geom is overall geometry of the space", Fields: []types.Field{{Name: "Depth", Doc: "computed total depth, starts at 0 goes deep"}, {Name: "Width", Doc: "computed total width"}, {Name: "Thick", Doc: "thickness of walls, floor"}, {Name: "HalfWidth", Doc: "half width for centering on 0 X"}, {Name: "ObjWidth", Doc: "ObjWidth is the width of objects (landmarks)."}, {Name: "ObjHeight"}, {Name: "ObjSpace", Doc: "ObjSpace is the space between objects (landmarks) in degrees."}}})
+var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Geom", IDName: "geom", Doc: "Geom is overall geometry of the space", Fields: []types.Field{{Name: "Depth", Doc: "computed total depth, starts at 0 goes deep"}, {Name: "Width", Doc: "computed total width"}, {Name: "Thick", Doc: "thickness of walls, floor"}, {Name: "HalfWidth", Doc: "half width for centering on 0 X"}, {Name: "ObjWidth", Doc: "ObjWidth is the range in width of objects (landmarks)."}, {Name: "ObjHeight", Doc: "ObjHeight is the range in height of objects (landmarks)."}, {Name: "ObjSpace", Doc: "ObjSpace is the range in space between objects (landmarks) in degrees."}}})
 
 // SetDepth sets the [Geom.Depth]:
 // computed total depth, starts at 0 goes deep
@@ -76,14 +76,15 @@ func (t *Geom) SetThick(v float32) *Geom { t.Thick = v; return t }
 func (t *Geom) SetHalfWidth(v float32) *Geom { t.HalfWidth = v; return t }
 
 // SetObjWidth sets the [Geom.ObjWidth]:
-// ObjWidth is the width of objects (landmarks).
+// ObjWidth is the range in width of objects (landmarks).
 func (t *Geom) SetObjWidth(v minmax.F32) *Geom { t.ObjWidth = v; return t }
 
-// SetObjHeight sets the [Geom.ObjHeight]
+// SetObjHeight sets the [Geom.ObjHeight]:
+// ObjHeight is the range in height of objects (landmarks).
 func (t *Geom) SetObjHeight(v minmax.F32) *Geom { t.ObjHeight = v; return t }
 
 // SetObjSpace sets the [Geom.ObjSpace]:
-// ObjSpace is the space between objects (landmarks) in degrees.
+// ObjSpace is the range in space between objects (landmarks) in degrees.
 func (t *Geom) SetObjSpace(v minmax.F32) *Geom { t.ObjSpace = v; return t }
 
 var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Action", IDName: "action", Doc: "Action represents a single action.", Fields: []types.Field{{Name: "Action", Doc: "Action is the action taken"}, {Name: "Value", Doc: "Value is the action parameter (e.g., rotation degrees)"}}})
@@ -96,11 +97,15 @@ func (t *Action) SetAction(v Actions) *Action { t.Action = v; return t }
 // Value is the action parameter (e.g., rotation degrees)
 func (t *Action) SetValue(v float32) *Action { t.Value = v; return t }
 
-var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.EmeryEnv", IDName: "emery-env", Doc: "EmeryEnv is the emery rat environment", Fields: []types.Field{{Name: "Name", Doc: "name of this environment"}, {Name: "AngleCode", Doc: "angle population code values, in normalized units"}, {Name: "LinearCode", Doc: "population code for linear values, -1..1, in normalized units"}, {Name: "Vis", Doc: "Vis is vision processing filters."}, {Name: "UnitsPer", Doc: "UnitsPer is the number of units per localist value."}, {Name: "LinearUnits", Doc: "LinearUnits is the number of units per linear value."}, {Name: "AngleUnits", Doc: "AngleUnits is the number of units per angle value."}, {Name: "Geom", Doc: "Geom is the world geometry."}, {Name: "Emery", Doc: "Emery is the physics body for Emery."}, {Name: "EyeR", Doc: "Right and left eyes of emery"}, {Name: "EyeL", Doc: "Right and left eyes of emery"}, {Name: "EyeRImage", Doc: "captured images"}, {Name: "EyeLImage", Doc: "captured images"}, {Name: "World", Doc: "World is the 3D world, including emery"}, {Name: "Camera", Doc: "offscreen render camera settings"}, {Name: "NextAct", Doc: "NextAct is the next action to be taken."}, {Name: "LastAct", Doc: "LastAct is the last action taken."}, {Name: "CurStates", Doc: "CurStates is the current rendered state tensors."}, {Name: "NextStates", Doc: "NextStates is the next rendered state tensors -- updated from actions."}, {Name: "MaxRotate", Doc: "MaxRotate is maximum rotation angle magnitude per action, in degrees."}, {Name: "Rand", Doc: "Rand is the random number generator for the env.\nAll random calls must use this.\nSet seed here for weight initialization values."}, {Name: "RandSeed", Doc: "random seed"}}})
+var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.EmeryEnv", IDName: "emery-env", Doc: "EmeryEnv is the emery rat environment", Fields: []types.Field{{Name: "Name", Doc: "name of this environment"}, {Name: "LeftEye", Doc: "LeftEye determines whether to process left eye image or not."}, {Name: "AngleCode", Doc: "angle population code values, in normalized units"}, {Name: "LinearCode", Doc: "population code for linear values, -1..1, in normalized units"}, {Name: "Vis", Doc: "Vis is vision processing filters."}, {Name: "UnitsPer", Doc: "UnitsPer is the number of units per localist value."}, {Name: "LinearUnits", Doc: "LinearUnits is the number of units per linear value."}, {Name: "AngleUnits", Doc: "AngleUnits is the number of units per angle value."}, {Name: "Geom", Doc: "Geom is the world geometry."}, {Name: "Emery", Doc: "Emery is the physics body for Emery."}, {Name: "EyeR", Doc: "Right and left eyes of emery"}, {Name: "EyeL", Doc: "Right and left eyes of emery"}, {Name: "EyeRImage", Doc: "captured images"}, {Name: "EyeLImage", Doc: "captured images"}, {Name: "World", Doc: "World is the 3D world, including emery"}, {Name: "Camera", Doc: "offscreen render camera settings"}, {Name: "NextAct", Doc: "NextAct is the next action to be taken."}, {Name: "LastAct", Doc: "LastAct is the last action taken."}, {Name: "CurStates", Doc: "CurStates is the current rendered state tensors."}, {Name: "NextStates", Doc: "NextStates is the next rendered state tensors -- updated from actions."}, {Name: "MaxRotate", Doc: "MaxRotate is maximum rotation angle magnitude per action, in degrees."}, {Name: "Rand", Doc: "Rand is the random number generator for the env.\nAll random calls must use this.\nSet seed here for weight initialization values."}, {Name: "RandSeed", Doc: "random seed"}}})
 
 // SetName sets the [EmeryEnv.Name]:
 // name of this environment
 func (t *EmeryEnv) SetName(v string) *EmeryEnv { t.Name = v; return t }
+
+// SetLeftEye sets the [EmeryEnv.LeftEye]:
+// LeftEye determines whether to process left eye image or not.
+func (t *EmeryEnv) SetLeftEye(v bool) *EmeryEnv { t.LeftEye = v; return t }
 
 // SetAngleCode sets the [EmeryEnv.AngleCode]:
 // angle population code values, in normalized units

@@ -22,6 +22,9 @@ import (
 	"cogentcore.org/core/tree"
 	"cogentcore.org/lab/base/mpi"
 	"cogentcore.org/lab/base/randx"
+	"cogentcore.org/lab/plot"
+	"cogentcore.org/lab/stats/metric"
+	"cogentcore.org/lab/stats/stats"
 	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/axon/v2/axon"
@@ -119,9 +122,6 @@ func (ss *Sim) ConfigSim() {
 	tensorfs.CurRoot = ss.Root
 	ss.Net = axon.NewNetwork(ss.Config.Name)
 	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag, reflect.ValueOf(ss))
-	if ss.Config.Params.Hid2 {
-		ss.Params.ExtraSheets = "Hid2"
-	}
 	ss.RandSeeds.Init(100) // max 100 runs
 	ss.InitRandSeed(0)
 	if ss.Config.GPU {
@@ -181,23 +181,11 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	one2one := paths.NewOneToOne()
 	_ = one2one
 
-	// nPerAng := 5 // 30 total > 20 -- small improvement
-	// nPerDepth := 2
-	// rfDepth := 6
-	// rfWidth := 3
-	//
-	// rect := paths.NewRect()
-	// rect.Size.Set(rfWidth, rfDepth) // 6 > 8 > smaller
-	// rect.Scale.Set(1.0/float32(nPerAng), 1.0/float32(nPerDepth))
-	// _ = rect
-	//
-	// rectRecip := paths.NewRectRecip(rect)
-	// _ = rectRecip
-
 	space := float32(5)
 	// eyeSz := image.Point{2, 1}
 
 	rotAct := net.AddLayer2D("ActRotate", axon.InputLayer, ev.UnitsPer, ev.LinearUnits)
+	rotAct.AddClass("LinearIn")
 
 	vvelIn, vvelInp := net.AddInputPulv2D("VNCAngVel", ev.UnitsPer, ev.LinearUnits, space)
 	vvelIn.AddClass("LinearIn")
@@ -217,17 +205,17 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectCTSelf(vestHidct, full, "") // self definitely doesn't make sense -- no need for 2-back ct
 	// net.LateralConnectLayer(vestHidct, full).AddClass("CTSelfMaint") // no diff
 	net.ConnectToPulv(vestHid, vestHidct, vvelInp, full, full, "")
-	net.ConnectLayers(rotAct, vestHid, full, axon.ForwardPath).AddClass("FFToHid")
+	net.ConnectLayers(rotAct, vestHid, full, axon.ForwardPath).AddClass("FFToHid", "FromAct")
 	net.ConnectLayers(vvelIn, vestHid, full, axon.ForwardPath).AddClass("FFToHid")
 
 	visHid, visHidct := net.AddSuperCT2D("VisHid", "", 10, 10, space, one2one) // one2one learn > full
 	// net.ConnectCTSelf(visHidct, full, "") // self definitely doesn't make sense -- no need for 2-back ct
 	// net.LateralConnectLayer(visHidct, full).AddClass("CTSelfMaint") // no diff
 	net.ConnectToPulv(visHid, visHidct, eyeRInp, full, full, "")
+	net.ConnectLayers(rotAct, visHid, full, axon.ForwardPath).AddClass("FFToHid", "FromAct")
 	net.ConnectLayers(eyeRIn, visHid, full, axon.ForwardPath).AddClass("FFToHid")
 
-	net.ConnectLayers(rotAct, visHid, full, axon.ForwardPath).AddClass("FFToHid")
-	net.ConnectLayers(vvelIn, visHid, full, axon.ForwardPath).AddClass("FFToHid")
+	// net.ConnectLayers(vvelIn, visHid, full, axon.ForwardPath).AddClass("FFToHid")
 
 	if ev.LeftEye {
 		net.ConnectToPulv(visHid, visHidct, eyeLInp, full, full, "")
@@ -474,6 +462,7 @@ func (ss *Sim) StatsInit() {
 		tbs := ss.GUI.Tabs.AsLab()
 		_, idx := tbs.CurrentTab()
 		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Epoch))
+		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Trial))
 		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Run))
 		tbs.SelectTabIndex(idx)
 	}
@@ -517,7 +506,65 @@ func (ss *Sim) ConfigStats() {
 		prevCorFunc(mode, level, phase == Start)
 	})
 
-	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer, axon.InputLayer)
+	statNames := []string{"ActRot", "VisMot", "EmerAng", "MotActCor"}
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		for _, name := range statNames {
+			if name == "MotActCor" {
+				if level == Trial {
+					continue
+				}
+			} else {
+				if level != Trial {
+					continue
+				}
+			}
+			modeDir := ss.Stats.Dir(mode.String())
+			curModeDir := ss.Current.Dir(mode.String())
+			levelDir := modeDir.Dir(level.String())
+			subDir := modeDir.Dir((level - 1).String()) // note: will fail for Cycle
+			tsr := levelDir.Float64(name)
+			ndata := int(ss.Net.Context().NData)
+			if phase == Start {
+				tsr.SetNumRows(0)
+				plot.SetFirstStyler(tsr, func(s *plot.Style) {
+					s.On = true
+				})
+				continue
+			}
+			switch level {
+			case Trial:
+				for di := range ndata {
+					ev := ss.Envs.ByModeDi(mode, di).(*emery.EmeryEnv)
+					var stat float32
+					switch name {
+					case "ActRot":
+						stat = ev.LastActRotationDeg() / ev.MaxRotate
+					case "VisMot":
+						stat = ev.EyeLateralVelocity()
+					case "EmerAng":
+						stat = ev.EmeryAngleDeg()
+					}
+					curModeDir.Float64(name, ndata).SetFloat1D(float64(stat), di)
+					tsr.AppendRowFloat(float64(stat))
+				}
+			case Epoch: // only MotActCor
+				act := subDir.Value("ActRot")
+				vis := subDir.Value("VisMot")
+				cor := metric.Correlation(act, vis)
+				stat := cor.Float1D(0)
+				curModeDir.Float64(name, 1).SetFloat1D(stat, 0)
+				tsr.AppendRowFloat(stat)
+			case Run:
+				stat := stats.StatFinal.Call(subDir.Value(name)).Float1D(0)
+				tsr.AppendRowFloat(stat)
+			default: // Expt
+				stat := stats.StatMean.Call(subDir.Value(name)).Float1D(0)
+				tsr.AppendRowFloat(stat)
+			}
+		}
+	})
+
+	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer, axon.InputLayer, axon.PulvinarLayer)
 	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		actGeFunc(mode, level, phase == Start)
@@ -559,6 +606,49 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 	return counters
 }
 
+// MotionStats plots and computes the correlation between visual
+// motion signal and actual motion. For tuning the vis params.
+func (ss *Sim) MotionStats() {
+	curModeDir := ss.Current.Dir("Test")
+	dir := curModeDir.Dir("Motion")
+	ev := ss.Envs.ByModeDi(Train, 0).(*emery.EmeryEnv)
+	n := 500
+	act := dir.Float32("Act", n)
+	vis := dir.Float32("Vis", n)
+	ang := dir.Float32("Ang", n)
+	plot.SetFirstStyler(act, func(s *plot.Style) {
+		s.Role = plot.X
+		s.Plot.PointsOn = plot.On
+		s.Plot.LinesOn = plot.Off
+	})
+	plot.SetFirstStyler(vis, func(s *plot.Style) {
+		s.On = true
+		s.Line.On = plot.Off
+	})
+	plot.SetFirstStyler(ang, func(s *plot.Style) {
+		s.On = true
+		s.Role = plot.Size
+	})
+	for i := range n {
+		rang := 2.0 * (ev.Rand.Float32() - 0.5) * ev.MaxRotate
+		ev.Action("Rotate", tensor.NewFloat32FromValues(rang))
+		ev.Step()
+		act.Set1D(ev.NextActRotationDeg()/ev.MaxRotate, i)
+		vis.Set1D(ev.EyeLateralVelocity(), i)
+		ang.Set1D(ev.EmeryAngleDeg(), i)
+		if ss.Config.GUI {
+			ss.EnvGUI.Update()
+		}
+	}
+	cor := metric.Correlation(act, vis)
+	res := fmt.Sprintf("%#v Correlation: %7.4g", ev.Vis.Motion, cor.Float1D(0))
+	fmt.Println(res)
+	if ss.Config.GUI {
+		tbs := ss.GUI.Tabs.AsLab()
+		tbs.PlotTensorFS(dir)
+	}
+}
+
 //////// GUI
 
 func (ss *Sim) ConfigNetView(nv *netview.NetView) {
@@ -597,6 +687,16 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 func (ss *Sim) MakeToolbar(p *tree.Plan) {
 	ss.GUI.AddLooperCtrl(p, ss.Loops)
 
+	tree.Add(p, func(w *core.Separator) {})
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{
+		Label:   "Motion stats",
+		Icon:    icons.Move,
+		Tooltip: "Plot and compute correlation for visual motion computation based on generated motion.",
+		Active:  egui.ActiveAlways,
+		Func: func() {
+			go ss.MotionStats()
+		},
+	})
 	tree.Add(p, func(w *core.Separator) {})
 	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{
 		Label:   "New Seed",

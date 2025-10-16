@@ -44,8 +44,8 @@ github.com/dlclark/regexp2 v1.11.0 h1:G/nrcoOa7ZXlpoa/91N3X7mM3r8eIlMBBJZvsz/mxK
 github.com/dlclark/regexp2 v1.11.0/go.mod h1:DHkYz0B9wPfa6wondMfaivmHpzrQ3v9q8cnmRbL6yW8=
 github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250917165214-89adea4c1b2c h1:p381v/q/s0OtlRuV54b8BD8JULzrU3cIJz8InHuINwQ=
 github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20250917165214-89adea4c1b2c/go.mod h1:YKMUU2BIT2qt8+IFjf5agjyKswPaJP2AvNSTKn6txlc=
-github.com/emer/v1vision v0.1.1-0.20251014200524-6e273dea20a0 h1:gYCT4dZrIILSfQ8hASy1YOzsJ8Or7r2sKxq08P/LTEk=
-github.com/emer/v1vision v0.1.1-0.20251014200524-6e273dea20a0/go.mod h1:ESM4D1fHjeZQgbr/HqyRNM2+7fKW9JtSoldFHEUjJSo=
+github.com/emer/v1vision v0.1.1-0.20251015114716-db2109162a3b h1:llgWO3MzWPHe9rRYdo/1YODbxlrX5oULPh8Eo24zc68=
+github.com/emer/v1vision v0.1.1-0.20251015114716-db2109162a3b/go.mod h1:ESM4D1fHjeZQgbr/HqyRNM2+7fKW9JtSoldFHEUjJSo=
 github.com/ericchiang/css v1.3.0 h1:e0vS+vpujMjtT3/SYu7qTHn1LVzXWcLCCDjlfq3YlLY=
 github.com/ericchiang/css v1.3.0/go.mod h1:sVSdL+MFR9Q4cKJMQzpIkHIDOLiK+7Wmjjhq7D+MubA=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=

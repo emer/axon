@@ -24,10 +24,6 @@ type EnvConfig struct { //types:add
 // ParamConfig has config parameters related to sim params.
 type ParamConfig struct { //types:add
 
-	// Hid2 use a second hidden layer that predicts the first.
-	// Is not beneficial for this simple markovian task.
-	Hid2 bool
-
 	// Script is an interpreted script that is run to set parameters in Layer and Path
 	// sheets, by default using the "Script" set name.
 	Script string `new-window:"+" width:"100"`
@@ -80,7 +76,7 @@ type RunConfig struct { //types:add
 	Runs int `default:"2" min:"1"`
 
 	// Epochs is the total number of epochs per run.
-	Epochs int `default:"100"`
+	Epochs int `default:"50"`
 
 	// Trials is the total number of trials per epoch.
 	// Should be an even multiple of NData.

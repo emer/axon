@@ -51,12 +51,13 @@ type Geom struct {
 	// half width for centering on 0 X
 	HalfWidth float32 `edit:"-"`
 
-	// ObjWidth is the width of objects (landmarks).
+	// ObjWidth is the range in width of objects (landmarks).
 	ObjWidth minmax.F32
 
+	// ObjHeight is the range in height of objects (landmarks).
 	ObjHeight minmax.F32
 
-	// ObjSpace is the space between objects (landmarks) in degrees.
+	// ObjSpace is the range in space between objects (landmarks) in degrees.
 	ObjSpace minmax.F32
 }
 
@@ -67,7 +68,7 @@ func (gm *Geom) Defaults() {
 	gm.HalfWidth = gm.Width / 2
 	gm.ObjWidth.Set(1, 2)
 	gm.ObjHeight.Set(5, 10)
-	gm.ObjSpace.Set(15, 35)
+	gm.ObjSpace.Set(20, 35)
 }
 
 // Action represents a single action.
@@ -157,17 +158,17 @@ func (ev *EmeryEnv) Defaults() {
 	ev.LeftEye = false
 	ev.Geom.Defaults()
 	ev.UnitsPer = 4
-	ev.LinearUnits = 16
+	ev.LinearUnits = 12 // 12 > 16 for both
 	ev.AngleUnits = 16
 	ev.MaxRotate = 5
-	popSigma := float32(0.1)
+	popSigma := float32(0.2) // .15 > .2 for vnc, but opposite for eye
 	ev.LinearCode.Defaults()
-	ev.LinearCode.SetRange(-1.1, 1.1, popSigma)
+	ev.LinearCode.SetRange(-1.2, 1.2, popSigma) // 1.2 > 1.1 for eye
 	ev.AngleCode.Defaults()
 	ev.AngleCode.SetRange(0, 1, popSigma)
 	ev.Camera.Defaults()
 	ev.Camera.FOV = 100
-	ev.Camera.Size = image.Point{128, 128}
+	ev.Camera.Size = image.Point{64, 64}
 	ev.Vis.Defaults()
 }
 
@@ -391,7 +392,7 @@ func (ev *EmeryEnv) Step() bool {
 	return true
 }
 
-// VisMotion
+// VisMotion updates the visual motion value based on last action.
 func (ev *EmeryEnv) VisMotion() {
 	pw := ev.World.World
 	a := ev.NextAct.Action
@@ -424,6 +425,29 @@ func (ev *EmeryEnv) VisMotion() {
 		eyelv := full.Value1D(1) - full.Value1D(0)
 		ev.RenderLinear(eye, eyelv)
 	}
+}
+
+// EmeryAngleDeg returns the current lateral-plane rotation of Emery.
+func (ev *EmeryEnv) EmeryAngleDeg() float32 {
+	return math32.RadToDeg(ev.Emery.Rel.Quat.ToAxisAngle().W)
+}
+
+// NextActRotationDeg returns the rotation degrees from the next action.
+func (ev *EmeryEnv) NextActRotationDeg() float32 {
+	return ev.NextAct.Value
+}
+
+// LastActRotationDeg returns the rotation degrees from the last action.
+func (ev *EmeryEnv) LastActRotationDeg() float32 {
+	return ev.LastAct.Value
+}
+
+// EyeLateralVelocity returns the lateral velocity (-1..+1) computed
+// from the right eye.
+func (ev *EmeryEnv) EyeLateralVelocity() float32 {
+	full := ev.NextStates["EyeR_Full"]
+	eyelv := full.Value1D(1) - full.Value1D(0)
+	return eyelv
 }
 
 // Action records the next action and its outcomes.

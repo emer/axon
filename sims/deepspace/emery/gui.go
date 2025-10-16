@@ -12,6 +12,7 @@ import (
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/styles"
+	"cogentcore.org/core/styles/units"
 	"cogentcore.org/core/tree"
 	"cogentcore.org/core/xyz/xyzcore"
 )
@@ -52,10 +53,16 @@ func (ge *GUI) ConfigGUI(ev *EmeryEnv, b core.Widget) {
 	core.NewText(imfr).SetText("Right:")
 
 	ge.EyeLImageDisp = core.NewImage(imfr)
+	ge.EyeLImageDisp.Styler(func(s *styles.Style) {
+		s.Min.Set(units.Dot(128))
+	})
 	ge.EyeLImageDisp.Name = "eye-l-image"
 	ge.EyeLImageDisp.Image = image.NewRGBA(image.Rectangle{Max: ev.Camera.Size})
 
 	ge.EyeRImageDisp = core.NewImage(imfr)
+	ge.EyeRImageDisp.Styler(func(s *styles.Style) {
+		s.Min.Set(units.Dot(128))
+	})
 	ge.EyeRImageDisp.Name = "eye-r-image"
 	ge.EyeRImageDisp.Image = image.NewRGBA(image.Rectangle{Max: ev.Camera.Size})
 

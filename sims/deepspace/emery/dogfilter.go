@@ -56,19 +56,19 @@ func (vi *Vis) Defaults() {
 	vi.ClipToFit = true
 	vi.DoG.Defaults()
 	vi.Motion.Defaults()
-	vi.NFrames = 10
-	vi.Motion.SlowTau = 8
-	vi.Motion.FastTau = 4
-	vi.Motion.FullGain = 5
-	vi.Motion.IntegTau = 5
-	sz := 16
+	vi.NFrames = 16
+	vi.Motion.SlowTau = 4
+	vi.Motion.FastTau = 2
+	vi.Motion.FullGain = 3
+	vi.Motion.IntegTau = 6
+	sz := 8
 	spc := 2
 	vi.DoG.SetSize(sz, spc)
 	// note: first arg is border -- we are relying on Geom
 	// to set border to .5 * filter size
 	// any further border sizes on same image need to add Geom.FiltRt!
 	vi.Geom.Set(image.Point{0, 0}, image.Point{spc, spc}, image.Point{sz, sz})
-	vi.ImageSize = image.Point{24, 24}
+	vi.ImageSize = image.Point{64, 64} // note: must coordinate with camera size!
 	vi.Geom.SetSize(vi.ImageSize.Add(vi.Geom.Border.Mul(2)))
 	vi.DoG.ToTensor(&vi.DoGFilter)
 	tensorcore.AddGridStylerTo(&vi.ImageTsr, func(s *tensorcore.GridStyle) {
@@ -83,17 +83,18 @@ func (vi *Vis) SetImage(img image.Image) {
 	insz := vi.Geom.In
 	ibd := img.Bounds()
 	isz := ibd.Size()
-	if vi.ClipToFit && isz.X > insz.X && isz.Y > insz.Y {
+	if isz == vi.ImageSize {
+		vi.Image = img
+		vfilter.RGBToGrey(vi.Image, &vi.ImageTsr, 0, false) // pad for filt, bot zero
+	} else if vi.ClipToFit {
 		st := isz.Sub(insz).Div(2).Add(ibd.Min)
 		ed := st.Add(insz)
 		vi.Image = imagex.AsRGBA(img).SubImage(image.Rectangle{Min: st, Max: ed})
 		vfilter.RGBToGrey(vi.Image, &vi.ImageTsr, 0, false) // pad for filt, bot zero
 	} else {
-		if isz != vi.ImageSize {
-			vi.Image = transform.Resize(vi.Image, vi.ImageSize.X, vi.ImageSize.Y, transform.Linear)
-			vfilter.RGBToGrey(vi.Image, &vi.ImageTsr, vi.Geom.FiltRt.X, false) // pad for filt, bot zero
-			vfilter.WrapPad(&vi.ImageTsr, vi.Geom.FiltRt.X)
-		}
+		vi.Image = transform.Resize(vi.Image, vi.ImageSize.X, vi.ImageSize.Y, transform.Linear)
+		vfilter.RGBToGrey(vi.Image, &vi.ImageTsr, vi.Geom.FiltRt.X, false) // pad for filt, bot zero
+		vfilter.WrapPad(&vi.ImageTsr, vi.Geom.FiltRt.X)
 	}
 }
 
