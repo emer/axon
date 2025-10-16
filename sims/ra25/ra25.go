@@ -522,6 +522,14 @@ func (ss *Sim) ConfigStats() {
 	// up to a point, it is good to use loops over stats in one function,
 	// to reduce repetition of boilerplate.
 	statNames := []string{"CorSim", "UnitErr", "Err", "NZero", "FirstZero", "LastZero"}
+	statDocs := map[string]string{
+		"CorSim":    "The correlation-based similarity of the neural activity patterns between the minus and plus phase (1 = patterns are effectively identical). For target layers, this is good continuous, normalized measure of learning performance, which can be more sensitive than thresholded SSE measures.",
+		"UnitErr":   "Normalized proportion of neurons with activities on the wrong side of 0.5 relative to the target values. This is a good normalized error measure.",
+		"Err":       "At the trial level this indicates the presence of an error (i.e., UnitErr > 0), and at higher levels, it is the proportion of errors across the epoch. Thus, when this is zero, the network is performing perfectly (with respect to target outputs).",
+		"NZero":     "The number of zero-error epochs in a row.",
+		"FirstZero": "The first epoch when there were no errors according to Err stat.",
+		"LastZero":  "The epoch when training was stopped because NZero got above the threshold for number of perfect epochs in a row",
+	}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		for _, name := range statNames {
 			if name == "NZero" && (mode != Train || level == Trial) {
@@ -548,6 +556,7 @@ func (ss *Sim) ConfigStats() {
 						}
 					}
 				})
+				metadata.SetDoc(tsr, statDocs[name])
 				switch name {
 				case "NZero":
 					if level == Epoch {

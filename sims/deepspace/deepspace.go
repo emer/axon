@@ -13,6 +13,7 @@ import (
 	"os"
 	"reflect"
 
+	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/enums"
@@ -201,25 +202,28 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		eyeLInp.AddClass("LinearIn")
 	}
 
-	vestHid, vestHidct := net.AddSuperCT2D("VestHid", "", 10, 10, space, one2one) // one2one learn > full
-	// net.ConnectCTSelf(vestHidct, full, "") // self definitely doesn't make sense -- no need for 2-back ct
-	// net.LateralConnectLayer(vestHidct, full).AddClass("CTSelfMaint") // no diff
-	net.ConnectToPulv(vestHid, vestHidct, vvelInp, full, full, "")
-	net.ConnectLayers(rotAct, vestHid, full, axon.ForwardPath).AddClass("FFToHid", "FromAct")
-	net.ConnectLayers(vvelIn, vestHid, full, axon.ForwardPath).AddClass("FFToHid")
+	s1, s1ct := net.AddSuperCT2D("S1", "", 10, 10, space, one2one) // one2one learn > full
+	s1.Doc = "Neocortical integrated vestibular and full-field visual motion processing. Does predictive learning on both input signals, more like S2 (secondary), but just using one for simplicity."
+	// net.ConnectCTSelf(s1ct, full, "") // self definitely doesn't make sense -- no need for 2-back ct
+	// net.LateralConnectLayer(s1ct, full).AddClass("CTSelfMaint") // no diff
+	net.ConnectToPulv(s1, s1ct, vvelInp, full, full, "")
+	net.ConnectLayers(rotAct, s1, full, axon.ForwardPath).AddClass("FFToHid", "FromAct")
+	net.ConnectLayers(vvelIn, s1, full, axon.ForwardPath).AddClass("FFToHid")
 
-	visHid, visHidct := net.AddSuperCT2D("VisHid", "", 10, 10, space, one2one) // one2one learn > full
-	// net.ConnectCTSelf(visHidct, full, "") // self definitely doesn't make sense -- no need for 2-back ct
-	// net.LateralConnectLayer(visHidct, full).AddClass("CTSelfMaint") // no diff
-	net.ConnectToPulv(visHid, visHidct, eyeRInp, full, full, "")
-	net.ConnectLayers(rotAct, visHid, full, axon.ForwardPath).AddClass("FFToHid", "FromAct")
-	net.ConnectLayers(eyeRIn, visHid, full, axon.ForwardPath).AddClass("FFToHid")
+	// visHid, visHidct := net.AddSuperCT2D("VisHid", "", 10, 10, space, one2one) // one2one learn > full
+
+	// net.ConnectToPulv(visHid, visHidct, eyeRInp, full, full, "")
+	// net.ConnectLayers(rotAct, visHid, full, axon.ForwardPath).AddClass("FFToHid", "FromAct")
+	// net.ConnectLayers(eyeRIn, visHid, full, axon.ForwardPath).AddClass("FFToHid")
+
+	net.ConnectToPulv(s1, s1ct, eyeRInp, full, full, "")
+	net.ConnectLayers(eyeRIn, s1, full, axon.ForwardPath).AddClass("FFToHid")
 
 	// net.ConnectLayers(vvelIn, visHid, full, axon.ForwardPath).AddClass("FFToHid")
 
 	if ev.LeftEye {
-		net.ConnectToPulv(visHid, visHidct, eyeLInp, full, full, "")
-		net.ConnectLayers(eyeLIn, visHid, full, axon.ForwardPath).AddClass("FFToHid")
+		// net.ConnectToPulv(visHid, visHidct, eyeLInp, full, full, "")
+		// net.ConnectLayers(eyeLIn, visHid, full, axon.ForwardPath).AddClass("FFToHid")
 	}
 
 	vvelIn.PlaceBehind(rotAct, space)
@@ -227,8 +231,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	if ev.LeftEye {
 		eyeLIn.PlaceRightOf(eyeRIn, space)
 	}
-	vestHid.PlaceAbove(rotAct)
-	visHid.PlaceRightOf(vestHid, space)
+	s1.PlaceAbove(rotAct)
+	// visHid.PlaceRightOf(s1, space)
 	// if ss.Config.Params.Hid2 {
 	// 	hid2.PlaceBehind(hdHidct, 2*space)
 	// }
@@ -507,6 +511,12 @@ func (ss *Sim) ConfigStats() {
 	})
 
 	statNames := []string{"ActRot", "VisMot", "EmerAng", "MotActCor"}
+	statDescs := map[string]string{
+		"ActRot":    "Action rotation: degrees of body + head rotation",
+		"VisMot":    "Visual motion computed directly from full-field, retina-like motion filters",
+		"EmerAng":   "Emer's current body angle",
+		"MotActCor": "Correlation between the VisMot and ActRot signals, indicating quality of visual motion filters",
+	}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		for _, name := range statNames {
 			if name == "MotActCor" {
@@ -529,6 +539,7 @@ func (ss *Sim) ConfigStats() {
 				plot.SetFirstStyler(tsr, func(s *plot.Style) {
 					s.On = true
 				})
+				metadata.SetDoc(tsr, statDescs[name])
 				continue
 			}
 			switch level {
