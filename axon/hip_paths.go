@@ -4,7 +4,7 @@
 
 package axon
 
-//gosl:start hip_paths
+//gosl:start
 
 // HipPathParams define behavior of hippocampus paths, which have special learning rules
 type HipPathParams struct {
@@ -39,7 +39,7 @@ func (hp *HipPathParams) Update() {
 
 }
 
-//gosl:end hip_paths
+//gosl:end
 
 func (pj *PathParams) HipDefaults() {
 	pj.SWts.Init.Sym.SetBool(false)

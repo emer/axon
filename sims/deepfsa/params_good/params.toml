@@ -73,8 +73,8 @@
     "Layer.Inhib.Layer.FB" = "1"
     "Layer.Inhib.Layer.Gi" = "0.75"
     "Layer.Learn.RLRate.SigmoidMin" = "1.0"
-    "Layer.Pulv.DriveScale" = "0.2"
-    "Layer.Pulv.FullDriveAct" = "0.6"
+    "Layer.Pulvinar.DriveScale" = "0.2"
+    "Layer.Pulvinar.FullDriveAct" = "0.6"
 
 [[Base]]
   Sel = "Path"

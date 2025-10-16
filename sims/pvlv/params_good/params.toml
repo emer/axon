@@ -93,7 +93,7 @@
   Sel = "#CostP"
   Desc = ""
   [Base.Params]
-    "Layer.Pulv.DriveScale" = "0.2"
+    "Layer.Pulvinar.DriveScale" = "0.2"
 
 [[Base]]
   Sel = ".VSMatrixPath"

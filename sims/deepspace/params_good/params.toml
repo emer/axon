@@ -83,8 +83,8 @@
     "Layer.Acts.Decay.Glong" = "0.0"
     "Layer.Inhib.Layer.Gi" = "0.8"
     "Layer.Learn.RLRate.SigmoidMin" = "1.0"
-    "Layer.Pulv.DriveScale" = "0.1"
-    "Layer.Pulv.FullDriveAct" = "0.6"
+    "Layer.Pulvinar.DriveScale" = "0.1"
+    "Layer.Pulvinar.FullDriveAct" = "0.6"
 
 [[Base]]
   Sel = "#Action"
@@ -151,7 +151,7 @@
   [Hid2.Params]
     "Layer.Acts.NMDA.Ge" = "0.1"
     "Layer.Inhib.Layer.Gi" = "0.9"
-    "Layer.Pulv.DriveScale" = "0.1"
+    "Layer.Pulvinar.DriveScale" = "0.1"
 
 [[Hid2]]
   Sel = "#DepthHid2CT"

@@ -96,7 +96,7 @@ func SetNeuronExtPosNeg(ctx *Context, ni, di uint32, val float32) {
 // It is used in SynScale to not apply it to target layers.
 // In both cases, Target layers are purely error-driven.
 func (ly *LayerParams) IsTarget() bool {
-	return ly.Type == TargetLayer || ly.Type == PulvinarLayer
+	return ly.Type == TargetLayer || ly.Type == PulvinarLayer || ly.Type == CerebPredLayer
 }
 
 // IsInput returns true if this layer is an Input layer.
@@ -247,13 +247,23 @@ func (ly *LayerParams) CycleNeuron(ctx *Context, ni, di uint32) {
 }
 
 func (ly *LayerParams) PulvinarDriver(ctx *Context, lni, di uint32, drvGe, nonDrivePct *float32) {
-	dli := uint32(ly.Pulv.DriveLayIndex)
+	dli := uint32(ly.Pulvinar.DriveLayIndex)
 	dly := GetLayers(dli)
 	dpi := dly.PoolIndex(0)
 	drvMax := PoolAvgMax(AMCaP, AMCycle, Max, dpi, di)
-	*nonDrivePct = ly.Pulv.NonDrivePct(drvMax) // how much non-driver to keep
+	*nonDrivePct = ly.Pulvinar.NonDrivePct(drvMax) // how much non-driver to keep
 	burst := Neurons.Value(int(dly.Indexes.NeurSt+lni), int(di), int(Burst))
-	*drvGe = ly.Pulv.DriveGe(burst)
+	*drvGe = ly.Pulvinar.DriveGe(burst)
+}
+
+func (ly *LayerParams) CerebPredDriver(ctx *Context, lni, di uint32, drvGe, nonDrivePct *float32) {
+	dli := uint32(ly.CerebPred.DriveLayIndex)
+	dly := GetLayers(dli)
+	dpi := dly.PoolIndex(0)
+	drvMax := PoolAvgMax(AMCaP, AMCycle, Max, dpi, di)
+	*nonDrivePct = ly.CerebPred.NonDrivePct(drvMax) // how much non-driver to keep
+	dact := Neurons.Value(int(dly.Indexes.NeurSt+lni), int(di), int(CaP))
+	*drvGe = ly.CerebPred.DriveGe(dact)
 }
 
 // GInteg integrates conductances G over time (Ge, NMDA, etc).
@@ -263,6 +273,9 @@ func (ly *LayerParams) GInteg(ctx *Context, pi, ni, di uint32) {
 	nonDrivePct := float32(0)
 	if ly.Type == PulvinarLayer {
 		ly.PulvinarDriver(ctx, ni-ly.Indexes.NeurSt, di, &drvGe, &nonDrivePct)
+		Neurons.Set(nonDrivePct, int(ni), int(di), int(Ext)) // use for regulating inhibition
+	} else if ly.Type == CerebPredLayer {
+		ly.CerebPredDriver(ctx, ni-ly.Indexes.NeurSt, di, &drvGe, &nonDrivePct)
 		Neurons.Set(nonDrivePct, int(ni), int(di), int(Ext)) // use for regulating inhibition
 	}
 	saveVal := ly.SpecialPreGs(ctx, pi, ni, di, drvGe, nonDrivePct)
@@ -318,6 +331,14 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, pi, ni, di uint32, drvGe float
 		Neurons.Set(dr, int(ni), int(di), int(GeRaw))
 		Neurons.Set(ly.Acts.Dt.GeSynFromRawSteady(dr), int(ni), int(di), int(GeSyn))
 
+	case CerebPredLayer:
+		if ctx.PlusPhase.IsFalse() {
+			break
+		}
+		// geSyn, goes into nrn.GeExt in PostGs, so inhibition gets it
+		saveVal = nonDrivePct*Neurons.Value(int(ni), int(di), int(GeSyn)) + ly.Acts.Dt.GeSynFromRawSteady(drvGe)
+		Neurons.Set(nonDrivePct*nrnGeRaw+drvGe, int(ni), int(di), int(GeRaw))
+		Neurons.Set(saveVal, int(ni), int(di), int(GeSyn))
 	case BLALayer:
 		if ly.Learn.NeuroMod.IsBLAExt() {
 			md := max(-GlobalScalars.Value(int(GvDA), int(di)), float32(0)) // ext is modulated by negative da
@@ -412,7 +433,7 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni, di uint32, saveVal float3
 	}
 
 	switch ly.Type {
-	case PulvinarLayer, PTMaintLayer, CTLayer, BLALayer:
+	case PulvinarLayer, CerebPredLayer, PTMaintLayer, CTLayer, BLALayer:
 		Neurons.Set(saveVal, int(ni), int(di), int(GeExt))
 	case PTPredLayer:
 		Neurons.Set(saveVal, int(ni), int(di), int(GeExt))
@@ -494,7 +515,7 @@ func (ly *LayerParams) GiInteg(ctx *Context, pi, ni, di uint32) {
 	ssgi := Pools.Value(int(pi), int(di), int(fsfffb.SSGi))
 	Neurons.Set(gi, int(ni), int(di), int(Gi))
 	Neurons.Set(0.0, int(ni), int(di), int(SSGiDend))
-	if ctx.PlusPhase.IsTrue() && ly.Type == PulvinarLayer {
+	if ctx.PlusPhase.IsTrue() && (ly.Type == PulvinarLayer || ly.Type == CerebPredLayer) {
 		ext := Neurons.Value(int(ni), int(di), int(Ext)) // nonDrivePct
 		Neurons.Set(ext*ly.Acts.Dend.SSGi*ssgi, int(ni), int(di), int(SSGiDend))
 	} else {
@@ -1004,7 +1025,7 @@ func (ly *LayerParams) MinusPhasePost(ctx *Context) {
 	switch ly.Type {
 	case VSMatrixLayer, DSMatrixLayer:
 		ly.MatrixGated(ctx) // need gated state for decisions about action processing, so do in minus too
-	case PulvinarLayer:
+	case PulvinarLayer, CerebPredLayer:
 		ly.DecayStateNeuronsAll(ctx, 1, 1, 0)
 	default:
 	}

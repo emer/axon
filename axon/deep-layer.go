@@ -9,7 +9,7 @@ import (
 	"cogentcore.org/lab/gosl/slbool"
 )
 
-//gosl:start deep_layers
+//gosl:start
 
 // BurstParams determine how the 5IB Burst activation is computed from
 // CaP integrated spiking values in Super layers -- thresholded.
@@ -48,10 +48,16 @@ func (bp *BurstParams) ThrFromAvgMax(avg, mx float32) float32 {
 // CTParams control the CT corticothalamic neuron special behavior
 type CTParams struct {
 
-	// gain factor for context excitatory input, which is constant as compared to the spiking input from other pathways, so it must be downscaled accordingly.  This can make a difference and may need to be scaled up or down.
+	// GeGain is the gain factor for context excitatory input, which is
+	// constant as compared to the spiking input from other pathways, so it
+	// must be downscaled accordingly. This can make a difference
+	// and may need to be scaled up or down.
 	GeGain float32 `default:"0.05,0.1,1,2"`
 
-	// decay time constant for context Ge input -- if > 0, decays over time so intrinsic circuit dynamics have to take over.  For single-step copy-based cases, set to 0, while longer-time-scale dynamics should use 50 (80 for 280 cycles)
+	// DecayTau is the decay time constant for context Ge input.
+	// if > 0, decays over time so intrinsic circuit dynamics have to take over.
+	// For single-step copy-based cases, set to 0, while longer-time-scale
+	// dynamics should use ~50 or more.
 	DecayTau float32 `default:"0,50,70"`
 
 	// OFCposPT is set for the OFCposPT PTMaintLayer, which sets the
@@ -76,44 +82,51 @@ func (cp *CTParams) Defaults() {
 	cp.Update()
 }
 
-// PulvParams provides parameters for how the plus-phase (outcome)
+// PulvinarParams provides parameters for how the plus-phase (outcome)
 // state of Pulvinar thalamic relay cell neurons is computed from
 // the corresponding driver neuron Burst activation (or CaP if not Super)
-type PulvParams struct {
+type PulvinarParams struct {
 
-	// multiplier on driver input strength, multiplies CaP from driver layer to produce Ge excitatory input to Pulv unit.
+	// DriveScale is the multiplier on driver input strength,
+	// which multiplies CaP from driver layer to produce Ge excitatory
+	// input to CerebPred unit.
 	DriveScale float32 `default:"0.1" min:"0.0"`
 
-	// Level of Max driver layer CaP at which the drivers fully drive the burst phase activation.  If there is weaker driver input, then (Max/FullDriveAct) proportion of the non-driver inputs remain and this critically prevents the network from learning to turn activation off, which is difficult and severely degrades learning.
+	// FullDriveAct is the level of Max driver layer CaP at which the drivers
+	// fully drive the burst phase activation. If there is weaker driver input,
+	// then (Max/FullDriveAct) proportion of the non-driver inputs remain and
+	// this critically prevents the network from learning to turn activation
+	// off, which is difficult and severely degrades learning.
 	FullDriveAct float32 `default:"0.6" min:"0.01"`
 
-	// index of layer that generates the driving activity into this one -- set via SetBuildConfig(DriveLayName) setting
+	// DriveLayIndex of layer that generates the driving activity into this one
+	// set via SetBuildConfig(DriveLayName) setting
 	DriveLayIndex int32 `edit:"-"`
 
 	pad float32
 }
 
-func (tp *PulvParams) Update() {
+func (tp *PulvinarParams) Update() {
 }
 
-func (tp *PulvParams) Defaults() {
+func (tp *PulvinarParams) Defaults() {
 	tp.DriveScale = 0.1
 	tp.FullDriveAct = 0.6
 }
 
 // DriveGe returns effective excitatory conductance
 // to use for given driver input Burst activation
-func (tp *PulvParams) DriveGe(act float32) float32 {
+func (tp *PulvinarParams) DriveGe(act float32) float32 {
 	return tp.DriveScale * act
 }
 
 // NonDrivePct returns the multiplier proportion of the non-driver based Ge to
 // keep around, based on FullDriveAct and the max activity in driver layer.
-func (tp *PulvParams) NonDrivePct(drvMax float32) float32 {
+func (tp *PulvinarParams) NonDrivePct(drvMax float32) float32 {
 	return 1.0 - math32.Min(1.0, drvMax/tp.FullDriveAct)
 }
 
-//gosl:end deep_layers
+//gosl:end
 
 // note: Defaults not called on GPU
 
@@ -232,14 +245,14 @@ func (ly *LayerParams) PTPredDefaults() {
 }
 
 // called in Defaults for Pulvinar layer type
-func (ly *LayerParams) PulvDefaults() {
+func (ly *LayerParams) PulvinarDefaults() {
 	ly.Acts.Decay.Act = 0
 	ly.Acts.Decay.Glong = 0
 	ly.Acts.Decay.AHP = 0
 	ly.Learn.RLRate.SigmoidMin = 1.0 // 1.0 generally better but worth trying 0.05 too
 }
 
-// PulvPostBuild does post-Build config of Pulvinar based on BuildConfig options
-func (ly *Layer) PulvPostBuild() {
-	ly.Params.Pulv.DriveLayIndex = ly.BuildConfigFindLayer("DriveLayName", true)
+// PulvinarPostBuild does post-Build config of Pulvinar based on BuildConfig options
+func (ly *Layer) PulvinarPostBuild() {
+	ly.Params.Pulvinar.DriveLayIndex = ly.BuildConfigFindLayer("DriveLayName", true)
 }

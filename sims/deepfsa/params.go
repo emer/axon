@@ -80,9 +80,9 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.Layer.Gi = 0.75 // 0.75 > higher v1.6.1
 				ly.Inhib.Layer.FB = 1
-				ly.Pulv.DriveScale = 0.2   // 0.2 > 0.1, 0.15, 0.25, 0.3
-				ly.Pulv.FullDriveAct = 0.6 // 0.6 def
-				ly.Acts.Spikes.Tr = 3      // 1 is best for ra25..
+				ly.Pulvinar.DriveScale = 0.2   // 0.2 > 0.1, 0.15, 0.25, 0.3
+				ly.Pulvinar.FullDriveAct = 0.6 // 0.6 def
+				ly.Acts.Spikes.Tr = 3          // 1 is best for ra25..
 				ly.Acts.Decay.Act = 0.0
 				ly.Acts.Decay.Glong = 0.0        // clear long
 				ly.Acts.Decay.AHP = 0.0          // clear ahp

@@ -83,7 +83,7 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: "#CostP", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Pulv.DriveScale = 0.2 // 0.1 def
+				ly.Pulvinar.DriveScale = 0.2 // 0.1 def
 			}},
 	},
 }

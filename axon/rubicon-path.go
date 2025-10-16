@@ -4,7 +4,7 @@
 
 package axon
 
-//gosl:start rubicon_paths
+//gosl:start
 
 // BLAPathParams has parameters for basolateral amygdala learning.
 // Learning is driven by the Tr trace as function of ACh * Send Act
@@ -35,7 +35,7 @@ func (bp *BLAPathParams) Update() {
 
 }
 
-//gosl:end rubicon_paths
+//gosl:end
 
 func (pj *PathParams) BLADefaults() {
 	pj.SWts.Adapt.On.SetBool(false)

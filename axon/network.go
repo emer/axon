@@ -604,6 +604,7 @@ func (nt *Network) AddLayerInit(ly *Layer, name string, typ LayerTypes, shape ..
 	nt.Layers = append(nt.Layers, ly)
 	ly.Index = len(nt.Layers) - 1
 	ly.BuildConfig = make(map[string]string)
+	ly.Doc = typ.Desc()
 	nt.UpdateLayerMaps()
 }
 

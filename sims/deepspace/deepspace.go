@@ -182,19 +182,23 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	one2one := paths.NewOneToOne()
 	_ = one2one
 
-	space := float32(5)
+	space := float32(2)
 	// eyeSz := image.Point{2, 1}
 
 	rotAct := net.AddLayer2D("ActRotate", axon.InputLayer, ev.UnitsPer, ev.LinearUnits)
 	rotAct.AddClass("LinearIn")
+	rotAct.Doc = "Full body lateral rotation action, population coded left to right with gaussian tuning curves for a range of degrees for each unit (X axis) and redundant units for population code in the Y axis."
 
 	vvelIn, vvelInp := net.AddInputPulv2D("VNCAngVel", ev.UnitsPer, ev.LinearUnits, space)
 	vvelIn.AddClass("LinearIn")
 	vvelInp.AddClass("LinearIn")
+	vvelIn.Doc = "Vestibular lateral rotation velocity, which is just a copy of rotAct given the assumption of accurate vestibular sensing. Population coded left to right with gaussian tuning curves for a range of degrees for each unit (X axis) and redundant units for population code in the Y axis."
 
 	eyeRIn, eyeRInp := net.AddInputPulv2D("EyeR", ev.UnitsPer, ev.LinearUnits, space)
 	eyeRIn.AddClass("LinearIn")
 	eyeRInp.AddClass("LinearIn")
+	eyeRIn.Doc = "Full-field visual motion computed from the right eye using retinal motion filter (see Env tab for visual environment). Population coded left to right with gaussian tuning curves for a range of velocities for each unit (X axis) and redundant units for population code in the Y axis."
+
 	var eyeLIn, eyeLInp *axon.Layer
 	if ev.LeftEye {
 		eyeLIn, eyeLInp = net.AddInputPulv2D("EyeL", ev.UnitsPer, ev.LinearUnits, space)
@@ -226,12 +230,24 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		// net.ConnectLayers(eyeLIn, visHid, full, axon.ForwardPath).AddClass("FFToHid")
 	}
 
-	vvelIn.PlaceBehind(rotAct, space)
-	eyeRIn.PlaceRightOf(rotAct, space)
+	// cerebellum:
+	// output = copy of input that has subtraction
+	cout, cpred := net.AddCerebellumNucleus(vvelIn, space)
+
+	net.ConnectLayers(rotAct, cpred, full, axon.ForwardPath).AddClass("ToCPred")
+	net.ConnectLayers(s1, cpred, full, axon.ForwardPath).AddClass("ToCPred")
+
+	// position
+
+	vvelIn.PlaceRightOf(rotAct, space)
+	eyeRIn.PlaceRightOf(vvelIn, space)
 	if ev.LeftEye {
 		eyeLIn.PlaceRightOf(eyeRIn, space)
 	}
 	s1.PlaceAbove(rotAct)
+
+	cout.PlaceRightOf(s1, space)
+
 	// visHid.PlaceRightOf(s1, space)
 	// if ss.Config.Params.Hid2 {
 	// 	hid2.PlaceBehind(hdHidct, 2*space)

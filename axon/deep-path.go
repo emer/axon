@@ -4,10 +4,6 @@
 
 package axon
 
-//gosl:start deep_paths
-
-//gosl:end deep_paths
-
 func (pj *PathParams) CTCtxtPathDefaults() {
 	pj.Learn.DWt.LearnThr = 0
 }

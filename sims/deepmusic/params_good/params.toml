@@ -68,8 +68,8 @@
     "Layer.Acts.Decay.Glong" = "0.0"
     "Layer.Inhib.Layer.Gi" = "1.0"
     "Layer.Learn.RLRate.SigmoidMin" = "1.0"
-    "Layer.Pulv.DriveScale" = "0.1"
-    "Layer.Pulv.FullDriveAct" = "0.6"
+    "Layer.Pulvinar.DriveScale" = "0.1"
+    "Layer.Pulvinar.FullDriveAct" = "0.6"
 
 [[Base]]
   Sel = "Path"

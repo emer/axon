@@ -14,7 +14,7 @@ import (
 	"cogentcore.org/lab/gosl/slbool"
 )
 
-//gosl:start rubicon_layers
+//gosl:start
 
 // LDTParams compute reward salience as ACh global neuromodulatory signal
 // as a function of the MAX activation of its inputs from salience detecting
@@ -163,7 +163,7 @@ func (vt *VTAParams) VTADA(ctx *Context, di uint32, ach float32, hasRew bool) {
 	GlobalScalars.Set(netDA, int(GvDA), int(di))    // general neuromod DA
 }
 
-//gosl:end rubicon_layers
+//gosl:end
 
 func (ly *Layer) BLADefaults() {
 	isAcq := strings.Contains(ly.Name, "Acq") || strings.Contains(ly.Name, "Novel")

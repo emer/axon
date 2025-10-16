@@ -133,7 +133,7 @@ func (ly *Layer) Defaults() { //types:add
 	case PTPredLayer:
 		ly.Params.PTPredDefaults()
 	case PulvinarLayer:
-		ly.Params.PulvDefaults()
+		ly.Params.PulvinarDefaults()
 
 	case RewLayer:
 		ly.Params.RWDefaults()
@@ -147,6 +147,11 @@ func (ly *Layer) Defaults() { //types:add
 		ly.Params.TDPredDefaults()
 	case TDIntegLayer, TDDaLayer:
 		ly.Params.TDDefaults()
+
+	case CerebPredLayer:
+		ly.Params.CerebPredDefaults()
+	case CerebOutLayer:
+		ly.Params.CerebOutDefaults()
 
 	case LDTLayer:
 		ly.LDTDefaults()
@@ -418,7 +423,19 @@ func (ly *Layer) PostBuild() {
 
 	switch ly.Type {
 	case PulvinarLayer:
-		ly.PulvPostBuild()
+		ly.PulvinarPostBuild()
+
+	case DSMatrixLayer:
+		ly.DSMatrixPostBuild()
+	case VSMatrixLayer:
+		ly.VSMatrixPostBuild()
+	case DSPatchLayer:
+		ly.PatchPostBuild()
+	case GPLayer:
+		ly.GPPostBuild()
+
+	case CerebPredLayer:
+		ly.CerebPredPostBuild()
 
 	case LDTLayer:
 		ly.LDTPostBuild()
@@ -432,14 +449,6 @@ func (ly *Layer) PostBuild() {
 	case BLALayer, CeMLayer, USLayer, PVLayer, VSPatchLayer:
 		ly.RubiconPostBuild()
 
-	case DSMatrixLayer:
-		ly.DSMatrixPostBuild()
-	case VSMatrixLayer:
-		ly.VSMatrixPostBuild()
-	case DSPatchLayer:
-		ly.PatchPostBuild()
-	case GPLayer:
-		ly.GPPostBuild()
 	}
 }
 

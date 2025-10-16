@@ -109,10 +109,10 @@ type LayerParams struct {
 	// excitatory input plus stronger NMDA channels to maintain context trace.
 	CT CTParams `display:"inline"`
 
-	// Pulv has parameters for how the plus-phase (outcome) state of Pulvinar
+	// Pulvinar has parameters for how the plus-phase (outcome) state of Pulvinar
 	// thalamic relay cell neurons is computed from the corresponding driver
 	// neuron Burst activation (or CaP if not Super).
-	Pulv PulvParams `display:"inline"`
+	Pulvinar PulvinarParams `display:"inline"`
 
 	// DSMatrixParams has parameters for dorsal Matrix layers, for SPN / MSN
 	// direct and indirect pathways.
@@ -123,6 +123,11 @@ type LayerParams struct {
 
 	// GP has params for GP (globus pallidus) of the BG layers.
 	GP GPParams `display:"inline"`
+
+	// CerebPred has params for the cerebellar nuclei inhibitory prediction
+	// neurons, which learn to predict the activity of a specific sensory input,
+	// and inhibit it in the corresponding CerebOutLayer
+	CerebPred CerebPredParams `display:"inline"`
 
 	// LDT has parameters for laterodorsal tegmentum ACh salience neuromodulatory
 	// signal, driven by superior colliculus stimulus novelty, US input / absence,
@@ -191,11 +196,13 @@ func (ly *LayerParams) Update() {
 
 	ly.Bursts.Update()
 	ly.CT.Update()
-	ly.Pulv.Update()
+	ly.Pulvinar.Update()
 
 	ly.DSMatrix.Update()
 	ly.Striatum.Update()
 	ly.GP.Update()
+
+	ly.CerebPred.Update()
 
 	ly.LDT.Update()
 	ly.VTA.Update()
@@ -216,11 +223,13 @@ func (ly *LayerParams) Defaults() {
 
 	ly.Bursts.Defaults()
 	ly.CT.Defaults()
-	ly.Pulv.Defaults()
+	ly.Pulvinar.Defaults()
 
 	ly.DSMatrix.Defaults()
 	ly.Striatum.Defaults()
 	ly.GP.Defaults()
+
+	ly.CerebPred.Defaults()
 
 	ly.LDT.Defaults()
 	ly.VTA.Defaults()
@@ -237,7 +246,7 @@ func (ly *LayerParams) ShouldDisplay(field string) bool {
 		return ly.Type == SuperLayer
 	case "CT":
 		return ly.Type == CTLayer || ly.Type == PTPredLayer || ly.Type == BLALayer
-	case "Pulv":
+	case "Pulvinar":
 		return ly.Type == PulvinarLayer
 	case "DSMatrix":
 		return ly.Type == DSMatrixLayer
@@ -245,6 +254,8 @@ func (ly *LayerParams) ShouldDisplay(field string) bool {
 		return ly.Type == VSMatrixLayer || ly.Type == DSMatrixLayer || ly.Type == DSPatchLayer
 	case "GP":
 		return ly.Type == GPLayer
+	case "CerebPred":
+		return ly.Type == CerebPredLayer
 	case "LDT":
 		return ly.Type == LDTLayer
 	case "VTA":

@@ -4,7 +4,7 @@
 
 package axon
 
-//gosl:start rl_paths
+//gosl:start
 
 // RLPredPathParams does dopamine-modulated learning for reward prediction: Da * Send.Act
 // Used by RWPath and TDPredPath within corresponding RWPredLayer or TDPredLayer
@@ -28,7 +28,7 @@ func (pj *RLPredPathParams) Defaults() {
 func (pj *RLPredPathParams) Update() {
 }
 
-//gosl:end rl_paths
+//gosl:end
 
 func (pj *PathParams) RLPredDefaults() {
 	pj.SWts.Adapt.SigGain = 1

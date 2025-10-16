@@ -52,16 +52,38 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.MaintNMDA.Ge = 0.006 // not relevant -- no CTSelf
 				ly.Acts.MaintNMDA.Tau = 100
 			}},
-		{Sel: ".PulvinarLayer", Doc: "Pulvinar",
+		{Sel: ".PulvinarLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.15 // 0.15 accurate
 				ly.Inhib.Layer.Gi = 0.8        // 0.8 good -- was 0.9
-				ly.Pulv.DriveScale = 0.12      // 0.12 ~= .1
-				ly.Pulv.FullDriveAct = 0.6     // 0.6 def
+				ly.Pulvinar.DriveScale = 0.12  // 0.12 ~= .1
+				ly.Pulvinar.FullDriveAct = 0.6 // 0.6 def
 				ly.Acts.Decay.Act = 0.0
 				ly.Acts.Decay.Glong = 0.0        // clear long
 				ly.Acts.Decay.AHP = 0.0          // clear long
 				ly.Learn.RLRate.SigmoidMin = 1.0 // 1 > .05
+			}},
+		{Sel: ".CerebPredLayer", Doc: "",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.15  // 0.15 accurate
+				ly.Inhib.Layer.FB = 0           // no lateral
+				ly.Inhib.Layer.Gi = 0.4         // ?
+				ly.CerebPred.DriveScale = 0.12  // 0.12 ~= .1
+				ly.CerebPred.FullDriveAct = 0.6 // 0.6 def
+				ly.Acts.Decay.Act = 0.0
+				ly.Acts.Decay.Glong = 0.0        // clear long
+				ly.Acts.Decay.AHP = 0.0          // clear long
+				ly.Learn.RLRate.SigmoidMin = 1.0 // 1 > .05
+			}},
+		{Sel: ".CerebOutLayer", Doc: "",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.15 // 0.15 accurate
+				ly.Acts.Init.GeBase = 0.4
+				ly.Inhib.Layer.FB = 0   // no lateral
+				ly.Inhib.Layer.Gi = 0.2 // ?
+				ly.Acts.Decay.Act = 0.0
+				ly.Acts.Decay.Glong = 0.0 // clear long
+				ly.Acts.Decay.AHP = 0.0   // clear long
 			}},
 	},
 }
@@ -110,6 +132,10 @@ var PathParams = axon.PathSheets{
 		{Sel: ".FFToHid", Doc: "stronger",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 2
+			}},
+		{Sel: ".CerebPredToOut", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1
 			}},
 
 		/* not used

@@ -116,9 +116,9 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".PulvinarLayer", Doc: "Pulvinar",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.Layer.Gi = 0.8    // 0.8 good -- was 0.9
-				ly.Pulv.DriveScale = 0.1   // 0.1 > 0.15 -- does not work with 0.05
-				ly.Pulv.FullDriveAct = 0.6 // 0.6 def
+				ly.Inhib.Layer.Gi = 0.8        // 0.8 good -- was 0.9
+				ly.Pulvinar.DriveScale = 0.1   // 0.1 > 0.15 -- does not work with 0.05
+				ly.Pulvinar.FullDriveAct = 0.6 // 0.6 def
 				ly.Acts.Decay.Act = 0.0
 				ly.Acts.Decay.Glong = 0.0        // clear long
 				ly.Acts.Decay.AHP = 0.0          // clear long

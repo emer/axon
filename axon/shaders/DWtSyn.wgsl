@@ -225,7 +225,7 @@ fn SynapseTracesSetDiv(vl: f32, ix: u32) {
 
 //////// import: "act-layer.go"
 fn LayerParams_IsTarget(ly: LayerParams) -> bool {
-	return ly.Type == TargetLayer || ly.Type == PulvinarLayer;
+	return ly.Type == TargetLayer || ly.Type == PulvinarLayer || ly.Type == CerebPredLayer;
 }
 
 //////// import: "act-net.go"
@@ -373,6 +373,14 @@ struct ActParams {
 	SKCa: SKCaParams,
 	SMaint: SMaintParams,
 	PopCode: PopCodeParams,
+}
+
+//////// import: "cereb-layer.go"
+struct CerebPredParams {
+	DriveScale: f32,
+	FullDriveAct: f32,
+	DriveLayIndex: i32,
+	pad: f32,
 }
 
 //////// import: "chans-ak.go"
@@ -547,21 +555,19 @@ struct CTParams {
 	OFCposPT: i32,
 	DecayDt: f32,
 }
-struct PulvParams {
+struct PulvinarParams {
 	DriveScale: f32,
 	FullDriveAct: f32,
 	DriveLayIndex: i32,
 	pad: f32,
 }
 
-//////// import: "deep-path.go"
-
 //////// import: "enumgen.go"
 const PathGTypesN: PathGTypes = 5;
 const GlobalScalarVarsN: GlobalScalarVars = 58;
 const GlobalVectorVarsN: GlobalVectorVars = 10;
 const GPUVarsN: GPUVars = 23;
-const LayerTypesN: LayerTypes = 32;
+const LayerTypesN: LayerTypes = 34;
 const LayerVarsN: LayerVars = 12;
 const ViewTimesN: ViewTimes = 7;
 const DAModTypesN: DAModTypes = 4;
@@ -781,10 +787,11 @@ struct LayerParams {
 	Learn: LearnNeuronParams,
 	Bursts: BurstParams,
 	CT: CTParams,
-	Pulv: PulvParams,
+	Pulvinar: PulvinarParams,
 	DSMatrix: DSMatrixParams,
 	Striatum: StriatumParams,
 	GP: GPParams,
+	CerebPred: CerebPredParams,
 	LDT: LDTParams,
 	VTA: VTAParams,
 	RWPred: RWPredParams,
@@ -815,22 +822,24 @@ const  STNLayer: LayerTypes = 12;
 const  GPLayer: LayerTypes = 13;
 const  BGThalLayer: LayerTypes = 14;
 const  VSGatedLayer: LayerTypes = 15;
-const  BLALayer: LayerTypes = 16;
-const  CeMLayer: LayerTypes = 17;
-const  VSPatchLayer: LayerTypes = 18;
-const  LHbLayer: LayerTypes = 19;
-const  DrivesLayer: LayerTypes = 20;
-const  UrgencyLayer: LayerTypes = 21;
-const  USLayer: LayerTypes = 22;
-const  PVLayer: LayerTypes = 23;
-const  LDTLayer: LayerTypes = 24;
-const  VTALayer: LayerTypes = 25;
-const  RewLayer: LayerTypes = 26;
-const  RWPredLayer: LayerTypes = 27;
-const  RWDaLayer: LayerTypes = 28;
-const  TDPredLayer: LayerTypes = 29;
-const  TDIntegLayer: LayerTypes = 30;
-const  TDDaLayer: LayerTypes = 31;
+const  CerebPredLayer: LayerTypes = 16;
+const  CerebOutLayer: LayerTypes = 17;
+const  BLALayer: LayerTypes = 18;
+const  CeMLayer: LayerTypes = 19;
+const  VSPatchLayer: LayerTypes = 20;
+const  LHbLayer: LayerTypes = 21;
+const  DrivesLayer: LayerTypes = 22;
+const  UrgencyLayer: LayerTypes = 23;
+const  USLayer: LayerTypes = 24;
+const  PVLayer: LayerTypes = 25;
+const  LDTLayer: LayerTypes = 26;
+const  VTALayer: LayerTypes = 27;
+const  RewLayer: LayerTypes = 28;
+const  RWPredLayer: LayerTypes = 29;
+const  RWDaLayer: LayerTypes = 30;
+const  TDPredLayer: LayerTypes = 31;
+const  TDIntegLayer: LayerTypes = 32;
+const  TDDaLayer: LayerTypes = 33;
 
 //////// import: "layervars.go"
 alias LayerVars = i32; //enums:enum

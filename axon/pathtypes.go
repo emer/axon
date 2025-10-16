@@ -4,7 +4,7 @@
 
 package axon
 
-//gosl:start pathtypes
+//gosl:start
 
 // PathTypes enumerates all the different types of axon pathways,
 // for the different algorithm types supported.
@@ -95,4 +95,4 @@ const (
 	DSMatrixPath
 )
 
-//gosl:end pathtypes
+//gosl:end

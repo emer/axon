@@ -66,10 +66,10 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".PulvinarLayer", Doc: "Pulv = Pulvinar",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.Layer.Gi = 1.0    // 1.0 > 1.05, 0.9
-				ly.Inhib.Layer.FB = 4      // 4 >> 1 in full, 1 > 4 in 30
-				ly.Pulv.DriveScale = 0.12  // 0.12 min w/ CT->P=2, 30note
-				ly.Pulv.FullDriveAct = 0.6 // 0.6 def
+				ly.Inhib.Layer.Gi = 1.0        // 1.0 > 1.05, 0.9
+				ly.Inhib.Layer.FB = 4          // 4 >> 1 in full, 1 > 4 in 30
+				ly.Pulvinar.DriveScale = 0.12  // 0.12 min w/ CT->P=2, 30note
+				ly.Pulvinar.FullDriveAct = 0.6 // 0.6 def
 				ly.Acts.Decay.Act = 0.0
 				ly.Acts.Decay.Glong = 0.0        // clear long
 				ly.Learn.RLRate.SigmoidMin = 1.0 // 1 > .05
@@ -96,8 +96,8 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".PulvinarLayer", Doc: "less FB inhib",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.Layer.FB = 1     // 1 > 4
-				ly.Pulv.DriveScale = 0.12 // 0.12 > higher, min for CT->P 2.0
+				ly.Inhib.Layer.FB = 1         // 1 > 4
+				ly.Pulvinar.DriveScale = 0.12 // 0.12 > higher, min for CT->P 2.0
 			}},
 		{Sel: ".CTLayer", Doc: "30 needs less inhib, smaller layer",
 			Set: func(ly *axon.LayerParams) {
@@ -111,8 +111,8 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".PulvinarLayer", Doc: "more FB inhib",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.Layer.FB = 4     // 4 >> 1
-				ly.Pulv.DriveScale = 0.11 // 0.11 > 0.1, 0.12+
+				ly.Inhib.Layer.FB = 4         // 4 >> 1
+				ly.Pulvinar.DriveScale = 0.11 // 0.11 > 0.1, 0.12+
 			}},
 	},
 }
