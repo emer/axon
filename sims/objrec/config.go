@@ -5,6 +5,8 @@
 package objrec
 
 import (
+	"cogentcore.org/core/core"
+	"cogentcore.org/core/text/textcore"
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/paths"
 )
@@ -53,6 +55,13 @@ type ParamConfig struct {
 
 	// pathway from V1 to V4 which is tiled 4x4 skip 2 with topo scale values.
 	V1V4Path *paths.PoolTile `nest:"+"`
+}
+
+func (pc *ParamConfig) FieldWidget(field string) core.Value {
+	if field == "Script" {
+		return textcore.NewEditor()
+	}
+	return nil
 }
 
 func (cfg *ParamConfig) Defaults() {

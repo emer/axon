@@ -41,6 +41,7 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".DSMatrixLayer", Doc: "all matrix",
 			Set: func(ly *axon.LayerParams) {
+				ly.Learn.TrgAvgAct.RescaleOn.SetBool(true)
 			}},
 		{Sel: ".DSPatchLayer", Doc: "all matrix",
 			Set: func(ly *axon.LayerParams) {
@@ -57,13 +58,13 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.Layer.Gi = 2.4       // 2.4 >= 2.2, 2.6
 				ly.Inhib.ActAvg.Nominal = 0.3 // 0.3 def -- key but wrong!
-				ly.Acts.Dend.ModGain = 1.5    // 1.5 def
+				ly.Acts.Dend.ModGain = 1.0    // 1.5 def
 			}},
 		{Sel: ".PTPredLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.Layer.Gi = 0.7 // 0.7 > 0.8 > 0.9 with SSGi=2
 				// ly.CT.GeGain = 0.05     // 0.05 >= 0.07 > 0.03
-				// ly.CT.DecayTau = 100    // 100 >= 120, 80
+				ly.CT.DecayTau = 100 // 100 >= 120, 80
 			}},
 		{Sel: ".CTLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
@@ -128,19 +129,12 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.04 // 0.04 std best
 			}},
-		// {Sel: ".DSMatrixPath", Doc: "",
-		// 	Set: func(pt *axon.PathParams) {
-		// 		pt.PathScale.Abs = 1.8      // 1.8 > others
-		// 		pt.Learn.LRate.Base = 0.02  // rlr sig: .02 > .015 .025
-		// 		pt.Learn.DWt.LearnThr = 0.1 // 0.1  > 0.2
-		// 		pt.DSMatrix.PatchDA = 0.5   // 0.5 > 0.8 >> 0.2
-		// 		pt.DSMatrix.Credit = 0.6    // key param, 0.6 > 0.5, 0.4, 0.7, 1 with pf modulation
-		// 		pt.DSMatrix.Delta = 1       // verified essential v0.2.40
-		// 		// Delta should always be 1 except for testing; adjust lrate to compensate
-		// 		pt.DSMatrix.OffTrace = 0.1      // 0.1 > 0.2, 0.5 > 0.05 > 0
-		// 		pt.DSMatrix.D2Scale = 1         // 1 >= .9, 1.1
-		// 		pt.SWts.Adapt.On.SetBool(false) // false > true here
-		// 	}},
+		{Sel: ".DSMatrixPath", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1.8      // 1.8 > others
+				pt.Learn.LRate.Base = 0.02  // rlr sig: .02 > .015 .025
+				pt.Learn.DWt.LearnThr = 0.1 // 0.1  > 0.2
+			}},
 		{Sel: ".SuperToPT", Doc: "one-to-one from super",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 0.5

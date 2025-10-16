@@ -65,10 +65,12 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".CerebPredLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.15  // 0.15 accurate
+				ly.Inhib.ActAvg.Nominal = 0.15 // 0.15 accurate
+				ly.Learn.TrgAvgAct.RescaleOn.SetBool(false)
+				ly.Inhib.Layer.On.SetBool(false)
 				ly.Inhib.Layer.FB = 0           // no lateral
 				ly.Inhib.Layer.Gi = 0.4         // ?
-				ly.CerebPred.DriveScale = 0.12  // 0.12 ~= .1
+				ly.CerebPred.DriveScale = 0.1   // 0.12 ~= .1
 				ly.CerebPred.FullDriveAct = 0.6 // 0.6 def
 				ly.Acts.Decay.Act = 0.0
 				ly.Acts.Decay.Glong = 0.0        // clear long
@@ -77,13 +79,17 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".CerebOutLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.15 // 0.15 accurate
-				ly.Acts.Init.GeBase = 0.4
-				ly.Inhib.Layer.FB = 0   // no lateral
-				ly.Inhib.Layer.Gi = 0.2 // ?
+				ly.Inhib.ActAvg.Nominal = 0.15 // ?
+				ly.Learn.TrgAvgAct.RescaleOn.SetBool(false)
+				ly.Acts.Init.GeBase = 0.3
+				ly.Inhib.Layer.On.SetBool(false)
+				ly.Inhib.Layer.FB = 0 // no lateral
+				ly.Inhib.Layer.Gi = 0 // ?
 				ly.Acts.Decay.Act = 0.0
 				ly.Acts.Decay.Glong = 0.0 // clear long
 				ly.Acts.Decay.AHP = 0.0   // clear long
+				ly.Acts.GabaB.Gk = 0
+				ly.Acts.NMDA.Ge = 0
 			}},
 	},
 }
@@ -133,9 +139,19 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 2
 			}},
-		{Sel: ".CerebPredToOut", Doc: "",
+		{Sel: ".CerebPredToOut", Doc: "fixed inhibition to output",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 1
+				pt.Learn.Learn.SetBool(false)
+				pt.SWts.Init.Mean = 0.8
+				pt.SWts.Init.Var = 0
+			}},
+		{Sel: ".CerebOutInput", Doc: "fixed excitation to output",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1
+				pt.Learn.Learn.SetBool(false)
+				pt.SWts.Init.Mean = 0.8
+				pt.SWts.Init.Var = 0
 			}},
 
 		/* not used

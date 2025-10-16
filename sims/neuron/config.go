@@ -4,7 +4,11 @@
 
 package neuron
 
-import "github.com/emer/emergent/v2/egui"
+import (
+	"cogentcore.org/core/core"
+	"cogentcore.org/core/text/textcore"
+	"github.com/emer/emergent/v2/egui"
+)
 
 // ParamConfig has config parameters related to sim params.
 type ParamConfig struct {
@@ -35,6 +39,13 @@ type ParamConfig struct {
 	// This can be done prior to making a new release after all tests are passing.
 	// Add results to git to provide a full diff record of all params over level.
 	Good bool `nest:"+"`
+}
+
+func (pc *ParamConfig) FieldWidget(field string) core.Value {
+	if field == "Script" {
+		return textcore.NewEditor()
+	}
+	return nil
 }
 
 // RunConfig has config parameters related to running the sim.

@@ -189,6 +189,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	rotAct.AddClass("LinearIn")
 	rotAct.Doc = "Full body lateral rotation action, population coded left to right with gaussian tuning curves for a range of degrees for each unit (X axis) and redundant units for population code in the Y axis."
 
+	rotActPrev := net.AddLayer2D("ActRotatePrev", axon.InputLayer, ev.UnitsPer, ev.LinearUnits)
+	rotActPrev.AddClass("LinearIn")
+	rotActPrev.Doc = "Previous trial's version of ActRotate. This should be implicitly maintained but currently is not."
+
 	vvelIn, vvelInp := net.AddInputPulv2D("VNCAngVel", ev.UnitsPer, ev.LinearUnits, space)
 	vvelIn.AddClass("LinearIn")
 	vvelInp.AddClass("LinearIn")
@@ -234,11 +238,12 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// output = copy of input that has subtraction
 	cout, cpred := net.AddCerebellumNucleus(vvelIn, space)
 
-	net.ConnectLayers(rotAct, cpred, full, axon.ForwardPath).AddClass("ToCPred")
-	net.ConnectLayers(s1, cpred, full, axon.ForwardPath).AddClass("ToCPred")
+	net.ConnectLayers(rotActPrev, cpred, full, axon.ForwardPath).AddClass("ToCPred")
+	net.ConnectLayers(s1ct, cpred, full, axon.ForwardPath).AddClass("ToCPred")
 
 	// position
 
+	rotActPrev.PlaceBehind(rotAct, space)
 	vvelIn.PlaceRightOf(rotAct, space)
 	eyeRIn.PlaceRightOf(vvelIn, space)
 	if ev.LeftEye {

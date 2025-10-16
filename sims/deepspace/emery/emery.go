@@ -183,6 +183,7 @@ func (ev *EmeryEnv) Config() {
 	ev.NextStates["VNCAngVel"] = tensor.NewFloat32(ev.UnitsPer, ev.LinearUnits) // vestib
 	ev.NextStates["EyeR"] = tensor.NewFloat32(ev.UnitsPer, ev.LinearUnits)      // eye motion bump
 	ev.NextStates["EyeL"] = tensor.NewFloat32(ev.UnitsPer, ev.LinearUnits)      // eye motion bump
+	ev.CopyStateToState(true, "ActRotate", "ActRotatePrev")
 
 	filters := []string{"DoG", "Slow", "Fast", "Star", "Insta", "Full", "Norm"}
 
@@ -381,6 +382,22 @@ func (ev *EmeryEnv) CopyNextToCur(state string) {
 	}
 }
 
+// CopyStateToState copy one state to another. If next,
+// do it in NextStates, else CurStates.
+func (ev *EmeryEnv) CopyStateToState(next bool, from, to string) {
+	st := ev.CurStates
+	if next {
+		st = ev.NextStates
+	}
+	fs := st[from]
+	ts, ok := st[to]
+	if !ok {
+		st[to] = fs.Clone().(*tensor.Float32)
+	} else {
+		ts.CopyFrom(fs)
+	}
+}
+
 func (ev *EmeryEnv) Init(run int) {
 	ev.World.Init()
 }
@@ -470,6 +487,7 @@ func (ev *EmeryEnv) Action(action string, valIn tensor.Values) {
 
 	ev.RenderLinear("VNCAngVel", val/ev.MaxRotate)
 	ev.RenderLinear("ActRotate", val/ev.MaxRotate)
+	ev.CopyStateToState(false, "ActRotate", "ActRotatePrev")
 	ev.CopyNextToCur("ActRotate") // action needs to be current
 }
 

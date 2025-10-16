@@ -5,6 +5,9 @@
 package deepspace
 
 import (
+	"cogentcore.org/core/core"
+	"cogentcore.org/core/styles"
+	"cogentcore.org/core/text/textcore"
 	"github.com/emer/emergent/v2/egui"
 )
 
@@ -26,7 +29,7 @@ type ParamConfig struct { //types:add
 
 	// Script is an interpreted script that is run to set parameters in Layer and Path
 	// sheets, by default using the "Script" set name.
-	Script string `new-window:"+" width:"100"`
+	Script string `new-window:"+" width:"200"`
 
 	// Sheet is the extra params sheet name(s) to use (space separated
 	// if multiple). Must be valid name as listed in compiled-in params
@@ -50,6 +53,16 @@ type ParamConfig struct { //types:add
 	// This can be done prior to making a new release after all tests are passing.
 	// Add results to git to provide a full diff record of all params over level.
 	Good bool `nest:"+"`
+}
+
+func (pc *ParamConfig) FieldWidget(field string) core.Value {
+	if field == "Script" {
+		tx := textcore.NewEditor()
+		tx.Styler(func(s *styles.Style) {
+			s.Min.X.Ch(60)
+		})
+	}
+	return nil
 }
 
 // RunConfig has config parameters related to running the sim.
