@@ -7,7 +7,6 @@ package mpi
 import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/math32/vecint"
-	"cogentcore.org/core/text/textcore"
 	"github.com/emer/emergent/v2/egui"
 )
 
@@ -49,10 +48,7 @@ type ParamConfig struct {
 }
 
 func (pc *ParamConfig) FieldWidget(field string) core.Value {
-	if field == "Script" {
-		return textcore.NewEditor()
-	}
-	return nil
+	return egui.ScriptFieldWidget(field)
 }
 
 // RunConfig has config parameters related to running the sim.

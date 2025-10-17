@@ -6,8 +6,6 @@ package deepspace
 
 import (
 	"cogentcore.org/core/core"
-	"cogentcore.org/core/styles"
-	"cogentcore.org/core/text/textcore"
 	"github.com/emer/emergent/v2/egui"
 )
 
@@ -56,14 +54,7 @@ type ParamConfig struct { //types:add
 }
 
 func (pc *ParamConfig) FieldWidget(field string) core.Value {
-	if field == "Script" {
-		tx := textcore.NewEditor()
-		tx.Styler(func(s *styles.Style) {
-			s.Min.X.Em(60)
-		})
-		return tx
-	}
-	return nil
+	return egui.ScriptFieldWidget(field)
 }
 
 // RunConfig has config parameters related to running the sim.

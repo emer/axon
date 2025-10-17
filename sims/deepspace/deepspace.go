@@ -8,6 +8,9 @@ package deepspace
 
 //go:generate core generate -add-types -add-funcs -gosl
 
+// TODO: increase decay tau on reg gaba instead of using gaba b.
+// timing of prediction vs. excitation is wrong: sensory should be delayed!!
+
 import (
 	"fmt"
 	"os"
