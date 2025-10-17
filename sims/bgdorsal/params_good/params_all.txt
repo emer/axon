@@ -1309,7 +1309,7 @@
     RLRate    { On: true, SigmoidLinear: false, SigmoidMin: 1, Diff: true, SpikeThr: 0.1, DiffThr: 0.02, Min: 0.001 }
     NeuroMod  { DAMod: NoDAMod, Valence: Positive, DAModGain: 0, DALRateSign: false, DALRateMod: 0, AChLRateMod: 0, AChDisInhib: 0, BurstGain: 1, DipGain: 1 }
   }
-  Pulv     { DriveScale: 0.1, FullDriveAct: 0.6, DriveLayIndex: 13 }
+  Pulvinar { DriveScale: 0.1, FullDriveAct: 0.6, DriveLayIndex: 13 }
   ////////  Path: M1CTToVL
     Type      ForwardPath
     Index     46
@@ -1393,7 +1393,7 @@
     Noise     { On: true, GeHz: 100, Ge: 0.0001, GiHz: 200, Gi: 0.0001, MaintGe: false }
     VmRange   { Min: -100, Max: 0 }
     Mahp      { Gk: 0.05, Off: -30, Slope: 9, TauMax: 1000 }
-    Sahp      { Gk: 0.05, CaTau: 10, Off: 0.8, Slope: 0.02, TauMax: 1 }
+    Sahp      { Gk: 0.05, CaTau: 5, Off: 0.8, Slope: 0.02, TauMax: 1 }
     KNa       { On: true, TrialSlow: false, Med: { On: true, Gk: 0.2, Rise: 50, Decay: 200 }, Slow: { On: true, Gk: 0.2, Rise: 1000, Decay: 1000 } }
     Kir       { Gk: 0, MinfOff: -102, MinfTau: 13, RiseOff: -60, RiseTau: 14, DecayOff: -31, DecayTau: 23, Mrest: 0.078599066 }
     NMDA      { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
@@ -1486,7 +1486,7 @@
     Noise     { On: true, GeHz: 100, Ge: 0.0001, GiHz: 200, Gi: 0.0001, MaintGe: false }
     VmRange   { Min: -100, Max: 0 }
     Mahp      { Gk: 0.05, Off: -30, Slope: 9, TauMax: 1000 }
-    Sahp      { Gk: 0.05, CaTau: 10, Off: 0.8, Slope: 0.02, TauMax: 1 }
+    Sahp      { Gk: 0.05, CaTau: 5, Off: 0.8, Slope: 0.02, TauMax: 1 }
     KNa       { On: true, TrialSlow: false, Med: { On: true, Gk: 0.2, Rise: 50, Decay: 200 }, Slow: { On: true, Gk: 0.2, Rise: 1000, Decay: 1000 } }
     Kir       { Gk: 0, MinfOff: -102, MinfTau: 13, RiseOff: -60, RiseTau: 14, DecayOff: -31, DecayTau: 23, Mrest: 0.078599066 }
     NMDA      { Ge: 0.008, Tau: 200, ITau: 1, MgC: 1.4, Voff: 0 }
@@ -1569,7 +1569,7 @@
   Index    17
   Acts     {
     Spikes    { Thr: -50, VmR: -70, Tr: 3, RTau: 1.6667, Exp: true, ExpSlope: 2, ExpThr: -10, MaxHz: 180, ISITau: 5 }
-    Dend      { GExp: 0.2, GR: 3, SSGi: 2, HasMod: true, ModGain: 1, ModACh: false, ModBase: 0 }
+    Dend      { GExp: 0.2, GR: 3, SSGi: 2, HasMod: true, ModGain: 1.5, ModACh: false, ModBase: 0 }
     Init      { Vm: -70, Act: 0, GeBase: 0, GiBase: 0, GeVar: 0, GiVar: 0 }
     Decay     { Act: 0, Glong: 0, AHP: 0, LearnCa: 0, OnRew: true }
     Dt        { Integ: 1, VmC: 281, VmDendC: 500, VmSteps: 2, GeTau: 5, GiTau: 7, IntTau: 40, LongAvgTau: 20, MaxCycStart: 10 }
@@ -1579,7 +1579,7 @@
     Noise     { On: true, GeHz: 100, Ge: 0.0001, GiHz: 200, Gi: 0.0001, MaintGe: false }
     VmRange   { Min: -100, Max: 0 }
     Mahp      { Gk: 0.05, Off: -30, Slope: 9, TauMax: 1000 }
-    Sahp      { Gk: 0.05, CaTau: 10, Off: 0.8, Slope: 0.02, TauMax: 1 }
+    Sahp      { Gk: 0.05, CaTau: 5, Off: 0.8, Slope: 0.02, TauMax: 1 }
     KNa       { On: true, TrialSlow: false, Med: { On: true, Gk: 0.2, Rise: 50, Decay: 200 }, Slow: { On: true, Gk: 0.2, Rise: 1000, Decay: 1000 } }
     Kir       { Gk: 0, MinfOff: -102, MinfTau: 13, RiseOff: -60, RiseTau: 14, DecayOff: -31, DecayTau: 23, Mrest: 0.078599066 }
     NMDA      { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
@@ -1763,7 +1763,7 @@
     Noise     { On: true, GeHz: 100, Ge: 0.0001, GiHz: 200, Gi: 0.0001, MaintGe: false }
     VmRange   { Min: -100, Max: 0 }
     Mahp      { Gk: 0.05, Off: -30, Slope: 9, TauMax: 1000 }
-    Sahp      { Gk: 0.05, CaTau: 10, Off: 0.8, Slope: 0.02, TauMax: 1 }
+    Sahp      { Gk: 0.05, CaTau: 5, Off: 0.8, Slope: 0.02, TauMax: 1 }
     KNa       { On: true, TrialSlow: false, Med: { On: true, Gk: 0.2, Rise: 50, Decay: 200 }, Slow: { On: true, Gk: 0.2, Rise: 1000, Decay: 1000 } }
     Kir       { Gk: 0, MinfOff: -102, MinfTau: 13, RiseOff: -60, RiseTau: 14, DecayOff: -31, DecayTau: 23, Mrest: 0.078599066 }
     NMDA      { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }

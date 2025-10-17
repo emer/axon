@@ -41,7 +41,7 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".DSMatrixLayer", Doc: "all matrix",
 			Set: func(ly *axon.LayerParams) {
-				ly.Learn.TrgAvgAct.RescaleOn.SetBool(true)
+				ly.Learn.TrgAvgAct.RescaleOn.SetBool(true) // true >> false
 			}},
 		{Sel: ".DSPatchLayer", Doc: "all matrix",
 			Set: func(ly *axon.LayerParams) {
@@ -58,7 +58,7 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.Layer.Gi = 2.4       // 2.4 >= 2.2, 2.6
 				ly.Inhib.ActAvg.Nominal = 0.3 // 0.3 def -- key but wrong!
-				ly.Acts.Dend.ModGain = 1.0    // 1.5 def
+				ly.Acts.Dend.ModGain = 1.5    // 1.5 def > 1.0
 			}},
 		{Sel: ".PTPredLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
