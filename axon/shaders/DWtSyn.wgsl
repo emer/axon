@@ -382,6 +382,16 @@ struct CerebPredParams {
 	DriveLayIndex: i32,
 	pad: f32,
 }
+struct CerebOutParams {
+	ActTarg: f32,
+	LearnThr: f32,
+	GeBaseLRate: f32,
+	PredLayIndex: i32,
+	SenseLayIndex: i32,
+	pad: f32,
+	pad1: f32,
+	pad2: f32,
+}
 
 //////// import: "chans-ak.go"
 struct AKsParams {
@@ -576,7 +586,7 @@ const NeuronFlagsN: NeuronFlags = 9;
 const NeuronVarsN: NeuronVars = 85;
 const NeuronAvgVarsN: NeuronAvgVars = 7;
 const NeuronIndexVarsN: NeuronIndexVars = 3;
-const PathTypesN: PathTypes = 13;
+const PathTypesN: PathTypes = 14;
 const GPLayerTypesN: GPLayerTypes = 3;
 const PoolIndexVarsN: PoolIndexVars = 4;
 const PoolIntVarsN: PoolIntVars = 6;
@@ -792,6 +802,7 @@ struct LayerParams {
 	Striatum: StriatumParams,
 	GP: GPParams,
 	CerebPred: CerebPredParams,
+	CerebOut: CerebOutParams,
 	LDT: LDTParams,
 	VTA: VTAParams,
 	RWPred: RWPredParams,
@@ -882,12 +893,6 @@ fn PathParams_DWtSyn(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32,
 	var pi = LayerParams_PoolIndex(rlay, spi);
 	var lpi = LayerParams_PoolIndex(rlay, u32(u32(0)));
 	switch (pt.Type) {
-	case RWPath: {
-		PathParams_DWtSynRWPred(pt, ctx, syni, si, ri, lpi, pi, di);
-	}
-	case TDPredPath: {
-		PathParams_DWtSynTDPred(pt, ctx, syni, si, ri, lpi, pi, di);
-	}
 	case VSMatrixPath: {
 		PathParams_DWtSynVSMatrix(pt, ctx, syni, si, ri, lpi, pi, di);
 	}
@@ -899,6 +904,15 @@ fn PathParams_DWtSyn(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32,
 	}
 	case DSPatchPath: {
 		PathParams_DWtSynDSPatch(pt, ctx, syni, si, ri, lpi, pi, di);
+	}
+	case CerebPredToOutPath: {
+		PathParams_DWtSynCerebOut(pt, ctx, rlay, syni, si, ri, lpi, pi, di);
+	}
+	case RWPath: {
+		PathParams_DWtSynRWPred(pt, ctx, syni, si, ri, lpi, pi, di);
+	}
+	case TDPredPath: {
+		PathParams_DWtSynTDPred(pt, ctx, syni, si, ri, lpi, pi, di);
 	}
 	case BLAPath: {
 		PathParams_DWtSynBLA(pt, ctx, syni, si, ri, lpi, pi, di);
@@ -957,7 +971,7 @@ fn PathParams_DWtSynCortex(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u
 	u32(syni), u32(Wt))] == 0) {
 		return;
 	}
-	var err: f32;
+	var err = f32(0);
 	if (isTarget) {
 		err = syCaP - syCaD; // for target layers, syn Ca drives error signal directly
 	} else {
@@ -1003,7 +1017,7 @@ fn PathParams_DWtSynHip(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u32,
 	}
 	var rLearnCaP = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnCaP))];
 	var rLearnCaD = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnCaD))];
-	var err: f32;
+	var err = f32(0);
 	if (isTarget) {
 		err = syCaP - syCaD; // for target layers, syn Ca drives error signal directly
 	} else {
@@ -1214,9 +1228,20 @@ fn PathParams_DWtSynDSPatch(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: 
 		var dtr = pfmod * rlr * sact * ract; // rlr is just sig deriv
 		SynapseTracesSet(dtr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
 		SynapseTracesSetAdd(dtr, Index3D(TensorStrides[180], TensorStrides[181],
-		TensorStrides[182],
-		u32(syni), u32(di), u32(Tr)));
+		TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 	}
+}
+fn PathParams_DWtSynCerebOut(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
+	var sact = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // sending activity
+	u32(si), u32(di), u32(CaD))];
+	var ract = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // receiving activity
+	u32(ri), u32(di), u32(CaD))];
+	var predSenseAct = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // CerebPred * Sense input activity, in PlusPhaseNeuron
+	TensorStrides[72], u32(ri), u32(di), u32(RLRate))];
+	var dwt = -predSenseAct * sact * (rlay.CerebOut.ActTarg - ract); // minus sign due to inhibitory
+	SynapseTracesSet(pt.Learn.LRate.Eff * dwt, Index3D(TensorStrides[180], TensorStrides[181],
+	TensorStrides[182],
+	u32(syni), u32(di), u32(DiDWt)));
 }
 
 //////// import: "learn.go"
@@ -1555,14 +1580,15 @@ const  BackPath: PathTypes = 1;
 const  LateralPath: PathTypes = 2;
 const  InhibPath: PathTypes = 3;
 const  CTCtxtPath: PathTypes = 4;
-const  RWPath: PathTypes = 5;
-const  TDPredPath: PathTypes = 6;
-const  BLAPath: PathTypes = 7;
-const  HipPath: PathTypes = 8;
-const  DSPatchPath: PathTypes = 9;
-const  VSPatchPath: PathTypes = 10;
-const  VSMatrixPath: PathTypes = 11;
-const  DSMatrixPath: PathTypes = 12;
+const  DSPatchPath: PathTypes = 5;
+const  VSPatchPath: PathTypes = 6;
+const  VSMatrixPath: PathTypes = 7;
+const  DSMatrixPath: PathTypes = 8;
+const  CerebPredToOutPath: PathTypes = 9;
+const  RWPath: PathTypes = 10;
+const  TDPredPath: PathTypes = 11;
+const  BLAPath: PathTypes = 12;
+const  HipPath: PathTypes = 13;
 
 //////// import: "pcore-layer.go"
 struct DSMatrixParams {

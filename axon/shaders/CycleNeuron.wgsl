@@ -79,24 +79,6 @@ fn LayerParams_CycleNeuron(ly: LayerParams, ctx: Context, ni: u32,di: u32) {
 	LayerParams_GInteg(ly, ctx, pi, ni, di);
 	LayerParams_SpikeFromG(ly, ctx, lpi, ni, di);
 }
-fn LayerParams_PulvinarDriver(ly: LayerParams, ctx: Context, lni: u32,di: u32, drvGe: ptr<function,f32>,nonDrivePct: ptr<function,f32>) {
-	var dli = u32(ly.Pulvinar.DriveLayIndex);
-	let dly = Layers[dli];
-	var dpi = LayerParams_PoolIndex(dly, u32(u32(0)));
-	var drvMax = PoolAvgMax(AMCaP, AMCycle, Max, dpi, di);
-	*nonDrivePct = PulvinarParams_NonDrivePct(ly.Pulvinar, drvMax); // how much non-driver to keep
-	var burst = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(dly.Indexes.NeurSt + lni), u32(di), u32(Burst))];
-	*drvGe = PulvinarParams_DriveGe(ly.Pulvinar, burst);
-}
-fn LayerParams_CerebPredDriver(ly: LayerParams, ctx: Context, lni: u32,di: u32, drvGe: ptr<function,f32>,nonDrivePct: ptr<function,f32>) {
-	var dli = u32(ly.CerebPred.DriveLayIndex);
-	let dly = Layers[dli];
-	var dpi = LayerParams_PoolIndex(dly, u32(u32(0)));
-	var drvMax = PoolAvgMax(AMCaP, AMCycle, Max, dpi, di);
-	*nonDrivePct = CerebPredParams_NonDrivePct(ly.CerebPred, drvMax); // how much non-driver to keep
-	var dact = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(dly.Indexes.NeurSt + lni), u32(di), u32(CaP))];
-	*drvGe = CerebPredParams_DriveGe(ly.CerebPred, dact);
-}
 fn LayerParams_GInteg(ly: LayerParams, ctx: Context, pi: u32,ni: u32,di: u32) {
 	var drvGe = f32(0);
 	var nonDrivePct = f32(0);
@@ -918,6 +900,25 @@ fn CerebPredParams_DriveGe(tp: CerebPredParams, act: f32) -> f32 {
 fn CerebPredParams_NonDrivePct(tp: CerebPredParams, drvMax: f32) -> f32 {
 	return 1.0 - min(1.0, drvMax/tp.FullDriveAct);
 }
+fn LayerParams_CerebPredDriver(ly: LayerParams, ctx: Context, lni: u32,di: u32, drvGe: ptr<function,f32>,nonDrivePct: ptr<function,f32>) {
+	var dli = u32(ly.CerebPred.DriveLayIndex);
+	let dly = Layers[dli];
+	var dpi = LayerParams_PoolIndex(dly, u32(u32(0)));
+	var drvMax = PoolAvgMax(AMCaP, AMCycle, Max, dpi, di);
+	*nonDrivePct = CerebPredParams_NonDrivePct(ly.CerebPred, drvMax); // how much non-driver to keep
+	var dact = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(dly.Indexes.NeurSt + lni), u32(di), u32(CaP))];
+	*drvGe = CerebPredParams_DriveGe(ly.CerebPred, dact);
+}
+struct CerebOutParams {
+	ActTarg: f32,
+	LearnThr: f32,
+	GeBaseLRate: f32,
+	PredLayIndex: i32,
+	SenseLayIndex: i32,
+	pad: f32,
+	pad1: f32,
+	pad2: f32,
+}
 
 //////// import: "chans-ak.go"
 struct AKsParams {
@@ -1262,6 +1263,15 @@ fn PulvinarParams_DriveGe(tp: PulvinarParams, act: f32) -> f32 {
 fn PulvinarParams_NonDrivePct(tp: PulvinarParams, drvMax: f32) -> f32 {
 	return 1.0 - min(1.0, drvMax/tp.FullDriveAct);
 }
+fn LayerParams_PulvinarDriver(ly: LayerParams, ctx: Context, lni: u32,di: u32, drvGe: ptr<function,f32>,nonDrivePct: ptr<function,f32>) {
+	var dli = u32(ly.Pulvinar.DriveLayIndex);
+	let dly = Layers[dli];
+	var dpi = LayerParams_PoolIndex(dly, u32(u32(0)));
+	var drvMax = PoolAvgMax(AMCaP, AMCycle, Max, dpi, di);
+	*nonDrivePct = PulvinarParams_NonDrivePct(ly.Pulvinar, drvMax); // how much non-driver to keep
+	var burst = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(dly.Indexes.NeurSt + lni), u32(di), u32(Burst))];
+	*drvGe = PulvinarParams_DriveGe(ly.Pulvinar, burst);
+}
 
 //////// import: "enumgen.go"
 const PathGTypesN: PathGTypes = 5;
@@ -1277,7 +1287,7 @@ const NeuronFlagsN: NeuronFlags = 9;
 const NeuronVarsN: NeuronVars = 85;
 const NeuronAvgVarsN: NeuronAvgVars = 7;
 const NeuronIndexVarsN: NeuronIndexVars = 3;
-const PathTypesN: PathTypes = 13;
+const PathTypesN: PathTypes = 14;
 const GPLayerTypesN: GPLayerTypes = 3;
 const PoolIndexVarsN: PoolIndexVars = 4;
 const PoolIntVarsN: PoolIntVars = 6;
@@ -1505,6 +1515,7 @@ struct LayerParams {
 	Striatum: StriatumParams,
 	GP: GPParams,
 	CerebPred: CerebPredParams,
+	CerebOut: CerebOutParams,
 	LDT: LDTParams,
 	VTA: VTAParams,
 	RWPred: RWPredParams,
@@ -2001,14 +2012,15 @@ const  BackPath: PathTypes = 1;
 const  LateralPath: PathTypes = 2;
 const  InhibPath: PathTypes = 3;
 const  CTCtxtPath: PathTypes = 4;
-const  RWPath: PathTypes = 5;
-const  TDPredPath: PathTypes = 6;
-const  BLAPath: PathTypes = 7;
-const  HipPath: PathTypes = 8;
-const  DSPatchPath: PathTypes = 9;
-const  VSPatchPath: PathTypes = 10;
-const  VSMatrixPath: PathTypes = 11;
-const  DSMatrixPath: PathTypes = 12;
+const  DSPatchPath: PathTypes = 5;
+const  VSPatchPath: PathTypes = 6;
+const  VSMatrixPath: PathTypes = 7;
+const  DSMatrixPath: PathTypes = 8;
+const  CerebPredToOutPath: PathTypes = 9;
+const  RWPath: PathTypes = 10;
+const  TDPredPath: PathTypes = 11;
+const  BLAPath: PathTypes = 12;
+const  HipPath: PathTypes = 13;
 
 //////// import: "pcore-layer.go"
 struct DSMatrixParams {

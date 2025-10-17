@@ -36,34 +36,6 @@ const (
 	// Can also add self context from CT for deeper temporal context.
 	CTCtxtPath
 
-	// RWPath does dopamine-modulated learning for reward prediction:
-	// Da * Send.CaP (integrated current spiking activity).
-	// Uses RLPredPath parameters.
-	// Use in RWPredLayer typically to generate reward predictions.
-	// If the Da sign is positive, the first recv unit learns fully;
-	// for negative, second one learns fully.  Lower lrate applies for
-	// opposite cases.  Weights are positive-only.
-	RWPath
-
-	// TDPredPath does dopamine-modulated learning for reward prediction:
-	// DWt = Da * Send.CaDPrev (activity on *previous* timestep)
-	// Uses RLPredPath parameters.
-	// Use in TDPredLayer typically to generate reward predictions.
-	// If the Da sign is positive, the first recv unit learns fully;
-	// for negative, second one learns fully.  Lower lrate applies for
-	// opposite cases.  Weights are positive-only.
-	TDPredPath
-
-	// BLAPath implements the Rubicon BLA learning rule:
-	// dW = ACh * X_t-1 * (Y_t - Y_t-1)
-	// The recv delta is across trials, where the US should activate on trial
-	// boundary, to enable sufficient time for gating through to OFC, so
-	// BLA initially learns based on US present - US absent.
-	// It can also learn based on CS onset if there is a prior CS that predicts that.
-	BLAPath
-
-	HipPath
-
 	// DSPatchPath implements the DSPatch learning rule:
 	// dW = ACh * DA * X * Y
 	// where DA is D1 vs. D2 modulated DA level, X = sending activity factor,
@@ -93,6 +65,41 @@ const (
 	// and subsequent outcomes, and is based biologically on synaptic tags.
 	// Trace is reset at time of reward based on ACh level (from CINs in biology).
 	DSMatrixPath
+
+	// CerebPredToOutPath is the prediction to output pathway in the cerebellar
+	// nucleus system, which is inhibitory and learns drive the output neurons at
+	// their target baseline activity level, when both excitatory and inhibitory
+	// input is present there.
+	CerebPredToOutPath
+
+	// RWPath does dopamine-modulated learning for reward prediction:
+	// Da * Send.CaP (integrated current spiking activity).
+	// Uses RLPredPath parameters.
+	// Use in RWPredLayer typically to generate reward predictions.
+	// If the Da sign is positive, the first recv unit learns fully;
+	// for negative, second one learns fully.  Lower lrate applies for
+	// opposite cases.  Weights are positive-only.
+	RWPath
+
+	// TDPredPath does dopamine-modulated learning for reward prediction:
+	// DWt = Da * Send.CaDPrev (activity on *previous* timestep)
+	// Uses RLPredPath parameters.
+	// Use in TDPredLayer typically to generate reward predictions.
+	// If the Da sign is positive, the first recv unit learns fully;
+	// for negative, second one learns fully.  Lower lrate applies for
+	// opposite cases.  Weights are positive-only.
+	TDPredPath
+
+	// BLAPath implements the Rubicon BLA learning rule:
+	// dW = ACh * X_t-1 * (Y_t - Y_t-1)
+	// The recv delta is across trials, where the US should activate on trial
+	// boundary, to enable sufficient time for gating through to OFC, so
+	// BLA initially learns based on US present - US absent.
+	// It can also learn based on CS onset if there is a prior CS that predicts that.
+	BLAPath
+
+	// HipPath is a special pathway for the hippocampus. TODO: fixme.
+	HipPath
 )
 
 //gosl:end

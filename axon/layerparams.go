@@ -129,6 +129,11 @@ type LayerParams struct {
 	// and inhibit it in the corresponding CerebOutLayer
 	CerebPred CerebPredParams `display:"inline"`
 
+	// CerebOut has parameters for learning in the cerebellar nucleus
+	// output neurons, which are tonically active and learn to maintain a target
+	// activity level in the presence and absence of inputs.
+	CerebOut CerebOutParams `display:"inline"`
+
 	// LDT has parameters for laterodorsal tegmentum ACh salience neuromodulatory
 	// signal, driven by superior colliculus stimulus novelty, US input / absence,
 	// and OFC / ACC inhibition.
@@ -203,6 +208,7 @@ func (ly *LayerParams) Update() {
 	ly.GP.Update()
 
 	ly.CerebPred.Update()
+	ly.CerebOut.Update()
 
 	ly.LDT.Update()
 	ly.VTA.Update()
@@ -230,6 +236,7 @@ func (ly *LayerParams) Defaults() {
 	ly.GP.Defaults()
 
 	ly.CerebPred.Defaults()
+	ly.CerebOut.Defaults()
 
 	ly.LDT.Defaults()
 	ly.VTA.Defaults()
@@ -256,6 +263,8 @@ func (ly *LayerParams) ShouldDisplay(field string) bool {
 		return ly.Type == GPLayer
 	case "CerebPred":
 		return ly.Type == CerebPredLayer
+	case "CerebOut":
+		return ly.Type == CerebOutLayer
 	case "LDT":
 		return ly.Type == LDTLayer
 	case "VTA":

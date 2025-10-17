@@ -258,6 +258,16 @@ struct CerebPredParams {
 	DriveLayIndex: i32,
 	pad: f32,
 }
+struct CerebOutParams {
+	ActTarg: f32,
+	LearnThr: f32,
+	GeBaseLRate: f32,
+	PredLayIndex: i32,
+	SenseLayIndex: i32,
+	pad: f32,
+	pad1: f32,
+	pad2: f32,
+}
 
 //////// import: "chans-ak.go"
 struct AKsParams {
@@ -452,7 +462,7 @@ const NeuronFlagsN: NeuronFlags = 9;
 const NeuronVarsN: NeuronVars = 85;
 const NeuronAvgVarsN: NeuronAvgVars = 7;
 const NeuronIndexVarsN: NeuronIndexVars = 3;
-const PathTypesN: PathTypes = 13;
+const PathTypesN: PathTypes = 14;
 const GPLayerTypesN: GPLayerTypes = 3;
 const PoolIndexVarsN: PoolIndexVars = 4;
 const PoolIntVarsN: PoolIntVars = 6;
@@ -668,6 +678,7 @@ struct LayerParams {
 	Striatum: StriatumParams,
 	GP: GPParams,
 	CerebPred: CerebPredParams,
+	CerebOut: CerebOutParams,
 	LDT: LDTParams,
 	VTA: VTAParams,
 	RWPred: RWPredParams,
@@ -1073,14 +1084,15 @@ const  BackPath: PathTypes = 1;
 const  LateralPath: PathTypes = 2;
 const  InhibPath: PathTypes = 3;
 const  CTCtxtPath: PathTypes = 4;
-const  RWPath: PathTypes = 5;
-const  TDPredPath: PathTypes = 6;
-const  BLAPath: PathTypes = 7;
-const  HipPath: PathTypes = 8;
-const  DSPatchPath: PathTypes = 9;
-const  VSPatchPath: PathTypes = 10;
-const  VSMatrixPath: PathTypes = 11;
-const  DSMatrixPath: PathTypes = 12;
+const  DSPatchPath: PathTypes = 5;
+const  VSPatchPath: PathTypes = 6;
+const  VSMatrixPath: PathTypes = 7;
+const  DSMatrixPath: PathTypes = 8;
+const  CerebPredToOutPath: PathTypes = 9;
+const  RWPath: PathTypes = 10;
+const  TDPredPath: PathTypes = 11;
+const  BLAPath: PathTypes = 12;
+const  HipPath: PathTypes = 13;
 
 //////// import: "pcore-layer.go"
 struct DSMatrixParams {

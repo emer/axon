@@ -5,7 +5,7 @@
 package axon
 
 import (
-//	"fmt"
+	// "fmt"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/tensor"
 	"github.com/emer/axon/v2/fsfffb"
@@ -242,26 +242,6 @@ func (ly *LayerParams) CycleNeuron(ctx *Context, ni, di uint32) {
 	lpi := ly.PoolIndex(0)
 	ly.GInteg(ctx, pi, ni, di)
 	ly.SpikeFromG(ctx, lpi, ni, di)
-}
-
-func (ly *LayerParams) PulvinarDriver(ctx *Context, lni, di uint32, drvGe, nonDrivePct *float32) {
-	dli := uint32(ly.Pulvinar.DriveLayIndex)
-	dly := GetLayers(dli)
-	dpi := dly.PoolIndex(0)
-	drvMax := PoolAvgMax(AMCaP, AMCycle, Max, dpi, di)
-	*nonDrivePct = ly.Pulvinar.NonDrivePct(drvMax) // how much non-driver to keep
-	burst := Neurons[dly.Indexes.NeurSt+lni, di, Burst]
-	*drvGe = ly.Pulvinar.DriveGe(burst)
-}
-
-func (ly *LayerParams) CerebPredDriver(ctx *Context, lni, di uint32, drvGe, nonDrivePct *float32) {
-	dli := uint32(ly.CerebPred.DriveLayIndex)
-	dly := GetLayers(dli)
-	dpi := dly.PoolIndex(0)
-	drvMax := PoolAvgMax(AMCaP, AMCycle, Max, dpi, di)
-	*nonDrivePct = ly.CerebPred.NonDrivePct(drvMax) // how much non-driver to keep
-	dact := Neurons[dly.Indexes.NeurSt+lni, di, CaP]
-	*drvGe = ly.CerebPred.DriveGe(dact)
 }
 
 // GInteg integrates conductances G over time (Ge, NMDA, etc).
@@ -1065,11 +1045,6 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32) {
 	hasRew := (GlobalScalars[GvHasRew, di]) > 0
 
 	switch ly.Type {
-	case BLALayer:
-		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaP, Neurons[ni, di, CaDPrev]) // delta on previous trial
-		if !ly.Learn.NeuroMod.IsBLAExt() && PoolIxs[pi, PoolNeurSt] == 0 { // first pool
-			dlr = 0 // first pool is novelty / curiosity -- no learn
-		}
 	case DSPatchLayer:
 		if hasRew { // reward time
 			mlr = 1 // don't use sig deriv
@@ -1086,6 +1061,26 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32) {
 			mlr = 1 // don't use sig deriv
 		} else {
 			modlr = 1 // don't use mod
+		}
+	case CerebOutLayer:
+		// use lratediff to signal learning status
+		lni := ni - ly.Indexes.NeurSt // layer-based 
+		mlr = ly.CerebOutPredAct(ctx, lni, di)
+		dlr = ly.CerebOutSenseAct(ctx, lni, di)
+		if mlr < ly.CerebOut.LearnThr {
+			mlr = 0
+		}
+		if dlr < ly.CerebOut.LearnThr {
+			dlr = 0
+		}
+		modlr = 1
+		if mlr * dlr == 0 { // adapt GeBase only if both pathways inactive
+			NeuronAvgs[ni, GeBase] += ly.CerebOut.GeBaseLRate * (ly.CerebOut.ActTarg - nrnCaD)
+		}
+	case BLALayer:
+		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaP, Neurons[ni, di, CaDPrev]) // delta on previous trial
+		if !ly.Learn.NeuroMod.IsBLAExt() && PoolIxs[pi, PoolNeurSt] == 0 { // first pool
+			dlr = 0 // first pool is novelty / curiosity -- no learn
 		}
 	default:
 		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaP, nrnCaD)

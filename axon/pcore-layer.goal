@@ -291,34 +291,35 @@ func (ly *LayerParams) CyclePostDSMatrixLayer(ctx *Context, pi, di uint32, spi i
 
 //gosl:end
 
-func (ly *Layer) MatrixDefaults() {
-	ly.Params.Acts.Decay.Act = 1
-	ly.Params.Acts.Decay.Glong = 1 // prevent carryover of NMDA
-	ly.Params.Acts.Kir.Gk = 10
-	ly.Params.Acts.GabaB.Gk = 0 // Kir replaces GabaB
-	// ly.Params.Acts.NMDA.Ge = 0    // Matrix needs nmda, default is fine
-	ly.Params.Inhib.Layer.FB = 0 // pure FF
-	ly.Params.Inhib.Layer.Gi = 0.5
-	ly.Params.Inhib.Pool.On.SetBool(true) // needs both pool and layer if has pools
-	ly.Params.Inhib.Pool.FB = 0           // pure FF
-	ly.Params.Inhib.Pool.Gi = 0.5
-	ly.Params.Inhib.ActAvg.Nominal = 0.25   // pooled should be lower
-	ly.Params.Learn.RLRate.On.SetBool(true) // key: sig deriv used outside of rew trials
-	ly.Params.Learn.RLRate.Diff.SetBool(false)
-	ly.Params.Learn.TrgAvgAct.RescaleOn.SetBool(true) // major effect
+func (lly *Layer) MatrixDefaults() {
+	ly := lly.Params
+	ly.Acts.Decay.Act = 1
+	ly.Acts.Decay.Glong = 1 // prevent carryover of NMDA
+	ly.Acts.Kir.Gk = 10
+	ly.Acts.GabaB.Gk = 0 // Kir replaces GabaB
+	// ly.Acts.NMDA.Ge = 0    // Matrix needs nmda, default is fine
+	ly.Inhib.Layer.FB = 0 // pure FF
+	ly.Inhib.Layer.Gi = 0.5
+	ly.Inhib.Pool.On.SetBool(true) // needs both pool and layer if has pools
+	ly.Inhib.Pool.FB = 0           // pure FF
+	ly.Inhib.Pool.Gi = 0.5
+	ly.Inhib.ActAvg.Nominal = 0.25   // pooled should be lower
+	ly.Learn.RLRate.On.SetBool(true) // key: sig deriv used outside of rew trials
+	ly.Learn.RLRate.Diff.SetBool(false)
+	ly.Learn.TrgAvgAct.RescaleOn.SetBool(true) // major effect
 
-	// ly.Params.Learn.NeuroMod.DAMod needs to be set via BuildConfig
-	ly.Params.Learn.NeuroMod.DALRateSign.SetBool(true) // critical
-	ly.Params.Learn.NeuroMod.DALRateMod = 1
-	ly.Params.Learn.NeuroMod.DAModGain = 0
-	ly.Params.Learn.NeuroMod.AChLRateMod = 0
-	ly.Params.Learn.NeuroMod.BurstGain = 0.1
-	ly.Params.Learn.RLRate.SigmoidMin = 0.001
+	// ly.Learn.NeuroMod.DAMod needs to be set via BuildConfig
+	ly.Learn.NeuroMod.DALRateSign.SetBool(true) // critical
+	ly.Learn.NeuroMod.DALRateMod = 1
+	ly.Learn.NeuroMod.DAModGain = 0
+	ly.Learn.NeuroMod.AChLRateMod = 0
+	ly.Learn.NeuroMod.BurstGain = 0.1
+	ly.Learn.RLRate.SigmoidMin = 0.001
 
 	// important: user needs to adjust wt scale of some PFC inputs vs others:
 	// drivers vs. modulators
 
-	for _, pj := range ly.RecvPaths {
+	for _, pj := range lly.RecvPaths {
 		pj.Params.SWts.Init.SPct = 0
 		if pj.Send.Type == GPLayer { // GPeAkToMtx
 			pj.Params.SetFixedWts()
@@ -329,101 +330,108 @@ func (ly *Layer) MatrixDefaults() {
 	}
 }
 
-func (ly *Layer) DSMatrixDefaults() {
-	ly.MatrixDefaults()
-	ly.Params.Inhib.Layer.On.SetBool(false)
-	ly.Params.Acts.Dend.ModBase = 1
-	ly.Params.Acts.Dend.ModGain = 0
-	ly.Params.Learn.NeuroMod.AChDisInhib = 0
-	ly.Params.Learn.NeuroMod.DAModGain = 0.0 // DS
+func (lly *Layer) DSMatrixDefaults() {
+	ly := lly.Params
+	lly.MatrixDefaults()
+	ly.Inhib.Layer.On.SetBool(false)
+	ly.Acts.Dend.ModBase = 1
+	ly.Acts.Dend.ModGain = 0
+	ly.Learn.NeuroMod.AChDisInhib = 0
+	ly.Learn.NeuroMod.DAModGain = 0.0 // DS
 
-	for _, pj := range ly.RecvPaths {
+	for _, pj := range lly.RecvPaths {
 		if pj.Send.Type == GPLayer { // GPeAkToMtx
-			if strings.Contains(ly.Name, "No") {
+			if strings.Contains(lly.Name, "No") {
 				pj.Params.PathScale.Abs = 4
 			}
 		}
 	}
 }
 
-func (ly *Layer) VSMatrixDefaults() {
-	ly.MatrixDefaults()
-	ly.Params.Inhib.Layer.On.SetBool(true)
-	ly.Params.Acts.Dend.ModBase = 0
-	ly.Params.Acts.Dend.ModGain = 2 // for VS case -- otherwise irrelevant
-	ly.Params.Learn.NeuroMod.AChDisInhib = 5
-	ly.Params.Learn.NeuroMod.BurstGain = 1
+func (lly *Layer) VSMatrixDefaults() {
+	ly := lly.Params
+	lly.MatrixDefaults()
+	ly.Inhib.Layer.On.SetBool(true)
+	ly.Acts.Dend.ModBase = 0
+	ly.Acts.Dend.ModGain = 2 // for VS case -- otherwise irrelevant
+	ly.Learn.NeuroMod.AChDisInhib = 5
+	ly.Learn.NeuroMod.BurstGain = 1
 }
 
-func (ly *Layer) MatrixPostBuild() {
-	ly.Params.Striatum.ThalLay1Index = ly.BuildConfigFindLayer("ThalLay1Name", false) // optional
-	ly.Params.Striatum.ThalLay2Index = ly.BuildConfigFindLayer("ThalLay2Name", false) // optional
-	ly.Params.Striatum.ThalLay3Index = ly.BuildConfigFindLayer("ThalLay3Name", false) // optional
-	ly.Params.Striatum.ThalLay4Index = ly.BuildConfigFindLayer("ThalLay4Name", false) // optional
-	ly.Params.Striatum.ThalLay5Index = ly.BuildConfigFindLayer("ThalLay5Name", false) // optional
-	ly.Params.Striatum.ThalLay6Index = ly.BuildConfigFindLayer("ThalLay6Name", false) // optional
+func (lly *Layer) MatrixPostBuild() {
+	ly := lly.Params
+	ly.Striatum.ThalLay1Index = lly.BuildConfigFindLayer("ThalLay1Name", false) // optional
+	ly.Striatum.ThalLay2Index = lly.BuildConfigFindLayer("ThalLay2Name", false) // optional
+	ly.Striatum.ThalLay3Index = lly.BuildConfigFindLayer("ThalLay3Name", false) // optional
+	ly.Striatum.ThalLay4Index = lly.BuildConfigFindLayer("ThalLay4Name", false) // optional
+	ly.Striatum.ThalLay5Index = lly.BuildConfigFindLayer("ThalLay5Name", false) // optional
+	ly.Striatum.ThalLay6Index = lly.BuildConfigFindLayer("ThalLay6Name", false) // optional
 
-	ly.Params.Striatum.OtherIndex = ly.BuildConfigFindLayer("OtherName", true)
+	ly.Striatum.OtherIndex = lly.BuildConfigFindLayer("OtherName", true)
 
-	dm, err := ly.BuildConfigByName("DAMod")
+	dm, err := lly.BuildConfigByName("DAMod")
 	if err == nil {
-		errors.Log(ly.Params.Learn.NeuroMod.DAMod.SetString(dm))
+		errors.Log(ly.Learn.NeuroMod.DAMod.SetString(dm))
 	}
 }
 
-func (ly *Layer) DSMatrixPostBuild() {
-	ly.MatrixPostBuild()
-	ly.Params.Striatum.PFIndex = ly.BuildConfigFindLayer("PFName", true)
-	ly.Params.DSMatrix.PatchD1Index = ly.BuildConfigFindLayer("PatchD1Name", true)
-	ly.Params.DSMatrix.PatchD2Index = ly.BuildConfigFindLayer("PatchD2Name", true)
+func (lly *Layer) DSMatrixPostBuild() {
+	ly := lly.Params
+	lly.MatrixPostBuild()
+	ly.Striatum.PFIndex = lly.BuildConfigFindLayer("PFName", true)
+	ly.DSMatrix.PatchD1Index = lly.BuildConfigFindLayer("PatchD1Name", true)
+	ly.DSMatrix.PatchD2Index = lly.BuildConfigFindLayer("PatchD2Name", true)
 }
 
-func (ly *Layer) VSMatrixPostBuild() {
-	ly.MatrixPostBuild()
+func (lly *Layer) VSMatrixPostBuild() {
+	lly.MatrixPostBuild()
 }
 
-func (ly *Layer) DSPatchDefaults() {
-	ly.Params.VSPatchDefaults()
-	ly.Params.Acts.Dend.ModBase = 1
-	ly.Params.Acts.Dend.ModGain = 0
-	ly.Params.Learn.NeuroMod.AChLRateMod = 1
+func (lly *Layer) DSPatchDefaults() {
+	ly := lly.Params
+	ly.VSPatchDefaults()
+	ly.Acts.Dend.ModBase = 1
+	ly.Acts.Dend.ModGain = 0
+	ly.Learn.NeuroMod.AChLRateMod = 1
 }
 
-func (ly *Layer) PatchPostBuild() {
-	ly.Params.Striatum.OtherIndex = ly.BuildConfigFindLayer("OtherName", true)
-	ly.Params.Striatum.PFIndex = ly.BuildConfigFindLayer("PFName", true)
-	dm, err := ly.BuildConfigByName("DAMod")
+func (lly *Layer) PatchPostBuild() {
+	ly := lly.Params
+	ly.Striatum.OtherIndex = lly.BuildConfigFindLayer("OtherName", true)
+	ly.Striatum.PFIndex = lly.BuildConfigFindLayer("PFName", true)
+	dm, err := lly.BuildConfigByName("DAMod")
 	if err == nil {
-		errors.Log(ly.Params.Learn.NeuroMod.DAMod.SetString(dm))
+		errors.Log(ly.Learn.NeuroMod.DAMod.SetString(dm))
 	}
 }
 
 ////////  GP
 
-func (ly *Layer) GPDefaults() {
+func (lly *Layer) GPDefaults() {
+	ly := lly.Params
 	// GP is tonically self-active and has no FFFB inhibition
 	// Defaults are for GPePr, Ak has special values below
-	ly.Params.Acts.Init.GeBase = 0.4
-	ly.Params.Acts.Init.GeVar = 0.2
-	ly.Params.Acts.Init.GiVar = 0.1
-	ly.Params.Acts.Decay.Act = 0
-	ly.Params.Acts.Decay.Glong = 1
-	ly.Params.Acts.NMDA.Ge = 0 // carryover of NMDA was causing issues!
-	ly.Params.Acts.GabaB.Gk = 0
-	ly.Params.Inhib.ActAvg.Nominal = 1 // very active!
-	ly.Params.Inhib.Layer.On.SetBool(false)
-	ly.Params.Inhib.Pool.On.SetBool(false)
+	ly.Acts.Init.GeBase = 0.4
+	ly.Acts.Init.GeVar = 0.2
+	ly.Acts.Init.GiVar = 0.1
+	ly.Acts.Decay.Act = 0
+	ly.Acts.Decay.Glong = 1
+	ly.Acts.NMDA.Ge = 0 // carryover of NMDA was causing issues!
+	ly.Acts.GabaB.Gk = 0
+	ly.Inhib.ActAvg.Nominal = 1 // very active!
+	ly.Inhib.Layer.On.SetBool(false)
+	ly.Inhib.Pool.On.SetBool(false)
 
-	if ly.Params.GP.GPType == GPeAk {
-		ly.Params.Acts.Init.GeBase = 0.2 // definitely lower in bio data, necessary
-		ly.Params.Acts.Init.GeVar = 0.1
+	if ly.GP.GPType == GPeAk {
+		ly.Acts.Init.GeBase = 0.2 // definitely lower in bio data, necessary
+		ly.Acts.Init.GeVar = 0.1
 	}
 
-	for _, pj := range ly.RecvPaths {
+	for _, pj := range lly.RecvPaths {
 		pj.Params.SetFixedWts()
 		pj.Params.SWts.Init.Mean = 0.75 // 0.75 -- very similar -- maybe a bit more reliable with 0.8 / 0
 		pj.Params.SWts.Init.Var = 0.25  // 0.25
-		switch ly.Params.GP.GPType {
+		switch ly.GP.GPType {
 		case GPePr:
 			switch pj.Send.Type {
 			case VSMatrixLayer, DSMatrixLayer:
@@ -445,18 +453,19 @@ func (ly *Layer) GPDefaults() {
 		}
 	}
 
-	if ly.Params.GP.GPType == GPi {
-		ly.GPiDefaults()
+	if ly.GP.GPType == GPi {
+		lly.GPiDefaults()
 	}
 }
 
-func (ly *Layer) GPiDefaults() {
-	ly.Params.Acts.Init.GeBase = 0.3
-	ly.Params.Acts.Init.GeVar = 0.1
-	ly.Params.Acts.Init.GiVar = 0.1
+func (lly *Layer) GPiDefaults() {
+	ly := lly.Params
+	ly.Acts.Init.GeBase = 0.3
+	ly.Acts.Init.GeVar = 0.1
+	ly.Acts.Init.GiVar = 0.1
 	// note: GPLayer took care of STN input paths
 
-	for _, pj := range ly.RecvPaths {
+	for _, pj := range lly.RecvPaths {
 		pj.Params.SetFixedWts()
 		pj.Params.SWts.Init.Mean = 0.75    // 0.75  see above
 		pj.Params.SWts.Init.Var = 0.25     // 0.25
@@ -472,45 +481,47 @@ func (ly *Layer) GPiDefaults() {
 	}
 }
 
-func (ly *Layer) GPPostBuild() {
-	gpnm, err := ly.BuildConfigByName("GPType")
+func (lly *Layer) GPPostBuild() {
+	ly := lly.Params
+	gpnm, err := lly.BuildConfigByName("GPType")
 	if err == nil {
-		errors.Log(ly.Params.GP.GPType.SetString(gpnm))
+		errors.Log(ly.GP.GPType.SetString(gpnm))
 	}
 }
 
 ////////  STN
 
-func (ly *Layer) STNDefaults() {
+func (lly *Layer) STNDefaults() {
+	ly := lly.Params
 	// STN is tonically self-active and has no FFFB inhibition
-	ly.Params.Acts.Init.GeBase = 0.1 // was 0.3
-	ly.Params.Acts.Init.GeVar = 0.1
-	ly.Params.Acts.Init.GiVar = 0.1
-	ly.Params.Acts.SKCa.Gk = 2
-	ly.Params.Acts.SKCa.CaRDecayTau = 150 // 150 > 80 for longer theta windows
-	ly.Params.Acts.Kir.Gk = 10            // 10 > 5 -- key for pause
-	ly.Params.Acts.Decay.Act = 0
-	ly.Params.Acts.Decay.Glong = 0
-	ly.Params.Acts.Decay.LearnCa = 1 // key for non-spaced trials, to refresh immediately
-	ly.Params.Acts.Dend.SSGi = 0
-	ly.Params.Acts.NMDA.Ge = 0 // fine with 0
-	ly.Params.Acts.GabaB.Gk = 0
-	ly.Params.Inhib.Layer.On.SetBool(true)
-	ly.Params.Inhib.Layer.Gi = 0.5
-	ly.Params.Inhib.Layer.FB = 0
-	ly.Params.Inhib.Pool.On.SetBool(false)
-	ly.Params.Inhib.Pool.Gi = 0.5
-	ly.Params.Inhib.Pool.FB = 0
-	ly.Params.Inhib.ActAvg.Nominal = 0.15
-	ly.Params.Learn.NeuroMod.AChDisInhib = 0 // was 2,
+	ly.Acts.Init.GeBase = 0.1 // was 0.3
+	ly.Acts.Init.GeVar = 0.1
+	ly.Acts.Init.GiVar = 0.1
+	ly.Acts.SKCa.Gk = 2
+	ly.Acts.SKCa.CaRDecayTau = 150 // 150 > 80 for longer theta windows
+	ly.Acts.Kir.Gk = 10            // 10 > 5 -- key for pause
+	ly.Acts.Decay.Act = 0
+	ly.Acts.Decay.Glong = 0
+	ly.Acts.Decay.LearnCa = 1 // key for non-spaced trials, to refresh immediately
+	ly.Acts.Dend.SSGi = 0
+	ly.Acts.NMDA.Ge = 0 // fine with 0
+	ly.Acts.GabaB.Gk = 0
+	ly.Inhib.Layer.On.SetBool(true)
+	ly.Inhib.Layer.Gi = 0.5
+	ly.Inhib.Layer.FB = 0
+	ly.Inhib.Pool.On.SetBool(false)
+	ly.Inhib.Pool.Gi = 0.5
+	ly.Inhib.Pool.FB = 0
+	ly.Inhib.ActAvg.Nominal = 0.15
+	ly.Learn.NeuroMod.AChDisInhib = 0 // was 2,
 
 	// if ly.Cls == "VSTNLayer" {
-	// 	ly.Params.Inhib.Layer.On.SetBool(false)
+	// 	ly.Inhib.Layer.On.SetBool(false)
 	// } else {
-	// 	ly.Params.Inhib.Layer.On.SetBool(true)
+	// 	ly.Inhib.Layer.On.SetBool(true)
 	// }
 
-	for _, pj := range ly.RecvPaths {
+	for _, pj := range lly.RecvPaths {
 		pj.Params.SetFixedWts()
 		pj.Params.SWts.Init.Mean = 0.75
 		pj.Params.SWts.Init.Var = 0.25
@@ -524,21 +535,22 @@ func (ly *Layer) STNDefaults() {
 
 ////////  BGThal
 
-func (ly *Layer) BGThalDefaults() {
+func (lly *Layer) BGThalDefaults() {
+	ly := lly.Params
 	// note: not tonically active
-	// ly.Params.Acts.NMDA.Ge = 0 // needs NMDA
-	ly.Params.Acts.Decay.Act = 1
-	ly.Params.Acts.Decay.Glong = 0.6
-	ly.Params.Acts.Dend.SSGi = 0
-	ly.Params.Inhib.ActAvg.Nominal = 0.1
-	ly.Params.Inhib.Layer.On.SetBool(true)
-	ly.Params.Inhib.Layer.Gi = 0.6
-	ly.Params.Inhib.Pool.On.SetBool(false)
-	ly.Params.Inhib.Pool.Gi = 0.6
+	// ly.Acts.NMDA.Ge = 0 // needs NMDA
+	ly.Acts.Decay.Act = 1
+	ly.Acts.Decay.Glong = 0.6
+	ly.Acts.Dend.SSGi = 0
+	ly.Inhib.ActAvg.Nominal = 0.1
+	ly.Inhib.Layer.On.SetBool(true)
+	ly.Inhib.Layer.Gi = 0.6
+	ly.Inhib.Pool.On.SetBool(false)
+	ly.Inhib.Pool.Gi = 0.6
 
-	ly.Params.Learn.NeuroMod.AChDisInhib = 1
+	ly.Learn.NeuroMod.AChDisInhib = 1
 
-	for _, pj := range ly.RecvPaths {
+	for _, pj := range lly.RecvPaths {
 		pj.Params.SetFixedWts()
 		pj.Params.SWts.Init.Mean = 0.75
 		pj.Params.SWts.Init.Var = 0.0

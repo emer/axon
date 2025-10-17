@@ -126,6 +126,17 @@ func (tp *PulvinarParams) NonDrivePct(drvMax float32) float32 {
 	return 1.0 - math32.Min(1.0, drvMax/tp.FullDriveAct)
 }
 
+// PulvinarDriver gets the driver input excitation params for Pulvinar layer.
+func (ly *LayerParams) PulvinarDriver(ctx *Context, lni, di uint32, drvGe, nonDrivePct *float32) {
+	dli := uint32(ly.Pulvinar.DriveLayIndex)
+	dly := GetLayers(dli)
+	dpi := dly.PoolIndex(0)
+	drvMax := PoolAvgMax(AMCaP, AMCycle, Max, dpi, di)
+	*nonDrivePct = ly.Pulvinar.NonDrivePct(drvMax) // how much non-driver to keep
+	burst := Neurons.Value(int(dly.Indexes.NeurSt+lni), int(di), int(Burst))
+	*drvGe = ly.Pulvinar.DriveGe(burst)
+}
+
 //gosl:end
 
 // note: Defaults not called on GPU
@@ -201,24 +212,25 @@ func (ly *Layer) CTDefaultParamsLong() {
 	})
 }
 
-func (ly *Layer) PTMaintDefaults() {
-	ly.Params.Acts.Decay.Act = 0 // deep doesn't decay!
-	ly.Params.Acts.Decay.Glong = 0
-	ly.Params.Acts.Decay.AHP = 0
-	ly.Params.Acts.Decay.OnRew.SetBool(true)
-	ly.Params.Acts.Sahp.Gk = 0.01  // not much pressure -- long maint
-	ly.Params.Acts.GabaB.Gk = 0.01 // needed for cons, good for smaint
-	ly.Params.Acts.Dend.ModGain = 1.5
-	// ly.Params.Inhib.ActAvg.Nominal = 0.1 // normal
-	if ly.Is4D() {
-		ly.Params.Inhib.ActAvg.Nominal = 0.02
+func (lly *Layer) PTMaintDefaults() {
+	ly := lly.Params
+	ly.Acts.Decay.Act = 0 // deep doesn't decay!
+	ly.Acts.Decay.Glong = 0
+	ly.Acts.Decay.AHP = 0
+	ly.Acts.Decay.OnRew.SetBool(true)
+	ly.Acts.Sahp.Gk = 0.01  // not much pressure -- long maint
+	ly.Acts.GabaB.Gk = 0.01 // needed for cons, good for smaint
+	ly.Acts.Dend.ModGain = 1.5
+	// ly.Inhib.ActAvg.Nominal = 0.1 // normal
+	if lly.Is4D() {
+		ly.Inhib.ActAvg.Nominal = 0.02
 	}
-	ly.Params.Inhib.Layer.Gi = 2.4
-	ly.Params.Inhib.Pool.Gi = 2.4
-	ly.Params.Learn.TrgAvgAct.RescaleOn.SetBool(false)
-	ly.Params.Learn.NeuroMod.AChDisInhib = 0
+	ly.Inhib.Layer.Gi = 2.4
+	ly.Inhib.Pool.Gi = 2.4
+	ly.Learn.TrgAvgAct.RescaleOn.SetBool(false)
+	ly.Learn.NeuroMod.AChDisInhib = 0
 
-	for _, pj := range ly.RecvPaths {
+	for _, pj := range lly.RecvPaths {
 		slay := pj.Send
 		if slay.Type == BGThalLayer {
 			pj.Params.Com.GType = ModulatoryG

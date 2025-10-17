@@ -23,10 +23,6 @@ func (pt *PathParams) DWtSyn(ctx *Context, rlay *LayerParams, syni, si, ri, di u
 	pi := rlay.PoolIndex(spi)
 	lpi := rlay.PoolIndex(0)
 	switch pt.Type {
-	case RWPath:
-		pt.DWtSynRWPred(ctx, syni, si, ri, lpi, pi, di)
-	case TDPredPath:
-		pt.DWtSynTDPred(ctx, syni, si, ri, lpi, pi, di)
 	case VSMatrixPath:
 		pt.DWtSynVSMatrix(ctx, syni, si, ri, lpi, pi, di)
 	case DSMatrixPath:
@@ -35,6 +31,12 @@ func (pt *PathParams) DWtSyn(ctx *Context, rlay *LayerParams, syni, si, ri, di u
 		pt.DWtSynVSPatch(ctx, syni, si, ri, lpi, pi, di)
 	case DSPatchPath:
 		pt.DWtSynDSPatch(ctx, syni, si, ri, lpi, pi, di)
+	case CerebPredToOutPath:
+		pt.DWtSynCerebOut(ctx, rlay, syni, si, ri, lpi, pi, di)
+	case RWPath:
+		pt.DWtSynRWPred(ctx, syni, si, ri, lpi, pi, di)
+	case TDPredPath:
+		pt.DWtSynTDPred(ctx, syni, si, ri, lpi, pi, di)
 	case BLAPath:
 		pt.DWtSynBLA(ctx, syni, si, ri, lpi, pi, di)
 	case HipPath:
@@ -106,7 +108,7 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, syni, si, ri, lpi, pi, di uint3
 	}
 	
 	// error-gradient factor
-	var err float32
+	err := float32(0)
 	if isTarget {
 		err = syCaP - syCaD // for target layers, syn Ca drives error signal directly
 	} else {
@@ -164,7 +166,7 @@ func (pt *PathParams) DWtSynHip(ctx *Context, syni, si, ri, lpi, pi, di uint32, 
 	// error-driven learning part
 	rLearnCaP := Neurons[ri, di, LearnCaP]
 	rLearnCaD := Neurons[ri, di, LearnCaD]
-	var err float32
+	err := float32(0)
 	if isTarget {
 		err = syCaP - syCaD // for target layers, syn Ca drives error signal directly
 	} else {
@@ -411,6 +413,25 @@ func (pt *PathParams) DWtSynDSPatch(ctx *Context, syni, si, ri, lpi, pi, di uint
 		SynapseTraces[syni, di, DTr] = dtr
 		SynapseTraces[syni, di, Tr] += dtr
 	}
+}
+
+// DWtSynCerebOut computes the weight change (learning) at given synapse,
+// for the CerebPredToOut inhibitory pathway, conditioned on there being 
+// above-threshold activity in both excitatory and inhibitory pathways.
+func (pt *PathParams) DWtSynCerebOut(ctx *Context, rlay *LayerParams, syni, si, ri, lpi, pi, di uint32) {
+	sact := Neurons[si, di, CaD] // sending activity
+	ract := Neurons[ri, di, CaD] // receiving activity
+	predSenseAct := Neurons[ri, di, RLRate] // CerebPred * Sense input activity, in PlusPhaseNeuron
+	dwt := -predSenseAct * sact * (rlay.CerebOut.ActTarg - ract) // minus sign due to inhibitory
+	// softbound immediately -- enters into zero sum.
+	// also other types might not use, so need to do this per learning rule.
+	// lwt := Synapses[syni, LWt] // linear weight
+	// if dwt > 0 {
+	// 	dwt *= (1 - lwt)
+	// } else {
+	// 	dwt *= lwt
+	// }
+	SynapseTraces[syni, di, DiDWt] = pt.Learn.LRate.Eff * dwt
 }
 
 //////// WtFromDWt

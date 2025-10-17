@@ -151,7 +151,7 @@ func (ly *Layer) Defaults() { //types:add
 	case CerebPredLayer:
 		ly.Params.CerebPredDefaults()
 	case CerebOutLayer:
-		ly.Params.CerebOutDefaults()
+		ly.CerebOutDefaults()
 
 	case LDTLayer:
 		ly.LDTDefaults()
@@ -436,6 +436,8 @@ func (ly *Layer) PostBuild() {
 
 	case CerebPredLayer:
 		ly.CerebPredPostBuild()
+	case CerebOutLayer:
+		ly.CerebOutPostBuild()
 
 	case LDTLayer:
 		ly.LDTPostBuild()

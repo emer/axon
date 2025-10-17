@@ -11,20 +11,23 @@ import "github.com/emer/emergent/v2/paths"
 // Returns Cout, Cpred layers, with given optional prefix.
 func (net *Network) AddCerebellumNucleus(sense *Layer, space float32) (cout, cpred *Layer) {
 	name := sense.Name
+	predName := name + "Cpred"
 	shp := sense.Shape
 	if shp.NumDims() == 2 {
 		cout = net.AddLayer2D(name+"Cout", CerebOutLayer, shp.DimSize(0), shp.DimSize(1))
-		cpred = net.AddLayer2D(name+"Cpred", CerebPredLayer, shp.DimSize(0), shp.DimSize(1))
+		cpred = net.AddLayer2D(predName, CerebPredLayer, shp.DimSize(0), shp.DimSize(1))
 	} else {
 		cout = net.AddLayer4D(name+"Cout", CerebOutLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
-		cpred = net.AddLayer4D(name+"Cpred", CerebPredLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
+		cpred = net.AddLayer4D(predName, CerebPredLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
 	}
 	cpred.SetBuildConfig("DriveLayName", name)
 
 	one2one := paths.NewOneToOne()
 	net.ConnectLayers(sense, cout, one2one, ForwardPath).AddClass("CerebOutInput")
-	net.ConnectLayers(cpred, cout, one2one, InhibPath).AddClass("CerebPredToOut")
-	// todo: initial params settings
+	net.ConnectLayers(cpred, cout, one2one, CerebPredToOutPath).AddClass("CerebPredToOut")
+
+	cout.SetBuildConfig("PredLayName", predName)
+	cout.SetBuildConfig("SenseLayName", name)
 
 	cpred.PlaceBehind(cout, space)
 	return

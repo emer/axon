@@ -18,6 +18,8 @@ var<storage, read> NeuronIxs: array<u32>;
 var<storage, read_write> Ctx: array<Context>;
 @group(2) @binding(1)
 var<storage, read_write> Neurons: array<f32>;
+@group(2) @binding(2)
+var<storage, read_write> NeuronAvgs: array<f32>;
 @group(2) @binding(4)
 var<storage, read_write> GlobalScalars: array<f32>;
 @group(2) @binding(7)
@@ -58,13 +60,6 @@ fn LayerParams_PlusPhaseNeuron(ly: LayerParams, ctx: Context, ni: u32,di: u32) {
 	var dlr = f32(1);
 	var hasRew = (GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvHasRew), u32(di))]) > 0;
 	switch (ly.Type) {
-	case BLALayer: {
-		dlr = RLRateParams_RLRateDiff(ly.Learn.RLRate, nrnCaP, Neurons[Index3D(TensorStrides[70], TensorStrides[71], // delta on previous trial
-		TensorStrides[72], u32(ni), u32(di), u32(CaDPrev))]);
-		if (!NeuroModParams_IsBLAExt(ly.Learn.NeuroMod) && PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolNeurSt))] == 0) { // first pool
-			dlr = f32(0); // first pool is novelty / curiosity -- no learn
-		}
-	}
 	case DSPatchLayer: {
 		if (hasRew) { // reward time
 			mlr = f32(1); // don't use sig deriv
@@ -84,6 +79,28 @@ fn LayerParams_PlusPhaseNeuron(ly: LayerParams, ctx: Context, ni: u32,di: u32) {
 			mlr = f32(1); // don't use sig deriv
 		} else {
 			modlr = f32(1); // don't use mod
+		}
+	}
+	case CerebOutLayer: {
+		var lni = ni - ly.Indexes.NeurSt; // layer-based
+		mlr = LayerParams_CerebOutPredAct(ly, ctx, lni, di);
+		dlr = LayerParams_CerebOutSenseAct(ly, ctx, lni, di);
+		if (mlr < ly.CerebOut.LearnThr) {
+			mlr = f32(0);
+		}
+		if (dlr < ly.CerebOut.LearnThr) {
+			dlr = f32(0);
+		}
+		modlr = f32(1);
+		if (mlr*dlr == 0) { // adapt GeBase only if both pathways inactive
+			NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81], u32(ni), u32(GeBase))] += ly.CerebOut.GeBaseLRate * (ly.CerebOut.ActTarg - nrnCaP);
+		}
+	}
+	case BLALayer: {
+		dlr = RLRateParams_RLRateDiff(ly.Learn.RLRate, nrnCaP, Neurons[Index3D(TensorStrides[70], TensorStrides[71], // delta on previous trial
+		TensorStrides[72], u32(ni), u32(di), u32(CaDPrev))]);
+		if (!NeuroModParams_IsBLAExt(ly.Learn.NeuroMod) && PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolNeurSt))] == 0) { // first pool
+			dlr = f32(0); // first pool is novelty / curiosity -- no learn
 		}
 	}
 	default: {
@@ -264,6 +281,25 @@ struct CerebPredParams {
 	FullDriveAct: f32,
 	DriveLayIndex: i32,
 	pad: f32,
+}
+struct CerebOutParams {
+	ActTarg: f32,
+	LearnThr: f32,
+	GeBaseLRate: f32,
+	PredLayIndex: i32,
+	SenseLayIndex: i32,
+	pad: f32,
+	pad1: f32,
+	pad2: f32,
+}
+fn LayerParams_CerebOutPredAct(ly: LayerParams, ctx: Context, lni: u32,di: u32) -> f32 {
+	var dli = u32(ly.CerebOut.PredLayIndex);
+	let dly = Layers[dli];return Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
+u32(dly.Indexes.NeurSt + lni), u32(di), u32(CaD))];
+}
+fn LayerParams_CerebOutSenseAct(ly: LayerParams, ctx: Context, lni: u32,di: u32) -> f32 {
+	var dli = u32(ly.CerebOut.SenseLayIndex);
+	let dly = Layers[dli];return Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(dly.Indexes.NeurSt + lni), u32(di), u32(CaD))];
 }
 
 //////// import: "chans-ak.go"
@@ -478,7 +514,7 @@ const NeuronFlagsN: NeuronFlags = 9;
 const NeuronVarsN: NeuronVars = 85;
 const NeuronAvgVarsN: NeuronAvgVars = 7;
 const NeuronIndexVarsN: NeuronIndexVars = 3;
-const PathTypesN: PathTypes = 13;
+const PathTypesN: PathTypes = 14;
 const GPLayerTypesN: GPLayerTypes = 3;
 const PoolIndexVarsN: PoolIndexVars = 4;
 const PoolIntVarsN: PoolIntVars = 6;
@@ -694,6 +730,7 @@ struct LayerParams {
 	Striatum: StriatumParams,
 	GP: GPParams,
 	CerebPred: CerebPredParams,
+	CerebOut: CerebOutParams,
 	LDT: LDTParams,
 	VTA: VTAParams,
 	RWPred: RWPredParams,
@@ -1176,14 +1213,15 @@ const  BackPath: PathTypes = 1;
 const  LateralPath: PathTypes = 2;
 const  InhibPath: PathTypes = 3;
 const  CTCtxtPath: PathTypes = 4;
-const  RWPath: PathTypes = 5;
-const  TDPredPath: PathTypes = 6;
-const  BLAPath: PathTypes = 7;
-const  HipPath: PathTypes = 8;
-const  DSPatchPath: PathTypes = 9;
-const  VSPatchPath: PathTypes = 10;
-const  VSMatrixPath: PathTypes = 11;
-const  DSMatrixPath: PathTypes = 12;
+const  DSPatchPath: PathTypes = 5;
+const  VSPatchPath: PathTypes = 6;
+const  VSMatrixPath: PathTypes = 7;
+const  DSMatrixPath: PathTypes = 8;
+const  CerebPredToOutPath: PathTypes = 9;
+const  RWPath: PathTypes = 10;
+const  TDPredPath: PathTypes = 11;
+const  BLAPath: PathTypes = 12;
+const  HipPath: PathTypes = 13;
 
 //////// import: "pcore-layer.go"
 struct DSMatrixParams {

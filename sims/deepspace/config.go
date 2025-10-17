@@ -59,8 +59,9 @@ func (pc *ParamConfig) FieldWidget(field string) core.Value {
 	if field == "Script" {
 		tx := textcore.NewEditor()
 		tx.Styler(func(s *styles.Style) {
-			s.Min.X.Ch(60)
+			s.Min.X.Em(60)
 		})
+		return tx
 	}
 	return nil
 }
