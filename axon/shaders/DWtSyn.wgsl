@@ -583,7 +583,7 @@ const ViewTimesN: ViewTimes = 7;
 const DAModTypesN: DAModTypes = 4;
 const ValenceTypesN: ValenceTypes = 3;
 const NeuronFlagsN: NeuronFlags = 9;
-const NeuronVarsN: NeuronVars = 85;
+const NeuronVarsN: NeuronVars = 90;
 const NeuronAvgVarsN: NeuronAvgVars = 7;
 const NeuronIndexVarsN: NeuronIndexVars = 3;
 const PathTypesN: PathTypes = 14;
@@ -893,6 +893,9 @@ fn PathParams_DWtSyn(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32,
 	var pi = LayerParams_PoolIndex(rlay, spi);
 	var lpi = LayerParams_PoolIndex(rlay, u32(u32(0)));
 	switch (pt.Type) {
+	case CTCtxtPath: {
+		PathParams_DWtSynCTCtxt(pt, ctx, syni, si, ri, lpi, pi, di);
+	}
 	case VSMatrixPath: {
 		PathParams_DWtSynVSMatrix(pt, ctx, syni, si, ri, lpi, pi, di);
 	}
@@ -923,8 +926,10 @@ fn PathParams_DWtSyn(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32,
 	default: {
 		if (pt.Learn.Hebb.On == 1) {
 			PathParams_DWtSynHebb(pt, ctx, syni, si, ri, lpi, pi, di);
+		} else if (isTarget) {
+			PathParams_DWtSynTarget(pt, ctx, syni, si, ri, lpi, pi, di);
 		} else {
-			PathParams_DWtSynCortex(pt, ctx, syni, si, ri, lpi, pi, di, isTarget);
+			PathParams_DWtSynCortex(pt, ctx, syni, si, ri, lpi, pi, di);
 		}
 	}
 	}
@@ -955,44 +960,55 @@ fn PathParams_SynCa(pt: PathParams, ctx: Context, si: u32,ri: u32,di: u32, syCaP
 	*syCaP = pt.Learn.DWt.CaPScale * cp;
 	*syCaD = cd;
 }
-fn PathParams_DWtSynCortex(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32, isTarget: bool) {
+fn PathParams_DWtSynSoftBound(pt: PathParams, ctx: Context, syni: u32,di: u32, dwt: f32) {
+	if (dwt == 0) {
+		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));
+	} else {
+		var lwt = Synapses[Index2D(TensorStrides[170], TensorStrides[171], // linear weight
+		u32(syni), u32(LWt))];
+		var edw = dwt;
+		if (edw > 0) {
+			edw *= (1 - lwt);
+		} else {
+			edw *= lwt;
+		}
+		SynapseTracesSet(pt.Learn.LRate.Eff * edw, Index3D(TensorStrides[180], TensorStrides[181],
+		TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));
+	}
+}
+fn PathParams_DWtSynCortex(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
 	var syCaP: f32;
 	var syCaD: f32;
 	PathParams_SynCa(pt, ctx, si, ri, di, &syCaP, &syCaD);
-	var syn = syCaD;             // synaptic activity co-product factor.
-	if (pt.Type == CTCtxtPath) { // layer 6 CT pathway
-		syn = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
-		u32(si), u32(di), u32(BurstPrv))];
-	}
+	SynapseTracesSet(syCaD, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
+	var tr = DWtParams_SynTrace(pt.Learn.DWt, SynapseTracesGet(Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr))), syCaD);
+	SynapseTracesSet(tr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182],
+	u32(syni), u32(di), u32(Tr)));
+	var dwt = f32(0);
+	dwt = tr * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(RLRate))] * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnDiff))] * Neurons[Index3D(TensorStrides[70], TensorStrides[71],
+	TensorStrides[72], u32(ri), u32(di), u32(ETraceLearn))];
+	PathParams_DWtSynSoftBound(pt, ctx, syni, di, dwt);
+}
+fn PathParams_DWtSynTarget(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
+	var syCaP: f32;
+	var syCaD: f32;
+	PathParams_SynCa(pt, ctx, si, ri, di, &syCaP, &syCaD);
+	SynapseTracesSet(syCaD, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
+	var tr = DWtParams_SynTrace(pt.Learn.DWt, SynapseTracesGet(Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr))), syCaD);
+	SynapseTracesSet(tr, Index3D(TensorStrides[180], TensorStrides[181],
+	TensorStrides[182], u32(syni), u32(di), u32(Tr)));
+	var dwt = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(RLRate))] * (syCaP - syCaD);
+	PathParams_DWtSynSoftBound(pt, ctx, syni, di, dwt);
+}
+fn PathParams_DWtSynCTCtxt(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
+	var syn = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // previous burst, not synCa
+	TensorStrides[72], u32(si), u32(di), u32(BurstPrv))];
 	SynapseTracesSet(syn, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
 	var tr = DWtParams_SynTrace(pt.Learn.DWt, SynapseTracesGet(Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr))), syn);
-	SynapseTracesSet(tr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
-	if (Synapses[Index2D(TensorStrides[170], TensorStrides[171], // failed con, no learn
-	u32(syni), u32(Wt))] == 0) {
-		return;
-	}
-	var err = f32(0);
-	if (isTarget) {
-		err = syCaP - syCaD; // for target layers, syn Ca drives error signal directly
-	} else {
-		if (pt.Type == CTCtxtPath || syCaP > pt.Learn.DWt.LearnThr || syCaD > pt.Learn.DWt.LearnThr) {
-			err = tr * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnCaP))] - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnCaD))]) * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
-			u32(ri), u32(di), u32(ETraceLearn))];
-		}
-	}
-	var lwt = Synapses[Index2D(TensorStrides[170], TensorStrides[171], // linear weight
-	u32(syni), u32(LWt))];
-	if (err > 0) {
-		err *= (1 - lwt);
-	} else {
-		err *= lwt;
-	}
-	if (pt.Type == CTCtxtPath) { // rn.RLRate IS needed for other pathways, just not the context one
-		SynapseTracesSet(pt.Learn.LRate.Eff * err, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));
-	} else {
-		SynapseTracesSet(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(RLRate))] * pt.Learn.LRate.Eff * err, Index3D(TensorStrides[180], TensorStrides[181],
-		TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));
-	}
+	SynapseTracesSet(tr, Index3D(TensorStrides[180], TensorStrides[181],
+	TensorStrides[182], u32(syni), u32(di), u32(Tr)));
+	var dwt = tr * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnCaP))] - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnCaD))]) * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(ETraceLearn))];
+	PathParams_DWtSynSoftBound(pt, ctx, syni, di, dwt);
 }
 fn PathParams_DWtSynHebb(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
 	var rLearnCaP = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnCaP))];
@@ -1010,11 +1026,8 @@ fn PathParams_DWtSynHip(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u32,
 	var syn = syCaD; // synaptic activity co-product factor.
 	SynapseTracesSet(syn, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
 	var tr = DWtParams_SynTrace(pt.Learn.DWt, SynapseTracesGet(Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr))), syn);
-	SynapseTracesSet(tr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
-	if (Synapses[Index2D(TensorStrides[170], TensorStrides[171], // failed con, no learn
-	u32(syni), u32(Wt))] == 0) {
-		return;
-	}
+	SynapseTracesSet(tr, Index3D(TensorStrides[180], TensorStrides[181],
+	TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 	var rLearnCaP = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnCaP))];
 	var rLearnCaD = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnCaD))];
 	var err = f32(0);
@@ -1040,8 +1053,8 @@ fn PathParams_DWtSynHip(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u32,
 	TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));
 }
 fn PathParams_DWtSynBLA(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
-	var dwt = f32(0);
 	var ach = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvACh), u32(di))];
+	var dwt = f32(0);
 	if (GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], // learn and reset
 	u32(GvHasRew), u32(di))] > 0) {
 		var ract = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaD))];
@@ -1056,7 +1069,7 @@ fn PathParams_DWtSynBLA(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u32,
 		if (delta < 0) {
 			delta *= pt.BLA.NegDeltaLRate;
 		}
-		dwt = tr * delta * ract;
+		dwt = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(RLRate))] * tr * delta * ract;
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 	} else if (ach > pt.BLA.AChThr) {
 		var dtr = ach * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(Burst))];
@@ -1066,14 +1079,7 @@ fn PathParams_DWtSynBLA(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u32,
 	} else {
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
 	}
-	var lwt = Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(LWt))];
-	if (dwt > 0) {
-		dwt *= (1 - lwt);
-	} else {
-		dwt *= lwt;
-	}
-	SynapseTracesSet(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(RLRate))] * pt.Learn.LRate.Eff * dwt, Index3D(TensorStrides[180], TensorStrides[181],
-	TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));
+	PathParams_DWtSynSoftBound(pt, ctx, syni, di, dwt);
 }
 fn PathParams_DWtSynRWPred(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
 	var lda = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvDA), u32(di))];
@@ -1146,32 +1152,30 @@ fn PathParams_DWtSynVSMatrix(pt: PathParams, ctx: Context, syni: u32,si: u32,ri:
 	if (rminus > pt.Learn.DWt.LearnThr) { // key: prevents learning if < threshold
 		dtr += ach * (pt.VSMatrix.Credit * sact * rminus);
 	}
+	var dwt = f32(0);
 	if (hasRew) {
 		var tr = SynapseTracesGet(Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 		if (pt.VSMatrix.RewActLearn == 1) {
 			tr += (1 - GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvGoalMaint), u32(di))]) * dtr;
 		}
-		var dwt = rlr * pt.Learn.LRate.Eff * tr;
-		SynapseTracesSet(dwt, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));
-		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
-		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
+		dtr = f32(0);
+		dwt = rlr * pt.Learn.LRate.Eff * tr;
 	} else {
 		dtr *= rlr;
-		SynapseTracesSet(dtr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
-		SynapseTracesSetAdd(dtr, Index3D(TensorStrides[180], TensorStrides[181],
-		TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 	}
+	SynapseTracesSet(dwt, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));
+	SynapseTracesSet(dtr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
+	SynapseTracesSetAdd(dtr, Index3D(TensorStrides[180], TensorStrides[181],
+	TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 }
 fn PathParams_DWtSynDSMatrix(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
 	var rlr = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(RLRate))];
+	var dwt = f32(0);
+	var dtr = f32(0);
 	if (GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], // US time -- use DA and current recv activity
 	u32(GvHasRew), u32(di))] > 0) {
 		var tr = SynapseTracesGet(Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
-		var dwt = rlr * pt.Learn.LRate.Eff * tr;
-		SynapseTracesSet(dwt, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));
-		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
-		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181],
-		TensorStrides[182], u32(syni), u32(di), u32(DTr)));
+		dwt = rlr * pt.Learn.LRate.Eff * tr;
 	} else {
 		var pfmod = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // syn value is always better
 		TensorStrides[72], u32(ri), u32(di), u32(GModSyn))];
@@ -1180,8 +1184,8 @@ fn PathParams_DWtSynDSMatrix(pt: PathParams, ctx: Context, syni: u32,si: u32,ri:
 		var rplus = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaP))];
 		var rminus = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaD))];
 		var sact = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(CaD))];
-		var dtr = rlr * (pt.DSMatrix.Delta * sact * (rplus - rminus)); // always delta
-		if (rminus > pt.Learn.DWt.LearnThr) {                          // key: prevents learning if < threshold
+		dtr = rlr * (pt.DSMatrix.Delta * sact * (rplus - rminus)); // always delta
+		if (rminus > pt.Learn.DWt.LearnThr) {                      // key: prevents learning if < threshold
 			var act = pt.DSMatrix.Credit * rlr * sact * rminus; // rlr is sig deriv -- todo: CaSyn??
 			dtr += (1.0 - pt.DSMatrix.PatchDA) * pfmod * act;   // std credit
 			if (pfmod > pt.Learn.DWt.LearnThr) {                // we were active in output
@@ -1190,10 +1194,11 @@ fn PathParams_DWtSynDSMatrix(pt: PathParams, ctx: Context, syni: u32,si: u32,ri:
 				dtr += pt.DSMatrix.OffTrace * pt.DSMatrix.PatchDA * (patchDAD2 - patchDAD1) * act;
 			}
 		}
-		SynapseTracesSet(dtr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
-		SynapseTracesSetAdd(dtr, Index3D(TensorStrides[180], TensorStrides[181],
-		TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 	}
+	SynapseTracesSet(dwt, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));
+	SynapseTracesSet(dtr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
+	SynapseTracesSetAdd(dtr, Index3D(TensorStrides[180], TensorStrides[181],
+	TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 }
 fn PathParams_DWtSynVSPatch(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
 	var ract = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // t-1
@@ -1213,23 +1218,23 @@ fn PathParams_DWtSynDSPatch(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: 
 		ract = f32(0);
 	}
 	var rlr = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(RLRate))];
+	var dwt = f32(0);
+	var dtr = f32(0);
 	if (GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], // US time -- use DA * tr
 	u32(GvHasRew), u32(di))] > 0) {
 		var tr = SynapseTracesGet(Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
-		var dwt = rlr * pt.Learn.LRate.Eff * tr;
-		SynapseTracesSet(dwt, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));
-		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
-		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
+		dwt = rlr * pt.Learn.LRate.Eff * tr;
 	} else {
 		var pfmod = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // so much better! todo: why!?
 		TensorStrides[72], u32(ri), u32(di), u32(GModSyn))];
 		var sact = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // todo: use CaSyn instead of sact * ract? But BG is transient, so no?
 		TensorStrides[72], u32(si), u32(di), u32(CaD))];
-		var dtr = pfmod * rlr * sact * ract; // rlr is just sig deriv
-		SynapseTracesSet(dtr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
-		SynapseTracesSetAdd(dtr, Index3D(TensorStrides[180], TensorStrides[181],
-		TensorStrides[182], u32(syni), u32(di), u32(Tr)));
+		dtr = pfmod * rlr * sact * ract; // rlr is just sig deriv
 	}
+	SynapseTracesSet(dwt, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));
+	SynapseTracesSet(dtr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
+	SynapseTracesSetAdd(dtr, Index3D(TensorStrides[180], TensorStrides[181],
+	TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 }
 fn PathParams_DWtSynCNeUp(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
 	var sact = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // sending activity
@@ -1258,7 +1263,17 @@ struct LearnCaParams {
 	VgccDt: f32,
 	ETraceDt: f32,
 	NormInv: f32,
-	pad2: i32,
+	pad2: f32,
+}
+struct LearnTimingParams {
+	On: i32,
+	TimerTau: f32,
+	Threshold: f32,
+	Sustain: i32,
+	Learn: i32,
+	Reset: i32,
+	TimerDt: f32,
+	pad: f32,
 }
 struct TrgAvgActParams {
 	GiBaseInit: f32,
@@ -1283,6 +1298,7 @@ struct RLRateParams {
 }
 struct LearnNeuronParams {
 	CaLearn: LearnCaParams,
+	Timing: LearnTimingParams,
 	CaSpike: CaSpikeParams,
 	LearnNMDA: NMDAParams,
 	TrgAvgAct: TrgAvgActParams,
@@ -1451,67 +1467,72 @@ const  LearnCaM: NeuronVars = 20;
 const  LearnCaP: NeuronVars = 21;
 const  LearnCaD: NeuronVars = 22;
 const  CaDiff: NeuronVars = 23;
-const  RLRate: NeuronVars = 24;
-const  ETrace: NeuronVars = 25;
-const  ETraceLearn: NeuronVars = 26;
-const  GnmdaSyn: NeuronVars = 27;
-const  Gnmda: NeuronVars = 28;
-const  GnmdaLrn: NeuronVars = 29;
-const  GnmdaMaint: NeuronVars = 30;
-const  NmdaCa: NeuronVars = 31;
-const  Gvgcc: NeuronVars = 32;
-const  VgccM: NeuronVars = 33;
-const  VgccH: NeuronVars = 34;
-const  VgccCa: NeuronVars = 35;
-const  VgccCaInt: NeuronVars = 36;
-const  Burst: NeuronVars = 37;
-const  BurstPrv: NeuronVars = 38;
-const  CtxtGe: NeuronVars = 39;
-const  CtxtGeRaw: NeuronVars = 40;
-const  CtxtGeOrig: NeuronVars = 41;
-const  GgabaB: NeuronVars = 42;
-const  GababM: NeuronVars = 43;
-const  GababX: NeuronVars = 44;
-const  Gak: NeuronVars = 45;
-const  SSGiDend: NeuronVars = 46;
-const  GknaMed: NeuronVars = 47;
-const  GknaSlow: NeuronVars = 48;
-const  Gkir: NeuronVars = 49;
-const  KirM: NeuronVars = 50;
-const  Gsk: NeuronVars = 51;
-const  SKCaIn: NeuronVars = 52;
-const  SKCaR: NeuronVars = 53;
-const  SKCaM: NeuronVars = 54;
-const  Gmahp: NeuronVars = 55;
-const  MahpN: NeuronVars = 56;
-const  Gsahp: NeuronVars = 57;
-const  SahpCa: NeuronVars = 58;
-const  SahpN: NeuronVars = 59;
-const  ActM: NeuronVars = 60;
-const  ActP: NeuronVars = 61;
-const  Beta1: NeuronVars = 62;
-const  Beta2: NeuronVars = 63;
-const  CaPMax: NeuronVars = 64;
-const  CaPMaxCa: NeuronVars = 65;
-const  GeNoise: NeuronVars = 66;
-const  GeNoiseP: NeuronVars = 67;
-const  GiNoise: NeuronVars = 68;
-const  GiNoiseP: NeuronVars = 69;
-const  GeExt: NeuronVars = 70;
-const  GeRaw: NeuronVars = 71;
-const  GeSyn: NeuronVars = 72;
-const  GiRaw: NeuronVars = 73;
-const  GiSyn: NeuronVars = 74;
-const  GeInt: NeuronVars = 75;
-const  GeIntNorm: NeuronVars = 76;
-const  GiInt: NeuronVars = 77;
-const  GModRaw: NeuronVars = 78;
-const  GModSyn: NeuronVars = 79;
-const  SMaintP: NeuronVars = 80;
-const  GMaintRaw: NeuronVars = 81;
-const  GMaintSyn: NeuronVars = 82;
-const  NeurFlags: NeuronVars = 83;
-const  CaBins: NeuronVars = 84;
+const  LearnDiff: NeuronVars = 24;
+const  LearnNow: NeuronVars = 25;
+const  LearnTimer: NeuronVars = 26;
+const  TimerCyc: NeuronVars = 27;
+const  SustainCyc: NeuronVars = 28;
+const  RLRate: NeuronVars = 29;
+const  ETrace: NeuronVars = 30;
+const  ETraceLearn: NeuronVars = 31;
+const  GnmdaSyn: NeuronVars = 32;
+const  Gnmda: NeuronVars = 33;
+const  GnmdaLrn: NeuronVars = 34;
+const  GnmdaMaint: NeuronVars = 35;
+const  NmdaCa: NeuronVars = 36;
+const  Gvgcc: NeuronVars = 37;
+const  VgccM: NeuronVars = 38;
+const  VgccH: NeuronVars = 39;
+const  VgccCa: NeuronVars = 40;
+const  VgccCaInt: NeuronVars = 41;
+const  Burst: NeuronVars = 42;
+const  BurstPrv: NeuronVars = 43;
+const  CtxtGe: NeuronVars = 44;
+const  CtxtGeRaw: NeuronVars = 45;
+const  CtxtGeOrig: NeuronVars = 46;
+const  GgabaB: NeuronVars = 47;
+const  GababM: NeuronVars = 48;
+const  GababX: NeuronVars = 49;
+const  Gak: NeuronVars = 50;
+const  SSGiDend: NeuronVars = 51;
+const  GknaMed: NeuronVars = 52;
+const  GknaSlow: NeuronVars = 53;
+const  Gkir: NeuronVars = 54;
+const  KirM: NeuronVars = 55;
+const  Gsk: NeuronVars = 56;
+const  SKCaIn: NeuronVars = 57;
+const  SKCaR: NeuronVars = 58;
+const  SKCaM: NeuronVars = 59;
+const  Gmahp: NeuronVars = 60;
+const  MahpN: NeuronVars = 61;
+const  Gsahp: NeuronVars = 62;
+const  SahpCa: NeuronVars = 63;
+const  SahpN: NeuronVars = 64;
+const  ActM: NeuronVars = 65;
+const  ActP: NeuronVars = 66;
+const  Beta1: NeuronVars = 67;
+const  Beta2: NeuronVars = 68;
+const  CaPMax: NeuronVars = 69;
+const  CaPMaxCa: NeuronVars = 70;
+const  GeNoise: NeuronVars = 71;
+const  GeNoiseP: NeuronVars = 72;
+const  GiNoise: NeuronVars = 73;
+const  GiNoiseP: NeuronVars = 74;
+const  GeExt: NeuronVars = 75;
+const  GeRaw: NeuronVars = 76;
+const  GeSyn: NeuronVars = 77;
+const  GiRaw: NeuronVars = 78;
+const  GiSyn: NeuronVars = 79;
+const  GeInt: NeuronVars = 80;
+const  GeIntNorm: NeuronVars = 81;
+const  GiInt: NeuronVars = 82;
+const  GModRaw: NeuronVars = 83;
+const  GModSyn: NeuronVars = 84;
+const  SMaintP: NeuronVars = 85;
+const  GMaintRaw: NeuronVars = 86;
+const  GMaintSyn: NeuronVars = 87;
+const  NeurFlags: NeuronVars = 88;
+const  CaBins: NeuronVars = 89;
 alias NeuronAvgVars = i32; //enums:enum
 const  ActAvg: NeuronAvgVars = 0;
 const  AvgPct: NeuronAvgVars = 1;

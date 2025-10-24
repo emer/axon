@@ -529,6 +529,18 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, lpi, ni, di uint32) {
 	ly.Acts.VmFromG(ctx, ni, di)
 	ly.Acts.SpikeFromVm(ctx, ni, di)
 	ly.Learn.CaFromSpike(ctx, ni, di)
+
+	if !ly.IsTarget() && Neurons.Value(int(ni), int(di), int(LearnNow)) > 0 {
+		da := GlobalScalars.Value(int(GvDA), int(di))
+		ach := GlobalScalars.Value(int(GvACh), int(di))
+		nrnCaP := Neurons.Value(int(ni), int(di), int(CaP))
+		nrnCaD := Neurons.Value(int(ni), int(di), int(CaD))
+		mlr := ly.Learn.RLRate.RLRateSigDeriv(nrnCaD, PoolAvgMax(AMCaD, AMCycle, Max, lpi, di))
+		modlr := ly.Learn.NeuroMod.LRMod(da, ach)
+		dlr := ly.Learn.RLRate.RLRateDiff(nrnCaP, nrnCaD)
+		Neurons.Set(mlr*dlr*modlr, int(ni), int(di), int(RLRate))
+	}
+
 	lmax := PoolAvgMax(AMGeInt, AMCycle, Max, lpi, di)
 	if lmax > 0 {
 		Neurons.Set(Neurons.Value(int(ni), int(di), int(GeInt))/lmax, int(ni), int(di), int(GeIntNorm))
@@ -941,6 +953,9 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32) {
 	Neurons.Set(Neurons.Value(int(ni), int(di), int(CaD)), int(ni), int(di), int(CaDPrev))
 	Neurons.Set(0.0, int(ni), int(di), int(CaPMax))
 	Neurons.Set(0.0, int(ni), int(di), int(CaPMaxCa))
+	Neurons.Set(0.0, int(ni), int(di), int(LearnDiff))
+	Neurons.Set(0.0, int(ni), int(di), int(LearnNow))
+	Neurons.Set(0.0, int(ni), int(di), int(RLRate))
 	ly.Acts.DecayState(ctx, ni, di, ly.Acts.Decay.Act, ly.Acts.Decay.Glong, ly.Acts.Decay.AHP)
 	// Note: synapse-level Ca decay happens in DWt
 	ly.Acts.KNaNewState(ctx, ni, di)
@@ -1044,6 +1059,7 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32) {
 	modlr := ly.Learn.NeuroMod.LRMod(da, ach)
 	dlr := float32(1)
 	hasRew := (GlobalScalars.Value(int(GvHasRew), int(di))) > 0
+	stdRLRate := false
 
 	switch ly.Type {
 	case DSPatchLayer:
@@ -1084,9 +1100,15 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32) {
 			dlr = 0 // first pool is novelty / curiosity -- no learn
 		}
 	default:
-		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaP, nrnCaD)
+		if !ly.IsTarget() {
+			stdRLRate = ly.Learn.Timing.On.IsTrue() // computed at time of learning
+		} else {
+			dlr = ly.Learn.RLRate.RLRateDiff(nrnCaP, nrnCaD)
+		}
 	}
-	Neurons.Set(mlr*dlr*modlr, int(ni), int(di), int(RLRate))
+	if !stdRLRate {
+		Neurons.Set(mlr*dlr*modlr, int(ni), int(di), int(RLRate))
+	}
 	var tau float32
 	sahpN := Neurons.Value(int(ni), int(di), int(SahpN))
 	nrnSaphCa := Neurons.Value(int(ni), int(di), int(SahpCa))

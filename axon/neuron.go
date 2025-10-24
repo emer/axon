@@ -176,9 +176,34 @@ const (
 	// capturing the function of DAPK1 in the Kinase learning rule.
 	LearnCaD
 
-	// CaDiff is difference between [LearnCaP] - [LearnCaD].  This is the error
+	// CaDiff is difference between [LearnCaP] - [LearnCaD]. This is the error
 	// signal that drives error-driven learning.
 	CaDiff
+
+	// LearnDiff is the actual difference signal that drives learning, which is
+	// computed from [CaDiff] for neocortical neurons, but specifically at the
+	// point of learning (LearnNow). It is cleared at the start of a new learning window.
+	LearnDiff
+
+	// LearnNow is activated at the moment when the receiving neuron is learning,
+	// based on accumulated calcium signals in neocortical neurons.
+	// See [LearnTimingParams] and [LearnTimer], [TimerCyc], [SustainCyc].
+	LearnNow
+
+	// LearnTimer is an intermediate integration of LearnCaM that is used for
+	// timing when to learn, using LearnTimingParams.TimerTau.
+	LearnTimer
+
+	// TimerCyc is the cycle at which LearnTimer first got over the minimal
+	// threshold for learning. This is reset when it goes back below the threshold,
+	// and learning occurs only if sustained sufficiently long, at which point
+	// SustainCyc is triggered.
+	TimerCyc
+
+	// SustainCyc is the cycle at which LearnTimer was sustained long enough to
+	// trigger learning. Actual learning will occur after an interval of cycles
+	// after this point, or at the end of the trial if that comes first.
+	SustainCyc
 
 	// RLRate is recv-unit based learning rate multiplier, reflecting the sigmoid
 	// derivative computed from [CaD] of recv unit, and the normalized difference
@@ -574,6 +599,11 @@ var NeuronVarProps = map[string]string{
 	"LearnCaP":    `cat:"Learn"`,
 	"LearnCaD":    `cat:"Learn"`,
 	"CaDiff":      `cat:"Learn"`,
+	"LearnDiff":   `cat:"Learn"`,
+	"LearnNow":    `cat:"Learn"`,
+	"LearnTimer":  `cat:"Learn"`,
+	"TimerCyc":    `cat:"Learn" auto-scale:"+"`,
+	"SustainCyc":  `cat:"Learn" auto-scale:"+"`,
 	"RLRate":      `cat:"Learn" auto-scale:"+"`,
 	"ETrace":      `cat:"Learn"`,
 	"ETraceLearn": `cat:"Learn" auto-scale:"+"`,

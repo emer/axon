@@ -178,7 +178,7 @@ type Network struct {
 
 	// Ctx is the context state (one). Other copies of Context can be maintained
 	// and [SetContext] to update this one, but this instance is the canonical one.
-	Ctx []Context `display:"-"`
+	Ctx []Context `new-window:"+"`
 
 	// Neurons are all the neuron state variables.
 	// [Neurons][Data][Vars]
@@ -192,12 +192,12 @@ type Network struct {
 	// Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition,
 	// Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex].
 	// [Layer * Pools][Data][PoolVars+AvgMax]
-	Pools tensor.Float32
+	Pools tensor.Float32 `display:"-"`
 
 	// PoolsInt are the [PoolIntVars] int32 state values for layer and sub-pool
 	// inhibition, AvgMax atomic integration, and other vars: use [AvgMaxIntVarIndex]
 	// [Layer * Pools][Data][PoolIntVars+AvgMax]
-	PoolsInt tensor.Int32
+	PoolsInt tensor.Int32 `display:"-"`
 
 	// LayerStates holds layer-level state values, with variables defined in
 	// [LayerVars], for each layer and Data parallel index.

@@ -46,6 +46,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.CaLearn.ETraceTau = 4               // 4 == 5
 				ly.Learn.CaLearn.ETraceScale = 0.1           // 0.1 > 0.05, 0.2 etc
 
+				ly.Learn.Timing.On.SetBool(true)
+
 				// ly.Learn.CaSpike.SpikeCaSyn = 8 // vs 12 in lvis -- 12 does NOT work here
 			}},
 		{Sel: ".SuperLayer", Doc: "super layer params",
