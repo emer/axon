@@ -65,7 +65,7 @@ fn SetNeuronExtPosNeg(ctx: Context, ni: u32,di: u32, val: f32) {
 	}
 }
 fn LayerParams_IsTarget(ly: LayerParams) -> bool {
-	return ly.Type == TargetLayer || ly.Type == PulvinarLayer || ly.Type == CerebPredLayer;
+	return ly.Type == TargetLayer || ly.Type == PulvinarLayer || ly.Type == CNiPredLayer;
 }
 fn LayerParams_IsInput(ly: LayerParams) -> bool {
 	return ly.Type == InputLayer;
@@ -86,8 +86,8 @@ fn LayerParams_GInteg(ly: LayerParams, ctx: Context, pi: u32,ni: u32,di: u32) {
 		LayerParams_PulvinarDriver(ly, ctx, ni-ly.Indexes.NeurSt, di, &drvGe, &nonDrivePct);
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // use for regulating inhibition
 		u32(ni), u32(di), u32(Ext))] = nonDrivePct;
-	} else if (ly.Type == CerebPredLayer) {
-		LayerParams_CerebPredDriver(ly, ctx, ni-ly.Indexes.NeurSt, di, &drvGe, &nonDrivePct);
+	} else if (ly.Type == CNiPredLayer) {
+		LayerParams_CNiPredDriver(ly, ctx, ni-ly.Indexes.NeurSt, di, &drvGe, &nonDrivePct);
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // use for regulating inhibition
 		u32(ni), u32(di), u32(Ext))] = nonDrivePct;
 	}
@@ -140,7 +140,7 @@ fn LayerParams_SpecialPreGs(ly: LayerParams, ctx: Context, pi: u32,ni: u32,di: u
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeRaw))] = dr;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeSyn))] = DtParams_GeSynFromRawSteady(ly.Acts.Dt, dr);
 	}
-	case CerebPredLayer: {
+	case CNiPredLayer: {
 		if (ctx.PlusPhase == 0) {
 			break;
 		}
@@ -249,7 +249,7 @@ fn LayerParams_SpecialPostGs(ly: LayerParams, ctx: Context, ni: u32,di: u32, sav
 		LayerParams_GNeuroMod(ly, ctx, ni, di);
 	}
 	switch (ly.Type) {
-	case PulvinarLayer, CerebPredLayer, PTMaintLayer, CTLayer, BLALayer: {
+	case PulvinarLayer, CNiPredLayer, PTMaintLayer, CTLayer, BLALayer: {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeExt))] = saveVal;
 	}
 	case PTPredLayer: {
@@ -331,7 +331,7 @@ fn LayerParams_GiInteg(ly: LayerParams, ctx: Context, pi: u32,ni: u32,di: u32) {
 	var ssgi = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(SSGi))];
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Gi))] = gi;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SSGiDend))] = 0.0;
-	if (ctx.PlusPhase == 1 && (ly.Type == PulvinarLayer || ly.Type == CerebPredLayer)) {
+	if (ctx.PlusPhase == 1 && (ly.Type == PulvinarLayer || ly.Type == CNiPredLayer)) {
 		var ext = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // nonDrivePct
 		TensorStrides[72], u32(ni), u32(di), u32(Ext))];
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SSGiDend))] = ext * ly.Acts.Dend.SSGi * ssgi;
@@ -888,28 +888,28 @@ fn ActParams_SpikeFromVm(ac: ActParams, ctx: Context, ni: u32,di: u32) {
 }
 
 //////// import: "cereb-layer.go"
-struct CerebPredParams {
+struct CNiPredParams {
 	DriveScale: f32,
 	FullDriveAct: f32,
 	DriveLayIndex: i32,
 	pad: f32,
 }
-fn CerebPredParams_DriveGe(tp: CerebPredParams, act: f32) -> f32 {
+fn CNiPredParams_DriveGe(tp: CNiPredParams, act: f32) -> f32 {
 	return tp.DriveScale * act;
 }
-fn CerebPredParams_NonDrivePct(tp: CerebPredParams, drvMax: f32) -> f32 {
+fn CNiPredParams_NonDrivePct(tp: CNiPredParams, drvMax: f32) -> f32 {
 	return 1.0 - min(1.0, drvMax/tp.FullDriveAct);
 }
-fn LayerParams_CerebPredDriver(ly: LayerParams, ctx: Context, lni: u32,di: u32, drvGe: ptr<function,f32>,nonDrivePct: ptr<function,f32>) {
-	var dli = u32(ly.CerebPred.DriveLayIndex);
+fn LayerParams_CNiPredDriver(ly: LayerParams, ctx: Context, lni: u32,di: u32, drvGe: ptr<function,f32>,nonDrivePct: ptr<function,f32>) {
+	var dli = u32(ly.CNiPred.DriveLayIndex);
 	let dly = Layers[dli];
 	var dpi = LayerParams_PoolIndex(dly, u32(u32(0)));
 	var drvMax = PoolAvgMax(AMCaP, AMCycle, Max, dpi, di);
-	*nonDrivePct = CerebPredParams_NonDrivePct(ly.CerebPred, drvMax); // how much non-driver to keep
+	*nonDrivePct = CNiPredParams_NonDrivePct(ly.CNiPred, drvMax); // how much non-driver to keep
 	var dact = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(dly.Indexes.NeurSt + lni), u32(di), u32(CaP))];
-	*drvGe = CerebPredParams_DriveGe(ly.CerebPred, dact);
+	*drvGe = CNiPredParams_DriveGe(ly.CNiPred, dact);
 }
-struct CerebOutParams {
+struct CNeUpParams {
 	ActTarg: f32,
 	LearnThr: f32,
 	GeBaseLRate: f32,
@@ -1514,8 +1514,8 @@ struct LayerParams {
 	DSMatrix: DSMatrixParams,
 	Striatum: StriatumParams,
 	GP: GPParams,
-	CerebPred: CerebPredParams,
-	CerebOut: CerebOutParams,
+	CNiPred: CNiPredParams,
+	CNeUp: CNeUpParams,
 	LDT: LDTParams,
 	VTA: VTAParams,
 	RWPred: RWPredParams,
@@ -1546,8 +1546,8 @@ const  STNLayer: LayerTypes = 12;
 const  GPLayer: LayerTypes = 13;
 const  BGThalLayer: LayerTypes = 14;
 const  VSGatedLayer: LayerTypes = 15;
-const  CerebPredLayer: LayerTypes = 16;
-const  CerebOutLayer: LayerTypes = 17;
+const  CNiPredLayer: LayerTypes = 16;
+const  CNeUpLayer: LayerTypes = 17;
 const  BLALayer: LayerTypes = 18;
 const  CeMLayer: LayerTypes = 19;
 const  VSPatchLayer: LayerTypes = 20;
@@ -2016,7 +2016,7 @@ const  DSPatchPath: PathTypes = 5;
 const  VSPatchPath: PathTypes = 6;
 const  VSMatrixPath: PathTypes = 7;
 const  DSMatrixPath: PathTypes = 8;
-const  CerebPredToOutPath: PathTypes = 9;
+const  CNiPredToOutPath: PathTypes = 9;
 const  RWPath: PathTypes = 10;
 const  TDPredPath: PathTypes = 11;
 const  BLAPath: PathTypes = 12;

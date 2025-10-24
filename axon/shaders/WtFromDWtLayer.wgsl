@@ -41,7 +41,7 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 
 //////// import: "act-layer.go"
 fn LayerParams_IsTarget(ly: LayerParams) -> bool {
-	return ly.Type == TargetLayer || ly.Type == PulvinarLayer || ly.Type == CerebPredLayer;
+	return ly.Type == TargetLayer || ly.Type == PulvinarLayer || ly.Type == CNiPredLayer;
 }
 fn LayerParams_IsInput(ly: LayerParams) -> bool {
 	return ly.Type == InputLayer;
@@ -212,13 +212,13 @@ struct ActParams {
 }
 
 //////// import: "cereb-layer.go"
-struct CerebPredParams {
+struct CNiPredParams {
 	DriveScale: f32,
 	FullDriveAct: f32,
 	DriveLayIndex: i32,
 	pad: f32,
 }
-struct CerebOutParams {
+struct CNeUpParams {
 	ActTarg: f32,
 	LearnThr: f32,
 	GeBaseLRate: f32,
@@ -631,8 +631,8 @@ struct LayerParams {
 	DSMatrix: DSMatrixParams,
 	Striatum: StriatumParams,
 	GP: GPParams,
-	CerebPred: CerebPredParams,
-	CerebOut: CerebOutParams,
+	CNiPred: CNiPredParams,
+	CNeUp: CNeUpParams,
 	LDT: LDTParams,
 	VTA: VTAParams,
 	RWPred: RWPredParams,
@@ -666,8 +666,8 @@ const  STNLayer: LayerTypes = 12;
 const  GPLayer: LayerTypes = 13;
 const  BGThalLayer: LayerTypes = 14;
 const  VSGatedLayer: LayerTypes = 15;
-const  CerebPredLayer: LayerTypes = 16;
-const  CerebOutLayer: LayerTypes = 17;
+const  CNiPredLayer: LayerTypes = 16;
+const  CNeUpLayer: LayerTypes = 17;
 const  BLALayer: LayerTypes = 18;
 const  CeMLayer: LayerTypes = 19;
 const  VSPatchLayer: LayerTypes = 20;
@@ -1140,7 +1140,7 @@ const  DSPatchPath: PathTypes = 5;
 const  VSPatchPath: PathTypes = 6;
 const  VSMatrixPath: PathTypes = 7;
 const  DSMatrixPath: PathTypes = 8;
-const  CerebPredToOutPath: PathTypes = 9;
+const  CNiPredToOutPath: PathTypes = 9;
 const  RWPath: PathTypes = 10;
 const  TDPredPath: PathTypes = 11;
 const  BLAPath: PathTypes = 12;

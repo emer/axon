@@ -66,11 +66,11 @@ const (
 	// Trace is reset at time of reward based on ACh level (from CINs in biology).
 	DSMatrixPath
 
-	// CerebPredToOutPath is the prediction to output pathway in the cerebellar
+	// CNiPredToOutPath is the prediction to output pathway in the cerebellar
 	// nucleus system, which is inhibitory and learns drive the output neurons at
 	// their target baseline activity level, when both excitatory and inhibitory
 	// input is present there.
-	CerebPredToOutPath
+	CNiPredToOutPath
 
 	// RWPath does dopamine-modulated learning for reward prediction:
 	// Da * Send.CaP (integrated current spiking activity).

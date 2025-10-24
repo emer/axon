@@ -96,7 +96,7 @@ func SetNeuronExtPosNeg(ctx *Context, ni, di uint32, val float32) {
 // It is used in SynScale to not apply it to target layers.
 // In both cases, Target layers are purely error-driven.
 func (ly *LayerParams) IsTarget() bool {
-	return ly.Type == TargetLayer || ly.Type == PulvinarLayer || ly.Type == CerebPredLayer
+	return ly.Type == TargetLayer || ly.Type == PulvinarLayer || ly.Type == CNiPredLayer
 }
 
 // IsInput returns true if this layer is an Input layer.
@@ -254,8 +254,8 @@ func (ly *LayerParams) GInteg(ctx *Context, pi, ni, di uint32) {
 	if ly.Type == PulvinarLayer {
 		ly.PulvinarDriver(ctx, ni-ly.Indexes.NeurSt, di, &drvGe, &nonDrivePct)
 		Neurons.Set(nonDrivePct, int(ni), int(di), int(Ext)) // use for regulating inhibition
-	} else if ly.Type == CerebPredLayer {
-		ly.CerebPredDriver(ctx, ni-ly.Indexes.NeurSt, di, &drvGe, &nonDrivePct)
+	} else if ly.Type == CNiPredLayer {
+		ly.CNiPredDriver(ctx, ni-ly.Indexes.NeurSt, di, &drvGe, &nonDrivePct)
 		Neurons.Set(nonDrivePct, int(ni), int(di), int(Ext)) // use for regulating inhibition
 	}
 	saveVal := ly.SpecialPreGs(ctx, pi, ni, di, drvGe, nonDrivePct)
@@ -311,7 +311,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, pi, ni, di uint32, drvGe float
 		Neurons.Set(dr, int(ni), int(di), int(GeRaw))
 		Neurons.Set(ly.Acts.Dt.GeSynFromRawSteady(dr), int(ni), int(di), int(GeSyn))
 
-	case CerebPredLayer:
+	case CNiPredLayer:
 		if ctx.PlusPhase.IsFalse() {
 			break
 		}
@@ -413,7 +413,7 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni, di uint32, saveVal float3
 	}
 
 	switch ly.Type {
-	case PulvinarLayer, CerebPredLayer, PTMaintLayer, CTLayer, BLALayer:
+	case PulvinarLayer, CNiPredLayer, PTMaintLayer, CTLayer, BLALayer:
 		Neurons.Set(saveVal, int(ni), int(di), int(GeExt))
 	case PTPredLayer:
 		Neurons.Set(saveVal, int(ni), int(di), int(GeExt))
@@ -495,7 +495,7 @@ func (ly *LayerParams) GiInteg(ctx *Context, pi, ni, di uint32) {
 	ssgi := Pools.Value(int(pi), int(di), int(fsfffb.SSGi))
 	Neurons.Set(gi, int(ni), int(di), int(Gi))
 	Neurons.Set(0.0, int(ni), int(di), int(SSGiDend))
-	if ctx.PlusPhase.IsTrue() && (ly.Type == PulvinarLayer || ly.Type == CerebPredLayer) {
+	if ctx.PlusPhase.IsTrue() && (ly.Type == PulvinarLayer || ly.Type == CNiPredLayer) {
 		ext := Neurons.Value(int(ni), int(di), int(Ext)) // nonDrivePct
 		Neurons.Set(ext*ly.Acts.Dend.SSGi*ssgi, int(ni), int(di), int(SSGiDend))
 	} else {
@@ -1005,7 +1005,7 @@ func (ly *LayerParams) MinusPhasePost(ctx *Context) {
 	switch ly.Type {
 	case VSMatrixLayer, DSMatrixLayer:
 		ly.MatrixGated(ctx) // need gated state for decisions about action processing, so do in minus too
-	case PulvinarLayer, CerebPredLayer:
+	case PulvinarLayer, CNiPredLayer:
 		ly.DecayStateNeuronsAll(ctx, 1, 1, 0)
 	default:
 	}
@@ -1063,20 +1063,20 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32) {
 		} else {
 			modlr = 1 // don't use mod
 		}
-	case CerebOutLayer:
+	case CNeUpLayer:
 		// use lratediff to signal learning status
 		lni := ni - ly.Indexes.NeurSt // layer-based
-		mlr = ly.CerebOutPredAct(ctx, lni, di)
-		dlr = ly.CerebOutSenseAct(ctx, lni, di)
-		if mlr < ly.CerebOut.LearnThr {
+		mlr = ly.CNeUpPredAct(ctx, lni, di)
+		dlr = ly.CNeUpSenseAct(ctx, lni, di)
+		if mlr < ly.CNeUp.LearnThr {
 			mlr = 0
 		}
-		if dlr < ly.CerebOut.LearnThr {
+		if dlr < ly.CNeUp.LearnThr {
 			dlr = 0
 		}
 		modlr = 1
 		if mlr*dlr == 0 { // adapt GeBase only if both pathways inactive
-			NeuronAvgs.SetAdd(ly.CerebOut.GeBaseLRate*(ly.CerebOut.ActTarg-nrnCaP), int(ni), int(GeBase))
+			NeuronAvgs.SetAdd(ly.CNeUp.GeBaseLRate*(ly.CNeUp.ActTarg-nrnCaD), int(ni), int(GeBase))
 		}
 	case BLALayer:
 		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaP, Neurons.Value(int(ni), int(di), int(CaDPrev))) // delta on previous trial

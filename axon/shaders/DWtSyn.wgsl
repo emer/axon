@@ -225,7 +225,7 @@ fn SynapseTracesSetDiv(vl: f32, ix: u32) {
 
 //////// import: "act-layer.go"
 fn LayerParams_IsTarget(ly: LayerParams) -> bool {
-	return ly.Type == TargetLayer || ly.Type == PulvinarLayer || ly.Type == CerebPredLayer;
+	return ly.Type == TargetLayer || ly.Type == PulvinarLayer || ly.Type == CNiPredLayer;
 }
 
 //////// import: "act-net.go"
@@ -376,13 +376,13 @@ struct ActParams {
 }
 
 //////// import: "cereb-layer.go"
-struct CerebPredParams {
+struct CNiPredParams {
 	DriveScale: f32,
 	FullDriveAct: f32,
 	DriveLayIndex: i32,
 	pad: f32,
 }
-struct CerebOutParams {
+struct CNeUpParams {
 	ActTarg: f32,
 	LearnThr: f32,
 	GeBaseLRate: f32,
@@ -801,8 +801,8 @@ struct LayerParams {
 	DSMatrix: DSMatrixParams,
 	Striatum: StriatumParams,
 	GP: GPParams,
-	CerebPred: CerebPredParams,
-	CerebOut: CerebOutParams,
+	CNiPred: CNiPredParams,
+	CNeUp: CNeUpParams,
 	LDT: LDTParams,
 	VTA: VTAParams,
 	RWPred: RWPredParams,
@@ -833,8 +833,8 @@ const  STNLayer: LayerTypes = 12;
 const  GPLayer: LayerTypes = 13;
 const  BGThalLayer: LayerTypes = 14;
 const  VSGatedLayer: LayerTypes = 15;
-const  CerebPredLayer: LayerTypes = 16;
-const  CerebOutLayer: LayerTypes = 17;
+const  CNiPredLayer: LayerTypes = 16;
+const  CNeUpLayer: LayerTypes = 17;
 const  BLALayer: LayerTypes = 18;
 const  CeMLayer: LayerTypes = 19;
 const  VSPatchLayer: LayerTypes = 20;
@@ -905,8 +905,8 @@ fn PathParams_DWtSyn(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32,
 	case DSPatchPath: {
 		PathParams_DWtSynDSPatch(pt, ctx, syni, si, ri, lpi, pi, di);
 	}
-	case CerebPredToOutPath: {
-		PathParams_DWtSynCerebOut(pt, ctx, rlay, syni, si, ri, lpi, pi, di);
+	case CNiPredToOutPath: {
+		PathParams_DWtSynCNeUp(pt, ctx, rlay, syni, si, ri, lpi, pi, di);
 	}
 	case RWPath: {
 		PathParams_DWtSynRWPred(pt, ctx, syni, si, ri, lpi, pi, di);
@@ -1231,14 +1231,14 @@ fn PathParams_DWtSynDSPatch(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: 
 		TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 	}
 }
-fn PathParams_DWtSynCerebOut(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
+fn PathParams_DWtSynCNeUp(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
 	var sact = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // sending activity
 	u32(si), u32(di), u32(CaD))];
 	var ract = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // receiving activity
 	u32(ri), u32(di), u32(CaD))];
-	var predSenseAct = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // CerebPred * Sense input activity, in PlusPhaseNeuron
+	var predSenseAct = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // CNiPred * Sense input activity, in PlusPhaseNeuron
 	TensorStrides[72], u32(ri), u32(di), u32(RLRate))];
-	var dwt = -predSenseAct * sact * (rlay.CerebOut.ActTarg - ract); // minus sign due to inhibitory
+	var dwt = -predSenseAct * sact * (rlay.CNeUp.ActTarg - ract); // minus sign due to inhibitory
 	SynapseTracesSet(pt.Learn.LRate.Eff * dwt, Index3D(TensorStrides[180], TensorStrides[181],
 	TensorStrides[182],
 	u32(syni), u32(di), u32(DiDWt)));
@@ -1584,7 +1584,7 @@ const  DSPatchPath: PathTypes = 5;
 const  VSPatchPath: PathTypes = 6;
 const  VSMatrixPath: PathTypes = 7;
 const  DSMatrixPath: PathTypes = 8;
-const  CerebPredToOutPath: PathTypes = 9;
+const  CNiPredToOutPath: PathTypes = 9;
 const  RWPath: PathTypes = 10;
 const  TDPredPath: PathTypes = 11;
 const  BLAPath: PathTypes = 12;

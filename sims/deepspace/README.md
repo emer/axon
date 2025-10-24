@@ -1,4 +1,33 @@
-# deep_move
+# deepspace
+
+TODO: do VOR
+
+De Zeeuw (2021):
+
+> More specifically, given the inhibitory nature of Purkinje cells90, they can be expected to participate in an upbound or downbound microzone if the net polarity of the downstream circuitry is inhibitory or excitatory, respectively. 
+
+```
+     PCd       --o CoutD --> Act
+      v        --o   ^   -->  ^
+   ^  |
+S --> IO
+      o
+      | --o Ci --o CoutD --> Act
+    CNiPred -------o CoutU --> Inh --o Act
+      ^
+```
+
+* CNiPred cannot have up / down versions because it needs to inhibit in proportion to excitatory S sensory input to IO. Its inhibitory output always must go up with learning / in response to sensory signals.
+
+* 
+
+
+- CoutUp: upbound cerebellar output: 
+- CoutDn: downbound output
+
+
+
+## Old
 
 This example tests the `deep` predictive learning model on predicting the effects of moving within a first-person depth-map view of an agent moving within a simple square-shaped environment.  There are two predictions that are updated: head direction relative to some kind of "north" compass direction, which changes with rotations, and a depth map to the walls, encoded using a population code for each of N angles within an overall field of view (FOV).  This uses a simplified version of the [Flat World](https://github.com/emer/envs/tree/main/fworld) environment, and this project serves as an testing and optimization platform for the larger [Emery Map Nav](https://github.com/ccnlab/map-nav/tree/main/sims/emery2) model.
 

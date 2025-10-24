@@ -240,10 +240,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	// cerebellum:
 	// output = copy of input that has subtraction
-	cout, cpred := net.AddCerebellumNucleus(vvelIn, space)
+	cneUp, cniPred := net.AddCerebellumNucleus(vvelIn, space)
 
-	net.ConnectLayers(rotActPrev, cpred, full, axon.ForwardPath).AddClass("ToCPred")
-	net.ConnectLayers(s1ct, cpred, full, axon.ForwardPath).AddClass("ToCPred")
+	net.ConnectLayers(rotActPrev, cniPred, full, axon.ForwardPath).AddClass("ToCNiPred")
+	net.ConnectLayers(s1ct, cniPred, full, axon.ForwardPath).AddClass("ToCNiPred")
 
 	// position
 
@@ -255,7 +255,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	}
 	s1.PlaceAbove(rotAct)
 
-	cout.PlaceRightOf(s1, space)
+	cneUp.PlaceRightOf(s1, space)
 
 	// visHid.PlaceRightOf(s1, space)
 	// if ss.Config.Params.Hid2 {

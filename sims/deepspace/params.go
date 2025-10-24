@@ -48,17 +48,17 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Decay.AHP = 0.0          // clear long
 				ly.Learn.RLRate.SigmoidMin = 1.0 // 1 > .05
 			}},
-		{Sel: ".CerebPredLayer", Doc: "",
+		{Sel: ".CNiPredLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.15 // 0.15 accurate
 				ly.Inhib.Layer.On.SetBool(false)
 				ly.Inhib.Layer.FB = 0            // no lateral
 				ly.Inhib.Layer.Gi = 0.4          // ?
-				ly.CerebPred.DriveScale = 0.1    // 0.1 less over-active in plus?
-				ly.CerebPred.FullDriveAct = 0.6  // 0.6 def
+				ly.CNiPred.DriveScale = 0.1      // 0.1 less over-active in plus?
+				ly.CNiPred.FullDriveAct = 0.6    // 0.6 def
 				ly.Learn.RLRate.SigmoidMin = 1.0 // 1 > .05
 			}},
-		{Sel: ".CerebOutLayer", Doc: "",
+		{Sel: ".CNeUpLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.15 // ?
 				ly.Acts.Init.GeBase = 0.25
@@ -112,13 +112,13 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 2
 			}},
-		{Sel: ".CerebPredToOut", Doc: "fixed inhibition to output",
+		{Sel: ".CNiPredToOut", Doc: "fixed inhibition to output",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 2 // strong so that weight range is sufficient
 				pt.SWts.Init.SPct = 0
-				pt.Learn.LRate.Base = 0.001
+				pt.Learn.LRate.Base = 0.01
 			}},
-		{Sel: ".CerebOutInput", Doc: "fixed excitation to output",
+		{Sel: ".CNeUpInput", Doc: "fixed excitation to output",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 1
 			}},

@@ -124,15 +124,15 @@ type LayerParams struct {
 	// GP has params for GP (globus pallidus) of the BG layers.
 	GP GPParams `display:"inline"`
 
-	// CerebPred has params for the cerebellar nuclei inhibitory prediction
+	// CNiPred has params for the cerebellar nuclei inhibitory prediction
 	// neurons, which learn to predict the activity of a specific sensory input,
-	// and inhibit it in the corresponding CerebOutLayer
-	CerebPred CerebPredParams `display:"inline"`
+	// and inhibit it in the corresponding CNeUpLayer
+	CNiPred CNiPredParams `display:"inline"`
 
-	// CerebOut has parameters for learning in the cerebellar nucleus
+	// CNeUp has parameters for learning in the cerebellar nucleus
 	// output neurons, which are tonically active and learn to maintain a target
 	// activity level in the presence and absence of inputs.
-	CerebOut CerebOutParams `display:"inline"`
+	CNeUp CNeUpParams `display:"inline"`
 
 	// LDT has parameters for laterodorsal tegmentum ACh salience neuromodulatory
 	// signal, driven by superior colliculus stimulus novelty, US input / absence,
@@ -207,8 +207,8 @@ func (ly *LayerParams) Update() {
 	ly.Striatum.Update()
 	ly.GP.Update()
 
-	ly.CerebPred.Update()
-	ly.CerebOut.Update()
+	ly.CNiPred.Update()
+	ly.CNeUp.Update()
 
 	ly.LDT.Update()
 	ly.VTA.Update()
@@ -235,8 +235,8 @@ func (ly *LayerParams) Defaults() {
 	ly.Striatum.Defaults()
 	ly.GP.Defaults()
 
-	ly.CerebPred.Defaults()
-	ly.CerebOut.Defaults()
+	ly.CNiPred.Defaults()
+	ly.CNeUp.Defaults()
 
 	ly.LDT.Defaults()
 	ly.VTA.Defaults()
@@ -261,10 +261,10 @@ func (ly *LayerParams) ShouldDisplay(field string) bool {
 		return ly.Type == VSMatrixLayer || ly.Type == DSMatrixLayer || ly.Type == DSPatchLayer
 	case "GP":
 		return ly.Type == GPLayer
-	case "CerebPred":
-		return ly.Type == CerebPredLayer
-	case "CerebOut":
-		return ly.Type == CerebOutLayer
+	case "CNiPred":
+		return ly.Type == CNiPredLayer
+	case "CNeUp":
+		return ly.Type == CNeUpLayer
 	case "LDT":
 		return ly.Type == LDTLayer
 	case "VTA":

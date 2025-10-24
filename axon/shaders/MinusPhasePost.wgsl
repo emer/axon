@@ -59,7 +59,7 @@ fn LayerParams_MinusPhasePost(ly: LayerParams, ctx: Context) {
 	case VSMatrixLayer, DSMatrixLayer: {
 		LayerParams_MatrixGated(ly, ctx);
 	} // need gated state for decisions about action processing, so do in minus too
-	case PulvinarLayer, CerebPredLayer: {
+	case PulvinarLayer, CNiPredLayer: {
 		LayerParams_DecayStateNeuronsAll(ly, ctx, f32(f32(1)), f32(f32(1)), f32(f32(0)));
 	}
 	default: {
@@ -306,13 +306,13 @@ fn ActParams_DecayState(ac: ActParams, ctx: Context, ni: u32,di: u32, decay: f32
 }
 
 //////// import: "cereb-layer.go"
-struct CerebPredParams {
+struct CNiPredParams {
 	DriveScale: f32,
 	FullDriveAct: f32,
 	DriveLayIndex: i32,
 	pad: f32,
 }
-struct CerebOutParams {
+struct CNeUpParams {
 	ActTarg: f32,
 	LearnThr: f32,
 	GeBaseLRate: f32,
@@ -725,8 +725,8 @@ struct LayerParams {
 	DSMatrix: DSMatrixParams,
 	Striatum: StriatumParams,
 	GP: GPParams,
-	CerebPred: CerebPredParams,
-	CerebOut: CerebOutParams,
+	CNiPred: CNiPredParams,
+	CNeUp: CNeUpParams,
 	LDT: LDTParams,
 	VTA: VTAParams,
 	RWPred: RWPredParams,
@@ -757,8 +757,8 @@ const  STNLayer: LayerTypes = 12;
 const  GPLayer: LayerTypes = 13;
 const  BGThalLayer: LayerTypes = 14;
 const  VSGatedLayer: LayerTypes = 15;
-const  CerebPredLayer: LayerTypes = 16;
-const  CerebOutLayer: LayerTypes = 17;
+const  CNiPredLayer: LayerTypes = 16;
+const  CNeUpLayer: LayerTypes = 17;
 const  BLALayer: LayerTypes = 18;
 const  CeMLayer: LayerTypes = 19;
 const  VSPatchLayer: LayerTypes = 20;
@@ -1134,7 +1134,7 @@ const  DSPatchPath: PathTypes = 5;
 const  VSPatchPath: PathTypes = 6;
 const  VSMatrixPath: PathTypes = 7;
 const  DSMatrixPath: PathTypes = 8;
-const  CerebPredToOutPath: PathTypes = 9;
+const  CNiPredToOutPath: PathTypes = 9;
 const  RWPath: PathTypes = 10;
 const  TDPredPath: PathTypes = 11;
 const  BLAPath: PathTypes = 12;

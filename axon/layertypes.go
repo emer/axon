@@ -135,19 +135,19 @@ const (
 
 	//////// Cerebellum (Nuclear)
 
-	// CerebPredLayer represents the cerebellar nuclei inhibitory prediction
+	// CNiPredLayer represents the cerebellar nuclei inhibitory prediction
 	// neurons, which learn to predict the activity of a specific sensory input,
-	// and inhibit it in the corresponding CerebOutLayer
-	CerebPredLayer
+	// and inhibit it in the corresponding CNeUpLayer
+	CNiPredLayer
 
-	// CerebOutLayer represents the cerebellar nuclei excitatory output
-	// neurons, which are inhibited by the CerebPredLayer neurons, thereby
-	// cancelling the effects of self-generated motor commands.
-	CerebOutLayer
+	// CNeUpLayer represents the cerebellar nuclei excitatory upgoing
+	// output neurons, which are inhibited by the CNiPredLayer neurons,
+	// thereby cancelling the effects of self-generated motor commands.
+	CNeUpLayer
 
 	// CerebIOLayer represents the cerebellar inferior olive neurons,
 	// which receive excitatory sensory and motor inputs from a range of
-	// sources, and are inhibited by the CerebPredLayer neurons, to compute
+	// sources, and are inhibited by the CNiPredLayer neurons, to compute
 	// the climbing fiber teaching signal to the cerebellar purkinje cells.
 	// CerebIOLayer
 

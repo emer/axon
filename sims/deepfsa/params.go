@@ -105,7 +105,7 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Adapt.HiMeanDecay = 0.0008  // 0.0008 default
 				pt.Learn.DWt.SynCa20.SetBool(false) // 10 > 20 reliably
 				pt.Learn.DWt.SynTraceTau = 1        // 1 >> 2 v0.0.9
-				pt.Learn.DWt.LearnThr = 0           // > 0 ok but not better
+				pt.Learn.DWt.LearnThr = .2          // > 0 ok but not better
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {

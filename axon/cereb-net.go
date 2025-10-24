@@ -8,27 +8,27 @@ import "github.com/emer/emergent/v2/paths"
 
 // AddCerebNucleus adds cerebellar nucleus layers that learn to cancel
 // the given sensory input layer, from which they copy their shape.
-// Returns Cout, Cpred layers, with given optional prefix.
-func (net *Network) AddCerebellumNucleus(sense *Layer, space float32) (cout, cpred *Layer) {
+// Returns cneUp, CNiPred layers, with given optional prefix.
+func (net *Network) AddCerebellumNucleus(sense *Layer, space float32) (cneUp, cniPred *Layer) {
 	name := sense.Name
-	predName := name + "Cpred"
+	predName := name + "CNiPred"
 	shp := sense.Shape
 	if shp.NumDims() == 2 {
-		cout = net.AddLayer2D(name+"Cout", CerebOutLayer, shp.DimSize(0), shp.DimSize(1))
-		cpred = net.AddLayer2D(predName, CerebPredLayer, shp.DimSize(0), shp.DimSize(1))
+		cneUp = net.AddLayer2D(name+"CNeUp", CNeUpLayer, shp.DimSize(0), shp.DimSize(1))
+		cniPred = net.AddLayer2D(predName, CNiPredLayer, shp.DimSize(0), shp.DimSize(1))
 	} else {
-		cout = net.AddLayer4D(name+"Cout", CerebOutLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
-		cpred = net.AddLayer4D(predName, CerebPredLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
+		cneUp = net.AddLayer4D(name+"CNeUp", CNeUpLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
+		cniPred = net.AddLayer4D(predName, CNiPredLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
 	}
-	cpred.SetBuildConfig("DriveLayName", name)
+	cniPred.SetBuildConfig("DriveLayName", name)
 
 	one2one := paths.NewOneToOne()
-	net.ConnectLayers(sense, cout, one2one, ForwardPath).AddClass("CerebOutInput")
-	net.ConnectLayers(cpred, cout, one2one, CerebPredToOutPath).AddClass("CerebPredToOut")
+	net.ConnectLayers(sense, cneUp, one2one, ForwardPath).AddClass("CNeUpInput")
+	net.ConnectLayers(cniPred, cneUp, one2one, CNiPredToOutPath).AddClass("CNiPredToOut")
 
-	cout.SetBuildConfig("PredLayName", predName)
-	cout.SetBuildConfig("SenseLayName", name)
+	cneUp.SetBuildConfig("PredLayName", predName)
+	cneUp.SetBuildConfig("SenseLayName", name)
 
-	cpred.PlaceBehind(cout, space)
+	cniPred.PlaceBehind(cneUp, space)
 	return
 }

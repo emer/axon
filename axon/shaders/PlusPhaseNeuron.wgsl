@@ -81,19 +81,19 @@ fn LayerParams_PlusPhaseNeuron(ly: LayerParams, ctx: Context, ni: u32,di: u32) {
 			modlr = f32(1); // don't use mod
 		}
 	}
-	case CerebOutLayer: {
+	case CNeUpLayer: {
 		var lni = ni - ly.Indexes.NeurSt; // layer-based
-		mlr = LayerParams_CerebOutPredAct(ly, ctx, lni, di);
-		dlr = LayerParams_CerebOutSenseAct(ly, ctx, lni, di);
-		if (mlr < ly.CerebOut.LearnThr) {
+		mlr = LayerParams_CNeUpPredAct(ly, ctx, lni, di);
+		dlr = LayerParams_CNeUpSenseAct(ly, ctx, lni, di);
+		if (mlr < ly.CNeUp.LearnThr) {
 			mlr = f32(0);
 		}
-		if (dlr < ly.CerebOut.LearnThr) {
+		if (dlr < ly.CNeUp.LearnThr) {
 			dlr = f32(0);
 		}
 		modlr = f32(1);
 		if (mlr*dlr == 0) { // adapt GeBase only if both pathways inactive
-			NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81], u32(ni), u32(GeBase))] += ly.CerebOut.GeBaseLRate * (ly.CerebOut.ActTarg - nrnCaP);
+			NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81], u32(ni), u32(GeBase))] += ly.CNeUp.GeBaseLRate * (ly.CNeUp.ActTarg - nrnCaD);
 		}
 	}
 	case BLALayer: {
@@ -276,13 +276,13 @@ struct ActParams {
 }
 
 //////// import: "cereb-layer.go"
-struct CerebPredParams {
+struct CNiPredParams {
 	DriveScale: f32,
 	FullDriveAct: f32,
 	DriveLayIndex: i32,
 	pad: f32,
 }
-struct CerebOutParams {
+struct CNeUpParams {
 	ActTarg: f32,
 	LearnThr: f32,
 	GeBaseLRate: f32,
@@ -292,13 +292,13 @@ struct CerebOutParams {
 	pad1: f32,
 	pad2: f32,
 }
-fn LayerParams_CerebOutPredAct(ly: LayerParams, ctx: Context, lni: u32,di: u32) -> f32 {
-	var dli = u32(ly.CerebOut.PredLayIndex);
+fn LayerParams_CNeUpPredAct(ly: LayerParams, ctx: Context, lni: u32,di: u32) -> f32 {
+	var dli = u32(ly.CNeUp.PredLayIndex);
 	let dly = Layers[dli];return Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
 u32(dly.Indexes.NeurSt + lni), u32(di), u32(CaD))];
 }
-fn LayerParams_CerebOutSenseAct(ly: LayerParams, ctx: Context, lni: u32,di: u32) -> f32 {
-	var dli = u32(ly.CerebOut.SenseLayIndex);
+fn LayerParams_CNeUpSenseAct(ly: LayerParams, ctx: Context, lni: u32,di: u32) -> f32 {
+	var dli = u32(ly.CNeUp.SenseLayIndex);
 	let dly = Layers[dli];return Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(dly.Indexes.NeurSt + lni), u32(di), u32(CaD))];
 }
 
@@ -729,8 +729,8 @@ struct LayerParams {
 	DSMatrix: DSMatrixParams,
 	Striatum: StriatumParams,
 	GP: GPParams,
-	CerebPred: CerebPredParams,
-	CerebOut: CerebOutParams,
+	CNiPred: CNiPredParams,
+	CNeUp: CNeUpParams,
 	LDT: LDTParams,
 	VTA: VTAParams,
 	RWPred: RWPredParams,
@@ -761,8 +761,8 @@ const  STNLayer: LayerTypes = 12;
 const  GPLayer: LayerTypes = 13;
 const  BGThalLayer: LayerTypes = 14;
 const  VSGatedLayer: LayerTypes = 15;
-const  CerebPredLayer: LayerTypes = 16;
-const  CerebOutLayer: LayerTypes = 17;
+const  CNiPredLayer: LayerTypes = 16;
+const  CNeUpLayer: LayerTypes = 17;
 const  BLALayer: LayerTypes = 18;
 const  CeMLayer: LayerTypes = 19;
 const  VSPatchLayer: LayerTypes = 20;
@@ -1217,7 +1217,7 @@ const  DSPatchPath: PathTypes = 5;
 const  VSPatchPath: PathTypes = 6;
 const  VSMatrixPath: PathTypes = 7;
 const  DSMatrixPath: PathTypes = 8;
-const  CerebPredToOutPath: PathTypes = 9;
+const  CNiPredToOutPath: PathTypes = 9;
 const  RWPath: PathTypes = 10;
 const  TDPredPath: PathTypes = 11;
 const  BLAPath: PathTypes = 12;

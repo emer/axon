@@ -33,8 +33,8 @@ func (pt *PathParams) DWtSyn(ctx *Context, rlay *LayerParams, syni, si, ri, di u
 		pt.DWtSynVSPatch(ctx, syni, si, ri, lpi, pi, di)
 	case DSPatchPath:
 		pt.DWtSynDSPatch(ctx, syni, si, ri, lpi, pi, di)
-	case CerebPredToOutPath:
-		pt.DWtSynCerebOut(ctx, rlay, syni, si, ri, lpi, pi, di)
+	case CNiPredToOutPath:
+		pt.DWtSynCNeUp(ctx, rlay, syni, si, ri, lpi, pi, di)
 	case RWPath:
 		pt.DWtSynRWPred(ctx, syni, si, ri, lpi, pi, di)
 	case TDPredPath:
@@ -417,14 +417,14 @@ func (pt *PathParams) DWtSynDSPatch(ctx *Context, syni, si, ri, lpi, pi, di uint
 	}
 }
 
-// DWtSynCerebOut computes the weight change (learning) at given synapse,
-// for the CerebPredToOut inhibitory pathway, conditioned on there being
+// DWtSynCNeUp computes the weight change (learning) at given synapse,
+// for the CNiPredToOut inhibitory pathway, conditioned on there being
 // above-threshold activity in both excitatory and inhibitory pathways.
-func (pt *PathParams) DWtSynCerebOut(ctx *Context, rlay *LayerParams, syni, si, ri, lpi, pi, di uint32) {
+func (pt *PathParams) DWtSynCNeUp(ctx *Context, rlay *LayerParams, syni, si, ri, lpi, pi, di uint32) {
 	sact := Neurons.Value(int(si), int(di), int(CaD))            // sending activity
 	ract := Neurons.Value(int(ri), int(di), int(CaD))            // receiving activity
-	predSenseAct := Neurons.Value(int(ri), int(di), int(RLRate)) // CerebPred * Sense input activity, in PlusPhaseNeuron
-	dwt := -predSenseAct * sact * (rlay.CerebOut.ActTarg - ract) // minus sign due to inhibitory
+	predSenseAct := Neurons.Value(int(ri), int(di), int(RLRate)) // CNiPred * Sense input activity, in PlusPhaseNeuron
+	dwt := -predSenseAct * sact * (rlay.CNeUp.ActTarg - ract)    // minus sign due to inhibitory
 	// softbound immediately -- enters into zero sum.
 	// also other types might not use, so need to do this per learning rule.
 	// lwt := Synapses[syni, LWt] // linear weight

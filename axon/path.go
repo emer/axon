@@ -127,7 +127,7 @@ func (pt *Path) Update() {
 	if pt.Params == nil {
 		return
 	}
-	if pt.Params.Type == InhibPath || pt.Params.Type == CerebPredToOutPath {
+	if pt.Params.Type == InhibPath || pt.Params.Type == CNiPredToOutPath {
 		pt.Params.Com.GType = InhibitoryG
 	}
 	pt.Params.Update()
