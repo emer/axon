@@ -31,13 +31,13 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.CaLearn.VgccTau = 10               // 10 > 5 ?
 				ly.Learn.CaLearn.Dt.MTau = 2                // 2 > 4 even with more ncycles
 				ly.Learn.CaSpike.Dt.MTau = 5                // 5 > 10 even with more ncycles
-				ly.Learn.Timing.On.SetBool(false)
-				ly.Learn.Timing.Threshold = 0.25
-				// now automatic:
-				// ly.Learn.CaLearn.Dt.PTau =        40   // 60 for 300 cyc, 40 for 200 (scales linearly)
-				// ly.Learn.CaLearn.Dt.DTau =        40   // "
-				// ly.Learn.CaSpk.Dt.PTau =          40   // "
-				// ly.Learn.CaSpk.Dt.DTau =          40   // "
+
+				ly.Learn.Timing.On.SetBool(true)
+				ly.Learn.Timing.Threshold = 0.3
+				ly.Learn.Timing.Sustain = 110 // 100 > 90
+				ly.Learn.Timing.Learn = 50
+				ly.Learn.Timing.Reset = 1000 // 200 is bad
+
 			}},
 		{Sel: "#V1", Doc: "pool inhib (not used), initial activity",
 			Set: func(ly *axon.LayerParams) {
@@ -70,7 +70,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
 				ly.Inhib.Layer.Gi = 1.1 // 1.1 > 1.05 1.6.15 adapt
 				ly.Inhib.Layer.FB = 4   // 4
-				ly.Learn.Timing.Threshold = 0.2
+				ly.Learn.Timing.Threshold = 0.15
 			}},
 		{Sel: "#Output", Doc: "high inhib for one-hot output",
 			Set: func(ly *axon.LayerParams) {

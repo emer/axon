@@ -222,6 +222,9 @@ func (lc *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 			if sdel < lc.Learn {
 				Neurons.SetSub(float32(lc.Learn-sdel), int(ni), int(di), int(SustainCyc)) // back date it!
 			}
+		} else if sdel > lc.Learn && tmr < lc.Threshold {
+			Neurons.Set(0.0, int(ni), int(di), int(TimerCyc))
+			Neurons.Set(0.0, int(ni), int(di), int(SustainCyc))
 		} else if sdel > lc.Reset || sdel < 0 {
 			Neurons.Set(0.0, int(ni), int(di), int(TimerCyc))
 			Neurons.Set(0.0, int(ni), int(di), int(SustainCyc))

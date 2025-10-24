@@ -1650,6 +1650,9 @@ fn LearnTimingParams_LearnTiming(lc: LearnTimingParams, ctx: Context, ni: u32,di
 			if (sdel < lc.Learn) {
 				Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SustainCyc))] -= f32(lc.Learn - sdel); // back date it!
 			}
+		} else if (sdel > lc.Learn && tmr < lc.Threshold) {
+			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimerCyc))] = 0.0;
+			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SustainCyc))] = 0.0;
 		} else if (sdel > lc.Reset || sdel < 0) {
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimerCyc))] = 0.0;
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SustainCyc))] = 0.0;
