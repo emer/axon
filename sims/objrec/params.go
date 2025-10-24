@@ -31,7 +31,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.CaLearn.VgccTau = 10               // 10 > 5 ?
 				ly.Learn.CaLearn.Dt.MTau = 2                // 2 > 4 even with more ncycles
 				ly.Learn.CaSpike.Dt.MTau = 5                // 5 > 10 even with more ncycles
-				ly.Learn.Timing.On.SetBool(true)
+				ly.Learn.Timing.On.SetBool(false)
 				ly.Learn.Timing.Threshold = 0.25
 				// now automatic:
 				// ly.Learn.CaLearn.Dt.PTau =        40   // 60 for 300 cyc, 40 for 200 (scales linearly)

@@ -1102,6 +1102,7 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32) {
 	default:
 		if !ly.IsTarget() {
 			stdRLRate = ly.Learn.Timing.On.IsTrue() // computed at time of learning
+			dlr = ly.Learn.RLRate.RLRateDiff(nrnCaP, nrnCaD)
 		} else {
 			dlr = ly.Learn.RLRate.RLRateDiff(nrnCaP, nrnCaD)
 		}

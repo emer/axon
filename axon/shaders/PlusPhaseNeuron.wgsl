@@ -110,6 +110,7 @@ fn LayerParams_PlusPhaseNeuron(ly: LayerParams, ctx: Context, ni: u32,di: u32) {
 	default: {
 		if (!LayerParams_IsTarget(ly)) {
 			stdRLRate = ly.Learn.Timing.On == 1; // computed at time of learning
+			dlr = RLRateParams_RLRateDiff(ly.Learn.RLRate, nrnCaP, nrnCaD);
 		} else {
 			dlr = RLRateParams_RLRateDiff(ly.Learn.RLRate, nrnCaP, nrnCaD);
 		}
