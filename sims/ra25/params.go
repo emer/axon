@@ -20,7 +20,13 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.NMDA.MgC = 1.2         // 1.2 > 1.4 here, still..
 				ly.Acts.VGCC.Ge = 0
 				ly.Learn.CaSpike.SpikeCaSyn = 8
-				ly.Learn.Timing.On.SetBool(false)
+
+				ly.Learn.Timing.On.SetBool(true)
+				ly.Learn.Timing.Spikes.SetBool(true)
+				ly.Learn.Timing.Threshold = .2
+				ly.Learn.Timing.Reset = 0
+				ly.Learn.Timing.TimerTau = 15
+
 				// ly.Learn.CaLearn.ETraceTau = 4
 				// ly.Learn.CaLearn.ETraceScale = 0.1 // 4,0.1 best in sequential
 				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // false > true here

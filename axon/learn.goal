@@ -148,6 +148,10 @@ type LearnTimingParams struct {
 	// off, for comparison purposes.
 	On slbool.Bool
 
+	// Spikes uses spiking (CaM) instead of LearnCaM for LearnTimer,
+	// because it is easier to parameterize and is generally more stable.
+	Spikes slbool.Bool
+
 	// TimerTau is the time constant for integrating the [LearnTimer]
 	// neuron variable, which determines when learning occurs.
 	// Integrates over LearnCaM. This is typically faster than CaP, which
@@ -178,8 +182,6 @@ type LearnTimingParams struct {
 
 	// TimerDt rate = 1 / tau
 	TimerDt float32 `display:"-" json:"-" xml:"-" edit:"-"`
-
-	pad float32
 }
 
 func (lt *LearnTimingParams) Defaults() {
@@ -207,7 +209,11 @@ func (lt *LearnTimingParams) ShouldDisplay(field string) bool {
 // LearnTiming does the timing updates for learning.
 func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 	tmr := Neurons[ni, di, LearnTimer]
-	tmr += lt.TimerDt * (Neurons[ni, di, LearnCaM] - tmr)
+	if lt.Spikes.IsTrue() {
+		tmr += lt.TimerDt * (Neurons[ni, di, CaM] - tmr)
+	} else {
+		tmr += lt.TimerDt * (Neurons[ni, di, LearnCaM] - tmr)
+	}
 	Neurons[ni, di, LearnTimer] = tmr
 	learnNow := float32(0)
 

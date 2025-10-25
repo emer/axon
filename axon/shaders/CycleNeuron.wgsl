@@ -1633,17 +1633,21 @@ fn LearnCaParams_LearnCas(lc: LearnCaParams, ctx: Context, ni: u32,di: u32) {
 }
 struct LearnTimingParams {
 	On: i32,
+	Spikes: i32,
 	TimerTau: f32,
 	Threshold: f32,
 	Sustain: i32,
 	Learn: i32,
 	Reset: i32,
 	TimerDt: f32,
-	pad: f32,
 }
 fn LearnTimingParams_LearnTiming(lt: LearnTimingParams, ctx: Context, ni: u32,di: u32) {
 	var tmr = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnTimer))];
-	tmr += lt.TimerDt * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnCaM))] - tmr);
+	if (lt.Spikes == 1) {
+		tmr += lt.TimerDt * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaM))] - tmr);
+	} else {
+		tmr += lt.TimerDt * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnCaM))] - tmr);
+	}
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnTimer))] = tmr;
 	var learnNow = f32(0);
 	var scyc = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SustainCyc))]);

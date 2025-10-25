@@ -193,7 +193,8 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ss.Config.Run.NData)
-	net.Context().SetThetaCycles(int32(ss.Config.Run.Cycles)).
+	net.Context().SetThetaCycles(int32(ss.Config.Run.Cycles())).
+		SetMinusCycles(int32(ss.Config.Run.MinusCycles)).
 		SetPlusCycles(int32(ss.Config.Run.PlusCycles))
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
@@ -268,8 +269,9 @@ func (ss *Sim) ConfigLoops() {
 	ls := looper.NewStacks()
 
 	trials := int(math32.IntMultipleGE(float32(ss.Config.Run.Trials), float32(ss.Config.Run.NData)))
-	cycles := ss.Config.Run.Cycles
-	plusPhase := ss.Config.Run.PlusCycles
+	cycles := ss.Config.Run.Cycles()
+	minus := ss.Config.Run.MinusCycles
+	isi := ss.Config.Run.ISICycles
 
 	ls.AddStack(Train, Trial).
 		AddLevel(Expt, 1).
@@ -283,14 +285,13 @@ func (ss *Sim) ConfigLoops() {
 		AddLevelIncr(Trial, trials, ss.Config.Run.NData).
 		AddLevel(Cycle, cycles)
 
-	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, cycles-plusPhase, Cycle, Trial, Train)
+	axon.LooperStandardISI(ls, ss.Net, ss.NetViewUpdater, isi, minus, Cycle, Trial, Train,
+		func(mode enums.Enum) { ss.ClearInputs(mode.(Modes)) },
+		func(mode enums.Enum) { ss.ApplyInputs(mode.(Modes)) },
+	)
+	// axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, minus, Cycle, Trial, Train)
 
 	ls.Stacks[Train].OnInit.Add("Init", ss.Init)
-
-	ls.AddOnStartToLoop(Trial, "ApplyInputs", func(mode enums.Enum) {
-		ss.ApplyInputs(mode.(Modes))
-	})
-
 	ls.Loop(Train, Run).OnStart.Add("NewRun", ss.NewRun)
 
 	trainEpoch := ls.Loop(Train, Epoch)
@@ -331,6 +332,13 @@ func (ss *Sim) ConfigLoops() {
 		mpi.Println(ls.DocString())
 	}
 	ss.Loops = ls
+}
+
+// ClearInputs clears the inputs, at the start of the ISI.
+func (ss *Sim) ClearInputs(mode Modes) {
+	net := ss.Net
+	net.InitExt()
+	net.ApplyExts()
 }
 
 // ApplyInputs applies input patterns from given environment for given mode.
@@ -693,8 +701,8 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	ss.GUI.MakeBody(b, ss, ss.Root, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
 	ss.GUI.StopLevel = Trial
 	nv := ss.GUI.AddNetView("Network")
-	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles
-	nv.Options.Raster.Max = ss.Config.Run.Cycles
+	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles()
+	nv.Options.Raster.Max = ss.Config.Run.Cycles()
 	nv.SetNet(ss.Net)
 	ss.TrainUpdate.Config(nv, axon.Theta, ss.StatCounters)
 	ss.TestUpdate.Config(nv, axon.Theta, ss.StatCounters)

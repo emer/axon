@@ -199,7 +199,7 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ss.Config.Run.NData)
-	net.Context().SetThetaCycles(int32(ss.Config.Run.Cycles)).
+	net.Context().SetThetaCycles(int32(ss.Config.Run.Cycles())).
 		SetMinusCycles(int32(ss.Config.Run.MinusCycles)).
 		SetPlusCycles(int32(ss.Config.Run.PlusCycles)).
 		SetSlowInterval(int32(ss.Config.Run.SlowInterval)).
@@ -225,12 +225,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_ = pool1to1
 	rndcut := paths.NewUniformRand()
 	rndcut.PCon = 0.1 // 0.2 == .1 459
+	_ = rndcut
 
 	net.ConnectLayers(v1, v4, ss.Config.Params.V1V4Path, axon.ForwardPath)
 	v4IT, _ := net.BidirConnectLayers(v4, it, full)
 	itOut, outIT := net.BidirConnectLayers(it, out, full)
 
-	net.ConnectLayers(v1, it, rndcut, axon.ForwardPath).AddClass("V1SC")
+	// net.ConnectLayers(v1, it, rndcut, axon.ForwardPath).AddClass("V1SC")
 
 	it.PlaceRightOf(v4, 2)
 	out.PlaceRightOf(it, 2)
@@ -287,10 +288,10 @@ func (ss *Sim) ConfigLoops() {
 	ls := looper.NewStacks()
 
 	trials := int(math32.IntMultipleGE(float32(ss.Config.Run.Trials), float32(ss.Config.Run.NData)))
-	cycles := ss.Config.Run.Cycles
+	cycles := ss.Config.Run.Cycles()
 	minus := ss.Config.Run.MinusCycles
 	plus := ss.Config.Run.PlusCycles
-	isi := ss.Config.Run.Cycles - (minus + plus)
+	isi := ss.Config.Run.ISICycles
 	if ss.Config.Debug {
 		mpi.Println("ISI:", isi, "Minus:", minus, "Plus:", plus)
 	}
@@ -313,7 +314,6 @@ func (ss *Sim) ConfigLoops() {
 	)
 
 	ls.Stacks[Train].OnInit.Add("Init", ss.Init)
-
 	ls.Loop(Train, Run).OnStart.Add("NewRun", ss.NewRun)
 
 	trainEpoch := ls.Loop(Train, Epoch)
@@ -677,8 +677,8 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	ss.GUI.MakeBody(b, ss, ss.Root, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
 	ss.GUI.StopLevel = Trial
 	nv := ss.GUI.AddNetView("Network")
-	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles
-	nv.Options.Raster.Max = ss.Config.Run.Cycles
+	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles()
+	nv.Options.Raster.Max = ss.Config.Run.Cycles()
 	nv.SetNet(ss.Net)
 	ss.TrainUpdate.Config(nv, axon.Theta, ss.StatCounters)
 	ss.TestUpdate.Config(nv, axon.Theta, ss.StatCounters)
