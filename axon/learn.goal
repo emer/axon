@@ -182,32 +182,32 @@ type LearnTimingParams struct {
 	pad float32
 }
 
-func (lc *LearnTimingParams) Defaults() {
-	lc.TimerTau = 20
-	lc.Threshold = 0.3
-	lc.Sustain = 100
-	lc.Learn = 50
-	lc.Reset = 1000
-	lc.Update()
+func (lt *LearnTimingParams) Defaults() {
+	lt.TimerTau = 20
+	lt.Threshold = 0.3
+	lt.Sustain = 100
+	lt.Learn = 50
+	lt.Reset = 1000
+	lt.Update()
 }
 
-func (lc *LearnTimingParams) Update() {
-	lc.TimerDt = 1 / lc.TimerTau
+func (lt *LearnTimingParams) Update() {
+	lt.TimerDt = 1 / lt.TimerTau
 }
 
-func (lc *LearnTimingParams) ShouldDisplay(field string) bool {
+func (lt *LearnTimingParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "On":
 		return true
 	default:
-		return lc.On.IsTrue()
+		return lt.On.IsTrue()
 	}
 }
 
 // LearnTiming does the timing updates for learning.
-func (lc *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
+func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 	tmr := Neurons[ni, di, LearnTimer]
-	tmr += lc.TimerDt * (Neurons[ni, di, LearnCaM] - tmr)
+	tmr += lt.TimerDt * (Neurons[ni, di, LearnCaM] - tmr)
 	Neurons[ni, di, LearnTimer] = tmr
 	learnNow := float32(0)
 
@@ -221,26 +221,26 @@ func (lc *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 		} else {
 			atEnd = ctx.Cycle == ctx.ThetaCycles-1
 		}
-		if sdel == lc.Learn || (sdel < lc.Learn && atEnd) {
+		if sdel == lt.Learn || (sdel < lt.Learn && atEnd) {
 			learnNow = 1.0
 			Neurons[ni, di, LearnDiff] = Neurons[ni, di, CaDiff]
-			if sdel < lc.Learn {
-				Neurons[ni, di, SustainCyc] -= float32(lc.Learn - sdel) // back date it!
+			if sdel < lt.Learn {
+				Neurons[ni, di, SustainCyc] -= float32(lt.Learn - sdel) // back date it!
 			}
-		} else if sdel > lc.Learn && tmr < lc.Threshold {
+		} else if sdel > lt.Learn && tmr < lt.Threshold {
 			Neurons[ni, di, TimerCyc] = 0.0
 			Neurons[ni, di, SustainCyc] = 0.0
-		} else if (lc.Reset > 0 && sdel > lc.Reset) || sdel < 0 {
+		} else if (lt.Reset > 0 && sdel > lt.Reset) || sdel < 0 {
 			Neurons[ni, di, TimerCyc] = 0.0
 			Neurons[ni, di, SustainCyc] = 0.0
 		}
-	} else if tmr >= lc.Threshold {
+	} else if tmr >= lt.Threshold {
 		tcyc := int32(Neurons[ni, di, TimerCyc])
 		if tcyc == 0 {
 			Neurons[ni, di, TimerCyc] = float32(ctx.CyclesTotal)
 		} else {
 			tdel := ctx.CyclesTotal - tcyc
-			if tdel == lc.Sustain {
+			if tdel == lt.Sustain {
 				Neurons[ni, di, SustainCyc] = float32(ctx.CyclesTotal)
 			} else if tdel < 0 {
 				Neurons[ni, di, TimerCyc] = 0.0
@@ -250,8 +250,10 @@ func (lc *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 		Neurons[ni, di, TimerCyc] = 0.0
 	}
 	Neurons[ni, di, LearnNow] = learnNow
-	if lc.On.IsFalse() {
-		Neurons[ni, di, LearnDiff] = Neurons[ni, di, CaDiff] // this is all that matters
+	if lt.On.IsFalse() {
+		if ctx.PlusPhase.IsTrue() {
+			Neurons[ni, di, LearnDiff] = Neurons[ni, di, CaDiff] // this is all that matters
+		}
 	}
 }
 

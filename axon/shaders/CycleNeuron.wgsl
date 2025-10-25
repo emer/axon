@@ -1641,9 +1641,9 @@ struct LearnTimingParams {
 	TimerDt: f32,
 	pad: f32,
 }
-fn LearnTimingParams_LearnTiming(lc: LearnTimingParams, ctx: Context, ni: u32,di: u32) {
+fn LearnTimingParams_LearnTiming(lt: LearnTimingParams, ctx: Context, ni: u32,di: u32) {
 	var tmr = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnTimer))];
-	tmr += lc.TimerDt * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnCaM))] - tmr);
+	tmr += lt.TimerDt * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnCaM))] - tmr);
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnTimer))] = tmr;
 	var learnNow = f32(0);
 	var scyc = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SustainCyc))]);
@@ -1656,26 +1656,26 @@ fn LearnTimingParams_LearnTiming(lc: LearnTimingParams, ctx: Context, ni: u32,di
 		} else {
 			atEnd = ctx.Cycle == ctx.ThetaCycles-1;
 		}
-		if (sdel == lc.Learn || (sdel < lc.Learn && atEnd)) {
+		if (sdel == lt.Learn || (sdel < lt.Learn && atEnd)) {
 			learnNow = f32(1.0);
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnDiff))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaDiff))];
-			if (sdel < lc.Learn) {
-				Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SustainCyc))] -= f32(lc.Learn - sdel); // back date it!
+			if (sdel < lt.Learn) {
+				Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SustainCyc))] -= f32(lt.Learn - sdel); // back date it!
 			}
-		} else if (sdel > lc.Learn && tmr < lc.Threshold) {
+		} else if (sdel > lt.Learn && tmr < lt.Threshold) {
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimerCyc))] = 0.0;
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SustainCyc))] = 0.0;
-		} else if ((lc.Reset > 0 && sdel > lc.Reset) || sdel < 0) {
+		} else if ((lt.Reset > 0 && sdel > lt.Reset) || sdel < 0) {
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimerCyc))] = 0.0;
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SustainCyc))] = 0.0;
 		}
-	} else if (tmr >= lc.Threshold) {
+	} else if (tmr >= lt.Threshold) {
 		var tcyc = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimerCyc))]);
 		if (tcyc == 0) {
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimerCyc))] = f32(ctx.CyclesTotal);
 		} else {
 			var tdel = ctx.CyclesTotal - tcyc;
-			if (tdel == lc.Sustain) {
+			if (tdel == lt.Sustain) {
 				Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SustainCyc))] = f32(ctx.CyclesTotal);
 			} else if (tdel < 0) {
 				Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimerCyc))] = 0.0;
@@ -1685,8 +1685,10 @@ fn LearnTimingParams_LearnTiming(lc: LearnTimingParams, ctx: Context, ni: u32,di
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimerCyc))] = 0.0;
 	}
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = learnNow;
-	if (lc.On == 0) {
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnDiff))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaDiff))]; // this is all that matters
+	if (lt.On == 0) {
+		if (ctx.PlusPhase == 1) {
+			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnDiff))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaDiff))]; // this is all that matters
+		}
 	}
 }
 struct TrgAvgActParams {
