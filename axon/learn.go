@@ -216,7 +216,14 @@ func (lc *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 	scyc := int32(Neurons.Value(int(ni), int(di), int(SustainCyc)))
 	if scyc > 0 {
 		sdel := ctx.CyclesTotal - scyc
-		if sdel == lc.Learn || (sdel < lc.Learn && ctx.Cycle == ctx.ThetaCycles-1) { // or end of trial
+		isiCyc := ctx.ThetaCycles - (ctx.MinusCycles + ctx.PlusCycles) // ISICycles not working
+		atEnd := false
+		if isiCyc > 0 {
+			atEnd = ctx.Cycle == isiCyc-1 // wrap around to next trial
+		} else {
+			atEnd = ctx.Cycle == ctx.ThetaCycles-1
+		}
+		if sdel == lc.Learn || (sdel < lc.Learn && atEnd) {
 			learnNow = 1.0
 			Neurons.Set(Neurons.Value(int(ni), int(di), int(CaDiff)), int(ni), int(di), int(LearnDiff))
 			if sdel < lc.Learn {
@@ -225,7 +232,7 @@ func (lc *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 		} else if sdel > lc.Learn && tmr < lc.Threshold {
 			Neurons.Set(0.0, int(ni), int(di), int(TimerCyc))
 			Neurons.Set(0.0, int(ni), int(di), int(SustainCyc))
-		} else if sdel > lc.Reset || sdel < 0 {
+		} else if (lc.Reset > 0 && sdel > lc.Reset) || sdel < 0 {
 			Neurons.Set(0.0, int(ni), int(di), int(TimerCyc))
 			Neurons.Set(0.0, int(ni), int(di), int(SustainCyc))
 		}

@@ -111,7 +111,7 @@ type RunConfig struct {
 
 	// Cycles is the total number of cycles per trial: any extra above
 	// MinusCycles + PlusCycles is an ISI at the start of the theta trial
-	Cycles int `default:"210"`
+	Cycles int `default:"200"`
 
 	// MinusCycles is the duration of the inter-stimulus-interval between trials.
 	MinusCycles int `default:"150"`

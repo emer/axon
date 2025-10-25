@@ -1649,7 +1649,14 @@ fn LearnTimingParams_LearnTiming(lc: LearnTimingParams, ctx: Context, ni: u32,di
 	var scyc = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SustainCyc))]);
 	if (scyc > 0) {
 		var sdel = ctx.CyclesTotal - scyc;
-		if (sdel == lc.Learn || (sdel < lc.Learn && ctx.Cycle == ctx.ThetaCycles-1)) { // or end of trial
+		var isiCyc = ctx.ThetaCycles - (ctx.MinusCycles + ctx.PlusCycles); // ISICycles not working
+		var atEnd = false;
+		if (isiCyc > 0) {
+			atEnd = ctx.Cycle == isiCyc-1; // wrap around to next trial
+		} else {
+			atEnd = ctx.Cycle == ctx.ThetaCycles-1;
+		}
+		if (sdel == lc.Learn || (sdel < lc.Learn && atEnd)) {
 			learnNow = f32(1.0);
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnDiff))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaDiff))];
 			if (sdel < lc.Learn) {
@@ -1658,7 +1665,7 @@ fn LearnTimingParams_LearnTiming(lc: LearnTimingParams, ctx: Context, ni: u32,di
 		} else if (sdel > lc.Learn && tmr < lc.Threshold) {
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimerCyc))] = 0.0;
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SustainCyc))] = 0.0;
-		} else if (sdel > lc.Reset || sdel < 0) {
+		} else if ((lc.Reset > 0 && sdel > lc.Reset) || sdel < 0) {
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimerCyc))] = 0.0;
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SustainCyc))] = 0.0;
 		}
