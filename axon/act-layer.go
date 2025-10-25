@@ -547,15 +547,21 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, lpi, ni, di uint32) {
 	} else {
 		Neurons.Set(Neurons.Value(int(ni), int(di), int(GeInt)), int(ni), int(di), int(GeIntNorm))
 	}
-	if ctx.Cycle >= ly.Acts.Dt.MaxCycStart {
+	if ctx.MinusPhase.IsFalse() && ctx.PlusPhase.IsFalse() {
+		return
+	}
+	isiCyc := ctx.ThetaCycles - (ctx.MinusCycles + ctx.PlusCycles) // ISICycles not working
+	lrnCyc := ctx.Cycle - isiCyc
+	if lrnCyc >= ly.Acts.Dt.MaxCycStart {
 		Neurons.SetAdd(ly.Learn.CaSpike.Dt.PDt*(Neurons.Value(int(ni), int(di), int(CaM))-Neurons.Value(int(ni), int(di), int(CaPMaxCa))), int(ni), int(di), int(CaPMaxCa))
 		spkmax := Neurons.Value(int(ni), int(di), int(CaPMaxCa))
 		if spkmax > Neurons.Value(int(ni), int(di), int(CaPMax)) {
 			Neurons.Set(spkmax, int(ni), int(di), int(CaPMax))
 		}
 	}
+
 	mx := NetworkIxs[0].NCaBins
-	bin := min(ctx.Cycle/ctx.CaBinCycles, mx)
+	bin := min(lrnCyc/ctx.CaBinCycles, mx)
 	Neurons.SetAdd(Neurons.Value(int(ni), int(di), int(CaSyn))/float32(ctx.CaBinCycles), int(ni), int(di), int(CaBins+NeuronVars(bin)))
 }
 
@@ -1040,12 +1046,12 @@ func (ly *LayerParams) PlusPhaseStartNeuron(ctx *Context, ni, di uint32) {
 	}
 }
 
-func (ly *LayerParams) PlusPhasePool(ctx *Context, pi, di uint32) {
+func (ly *LayerParams) PlusPhaseEndPool(ctx *Context, pi, di uint32) {
 	PoolCycleToPlus(pi, di)
 }
 
-// PlusPhaseNeuron does neuron level plus-phase updating
-func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32) {
+// PlusPhaseEndNeuron does neuron level plus-phase end updating.
+func (ly *LayerParams) PlusPhaseEndNeuron(ctx *Context, ni, di uint32) {
 	pi := ly.PoolIndex(NeuronIxs.Value(int(ni), int(NrnSubPool)))
 	lpi := ly.PoolIndex(0)
 	Neurons.Set(Neurons.Value(int(ni), int(di), int(ActInt)), int(ni), int(di), int(ActP))
@@ -1120,9 +1126,9 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32) {
 	Neurons.Set(ly.Acts.Sahp.GsAHP(sahpN), int(ni), int(di), int(Gsahp))
 }
 
-// PlusPhasePost does special algorithm processing at end of plus
-func (ly *LayerParams) PlusPhasePost(ctx *Context) {
-	ly.PlusPhaseActAvg(ctx)
+// PlusPhaseEndPost does special algorithm processing at end of plus.
+func (ly *LayerParams) PlusPhaseEndPost(ctx *Context) {
+	ly.PlusPhaseEndActAvg(ctx)
 	ly.PhaseDiffFromActs(ctx) // GPU syncs down the state before this
 	np := ly.Indexes.NPools
 	if ly.Type == PTMaintLayer && ly.CT.OFCposPT.IsTrue() {
@@ -1153,9 +1159,9 @@ func (ly *LayerParams) PlusPhasePost(ctx *Context) {
 	}
 }
 
-// PlusPhaseActAvg updates ActAvg and DTrgAvg at the plus phase
+// PlusPhaseEndActAvg updates ActAvg and DTrgAvg at the plus phase end.
 // Note: could be done on GPU but not worth it at this point..
-func (ly *LayerParams) PlusPhaseActAvg(ctx *Context) {
+func (ly *LayerParams) PlusPhaseEndActAvg(ctx *Context) {
 	nn := ly.Indexes.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.Indexes.NeurSt + lni

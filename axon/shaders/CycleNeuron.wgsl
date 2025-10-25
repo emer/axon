@@ -378,7 +378,12 @@ fn LayerParams_SpikeFromG(ly: LayerParams, ctx: Context, lpi: u32,ni: u32,di: u3
 	} else {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeIntNorm))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeInt))];
 	}
-	if (ctx.Cycle >= ly.Acts.Dt.MaxCycStart) {
+	if (ctx.MinusPhase == 0 && ctx.PlusPhase == 0) {
+		return;
+	}
+	var isiCyc = ctx.ThetaCycles - (ctx.MinusCycles + ctx.PlusCycles); // ISICycles not working
+	var lrnCyc = ctx.Cycle - isiCyc;
+	if (lrnCyc >= ly.Acts.Dt.MaxCycStart) {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaPMaxCa))] += ly.Learn.CaSpike.Dt.PDt * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaM))] - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaPMaxCa))]);
 		var spkmax = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaPMaxCa))];
 		if (spkmax > Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaPMax))]) {
@@ -386,7 +391,7 @@ fn LayerParams_SpikeFromG(ly: LayerParams, ctx: Context, lpi: u32,ni: u32,di: u3
 		}
 	}
 	var mx = NetworkIxs[0].NCaBins;
-	var bin = min(ctx.Cycle/ctx.CaBinCycles, mx);
+	var bin = min(lrnCyc/ctx.CaBinCycles, mx);
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaBins + NeuronVars(bin)))] += Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaSyn))] / f32(ctx.CaBinCycles);
 }
 
@@ -1222,11 +1227,12 @@ struct Context { //types:add -setters
 	NData: u32,
 	Mode: i32,
 	Testing: i32,
-	Phase: i32,
+	MinusPhase: i32,
 	PlusPhase: i32,
 	PhaseCycle: i32,
 	Cycle: i32,
 	ThetaCycles: i32,
+	MinusCycles: i32,
 	PlusCycles: i32,
 	CaBinCycles: i32,
 	CyclesTotal: i32,
@@ -1238,7 +1244,6 @@ struct Context { //types:add -setters
 	AdaptGiInterval: i32,
 	AdaptGiCounter: i32,
 	pad: i32,
-	pad1: i32,
 	RandCounter: RandCounter,
 }
 fn Context_ItemIndex(ctx: Context, idx: u32) -> u32 {

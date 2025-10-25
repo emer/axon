@@ -119,7 +119,7 @@ func newTestNet(nData int) *Network {
 	testNet.Defaults()
 	ApplyParamSheets(testNet, layerParams["Base"], pathParams["Base"])
 	testNet.InitWeights() // get GScale here
-	testNet.NewState(etime.Train, false)
+	testNet.ThetaCycleStart(etime.Train, false)
 	return testNet
 }
 
@@ -142,7 +142,7 @@ func newTestNetFull(nData int) *Network {
 	testNet.Defaults()
 	ApplyParamSheets(testNet, layerParams["Base"], pathParams["Base"])
 	testNet.InitWeights() // get GScale here
-	testNet.NewState(etime.Train, false)
+	testNet.ThetaCycleStart(etime.Train, false)
 	return testNet
 }
 
@@ -236,7 +236,8 @@ func TestSpikeProp(t *testing.T) {
 		pt.Params.Com.Delay = uint32(del)
 		pt.Params.Com.MaxDelay = uint32(del) // now need to ensure that >= Delay
 		net.InitWeights()                    // resets Gbuf
-		net.NewState(etime.Train, false)
+		net.ThetaCycleStart(etime.Train, false)
+		net.MinusPhaseStart()
 
 		inLay.ApplyExt(0, pat)
 
@@ -331,7 +332,8 @@ func TestInitWeights(t *testing.T) {
 		}
 
 		for pi := range 4 {
-			testNet.NewState(etime.Train, false)
+			testNet.ThetaCycleStart(etime.Train, false)
+			testNet.MinusPhaseStart()
 
 			inpat := inPats.SubSpace(pi)
 			testNet.InitExt()
@@ -346,11 +348,11 @@ func TestInitWeights(t *testing.T) {
 					testNet.Cycle(true)
 				}
 				if qtr == 2 {
-					testNet.MinusPhase()
+					testNet.MinusPhaseEnd()
 					testNet.PlusPhaseStart()
 				}
 			}
-			testNet.PlusPhase()
+			testNet.PlusPhaseEnd()
 			testNet.DWt()
 			testNet.WtFromDWt()
 		}
@@ -472,7 +474,8 @@ func NetActTest(t *testing.T, tol float32, gpu bool) {
 	cycPerQtr := 50
 
 	for pi := range 2 {
-		testNet.NewState(etime.Train, false)
+		testNet.ThetaCycleStart(etime.Train, false)
+		testNet.MinusPhaseStart()
 
 		inpat := inPats.SubSpace(pi)
 		testNet.InitExt()
@@ -485,7 +488,7 @@ func NetActTest(t *testing.T, tol float32, gpu bool) {
 				testNet.Cycle(true)
 			}
 			if qtr == 2 {
-				testNet.MinusPhase()
+				testNet.MinusPhaseEnd()
 				testNet.PlusPhaseStart()
 			}
 
@@ -530,7 +533,7 @@ func NetActTest(t *testing.T, tol float32, gpu bool) {
 				CompareFloats(tol, outGis, p1qtr3OutGis, "p1qtr3OutGis", t)
 			}
 		}
-		testNet.PlusPhase()
+		testNet.PlusPhaseEnd()
 	}
 
 	GPURelease()
@@ -583,7 +586,8 @@ func NetActTestShort(t *testing.T, tol float32, gpu bool) {
 	cycPerQtr := 40
 
 	for pi := range npats {
-		testNet.NewState(etime.Train, false)
+		testNet.ThetaCycleStart(etime.Train, false)
+		testNet.MinusPhaseStart()
 
 		inpat := inPats.SubSpace(pi)
 		testNet.InitExt()
@@ -597,7 +601,7 @@ func NetActTestShort(t *testing.T, tol float32, gpu bool) {
 				testNet.Cycle(true)
 			}
 			if qtr == 2 {
-				testNet.MinusPhase()
+				testNet.MinusPhaseEnd()
 				testNet.PlusPhaseStart()
 			}
 
@@ -626,7 +630,7 @@ func NetActTestShort(t *testing.T, tol float32, gpu bool) {
 				CompareFloats(tol, outGis, p1qtr0OutGis, "p1qtr0OutGis", t)
 			}
 		}
-		testNet.PlusPhase()
+		testNet.PlusPhaseEnd()
 	}
 	GPURelease()
 	UseGPU = false
@@ -710,7 +714,8 @@ func RunDebugAct(t *testing.T, testNet *Network, printValues bool, gpu bool, ini
 			testNet.SetRandSeed(42) // critical for ActAvg values
 			testNet.InitWeights()
 		}
-		testNet.NewState(etime.Train, false)
+		testNet.ThetaCycleStart(etime.Train, false)
+		testNet.MinusPhaseStart()
 
 		testNet.InitExt()
 		for di := 0; di < nData; di++ {
@@ -767,12 +772,12 @@ func RunDebugAct(t *testing.T, testNet *Network, printValues bool, gpu bool, ini
 				}
 			}
 			if qtr == 2 {
-				testNet.MinusPhase()
+				testNet.MinusPhaseEnd()
 				testNet.PlusPhaseStart()
 			}
 		}
 
-		testNet.PlusPhase()
+		testNet.PlusPhaseEnd()
 		pi += nData - 1
 	}
 
@@ -887,7 +892,8 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 	testNet.InitExt()
 
 	for pi := 0; pi < 4; pi++ {
-		testNet.NewState(etime.Train, false)
+		testNet.ThetaCycleStart(etime.Train, false)
+		testNet.MinusPhaseStart()
 
 		inpat := inPats.SubSpace(pi)
 		testNet.InitExt()
@@ -914,7 +920,7 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 				}
 			}
 			if qtr == 2 {
-				testNet.MinusPhase()
+				testNet.MinusPhaseEnd()
 				testNet.PlusPhaseStart()
 			}
 
@@ -937,7 +943,7 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 			}
 
 		}
-		testNet.PlusPhase()
+		testNet.PlusPhaseEnd()
 
 		if printQtrs {
 			fmt.Printf("=============================\n")
@@ -1041,13 +1047,15 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 	testNet.InitExt()
 
 	for pi := 0; pi < 4; pi++ {
+		testNet.ThetaCycleStart(etime.Train, false)
+		testNet.MinusPhaseStart()
+
 		inpat := inPats.SubSpace(pi)
 		testNet.InitExt()
 		inLay.ApplyExt(0, inpat)
 		outLay.ApplyExt(0, inpat)
 		testNet.ApplyExts() // key now for GPU
 
-		testNet.NewState(etime.Train, false)
 		for qtr := 0; qtr < 4; qtr++ {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {
 				testNet.Cycle(true)
@@ -1067,7 +1075,7 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 				}
 			}
 			if qtr == 2 {
-				testNet.MinusPhase()
+				testNet.MinusPhaseEnd()
 				testNet.PlusPhaseStart()
 			}
 
@@ -1089,7 +1097,7 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 				fmt.Printf("pat: %v qtr: %v cyc: %v\nhid avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctx.Cycle, hidCaP, hidCaD, outCaP, outCaD)
 			}
 		}
-		testNet.PlusPhase()
+		testNet.PlusPhaseEnd()
 		if gpu {
 			// testNet.GPU.SyncNeuronsFromGPU() // RLRate updated after plus
 		}
@@ -1193,7 +1201,8 @@ func RunDebugLearn(t *testing.T, testNet *Network, printValues bool, gpu bool, i
 			testNet.SetRandSeed(42) // critical for ActAvg values
 			testNet.InitWeights()
 		}
-		testNet.NewState(etime.Train, false)
+		testNet.ThetaCycleStart(etime.Train, false)
+		testNet.MinusPhaseStart()
 
 		testNet.InitExt()
 		for di := 0; di < nData; di++ {
@@ -1211,12 +1220,12 @@ func RunDebugLearn(t *testing.T, testNet *Network, printValues bool, gpu bool, i
 				testNet.Cycle(true)
 			}
 			if qtr == 2 {
-				testNet.MinusPhase()
+				testNet.MinusPhaseEnd()
 				testNet.PlusPhaseStart()
 			}
 		}
 
-		testNet.PlusPhase()
+		testNet.PlusPhaseEnd()
 		testNet.DWt()
 
 		if syncAfterWt {
@@ -1303,7 +1312,7 @@ func TestDebugLearn(t *testing.T) {
 func TestNDataLearn(t *testing.T) {
 	nd1Values := NetDebugLearn(t, false, false, 1, 1, true, false, false)
 	nd4Values := NetDebugLearn(t, false, false, 4, 4, true, false, false)
-	ReportValDiffs(t, Tol7, nd1Values, nd4Values, "nData = 1", "nData = 4", "DWt", "ActAvg", "DTrgAvg")
+	ReportValDiffs(t, Tol7, nd1Values, nd4Values, "nData = 1", "nData = 4", "DWt", "ActAvg", "DTrgAvg", "SustainCyc", "TimerCyc")
 }
 
 func TestNDataMaxDataLearn(t *testing.T) {
@@ -1387,7 +1396,8 @@ func TestInhibAct(t *testing.T) {
 	inhibNet.Defaults()
 	ApplyParamSheets(inhibNet, layerParams["Base"], pathParams["Base"])
 	inhibNet.InitWeights() // get GScale
-	inhibNet.NewState(etime.Train, false)
+	inhibNet.ThetaCycleStart(etime.Train, false)
+	inhibNet.MinusPhaseStart()
 
 	inhibNet.InitWeights()
 	inhibNet.InitExt()
@@ -1425,7 +1435,8 @@ func TestInhibAct(t *testing.T) {
 		inLay.ApplyExt(0, inpat)
 		outLay.ApplyExt(0, inpat)
 
-		inhibNet.NewState(etime.Train, false)
+		inhibNet.ThetaCycleStart(etime.Train, false)
+		inhibNet.MinusPhaseStart()
 		for qtr := 0; qtr < 4; qtr++ {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {
 				inhibNet.Cycle(true)
@@ -1442,7 +1453,7 @@ func TestInhibAct(t *testing.T) {
 				}
 			}
 			if qtr == 2 {
-				inhibNet.MinusPhase()
+				inhibNet.MinusPhaseEnd()
 				inhibNet.PlusPhaseStart()
 			}
 
@@ -1483,7 +1494,7 @@ func TestInhibAct(t *testing.T) {
 				CompareFloats(tol, outGis, qtr3OutGis, "qtr3OutGis", t)
 			}
 		}
-		inhibNet.PlusPhase()
+		inhibNet.PlusPhaseEnd()
 
 		if printQtrs {
 			fmt.Printf("=============================\n")

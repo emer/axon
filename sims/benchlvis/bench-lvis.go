@@ -208,7 +208,8 @@ func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, p
 		cntErr := 0
 		sse := 0.0
 		for pi := 0; pi < np; pi++ {
-			net.NewState(etime.Train, false)
+			net.ThetaCycleStart(etime.Train, false)
+			net.MinusPhaseStart()
 
 			for di := uint32(0); di < ctx.NData; di++ {
 				epi := (pi + int(di)) % np
@@ -231,11 +232,11 @@ func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, p
 					cyc += cycPerStep - 1
 				}
 				if qtr == 2 {
-					net.MinusPhase()
+					net.MinusPhaseEnd()
 					net.PlusPhaseStart()
 				}
 			}
-			net.PlusPhase()
+			net.PlusPhaseEnd()
 			net.DWtToWt()
 			phasedif := axon.LayerStates.Value(int(outLay.Index), int(0), int(axon.LayerPhaseDiff))
 			outPhaseDiff += 1.0 - phasedif

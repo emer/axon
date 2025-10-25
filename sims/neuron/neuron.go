@@ -254,7 +254,8 @@ func (ss *Sim) InitRandSeed(run int) {
 func (ss *Sim) RunCycles() {
 	ctx := ss.Net.Context()
 	ss.Net.InitActs()
-	ctx.NewState(Test, false)
+	ss.Net.ThetaCycleStart(Test, false)
+	ss.Net.MinusPhaseStart()
 	ss.ApplyParams()
 	inputOn := false
 	for cyc := 0; cyc < ss.Config.Run.Cycles; cyc++ {

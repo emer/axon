@@ -109,10 +109,14 @@ type RunConfig struct {
 	// Should be an even multiple of NData.
 	Trials int `default:"128"`
 
-	// Cycles is the total number of cycles per trial: at least 200.
-	Cycles int `default:"200"`
+	// Cycles is the total number of cycles per trial: any extra above
+	// MinusCycles + PlusCycles is an ISI at the start of the theta trial
+	Cycles int `default:"210"`
 
-	// PlusCycles is the total number of plus-phase cycles per trial. For Cycles=300, use 100.
+	// MinusCycles is the duration of the inter-stimulus-interval between trials.
+	MinusCycles int `default:"150"`
+
+	// PlusCycles is the total number of plus-phase cycles per trial.
 	PlusCycles int `default:"50"`
 
 	// NZero is how many perfect, zero-error epochs before stopping a Run.

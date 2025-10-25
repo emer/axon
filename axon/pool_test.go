@@ -142,7 +142,8 @@ func newPoolTestNet(nData int) *Network {
 	testNet.Defaults()
 	ApplyParamSheets(testNet, poolLayerParams["Base"], poolPathParams["Base"])
 	testNet.InitWeights() // get GScale here
-	testNet.NewState(etime.Train, false)
+	testNet.ThetaCycleStart(etime.Train, false)
+	testNet.MinusPhaseStart()
 	return testNet
 }
 

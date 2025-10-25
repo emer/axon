@@ -284,7 +284,7 @@ func (ss *Sim) ConfigLoops() {
 		AddLevel(Theta, ev.Thetas).
 		AddLevel(Cycle, cycles)
 
-	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, cycles-plusPhase, cycles-1, Cycle, Theta, Train) // note: Theta
+	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, cycles-plusPhase, Cycle, Theta, Train) // note: Theta
 
 	ls.Stacks[Train].OnInit.Add("Init", ss.Init)
 

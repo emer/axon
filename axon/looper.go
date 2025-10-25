@@ -19,50 +19,94 @@ import (
 //   - net.DWt() and net.WtFromDWt() learning calls in training mode, with netview update
 //     between these two calls if it is visible and viewing synapse variables.
 //   - netview update calls at appropriate levels (no-op if no GUI)
-func LooperStandard(ls *looper.Stacks, net *Network, viewFunc func(mode enums.Enum) *NetViewUpdate, plusStart, plusEnd int, cycle, trial, trainMode enums.Enum) {
+func LooperStandard(ls *looper.Stacks, net *Network, viewFunc func(mode enums.Enum) *NetViewUpdate, plusStart int, cycle, trial, trainMode enums.Enum) {
 	ls.AddEventAllModes(cycle, "Beta1", 50, func() { net.Beta1() })
 	ls.AddEventAllModes(cycle, "Beta2", 100, func() { net.Beta2() })
 
-	ls.AddEventAllModes(cycle, "MinusPhase:End", plusStart, func() { net.MinusPhase() })
+	ls.AddEventAllModes(cycle, "MinusPhase:End", plusStart, func() { net.MinusPhaseEnd() })
 	ls.AddEventAllModes(cycle, "PlusPhase:Start", plusStart, func() { net.PlusPhaseStart() })
 
 	for mode, st := range ls.Stacks {
 		cycLoop := st.Loops[cycle]
-		cycLoop.OnStart.Add("Cycle", func() {
-			getNeurons := false
-			if ls.ModeStack().StepLevel.Int64() == cycle.Int64() {
-				getNeurons = true
-			} else if view := viewFunc(mode); view != nil && view.View != nil {
-				if view.IsCycleUpdating() {
-					getNeurons = true
-				} else {
-					if view.Time < Theta {
-						getNeurons = true
-					}
-				}
-			}
-			net.Cycle(getNeurons)
-			if UseGPU && !getNeurons {
-				ctx := net.Context()
-				ctx.CycleInc() // keep synced
-			}
-		})
+		cycLoop.OnStart.Add("Cycle", LooperCycleStartFunc(ls, net, viewFunc, cycle, mode))
 
 		trlLoop := st.Loops[trial]
 		testing := mode.Int64() != trainMode.Int64()
-		trlLoop.OnStart.Add("NewState", func() { net.NewState(mode, testing) })
-		trlLoop.OnEnd.Add("PlusPhase:End", func() { net.PlusPhase() })
+		trlLoop.OnStart.Add("MinusPhase:Start", func() { net.ThetaCycleStart(mode, testing); net.MinusPhaseStart() })
+		trlLoop.OnEnd.Add("PlusPhase:End", func() { net.PlusPhaseEnd() })
 		if mode.Int64() == trainMode.Int64() {
-			trlLoop.OnEnd.Add("UpdateWeights", func() {
-				if view := viewFunc(mode); view != nil && view.IsViewingSynapse() {
-					net.DWt()         // todo: need to get synapses here, not after
-					view.RecordSyns() // note: critical to update weights here so DWt is visible
-					net.WtFromDWt()
-				} else {
-					net.DWtToWt()
-				}
-			})
+			trlLoop.OnEnd.Add("UpdateWeights", LooperUpdateWeightsFunc(ls, net, viewFunc, mode))
 		}
+	}
+}
+
+// LooperCycleStartFunc returns a standard looper OnStart function at Cycle level,
+// which runs every cycle and updates the view.
+func LooperCycleStartFunc(ls *looper.Stacks, net *Network, viewFunc func(mode enums.Enum) *NetViewUpdate, cycle, mode enums.Enum) func() {
+	return func() {
+		getNeurons := false
+		if ls.ModeStack().StepLevel.Int64() == cycle.Int64() {
+			getNeurons = true
+		} else if view := viewFunc(mode); view != nil && view.View != nil {
+			if view.IsCycleUpdating() {
+				getNeurons = true
+			} else {
+				if view.Time < Theta {
+					getNeurons = true
+				}
+			}
+		}
+		net.Cycle(getNeurons)
+		if UseGPU && !getNeurons {
+			net.Context().CycleInc() // keep synced
+		}
+	}
+}
+
+// LooperUpdateWeightsFunc returns a standard looper OnEnd function at Trial level
+// to update the weights, with different GPU logic for when weights are being viewed.
+func LooperUpdateWeightsFunc(ls *looper.Stacks, net *Network, viewFunc func(mode enums.Enum) *NetViewUpdate, mode enums.Enum) func() {
+	return func() {
+		if view := viewFunc(mode); view != nil && view.IsViewingSynapse() {
+			net.DWt()         // todo: need to get synapses here, not after
+			view.RecordSyns() // note: critical to update weights here so DWt is visible
+			net.WtFromDWt()
+		} else {
+			net.DWtToWt()
+		}
+	}
+}
+
+// LooperStandardISI is a version of [LooperStandard] that includes an
+// inter-stimulus-interval, which happens at the start of the trial,
+// so that the trial end state shows the final plus phase state.
+// The clearInputs function is called at the start of the trial to begin
+// the ISI period, and applyInputs is called after that to apply new inputs.
+func LooperStandardISI(ls *looper.Stacks, net *Network, viewFunc func(mode enums.Enum) *NetViewUpdate, isiCycles, minusCycles int, cycle, trial, trainMode enums.Enum, clearInputs, applyInputs func(mode enums.Enum)) {
+	plusStart := isiCycles + minusCycles
+
+	ls.AddEventAllModes(cycle, "Beta1", isiCycles+50, func() { net.Beta1() })
+	ls.AddEventAllModes(cycle, "Beta2", isiCycles+100, func() { net.Beta2() })
+
+	ls.AddEventAllModes(cycle, "MinusPhase:End", plusStart, func() { net.MinusPhaseEnd() })
+	ls.AddEventAllModes(cycle, "PlusPhase:Start", plusStart, func() { net.PlusPhaseStart() })
+
+	for mode, st := range ls.Stacks {
+		cycLoop := st.Loops[cycle]
+		trlLoop := st.Loops[trial]
+		testing := mode.Int64() != trainMode.Int64()
+
+		cycLoop.OnStart.Add("Cycle", LooperCycleStartFunc(ls, net, viewFunc, cycle, mode))
+		if mode.Int64() == trainMode.Int64() {
+			cycLoop.AddEvent("UpdateWeights", isiCycles, LooperUpdateWeightsFunc(ls, net, viewFunc, mode))
+		}
+		cycLoop.AddEvent("MinusPhase:Start", isiCycles, func() {
+			net.MinusPhaseStart()
+			applyInputs(mode)
+		})
+
+		trlLoop.OnStart.Add("ISI:Start", func() { net.ThetaCycleStart(mode, testing); clearInputs(mode) })
+		trlLoop.OnEnd.Add("PlusPhase:End", func() { net.PlusPhaseEnd() })
 	}
 }
 

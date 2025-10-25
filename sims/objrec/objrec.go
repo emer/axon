@@ -200,6 +200,7 @@ func (ss *Sim) ConfigEnv() {
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ss.Config.Run.NData)
 	net.Context().SetThetaCycles(int32(ss.Config.Run.Cycles)).
+		SetMinusCycles(int32(ss.Config.Run.MinusCycles)).
 		SetPlusCycles(int32(ss.Config.Run.PlusCycles)).
 		SetSlowInterval(int32(ss.Config.Run.SlowInterval)).
 		SetAdaptGiInterval(int32(ss.Config.Run.AdaptGiInterval))
@@ -222,10 +223,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	pool1to1 := paths.NewPoolOneToOne()
 	_ = pool1to1
+	rndcut := paths.NewUniformRand()
+	rndcut.PCon = 0.1 // 0.2 == .1 459
 
 	net.ConnectLayers(v1, v4, ss.Config.Params.V1V4Path, axon.ForwardPath)
 	v4IT, _ := net.BidirConnectLayers(v4, it, full)
 	itOut, outIT := net.BidirConnectLayers(it, out, full)
+
+	net.ConnectLayers(v1, it, rndcut, axon.ForwardPath).AddClass("V1SC")
 
 	it.PlaceRightOf(v4, 2)
 	out.PlaceRightOf(it, 2)
@@ -283,7 +288,12 @@ func (ss *Sim) ConfigLoops() {
 
 	trials := int(math32.IntMultipleGE(float32(ss.Config.Run.Trials), float32(ss.Config.Run.NData)))
 	cycles := ss.Config.Run.Cycles
-	plusPhase := ss.Config.Run.PlusCycles
+	minus := ss.Config.Run.MinusCycles
+	plus := ss.Config.Run.PlusCycles
+	isi := ss.Config.Run.Cycles - (minus + plus)
+	if ss.Config.Debug {
+		mpi.Println("ISI:", isi, "Minus:", minus, "Plus:", plus)
+	}
 
 	ls.AddStack(Train, Trial).
 		AddLevel(Expt, 1).
@@ -297,13 +307,12 @@ func (ss *Sim) ConfigLoops() {
 		AddLevelIncr(Trial, trials, ss.Config.Run.NData).
 		AddLevel(Cycle, cycles)
 
-	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, cycles-plusPhase, cycles-1, Cycle, Trial, Train)
+	axon.LooperStandardISI(ls, ss.Net, ss.NetViewUpdater, isi, minus, Cycle, Trial, Train,
+		func(mode enums.Enum) { ss.ClearInputs(mode.(Modes)) },
+		func(mode enums.Enum) { ss.ApplyInputs(mode.(Modes)) },
+	)
 
 	ls.Stacks[Train].OnInit.Add("Init", ss.Init)
-
-	ls.AddOnStartToLoop(Trial, "ApplyInputs", func(mode enums.Enum) {
-		ss.ApplyInputs(mode.(Modes))
-	})
 
 	ls.Loop(Train, Run).OnStart.Add("NewRun", ss.NewRun)
 
@@ -370,6 +379,13 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 	}
 	net.ApplyExts()
 	ss.UpdateImage()
+}
+
+// ClearInputs clears the inputs, at the start of the ISI.
+func (ss *Sim) ClearInputs(mode Modes) {
+	net := ss.Net
+	net.InitExt()
+	net.ApplyExts()
 }
 
 // NewRun intializes a new Run level of the model.

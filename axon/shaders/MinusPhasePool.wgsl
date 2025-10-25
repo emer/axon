@@ -376,11 +376,12 @@ struct Context { //types:add -setters
 	NData: u32,
 	Mode: i32,
 	Testing: i32,
-	Phase: i32,
+	MinusPhase: i32,
 	PlusPhase: i32,
 	PhaseCycle: i32,
 	Cycle: i32,
 	ThetaCycles: i32,
+	MinusCycles: i32,
 	PlusCycles: i32,
 	CaBinCycles: i32,
 	CyclesTotal: i32,
@@ -392,7 +393,6 @@ struct Context { //types:add -setters
 	AdaptGiInterval: i32,
 	AdaptGiCounter: i32,
 	pad: i32,
-	pad1: i32,
 	RandCounter: RandCounter,
 }
 

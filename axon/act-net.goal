@@ -51,15 +51,23 @@ func (nt *Network) Cycle(getNeurons bool) {
 	// }
 }
 
-// NewState handles all initialization at start of new input pattern.
-// This is called *before* applying external input data and operates across
-// all data parallel values.  The current Context.NData should be set
-// properly prior to calling this and subsequent Cycle methods.
-func (nt *Network) NewState(mode enums.Enum, testing bool) {
+// ThetaCycleStart starts a new theta cycle, resetting the ctx.Cycle counter
+// and all phase state information in the context.
+// The current Context.NData should be set properly prior to calling this
+// and subsequent Cycle methods.
+func (nt *Network) ThetaCycleStart(mode enums.Enum, testing bool) {
+	ctx := nt.Context()
+	ctx.ThetaCycleStart(mode, testing)
+	ToGPUCtxGlobal()
+}
+
+// MinusPhaseStart should be called at the start of a new minus phase,
+// handling all initialization prior to applying a new input pattern.
+func (nt *Network) MinusPhaseStart() {
 	nix := nt.NetIxs()
 	ctx := nt.Context()
 	nd := int(nix.NNeurons * ctx.NData)
-	ctx.NewState(mode, testing)
+	ctx.MinusPhaseStart()
 	ToGPUCtxGlobal()
 	RunNewStateLayer(int(nix.NLayers))
 	RunNewStateNeuron(nd)
@@ -111,8 +119,8 @@ func (nt *Network) Beta2() {
 	RunBeta2Neuron(nd)
 }
 
-// MinusPhase does updating after end of minus phase.
-func (nt *Network) MinusPhase() {
+// MinusPhaseEnd does updating after end of minus phase.
+func (nt *Network) MinusPhaseEnd() {
 	nix := nt.NetIxs()
 	ctx := nt.Context()
 	nd := int(nix.NNeurons * ctx.NData)
@@ -133,17 +141,17 @@ func (nt *Network) PlusPhaseStart() {
 	RunPlusPhaseStartNeuron(nd)
 }
 
-// PlusPhase does updating after end of plus phase.
+// PlusPhaseEnd does updating after end of plus phase.
 // On GPU this is when we finally sync back Layers and Neurons.
-func (nt *Network) PlusPhase() {
+func (nt *Network) PlusPhaseEnd() {
 	nix := nt.NetIxs()
 	ctx := nt.Context()
 	// fmt.Println("plus start:", ctx.Cycle)
 	nd := int(nix.NNeurons * ctx.NData)
 	pd := int(nix.NPools * ctx.NData)
-	RunPlusPhasePool(pd)
-	RunPlusPhaseNeuron(nd)
-	RunPlusPhasePost(int(nix.NLayers))
+	RunPlusPhaseEndPool(pd)
+	RunPlusPhaseEndNeuron(nd)
+	RunPlusPhaseEndPost(int(nix.NLayers))
 	RunDoneLayersNeurons()
 	// fmt.Println("plus post sync:", ctx.Cycle)
 }
@@ -397,9 +405,9 @@ func PlusPhaseStartNeuron(i uint32) { //gosl:kernel
 	Layers[li].PlusPhaseStartNeuron(ctx, ni, di)
 }
 
-// PlusPhasePool is the kernel over Pools * Data to
+// PlusPhaseEndPool is the kernel over Pools * Data to
 // do pool-level updating after end of plus phase.
-func PlusPhasePool(i uint32) { //gosl:kernel
+func PlusPhaseEndPool(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	pi := ctx.ItemIndex(i)
 	if pi >= NetworkIxs[0].NPools {
@@ -407,12 +415,12 @@ func PlusPhasePool(i uint32) { //gosl:kernel
 	}
 	di := ctx.DataIndex(i)
 	li := PoolIxs[pi, PoolLayerIdx]
-	Layers[li].PlusPhasePool(ctx, pi, di)
+	Layers[li].PlusPhaseEndPool(ctx, pi, di)
 }
 
-// PlusPhaseNeuron is the kernel over Neurons * Data to
+// PlusPhaseEndNeuron is the kernel over Neurons * Data to
 // do neuron-level updating after end of plus phase.
-func PlusPhaseNeuron(i uint32) { //gosl:kernel
+func PlusPhaseEndNeuron(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	ni := ctx.ItemIndex(i)
 	if ni >= NetworkIxs[0].NNeurons {
@@ -420,13 +428,13 @@ func PlusPhaseNeuron(i uint32) { //gosl:kernel
 	}
 	di := ctx.DataIndex(i)
 	li := NeuronIxs[ni, NrnLayIndex]
-	Layers[li].PlusPhaseNeuron(ctx, ni, di)
+	Layers[li].PlusPhaseEndNeuron(ctx, ni, di)
 }
 
-// PlusPhasePost does special algorithm post processing.
-func PlusPhasePost(li uint32) { //gosl:kernel
+// PlusPhaseEndPost does special algorithm post processing.
+func PlusPhaseEndPost(li uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	Layers[li].PlusPhasePost(ctx)
+	Layers[li].PlusPhaseEndPost(ctx)
 }
 
 // GPUTestWrite is the kernel over Neurons * Data for testing

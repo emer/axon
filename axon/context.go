@@ -33,11 +33,13 @@ type Context struct { //types:add -setters
 	// This flag should only affect learning-related behavior.
 	Testing slbool.Bool `edit:"-"`
 
-	// Phase counter: typicaly 0-1 for minus-plus.
-	Phase int32
+	// MinusPhase is true if this is the minus phase, when a stimulus is present
+	// and learning is occuring. Could also be in a non-learning phase when
+	// no stimulus is present. This affects accumulation of CaBins values only.
+	MinusPhase slbool.Bool
 
 	// PlusPhase is true if this is the plus phase, when the outcome / bursting
-	// is occurring, driving positive learning; else minus phase.
+	// is occurring, driving positive learning; else minus or non-learning phase.
 	PlusPhase slbool.Bool
 
 	// Cycle within current phase, minus or plus.
@@ -47,10 +49,16 @@ type Context struct { //types:add -setters
 	// on the current state. This is reset at NewState.
 	Cycle int32
 
-	// ThetaCycles is the length of the theta cycle (i.e., Trial), in terms of 1 msec Cycles.
-	// Some network update steps depend on doing something at the end of the
-	// theta cycle (e.g., CTCtxtPath).
+	// ThetaCycles is the length of the theta cycle (i.e., Trial),
+	// in terms of 1 msec Cycles. Some network update steps depend on doing something
+	// at the end of the theta cycle (e.g., CTCtxtPath).
 	ThetaCycles int32 `default:"200"`
+
+	// MinusCycles is the number of cycles in the minus phase. Typically 150,
+	// but may be set longer if ThetaCycles is above default of 200.
+	// Any additional cycles are considered to be an ISI that occurs at the start
+	// of the ThetaCycles window.
+	MinusCycles int32 `default:"150"`
 
 	// PlusCycles is the number of cycles in the plus phase. Typically 50,
 	// but may be set longer if ThetaCycles is above default of 200.
@@ -98,7 +106,7 @@ type Context struct { //types:add -setters
 	// This is incremented by NData to maintain consistency across different values of this parameter.
 	AdaptGiCounter int32 `edit:"-"`
 
-	pad, pad1 int32
+	pad int32
 
 	// RandCounter is the random counter, incremented by maximum number of
 	// possible random numbers generated per cycle, regardless of how
@@ -112,6 +120,7 @@ func (ctx *Context) Defaults() {
 	ctx.NData = 1
 	ctx.TimePerCycle = 0.001
 	ctx.ThetaCycles = 200
+	ctx.MinusCycles = 150
 	ctx.PlusCycles = 50
 	ctx.CaBinCycles = 10
 	ctx.SlowInterval = 100
@@ -159,25 +168,42 @@ func (ctx *Context) SlowInc() (slow bool, adaptgi bool) {
 	return
 }
 
-// PlusPhaseStart resets PhaseCycle = 0 and sets the plus phase to true.
+// MinusPhaseStart resets PhaseCycle = 0 and sets the minus phase to true,
+// and plus phase to false.
+func (ctx *Context) MinusPhaseStart() {
+	ctx.PhaseCycle = 0
+	ctx.MinusPhase.SetBool(true)
+	ctx.PlusPhase.SetBool(false)
+}
+
+// PlusPhaseStart resets PhaseCycle = 0 and sets the plus phase to true,
+// and minus phase to false.
 func (ctx *Context) PlusPhaseStart() {
 	ctx.PhaseCycle = 0
+	ctx.MinusPhase.SetBool(false)
 	ctx.PlusPhase.SetBool(true)
 }
 
 // NCaBins returns ThetaCycles / CaBinCycles
 func (ctx *Context) NCaBins() int32 {
-	return ctx.ThetaCycles / ctx.CaBinCycles
+	return (ctx.MinusCycles + ctx.PlusCycles) / ctx.CaBinCycles
+}
+
+// ISICycles returns ThetaCycles - (MinusCycles + PlusCycles),
+// which are leftover inter-stimulus-interval cycles, which must come
+// at the start of the trial.
+func (ctx *Context) ISICycles() int32 {
+	return ctx.ThetaCycles - (ctx.MinusCycles + ctx.PlusCycles)
 }
 
 //gosl:end
 
-// NewState resets counters at start of new state (trial) of processing.
-// Pass the evaluation mode associated with this new state and testing bool.
-func (ctx *Context) NewState(mode enums.Enum, testing bool) {
-	ctx.Phase = 0
+// ThetaCycleStart resets counters at start of new theta cycle of processing.
+// Pass the evaluation mode associated with this theta cycle and testing bool.
+// Resets the Minus and Plus phase states, and sets Cycle = 0.
+func (ctx *Context) ThetaCycleStart(mode enums.Enum, testing bool) {
+	ctx.MinusPhase.SetBool(false)
 	ctx.PlusPhase.SetBool(false)
-	ctx.PhaseCycle = 0
 	ctx.Cycle = 0
 	ctx.Mode = int32(mode.Int64())
 	ctx.Testing.SetBool(testing)
@@ -188,7 +214,7 @@ func (ctx *Context) NewState(mode enums.Enum, testing bool) {
 
 // Reset resets the counters all back to zero
 func (ctx *Context) Reset() {
-	ctx.Phase = 0
+	ctx.MinusPhase.SetBool(false)
 	ctx.PlusPhase.SetBool(false)
 	ctx.PhaseCycle = 0
 	ctx.Cycle = 0

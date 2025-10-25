@@ -32,11 +32,11 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.CaLearn.Dt.MTau = 2                // 2 > 4 even with more ncycles
 				ly.Learn.CaSpike.Dt.MTau = 5                // 5 > 10 even with more ncycles
 
-				ly.Learn.Timing.On.SetBool(true)
-				ly.Learn.Timing.Threshold = 0.3
-				ly.Learn.Timing.Sustain = 110 // 100 > 90
+				ly.Learn.Timing.On.SetBool(false)
+				ly.Learn.Timing.Threshold = 0.3 // .3 > .35, .25
+				ly.Learn.Timing.Sustain = 100   // 100 > 90 > 110 long term
 				ly.Learn.Timing.Learn = 50
-				ly.Learn.Timing.Reset = 1000 // 200 is bad
+				ly.Learn.Timing.Reset = 10000 // 10000 > 1000
 
 			}},
 		{Sel: "#V1", Doc: "pool inhib (not used), initial activity",
@@ -66,11 +66,11 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: "#IT", Doc: "initial activity",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.04 // 0.04 -- 0.05 actual at end, but starts low
+				ly.Inhib.ActAvg.Nominal = 0.05 // 0.05 > 0.04 with v1sc
 				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
-				ly.Inhib.Layer.Gi = 1.1 // 1.1 > 1.05 1.6.15 adapt
-				ly.Inhib.Layer.FB = 4   // 4
-				ly.Learn.Timing.Threshold = 0.15
+				ly.Inhib.Layer.Gi = 1.1          // 1.1 > 1.05 1.6.15 adapt
+				ly.Inhib.Layer.FB = 4            // 4
+				ly.Learn.Timing.Threshold = 0.25 // 0.2 > .15 long term
 			}},
 		{Sel: "#Output", Doc: "high inhib for one-hot output",
 			Set: func(ly *axon.LayerParams) {
@@ -106,6 +106,16 @@ var PathParams = axon.PathSheets{
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 0.2 // .2 >= .3 > .15 > .1 > .05 @176
+			}},
+		{Sel: "#V4ToIT", Doc: "stronger",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1.2 // 1.2 >= 1.0 ? > 1.5 too much
+			}},
+		{Sel: ".V1SC", Doc: "v1 shortcut",
+			Set: func(pt *axon.PathParams) {
+				pt.Learn.LRate.Base = 0.001     // ?
+				pt.PathScale.Rel = 0.2          // 0.2 >> 0.3, 0.5 (blows up)
+				pt.SWts.Adapt.On.SetBool(false) // seems better
 			}},
 	},
 }
