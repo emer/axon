@@ -286,7 +286,7 @@ func (ss *Sim) ConfigLoops() {
 		AddLevel(Cycle, cycles)
 
 	axon.LooperStandardISI(ls, ss.Net, ss.NetViewUpdater, isi, minus, Cycle, Trial, Train,
-		func(mode enums.Enum) { ss.ClearInputs(mode.(Modes)) },
+		func(mode enums.Enum) { ss.Net.ClearInputs() },
 		func(mode enums.Enum) { ss.ApplyInputs(mode.(Modes)) },
 	)
 	// axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, minus, Cycle, Trial, Train)
@@ -332,13 +332,6 @@ func (ss *Sim) ConfigLoops() {
 		mpi.Println(ls.DocString())
 	}
 	ss.Loops = ls
-}
-
-// ClearInputs clears the inputs, at the start of the ISI.
-func (ss *Sim) ClearInputs(mode Modes) {
-	net := ss.Net
-	net.InitExt()
-	net.ApplyExts()
 }
 
 // ApplyInputs applies input patterns from given environment for given mode.

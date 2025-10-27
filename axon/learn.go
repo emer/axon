@@ -136,7 +136,7 @@ func (lc *LearnCaParams) ETrace(ctx *Context, ni, di uint32, cad float32) {
 }
 
 // LearnTimingParams parameterizes the timing of Ca-driven Kinase
-// algorithm learning, based on a LearnTimer variable that integrates
+// algorithm learning, based on CaP spike-driven Ca that integrates
 // receiver Ca activity over time. When this value remains above a
 // low threshold for a sufficiently long duration, then a learning
 // event is triggered. This excludes transient activity associated with
@@ -150,53 +150,31 @@ type LearnTimingParams struct {
 	// off, for comparison purposes.
 	On slbool.Bool
 
-	// Spikes uses spiking (CaM) instead of LearnCaM for LearnTimer,
-	// because it is easier to parameterize and is generally more stable.
-	Spikes slbool.Bool
-
-	// TimerTau is the time constant for integrating the [LearnTimer]
-	// neuron variable, which determines when learning occurs.
-	// Integrates over LearnCaM. This is typically faster than CaP, which
-	// is relatively slow for these purposes.
-	TimerTau float32 `default:"20"`
-
-	// Threshold is the threshold on [LearnTimer] required to trigger learning.
-	// The point at which LearnTimer gets over this threshold is recorded
-	// as [TimerCyc] in the neuron, and learning starts StartDelay cycles
-	// after that point if LearnTimer remains above threshold.
-	Threshold float32 `default:"0.3"`
+	// Threshold is the threshold on [CaP] required to trigger learning.
+	// The point at which CaP gets over this threshold is recorded
+	// as [TimerCyc] in the neuron, and learning starts Sustain cycles
+	// after that point if CaP remains above threshold.
+	Threshold float32 `default:"0.1"`
 
 	// Sustain is the number of cycles (ms) from the [TimerCyc] start of
 	// learning eligibility, that activity must be sustained above
 	// Threshold in order for learning to occur.
-	Sustain int32
+	Sustain int32 `default:"110"`
 
 	// Learn is the number of cycles (ms) after the Sustain interval
 	// has been satisfied, when learning can then actually occur.
 	// If the trial is ending, then learning happens then in any case.
-	Learn int32
-
-	// Reset is the number of cycles (ms) after the Sustain interval
-	// has been satisfied, to reset the learning integration signals
-	// so that the neuron is eligible for learning again.
-	// If 0, it is never reset.
-	Reset int32
-
-	// TimerDt rate = 1 / tau
-	TimerDt float32 `display:"-" json:"-" xml:"-" edit:"-"`
+	Learn int32 `default:"50"`
 }
 
 func (lt *LearnTimingParams) Defaults() {
-	lt.TimerTau = 20
-	lt.Threshold = 0.3
-	lt.Sustain = 100
+	lt.Threshold = 0.1
+	lt.Sustain = 110
 	lt.Learn = 50
-	lt.Reset = 1000
 	lt.Update()
 }
 
 func (lt *LearnTimingParams) Update() {
-	lt.TimerDt = 1 / lt.TimerTau
 }
 
 func (lt *LearnTimingParams) ShouldDisplay(field string) bool {
@@ -210,13 +188,7 @@ func (lt *LearnTimingParams) ShouldDisplay(field string) bool {
 
 // LearnTiming does the timing updates for learning.
 func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
-	tmr := Neurons.Value(int(ni), int(di), int(LearnTimer))
-	if lt.Spikes.IsTrue() {
-		tmr += lt.TimerDt * (Neurons.Value(int(ni), int(di), int(CaM)) - tmr)
-	} else {
-		tmr += lt.TimerDt * (Neurons.Value(int(ni), int(di), int(LearnCaM)) - tmr)
-	}
-	Neurons.Set(tmr, int(ni), int(di), int(LearnTimer))
+	ca := Neurons.Value(int(ni), int(di), int(CaP))
 	learnNow := float32(0)
 
 	scyc := int32(Neurons.Value(int(ni), int(di), int(SustainCyc)))
@@ -235,14 +207,11 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 			if sdel < lt.Learn {
 				Neurons.SetSub(float32(lt.Learn-sdel), int(ni), int(di), int(SustainCyc)) // back date it!
 			}
-		} else if sdel > lt.Learn && tmr < lt.Threshold {
-			Neurons.Set(0.0, int(ni), int(di), int(TimerCyc))
-			Neurons.Set(0.0, int(ni), int(di), int(SustainCyc))
-		} else if (lt.Reset > 0 && sdel > lt.Reset) || sdel < 0 {
+		} else if sdel > lt.Learn && ca < lt.Threshold {
 			Neurons.Set(0.0, int(ni), int(di), int(TimerCyc))
 			Neurons.Set(0.0, int(ni), int(di), int(SustainCyc))
 		}
-	} else if tmr >= lt.Threshold {
+	} else if ca >= lt.Threshold {
 		tcyc := int32(Neurons.Value(int(ni), int(di), int(TimerCyc)))
 		if tcyc == 0 {
 			Neurons.Set(float32(ctx.CyclesTotal), int(ni), int(di), int(TimerCyc))
@@ -466,7 +435,7 @@ type LearnNeuronParams struct {
 	CaLearn LearnCaParams `display:"inline"`
 
 	// LearnTimingParams parameterizes the timing of Ca-driven Kinase
-	// algorithm learning, based on a LearnTimer variable that integrates
+	// algorithm learning, based on a CaP variable that integrates
 	// receiver Ca activity over time. When this value remains above a
 	// low threshold for a sufficiently long duration, then a learning
 	// event is triggered. This excludes transient activity associated with
@@ -545,7 +514,6 @@ func (ln *LearnNeuronParams) InitNeuronCa(ctx *Context, ni, di uint32) {
 	Neurons.Set(0, int(ni), int(di), int(CaDiff))
 	Neurons.Set(0, int(ni), int(di), int(LearnDiff))
 	Neurons.Set(0, int(ni), int(di), int(LearnNow))
-	Neurons.Set(0, int(ni), int(di), int(LearnTimer))
 	Neurons.Set(0, int(ni), int(di), int(TimerCyc))
 	Neurons.Set(0, int(ni), int(di), int(SustainCyc))
 }

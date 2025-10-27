@@ -187,20 +187,16 @@ const (
 
 	// LearnNow is activated at the moment when the receiving neuron is learning,
 	// based on accumulated calcium signals in neocortical neurons.
-	// See [LearnTimingParams] and [LearnTimer], [TimerCyc], [SustainCyc].
+	// See [LearnTimingParams] and [CaP], [TimerCyc], [SustainCyc].
 	LearnNow
 
-	// LearnTimer is an intermediate integration of LearnCaM that is used for
-	// timing when to learn, using LearnTimingParams.TimerTau.
-	LearnTimer
-
-	// TimerCyc is the cycle at which LearnTimer first got over the minimal
+	// TimerCyc is the cycle at which CaP first got over the minimal
 	// threshold for learning. This is reset when it goes back below the threshold,
 	// and learning occurs only if sustained sufficiently long, at which point
 	// SustainCyc is triggered.
 	TimerCyc
 
-	// SustainCyc is the cycle at which LearnTimer was sustained long enough to
+	// SustainCyc is the cycle at which CaP was sustained long enough to
 	// trigger learning. Actual learning will occur after an interval of cycles
 	// after this point, or at the end of the trial if that comes first.
 	SustainCyc
@@ -601,7 +597,6 @@ var NeuronVarProps = map[string]string{
 	"CaDiff":      `cat:"Learn"`,
 	"LearnDiff":   `cat:"Learn"`,
 	"LearnNow":    `cat:"Learn"`,
-	"LearnTimer":  `cat:"Learn"`,
 	"TimerCyc":    `cat:"Learn" auto-scale:"+"`,
 	"SustainCyc":  `cat:"Learn" auto-scale:"+"`,
 	"RLRate":      `cat:"Learn" auto-scale:"+"`,

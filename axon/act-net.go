@@ -109,6 +109,13 @@ func (nt *Network) ApplyExts() {
 	RunApplyExtsNeuron(nd)
 }
 
+// ClearInputs clears the external input to the network,
+// calling InitExt and ApplyExt.
+func (nt *Network) ClearInputs() {
+	nt.InitExt()
+	nt.ApplyExts()
+}
+
 // Beta1 does updating at Beta1 timescale.
 func (nt *Network) Beta1() {
 	nix := nt.NetIxs()

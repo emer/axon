@@ -297,7 +297,6 @@ func init() {
 		"LearnCaP":                     reflect.ValueOf(axon.LearnCaP),
 		"LearnDiff":                    reflect.ValueOf(axon.LearnDiff),
 		"LearnNow":                     reflect.ValueOf(axon.LearnNow),
-		"LearnTimer":                   reflect.ValueOf(axon.LearnTimer),
 		"LogFilename":                  reflect.ValueOf(axon.LogFilename),
 		"LooperCycleStartFunc":         reflect.ValueOf(axon.LooperCycleStartFunc),
 		"LooperStandard":               reflect.ValueOf(axon.LooperStandard),

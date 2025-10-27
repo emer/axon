@@ -33,11 +33,9 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.CaSpike.Dt.MTau = 5                // 5 > 10 even with more ncycles
 
 				ly.Learn.Timing.On.SetBool(true)
-				ly.Learn.Timing.TimerTau = 10
-				ly.Learn.Timing.Threshold = 0.25 // .3 > .35, .25
-				ly.Learn.Timing.Sustain = 100    // 100 > 90 > 110 long term
-				ly.Learn.Timing.Learn = 50
-				ly.Learn.Timing.Reset = 0 // 0 == 10000 > 1000
+				ly.Learn.Timing.Threshold = 0.1 // .1 > .09, .11 > .15, .05 others
+				ly.Learn.Timing.Sustain = 110   // 110 > 100, 120 > 90
+				ly.Learn.Timing.Learn = 50      // 50 > 40, 60
 
 			}},
 		{Sel: "#V1", Doc: "pool inhib (not used), initial activity",
@@ -69,9 +67,8 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.04 // 0.05 > 0.04 with v1sc
 				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
-				ly.Inhib.Layer.Gi = 1.1         // 1.1 > 1.05 1.6.15 adapt
-				ly.Inhib.Layer.FB = 4           // 4
-				ly.Learn.Timing.Threshold = 0.2 // 0.2 > .15 long term
+				ly.Inhib.Layer.Gi = 1.1 // 1.1 > 1.05 1.6.15 adapt
+				ly.Inhib.Layer.FB = 4   // 4
 			}},
 		{Sel: "#Output", Doc: "high inhib for one-hot output",
 			Set: func(ly *axon.LayerParams) {
@@ -95,7 +92,7 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				// pt.Com.MaxDelay = 10 // not much effect
 				// pt.Com.Delay = 10
-				pt.Learn.LRate.Base = 0.1     // 0.1 > 0.2 for syncadiff = false; .05 for syncadiff?
+				pt.Learn.LRate.Base = 0.1     // 0.1 > 0.05
 				pt.Learn.DWt.SubMean = 1      // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
 				pt.SWts.Adapt.LRate = 0.0001  // 0.005 == .1 == .01
 				pt.SWts.Adapt.HiMeanDecay = 0 // 0 > 0.0008 (best in lvis)
@@ -115,7 +112,7 @@ var PathParams = axon.PathSheets{
 		// {Sel: ".V1SC", Doc: "v1 shortcut",
 		// 	Set: func(pt *axon.PathParams) {
 		// 		pt.Learn.LRate.Base = 0.02      // 0.02 >= 0.01 > 0.001, 0.05
-		// 		pt.PathScale.Rel = 0.2          // 0.2 >> 0.3, 0.5 (blows up)
+		// 		pt.PathScale.Rel = 0.1o          // 0.2 >> 0.3, 0.5 (blows up)
 		// 		pt.SWts.Adapt.On.SetBool(false) // seems better
 		// 	}},
 	},
