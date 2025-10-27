@@ -127,9 +127,9 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, syni, si, ri, lpi, pi, di uint3
 	SynapseTraces.Set(tr, int(syni), int(di), int(Tr))
 
 	dwt := float32(0)
-	// if syCaP > pt.Learn.DWt.LearnThr || syCaD > pt.Learn.DWt.LearnThr {
-	dwt = tr * Neurons.Value(int(ri), int(di), int(RLRate)) * Neurons.Value(int(ri), int(di), int(LearnDiff)) * Neurons.Value(int(ri), int(di), int(ETraceLearn))
-	// }
+	if syCaP > pt.Learn.DWt.LearnThr || syCaD > pt.Learn.DWt.LearnThr {
+		dwt = tr * Neurons.Value(int(ri), int(di), int(RLRate)) * Neurons.Value(int(ri), int(di), int(LearnDiff)) * Neurons.Value(int(ri), int(di), int(ETraceLearn))
+	}
 	pt.DWtSynSoftBound(ctx, syni, di, dwt)
 }
 

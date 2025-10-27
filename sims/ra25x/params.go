@@ -107,6 +107,7 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Adapt.SubMean = 1 // key for stability
 				pt.SWts.Init.SPct = 0.5   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 				pt.Learn.DWt.SubMean = 1  // 1 > 0 for long-term stability
+				pt.Learn.DWt.LearnThr = .1
 			}},
 		{Sel: "#Hidden2ToOutput", Doc: "",
 			Set: func(pt *axon.PathParams) {
