@@ -231,7 +231,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	v4IT, _ := net.BidirConnectLayers(v4, it, full)
 	itOut, outIT := net.BidirConnectLayers(it, out, full)
 
-	// net.ConnectLayers(v1, it, rndcut, axon.ForwardPath).AddClass("V1SC")
+	net.ConnectLayers(v1, it, rndcut, axon.ForwardPath).AddClass("V1SC")
 
 	it.PlaceRightOf(v4, 2)
 	out.PlaceRightOf(it, 2)

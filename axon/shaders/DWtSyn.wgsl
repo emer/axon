@@ -982,11 +982,11 @@ fn PathParams_DWtSynCortex(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u
 	PathParams_SynCa(pt, ctx, si, ri, di, &syCaP, &syCaD);
 	SynapseTracesSet(syCaD, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
 	var tr = DWtParams_SynTrace(pt.Learn.DWt, SynapseTracesGet(Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr))), syCaD);
-	SynapseTracesSet(tr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182],
-	u32(syni), u32(di), u32(Tr)));
+	SynapseTracesSet(tr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 	var dwt = f32(0);
-	dwt = tr * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(RLRate))] * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnDiff))] * Neurons[Index3D(TensorStrides[70], TensorStrides[71],
-	TensorStrides[72], u32(ri), u32(di), u32(ETraceLearn))];
+	if (syCaP > pt.Learn.DWt.LearnThr || syCaD > pt.Learn.DWt.LearnThr) {
+		dwt = tr * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(RLRate))] * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnDiff))] * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(ETraceLearn))];
+	}
 	PathParams_DWtSynSoftBound(pt, ctx, syni, di, dwt);
 }
 fn PathParams_DWtSynTarget(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
@@ -1267,9 +1267,13 @@ struct LearnCaParams {
 }
 struct LearnTimingParams {
 	On: i32,
+	TrialEnd: i32,
 	Threshold: f32,
 	Sustain: i32,
 	Learn: i32,
+	pad: f32,
+	pad1: f32,
+	pad2: f32,
 }
 struct TrgAvgActParams {
 	GiBaseInit: f32,

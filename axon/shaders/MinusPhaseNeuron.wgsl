@@ -712,9 +712,13 @@ struct LearnCaParams {
 }
 struct LearnTimingParams {
 	On: i32,
+	TrialEnd: i32,
 	Threshold: f32,
 	Sustain: i32,
 	Learn: i32,
+	pad: f32,
+	pad1: f32,
+	pad2: f32,
 }
 struct TrgAvgActParams {
 	GiBaseInit: f32,

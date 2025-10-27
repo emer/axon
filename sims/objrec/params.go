@@ -99,6 +99,7 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Adapt.HiMeanThr = 0.5 // 0.5, 0.0008 goes the distance
 				pt.SWts.Init.SPct = 1         // 1 >= lower (trace-v11)
 				pt.Learn.DWt.CaPScale = 1     //
+				pt.Learn.DWt.LearnThr = 0.1
 				pt.Learn.DWt.SynCa20.SetBool(false)
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger",
@@ -107,13 +108,13 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: "#V4ToIT", Doc: "stronger",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1.2 // 1.2 >= 1.0 ? > 1.5 too much
+				pt.PathScale.Abs = 1.0 // 1.2 >= 1.0 ? > 1.5 too much
 			}},
-		// {Sel: ".V1SC", Doc: "v1 shortcut",
-		// 	Set: func(pt *axon.PathParams) {
-		// 		pt.Learn.LRate.Base = 0.02      // 0.02 >= 0.01 > 0.001, 0.05
-		// 		pt.PathScale.Rel = 0.1o          // 0.2 >> 0.3, 0.5 (blows up)
-		// 		pt.SWts.Adapt.On.SetBool(false) // seems better
-		// 	}},
+		{Sel: ".V1SC", Doc: "v1 shortcut",
+			Set: func(pt *axon.PathParams) {
+				pt.Learn.LRate.Base = 0.02      // 0.02 >= 0.01 > 0.001, 0.05
+				pt.PathScale.Rel = 0.05         // 0.1 > 0.2 (timer)
+				pt.SWts.Adapt.On.SetBool(false) // seems better
+			}},
 	},
 }

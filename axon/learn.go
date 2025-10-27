@@ -150,6 +150,11 @@ type LearnTimingParams struct {
 	// off, for comparison purposes.
 	On slbool.Bool
 
+	// TrialEnd always learns at end of the trial, for neurons that
+	// are learning triggered. This allows distinguishing the effects
+	// of the learning threshold selection versus actual timing.
+	TrialEnd slbool.Bool
+
 	// Threshold is the threshold on [CaP] required to trigger learning.
 	// The point at which CaP gets over this threshold is recorded
 	// as [TimerCyc] in the neuron, and learning starts Sustain cycles
@@ -165,6 +170,8 @@ type LearnTimingParams struct {
 	// has been satisfied, when learning can then actually occur.
 	// If the trial is ending, then learning happens then in any case.
 	Learn int32 `default:"50"`
+
+	pad, pad1, pad2 float32
 }
 
 func (lt *LearnTimingParams) Defaults() {
@@ -196,12 +203,19 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 		sdel := ctx.CyclesTotal - scyc
 		isiCyc := ctx.ThetaCycles - (ctx.MinusCycles + ctx.PlusCycles) // ISICycles not working
 		atEnd := false
-		if isiCyc > 0 {
-			atEnd = ctx.Cycle == isiCyc-1 // wrap around to next trial
-		} else {
+		if lt.TrialEnd.IsTrue() || isiCyc == 0 {
 			atEnd = ctx.Cycle == ctx.ThetaCycles-1
+		} else {
+			atEnd = ctx.Cycle == isiCyc-1 // wrap around to next trial
 		}
-		if sdel == lt.Learn || (sdel < lt.Learn && atEnd) {
+		if lt.TrialEnd.IsTrue() {
+			if atEnd {
+				learnNow = 1.0
+				Neurons.Set(Neurons.Value(int(ni), int(di), int(CaDiff)), int(ni), int(di), int(LearnDiff))
+				Neurons.Set(0.0, int(ni), int(di), int(TimerCyc))
+				Neurons.Set(0.0, int(ni), int(di), int(SustainCyc))
+			}
+		} else if sdel == lt.Learn || (sdel < lt.Learn && atEnd) {
 			learnNow = 1.0
 			Neurons.Set(Neurons.Value(int(ni), int(di), int(CaDiff)), int(ni), int(di), int(LearnDiff))
 			if sdel < lt.Learn {
