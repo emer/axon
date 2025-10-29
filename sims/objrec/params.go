@@ -33,6 +33,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.CaSpike.Dt.MTau = 5                // 5 > 10 even with more ncycles
 
 				ly.Learn.Timing.On.SetBool(true)
+				ly.Learn.Timing.TrialEnd.SetBool(true)
 				ly.Learn.Timing.Threshold = 0.1 // .1 > .09, .11 > .15, .05 others
 				ly.Learn.Timing.Sustain = 110   // 110 > 100, 120 > 90
 				ly.Learn.Timing.Learn = 50      // 50 > 40, 60
@@ -108,7 +109,7 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: "#V4ToIT", Doc: "stronger",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1.0 // 1.2 >= 1.0 ? > 1.5 too much
+				pt.PathScale.Abs = 1.2 // 1.2 >= 1.0 ? > 1.5 too much
 			}},
 		{Sel: ".V1SC", Doc: "v1 shortcut",
 			Set: func(pt *axon.PathParams) {
