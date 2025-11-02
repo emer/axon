@@ -204,20 +204,18 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 		isiCyc := ctx.ThetaCycles - (ctx.MinusCycles + ctx.PlusCycles) // ISICycles not working
 		atEnd := false
 		if lt.TrialEnd.IsTrue() || isiCyc == 0 {
-			atEnd = ctx.Cycle == ctx.ThetaCycles-1
+			atEnd = (ctx.Cycle == ctx.ThetaCycles-1)
 		} else {
-			atEnd = ctx.Cycle == isiCyc-1 // wrap around to next trial
+			atEnd = (ctx.Cycle == isiCyc-1) // wrap around to next trial
 		}
 		if lt.TrialEnd.IsTrue() {
 			if atEnd {
 				learnNow = 1.0
-				Neurons.Set(Neurons.Value(int(ni), int(di), int(CaDiff)), int(ni), int(di), int(LearnDiff))
 				Neurons.Set(0.0, int(ni), int(di), int(TimerCyc))
 				Neurons.Set(0.0, int(ni), int(di), int(SustainCyc))
 			}
 		} else if sdel == lt.Learn || (sdel < lt.Learn && atEnd) {
 			learnNow = 1.0
-			Neurons.Set(Neurons.Value(int(ni), int(di), int(CaDiff)), int(ni), int(di), int(LearnDiff))
 			if sdel < lt.Learn {
 				Neurons.SetSub(float32(lt.Learn-sdel), int(ni), int(di), int(SustainCyc)) // back date it!
 			}
@@ -241,12 +239,43 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 		Neurons.Set(0.0, int(ni), int(di), int(TimerCyc))
 	}
 	Neurons.Set(learnNow, int(ni), int(di), int(LearnNow))
+	if learnNow > 0.0 {
+		Neurons.Set(Neurons.Value(int(ni), int(di), int(CaDiff)), int(ni), int(di), int(LearnDiff))
+	}
 	if lt.On.IsFalse() {
 		if ctx.PlusPhase.IsTrue() {
 			Neurons.Set(Neurons.Value(int(ni), int(di), int(CaDiff)), int(ni), int(di), int(LearnDiff)) // this is all that matters
 		}
 	}
 }
+
+// LearnTimingNoSustain does the timing updates for learning,
+// where Sustain == 0.
+// This does not work; was an older idea.
+// func (lt *LearnTimingParams) LearnTimingNoSustain(ctx *Context, ni, di uint32) {
+// 	learnNow := float32(0)
+//
+// 	cadMax := Neurons[ni, di, CaDMax]
+// 	cad := Neurons[ni, di, CaD]
+// 	if cadMax > lt.Threshold && cad / cadMax <= lt.DecayPct { // learning criterion
+// 		Neurons[ni, di, CaDMax] = 0.0
+// 		learnNow = 1.0
+
+// 		Neurons[ni, di, LearnDiffTmp] = 0.0
+// 	} else {
+// 		isi := int32(Neurons[ni, di, ISI])
+// 		isiTime := (isi == lt.PostSpike)
+// 		if isiTime {
+// 			Neurons[ni, di, LearnDiffTmp] = Neurons[ni, di, CaDiff]
+// 		}
+// 	}
+// 	Neurons[ni, di, LearnNow] = learnNow
+// 	if lt.On.IsFalse() {
+// 		if ctx.PlusPhase.IsTrue() {
+// 			Neurons[ni, di, LearnDiff] = Neurons[ni, di, CaDiff] // this is all that matters
+// 		}
+// 	}
+// }
 
 ////////  TrgAvgActParams
 
@@ -520,6 +549,7 @@ func (ln *LearnNeuronParams) InitNeuronCa(ctx *Context, ni, di uint32) {
 	Neurons.Set(0, int(ni), int(di), int(CaM))
 	Neurons.Set(0, int(ni), int(di), int(CaP))
 	Neurons.Set(0, int(ni), int(di), int(CaD))
+	Neurons.Set(0, int(ni), int(di), int(CaDPrev))
 
 	Neurons.Set(0, int(ni), int(di), int(CaSyn))
 	Neurons.Set(0, int(ni), int(di), int(LearnCaM))

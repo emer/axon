@@ -1650,20 +1650,18 @@ fn LearnTimingParams_LearnTiming(lt: LearnTimingParams, ctx: Context, ni: u32,di
 		var isiCyc = ctx.ThetaCycles - (ctx.MinusCycles + ctx.PlusCycles); // ISICycles not working
 		var atEnd = false;
 		if (lt.TrialEnd == 1 || isiCyc == 0) {
-			atEnd = ctx.Cycle == ctx.ThetaCycles-1;
+			atEnd = (ctx.Cycle == ctx.ThetaCycles-1);
 		} else {
-			atEnd = ctx.Cycle == isiCyc-1; // wrap around to next trial
+			atEnd = (ctx.Cycle == isiCyc-1); // wrap around to next trial
 		}
 		if (lt.TrialEnd == 1) {
 			if (atEnd) {
 				learnNow = f32(1.0);
-				Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnDiff))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaDiff))];
 				Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimerCyc))] = 0.0;
 				Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SustainCyc))] = 0.0;
 			}
 		} else if (sdel == lt.Learn || (sdel < lt.Learn && atEnd)) {
 			learnNow = f32(1.0);
-			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnDiff))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaDiff))];
 			if (sdel < lt.Learn) {
 				Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SustainCyc))] -= f32(lt.Learn - sdel); // back date it!
 			}
@@ -1687,6 +1685,9 @@ fn LearnTimingParams_LearnTiming(lt: LearnTimingParams, ctx: Context, ni: u32,di
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimerCyc))] = 0.0;
 	}
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = learnNow;
+	if (learnNow > 0.0) {
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnDiff))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaDiff))];
+	}
 	if (lt.On == 0) {
 		if (ctx.PlusPhase == 1) {
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnDiff))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaDiff))]; // this is all that matters
