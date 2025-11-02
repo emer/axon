@@ -33,10 +33,10 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.CaSpike.Dt.MTau = 5                // 5 > 10 even with more ncycles
 
 				ly.Learn.Timing.On.SetBool(true)
-				ly.Learn.Timing.Threshold = .02
+				ly.Learn.Timing.Threshold = .015
 				ly.Learn.Timing.MinusCycles = 80
 				ly.Learn.Timing.PlusCycles = 30
-				ly.Learn.Timing.CaDiffTau = 5
+				ly.Learn.Timing.CaDiffTau = 10
 
 			}},
 		{Sel: "#V1", Doc: "pool inhib (not used), initial activity",
@@ -114,7 +114,7 @@ var PathParams = axon.PathSheets{
 		{Sel: ".V1SC", Doc: "v1 shortcut",
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.02      // 0.02 >= 0.01 > 0.001, 0.05
-				pt.PathScale.Rel = 0.05         // 0.1 > 0.2 (timer)
+				pt.PathScale.Rel = 0.05         // 0.05 for timer
 				pt.SWts.Adapt.On.SetBool(false) // seems better
 			}},
 	},

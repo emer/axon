@@ -152,7 +152,7 @@ type LearnTimingParams struct {
 
 	// Threshold is the threshold on |[CaDiff]| required to engage peak
 	// detection process.
-	Threshold float32 `default:"0.02"`
+	Threshold float32 `default:"0.015"`
 
 	// MinusCycles is the minimum number of cycles (ms) after the first
 	// [MinusPeak] before the process of looking for the plus-phase peak starts.
@@ -174,7 +174,7 @@ type LearnTimingParams struct {
 }
 
 func (lt *LearnTimingParams) Defaults() {
-	lt.Threshold = 0.02
+	lt.Threshold = 0.015
 	lt.MinusCycles = 80
 	lt.PlusCycles = 30
 	lt.CaDiffTau = 5
@@ -233,7 +233,6 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 			if newPeak {
 				Neurons.Set(peak, int(ni), int(di), int(MinusPeak))
 				Neurons.Set(float32(peakCyc), int(ni), int(di), int(MinusPeakCyc))
-
 			}
 		}
 	} else {

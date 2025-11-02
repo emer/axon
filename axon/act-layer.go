@@ -963,9 +963,9 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32) {
 	Neurons.Set(0.0, int(ni), int(di), int(LearnNow))
 
 	// todo: these should be self-resetting:
-	Neurons.Set(0.0, int(ni), int(di), int(CaDiffAvg))
-	Neurons.Set(0.0, int(ni), int(di), int(CaDiffPeak))
-	Neurons.Set(0.0, int(ni), int(di), int(CaDiffPeakCyc))
+	// Neurons[ni, di, CaDiffAvg] = 0.0
+	// Neurons[ni, di, CaDiffPeak] = 0.0
+	// Neurons[ni, di, CaDiffPeakCyc] = 0.0
 	Neurons.Set(0.0, int(ni), int(di), int(MinusPeak))
 	Neurons.Set(0.0, int(ni), int(di), int(MinusPeakCyc))
 	Neurons.Set(0.0, int(ni), int(di), int(PlusPeak))
