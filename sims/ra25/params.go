@@ -22,9 +22,10 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.CaSpike.SpikeCaSyn = 8
 
 				ly.Learn.Timing.On.SetBool(true)
-				ly.Learn.Timing.Threshold = .1
-				ly.Learn.Timing.Sustain = 110
-				ly.Learn.Timing.Learn = 50
+				ly.Learn.Timing.Threshold = .02
+				ly.Learn.Timing.MinusCycles = 80
+				ly.Learn.Timing.PlusCycles = 30
+				ly.Learn.Timing.CaDiffTau = 5
 
 				// ly.Learn.CaLearn.ETraceTau = 4
 				// ly.Learn.CaLearn.ETraceScale = 0.1 // 4,0.1 best in sequential

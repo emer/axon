@@ -961,6 +961,16 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32) {
 	Neurons.Set(0.0, int(ni), int(di), int(CaPMaxCa))
 	Neurons.Set(0.0, int(ni), int(di), int(LearnDiff))
 	Neurons.Set(0.0, int(ni), int(di), int(LearnNow))
+
+	// todo: these should be self-resetting:
+	Neurons.Set(0.0, int(ni), int(di), int(CaDiffAvg))
+	Neurons.Set(0.0, int(ni), int(di), int(CaDiffPeak))
+	Neurons.Set(0.0, int(ni), int(di), int(CaDiffPeakCyc))
+	Neurons.Set(0.0, int(ni), int(di), int(MinusPeak))
+	Neurons.Set(0.0, int(ni), int(di), int(MinusPeakCyc))
+	Neurons.Set(0.0, int(ni), int(di), int(PlusPeak))
+	Neurons.Set(0.0, int(ni), int(di), int(PlusPeakCyc))
+
 	Neurons.Set(0.0, int(ni), int(di), int(RLRate))
 	ly.Acts.DecayState(ctx, ni, di, ly.Acts.Decay.Act, ly.Acts.Decay.Glong, ly.Acts.Decay.AHP)
 	// Note: synapse-level Ca decay happens in DWt

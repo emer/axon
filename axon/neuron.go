@@ -180,26 +180,41 @@ const (
 	// signal that drives error-driven learning.
 	CaDiff
 
+	// CaDiffAvg is the running time-average of |CaDiff| (absolute value),
+	// used for determining the timing of learning in terms of onsets of peaks.
+	// See [MinusPeak] and [PlusPeak].
+	CaDiffAvg
+
+	// CaDiffPeak is the value of the current peak (local maximum) of [CaDiffAvg].
+	CaDiffPeak
+
+	// CaDiffPeakCyc is the absolute cycle where [CaDiffPeak] occurred.
+	CaDiffPeakCyc
+
+	// MinusPeak is the value of the first, minus-phase peak of [CaDiffAvg],
+	// which occurs when new input drives the fast integral to diverge from slow.
+	MinusPeak
+
+	// MinusPeakCyc is the absolute cycle where [MinusPeak] occurred.
+	MinusPeakCyc
+
+	// PlusPeak is the value of the second, plus-phase peak of [CaDiffAvg],
+	// which occurs when an outcome causes fast integral to diverge from slow.
+	PlusPeak
+
+	// PlusPeakCyc is the absolute cycle where [PlusPeak] occurred.
+	PlusPeakCyc
+
 	// LearnDiff is the actual difference signal that drives learning, which is
 	// computed from [CaDiff] for neocortical neurons, but specifically at the
-	// point of learning (LearnNow). It is cleared at the start of a new learning window.
+	// point of learning (LearnNow), based on [PlusPeakCyc].
+	// It is cleared at the start of a new learning window.
 	LearnDiff
 
 	// LearnNow is activated at the moment when the receiving neuron is learning,
-	// based on accumulated calcium signals in neocortical neurons.
-	// See [LearnTimingParams] and [CaP], [TimerCyc], [SustainCyc].
+	// based on timing computed from [MinusPeak] and [PlusPeak].
+	// See [LearnTimingParams].
 	LearnNow
-
-	// TimerCyc is the cycle at which CaP first got over the minimal
-	// threshold for learning. This is reset when it goes back below the threshold,
-	// and learning occurs only if sustained sufficiently long, at which point
-	// SustainCyc is triggered.
-	TimerCyc
-
-	// SustainCyc is the cycle at which CaP was sustained long enough to
-	// trigger learning. Actual learning will occur after an interval of cycles
-	// after this point, or at the end of the trial if that comes first.
-	SustainCyc
 
 	// RLRate is recv-unit based learning rate multiplier, reflecting the sigmoid
 	// derivative computed from [CaD] of recv unit, and the normalized difference
@@ -589,16 +604,23 @@ var NeuronVarProps = map[string]string{
 	"CaD":     `cat:"Learn"`,
 	"CaDPrev": `cat:"Learn"`,
 
-	"CaSyn":       `cat:"Learn"`,
-	"LearnCa":     `cat:"Learn"`,
-	"LearnCaM":    `cat:"Learn"`,
-	"LearnCaP":    `cat:"Learn"`,
-	"LearnCaD":    `cat:"Learn"`,
-	"CaDiff":      `cat:"Learn"`,
+	"CaSyn":     `cat:"Learn"`,
+	"LearnCa":   `cat:"Learn"`,
+	"LearnCaM":  `cat:"Learn"`,
+	"LearnCaP":  `cat:"Learn"`,
+	"LearnCaD":  `cat:"Learn"`,
+	"CaDiff":    `cat:"Learn"`,
+	"CaDiffAvg": `cat:"Learn"`,
+
+	"CaDiffPeak":    `cat:"Learn"`,
+	"CaDiffPeakCyc": `cat:"Learn" auto-scale:"+"`,
+	"MinusPeak":     `cat:"Learn"`,
+	"MinusPeakCyc":  `cat:"Learn" auto-scale:"+"`,
+	"PlusPeak":      `cat:"Learn"`,
+	"PlusPeakCyc":   `cat:"Learn" auto-scale:"+"`,
+
 	"LearnDiff":   `cat:"Learn"`,
 	"LearnNow":    `cat:"Learn"`,
-	"TimerCyc":    `cat:"Learn" auto-scale:"+"`,
-	"SustainCyc":  `cat:"Learn" auto-scale:"+"`,
 	"RLRate":      `cat:"Learn" auto-scale:"+"`,
 	"ETrace":      `cat:"Learn"`,
 	"ETraceLearn": `cat:"Learn" auto-scale:"+"`,
