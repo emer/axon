@@ -138,7 +138,11 @@ func (lc *LearnCaParams) ETrace(ctx *Context, ni, di uint32, cad float32) {
 // LearnTimingParams parameterizes the timing of Ca-driven Kinase
 // algorithm learning, based on detecting the two peaks of differential
 // fast - slow activity associated with the minus and plus phases:
-// [MinusPeak] and [PlusPeak].
+// [MinusPeak] and [PlusPeak]. Learning occurs after the plus-phase peak.
+// This allows the minus and plus phases to be of variable durations,
+// with the minus peak initiating the learning process and the plus peak
+// finalizing it, where the fast - slow values at that time drive
+// the direction and magnitude of plasticity (i.e., [LearnDiff]).
 type LearnTimingParams struct {
 
 	// On indicates whether to use the timing parameters to drive
@@ -147,20 +151,9 @@ type LearnTimingParams struct {
 	// off, for comparison purposes.
 	On slbool.Bool
 
-	// Ca means use [CaDiff] (LearnCaP - LearnCaD) to drive the [TimeDiff] timing.
-	// By default, [GaP] - [GaD] is used, which samples all conductance
-	// inputs, providing a much smoother timing signal. Using Ca might be
-	// more biologically plausible, and it works despite being quite noisy,
-	// but Ga is more reliable.
-	Ca slbool.Bool
-
-	// Threshold is the threshold on |[TimeDiff]| required to engage peak
-	// detection process.
-	Threshold float32 `default:"0"`
-
 	// MinusCycles is the minimum number of cycles (ms) after the first
 	// [MinusPeak] before the process of looking for the plus-phase peak starts.
-	MinusCycles int32 `default:"140"`
+	MinusCycles int32 `default:"120"`
 
 	// PlusCycles is number of cycles (ms) after the second [PlusPeak] learning
 	// is triggered. If no second peak occurs within Minus + Plus cycles, then
@@ -169,17 +162,16 @@ type LearnTimingParams struct {
 
 	// Time constant for integrating [TimeDiff] as the absolute value of
 	// CaDiff integrated over time to smooth out significant local bumps.
-	TimeDiffTau float32 `default:"4"`
+	TimeDiffTau float32 `default:"2"`
 
 	// Dt is 1/Tau
 	TimeDiffDt float32 `display:"-"`
 
-	pad float32
+	pad, pad1, pad2 float32
 }
 
 func (lt *LearnTimingParams) Defaults() {
-	lt.Threshold = 0
-	lt.MinusCycles = 140
+	lt.MinusCycles = 120
 	lt.PlusCycles = 40
 	lt.TimeDiffTau = 2
 	lt.Update()
@@ -204,17 +196,17 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 	isiCyc := ctx.ThetaCycles - (ctx.MinusCycles + ctx.PlusCycles) // ISICycles not working
 
 	timeDiff := Neurons.Value(int(ni), int(di), int(TimeDiff))
-	if lt.Ca.IsTrue() {
-		timeDiff += lt.TimeDiffDt * (math32.Abs(Neurons.Value(int(ni), int(di), int(CaDiff))) - timeDiff)
-	} else {
-		gaDiff := Neurons.Value(int(ni), int(di), int(GaP)) - Neurons.Value(int(ni), int(di), int(GaD))
-		timeDiff += lt.TimeDiffDt * (math32.Abs(gaDiff) - timeDiff)
-	}
+	//	if lt.Ca.IsTrue() {
+	//		timeDiff += lt.TimeDiffDt * (math32.Abs(Neurons[ni, di, CaDiff]) - timeDiff)
+	//	} else {
+	gaDiff := Neurons.Value(int(ni), int(di), int(GaP)) - Neurons.Value(int(ni), int(di), int(GaD))
+	timeDiff += lt.TimeDiffDt * (math32.Abs(gaDiff) - timeDiff)
+	// }
 	Neurons.Set(timeDiff, int(ni), int(di), int(TimeDiff))
 	peak := Neurons.Value(int(ni), int(di), int(TimeDiffPeak))
 	peakCyc := int32(Neurons.Value(int(ni), int(di), int(TimeDiffPeakCyc)))
 	newPeak := false
-	if timeDiff > lt.Threshold && timeDiff > peak {
+	if timeDiff > peak {
 		newPeak = true
 		peak = timeDiff
 		peakCyc = ctx.CyclesTotal
@@ -234,6 +226,11 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 		}
 		if pcy == lt.PlusCycles || (pcy < lt.PlusCycles && atEnd) {
 			learnNow = 1.0
+		} else if pcy < lt.PlusCycles {
+			if newPeak {
+				Neurons.Set(peak, int(ni), int(di), int(PlusPeak))
+				Neurons.Set(float32(peakCyc), int(ni), int(di), int(PlusPeakCyc))
+			}
 		}
 	} else if mcyc > 0 {
 		mcy := ctx.CyclesTotal - mcyc

@@ -842,13 +842,13 @@ fn LearnCaParams_ETrace(lc: LearnCaParams, ctx: Context, ni: u32,di: u32, cad: f
 }
 struct LearnTimingParams {
 	On: i32,
-	Ca: i32,
-	Threshold: f32,
 	MinusCycles: i32,
 	PlusCycles: i32,
 	TimeDiffTau: f32,
 	TimeDiffDt: f32,
 	pad: f32,
+	pad1: f32,
+	pad2: f32,
 }
 struct TrgAvgActParams {
 	GiBaseInit: f32,

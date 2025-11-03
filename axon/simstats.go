@@ -715,10 +715,12 @@ func StatLevelAll(statsDir *tensorfs.Node, srcMode, srcLevel enums.Enum, styleFu
 // and std deviation of the LearnNow signal in the given layers.
 // This is useful for tracking the continuous learning mechanism.
 func StatLearnNow(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel, runLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
-	statNames := []string{"LrnNowMean", "LrnNowStDev"}
+	statNames := []string{"LrnNowMean", "LrnNowStDev", "MinusPeak", "PlusPeak"}
 	statDocs := map[string]string{
 		"LrnNowMean":   "Mean LearnNow cycle, relative to the theta cycle (trial), which may include an ISI period at the start (learning during ISI appears at the end of theta cycle).",
 		"LrnNowStdDev": "Standard deviation of LearnNow cycle, relative to the theta cycle (trial), which may include an ISI period at the start (learning during ISI appears at the end of theta cycle).",
+		"MinusPeak":    "Magnitude of the peak fast - slow deviation for the minus phase (mean).",
+		"PlusPeak":     "Magnitude of the peak fast - slow deviation for the plus phase (mean).",
 	}
 	levels := make([]enums.Enum, 10) // should be enough
 	levels[0] = trialLevel
@@ -751,13 +753,21 @@ func StatLearnNow(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel,
 					anow := curModeDir.Float64(lnm+"_LearnNow", ly.GetSampleShape().Sizes...)
 					for di := range ndata {
 						ly.UnitValuesSampleTensor(anow, "LearnNow", di)
-						anow.SetShapeSizes(anow.Len()) // set to 1D -- inexpensive and faster for computation
+						anow.SetShapeSizes(anow.Len()) // set to 1D -- faster
 						var stat float64
 						switch si {
 						case 0:
 							stat = stats.Mean(anow).Float1D(0)
 						case 1:
 							stat = stats.Std(anow).Float1D(0)
+						case 2:
+							ly.UnitValuesSampleTensor(anow, "MinusPeak", di)
+							anow.SetShapeSizes(anow.Len())
+							stat = stats.Mean(anow).Float1D(0)
+						case 3:
+							ly.UnitValuesSampleTensor(anow, "PlusPeak", di)
+							anow.SetShapeSizes(anow.Len())
+							stat = stats.Mean(anow).Float1D(0)
 						}
 						curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
 						tsr.AppendRowFloat(stat)

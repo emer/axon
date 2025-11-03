@@ -1633,29 +1633,26 @@ fn LearnCaParams_LearnCas(lc: LearnCaParams, ctx: Context, ni: u32,di: u32) {
 }
 struct LearnTimingParams {
 	On: i32,
-	Ca: i32,
-	Threshold: f32,
 	MinusCycles: i32,
 	PlusCycles: i32,
 	TimeDiffTau: f32,
 	TimeDiffDt: f32,
 	pad: f32,
+	pad1: f32,
+	pad2: f32,
 }
 fn LearnTimingParams_LearnTiming(lt: LearnTimingParams, ctx: Context, ni: u32,di: u32) {
 	var learnNow = f32(0);
 	var isiCyc = ctx.ThetaCycles - (ctx.MinusCycles + ctx.PlusCycles); // ISICycles not working
-	var timeDiff = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeDiff))];
-	if (lt.Ca == 1) {
-		timeDiff += lt.TimeDiffDt * (abs(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaDiff))]) - timeDiff);
-	} else {
-		var gaDiff = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))] - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaD))];
-		timeDiff += lt.TimeDiffDt * (abs(gaDiff) - timeDiff);
-	}
+	var timeDiff = Neurons[Index3D(TensorStrides[70], TensorStrides[71],
+	TensorStrides[72], u32(ni), u32(di), u32(TimeDiff))];
+	var gaDiff = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))] - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaD))];
+	timeDiff += lt.TimeDiffDt * (abs(gaDiff) - timeDiff);
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeDiff))] = timeDiff;
 	var peak = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeDiffPeak))];
 	var peakCyc = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeDiffPeakCyc))]);
 	var newPeak = false;
-	if (timeDiff > lt.Threshold && timeDiff > peak) {
+	if (timeDiff > peak) {
 		newPeak = true;
 		peak = timeDiff;
 		peakCyc = ctx.CyclesTotal;
@@ -1674,6 +1671,11 @@ fn LearnTimingParams_LearnTiming(lt: LearnTimingParams, ctx: Context, ni: u32,di
 		}
 		if (pcy == lt.PlusCycles || (pcy < lt.PlusCycles && atEnd)) {
 			learnNow = f32(1.0);
+		} else if (pcy < lt.PlusCycles) {
+			if (newPeak) {
+				Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(PlusPeak))] = peak;
+				Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(PlusPeakCyc))] = f32(peakCyc);
+			}
 		}
 	} else if (mcyc > 0) {
 		var mcy = ctx.CyclesTotal - mcyc;
