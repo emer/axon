@@ -654,13 +654,11 @@ func StatPrevCorSim(statsDir, currentDir *tensorfs.Node, net *Network, trialLeve
 						case 0:
 							ly.UnitValuesSampleTensor(actM, "ActM", di)
 							actM.SetShapeSizes(actM.Len())
-							cov := metric.Correlation(actM, prev)
-							stat = cov.Float1D(0)
+							stat = metric.Correlation(actM, prev).Float1D(0)
 						case 1:
 							ly.UnitValuesSampleTensor(actP, "ActP", di)
 							actP.SetShapeSizes(actP.Len())
-							cov := metric.Correlation(actP, prev)
-							stat = cov.Float1D(0)
+							stat = metric.Correlation(actP, prev).Float1D(0)
 						}
 						curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
 						tsr.AppendRowFloat(stat)
@@ -708,6 +706,72 @@ func StatLevelAll(statsDir *tensorfs.Node, srcMode, srcLevel enums.Enum, styleFu
 			} else {
 				trg := tensorfs.ValueType(allDir, cl.Name(), clv.DataType())
 				trg.AppendRow(clv.RowTensor(clv.DimSize(0) - 1))
+			}
+		}
+	}
+}
+
+// StatLearnNow returns a Stats function that records the mean, median,
+// and std deviation of the LearnNow signal in the given layers.
+// This is useful for tracking the continuous learning mechanism.
+func StatLearnNow(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel, runLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
+	statNames := []string{"LrnNowMean", "LrnNowMedian", "LrnNowStDev"}
+	statDocs := map[string]string{
+		"LrnNowMean":   "Mean LearnNow cycle, relative to the theta cycle (trial), which may include an ISI period at the start (learning during ISI appears at the end of theta cycle).",
+		"LrnNowMedian": "Median LearnNow cycle, relative to the theta cycle (trial), which may include an ISI period at the start (learning during ISI appears at the end of theta cycle).",
+		"LrnNowStdDev": "Standard deviation of LearnNow cycle, relative to the theta cycle (trial), which may include an ISI period at the start (learning during ISI appears at the end of theta cycle).",
+	}
+	levels := make([]enums.Enum, 10) // should be enough
+	levels[0] = trialLevel
+	return func(mode, level enums.Enum, start bool) {
+		levi := int(level.Int64() - trialLevel.Int64())
+		if levi < 0 {
+			return
+		}
+		levels[levi] = level
+		modeDir := statsDir.Dir(mode.String())
+		curModeDir := currentDir.Dir(mode.String())
+		levelDir := modeDir.Dir(level.String())
+		ndata := int(net.Context().NData)
+		for _, lnm := range layerNames {
+			for si, statName := range statNames {
+				ly := net.LayerByName(lnm)
+				name := lnm + "_" + statName
+				tsr := levelDir.Float64(name)
+				if start {
+					tsr.SetNumRows(0)
+					// plot.SetFirstStyler(tsr, func(s *plot.Style) {
+					// 	s.Range.SetMin(0).SetMax(1)
+					// })
+					metadata.SetDoc(tsr, statDocs[statName])
+					continue
+				}
+				switch levi {
+				case 0:
+					// note: current lnm + _var is standard reusable unit vals buffer
+					anow := curModeDir.Float64(lnm+"_LearnNow", ly.GetSampleShape().Sizes...)
+					for di := range ndata {
+						ly.UnitValuesSampleTensor(anow, "LearnNow", di)
+						anow.SetShapeSizes(anow.Len()) // set to 1D -- inexpensive and faster for computation
+						var stat float64
+						switch si {
+						case 0:
+							stat = stats.Mean(anow).Float1D(0)
+						case 1:
+							stat = stats.Median(anow).Float1D(0)
+						case 2:
+							stat = stats.Std(anow).Float1D(0)
+						}
+						curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
+						tsr.AppendRowFloat(stat)
+					}
+				case int(runLevel.Int64() - trialLevel.Int64()):
+					subDir := modeDir.Dir(levels[levi-1].String())
+					tsr.AppendRow(stats.StatFinal.Call(subDir.Value(name)))
+				default:
+					subDir := modeDir.Dir(levels[levi-1].String())
+					tsr.AppendRow(stats.StatMean.Call(subDir.Value(name)))
+				}
 			}
 		}
 	}

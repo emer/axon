@@ -136,12 +136,9 @@ func (lc *LearnCaParams) ETrace(ctx *Context, ni, di uint32, cad float32) {
 }
 
 // LearnTimingParams parameterizes the timing of Ca-driven Kinase
-// algorithm learning, based on CaP spike-driven Ca that integrates
-// receiver Ca activity over time. When this value remains above a
-// low threshold for a sufficiently long duration, then a learning
-// event is triggered. This excludes transient activity associated with
-// plus-phase-only firing, and thus focuses learning on neurons that
-// are already active in the minus phase.
+// algorithm learning, based on detecting the two peaks of differential
+// fast - slow activity associated with the minus and plus phases:
+// [MinusPeak] and [PlusPeak].
 type LearnTimingParams struct {
 
 	// On indicates whether to use the timing parameters to drive
@@ -204,6 +201,7 @@ func (lt *LearnTimingParams) ShouldDisplay(field string) bool {
 // LearnTiming does the timing updates for learning.
 func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 	learnNow := float32(0)
+	isiCyc := ctx.ThetaCycles - (ctx.MinusCycles + ctx.PlusCycles) // ISICycles not working
 
 	timeDiff := Neurons.Value(int(ni), int(di), int(TimeDiff))
 	if lt.Ca.IsTrue() {
@@ -228,7 +226,6 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 	pcyc := int32(Neurons.Value(int(ni), int(di), int(PlusPeakCyc)))
 	if pcyc > 0 {
 		pcy := ctx.CyclesTotal - pcyc
-		isiCyc := ctx.ThetaCycles - (ctx.MinusCycles + ctx.PlusCycles) // ISICycles not working
 		atEnd := false
 		if isiCyc == 0 {
 			atEnd = (ctx.Cycle == ctx.ThetaCycles-1)
@@ -259,8 +256,12 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 			Neurons.Set(float32(peakCyc), int(ni), int(di), int(MinusPeakCyc))
 		}
 	}
-	Neurons.Set(learnNow, int(ni), int(di), int(LearnNow))
 	if learnNow > 0.0 {
+		cyc := ctx.Cycle
+		if isiCyc > 0 && cyc < isiCyc {
+			cyc = ctx.ThetaCycles + cyc // add to end so stats are sensible
+		}
+		Neurons.Set(float32(cyc), int(ni), int(di), int(LearnNow))
 		Neurons.Set(Neurons.Value(int(ni), int(di), int(CaDiff)), int(ni), int(di), int(LearnDiff))
 	}
 	if lt.On.IsFalse() {
@@ -471,12 +472,9 @@ type LearnNeuronParams struct {
 	CaLearn LearnCaParams `display:"inline"`
 
 	// LearnTimingParams parameterizes the timing of Ca-driven Kinase
-	// algorithm learning, based on a CaP variable that integrates
-	// receiver Ca activity over time. When this value remains above a
-	// low threshold for a sufficiently long duration, then a learning
-	// event is triggered. This excludes transient activity associated with
-	// plus-phase-only firing, and thus focuses learning on neurons that
-	// are already active in the minus phase.
+	// algorithm learning, based on detecting the two peaks of differential
+	// fast - slow activity associated with the minus and plus phases:
+	// [MinusPeak] and [PlusPeak].
 	Timing LearnTimingParams `display:"inline"`
 
 	// CaSpike parameterizes the neuron-level spike-driven calcium signals:

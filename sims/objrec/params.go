@@ -36,7 +36,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.Timing.Threshold = 0
 				ly.Learn.Timing.MinusCycles = 140
 				ly.Learn.Timing.PlusCycles = 40
-				ly.Learn.Timing.TimeDiffTau = 4
+				ly.Learn.Timing.TimeDiffTau = 2
 			}},
 		{Sel: "#V1", Doc: "pool inhib (not used), initial activity",
 			Set: func(ly *axon.LayerParams) {

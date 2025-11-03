@@ -959,7 +959,7 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32) {
 	Neurons[ni, di, CaPMax] = 0.0
 	Neurons[ni, di, CaPMaxCa] = 0.0
 	Neurons[ni, di, LearnDiff] = 0.0
-	Neurons[ni, di, LearnNow] = 0.0
+	// Neurons[ni, di, LearnNow] = 0.0
 	
 	// todo: these should be self-resetting:
 	Neurons[ni, di, TimeDiff] = 0.0

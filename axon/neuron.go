@@ -180,6 +180,12 @@ const (
 	// signal that drives error-driven learning.
 	CaDiff
 
+	// LearnDiff is the actual difference signal that drives learning, which is
+	// computed from [CaDiff] for neocortical neurons, but specifically at the
+	// point of learning (LearnNow), based on [PlusPeakCyc].
+	// It is cleared at the start of a new learning window.
+	LearnDiff
+
 	//////// Learning Timing
 
 	// GaM is first-level integration of all input conductances g_a,
@@ -224,15 +230,12 @@ const (
 	// PlusPeakCyc is the absolute cycle where [PlusPeak] occurred.
 	PlusPeakCyc
 
-	// LearnDiff is the actual difference signal that drives learning, which is
-	// computed from [CaDiff] for neocortical neurons, but specifically at the
-	// point of learning (LearnNow), based on [PlusPeakCyc].
-	// It is cleared at the start of a new learning window.
-	LearnDiff
-
-	// LearnNow is activated at the moment when the receiving neuron is learning,
+	// LearnNow is the cycle (ms) within the theta cycle recording
+	// the moment when the receiving neuron is learning,
 	// based on timing computed from [MinusPeak] and [PlusPeak].
-	// See [LearnTimingParams].
+	// See [LearnTimingParams]. If there are ISICycles at the start of
+	// the theta cycle, and learning happens within them, it is translated
+	// to the end of the theta cycle, so statistics are sensible.
 	LearnNow
 
 	// RLRate is recv-unit based learning rate multiplier, reflecting the sigmoid
@@ -623,12 +626,13 @@ var NeuronVarProps = map[string]string{
 	"CaD":     `cat:"Learn"`,
 	"CaDPrev": `cat:"Learn"`,
 
-	"CaSyn":    `cat:"Learn"`,
-	"LearnCa":  `cat:"Learn"`,
-	"LearnCaM": `cat:"Learn"`,
-	"LearnCaP": `cat:"Learn"`,
-	"LearnCaD": `cat:"Learn"`,
-	"CaDiff":   `cat:"Learn"`,
+	"CaSyn":     `cat:"Learn"`,
+	"LearnCa":   `cat:"Learn"`,
+	"LearnCaM":  `cat:"Learn"`,
+	"LearnCaP":  `cat:"Learn"`,
+	"LearnCaD":  `cat:"Learn"`,
+	"CaDiff":    `cat:"Learn"`,
+	"LearnDiff": `cat:"Learn"`,
 
 	"GaM": `cat:"Learn"`,
 	"GaP": `cat:"Learn"`,
@@ -642,9 +646,8 @@ var NeuronVarProps = map[string]string{
 	"MinusPeakCyc":    `cat:"Learn" auto-scale:"+"`,
 	"PlusPeak":        `cat:"Learn"`,
 	"PlusPeakCyc":     `cat:"Learn" auto-scale:"+"`,
+	"LearnNow":        `cat:"Learn" auto-scale:"+"`,
 
-	"LearnDiff":   `cat:"Learn"`,
-	"LearnNow":    `cat:"Learn"`,
 	"RLRate":      `cat:"Learn" auto-scale:"+"`,
 	"ETrace":      `cat:"Learn"`,
 	"ETraceLearn": `cat:"Learn" auto-scale:"+"`,

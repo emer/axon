@@ -960,7 +960,7 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32) {
 	Neurons.Set(0.0, int(ni), int(di), int(CaPMax))
 	Neurons.Set(0.0, int(ni), int(di), int(CaPMaxCa))
 	Neurons.Set(0.0, int(ni), int(di), int(LearnDiff))
-	Neurons.Set(0.0, int(ni), int(di), int(LearnNow))
+	// Neurons[ni, di, LearnNow] = 0.0
 
 	// todo: these should be self-resetting:
 	Neurons.Set(0.0, int(ni), int(di), int(TimeDiff))

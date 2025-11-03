@@ -627,6 +627,11 @@ func (ss *Sim) ConfigStats() {
 		giMultFunc(mode, level, phase == Start)
 	})
 
+	learnNowFunc := axon.StatLearnNow(ss.Stats, ss.Current, net, Trial, Run, lays...)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		learnNowFunc(mode, level, phase == Start)
+	})
+
 	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, Run, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		trnEpc := ss.Loops.Loop(Train, Epoch).Counter.Cur
