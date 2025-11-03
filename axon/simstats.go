@@ -711,14 +711,13 @@ func StatLevelAll(statsDir *tensorfs.Node, srcMode, srcLevel enums.Enum, styleFu
 	}
 }
 
-// StatLearnNow returns a Stats function that records the mean, median,
+// StatLearnNow returns a Stats function that records the mean
 // and std deviation of the LearnNow signal in the given layers.
 // This is useful for tracking the continuous learning mechanism.
 func StatLearnNow(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel, runLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
-	statNames := []string{"LrnNowMean", "LrnNowMedian", "LrnNowStDev"}
+	statNames := []string{"LrnNowMean", "LrnNowStDev"}
 	statDocs := map[string]string{
 		"LrnNowMean":   "Mean LearnNow cycle, relative to the theta cycle (trial), which may include an ISI period at the start (learning during ISI appears at the end of theta cycle).",
-		"LrnNowMedian": "Median LearnNow cycle, relative to the theta cycle (trial), which may include an ISI period at the start (learning during ISI appears at the end of theta cycle).",
 		"LrnNowStdDev": "Standard deviation of LearnNow cycle, relative to the theta cycle (trial), which may include an ISI period at the start (learning during ISI appears at the end of theta cycle).",
 	}
 	levels := make([]enums.Enum, 10) // should be enough
@@ -758,8 +757,6 @@ func StatLearnNow(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel,
 						case 0:
 							stat = stats.Mean(anow).Float1D(0)
 						case 1:
-							stat = stats.Median(anow).Float1D(0)
-						case 2:
 							stat = stats.Std(anow).Float1D(0)
 						}
 						curModeDir.Float64(name, ndata).SetFloat1D(stat, di)

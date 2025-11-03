@@ -1672,7 +1672,7 @@ fn LearnTimingParams_LearnTiming(lt: LearnTimingParams, ctx: Context, ni: u32,di
 		} else {
 			atEnd = (ctx.Cycle == isiCyc-1); // wrap around to next trial
 		}
-		if (pcy == lt.PlusCycles || atEnd) {
+		if (pcy == lt.PlusCycles || (pcy < lt.PlusCycles && atEnd)) {
 			learnNow = f32(1.0);
 		}
 	} else if (mcyc > 0) {

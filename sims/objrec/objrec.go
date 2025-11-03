@@ -627,7 +627,8 @@ func (ss *Sim) ConfigStats() {
 		giMultFunc(mode, level, phase == Start)
 	})
 
-	learnNowFunc := axon.StatLearnNow(ss.Stats, ss.Current, net, Trial, Run, lays...)
+	superLays := net.LayersByType(axon.SuperLayer, axon.CTLayer)
+	learnNowFunc := axon.StatLearnNow(ss.Stats, ss.Current, net, Trial, Run, superLays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		learnNowFunc(mode, level, phase == Start)
 	})

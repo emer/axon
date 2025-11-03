@@ -113,7 +113,7 @@ var PathParams = axon.PathSheets{
 		{Sel: ".V1SC", Doc: "v1 shortcut",
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.02      // 0.02 >= 0.01 > 0.001, 0.05
-				pt.PathScale.Rel = 0.05         // 0.05 for timer
+				pt.PathScale.Rel = 0.2          // 0.2 >> 0.3, 0.5 (blows up)
 				pt.SWts.Adapt.On.SetBool(false) // seems better
 			}},
 	},

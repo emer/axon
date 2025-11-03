@@ -179,7 +179,7 @@ func (lt *LearnTimingParams) Defaults() {
 	lt.Threshold = 0
 	lt.MinusCycles = 140
 	lt.PlusCycles = 40
-	lt.TimeDiffTau = 4
+	lt.TimeDiffTau = 2
 	lt.Update()
 }
 
@@ -230,7 +230,7 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 		} else {
 			atEnd = (ctx.Cycle == isiCyc-1) // wrap around to next trial
 		}
-		if pcy == lt.PlusCycles || atEnd {
+		if pcy == lt.PlusCycles || (pcy < lt.PlusCycles && atEnd) {
 			learnNow = 1.0
 		}
 	} else if mcyc > 0 {
