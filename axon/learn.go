@@ -159,20 +159,20 @@ type LearnTimingParams struct {
 
 	// Threshold is the threshold on |[TimeDiff]| required to engage peak
 	// detection process.
-	Threshold float32 `default:"0.015"`
+	Threshold float32 `default:"0"`
 
 	// MinusCycles is the minimum number of cycles (ms) after the first
 	// [MinusPeak] before the process of looking for the plus-phase peak starts.
-	MinusCycles int32 `default:"80"`
+	MinusCycles int32 `default:"140"`
 
 	// PlusCycles is number of cycles (ms) after the second [PlusPeak] learning
 	// is triggered. If no second peak occurs within Minus + Plus cycles, then
 	// no plus phase is detected (i.e., no prediction error), and everything resets.
-	PlusCycles int32 `default:"30"`
+	PlusCycles int32 `default:"40"`
 
 	// Time constant for integrating [TimeDiff] as the absolute value of
 	// CaDiff integrated over time to smooth out significant local bumps.
-	TimeDiffTau float32 `defautl:"5"`
+	TimeDiffTau float32 `default:"4"`
 
 	// Dt is 1/Tau
 	TimeDiffDt float32 `display:"-"`
@@ -181,9 +181,9 @@ type LearnTimingParams struct {
 }
 
 func (lt *LearnTimingParams) Defaults() {
-	lt.Threshold = 0.015
-	lt.MinusCycles = 80
-	lt.PlusCycles = 30
+	lt.Threshold = 0
+	lt.MinusCycles = 140
+	lt.PlusCycles = 40
 	lt.TimeDiffTau = 4
 	lt.Update()
 }

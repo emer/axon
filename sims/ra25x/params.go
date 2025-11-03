@@ -63,7 +63,6 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.RLRate.Min = 0.001
 
 				ly.Learn.Timing.On.SetBool(true)
-				ly.Learn.Timing.Threshold = .1
 			}},
 		{Sel: "#Input", Doc: "critical now to specify the activity level",
 			Set: func(ly *axon.LayerParams) {
