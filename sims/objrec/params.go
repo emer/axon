@@ -33,11 +33,10 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.CaSpike.Dt.MTau = 5                // 5 > 10 even with more ncycles
 
 				ly.Learn.Timing.On.SetBool(true)
-				ly.Learn.Timing.Threshold = .015
-				ly.Learn.Timing.MinusCycles = 80
-				ly.Learn.Timing.PlusCycles = 30
-				ly.Learn.Timing.CaDiffTau = 10
-
+				ly.Learn.Timing.Threshold = 0
+				ly.Learn.Timing.MinusCycles = 140
+				ly.Learn.Timing.PlusCycles = 40
+				ly.Learn.Timing.TimeDiffTau = 4
 			}},
 		{Sel: "#V1", Doc: "pool inhib (not used), initial activity",
 			Set: func(ly *axon.LayerParams) {

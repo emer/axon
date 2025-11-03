@@ -180,25 +180,44 @@ const (
 	// signal that drives error-driven learning.
 	CaDiff
 
-	// CaDiffAvg is the running time-average of |CaDiff| (absolute value),
+	//////// Learning Timing
+
+	// GaM is first-level integration of all input conductances g_a,
+	// which then drives longer time-integrated variables: [GaP] and [GaD].
+	// These variables are used for timing of learning based on bursts of activity
+	// change over time: at the minus and plus phases.
+	GaM
+
+	// GaP is the continuous cascaded integration of [GaM] using the PTau time constant
+	// (typically 40), representing a neuron-level, all-conductance-based version
+	// of the plus, LTP direction of weight change in the Kinase learning rule.
+	GaP
+
+	// GaD is the continuous cascaded integration of [GaP] using the DTau time constant
+	// (typically 40), representing a neuron-level, all-conductance-based version
+	// of the minus, LTD direction of weight change in the Kinase learning rule.
+	GaD
+
+	// TimeDiff is the running time-average of |P - D| (absolute value),
 	// used for determining the timing of learning in terms of onsets of peaks.
-	// See [MinusPeak] and [PlusPeak].
-	CaDiffAvg
+	// See [MinusPeak] and [PlusPeak]. The GaP - GaD value is much smoother and
+	// more reliable than LearnCaP - LearnCaD (i.e., CaDiff).
+	TimeDiff
 
-	// CaDiffPeak is the value of the current peak (local maximum) of [CaDiffAvg].
-	CaDiffPeak
+	// TimeDiffPeak is the value of the current peak (local maximum) of [TimeDiff].
+	TimeDiffPeak
 
-	// CaDiffPeakCyc is the absolute cycle where [CaDiffPeak] occurred.
-	CaDiffPeakCyc
+	// TimeDiffPeakCyc is the absolute cycle where [TimeDiffPeak] occurred.
+	TimeDiffPeakCyc
 
-	// MinusPeak is the value of the first, minus-phase peak of [CaDiffAvg],
+	// MinusPeak is the value of the first, minus-phase peak of [TimeDiffAvg],
 	// which occurs when new input drives the fast integral to diverge from slow.
 	MinusPeak
 
 	// MinusPeakCyc is the absolute cycle where [MinusPeak] occurred.
 	MinusPeakCyc
 
-	// PlusPeak is the value of the second, plus-phase peak of [CaDiffAvg],
+	// PlusPeak is the value of the second, plus-phase peak of [TimeDiffAvg],
 	// which occurs when an outcome causes fast integral to diverge from slow.
 	PlusPeak
 
@@ -604,20 +623,25 @@ var NeuronVarProps = map[string]string{
 	"CaD":     `cat:"Learn"`,
 	"CaDPrev": `cat:"Learn"`,
 
-	"CaSyn":     `cat:"Learn"`,
-	"LearnCa":   `cat:"Learn"`,
-	"LearnCaM":  `cat:"Learn"`,
-	"LearnCaP":  `cat:"Learn"`,
-	"LearnCaD":  `cat:"Learn"`,
-	"CaDiff":    `cat:"Learn"`,
-	"CaDiffAvg": `cat:"Learn"`,
+	"CaSyn":    `cat:"Learn"`,
+	"LearnCa":  `cat:"Learn"`,
+	"LearnCaM": `cat:"Learn"`,
+	"LearnCaP": `cat:"Learn"`,
+	"LearnCaD": `cat:"Learn"`,
+	"CaDiff":   `cat:"Learn"`,
 
-	"CaDiffPeak":    `cat:"Learn"`,
-	"CaDiffPeakCyc": `cat:"Learn" auto-scale:"+"`,
-	"MinusPeak":     `cat:"Learn"`,
-	"MinusPeakCyc":  `cat:"Learn" auto-scale:"+"`,
-	"PlusPeak":      `cat:"Learn"`,
-	"PlusPeakCyc":   `cat:"Learn" auto-scale:"+"`,
+	"GaM": `cat:"Learn"`,
+	"GaP": `cat:"Learn"`,
+	"GaD": `cat:"Learn"`,
+
+	"TimeDiff": `cat:"Learn"`,
+
+	"TimeDiffPeak":    `cat:"Learn"`,
+	"TimeDiffPeakCyc": `cat:"Learn" auto-scale:"+"`,
+	"MinusPeak":       `cat:"Learn"`,
+	"MinusPeakCyc":    `cat:"Learn" auto-scale:"+"`,
+	"PlusPeak":        `cat:"Learn"`,
+	"PlusPeakCyc":     `cat:"Learn" auto-scale:"+"`,
 
 	"LearnDiff":   `cat:"Learn"`,
 	"LearnNow":    `cat:"Learn"`,

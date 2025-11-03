@@ -148,7 +148,14 @@ type LearnTimingParams struct {
 	// off, for comparison purposes.
 	On slbool.Bool
 
-	// Threshold is the threshold on |[CaDiff]| required to engage peak
+	// Ca means use [CaDiff] (LearnCaP - LearnCaD) to drive the [TimeDiff] timing.
+	// By default, [GaP] - [GaD] is used, which samples all conductance
+	// inputs, providing a much smoother timing signal. Using Ca might be
+	// more biologically plausible, and it works despite being quite noisy,
+	// but Ga is more reliable.
+	Ca slbool.Bool
+
+	// Threshold is the threshold on |[TimeDiff]| required to engage peak
 	// detection process.
 	Threshold float32 `default:"0.015"`
 
@@ -161,26 +168,26 @@ type LearnTimingParams struct {
 	// no plus phase is detected (i.e., no prediction error), and everything resets.
 	PlusCycles int32 `default:"30"`
 
-	// Time constant for integrating [CaDiffAvg] as the absolute value of
+	// Time constant for integrating [TimeDiff] as the absolute value of
 	// CaDiff integrated over time to smooth out significant local bumps.
-	CaDiffTau float32 `defautl:"5"`
+	TimeDiffTau float32 `defautl:"5"`
 
 	// Dt is 1/Tau
-	CaDiffDt float32 `display:"-"`
+	TimeDiffDt float32 `display:"-"`
 
-	pad, pad12 float32
+	pad float32
 }
 
 func (lt *LearnTimingParams) Defaults() {
 	lt.Threshold = 0.015
 	lt.MinusCycles = 80
 	lt.PlusCycles = 30
-	lt.CaDiffTau = 5
+	lt.TimeDiffTau = 4
 	lt.Update()
 }
 
 func (lt *LearnTimingParams) Update() {
-	lt.CaDiffDt = 1.0 / lt.CaDiffTau
+	lt.TimeDiffDt = 1.0 / lt.TimeDiffTau
 }
 
 func (lt *LearnTimingParams) ShouldDisplay(field string) bool {
@@ -196,32 +203,43 @@ func (lt *LearnTimingParams) ShouldDisplay(field string) bool {
 func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 	learnNow := float32(0)
 
-	cadiff := Neurons[ni, di, CaDiff]
-	cadavg := Neurons[ni, di, CaDiffAvg]
-	cadavg += lt.CaDiffDt * (math32.Abs(cadiff) - cadavg)
-	Neurons[ni, di, CaDiffAvg] = cadavg
-	peak := Neurons[ni, di, CaDiffPeak]
-	peakCyc := int32(Neurons[ni, di, CaDiffPeakCyc])
+	timeDiff := Neurons[ni, di, TimeDiff]
+	if lt.Ca.IsTrue() {
+		timeDiff += lt.TimeDiffDt * (math32.Abs(Neurons[ni, di, CaDiff]) - timeDiff)
+	} else {
+		gaDiff := Neurons[ni, di, GaP] - Neurons[ni, di, GaD]
+		timeDiff += lt.TimeDiffDt * (math32.Abs(gaDiff) - timeDiff)
+	}
+	Neurons[ni, di, TimeDiff] = timeDiff
+	peak := Neurons[ni, di, TimeDiffPeak]
+	peakCyc := int32(Neurons[ni, di, TimeDiffPeakCyc])
 	newPeak := false
-	if cadavg > lt.Threshold && cadavg > peak {
+	if timeDiff > lt.Threshold && timeDiff > peak {
 		newPeak = true
-		peak = cadavg
+		peak = timeDiff
 		peakCyc = ctx.CyclesTotal
-		Neurons[ni, di, CaDiffPeak] = peak
-		Neurons[ni, di, CaDiffPeakCyc] = float32(peakCyc)
+		Neurons[ni, di, TimeDiffPeak] = peak
+		Neurons[ni, di, TimeDiffPeakCyc] = float32(peakCyc)
 	}
 
 	mcyc := int32(Neurons[ni, di, MinusPeakCyc])
 	pcyc := int32(Neurons[ni, di, PlusPeakCyc])
 	if pcyc > 0 {
 		pcy := ctx.CyclesTotal - pcyc
-		if pcy == lt.PlusCycles {
+		isiCyc := ctx.ThetaCycles - (ctx.MinusCycles + ctx.PlusCycles) // ISICycles not working
+		atEnd := false
+		if isiCyc == 0 {
+			atEnd = (ctx.Cycle == ctx.ThetaCycles-1)
+		} else {
+			atEnd = (ctx.Cycle == isiCyc-1) // wrap around to next trial
+		}
+		if pcy == lt.PlusCycles || atEnd {
 			learnNow = 1.0
 		}
 	} else if mcyc > 0 {
 		mcy := ctx.CyclesTotal - mcyc
 		if mcy == lt.MinusCycles {
-			Neurons[ni, di, CaDiffPeak] = cadavg // now detect relative to our current
+			Neurons[ni, di, TimeDiffPeak] = timeDiff // now detect relative to our current
 		} else if mcy > lt.MinusCycles {
 			if !newPeak && peakCyc > mcyc+lt.MinusCycles { // going back down, after end
 				Neurons[ni, di, PlusPeak] = peak
@@ -528,13 +546,15 @@ func (ln *LearnNeuronParams) InitNeuronCa(ctx *Context, ni, di uint32) {
 	Neurons[ni, di, LearnCaM] = 0
 	Neurons[ni, di, LearnCaP] = 0
 	Neurons[ni, di, LearnCaD] = 0
-
 	Neurons[ni, di, CaDiff] = 0
-	Neurons[ni, di, CaDiffAvg] = 0
 
-	Neurons[ni, di, CaDiffAvg] = 0.0
-	Neurons[ni, di, CaDiffPeak] = 0.0
-	Neurons[ni, di, CaDiffPeakCyc] = 0.0
+	Neurons[ni, di, GaM] = 0
+	Neurons[ni, di, GaP] = 0
+	Neurons[ni, di, GaD] = 0
+
+	Neurons[ni, di, TimeDiff] = 0.0
+	Neurons[ni, di, TimeDiffPeak] = 0.0
+	Neurons[ni, di, TimeDiffPeakCyc] = 0.0
 	Neurons[ni, di, MinusPeak] = 0.0
 	Neurons[ni, di, MinusPeakCyc] = 0.0
 	Neurons[ni, di, PlusPeak] = 0.0
@@ -567,6 +587,15 @@ func (ln *LearnNeuronParams) CaFromSpike(ctx *Context, ni, di uint32) {
 	Neurons[ni, di, CaM] = caM
 	Neurons[ni, di, CaP] = caP
 	Neurons[ni, di, CaD] = caD
+
+	ga := Neurons[ni, di, Ge] + Neurons[ni, di, Gi]
+	gaM := Neurons[ni, di, GaM]
+	gaP := Neurons[ni, di, GaP]
+	gaD := Neurons[ni, di, GaD]
+	ln.CaSpike.Dt.FromCa(ga, &gaM, &gaP, &gaD)
+	Neurons[ni, di, GaM] = gaM
+	Neurons[ni, di, GaP] = gaP
+	Neurons[ni, di, GaD] = gaD
 
 	caSyn := Neurons[ni, di, CaSyn]
 	caSyn = ln.CaSpike.CaSynFromSpike(spike, caSyn)
