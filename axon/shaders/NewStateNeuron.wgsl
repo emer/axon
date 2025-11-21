@@ -45,22 +45,8 @@ fn LayerParams_NewStateNeuron(ly: LayerParams, ctx: Context, ni: u32,di: u32) {
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaDPrev))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaD))];
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaPMax))] = 0.0;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaPMaxCa))] = 0.0;
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnDiff))] = 0.0;
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
-	u32(ni), u32(di), u32(LearnNow))] = 0.0;
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeDiff))] = 0.0;
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeDiffPeak))] = 0.0;
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeDiffPeakCyc))] = 0.0;
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(RLRate))] = 0.0;
 	ActParams_DecayState(ly.Acts, ctx, ni, di, ly.Acts.Decay.Act, ly.Acts.Decay.Glong, ly.Acts.Decay.AHP);
 	ActParams_KNaNewState(ly.Acts, ctx, ni, di);
-	if (ly.Type != IOLayer) {
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(MinusPeak))] = 0.0;
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(MinusPeakCyc))] = 0.0;
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(PlusPeak))] = 0.0;
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
-		u32(ni), u32(di), u32(PlusPeakCyc))] = 0.0;
-	}
 }
 
 //////// import: "act-net.go"
@@ -831,13 +817,17 @@ struct LearnCaParams {
 }
 struct LearnTimingParams {
 	SynCaCycles: i32,
+	LearnThr: f32,
+	Refractory: i32,
 	On: i32,
+	MinusThr: f32,
 	MinusCycles: i32,
 	PlusCycles: i32,
 	TimeDiffTau: f32,
 	TimeDiffDt: f32,
 	pad: f32,
 	pad1: f32,
+	pad2: f32,
 }
 struct TrgAvgActParams {
 	GiBaseInit: f32,

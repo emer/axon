@@ -98,25 +98,20 @@ func (pt *PathParams) SynCa(ctx *Context, si, ri, di uint32, syCaP, syCaD *float
 }
 
 // SynCaTotal gets the total synaptic calcium coproduct from
-// given start cycle (total elapsed cycles) and number of cycles,
+// given ending cycle (total elapsed cycles) and number of cycles prior,
 // using an optimized integration of neuron-level [CaBins] values.
 func (pt *PathParams) SynCaTotal(ctx *Context, si, ri, di uint32, edcyc, ncyc int32) float32 {
-	// nc := (ctx.MinusCycles + ctx.PlusCycles)
-	nc := ncyc
-	nbins := nc / CaBinCycles
-	stcyc := edcyc - nc
-	// cadSt := GvCaBinWts+GlobalScalarVars(nbins)
+	nbins := ncyc / CaBinCycles
+	stcyc := edcyc - ncyc
 
 	sum := float32(0)
 	for i := range nbins {
-		cyc := stcyc + i*CaBinCycles
-		bi := CaBinForCycle(cyc)
+		bi := CaBinForCycle(stcyc + i*CaBinCycles)
 		rc := Neurons.Value(int(ri), int(di), int(CaBins+NeuronVars(bi)))
 		sc := Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(bi)))
-		// sum += GlobalScalars[cadSt + GlobalScalarVars(i), 0] * rc * sc
 		sum += rc * sc
 	}
-	return sum
+	return sum * (8.0 / float32(nbins)) // original 150/50 weights sum to 8
 }
 
 // IMPORTANT: all DWt routines MUST set DiDWt to _something_, otherwise the
@@ -146,8 +141,8 @@ func (pt *PathParams) DWtSynSoftBound(ctx *Context, syni, di uint32, dwt float32
 // based on the receiving neuron's [LearnCaP] - [LearnCaD], multiplied by a separate
 // synaptic activation credit assignment factor computed from synaptic co-product CaD values.
 func (pt *PathParams) DWtSynCortex(ctx *Context, rlay *LayerParams, syni, si, ri, lpi, pi, di uint32) {
-	learnNow := Neurons.Value(int(ri), int(di), int(LearnNow))
-	if learnNow == 0 {
+	learnNow := int32(Neurons.Value(int(ri), int(di), int(LearnNow))) - (ctx.CyclesTotal - ctx.ThetaCycles)
+	if learnNow < 0 { // not in this time window
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DiDWt))
 		return
 	}
@@ -171,7 +166,7 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, rlay *LayerParams, syni, si, ri
 func (pt *PathParams) DWtSynTarget(ctx *Context, syni, si, ri, lpi, pi, di uint32) {
 	var caP, caD float32
 	pt.SynCa(ctx, si, ri, di, &caP, &caD)
-	// caP := Neurons[ri, di, CaP]
+	// caP := Neurons[ri, di, CaP] // significantly worse!
 	// caD := Neurons[ri, di, CaD]
 
 	SynapseTraces.Set(caD, int(syni), int(di), int(DTr))

@@ -208,34 +208,39 @@ const (
 	// used for determining the timing of learning in terms of onsets of peaks.
 	// See [MinusPeak] and [PlusPeak]. GaP - GaD is used, as it is
 	// smoother and more reliable than LearnCaP - D.
+	// Cleared at LearnNow so only visible prior (use Raster view).
 	TimeDiff
 
 	// TimeDiffPeak is the value of the current peak (local maximum) of [TimeDiff].
+	// Cleared at LearnNow so only visible prior (use Raster view).
 	TimeDiffPeak
 
 	// TimeDiffPeakCyc is the absolute cycle where [TimeDiffPeak] occurred.
+	// Cleared at LearnNow so only visible prior (use Raster view).
 	TimeDiffPeakCyc
 
 	// MinusPeak is the value of the first, minus-phase peak of [TimeDiffAvg],
 	// which occurs when new input drives the fast integral to diverge from slow.
+	// Cleared at LearnNow so only visible prior (use Raster view).
 	MinusPeak
 
 	// MinusPeakCyc is the absolute cycle where [MinusPeak] occurred.
+	// Cleared at LearnNow so only visible prior (use Raster view).
 	MinusPeakCyc
 
 	// PlusPeak is the value of the second, plus-phase peak of [TimeDiffAvg],
 	// which occurs when an outcome causes fast integral to diverge from slow.
+	// Cleared at LearnNow so only visible prior (use Raster view).
 	PlusPeak
 
 	// PlusPeakCyc is the absolute cycle where [PlusPeak] occurred.
+	// Cleared at LearnNow so only visible prior (use Raster view).
 	PlusPeakCyc
 
-	// LearnNow is the cycle (ms) within the theta cycle recording
-	// the moment when the receiving neuron is learning,
-	// based on timing computed from [MinusPeak] and [PlusPeak].
-	// See [LearnTimingParams]. If there are ISICycles at the start of
-	// the theta cycle, and learning happens within them, it is translated
-	// to the end of the theta cycle, so statistics are sensible.
+	// LearnNow is the absolute cycle (ms, CyclesTotal) when the receiving
+	// neuron learns. Cleared at start of each theta cycle (trial).
+	// For neocortex, either at end of theta cycle or based on timing
+	// computed from [MinusPeak] and [PlusPeak] per [LearnTimingParams].
 	LearnNow
 
 	// RLRate is recv-unit based learning rate multiplier, reflecting the sigmoid

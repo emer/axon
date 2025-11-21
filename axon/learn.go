@@ -148,13 +148,28 @@ type LearnTimingParams struct {
 	// SynCaCycles is the number of cycles over which to integrate the synaptic
 	// pre * post calcium trace, which provides the credit assignment factor.
 	// Must be a multiple of CaBinCycles (10). Used for all learning (timed or not).
-	SynCaCycles int32 `default:"100"`
+	SynCaCycles int32 `default:"160"`
+
+	// LearnThr is the threshold on CaD that must be reached in order to be
+	// eligible for learning. If LearnNow is > 0, then it is reset when below
+	// this threshold, allowing further learning to occur.
+	// If this is 0, then it is ignored. Applies to non-timing based learning too.
+	LearnThr float32 `default:"0,0.1"`
+
+	// Refractory makes new learning depend on dropping below the learning
+	// threshold.
+	Refractory slbool.Bool
 
 	// On indicates whether to use the timing parameters to drive
 	// learning timing, or instead just learn at the end of the trial
 	// automatically. Timing variables are always computed even when
 	// off, for comparison purposes.
 	On slbool.Bool
+
+	// MinusThr is the threshold on the peak value to count as a minus phase peak.
+	// This is the primary phase resetting event that keeps things synchronized,
+	// and is typically much stronger than the plus peak.
+	MinusThr float32 `default:"0.2"`
 
 	// MinusCycles is the minimum number of cycles (ms) after the first
 	// [MinusPeak] before the process of looking for the plus-phase peak starts.
@@ -174,11 +189,13 @@ type LearnTimingParams struct {
 	// Dt is 1/Tau
 	TimeDiffDt float32 `display:"-"`
 
-	pad, pad1 float32
+	pad, pad1, pad2 float32
 }
 
 func (lt *LearnTimingParams) Defaults() {
-	lt.SynCaCycles = 50
+	lt.SynCaCycles = 160
+	lt.LearnThr = 0.1
+	lt.MinusThr = 0.1
 	lt.MinusCycles = 110
 	lt.PlusCycles = 50
 	lt.TimeDiffTau = 2
@@ -191,18 +208,45 @@ func (lt *LearnTimingParams) Update() {
 
 func (lt *LearnTimingParams) ShouldDisplay(field string) bool {
 	switch field {
-	case "On", "SynCaCycles":
+	case "On", "SynCaCycles", "LearnThr", "Refractory":
 		return true
 	default:
 		return lt.On.IsTrue()
 	}
 }
 
+func (lt *LearnTimingParams) TimingReset(ctx *Context, ni, di uint32) {
+	Neurons.Set(0.0, int(ni), int(di), int(TimeDiff))
+	Neurons.Set(0.0, int(ni), int(di), int(TimeDiffPeak))
+	Neurons.Set(0.0, int(ni), int(di), int(TimeDiffPeakCyc))
+	Neurons.Set(0.0, int(ni), int(di), int(MinusPeak))
+	Neurons.Set(0.0, int(ni), int(di), int(MinusPeakCyc))
+	Neurons.Set(0.0, int(ni), int(di), int(PlusPeak))
+	Neurons.Set(0.0, int(ni), int(di), int(PlusPeakCyc))
+}
+
+// | ISI | Minus            | Plus    |
+// |-----|------------------|---------|
+//       ^ learn
+
 // LearnTiming determines whether it is time to learn, for given neuron.
 // returns true if just triggered learning.
 func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
 	learnNow := false
-	isiCyc := ctx.ISICycles
+	// isiCyc := ctx.ISICycles
+
+	lrnNow := int32(Neurons.Value(int(ni), int(di), int(LearnNow)))
+	if lt.LearnThr > 0 && Neurons.Value(int(ni), int(di), int(CaD)) < lt.LearnThr {
+		if lrnNow > 0 && ctx.CyclesTotal-lrnNow > ctx.ThetaCycles {
+			Neurons.Set(0.0, int(ni), int(di), int(LearnNow))
+			Neurons.Set(0.0, int(ni), int(di), int(LearnDiff))
+			lt.TimingReset(ctx, ni, di)
+		}
+		return false
+	}
+	if lt.Refractory.IsTrue() && lrnNow > 0 {
+		return false
+	}
 
 	timeDiff := Neurons.Value(int(ni), int(di), int(TimeDiff))
 	gaDiff := Neurons.Value(int(ni), int(di), int(GaP)) - Neurons.Value(int(ni), int(di), int(GaD))
@@ -223,13 +267,15 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
 	pcyc := int32(Neurons.Value(int(ni), int(di), int(PlusPeakCyc)))
 	if pcyc > 0 {
 		pcy := ctx.CyclesTotal - pcyc
-		atEnd := false
-		if isiCyc == 0 {
-			atEnd = (ctx.Cycle == ctx.ThetaCycles-1)
-		} else {
-			atEnd = (ctx.Cycle == isiCyc-1) // wrap around to next trial
-		}
-		if pcy == lt.PlusCycles || (pcy < lt.PlusCycles && atEnd) {
+		// atEnd := false
+		//
+		//	if isiCyc == 0 {
+		//		atEnd = (ctx.Cycle == ctx.ThetaCycles-1)
+		//	} else {
+		//
+		//		atEnd = (ctx.Cycle == isiCyc-1) // wrap around to next trial
+		//	}
+		if pcy == lt.PlusCycles {
 			learnNow = true
 		} else if pcy < lt.PlusCycles {
 			if newPeak {
@@ -243,17 +289,18 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
 			Neurons.Set(timeDiff, int(ni), int(di), int(TimeDiffPeak)) // now detect relative to our current
 		} else if mcy > lt.MinusCycles {
 			if !newPeak && peakCyc > mcyc+lt.MinusCycles { // going back down, after end
+				Neurons.Set(timeDiff, int(ni), int(di), int(TimeDiffPeak))
 				Neurons.Set(peak, int(ni), int(di), int(PlusPeak))
 				Neurons.Set(float32(peakCyc), int(ni), int(di), int(PlusPeakCyc))
 			}
 		} else {
-			if newPeak {
+			if newPeak { // still going up
 				Neurons.Set(peak, int(ni), int(di), int(MinusPeak))
 				Neurons.Set(float32(peakCyc), int(ni), int(di), int(MinusPeakCyc))
 			}
 		}
 	} else {
-		if newPeak { // get started
+		if newPeak && peak > lt.MinusThr { // get started
 			Neurons.Set(peak, int(ni), int(di), int(MinusPeak))
 			Neurons.Set(float32(peakCyc), int(ni), int(di), int(MinusPeakCyc))
 		}

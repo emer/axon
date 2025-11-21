@@ -979,18 +979,15 @@ fn PathParams_SynCa(pt: PathParams, ctx: Context, si: u32,ri: u32,di: u32, syCaP
 	*syCaD = cd;
 }
 fn PathParams_SynCaTotal(pt: PathParams, ctx: Context, si: u32,ri: u32,di: u32, edcyc: i32,ncyc: i32) -> f32 {
-	var nc = ncyc;
-	var nbins = nc / CaBinCycles;
-	var stcyc = edcyc - nc;
+	var nbins = ncyc / CaBinCycles;
+	var stcyc = edcyc - ncyc;
 	var sum = f32(0);
 	for (var i=0; i<nbins; i++) {
-		var cyc = stcyc + i*CaBinCycles;
-		var bi = CaBinForCycle(cyc);
+		var bi = CaBinForCycle(stcyc + i*CaBinCycles);
 		var rc = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaBins + NeuronVars(bi)))];
-		var sc = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
-		u32(si), u32(di), u32(CaBins + NeuronVars(bi)))];
+		var sc = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(CaBins + NeuronVars(bi)))];
 		sum += rc * sc;
-	}return sum;
+	}return sum * (8.0 / f32(nbins)); // original 150/50 weights sum to 8
 }
 fn PathParams_DWtSynSoftBound(pt: PathParams, ctx: Context, syni: u32,di: u32, dwt: f32) {
 	if (dwt == 0) {
@@ -1009,8 +1006,8 @@ fn PathParams_DWtSynSoftBound(pt: PathParams, ctx: Context, syni: u32,di: u32, d
 	}
 }
 fn PathParams_DWtSynCortex(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
-	var learnNow = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnNow))];
-	if (learnNow == 0) {
+	var learnNow = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnNow))]) - (ctx.CyclesTotal - ctx.ThetaCycles);
+	if (learnNow < 0) { // not in this time window
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));return;
 	}
 	var syCa = PathParams_SynCaTotal(pt, ctx, si, ri, di, i32(learnNow), rlay.Learn.Timing.SynCaCycles);
@@ -1257,13 +1254,17 @@ struct LearnCaParams {
 }
 struct LearnTimingParams {
 	SynCaCycles: i32,
+	LearnThr: f32,
+	Refractory: i32,
 	On: i32,
+	MinusThr: f32,
 	MinusCycles: i32,
 	PlusCycles: i32,
 	TimeDiffTau: f32,
 	TimeDiffDt: f32,
 	pad: f32,
 	pad1: f32,
+	pad2: f32,
 }
 struct TrgAvgActParams {
 	GiBaseInit: f32,

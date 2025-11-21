@@ -964,24 +964,9 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32) {
 	Neurons[ni, di, CaDPrev] = Neurons[ni, di, CaD]
 	Neurons[ni, di, CaPMax] = 0.0
 	Neurons[ni, di, CaPMaxCa] = 0.0
-	Neurons[ni, di, LearnDiff] = 0.0
-	Neurons[ni, di, LearnNow] = 0.0
-	
-	// todo: these should be self-resetting:
-	Neurons[ni, di, TimeDiff] = 0.0
-	Neurons[ni, di, TimeDiffPeak] = 0.0
-	Neurons[ni, di, TimeDiffPeakCyc] = 0.0
-	
-	Neurons[ni, di, RLRate] = 0.0
 	ly.Acts.DecayState(ctx, ni, di, ly.Acts.Decay.Act, ly.Acts.Decay.Glong, ly.Acts.Decay.AHP)
 	// Note: synapse-level Ca decay happens in DWt
 	ly.Acts.KNaNewState(ctx, ni, di)
-	if ly.Type != IOLayer {
-		Neurons[ni, di, MinusPeak] = 0.0
-		Neurons[ni, di, MinusPeakCyc] = 0.0
-		Neurons[ni, di, PlusPeak] = 0.0
-		Neurons[ni, di, PlusPeakCyc] = 0.0
-	}
 }
 
 // Beta1Neuron does neuron level Beta1 updating.

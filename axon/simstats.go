@@ -5,6 +5,7 @@
 package axon
 
 import (
+	"math"
 	"reflect"
 	"strings"
 	"time"
@@ -715,12 +716,10 @@ func StatLevelAll(statsDir *tensorfs.Node, srcMode, srcLevel enums.Enum, styleFu
 // and std deviation of the LearnNow signal in the given layers.
 // This is useful for tracking the continuous learning mechanism.
 func StatLearnNow(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel, runLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
-	statNames := []string{"LrnNowMean", "LrnNowStDev", "MinusPeak", "PlusPeak"}
+	statNames := []string{"LrnNowMean", "LrnNowStDev", "MinusCyc", "PlusCyc"}
 	statDocs := map[string]string{
-		"LrnNowMean":   "Mean LearnNow cycle, relative to the theta cycle (trial), which may include an ISI period at the start (learning during ISI appears at the end of theta cycle).",
-		"LrnNowStdDev": "Standard deviation of LearnNow cycle, relative to the theta cycle (trial), which may include an ISI period at the start (learning during ISI appears at the end of theta cycle).",
-		"MinusPeak":    "Magnitude of the peak fast - slow deviation for the minus phase (mean).",
-		"PlusPeak":     "Magnitude of the peak fast - slow deviation for the plus phase (mean).",
+		"LrnNowMean":   "Mean LearnNow cycle, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
+		"LrnNowStdDev": "Standard deviation of LearnNow cycle.",
 	}
 	levels := make([]enums.Enum, 10) // should be enough
 	levels[0] = trialLevel
@@ -734,6 +733,11 @@ func StatLearnNow(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel,
 		curModeDir := currentDir.Dir(mode.String())
 		levelDir := modeDir.Dir(level.String())
 		ndata := int(net.Context().NData)
+		ctx := net.Context()
+		stCyc := ctx.CyclesTotal - ctx.ThetaCycles
+		isiCyc := ctx.ISICycles
+		pmCyc := ctx.ThetaCycles - isiCyc
+		nan := math.NaN()
 		for _, lnm := range layerNames {
 			for si, statName := range statNames {
 				ly := net.LayerByName(lnm)
@@ -752,22 +756,39 @@ func StatLearnNow(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel,
 					// note: current lnm + _var is standard reusable unit vals buffer
 					anow := curModeDir.Float64(lnm+"_LearnNow", ly.GetSampleShape().Sizes...)
 					for di := range ndata {
-						ly.UnitValuesSampleTensor(anow, "LearnNow", di)
-						anow.SetShapeSizes(anow.Len()) // set to 1D -- faster
+						switch si {
+						case 2:
+							ly.UnitValuesSampleTensor(anow, "MinusPeakCyc", di)
+						case 3:
+							ly.UnitValuesSampleTensor(anow, "PlusPeakCyc", di)
+						default:
+							ly.UnitValuesSampleTensor(anow, "LearnNow", di)
+						}
+						n := anow.Len()
+						anow.SetShapeSizes(n) // set to 1D -- faster
+						for i := range n {
+							v := int32(anow.Float1D(i)) - stCyc
+							if v < 0 {
+								anow.SetFloat1D(nan, i)
+							} else if isiCyc > 0 {
+								if v <= isiCyc {
+									anow.SetFloat1D(float64(v+pmCyc), i)
+								} else {
+									anow.SetFloat1D(float64(v-isiCyc), i)
+								}
+							} else {
+								anow.SetFloat1D(float64(v), i)
+							}
+						}
 						var stat float64
 						switch si {
-						case 0:
-							stat = stats.Mean(anow).Float1D(0)
 						case 1:
 							stat = stats.Std(anow).Float1D(0)
-						case 2:
-							ly.UnitValuesSampleTensor(anow, "MinusPeak", di)
-							anow.SetShapeSizes(anow.Len())
+						default:
 							stat = stats.Mean(anow).Float1D(0)
-						case 3:
-							ly.UnitValuesSampleTensor(anow, "PlusPeak", di)
-							anow.SetShapeSizes(anow.Len())
-							stat = stats.Mean(anow).Float1D(0)
+						}
+						if si != 1 && stat == 0 {
+							stat = nan
 						}
 						curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
 						tsr.AppendRowFloat(stat)

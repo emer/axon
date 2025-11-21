@@ -753,13 +753,17 @@ struct LearnCaParams {
 }
 struct LearnTimingParams {
 	SynCaCycles: i32,
+	LearnThr: f32,
+	Refractory: i32,
 	On: i32,
+	MinusThr: f32,
 	MinusCycles: i32,
 	PlusCycles: i32,
 	TimeDiffTau: f32,
 	TimeDiffDt: f32,
 	pad: f32,
 	pad1: f32,
+	pad2: f32,
 }
 struct TrgAvgActParams {
 	GiBaseInit: f32,
