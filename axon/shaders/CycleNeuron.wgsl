@@ -65,7 +65,7 @@ fn SetNeuronExtPosNeg(ctx: Context, ni: u32,di: u32, val: f32) {
 	}
 }
 fn LayerParams_IsTarget(ly: LayerParams) -> bool {
-	return ly.Type == TargetLayer || ly.Type == PulvinarLayer || ly.Type == CNiPredLayer;
+	return ly.Type == TargetLayer || ly.Type == PulvinarLayer || ly.Type == CNiIOLayer;
 }
 fn LayerParams_IsInput(ly: LayerParams) -> bool {
 	return ly.Type == InputLayer;
@@ -84,10 +84,6 @@ fn LayerParams_GInteg(ly: LayerParams, ctx: Context, pi: u32,ni: u32,di: u32) {
 	var nonDrivePct = f32(0);
 	if (ly.Type == PulvinarLayer) {
 		LayerParams_PulvinarDriver(ly, ctx, ni-ly.Indexes.NeurSt, di, &drvGe, &nonDrivePct);
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // use for regulating inhibition
-		u32(ni), u32(di), u32(Ext))] = nonDrivePct;
-	} else if (ly.Type == CNiPredLayer) {
-		LayerParams_CNiPredDriver(ly, ctx, ni-ly.Indexes.NeurSt, di, &drvGe, &nonDrivePct);
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // use for regulating inhibition
 		u32(ni), u32(di), u32(Ext))] = nonDrivePct;
 	}
@@ -140,7 +136,7 @@ fn LayerParams_SpecialPreGs(ly: LayerParams, ctx: Context, pi: u32,ni: u32,di: u
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeRaw))] = dr;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeSyn))] = DtParams_GeSynFromRawSteady(ly.Acts.Dt, dr);
 	}
-	case CNiPredLayer: {
+	case CNiIOLayer: {
 		if (ctx.PlusPhase == 0) {
 			break;
 		}
@@ -249,7 +245,7 @@ fn LayerParams_SpecialPostGs(ly: LayerParams, ctx: Context, ni: u32,di: u32, sav
 		LayerParams_GNeuroMod(ly, ctx, ni, di);
 	}
 	switch (ly.Type) {
-	case PulvinarLayer, CNiPredLayer, PTMaintLayer, CTLayer, BLALayer: {
+	case PulvinarLayer, CNiIOLayer, PTMaintLayer, CTLayer, BLALayer: {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeExt))] = saveVal;
 	}
 	case PTPredLayer: {
@@ -331,7 +327,7 @@ fn LayerParams_GiInteg(ly: LayerParams, ctx: Context, pi: u32,ni: u32,di: u32) {
 	var ssgi = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(SSGi))];
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Gi))] = gi;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SSGiDend))] = 0.0;
-	if (ctx.PlusPhase == 1 && (ly.Type == PulvinarLayer || ly.Type == CNiPredLayer)) {
+	if (ctx.PlusPhase == 1 && (ly.Type == PulvinarLayer || ly.Type == CNiIOLayer)) {
 		var ext = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // nonDrivePct
 		TensorStrides[72], u32(ni), u32(di), u32(Ext))];
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SSGiDend))] = ext * ly.Acts.Dend.SSGi * ssgi;
@@ -362,15 +358,17 @@ fn LayerParams_SpikeFromG(ly: LayerParams, ctx: Context, lpi: u32,ni: u32,di: u3
 	ActParams_VmFromG(ly.Acts, ctx, ni, di);
 	ActParams_SpikeFromVm(ly.Acts, ctx, ni, di);
 	LearnNeuronParams_CaFromSpike(ly.Learn, ctx, ni, di);
-	if (!LayerParams_IsTarget(ly) && Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] > 0) {
-		var da = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvDA), u32(di))];
-		var ach = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvACh), u32(di))];
-		var nrnCaP = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaP))];
-		var nrnCaD = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaD))];
-		var mlr = RLRateParams_RLRateSigDeriv(ly.Learn.RLRate, nrnCaD, PoolAvgMax(AMCaD, AMCycle, Max, lpi, di));
-		var modlr = NeuroModParams_LRMod(ly.Learn.NeuroMod, da, ach);
-		var dlr = RLRateParams_RLRateDiff(ly.Learn.RLRate, nrnCaP, nrnCaD);
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(RLRate))] = mlr * dlr * modlr;
+	if (!LayerParams_IsTarget(ly) && ly.Type != IOLayer) {
+		var learnNow = LearnTimingParams_LearnTiming(ly.Learn.Timing, ctx, ni, di);
+		if (learnNow) {
+			var da = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvDA), u32(di))];
+			var ach = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvACh), u32(di))];
+			var nrnCaD = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaD))];
+			var mlr = RLRateParams_RLRateSigDeriv(ly.Learn.RLRate, nrnCaD, PoolAvgMax(AMCaD, AMCycle, Max, lpi, di));
+			var modlr = NeuroModParams_LRMod(ly.Learn.NeuroMod, da, ach);
+			var dlr = RLRateParams_RLRateDiff(ly.Learn.RLRate, Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaP))], nrnCaD);
+			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(RLRate))] = mlr * dlr * modlr;
+		}
 	}
 	var lmax = PoolAvgMax(AMGeInt, AMCycle, Max, lpi, di);
 	if (lmax > 0) {
@@ -381,8 +379,7 @@ fn LayerParams_SpikeFromG(ly: LayerParams, ctx: Context, lpi: u32,ni: u32,di: u3
 	if (ctx.MinusPhase == 0 && ctx.PlusPhase == 0) {
 		return;
 	}
-	var isiCyc = ctx.ThetaCycles - (ctx.MinusCycles + ctx.PlusCycles); // ISICycles not working
-	var lrnCyc = ctx.Cycle - isiCyc;
+	var lrnCyc = ctx.Cycle - ctx.ISICycles;
 	if (lrnCyc >= ly.Acts.Dt.MaxCycStart) {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaPMaxCa))] += ly.Learn.CaSpike.Dt.PDt * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaM))] - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaPMaxCa))]);
 		var spkmax = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaPMaxCa))];
@@ -390,9 +387,15 @@ fn LayerParams_SpikeFromG(ly: LayerParams, ctx: Context, lpi: u32,ni: u32,di: u3
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaPMax))] = spkmax;
 		}
 	}
-	var mx = NetworkIxs[0].NCaBins;
-	var bin = min(lrnCyc/ctx.CaBinCycles, mx);
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaBins + NeuronVars(bin)))] += Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaSyn))] / f32(ctx.CaBinCycles);
+	if (ly.Type != IOLayer) { // uses bins for itself
+		var bin = CaBinForCycle(ctx.CyclesTotal);
+		var incr = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaSyn))] / f32(CaBinCycles);
+		if (CaBinIsFirst(ctx.CyclesTotal)) {
+			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaBins + NeuronVars(bin)))] = incr;
+		} else {
+			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaBins + NeuronVars(bin)))] += incr;
+		}
+	}
 }
 
 //////// import: "act-net.go"
@@ -903,26 +906,21 @@ fn ActParams_SpikeFromVm(ac: ActParams, ctx: Context, ni: u32,di: u32) {
 }
 
 //////// import: "cereb-layer.go"
-struct CNiPredParams {
-	DriveScale: f32,
-	FullDriveAct: f32,
-	DriveLayIndex: i32,
+struct NuclearParams {
+	ActTarget: f32,
+	IOLayIndex: i32,
 	pad: f32,
+	pad1: f32,
 }
-fn CNiPredParams_DriveGe(tp: CNiPredParams, act: f32) -> f32 {
-	return tp.DriveScale * act;
-}
-fn CNiPredParams_NonDrivePct(tp: CNiPredParams, drvMax: f32) -> f32 {
-	return 1.0 - min(1.0, drvMax/tp.FullDriveAct);
-}
-fn LayerParams_CNiPredDriver(ly: LayerParams, ctx: Context, lni: u32,di: u32, drvGe: ptr<function,f32>,nonDrivePct: ptr<function,f32>) {
-	var dli = u32(ly.CNiPred.DriveLayIndex);
-	let dly = Layers[dli];
-	var dpi = LayerParams_PoolIndex(dly, u32(u32(0)));
-	var drvMax = PoolAvgMax(AMCaP, AMCycle, Max, dpi, di);
-	*nonDrivePct = CNiPredParams_NonDrivePct(ly.CNiPred, drvMax); // how much non-driver to keep
-	var dact = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(dly.Indexes.NeurSt + lni), u32(di), u32(CaP))];
-	*drvGe = CNiPredParams_DriveGe(ly.CNiPred, dact);
+struct IOParams {
+	TimeOff: i32,
+	ActionEnv: i32,
+	ErrThr: f32,
+	EfferentThr: f32,
+	InhibBin: i32,
+	TimeBins: i32,
+	pad: i32,
+	pad1: i32,
 }
 struct CNeUpParams {
 	ActTarg: f32,
@@ -1223,6 +1221,7 @@ fn VGCCParams_CaFromG(np: VGCCParams, v: f32,g: f32,ca: f32) -> f32 {
 }
 
 //////// import: "context.go"
+const CaBinCycles = 10;
 struct Context { //types:add -setters
 	NData: u32,
 	Mode: i32,
@@ -1232,9 +1231,9 @@ struct Context { //types:add -setters
 	PhaseCycle: i32,
 	Cycle: i32,
 	ThetaCycles: i32,
+	ISICycles: i32,
 	MinusCycles: i32,
 	PlusCycles: i32,
-	CaBinCycles: i32,
 	CyclesTotal: i32,
 	Time: f32,
 	TrialsTotal: i32,
@@ -1251,6 +1250,12 @@ fn Context_ItemIndex(ctx: Context, idx: u32) -> u32 {
 }
 fn Context_DataIndex(ctx: Context, idx: u32) -> u32 {
 	return idx % ctx.NData;
+}
+fn CaBinForCycle(cycle: i32) -> i32 {
+	return (cycle / CaBinCycles) % NetworkIxs[0].NCaBins;
+}
+fn CaBinIsFirst(cycle: i32) -> bool {
+	return (cycle % CaBinCycles) == 0;
 }
 
 //////// import: "deep-layer.go"
@@ -1293,7 +1298,7 @@ const PathGTypesN: PathGTypes = 5;
 const GlobalScalarVarsN: GlobalScalarVars = 58;
 const GlobalVectorVarsN: GlobalVectorVars = 10;
 const GPUVarsN: GPUVars = 23;
-const LayerTypesN: LayerTypes = 34;
+const LayerTypesN: LayerTypes = 36;
 const LayerVarsN: LayerVars = 12;
 const ViewTimesN: ViewTimes = 7;
 const DAModTypesN: DAModTypes = 4;
@@ -1302,7 +1307,7 @@ const NeuronFlagsN: NeuronFlags = 9;
 const NeuronVarsN: NeuronVars = 97;
 const NeuronAvgVarsN: NeuronAvgVars = 7;
 const NeuronIndexVarsN: NeuronIndexVars = 3;
-const PathTypesN: PathTypes = 14;
+const PathTypesN: PathTypes = 15;
 const GPLayerTypesN: GPLayerTypes = 3;
 const PoolIndexVarsN: PoolIndexVars = 4;
 const PoolIntVarsN: PoolIntVars = 6;
@@ -1529,7 +1534,7 @@ struct LayerParams {
 	DSMatrix: DSMatrixParams,
 	Striatum: StriatumParams,
 	GP: GPParams,
-	CNiPred: CNiPredParams,
+	IO: IOParams,
 	CNeUp: CNeUpParams,
 	LDT: LDTParams,
 	VTA: VTAParams,
@@ -1561,24 +1566,26 @@ const  STNLayer: LayerTypes = 12;
 const  GPLayer: LayerTypes = 13;
 const  BGThalLayer: LayerTypes = 14;
 const  VSGatedLayer: LayerTypes = 15;
-const  CNiPredLayer: LayerTypes = 16;
-const  CNeUpLayer: LayerTypes = 17;
-const  BLALayer: LayerTypes = 18;
-const  CeMLayer: LayerTypes = 19;
-const  VSPatchLayer: LayerTypes = 20;
-const  LHbLayer: LayerTypes = 21;
-const  DrivesLayer: LayerTypes = 22;
-const  UrgencyLayer: LayerTypes = 23;
-const  USLayer: LayerTypes = 24;
-const  PVLayer: LayerTypes = 25;
-const  LDTLayer: LayerTypes = 26;
-const  VTALayer: LayerTypes = 27;
-const  RewLayer: LayerTypes = 28;
-const  RWPredLayer: LayerTypes = 29;
-const  RWDaLayer: LayerTypes = 30;
-const  TDPredLayer: LayerTypes = 31;
-const  TDIntegLayer: LayerTypes = 32;
-const  TDDaLayer: LayerTypes = 33;
+const  IOLayer: LayerTypes = 16;
+const  CNeLayer: LayerTypes = 17;
+const  CNiIOLayer: LayerTypes = 18;
+const  CNiUpLayer: LayerTypes = 19;
+const  BLALayer: LayerTypes = 20;
+const  CeMLayer: LayerTypes = 21;
+const  VSPatchLayer: LayerTypes = 22;
+const  LHbLayer: LayerTypes = 23;
+const  DrivesLayer: LayerTypes = 24;
+const  UrgencyLayer: LayerTypes = 25;
+const  USLayer: LayerTypes = 26;
+const  PVLayer: LayerTypes = 27;
+const  LDTLayer: LayerTypes = 28;
+const  VTALayer: LayerTypes = 29;
+const  RewLayer: LayerTypes = 30;
+const  RWPredLayer: LayerTypes = 31;
+const  RWDaLayer: LayerTypes = 32;
+const  TDPredLayer: LayerTypes = 33;
+const  TDIntegLayer: LayerTypes = 34;
+const  TDDaLayer: LayerTypes = 35;
 
 //////// import: "layervars.go"
 alias LayerVars = i32; //enums:enum
@@ -1632,6 +1639,7 @@ fn LearnCaParams_LearnCas(lc: LearnCaParams, ctx: Context, ni: u32,di: u32) {
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaDiff))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnCaP))] - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnCaD))];
 }
 struct LearnTimingParams {
+	SynCaCycles: i32,
 	On: i32,
 	MinusCycles: i32,
 	PlusCycles: i32,
@@ -1639,13 +1647,11 @@ struct LearnTimingParams {
 	TimeDiffDt: f32,
 	pad: f32,
 	pad1: f32,
-	pad2: f32,
 }
-fn LearnTimingParams_LearnTiming(lt: LearnTimingParams, ctx: Context, ni: u32,di: u32) {
-	var learnNow = f32(0);
-	var isiCyc = ctx.ThetaCycles - (ctx.MinusCycles + ctx.PlusCycles); // ISICycles not working
-	var timeDiff = Neurons[Index3D(TensorStrides[70], TensorStrides[71],
-	TensorStrides[72], u32(ni), u32(di), u32(TimeDiff))];
+fn LearnTimingParams_LearnTiming(lt: LearnTimingParams, ctx: Context, ni: u32,di: u32) -> bool {
+	var learnNow = false;
+	var isiCyc = ctx.ISICycles;
+	var timeDiff = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeDiff))];
 	var gaDiff = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))] - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaD))];
 	timeDiff += lt.TimeDiffDt * (abs(gaDiff) - timeDiff);
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeDiff))] = timeDiff;
@@ -1670,7 +1676,7 @@ fn LearnTimingParams_LearnTiming(lt: LearnTimingParams, ctx: Context, ni: u32,di
 			atEnd = (ctx.Cycle == isiCyc-1); // wrap around to next trial
 		}
 		if (pcy == lt.PlusCycles || (pcy < lt.PlusCycles && atEnd)) {
-			learnNow = f32(1.0);
+			learnNow = true;
 		} else if (pcy < lt.PlusCycles) {
 			if (newPeak) {
 				Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(PlusPeak))] = peak;
@@ -1699,19 +1705,13 @@ fn LearnTimingParams_LearnTiming(lt: LearnTimingParams, ctx: Context, ni: u32,di
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(MinusPeakCyc))] = f32(peakCyc);
 		}
 	}
-	if (learnNow > 0.0) {
-		var cyc = ctx.Cycle;
-		if (isiCyc > 0 && cyc < isiCyc) {
-			cyc = ctx.ThetaCycles + cyc; // add to end so stats are sensible
-		}
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = f32(cyc);
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnDiff))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaDiff))];
-	}
 	if (lt.On == 0) {
-		if (ctx.PlusPhase == 1) {
-			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnDiff))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaDiff))]; // this is all that matters
-		}
+		learnNow = (ctx.Cycle == ctx.ThetaCycles-1);
 	}
+	if (learnNow) {
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = f32(ctx.CyclesTotal);
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnDiff))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaDiff))];
+	}return learnNow;
 }
 struct TrgAvgActParams {
 	GiBaseInit: f32,
@@ -1802,7 +1802,6 @@ fn LearnNeuronParams_CaFromSpike(ln: LearnNeuronParams, ctx: Context, ni: u32,di
 	caSyn = CaSpikeParams_CaSynFromSpike(ln.CaSpike, spike, caSyn);
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaSyn))] = caSyn;
 	LearnCaParams_LearnCas(ln.CaLearn, ctx, ni, di);
-	LearnTimingParams_LearnTiming(ln.Timing, ctx, ni, di);
 }
 struct SWtInitParams {
 	SPct: f32,
@@ -2185,11 +2184,12 @@ const  DSPatchPath: PathTypes = 5;
 const  VSPatchPath: PathTypes = 6;
 const  VSMatrixPath: PathTypes = 7;
 const  DSMatrixPath: PathTypes = 8;
-const  CNiPredToOutPath: PathTypes = 9;
-const  RWPath: PathTypes = 10;
-const  TDPredPath: PathTypes = 11;
-const  BLAPath: PathTypes = 12;
-const  HipPath: PathTypes = 13;
+const  CNIOPath: PathTypes = 9;
+const  CNePath: PathTypes = 10;
+const  RWPath: PathTypes = 11;
+const  TDPredPath: PathTypes = 12;
+const  BLAPath: PathTypes = 13;
+const  HipPath: PathTypes = 14;
 
 //////// import: "pcore-layer.go"
 struct DSMatrixParams {

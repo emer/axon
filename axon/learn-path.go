@@ -35,8 +35,9 @@ func (pt *PathParams) DWtSyn(ctx *Context, rlay *LayerParams, syni, si, ri, di u
 		pt.DWtSynVSPatch(ctx, syni, si, ri, lpi, pi, di)
 	case DSPatchPath:
 		pt.DWtSynDSPatch(ctx, syni, si, ri, lpi, pi, di)
-	case CNiPredToOutPath:
-		pt.DWtSynCNeUp(ctx, rlay, syni, si, ri, lpi, pi, di)
+	// case CNiIOToOutPath:
+	//
+	//	pt.DWtSynCNeUp(ctx, rlay, syni, si, ri, lpi, pi, di)
 	case RWPath:
 		pt.DWtSynRWPred(ctx, syni, si, ri, lpi, pi, di)
 	case TDPredPath:
@@ -51,7 +52,7 @@ func (pt *PathParams) DWtSyn(ctx *Context, rlay *LayerParams, syni, si, ri, di u
 		} else if isTarget {
 			pt.DWtSynTarget(ctx, syni, si, ri, lpi, pi, di)
 		} else {
-			pt.DWtSynCortex(ctx, syni, si, ri, lpi, pi, di)
+			pt.DWtSynCortex(ctx, rlay, syni, si, ri, lpi, pi, di)
 		}
 	}
 }
@@ -60,12 +61,16 @@ func (pt *PathParams) DWtSyn(ctx *Context, rlay *LayerParams, syni, si, ri, di u
 // values, using an optimized integration of neuron-level [CaBins] values,
 // and weight factors to capture the different CaP vs. CaD time constants.
 func (pt *PathParams) SynCa(ctx *Context, si, ri, di uint32, syCaP, syCaD *float32) {
-	nbins := NetworkIxs[0].NCaBins
+	edcyc := ctx.CyclesTotal
+	stcyc := edcyc - (ctx.MinusCycles + ctx.PlusCycles)
+	nbins := (edcyc - stcyc) / CaBinCycles
 	cadSt := GvCaBinWts + GlobalScalarVars(nbins)
 
+	b0 := CaBinForCycle(stcyc)
+
 	// T0
-	r0 := Neurons.Value(int(ri), int(di), int(CaBins+NeuronVars(0)))
-	s0 := Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(0)))
+	r0 := Neurons.Value(int(ri), int(di), int(CaBins+NeuronVars(b0)))
+	s0 := Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(b0)))
 	sp := r0 * s0
 	cp := sp * GlobalScalars.Value(int(GvCaBinWts+GlobalScalarVars(0)), int(0))
 	cd := sp * GlobalScalars.Value(int(cadSt+GlobalScalarVars(0)), int(0))
@@ -73,12 +78,14 @@ func (pt *PathParams) SynCa(ctx *Context, si, ri, di uint32, syCaP, syCaD *float
 	syn20 := pt.Learn.DWt.SynCa20.IsTrue()
 
 	for i := int32(1); i < nbins; i++ {
-		rt := Neurons.Value(int(ri), int(di), int(CaBins+NeuronVars(i)))
-		rt1 := Neurons.Value(int(ri), int(di), int(CaBins+NeuronVars(i-1)))
-		st := Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(i)))
-		st1 := Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(i-1)))
+		bi := CaBinForCycle(stcyc + i*CaBinCycles)
+		rt := Neurons.Value(int(ri), int(di), int(CaBins+NeuronVars(bi)))
+		st := Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(bi)))
 		sp := float32(0)
 		if syn20 {
+			bm := CaBinForCycle(stcyc + (i-1)*CaBinCycles)
+			rt1 := Neurons.Value(int(ri), int(di), int(CaBins+NeuronVars(bm)))
+			st1 := Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(bm)))
 			sp = 0.25 * (rt + rt1) * (st + st1)
 		} else {
 			sp = rt * st
@@ -88,6 +95,28 @@ func (pt *PathParams) SynCa(ctx *Context, si, ri, di uint32, syCaP, syCaD *float
 	}
 	*syCaP = pt.Learn.DWt.CaPScale * cp
 	*syCaD = cd
+}
+
+// SynCaTotal gets the total synaptic calcium coproduct from
+// given start cycle (total elapsed cycles) and number of cycles,
+// using an optimized integration of neuron-level [CaBins] values.
+func (pt *PathParams) SynCaTotal(ctx *Context, si, ri, di uint32, edcyc, ncyc int32) float32 {
+	// nc := (ctx.MinusCycles + ctx.PlusCycles)
+	nc := ncyc
+	nbins := nc / CaBinCycles
+	stcyc := edcyc - nc
+	// cadSt := GvCaBinWts+GlobalScalarVars(nbins)
+
+	sum := float32(0)
+	for i := range nbins {
+		cyc := stcyc + i*CaBinCycles
+		bi := CaBinForCycle(cyc)
+		rc := Neurons.Value(int(ri), int(di), int(CaBins+NeuronVars(bi)))
+		sc := Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(bi)))
+		// sum += GlobalScalars[cadSt + GlobalScalarVars(i), 0] * rc * sc
+		sum += rc * sc
+	}
+	return sum
 }
 
 // IMPORTANT: all DWt routines MUST set DiDWt to _something_, otherwise the
@@ -116,18 +145,22 @@ func (pt *PathParams) DWtSynSoftBound(ctx *Context, syni, di uint32, dwt float32
 // kinase error-driven learning rule for cortical neurons. The error delta is
 // based on the receiving neuron's [LearnCaP] - [LearnCaD], multiplied by a separate
 // synaptic activation credit assignment factor computed from synaptic co-product CaD values.
-func (pt *PathParams) DWtSynCortex(ctx *Context, syni, si, ri, lpi, pi, di uint32) {
-	var syCaP, syCaD float32
-	pt.SynCa(ctx, si, ri, di, &syCaP, &syCaD)
+func (pt *PathParams) DWtSynCortex(ctx *Context, rlay *LayerParams, syni, si, ri, lpi, pi, di uint32) {
+	learnNow := Neurons.Value(int(ri), int(di), int(LearnNow))
+	if learnNow == 0 {
+		SynapseTraces.Set(0.0, int(syni), int(di), int(DiDWt))
+		return
+	}
+	syCa := pt.SynCaTotal(ctx, si, ri, di, int32(learnNow), rlay.Learn.Timing.SynCaCycles)
 
 	// integrate synaptic trace over time: this is actually beneficial in certain cases,
 	// in addition to the ETraceLearn factor.
-	SynapseTraces.Set(syCaD, int(syni), int(di), int(DTr))
-	tr := pt.Learn.DWt.SynTrace(SynapseTraces.Value(int(syni), int(di), int(Tr)), syCaD)
+	SynapseTraces.Set(syCa, int(syni), int(di), int(DTr))
+	tr := pt.Learn.DWt.SynTrace(SynapseTraces.Value(int(syni), int(di), int(Tr)), syCa)
 	SynapseTraces.Set(tr, int(syni), int(di), int(Tr))
 
 	dwt := float32(0)
-	if syCaP > pt.Learn.DWt.LearnThr || syCaD > pt.Learn.DWt.LearnThr {
+	if syCa > pt.Learn.DWt.LearnThr { // todo: elminate?
 		dwt = tr * Neurons.Value(int(ri), int(di), int(RLRate)) * Neurons.Value(int(ri), int(di), int(LearnDiff)) * Neurons.Value(int(ri), int(di), int(ETraceLearn))
 	}
 	pt.DWtSynSoftBound(ctx, syni, di, dwt)
@@ -136,15 +169,16 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, syni, si, ri, lpi, pi, di uint3
 // DWtSynTarget computes the weight change (learning) at given synapse,
 // for a target layer (i.e., Pulvinar in predictive error-driven learning).
 func (pt *PathParams) DWtSynTarget(ctx *Context, syni, si, ri, lpi, pi, di uint32) {
-	var syCaP, syCaD float32
-	pt.SynCa(ctx, si, ri, di, &syCaP, &syCaD)
+	var caP, caD float32
+	pt.SynCa(ctx, si, ri, di, &caP, &caD)
+	// caP := Neurons[ri, di, CaP]
+	// caD := Neurons[ri, di, CaD]
 
-	SynapseTraces.Set(syCaD, int(syni), int(di), int(DTr))
-	tr := pt.Learn.DWt.SynTrace(SynapseTraces.Value(int(syni), int(di), int(Tr)), syCaD)
+	SynapseTraces.Set(caD, int(syni), int(di), int(DTr))
+	tr := pt.Learn.DWt.SynTrace(SynapseTraces.Value(int(syni), int(di), int(Tr)), caD)
 	SynapseTraces.Set(tr, int(syni), int(di), int(Tr))
 
-	// for target layers, syn Ca drives error signal directly
-	dwt := Neurons.Value(int(ri), int(di), int(RLRate)) * (syCaP - syCaD)
+	dwt := Neurons.Value(int(ri), int(di), int(RLRate)) * (caP - caD)
 	pt.DWtSynSoftBound(ctx, syni, di, dwt)
 }
 
@@ -182,44 +216,49 @@ func (pt *PathParams) DWtSynHebb(ctx *Context, syni, si, ri, lpi, pi, di uint32)
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
 // Adds proportional CPCA learning rule for hip-specific paths
 func (pt *PathParams) DWtSynHip(ctx *Context, syni, si, ri, lpi, pi, di uint32, isTarget bool) {
-	var syCaP, syCaD float32
-	pt.SynCa(ctx, si, ri, di, &syCaP, &syCaD)
-
-	syn := syCaD // synaptic activity co-product factor.
-	// integrate synaptic trace over time: this is actually beneficial in certain cases,
-	// in addition to the ETraceLearn factor.
-	SynapseTraces.Set(syn, int(syni), int(di), int(DTr))
-	tr := pt.Learn.DWt.SynTrace(SynapseTraces.Value(int(syni), int(di), int(Tr)), syn)
-	SynapseTraces.Set(tr, int(syni), int(di), int(Tr))
-
-	// error-driven learning part
-	rLearnCaP := Neurons.Value(int(ri), int(di), int(LearnCaP))
-	rLearnCaD := Neurons.Value(int(ri), int(di), int(LearnCaD))
-	err := float32(0)
-	if isTarget {
-		err = syCaP - syCaD // for target layers, syn Ca drives error signal directly
-	} else {
-		err = tr * (rLearnCaP - rLearnCaD) * Neurons.Value(int(ri), int(di), int(ETraceLearn))
-	}
-
-	// softbound immediately -- enters into zero sum.
-	// also other types might not use, so need to do this per learning rule
-	lwt := Synapses.Value(int(syni), int(LWt)) // linear weight
-	if err > 0 {
-		err *= (1 - lwt)
-	} else {
-		err *= lwt
-	}
-
-	// hebbian-learning part
-	sNrnCap := Neurons.Value(int(si), int(di), int(LearnCaP))
-	savg := 0.5 + pt.Hip.SAvgCor*(pt.Hip.SNominal-0.5)
-	savg = 0.5 / math32.Max(pt.Hip.SAvgThr, savg) // keep this Sending Average Correction term within bounds (SAvgThr)
-	hebb := rLearnCaP * (sNrnCap*(savg-lwt) - (1-sNrnCap)*lwt)
-
-	// setting delta weight (note: impossible to be CTCtxtPath)
-	dwt := Neurons.Value(int(ri), int(di), int(RLRate)) * pt.Learn.LRate.Eff * (pt.Hip.Hebb*hebb + pt.Hip.Err*err)
-	SynapseTraces.Set(dwt, int(syni), int(di), int(DiDWt))
+	// todo:
+	// var syCaP, syCaD float32
+	// pt.SynCa(ctx, si, ri, di, &syCaP, &syCaD)
+	//
+	// syn := syCaD               // synaptic activity co-product factor.
+	// // integrate synaptic trace over time: this is actually beneficial in certain cases,
+	// // in addition to the ETraceLearn factor.
+	// SynapseTraces[syni, di, DTr] = syn
+	// tr := pt.Learn.DWt.SynTrace(SynapseTraces[syni, di, Tr], syn)
+	// SynapseTraces[syni, di, Tr] = tr
+	//
+	// // error-driven learning part
+	// rLearnCaP := Neurons[ri, di, LearnCaP]
+	// rLearnCaD := Neurons[ri, di, LearnCaD]
+	// err := float32(0)
+	//
+	//	if isTarget {
+	//		err = syCaP - syCaD // for target layers, syn Ca drives error signal directly
+	//	} else {
+	//
+	//		err = tr * (rLearnCaP - rLearnCaD) * Neurons[ri, di, ETraceLearn]
+	//	}
+	//
+	// // softbound immediately -- enters into zero sum.
+	// // also other types might not use, so need to do this per learning rule
+	// lwt := Synapses[syni, LWt] // linear weight
+	//
+	//	if err > 0 {
+	//		err *= (1 - lwt)
+	//	} else {
+	//
+	//		err *= lwt
+	//	}
+	//
+	// // hebbian-learning part
+	// sNrnCap := Neurons[si, di, LearnCaP]
+	// savg := 0.5 + pt.Hip.SAvgCor*(pt.Hip.SNominal-0.5)
+	// savg = 0.5 / math32.Max(pt.Hip.SAvgThr, savg) // keep this Sending Average Correction term within bounds (SAvgThr)
+	// hebb := rLearnCaP * (sNrnCap*(savg-lwt) - (1-sNrnCap)*lwt)
+	//
+	// // setting delta weight (note: impossible to be CTCtxtPath)
+	// dwt := Neurons[ri, di, RLRate] * pt.Learn.LRate.Eff * (pt.Hip.Hebb*hebb + pt.Hip.Err*err)
+	// SynapseTraces[syni, di, DiDWt] = dwt
 }
 
 // DWtSynBLA computes the weight change (learning) at given synapse for BLAPath type.
@@ -439,16 +478,16 @@ func (pt *PathParams) DWtSynDSPatch(ctx *Context, syni, si, ri, lpi, pi, di uint
 }
 
 // DWtSynCNeUp computes the weight change (learning) at given synapse,
-// for the CNiPredToOut inhibitory pathway, conditioned on there being
+// for the CNiIOToOut inhibitory pathway, conditioned on there being
 // above-threshold activity in both excitatory and inhibitory pathways.
-func (pt *PathParams) DWtSynCNeUp(ctx *Context, rlay *LayerParams, syni, si, ri, lpi, pi, di uint32) {
-	sact := Neurons.Value(int(si), int(di), int(CaD))            // sending activity
-	ract := Neurons.Value(int(ri), int(di), int(CaD))            // receiving activity
-	predSenseAct := Neurons.Value(int(ri), int(di), int(RLRate)) // CNiPred * Sense input activity, in PlusPhaseNeuron
-	dwt := -predSenseAct * sact * (rlay.CNeUp.ActTarg - ract)    // minus sign due to inhibitory
-	// todo: softbound?
-	SynapseTraces.Set(pt.Learn.LRate.Eff*dwt, int(syni), int(di), int(DiDWt))
-}
+// func (pt *PathParams) DWtSynCNeUp(ctx *Context, rlay *LayerParams, syni, si, ri, lpi, pi, di uint32) {
+// 	sact := Neurons[si, di, CaD] // sending activity
+// 	ract := Neurons[ri, di, CaD] // receiving activity
+// 	predSenseAct := Neurons[ri, di, RLRate] // CNiIO * Sense input activity, in PlusPhaseNeuron
+// 	dwt := -predSenseAct * sact * (rlay.CNeUp.ActTarg - ract) // minus sign due to inhibitory
+// 	// todo: softbound?
+// 	SynapseTraces[syni, di, DiDWt] = pt.Learn.LRate.Eff * dwt
+// }
 
 //////// WtFromDWt
 

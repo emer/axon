@@ -124,10 +124,11 @@ type LayerParams struct {
 	// GP has params for GP (globus pallidus) of the BG layers.
 	GP GPParams `display:"inline"`
 
-	// CNiPred has params for the cerebellar nuclei inhibitory prediction
-	// neurons, which learn to predict the activity of a specific sensory input,
-	// and inhibit it in the corresponding CNeUpLayer
-	CNiPred CNiPredParams `display:"inline"`
+	// IOParams has parameters for the IO inferior olive neurons,
+	// which compute a temporal offset error signal between CNiIO inhibitory
+	// predictions and excitatory sensory input, contingent on initial
+	// above-threshold efferent copy motor trigger input (modulatory).
+	IO IOParams `display:"inline"`
 
 	// CNeUp has parameters for learning in the cerebellar nucleus
 	// output neurons, which are tonically active and learn to maintain a target
@@ -207,7 +208,7 @@ func (ly *LayerParams) Update() {
 	ly.Striatum.Update()
 	ly.GP.Update()
 
-	ly.CNiPred.Update()
+	ly.IO.Update()
 	ly.CNeUp.Update()
 
 	ly.LDT.Update()
@@ -235,7 +236,7 @@ func (ly *LayerParams) Defaults() {
 	ly.Striatum.Defaults()
 	ly.GP.Defaults()
 
-	ly.CNiPred.Defaults()
+	ly.IO.Defaults()
 	ly.CNeUp.Defaults()
 
 	ly.LDT.Defaults()
@@ -261,10 +262,10 @@ func (ly *LayerParams) ShouldDisplay(field string) bool {
 		return ly.Type == VSMatrixLayer || ly.Type == DSMatrixLayer || ly.Type == DSPatchLayer
 	case "GP":
 		return ly.Type == GPLayer
-	case "CNiPred":
-		return ly.Type == CNiPredLayer
-	case "CNeUp":
-		return ly.Type == CNeUpLayer
+	case "IO":
+		return ly.Type == IOLayer
+	// case "CNeUp":
+	// 	return ly.Type == CNeUpLayer
 	case "LDT":
 		return ly.Type == LDTLayer
 	case "VTA":

@@ -48,14 +48,14 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Decay.AHP = 0.0          // clear long
 				ly.Learn.RLRate.SigmoidMin = 1.0 // 1 > .05
 			}},
-		{Sel: ".CNiPredLayer", Doc: "",
+		{Sel: ".CNiIOLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.15 // 0.15 accurate
 				ly.Inhib.Layer.On.SetBool(false)
 				ly.Inhib.Layer.FB = 0            // no lateral
 				ly.Inhib.Layer.Gi = 0.4          // ?
-				ly.CNiPred.DriveScale = 0.1      // 0.1 less over-active in plus?
-				ly.CNiPred.FullDriveAct = 0.6    // 0.6 def
+				ly.CNiIO.DriveScale = 0.1        // 0.1 less over-active in plus?
+				ly.CNiIO.FullDriveAct = 0.6      // 0.6 def
 				ly.Learn.RLRate.SigmoidMin = 1.0 // 1 > .05
 			}},
 		{Sel: ".CNeUpLayer", Doc: "",
@@ -112,7 +112,7 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 2
 			}},
-		{Sel: ".CNiPredToOut", Doc: "fixed inhibition to output",
+		{Sel: ".CNiIOToOut", Doc: "fixed inhibition to output",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 2 // strong so that weight range is sufficient
 				pt.SWts.Init.SPct = 0

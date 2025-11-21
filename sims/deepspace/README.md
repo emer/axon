@@ -13,11 +13,11 @@ De Zeeuw (2021):
 S --> IO
       o
       | --o Ci --o CoutD --> Act
-    CNiPred -------o CoutU --> Inh --o Act
+    CNiIO -------o CoutU --> Inh --o Act
       ^
 ```
 
-* CNiPred cannot have up / down versions because it needs to inhibit in proportion to excitatory S sensory input to IO. Its inhibitory output always must go up with learning / in response to sensory signals.
+* CNiIO cannot have up / down versions because it needs to inhibit in proportion to excitatory S sensory input to IO. Its inhibitory output always must go up with learning / in response to sensory signals.
 
 * 
 

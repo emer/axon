@@ -109,7 +109,7 @@ var (
 	LayerStates *tensor.Float32
 
 	// GlobalScalars are the global scalar state variables.
-	// [GlobalScalarsN + 2*NCaBins][Data]
+	// [GlobalScalarVarsN + 2*NCaBins][Data]
 	//gosl:dims 2
 	GlobalScalars *tensor.Float32
 

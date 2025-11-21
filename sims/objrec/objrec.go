@@ -199,11 +199,11 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ss.Config.Run.NData)
-	net.Context().SetThetaCycles(int32(ss.Config.Run.Cycles())).
+	net.Context().SetISICycles(int32(ss.Config.Run.ISICycles)).
 		SetMinusCycles(int32(ss.Config.Run.MinusCycles)).
 		SetPlusCycles(int32(ss.Config.Run.PlusCycles)).
 		SetSlowInterval(int32(ss.Config.Run.SlowInterval)).
-		SetAdaptGiInterval(int32(ss.Config.Run.AdaptGiInterval))
+		SetAdaptGiInterval(int32(ss.Config.Run.AdaptGiInterval)).Update()
 
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 

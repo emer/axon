@@ -89,7 +89,7 @@ type PulvinarParams struct {
 
 	// DriveScale is the multiplier on driver input strength,
 	// which multiplies CaP from driver layer to produce Ge excitatory
-	// input to CNiPred unit.
+	// input to CNiIO unit.
 	DriveScale float32 `default:"0.1" min:"0.0"`
 
 	// FullDriveAct is the level of Max driver layer CaP at which the drivers

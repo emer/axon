@@ -242,8 +242,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// output = copy of input that has subtraction
 	cneUp, cniPred := net.AddCerebellumNucleus(vvelIn, space)
 
-	net.ConnectLayers(rotActPrev, cniPred, full, axon.ForwardPath).AddClass("ToCNiPred")
-	net.ConnectLayers(s1ct, cniPred, full, axon.ForwardPath).AddClass("ToCNiPred")
+	net.ConnectLayers(rotActPrev, cniPred, full, axon.ForwardPath).AddClass("ToCNiIO")
+	net.ConnectLayers(s1ct, cniPred, full, axon.ForwardPath).AddClass("ToCNiIO")
 
 	// position
 

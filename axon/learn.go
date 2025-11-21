@@ -145,6 +145,11 @@ func (lc *LearnCaParams) ETrace(ctx *Context, ni, di uint32, cad float32) {
 // the direction and magnitude of plasticity (i.e., [LearnDiff]).
 type LearnTimingParams struct {
 
+	// SynCaCycles is the number of cycles over which to integrate the synaptic
+	// pre * post calcium trace, which provides the credit assignment factor.
+	// Must be a multiple of CaBinCycles (10). Used for all learning (timed or not).
+	SynCaCycles int32 `default:"100"`
+
 	// On indicates whether to use the timing parameters to drive
 	// learning timing, or instead just learn at the end of the trial
 	// automatically. Timing variables are always computed even when
@@ -153,12 +158,14 @@ type LearnTimingParams struct {
 
 	// MinusCycles is the minimum number of cycles (ms) after the first
 	// [MinusPeak] before the process of looking for the plus-phase peak starts.
-	MinusCycles int32 `default:"120"`
+	// Should be less than total MinusCycles, and is not very critical in general.
+	MinusCycles int32 `default:"110"`
 
 	// PlusCycles is number of cycles (ms) after the second [PlusPeak] learning
 	// is triggered. If no second peak occurs within Minus + Plus cycles, then
 	// no plus phase is detected (i.e., no prediction error), and everything resets.
-	PlusCycles int32 `default:"40"`
+	// Generally it is better to have plus = 60 with ISI = 10, and use 60 here.
+	PlusCycles int32 `default:"50,60"`
 
 	// Time constant for integrating [TimeDiff] as the absolute value of
 	// CaDiff integrated over time to smooth out significant local bumps.
@@ -167,12 +174,13 @@ type LearnTimingParams struct {
 	// Dt is 1/Tau
 	TimeDiffDt float32 `display:"-"`
 
-	pad, pad1, pad2 float32
+	pad, pad1 float32
 }
 
 func (lt *LearnTimingParams) Defaults() {
-	lt.MinusCycles = 120
-	lt.PlusCycles = 40
+	lt.SynCaCycles = 50
+	lt.MinusCycles = 110
+	lt.PlusCycles = 50
 	lt.TimeDiffTau = 2
 	lt.Update()
 }
@@ -183,25 +191,22 @@ func (lt *LearnTimingParams) Update() {
 
 func (lt *LearnTimingParams) ShouldDisplay(field string) bool {
 	switch field {
-	case "On":
+	case "On", "SynCaCycles":
 		return true
 	default:
 		return lt.On.IsTrue()
 	}
 }
 
-// LearnTiming does the timing updates for learning.
-func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
-	learnNow := float32(0)
-	isiCyc := ctx.ThetaCycles - (ctx.MinusCycles + ctx.PlusCycles) // ISICycles not working
+// LearnTiming determines whether it is time to learn, for given neuron.
+// returns true if just triggered learning.
+func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
+	learnNow := false
+	isiCyc := ctx.ISICycles
 
 	timeDiff := Neurons.Value(int(ni), int(di), int(TimeDiff))
-	//	if lt.Ca.IsTrue() {
-	//		timeDiff += lt.TimeDiffDt * (math32.Abs(Neurons[ni, di, CaDiff]) - timeDiff)
-	//	} else {
 	gaDiff := Neurons.Value(int(ni), int(di), int(GaP)) - Neurons.Value(int(ni), int(di), int(GaD))
 	timeDiff += lt.TimeDiffDt * (math32.Abs(gaDiff) - timeDiff)
-	// }
 	Neurons.Set(timeDiff, int(ni), int(di), int(TimeDiff))
 	peak := Neurons.Value(int(ni), int(di), int(TimeDiffPeak))
 	peakCyc := int32(Neurons.Value(int(ni), int(di), int(TimeDiffPeakCyc)))
@@ -225,7 +230,7 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 			atEnd = (ctx.Cycle == isiCyc-1) // wrap around to next trial
 		}
 		if pcy == lt.PlusCycles || (pcy < lt.PlusCycles && atEnd) {
-			learnNow = 1.0
+			learnNow = true
 		} else if pcy < lt.PlusCycles {
 			if newPeak {
 				Neurons.Set(peak, int(ni), int(di), int(PlusPeak))
@@ -253,19 +258,14 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 			Neurons.Set(float32(peakCyc), int(ni), int(di), int(MinusPeakCyc))
 		}
 	}
-	if learnNow > 0.0 {
-		cyc := ctx.Cycle
-		if isiCyc > 0 && cyc < isiCyc {
-			cyc = ctx.ThetaCycles + cyc // add to end so stats are sensible
-		}
-		Neurons.Set(float32(cyc), int(ni), int(di), int(LearnNow))
+	if lt.On.IsFalse() {
+		learnNow = (ctx.Cycle == ctx.ThetaCycles-1)
+	}
+	if learnNow {
+		Neurons.Set(float32(ctx.CyclesTotal), int(ni), int(di), int(LearnNow))
 		Neurons.Set(Neurons.Value(int(ni), int(di), int(CaDiff)), int(ni), int(di), int(LearnDiff))
 	}
-	if lt.On.IsFalse() {
-		if ctx.PlusPhase.IsTrue() {
-			Neurons.Set(Neurons.Value(int(ni), int(di), int(CaDiff)), int(ni), int(di), int(LearnDiff)) // this is all that matters
-		}
-	}
+	return learnNow
 }
 
 ////////  TrgAvgActParams
@@ -599,7 +599,6 @@ func (ln *LearnNeuronParams) CaFromSpike(ctx *Context, ni, di uint32) {
 	Neurons.Set(caSyn, int(ni), int(di), int(CaSyn))
 
 	ln.CaLearn.LearnCas(ctx, ni, di)
-	ln.Timing.LearnTiming(ctx, ni, di)
 }
 
 ////////  SWtParams

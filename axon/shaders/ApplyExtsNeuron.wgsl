@@ -252,11 +252,21 @@ struct ActParams {
 }
 
 //////// import: "cereb-layer.go"
-struct CNiPredParams {
-	DriveScale: f32,
-	FullDriveAct: f32,
-	DriveLayIndex: i32,
+struct NuclearParams {
+	ActTarget: f32,
+	IOLayIndex: i32,
 	pad: f32,
+	pad1: f32,
+}
+struct IOParams {
+	TimeOff: i32,
+	ActionEnv: i32,
+	ErrThr: f32,
+	EfferentThr: f32,
+	InhibBin: i32,
+	TimeBins: i32,
+	pad: i32,
+	pad1: i32,
 }
 struct CNeUpParams {
 	ActTarg: f32,
@@ -398,6 +408,7 @@ struct VGCCParams {
 }
 
 //////// import: "context.go"
+const CaBinCycles = 10;
 struct Context { //types:add -setters
 	NData: u32,
 	Mode: i32,
@@ -407,9 +418,9 @@ struct Context { //types:add -setters
 	PhaseCycle: i32,
 	Cycle: i32,
 	ThetaCycles: i32,
+	ISICycles: i32,
 	MinusCycles: i32,
 	PlusCycles: i32,
-	CaBinCycles: i32,
 	CyclesTotal: i32,
 	Time: f32,
 	TrialsTotal: i32,
@@ -453,7 +464,7 @@ const PathGTypesN: PathGTypes = 5;
 const GlobalScalarVarsN: GlobalScalarVars = 58;
 const GlobalVectorVarsN: GlobalVectorVars = 10;
 const GPUVarsN: GPUVars = 23;
-const LayerTypesN: LayerTypes = 34;
+const LayerTypesN: LayerTypes = 36;
 const LayerVarsN: LayerVars = 12;
 const ViewTimesN: ViewTimes = 7;
 const DAModTypesN: DAModTypes = 4;
@@ -462,7 +473,7 @@ const NeuronFlagsN: NeuronFlags = 9;
 const NeuronVarsN: NeuronVars = 97;
 const NeuronAvgVarsN: NeuronAvgVars = 7;
 const NeuronIndexVarsN: NeuronIndexVars = 3;
-const PathTypesN: PathTypes = 14;
+const PathTypesN: PathTypes = 15;
 const GPLayerTypesN: GPLayerTypes = 3;
 const PoolIndexVarsN: PoolIndexVars = 4;
 const PoolIntVarsN: PoolIntVars = 6;
@@ -677,7 +688,7 @@ struct LayerParams {
 	DSMatrix: DSMatrixParams,
 	Striatum: StriatumParams,
 	GP: GPParams,
-	CNiPred: CNiPredParams,
+	IO: IOParams,
 	CNeUp: CNeUpParams,
 	LDT: LDTParams,
 	VTA: VTAParams,
@@ -706,24 +717,26 @@ const  STNLayer: LayerTypes = 12;
 const  GPLayer: LayerTypes = 13;
 const  BGThalLayer: LayerTypes = 14;
 const  VSGatedLayer: LayerTypes = 15;
-const  CNiPredLayer: LayerTypes = 16;
-const  CNeUpLayer: LayerTypes = 17;
-const  BLALayer: LayerTypes = 18;
-const  CeMLayer: LayerTypes = 19;
-const  VSPatchLayer: LayerTypes = 20;
-const  LHbLayer: LayerTypes = 21;
-const  DrivesLayer: LayerTypes = 22;
-const  UrgencyLayer: LayerTypes = 23;
-const  USLayer: LayerTypes = 24;
-const  PVLayer: LayerTypes = 25;
-const  LDTLayer: LayerTypes = 26;
-const  VTALayer: LayerTypes = 27;
-const  RewLayer: LayerTypes = 28;
-const  RWPredLayer: LayerTypes = 29;
-const  RWDaLayer: LayerTypes = 30;
-const  TDPredLayer: LayerTypes = 31;
-const  TDIntegLayer: LayerTypes = 32;
-const  TDDaLayer: LayerTypes = 33;
+const  IOLayer: LayerTypes = 16;
+const  CNeLayer: LayerTypes = 17;
+const  CNiIOLayer: LayerTypes = 18;
+const  CNiUpLayer: LayerTypes = 19;
+const  BLALayer: LayerTypes = 20;
+const  CeMLayer: LayerTypes = 21;
+const  VSPatchLayer: LayerTypes = 22;
+const  LHbLayer: LayerTypes = 23;
+const  DrivesLayer: LayerTypes = 24;
+const  UrgencyLayer: LayerTypes = 25;
+const  USLayer: LayerTypes = 26;
+const  PVLayer: LayerTypes = 27;
+const  LDTLayer: LayerTypes = 28;
+const  VTALayer: LayerTypes = 29;
+const  RewLayer: LayerTypes = 30;
+const  RWPredLayer: LayerTypes = 31;
+const  RWDaLayer: LayerTypes = 32;
+const  TDPredLayer: LayerTypes = 33;
+const  TDIntegLayer: LayerTypes = 34;
+const  TDDaLayer: LayerTypes = 35;
 fn IsExtLayerType(lt: LayerTypes) -> bool {
 	if (lt == InputLayer || lt == TargetLayer || lt == CompareLayer || lt == RewLayer) {
 		return true;
@@ -768,6 +781,7 @@ struct LearnCaParams {
 	pad2: f32,
 }
 struct LearnTimingParams {
+	SynCaCycles: i32,
 	On: i32,
 	MinusCycles: i32,
 	PlusCycles: i32,
@@ -775,7 +789,6 @@ struct LearnTimingParams {
 	TimeDiffDt: f32,
 	pad: f32,
 	pad1: f32,
-	pad2: f32,
 }
 struct TrgAvgActParams {
 	GiBaseInit: f32,
@@ -1111,11 +1124,12 @@ const  DSPatchPath: PathTypes = 5;
 const  VSPatchPath: PathTypes = 6;
 const  VSMatrixPath: PathTypes = 7;
 const  DSMatrixPath: PathTypes = 8;
-const  CNiPredToOutPath: PathTypes = 9;
-const  RWPath: PathTypes = 10;
-const  TDPredPath: PathTypes = 11;
-const  BLAPath: PathTypes = 12;
-const  HipPath: PathTypes = 13;
+const  CNIOPath: PathTypes = 9;
+const  CNePath: PathTypes = 10;
+const  RWPath: PathTypes = 11;
+const  TDPredPath: PathTypes = 12;
+const  BLAPath: PathTypes = 13;
+const  HipPath: PathTypes = 14;
 
 //////// import: "pcore-layer.go"
 struct DSMatrixParams {

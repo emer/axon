@@ -205,7 +205,7 @@ type Network struct {
 	LayerStates tensor.Float32 `display:"-"`
 
 	// GlobalScalars are the global scalar state variables.
-	// [GlobalScalarsN+2*NCaBins][Data]
+	// [GlobalScalarVarsN+2*NCaWeights][Data]
 	GlobalScalars tensor.Float32 `display:"-"`
 
 	// GlobalVectors are the global vector state variables.
@@ -515,6 +515,8 @@ func (nt *Network) SaveAllPathScales(filename core.Filename) error {
 func (nt *Network) AllGlobals() string {
 	nix := nt.NetIxs()
 	md := nix.MaxData
+	ctx := nt.Context()
+	nCaWts := ctx.NCaWeights()
 	str := ""
 	for di := uint32(0); di < md; di++ {
 		str += fmt.Sprintf("\n###############################\nData Index: %02d\n\n", di)
@@ -544,12 +546,12 @@ func (nt *Network) AllGlobals() string {
 		}
 	}
 	str += "\n###############################\nSpike Bin Weights\n\n"
-	for i := range nix.NCaBins {
+	for i := range nCaWts {
 		str += fmt.Sprintf("CaBinWtsCaP%02d:\t%7.4f\n", i, GlobalScalars.Value(int(GvCaBinWts+GlobalScalarVars(i)), int(0)))
 	}
 	str += "#### CaD\n"
-	for i := range nix.NCaBins {
-		str += fmt.Sprintf("CaBinWtsCaD%02d:\t%7.4f\n", i, GlobalScalars.Value(int(GvCaBinWts+GlobalScalarVars(nix.NCaBins+i)), int(0)))
+	for i := range nCaWts {
+		str += fmt.Sprintf("CaBinWtsCaD%02d:\t%7.4f\n", i, GlobalScalars.Value(int(GvCaBinWts+GlobalScalarVars(nCaWts+i)), int(0)))
 	}
 	return str
 }
@@ -759,7 +761,8 @@ func (nt *Network) Build() error { //types:add
 	nt.NeuronAvgs.SetShapeSizes(totNeurons, int(NeuronAvgVarsN))
 	nt.NeuronIxs.SetShapeSizes(totNeurons, int(NeuronIndexVarsN))
 	nt.Exts.SetShapeSizes(totExts, maxData)
-	nt.GlobalScalars.SetShapeSizes(int(GlobalScalarVarsN)+int(2*maxBins), maxData)
+	nCaWts := ctx.NCaWeights()
+	nt.GlobalScalars.SetShapeSizes(int(GlobalScalarVarsN)+int(2*nCaWts), maxData)
 	nt.GlobalVectors.SetShapeSizes(int(GlobalVectorVarsN), int(MaxGlobalVecN), maxData)
 
 	nt.SetAsCurrent()
@@ -928,14 +931,13 @@ func (nt *Network) Build() error { //types:add
 // trace learning rule integration of [CaBins] neuron-level spike values.
 func (nt *Network) SetCaBinWts() {
 	ctx := nt.Context()
-	nix := nt.NetIxs()
-	nBins := int(nix.NCaBins)
-	cp := make([]float32, nBins)
-	cd := make([]float32, nBins)
+	nCaWts := ctx.NCaWeights()
+	cp := make([]float32, nCaWts)
+	cd := make([]float32, nCaWts)
 	kinase.CaBinWts(int(ctx.PlusCycles), cp, cd)
-	for i := range nBins {
+	for i := range nCaWts {
 		nt.GlobalScalars.Set(cp[i], int(GvCaBinWts+GlobalScalarVars(i)), int(0))
-		nt.GlobalScalars.Set(cd[i], int(GvCaBinWts+GlobalScalarVars(nBins+i)), int(0))
+		nt.GlobalScalars.Set(cd[i], int(GvCaBinWts+GlobalScalarVars(nCaWts+i)), int(0))
 	}
 }
 

@@ -135,21 +135,27 @@ const (
 
 	//////// Cerebellum (Nuclear)
 
-	// CNiPredLayer represents the cerebellar nuclei inhibitory prediction
+	// IOLayer represents a cerebellum inferior olive (IO) layer,
+	// which drive learning in associated cerebellar nuclei and Purkinje cells.
+	// Receives paired input from the CNiIOLayer inhibitory prediction neurons
+	// and specific sensory channels that are being predicted, and a modulatory
+	// input from the efferent copy of motor action to initiate it.
+	IOLayer
+
+	// CNeLayer represents the cerebellar nuclei excitatory neurons,
+	// which have slow learning to maintain a target average firing rate.
+	CNeLayer
+
+	// CNiIOLayer represents the cerebellar nuclei inhibitory prediction
 	// neurons, which learn to predict the activity of a specific sensory input,
 	// and inhibit it in the corresponding CNeUpLayer
-	CNiPredLayer
+	CNiIOLayer
 
-	// CNeUpLayer represents the cerebellar nuclei excitatory upgoing
-	// output neurons, which are inhibited by the CNiPredLayer neurons,
-	// thereby cancelling the effects of self-generated motor commands.
-	CNeUpLayer
-
-	// CerebIOLayer represents the cerebellar inferior olive neurons,
-	// which receive excitatory sensory and motor inputs from a range of
-	// sources, and are inhibited by the CNiPredLayer neurons, to compute
-	// the climbing fiber teaching signal to the cerebellar purkinje cells.
-	// CerebIOLayer
+	// CNiUpLayer represents the cerebellar nuclei inhibitory upgoing
+	// output neurons, which learn from IOLayer error signals to predict
+	// specific sensory inputs based on motor commands, thereby cancelling
+	// the effects of self-generated motor commands.
+	CNiUpLayer
 
 	//////// Rubicon
 

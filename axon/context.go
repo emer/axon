@@ -13,6 +13,12 @@ import (
 
 //gosl:start
 
+// CaBinCycles is the number of cycles per CaBin for integrating
+// calcium-based activity values ([CaSyn]) that are used for computing
+// a synaptic-level (pre * post) credit assignment factor for learning.
+// This is a constant because other pre-computed factors depend on it.
+const CaBinCycles = 10
+
 // Context contains all of the global context state info
 // that is shared across every step of the computation.
 // It is passed around to all relevant computational functions,
@@ -52,22 +58,20 @@ type Context struct { //types:add -setters
 	// ThetaCycles is the length of the theta cycle (i.e., Trial),
 	// in terms of 1 msec Cycles. Some network update steps depend on doing something
 	// at the end of the theta cycle (e.g., CTCtxtPath).
+	// Should be ISICycles + MinusCycles + PlusCycles
 	ThetaCycles int32 `default:"200"`
+
+	// ISICycles is the number of inter-stimulus-interval cycles,
+	// which happen prior to the minus phase (i.e., after the last plus phase).
+	ISICycles int32
 
 	// MinusCycles is the number of cycles in the minus phase. Typically 150,
 	// but may be set longer if ThetaCycles is above default of 200.
-	// Any additional cycles are considered to be an ISI that occurs at the start
-	// of the ThetaCycles window.
 	MinusCycles int32 `default:"150"`
 
 	// PlusCycles is the number of cycles in the plus phase. Typically 50,
 	// but may be set longer if ThetaCycles is above default of 200.
 	PlusCycles int32 `default:"50"`
-
-	// CaBinCycles is the number of cycles for neuron [CaBins] values used in
-	// computing synaptic calcium values. Total number of bins = ThetaCycles / CaBinCycles.
-	// This is fixed at 10.
-	CaBinCycles int32 `default:"10"`
 
 	// CyclesTotal is the accumulated cycle count, which increments continuously
 	// from whenever it was last reset. Typically this is the number of milliseconds
@@ -119,12 +123,16 @@ type Context struct { //types:add -setters
 func (ctx *Context) Defaults() {
 	ctx.NData = 1
 	ctx.TimePerCycle = 0.001
-	ctx.ThetaCycles = 200
+	ctx.ISICycles = 0
 	ctx.MinusCycles = 150
 	ctx.PlusCycles = 50
-	ctx.CaBinCycles = 10
 	ctx.SlowInterval = 100
 	ctx.AdaptGiInterval = 1000
+	ctx.Update()
+}
+
+func (ctx *Context) Update() {
+	ctx.ThetaCycles = ctx.ISICycles + ctx.MinusCycles + ctx.PlusCycles
 }
 
 // ItemIndex returns the main item index from an overall index over NItems * NData.
@@ -184,16 +192,29 @@ func (ctx *Context) PlusPhaseStart() {
 	ctx.PlusPhase.SetBool(true)
 }
 
-// NCaBins returns ThetaCycles / CaBinCycles
+// NCaBins returns 2 * ThetaCycles / CaBinCycles: stored in NetworkIxs.NCaBins.
 func (ctx *Context) NCaBins() int32 {
-	return (ctx.MinusCycles + ctx.PlusCycles) / ctx.CaBinCycles
+	return 2 * (ctx.ThetaCycles / CaBinCycles)
 }
 
-// ISICycles returns ThetaCycles - (MinusCycles + PlusCycles),
-// which are leftover inter-stimulus-interval cycles, which must come
-// at the start of the trial.
-func (ctx *Context) ISICycles() int32 {
-	return ctx.ThetaCycles - (ctx.MinusCycles + ctx.PlusCycles)
+// NCaWeights returns (MinusCycles + PlusCycles) / CaBinCycles:
+// number of weights set for SynCa weighted computation of SynCaP, SynCaD.
+// Weights are stored in [GlobalScalars]
+func (ctx *Context) NCaWeights() int32 {
+	return (ctx.MinusCycles + ctx.PlusCycles) / CaBinCycles
+}
+
+// CaBinForCycle returns the [CaBins] bin number for given CyclesTotal
+// cycle index. Two ThetaCycles worth of data are stored at a CaBinCycles
+// resolution, allowing learning to use any subset of data within that window.
+func CaBinForCycle(cycle int32) int32 {
+	return (cycle / CaBinCycles) % NetworkIxs[0].NCaBins
+}
+
+// CaBinIsFirst returns true if given cycle is the first of the CaBinCycles
+// cycle. Used for initializing a new value versus adding to existing.
+func CaBinIsFirst(cycle int32) bool {
+	return (cycle % CaBinCycles) == 0
 }
 
 //gosl:end

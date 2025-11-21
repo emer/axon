@@ -96,7 +96,7 @@ func SetNeuronExtPosNeg(ctx *Context, ni, di uint32, val float32) {
 // It is used in SynScale to not apply it to target layers.
 // In both cases, Target layers are purely error-driven.
 func (ly *LayerParams) IsTarget() bool {
-	return ly.Type == TargetLayer || ly.Type == PulvinarLayer || ly.Type == CNiPredLayer
+	return ly.Type == TargetLayer || ly.Type == PulvinarLayer || ly.Type == CNiIOLayer
 }
 
 // IsInput returns true if this layer is an Input layer.
@@ -254,9 +254,6 @@ func (ly *LayerParams) GInteg(ctx *Context, pi, ni, di uint32) {
 	if ly.Type == PulvinarLayer {
 		ly.PulvinarDriver(ctx, ni-ly.Indexes.NeurSt, di, &drvGe, &nonDrivePct)
 		Neurons.Set(nonDrivePct, int(ni), int(di), int(Ext)) // use for regulating inhibition
-	} else if ly.Type == CNiPredLayer {
-		ly.CNiPredDriver(ctx, ni-ly.Indexes.NeurSt, di, &drvGe, &nonDrivePct)
-		Neurons.Set(nonDrivePct, int(ni), int(di), int(Ext)) // use for regulating inhibition
 	}
 	saveVal := ly.SpecialPreGs(ctx, pi, ni, di, drvGe, nonDrivePct)
 
@@ -311,7 +308,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, pi, ni, di uint32, drvGe float
 		Neurons.Set(dr, int(ni), int(di), int(GeRaw))
 		Neurons.Set(ly.Acts.Dt.GeSynFromRawSteady(dr), int(ni), int(di), int(GeSyn))
 
-	case CNiPredLayer:
+	case CNiIOLayer:
 		if ctx.PlusPhase.IsFalse() {
 			break
 		}
@@ -413,7 +410,7 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni, di uint32, saveVal float3
 	}
 
 	switch ly.Type {
-	case PulvinarLayer, CNiPredLayer, PTMaintLayer, CTLayer, BLALayer:
+	case PulvinarLayer, CNiIOLayer, PTMaintLayer, CTLayer, BLALayer:
 		Neurons.Set(saveVal, int(ni), int(di), int(GeExt))
 	case PTPredLayer:
 		Neurons.Set(saveVal, int(ni), int(di), int(GeExt))
@@ -495,7 +492,7 @@ func (ly *LayerParams) GiInteg(ctx *Context, pi, ni, di uint32) {
 	ssgi := Pools.Value(int(pi), int(di), int(fsfffb.SSGi))
 	Neurons.Set(gi, int(ni), int(di), int(Gi))
 	Neurons.Set(0.0, int(ni), int(di), int(SSGiDend))
-	if ctx.PlusPhase.IsTrue() && (ly.Type == PulvinarLayer || ly.Type == CNiPredLayer) {
+	if ctx.PlusPhase.IsTrue() && (ly.Type == PulvinarLayer || ly.Type == CNiIOLayer) {
 		ext := Neurons.Value(int(ni), int(di), int(Ext)) // nonDrivePct
 		Neurons.Set(ext*ly.Acts.Dend.SSGi*ssgi, int(ni), int(di), int(SSGiDend))
 	} else {
@@ -529,16 +526,17 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, lpi, ni, di uint32) {
 	ly.Acts.VmFromG(ctx, ni, di)
 	ly.Acts.SpikeFromVm(ctx, ni, di)
 	ly.Learn.CaFromSpike(ctx, ni, di)
-
-	if !ly.IsTarget() && Neurons.Value(int(ni), int(di), int(LearnNow)) > 0 {
-		da := GlobalScalars.Value(int(GvDA), int(di))
-		ach := GlobalScalars.Value(int(GvACh), int(di))
-		nrnCaP := Neurons.Value(int(ni), int(di), int(CaP))
-		nrnCaD := Neurons.Value(int(ni), int(di), int(CaD))
-		mlr := ly.Learn.RLRate.RLRateSigDeriv(nrnCaD, PoolAvgMax(AMCaD, AMCycle, Max, lpi, di))
-		modlr := ly.Learn.NeuroMod.LRMod(da, ach)
-		dlr := ly.Learn.RLRate.RLRateDiff(nrnCaP, nrnCaD)
-		Neurons.Set(mlr*dlr*modlr, int(ni), int(di), int(RLRate))
+	if !ly.IsTarget() && ly.Type != IOLayer {
+		learnNow := ly.Learn.Timing.LearnTiming(ctx, ni, di)
+		if learnNow {
+			da := GlobalScalars.Value(int(GvDA), int(di))
+			ach := GlobalScalars.Value(int(GvACh), int(di))
+			nrnCaD := Neurons.Value(int(ni), int(di), int(CaD))
+			mlr := ly.Learn.RLRate.RLRateSigDeriv(nrnCaD, PoolAvgMax(AMCaD, AMCycle, Max, lpi, di))
+			modlr := ly.Learn.NeuroMod.LRMod(da, ach)
+			dlr := ly.Learn.RLRate.RLRateDiff(Neurons.Value(int(ni), int(di), int(CaP)), nrnCaD)
+			Neurons.Set(mlr*dlr*modlr, int(ni), int(di), int(RLRate))
+		}
 	}
 
 	lmax := PoolAvgMax(AMGeInt, AMCycle, Max, lpi, di)
@@ -550,8 +548,7 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, lpi, ni, di uint32) {
 	if ctx.MinusPhase.IsFalse() && ctx.PlusPhase.IsFalse() {
 		return
 	}
-	isiCyc := ctx.ThetaCycles - (ctx.MinusCycles + ctx.PlusCycles) // ISICycles not working
-	lrnCyc := ctx.Cycle - isiCyc
+	lrnCyc := ctx.Cycle - ctx.ISICycles
 	if lrnCyc >= ly.Acts.Dt.MaxCycStart {
 		Neurons.SetAdd(ly.Learn.CaSpike.Dt.PDt*(Neurons.Value(int(ni), int(di), int(CaM))-Neurons.Value(int(ni), int(di), int(CaPMaxCa))), int(ni), int(di), int(CaPMaxCa))
 		spkmax := Neurons.Value(int(ni), int(di), int(CaPMaxCa))
@@ -559,10 +556,15 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, lpi, ni, di uint32) {
 			Neurons.Set(spkmax, int(ni), int(di), int(CaPMax))
 		}
 	}
-
-	mx := NetworkIxs[0].NCaBins
-	bin := min(lrnCyc/ctx.CaBinCycles, mx)
-	Neurons.SetAdd(Neurons.Value(int(ni), int(di), int(CaSyn))/float32(ctx.CaBinCycles), int(ni), int(di), int(CaBins+NeuronVars(bin)))
+	if ly.Type != IOLayer { // uses bins for itself
+		bin := CaBinForCycle(ctx.CyclesTotal)
+		incr := Neurons.Value(int(ni), int(di), int(CaSyn)) / float32(CaBinCycles)
+		if CaBinIsFirst(ctx.CyclesTotal) {
+			Neurons.Set(incr, int(ni), int(di), int(CaBins+NeuronVars(bin)))
+		} else {
+			Neurons.SetAdd(incr, int(ni), int(di), int(CaBins+NeuronVars(bin)))
+		}
+	}
 }
 
 // SendSpike sends spike to receivers for all neurons that spiked
@@ -617,6 +619,10 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, lpi, pi, ni, di uint32) {
 		}
 		Neurons.Set(dr, int(ni), int(di), int(Act))
 
+	case IOLayer:
+		ly.IOUpdate(ctx, lpi, pi, ni, di)
+	case CNiIOLayer:
+		ly.IOLearn(ctx, ni-ly.Indexes.NeurSt, lpi, pi, ni, di)
 	case BLALayer:
 		if ctx.Cycle == ctx.ThetaCycles-1 {
 			if hasRew {
@@ -960,24 +966,22 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32) {
 	Neurons.Set(0.0, int(ni), int(di), int(CaPMax))
 	Neurons.Set(0.0, int(ni), int(di), int(CaPMaxCa))
 	Neurons.Set(0.0, int(ni), int(di), int(LearnDiff))
-	// Neurons[ni, di, LearnNow] = 0.0
+	Neurons.Set(0.0, int(ni), int(di), int(LearnNow))
 
 	// todo: these should be self-resetting:
 	Neurons.Set(0.0, int(ni), int(di), int(TimeDiff))
 	Neurons.Set(0.0, int(ni), int(di), int(TimeDiffPeak))
 	Neurons.Set(0.0, int(ni), int(di), int(TimeDiffPeakCyc))
-	Neurons.Set(0.0, int(ni), int(di), int(MinusPeak))
-	Neurons.Set(0.0, int(ni), int(di), int(MinusPeakCyc))
-	Neurons.Set(0.0, int(ni), int(di), int(PlusPeak))
-	Neurons.Set(0.0, int(ni), int(di), int(PlusPeakCyc))
 
 	Neurons.Set(0.0, int(ni), int(di), int(RLRate))
 	ly.Acts.DecayState(ctx, ni, di, ly.Acts.Decay.Act, ly.Acts.Decay.Glong, ly.Acts.Decay.AHP)
 	// Note: synapse-level Ca decay happens in DWt
 	ly.Acts.KNaNewState(ctx, ni, di)
-	mx := NetworkIxs[0].NCaBins
-	for i := range mx {
-		Neurons.Set(0.0, int(ni), int(di), int(CaBins+NeuronVars(i)))
+	if ly.Type != IOLayer {
+		Neurons.Set(0.0, int(ni), int(di), int(MinusPeak))
+		Neurons.Set(0.0, int(ni), int(di), int(MinusPeakCyc))
+		Neurons.Set(0.0, int(ni), int(di), int(PlusPeak))
+		Neurons.Set(0.0, int(ni), int(di), int(PlusPeakCyc))
 	}
 }
 
@@ -1036,7 +1040,7 @@ func (ly *LayerParams) MinusPhasePost(ctx *Context) {
 	switch ly.Type {
 	case VSMatrixLayer, DSMatrixLayer:
 		ly.MatrixGated(ctx) // need gated state for decisions about action processing, so do in minus too
-	case PulvinarLayer, CNiPredLayer:
+	case PulvinarLayer, CNiIOLayer:
 		ly.DecayStateNeuronsAll(ctx, 1, 1, 0)
 	default:
 	}
@@ -1095,21 +1099,22 @@ func (ly *LayerParams) PlusPhaseEndNeuron(ctx *Context, ni, di uint32) {
 		} else {
 			modlr = 1 // don't use mod
 		}
-	case CNeUpLayer:
-		// use lratediff to signal learning status
-		lni := ni - ly.Indexes.NeurSt // layer-based
-		mlr = ly.CNeUpPredAct(ctx, lni, di)
-		dlr = ly.CNeUpSenseAct(ctx, lni, di)
-		if mlr < ly.CNeUp.LearnThr {
-			mlr = 0
-		}
-		if dlr < ly.CNeUp.LearnThr {
-			dlr = 0
-		}
-		modlr = 1
-		if mlr*dlr == 0 { // adapt GeBase only if both pathways inactive
-			NeuronAvgs.SetAdd(ly.CNeUp.GeBaseLRate*(ly.CNeUp.ActTarg-nrnCaD), int(ni), int(GeBase))
-		}
+	// case CNeUpLayer:
+	//
+	//	// use lratediff to signal learning status
+	//	lni := ni - ly.Indexes.NeurSt // layer-based
+	//	mlr = ly.CNeUpPredAct(ctx, lni, di)
+	//	dlr = ly.CNeUpSenseAct(ctx, lni, di)
+	//	if mlr < ly.CNeUp.LearnThr {
+	//		mlr = 0
+	//	}
+	//	if dlr < ly.CNeUp.LearnThr {
+	//		dlr = 0
+	//	}
+	//	modlr = 1
+	//	if mlr * dlr == 0 { // adapt GeBase only if both pathways inactive
+	//		NeuronAvgs[ni, GeBase] += ly.CNeUp.GeBaseLRate * (ly.CNeUp.ActTarg - nrnCaD)
+	//	}
 	case BLALayer:
 		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaP, Neurons.Value(int(ni), int(di), int(CaDPrev))) // delta on previous trial
 		if !ly.Learn.NeuroMod.IsBLAExt() && PoolIxs.Value(int(pi), int(PoolNeurSt)) == 0 {      // first pool

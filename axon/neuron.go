@@ -206,8 +206,8 @@ const (
 
 	// TimeDiff is the running time-average of |P - D| (absolute value),
 	// used for determining the timing of learning in terms of onsets of peaks.
-	// See [MinusPeak] and [PlusPeak]. The GaP - GaD value is much smoother and
-	// more reliable than LearnCaP - LearnCaD (i.e., CaDiff).
+	// See [MinusPeak] and [PlusPeak]. GaP - GaD is used, as it is
+	// smoother and more reliable than LearnCaP - D.
 	TimeDiff
 
 	// TimeDiffPeak is the value of the current peak (local maximum) of [TimeDiff].
@@ -519,9 +519,10 @@ const (
 	NeurFlags
 
 	// CaBins is a vector of values starting here, with aggregated [CaSyn] values
-	// in time bins of [Context.CaBinCycles] across the theta cycle,
-	// for computing synaptic calcium efficiently. Each bin = Sum(CaSyn) / CaBinCycles.
-	// Total number of bins = [Context.ThetaCycles] / CaBinCycles.
+	// in time bins of [CaBinCycles] across two theta cycles,
+	// for computing synaptic calcium efficiently. Each bin = Sum(CaSyn / CaBinCycles).
+	// Total number of bins = 2 * [Context.ThetaCycles] / CaBinCycles.
+	// Use [CaBinForCycle] to access.
 	// Synaptic calcium is integrated from sender * receiver CaBins values,
 	// with weights for CaP vs CaD that reflect their faster vs. slower time constants,
 	// respectively. CaD is used for the credit assignment factor, while CaP - CaD is
