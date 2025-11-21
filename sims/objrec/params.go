@@ -32,9 +32,9 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.CaLearn.Dt.MTau = 2                // 2 > 4 even with more ncycles
 				ly.Learn.CaSpike.Dt.MTau = 5                // 5 > 10 even with more ncycles
 
-				ly.Learn.Timing.On.SetBool(false)
-				ly.Learn.Timing.Refractory.SetBool(false)
-				ly.Learn.Timing.LearnThr = 0
+				ly.Learn.Timing.On.SetBool(true)
+				ly.Learn.Timing.Refractory.SetBool(true)
+				ly.Learn.Timing.LearnThr = 0.1
 				ly.Learn.Timing.SynCaCycles = 160
 				ly.Learn.Timing.MinusThr = 0
 				ly.Learn.Timing.MinusCycles = 110
@@ -95,7 +95,7 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				// pt.Com.MaxDelay = 10 // not much effect
 				// pt.Com.Delay = 10
-				pt.Learn.LRate.Base = 0.2     // 0.1 > 0.05
+				pt.Learn.LRate.Base = 0.2     // 0.2 > 0.1 > 0.05
 				pt.Learn.DWt.SubMean = 1      // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
 				pt.SWts.Adapt.LRate = 0.0001  // 0.005 == .1 == .01
 				pt.SWts.Adapt.HiMeanDecay = 0 // 0 > 0.0008 (best in lvis)
