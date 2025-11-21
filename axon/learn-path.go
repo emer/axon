@@ -141,12 +141,12 @@ func (pt *PathParams) DWtSynSoftBound(ctx *Context, syni, di uint32, dwt float32
 // based on the receiving neuron's [LearnCaP] - [LearnCaD], multiplied by a separate
 // synaptic activation credit assignment factor computed from synaptic co-product CaD values.
 func (pt *PathParams) DWtSynCortex(ctx *Context, rlay *LayerParams, syni, si, ri, lpi, pi, di uint32) {
-	learnNow := int32(Neurons.Value(int(ri), int(di), int(LearnNow))) - (ctx.CyclesTotal - ctx.ThetaCycles)
-	if learnNow < 0 { // not in this time window
+	learnNow := int32(Neurons.Value(int(ri), int(di), int(LearnNow)))
+	if learnNow-(ctx.CyclesTotal-ctx.ThetaCycles) < 0 { // not in this time window
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DiDWt))
 		return
 	}
-	syCa := pt.SynCaTotal(ctx, si, ri, di, int32(learnNow), rlay.Learn.Timing.SynCaCycles)
+	syCa := pt.SynCaTotal(ctx, si, ri, di, learnNow, rlay.Learn.Timing.SynCaCycles)
 
 	// integrate synaptic trace over time: this is actually beneficial in certain cases,
 	// in addition to the ETraceLearn factor.

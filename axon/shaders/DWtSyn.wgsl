@@ -1006,11 +1006,11 @@ fn PathParams_DWtSynSoftBound(pt: PathParams, ctx: Context, syni: u32,di: u32, d
 	}
 }
 fn PathParams_DWtSynCortex(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
-	var learnNow = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnNow))]) - (ctx.CyclesTotal - ctx.ThetaCycles);
-	if (learnNow < 0) { // not in this time window
+	var learnNow = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnNow))]);
+	if (learnNow-(ctx.CyclesTotal-ctx.ThetaCycles) < 0) { // not in this time window
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));return;
 	}
-	var syCa = PathParams_SynCaTotal(pt, ctx, si, ri, di, i32(learnNow), rlay.Learn.Timing.SynCaCycles);
+	var syCa = PathParams_SynCaTotal(pt, ctx, si, ri, di, learnNow, rlay.Learn.Timing.SynCaCycles);
 	SynapseTracesSet(syCa, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
 	var tr = DWtParams_SynTrace(pt.Learn.DWt, SynapseTracesGet(Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr))), syCa);
 	SynapseTracesSet(tr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
