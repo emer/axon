@@ -109,21 +109,21 @@ func (tp *IOParams) RingIndex(i int32) int32 {
 func (ly *LayerParams) IOUpdate(ctx *Context, lpi, pi, ni, di uint32) {
 	cycTot := float32(ctx.CyclesTotal)
 	if Neurons[ni, di, GModSyn] > ly.IO.EfferentThr {
-		Neurons[ni, di, LearnPeakCyc] = cycTot // efferent activation cycle
-		Neurons[ni, di, LearnPeak] = 0.0
+		Neurons[ni, di, TimeCycle] = cycTot // efferent activation cycle
+		Neurons[ni, di, TimePeak] = 0.0
 		Neurons[ni, di, LearnNow] = 0.0
 		Neurons[ni, di, Spike] = 0.0
 		return
 	}
-	effAct := Neurons[ni, di, LearnPeakCyc]
+	effAct := Neurons[ni, di, TimeCycle]
 	if effAct == 0 {
 		Neurons[ni, di, Spike] = 0.0
 		return
 	}
 	envCyc := int32(cycTot-effAct) // cycle within envelope
 	if envCyc > ly.IO.ActionEnv {
-		Neurons[ni, di, LearnPeakCyc] = 0.0
-		Neurons[ni, di, LearnPeak] = 1.0 // records that we got to end of cycle
+		Neurons[ni, di, TimeCycle] = 0.0
+		Neurons[ni, di, TimePeak] = 1.0 // records that we got to end of cycle
 		Neurons[ni, di, Spike] = 1.0 // baseline spike
 		return
 	}

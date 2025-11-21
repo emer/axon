@@ -37,7 +37,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.Timing.LearnThr = 0.1
 				ly.Learn.Timing.SynCaCycles = 160
 				ly.Learn.Timing.StartThr = 0.05
-				ly.Learn.Timing.MinCycles = 140
+				ly.Learn.Timing.Cycles = 160
 				ly.Learn.Timing.TimeDiffTau = 2
 			}},
 		{Sel: "#V1", Doc: "pool inhib (not used), initial activity",

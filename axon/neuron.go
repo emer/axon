@@ -205,27 +205,21 @@ const (
 
 	// TimeDiff is the running time-average of |P - D| (absolute value),
 	// used for determining the timing of learning in terms of onsets of peaks.
-	// See [LearnPeak]. GaP - GaD is used, as it is
+	// See [TimePeak]. GaP - GaD is used, as it is
 	// smoother and more reliable than LearnCaP - D.
 	TimeDiff
 
-	// TimeDiffPeak is the value of the current peak (local maximum) of [TimeDiff].
-	TimeDiffPeak
+	// TimePeak is the value of the current peak (local maximum) of [TimeDiff].
+	// This typically occurs at the onset of the minus phase, and drives
+	// the timing of learning a given number of cycles after that.
+	TimePeak
 
-	// TimeDiffPeakCyc is the absolute cycle where [TimeDiffPeak] occurred.
-	TimeDiffPeakCyc
-
-	// LearnPeak is the value of the first large peak of [TimeDiff],
-	// which occurs when new input drives the fast integral to diverge from slow.
-	// Learning happens a given number of ms after this peak.
-	LearnPeak
-
-	// LearnPeakCyc is the absolute cycle where [LearnPeak] occurred.
-	LearnPeakCyc
+	// TimeCycle is the absolute cycle where [TimePeak] occurred.
+	TimeCycle
 
 	// LearnNow is the absolute cycle (ms, CyclesTotal) when the receiving
 	// neuron learns. For neocortex, either at end of theta cycle or based
-	// on timing computed from [LearnPeak] per [LearnTimingParams].
+	// on timing computed from [TimeCycle] per [LearnTimingParams].
 	LearnNow
 
 	// RLRate is recv-unit based learning rate multiplier, reflecting the sigmoid
@@ -631,11 +625,11 @@ var NeuronVarProps = map[string]string{
 
 	"TimeDiff": `cat:"Learn"`,
 
-	"TimeDiffPeak":    `cat:"Learn"`,
-	"TimeDiffPeakCyc": `cat:"Learn" auto-scale:"+"`,
-	"LearnPeak":       `cat:"Learn"`,
-	"LearnPeakCyc":    `cat:"Learn" auto-scale:"+"`,
-	"LearnNow":        `cat:"Learn" auto-scale:"+"`,
+	"TimePeak":     `cat:"Learn"`,
+	"TimeCycle":    `cat:"Learn" auto-scale:"+"`,
+	"LearnPeak":    `cat:"Learn"`,
+	"LearnPeakCyc": `cat:"Learn" auto-scale:"+"`,
+	"LearnNow":     `cat:"Learn" auto-scale:"+"`,
 
 	"RLRate":      `cat:"Learn" auto-scale:"+"`,
 	"ETrace":      `cat:"Learn"`,

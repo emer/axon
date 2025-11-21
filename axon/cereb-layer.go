@@ -111,22 +111,22 @@ func (tp *IOParams) RingIndex(i int32) int32 {
 func (ly *LayerParams) IOUpdate(ctx *Context, lpi, pi, ni, di uint32) {
 	cycTot := float32(ctx.CyclesTotal)
 	if Neurons.Value(int(ni), int(di), int(GModSyn)) > ly.IO.EfferentThr {
-		Neurons.Set(cycTot, int(ni), int(di), int(LearnPeakCyc)) // efferent activation cycle
-		Neurons.Set(0.0, int(ni), int(di), int(LearnPeak))
+		Neurons.Set(cycTot, int(ni), int(di), int(TimeCycle)) // efferent activation cycle
+		Neurons.Set(0.0, int(ni), int(di), int(TimePeak))
 		Neurons.Set(0.0, int(ni), int(di), int(LearnNow))
 		Neurons.Set(0.0, int(ni), int(di), int(Spike))
 		return
 	}
-	effAct := Neurons.Value(int(ni), int(di), int(LearnPeakCyc))
+	effAct := Neurons.Value(int(ni), int(di), int(TimeCycle))
 	if effAct == 0 {
 		Neurons.Set(0.0, int(ni), int(di), int(Spike))
 		return
 	}
 	envCyc := int32(cycTot - effAct) // cycle within envelope
 	if envCyc > ly.IO.ActionEnv {
-		Neurons.Set(0.0, int(ni), int(di), int(LearnPeakCyc))
-		Neurons.Set(1.0, int(ni), int(di), int(LearnPeak)) // records that we got to end of cycle
-		Neurons.Set(1.0, int(ni), int(di), int(Spike))     // baseline spike
+		Neurons.Set(0.0, int(ni), int(di), int(TimeCycle))
+		Neurons.Set(1.0, int(ni), int(di), int(TimePeak)) // records that we got to end of cycle
+		Neurons.Set(1.0, int(ni), int(di), int(Spike))    // baseline spike
 		return
 	}
 	// use ring index logic for storing in CaBins
