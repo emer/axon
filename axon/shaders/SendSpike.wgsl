@@ -479,22 +479,20 @@ fn LayerParams_IOUpdate(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,
 	var cycTot = f32(ctx.CyclesTotal);
 	if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GModSyn))] > ly.IO.EfferentThr) {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // efferent activation cycle
-		u32(ni), u32(di), u32(MinusPeakCyc))] = cycTot;
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(MinusPeak))] = 0.0;
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], // records error signal
-		TensorStrides[72], u32(ni), u32(di), u32(PlusPeak))] = 0.0;
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(PlusPeakCyc))] = 0.0;
+		u32(ni), u32(di), u32(LearnPeakCyc))] = cycTot;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnPeak))] = 0.0;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = 0.0;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 0.0;return;
 	}
-	var effAct = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(MinusPeakCyc))];
+	var effAct = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnPeakCyc))];
 	if (effAct == 0) {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 0.0;return;
 	}
 	var envCyc = i32(cycTot - effAct); // cycle within envelope
 	if (envCyc > ly.IO.ActionEnv) {
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(MinusPeakCyc))] = 0.0;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnPeakCyc))] = 0.0;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], // records that we got to end of cycle
-		TensorStrides[72], u32(ni), u32(di), u32(MinusPeak))] = 1.0;
+		TensorStrides[72], u32(ni), u32(di), u32(LearnPeak))] = 1.0;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], // baseline spike
 		TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 1.0;return;
 	}
@@ -507,10 +505,8 @@ fn LayerParams_IOUpdate(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,
 	if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeSyn))]-oldInhib > ly.IO.ErrThr) {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // error spike
 		u32(ni), u32(di), u32(Spike))] = 1.0;
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // indicates that we are firing because error
-		u32(ni), u32(di), u32(PlusPeak))] = 1.0;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // record point of error
-		u32(ni), u32(di), u32(PlusPeakCyc))] = cycTot;
+		u32(ni), u32(di), u32(LearnNow))] = cycTot;
 	} else {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
 		u32(ni), u32(di), u32(Spike))] = 0.0;
@@ -722,7 +718,7 @@ const ViewTimesN: ViewTimes = 7;
 const DAModTypesN: DAModTypes = 4;
 const ValenceTypesN: ValenceTypes = 3;
 const NeuronFlagsN: NeuronFlags = 9;
-const NeuronVarsN: NeuronVars = 97;
+const NeuronVarsN: NeuronVars = 95;
 const NeuronAvgVarsN: NeuronAvgVars = 7;
 const NeuronIndexVarsN: NeuronIndexVars = 3;
 const PathTypesN: PathTypes = 15;
@@ -1037,12 +1033,8 @@ struct LearnTimingParams {
 	On: i32,
 	MinusThr: f32,
 	MinusCycles: i32,
-	PlusCycles: i32,
 	TimeDiffTau: f32,
-	PeakGapMax: i32,
 	TimeDiffDt: f32,
-	pad: f32,
-	pad1: f32,
 }
 struct TrgAvgActParams {
 	GiBaseInit: f32,
@@ -1256,72 +1248,70 @@ const  GaD: NeuronVars = 27;
 const  TimeDiff: NeuronVars = 28;
 const  TimeDiffPeak: NeuronVars = 29;
 const  TimeDiffPeakCyc: NeuronVars = 30;
-const  MinusPeak: NeuronVars = 31;
-const  MinusPeakCyc: NeuronVars = 32;
-const  PlusPeak: NeuronVars = 33;
-const  PlusPeakCyc: NeuronVars = 34;
-const  LearnNow: NeuronVars = 35;
-const  RLRate: NeuronVars = 36;
-const  ETrace: NeuronVars = 37;
-const  ETraceLearn: NeuronVars = 38;
-const  GnmdaSyn: NeuronVars = 39;
-const  Gnmda: NeuronVars = 40;
-const  GnmdaLrn: NeuronVars = 41;
-const  GnmdaMaint: NeuronVars = 42;
-const  NmdaCa: NeuronVars = 43;
-const  Gvgcc: NeuronVars = 44;
-const  VgccM: NeuronVars = 45;
-const  VgccH: NeuronVars = 46;
-const  VgccCa: NeuronVars = 47;
-const  VgccCaInt: NeuronVars = 48;
-const  Burst: NeuronVars = 49;
-const  BurstPrv: NeuronVars = 50;
-const  CtxtGe: NeuronVars = 51;
-const  CtxtGeRaw: NeuronVars = 52;
-const  CtxtGeOrig: NeuronVars = 53;
-const  GgabaB: NeuronVars = 54;
-const  GababM: NeuronVars = 55;
-const  GababX: NeuronVars = 56;
-const  Gak: NeuronVars = 57;
-const  SSGiDend: NeuronVars = 58;
-const  GknaMed: NeuronVars = 59;
-const  GknaSlow: NeuronVars = 60;
-const  Gkir: NeuronVars = 61;
-const  KirM: NeuronVars = 62;
-const  Gsk: NeuronVars = 63;
-const  SKCaIn: NeuronVars = 64;
-const  SKCaR: NeuronVars = 65;
-const  SKCaM: NeuronVars = 66;
-const  Gmahp: NeuronVars = 67;
-const  MahpN: NeuronVars = 68;
-const  Gsahp: NeuronVars = 69;
-const  SahpCa: NeuronVars = 70;
-const  SahpN: NeuronVars = 71;
-const  ActM: NeuronVars = 72;
-const  ActP: NeuronVars = 73;
-const  Beta1: NeuronVars = 74;
-const  Beta2: NeuronVars = 75;
-const  CaPMax: NeuronVars = 76;
-const  CaPMaxCa: NeuronVars = 77;
-const  GeNoise: NeuronVars = 78;
-const  GeNoiseP: NeuronVars = 79;
-const  GiNoise: NeuronVars = 80;
-const  GiNoiseP: NeuronVars = 81;
-const  GeExt: NeuronVars = 82;
-const  GeRaw: NeuronVars = 83;
-const  GeSyn: NeuronVars = 84;
-const  GiRaw: NeuronVars = 85;
-const  GiSyn: NeuronVars = 86;
-const  GeInt: NeuronVars = 87;
-const  GeIntNorm: NeuronVars = 88;
-const  GiInt: NeuronVars = 89;
-const  GModRaw: NeuronVars = 90;
-const  GModSyn: NeuronVars = 91;
-const  SMaintP: NeuronVars = 92;
-const  GMaintRaw: NeuronVars = 93;
-const  GMaintSyn: NeuronVars = 94;
-const  NeurFlags: NeuronVars = 95;
-const  CaBins: NeuronVars = 96;
+const  LearnPeak: NeuronVars = 31;
+const  LearnPeakCyc: NeuronVars = 32;
+const  LearnNow: NeuronVars = 33;
+const  RLRate: NeuronVars = 34;
+const  ETrace: NeuronVars = 35;
+const  ETraceLearn: NeuronVars = 36;
+const  GnmdaSyn: NeuronVars = 37;
+const  Gnmda: NeuronVars = 38;
+const  GnmdaLrn: NeuronVars = 39;
+const  GnmdaMaint: NeuronVars = 40;
+const  NmdaCa: NeuronVars = 41;
+const  Gvgcc: NeuronVars = 42;
+const  VgccM: NeuronVars = 43;
+const  VgccH: NeuronVars = 44;
+const  VgccCa: NeuronVars = 45;
+const  VgccCaInt: NeuronVars = 46;
+const  Burst: NeuronVars = 47;
+const  BurstPrv: NeuronVars = 48;
+const  CtxtGe: NeuronVars = 49;
+const  CtxtGeRaw: NeuronVars = 50;
+const  CtxtGeOrig: NeuronVars = 51;
+const  GgabaB: NeuronVars = 52;
+const  GababM: NeuronVars = 53;
+const  GababX: NeuronVars = 54;
+const  Gak: NeuronVars = 55;
+const  SSGiDend: NeuronVars = 56;
+const  GknaMed: NeuronVars = 57;
+const  GknaSlow: NeuronVars = 58;
+const  Gkir: NeuronVars = 59;
+const  KirM: NeuronVars = 60;
+const  Gsk: NeuronVars = 61;
+const  SKCaIn: NeuronVars = 62;
+const  SKCaR: NeuronVars = 63;
+const  SKCaM: NeuronVars = 64;
+const  Gmahp: NeuronVars = 65;
+const  MahpN: NeuronVars = 66;
+const  Gsahp: NeuronVars = 67;
+const  SahpCa: NeuronVars = 68;
+const  SahpN: NeuronVars = 69;
+const  ActM: NeuronVars = 70;
+const  ActP: NeuronVars = 71;
+const  Beta1: NeuronVars = 72;
+const  Beta2: NeuronVars = 73;
+const  CaPMax: NeuronVars = 74;
+const  CaPMaxCa: NeuronVars = 75;
+const  GeNoise: NeuronVars = 76;
+const  GeNoiseP: NeuronVars = 77;
+const  GiNoise: NeuronVars = 78;
+const  GiNoiseP: NeuronVars = 79;
+const  GeExt: NeuronVars = 80;
+const  GeRaw: NeuronVars = 81;
+const  GeSyn: NeuronVars = 82;
+const  GiRaw: NeuronVars = 83;
+const  GiSyn: NeuronVars = 84;
+const  GeInt: NeuronVars = 85;
+const  GeIntNorm: NeuronVars = 86;
+const  GiInt: NeuronVars = 87;
+const  GModRaw: NeuronVars = 88;
+const  GModSyn: NeuronVars = 89;
+const  SMaintP: NeuronVars = 90;
+const  GMaintRaw: NeuronVars = 91;
+const  GMaintSyn: NeuronVars = 92;
+const  NeurFlags: NeuronVars = 93;
+const  CaBins: NeuronVars = 94;
 alias NeuronAvgVars = i32; //enums:enum
 const  ActAvg: NeuronAvgVars = 0;
 const  AvgPct: NeuronAvgVars = 1;

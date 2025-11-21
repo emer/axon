@@ -39,7 +39,7 @@ func (ly *LayerParams) IOLearn(ctx *Context, lni, lpi, pi, ni, di uint32) {
 	// dli := uint32(ly.IO.DriveLayIndex)
 	// dly := GetLayers(dli)
 	// ioPlus := Neurons[dly.Indexes.NeurSt+lni, di, PlusPeak]
-	// ioMinus := Neurons[dly.Indexes.NeurSt+lni, di, MinusPeak]
+	// ioMinus := Neurons[dly.Indexes.NeurSt+lni, di, LearnPeak]
 	// if ioPlus > 0 || ioMinus > 0 { // learn
 	//
 	//		// todo: learning is based on this bin, record here as PlusCycle!
@@ -111,22 +111,21 @@ func (tp *IOParams) RingIndex(i int32) int32 {
 func (ly *LayerParams) IOUpdate(ctx *Context, lpi, pi, ni, di uint32) {
 	cycTot := float32(ctx.CyclesTotal)
 	if Neurons.Value(int(ni), int(di), int(GModSyn)) > ly.IO.EfferentThr {
-		Neurons.Set(cycTot, int(ni), int(di), int(MinusPeakCyc)) // efferent activation cycle
-		Neurons.Set(0.0, int(ni), int(di), int(MinusPeak))
-		Neurons.Set(0.0, int(ni), int(di), int(PlusPeak)) // records error signal
-		Neurons.Set(0.0, int(ni), int(di), int(PlusPeakCyc))
+		Neurons.Set(cycTot, int(ni), int(di), int(LearnPeakCyc)) // efferent activation cycle
+		Neurons.Set(0.0, int(ni), int(di), int(LearnPeak))
+		Neurons.Set(0.0, int(ni), int(di), int(LearnNow))
 		Neurons.Set(0.0, int(ni), int(di), int(Spike))
 		return
 	}
-	effAct := Neurons.Value(int(ni), int(di), int(MinusPeakCyc))
+	effAct := Neurons.Value(int(ni), int(di), int(LearnPeakCyc))
 	if effAct == 0 {
 		Neurons.Set(0.0, int(ni), int(di), int(Spike))
 		return
 	}
 	envCyc := int32(cycTot - effAct) // cycle within envelope
 	if envCyc > ly.IO.ActionEnv {
-		Neurons.Set(0.0, int(ni), int(di), int(MinusPeakCyc))
-		Neurons.Set(1.0, int(ni), int(di), int(MinusPeak)) // records that we got to end of cycle
+		Neurons.Set(0.0, int(ni), int(di), int(LearnPeakCyc))
+		Neurons.Set(1.0, int(ni), int(di), int(LearnPeak)) // records that we got to end of cycle
 		Neurons.Set(1.0, int(ni), int(di), int(Spike))     // baseline spike
 		return
 	}
@@ -143,9 +142,8 @@ func (ly *LayerParams) IOUpdate(ctx *Context, lpi, pi, ni, di uint32) {
 	oldInhib := Neurons.Value(int(ni), int(di), int(CaBins+NeuronVars(oldBin)))
 	// todo: need to use a time integral of GeSyn to smooth out
 	if Neurons.Value(int(ni), int(di), int(GeSyn))-oldInhib > ly.IO.ErrThr {
-		Neurons.Set(1.0, int(ni), int(di), int(Spike))          // error spike
-		Neurons.Set(1.0, int(ni), int(di), int(PlusPeak))       // indicates that we are firing because error
-		Neurons.Set(cycTot, int(ni), int(di), int(PlusPeakCyc)) // record point of error
+		Neurons.Set(1.0, int(ni), int(di), int(Spike))       // error spike
+		Neurons.Set(cycTot, int(ni), int(di), int(LearnNow)) // record point of error
 	} else {
 		Neurons.Set(0.0, int(ni), int(di), int(Spike))
 	}

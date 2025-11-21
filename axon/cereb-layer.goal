@@ -37,7 +37,7 @@ func (ly *LayerParams) IOLearn(ctx *Context, lni, lpi, pi, ni, di uint32) {
 	// dli := uint32(ly.IO.DriveLayIndex)
 	// dly := GetLayers(dli)
 	// ioPlus := Neurons[dly.Indexes.NeurSt+lni, di, PlusPeak]
-	// ioMinus := Neurons[dly.Indexes.NeurSt+lni, di, MinusPeak]
+	// ioMinus := Neurons[dly.Indexes.NeurSt+lni, di, LearnPeak]
 	// if ioPlus > 0 || ioMinus > 0 { // learn
 	// 	// todo: learning is based on this bin, record here as PlusCycle!
 	// 	mx := NetworkIxs[0].NCaBins
@@ -109,22 +109,21 @@ func (tp *IOParams) RingIndex(i int32) int32 {
 func (ly *LayerParams) IOUpdate(ctx *Context, lpi, pi, ni, di uint32) {
 	cycTot := float32(ctx.CyclesTotal)
 	if Neurons[ni, di, GModSyn] > ly.IO.EfferentThr {
-		Neurons[ni, di, MinusPeakCyc] = cycTot // efferent activation cycle
-		Neurons[ni, di, MinusPeak] = 0.0
-		Neurons[ni, di, PlusPeak] = 0.0 // records error signal
-		Neurons[ni, di, PlusPeakCyc] = 0.0
+		Neurons[ni, di, LearnPeakCyc] = cycTot // efferent activation cycle
+		Neurons[ni, di, LearnPeak] = 0.0
+		Neurons[ni, di, LearnNow] = 0.0
 		Neurons[ni, di, Spike] = 0.0
 		return
 	}
-	effAct := Neurons[ni, di, MinusPeakCyc]
+	effAct := Neurons[ni, di, LearnPeakCyc]
 	if effAct == 0 {
 		Neurons[ni, di, Spike] = 0.0
 		return
 	}
 	envCyc := int32(cycTot-effAct) // cycle within envelope
 	if envCyc > ly.IO.ActionEnv {
-		Neurons[ni, di, MinusPeakCyc] = 0.0
-		Neurons[ni, di, MinusPeak] = 1.0 // records that we got to end of cycle
+		Neurons[ni, di, LearnPeakCyc] = 0.0
+		Neurons[ni, di, LearnPeak] = 1.0 // records that we got to end of cycle
 		Neurons[ni, di, Spike] = 1.0 // baseline spike
 		return
 	}
@@ -142,8 +141,7 @@ func (ly *LayerParams) IOUpdate(ctx *Context, lpi, pi, ni, di uint32) {
 	// todo: need to use a time integral of GeSyn to smooth out
 	if Neurons[ni, di, GeSyn] - oldInhib > ly.IO.ErrThr {
 		Neurons[ni, di, Spike] = 1.0 // error spike
-		Neurons[ni, di, PlusPeak] = 1.0 // indicates that we are firing because error
-		Neurons[ni, di, PlusPeakCyc] = cycTot // record point of error
+		Neurons[ni, di, LearnNow] = cycTot // record point of error
 	} else {
 		Neurons[ni, di, Spike] = 0.0
 	}

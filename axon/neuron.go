@@ -182,8 +182,7 @@ const (
 
 	// LearnDiff is the actual difference signal that drives learning, which is
 	// computed from [CaDiff] for neocortical neurons, but specifically at the
-	// point of learning (LearnNow), based on [PlusPeakCyc].
-	// It is cleared at the start of a new learning window.
+	// point of learning ([LearnNow]).
 	LearnDiff
 
 	//////// Learning Timing
@@ -206,41 +205,27 @@ const (
 
 	// TimeDiff is the running time-average of |P - D| (absolute value),
 	// used for determining the timing of learning in terms of onsets of peaks.
-	// See [MinusPeak] and [PlusPeak]. GaP - GaD is used, as it is
+	// See [LearnPeak]. GaP - GaD is used, as it is
 	// smoother and more reliable than LearnCaP - D.
-	// Cleared at LearnNow so only visible prior (use Raster view).
 	TimeDiff
 
 	// TimeDiffPeak is the value of the current peak (local maximum) of [TimeDiff].
-	// Cleared at LearnNow so only visible prior (use Raster view).
 	TimeDiffPeak
 
 	// TimeDiffPeakCyc is the absolute cycle where [TimeDiffPeak] occurred.
-	// Cleared at LearnNow so only visible prior (use Raster view).
 	TimeDiffPeakCyc
 
-	// MinusPeak is the value of the first, minus-phase peak of [TimeDiffAvg],
+	// LearnPeak is the value of the first large peak of [TimeDiff],
 	// which occurs when new input drives the fast integral to diverge from slow.
-	// Cleared at LearnNow so only visible prior (use Raster view).
-	MinusPeak
+	// Learning happens a given number of ms after this peak.
+	LearnPeak
 
-	// MinusPeakCyc is the absolute cycle where [MinusPeak] occurred.
-	// Cleared at LearnNow so only visible prior (use Raster view).
-	MinusPeakCyc
-
-	// PlusPeak is the value of the second, plus-phase peak of [TimeDiffAvg],
-	// which occurs when an outcome causes fast integral to diverge from slow.
-	// Cleared at LearnNow so only visible prior (use Raster view).
-	PlusPeak
-
-	// PlusPeakCyc is the absolute cycle where [PlusPeak] occurred.
-	// Cleared at LearnNow so only visible prior (use Raster view).
-	PlusPeakCyc
+	// LearnPeakCyc is the absolute cycle where [LearnPeak] occurred.
+	LearnPeakCyc
 
 	// LearnNow is the absolute cycle (ms, CyclesTotal) when the receiving
-	// neuron learns. Cleared at start of each theta cycle (trial).
-	// For neocortex, either at end of theta cycle or based on timing
-	// computed from [MinusPeak] and [PlusPeak] per [LearnTimingParams].
+	// neuron learns. For neocortex, either at end of theta cycle or based
+	// on timing computed from [LearnPeak] per [LearnTimingParams].
 	LearnNow
 
 	// RLRate is recv-unit based learning rate multiplier, reflecting the sigmoid
@@ -648,10 +633,8 @@ var NeuronVarProps = map[string]string{
 
 	"TimeDiffPeak":    `cat:"Learn"`,
 	"TimeDiffPeakCyc": `cat:"Learn" auto-scale:"+"`,
-	"MinusPeak":       `cat:"Learn"`,
-	"MinusPeakCyc":    `cat:"Learn" auto-scale:"+"`,
-	"PlusPeak":        `cat:"Learn"`,
-	"PlusPeakCyc":     `cat:"Learn" auto-scale:"+"`,
+	"LearnPeak":       `cat:"Learn"`,
+	"LearnPeakCyc":    `cat:"Learn" auto-scale:"+"`,
 	"LearnNow":        `cat:"Learn" auto-scale:"+"`,
 
 	"RLRate":      `cat:"Learn" auto-scale:"+"`,

@@ -716,7 +716,7 @@ func StatLevelAll(statsDir *tensorfs.Node, srcMode, srcLevel enums.Enum, styleFu
 // and std deviation of the LearnNow signal in the given layers.
 // This is useful for tracking the continuous learning mechanism.
 func StatLearnNow(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel, runLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
-	statNames := []string{"LrnNowMean", "LrnNowStDev", "MinusCyc", "PlusCyc"}
+	statNames := []string{"LrnNowMean", "LrnNowStDev", "MinusCyc"}
 	statDocs := map[string]string{
 		"LrnNowMean":   "Mean LearnNow cycle, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
 		"LrnNowStdDev": "Standard deviation of LearnNow cycle.",
@@ -758,9 +758,7 @@ func StatLearnNow(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel,
 					for di := range ndata {
 						switch si {
 						case 2:
-							ly.UnitValuesSampleTensor(anow, "MinusPeakCyc", di)
-						case 3:
-							ly.UnitValuesSampleTensor(anow, "PlusPeakCyc", di)
+							ly.UnitValuesSampleTensor(anow, "LearnPeakCyc", di)
 						default:
 							ly.UnitValuesSampleTensor(anow, "LearnNow", di)
 						}

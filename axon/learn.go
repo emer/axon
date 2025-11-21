@@ -136,9 +136,9 @@ func (lc *LearnCaParams) ETrace(ctx *Context, ni, di uint32, cad float32) {
 }
 
 // LearnTimingParams parameterizes the timing of Ca-driven Kinase
-// algorithm learning, based on detecting the two peaks of differential
-// fast - slow activity associated with the minus and plus phases:
-// [MinusPeak] and [PlusPeak]. Learning occurs after the plus-phase peak.
+// algorithm learning, based on detecting the first major peaks of
+// differential fast - slow activity associated with the start of
+// the minus phases: [LearnPeak]. Learning occurs some number of ms later.
 // This allows the minus and plus phases to be of variable durations,
 // with the minus peak initiating the learning process and the plus peak
 // finalizing it, where the fast - slow values at that time drive
@@ -154,7 +154,7 @@ type LearnTimingParams struct {
 	// eligible for learning. If LearnNow is > 0, then it is reset when below
 	// this threshold, allowing further learning to occur.
 	// If this is 0, then it is ignored. Applies to non-timing based learning too.
-	LearnThr float32 `default:"0,0.1"`
+	LearnThr float32 `default:"0.1"`
 
 	// Refractory makes new learning depend on dropping below the learning
 	// threshold.
@@ -166,45 +166,30 @@ type LearnTimingParams struct {
 	// off, for comparison purposes.
 	On slbool.Bool
 
-	// MinusThr is the threshold on the peak value to count as a minus phase peak.
+	// StartThr is the threshold on the peak value to count as a minus phase peak.
 	// This is the primary phase resetting event that keeps things synchronized,
 	// and is typically much stronger than the plus peak.
-	MinusThr float32 `default:"0.2"`
+	StartThr float32 `default:"0.02"`
 
-	// MinusCycles is the minimum number of cycles (ms) after the first
-	// [MinusPeak] before the process of looking for the plus-phase peak starts.
-	// Should be less than total MinusCycles, and is not very critical in general.
-	MinusCycles int32 `default:"110"`
-
-	// PlusCycles is number of cycles (ms) after the second [PlusPeak] learning
-	// is triggered. If no second peak occurs within Minus + Plus cycles, then
-	// no plus phase is detected (i.e., no prediction error), and everything resets.
-	// Generally it is better to have plus = 60 with ISI = 10, and use 60 here.
-	PlusCycles int32 `default:"50,60"`
+	// MinCycles is the minimum number of cycles (ms) after the initial
+	// [LearnPeak] before the process of looking for the trough for the end
+	// of the learning window starts.
+	MinCycles int32 `default:"160"`
 
 	// Time constant for integrating [TimeDiff] as the absolute value of
 	// CaDiff integrated over time to smooth out significant local bumps.
 	TimeDiffTau float32 `default:"2"`
 
-	// PeakGapMax is the maximum number of cycles from the last peak
-	// that the peak can then increase again. Once there is a reasonable gap
-	// since the last peak, we don't keep tracking it.
-	PeakGapMax int32 `default:"5"`
-
 	// Dt is 1/Tau
 	TimeDiffDt float32 `display:"-"`
-
-	pad, pad1 float32
 }
 
 func (lt *LearnTimingParams) Defaults() {
 	lt.SynCaCycles = 160
 	lt.LearnThr = 0.1
-	lt.MinusThr = 0.1
-	lt.MinusCycles = 110
-	lt.PlusCycles = 50
+	lt.StartThr = 0.02
+	lt.MinCycles = 160
 	lt.TimeDiffTau = 2
-	lt.PeakGapMax = 5
 	lt.Update()
 }
 
@@ -222,13 +207,10 @@ func (lt *LearnTimingParams) ShouldDisplay(field string) bool {
 }
 
 func (lt *LearnTimingParams) TimingReset(ctx *Context, ni, di uint32) {
-	Neurons.Set(0.0, int(ni), int(di), int(TimeDiff))
 	Neurons.Set(0.0, int(ni), int(di), int(TimeDiffPeak))
 	Neurons.Set(0.0, int(ni), int(di), int(TimeDiffPeakCyc))
-	Neurons.Set(0.0, int(ni), int(di), int(MinusPeak))
-	Neurons.Set(0.0, int(ni), int(di), int(MinusPeakCyc))
-	Neurons.Set(0.0, int(ni), int(di), int(PlusPeak))
-	Neurons.Set(0.0, int(ni), int(di), int(PlusPeakCyc))
+	Neurons.Set(0.0, int(ni), int(di), int(LearnPeak))
+	Neurons.Set(0.0, int(ni), int(di), int(LearnPeakCyc))
 }
 
 func (lt *LearnTimingParams) LearnNow(ctx *Context, ni, di uint32) {
@@ -256,8 +238,7 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
 	timeDiff += lt.TimeDiffDt * (math32.Abs(gaDiff) - timeDiff)
 	Neurons.Set(timeDiff, int(ni), int(di), int(TimeDiff))
 
-	mcyc := int32(Neurons.Value(int(ni), int(di), int(MinusPeakCyc)))
-	pcyc := int32(Neurons.Value(int(ni), int(di), int(PlusPeakCyc)))
+	mcyc := int32(Neurons.Value(int(ni), int(di), int(LearnPeakCyc)))
 	belowThr := Neurons.Value(int(ni), int(di), int(CaD)) < lt.LearnThr
 	lrnNow := int32(Neurons.Value(int(ni), int(di), int(LearnNow)))
 
@@ -265,14 +246,10 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
 	peakCyc := int32(0)
 	newPeak := false
 
-	getPeak := !belowThr
-	if pcyc > 0 {
-		getPeak = true
-	}
-	if getPeak {
+	if !belowThr {
 		peak = Neurons.Value(int(ni), int(di), int(TimeDiffPeak))
 		peakCyc = int32(Neurons.Value(int(ni), int(di), int(TimeDiffPeakCyc)))
-		if timeDiff > peak { // && (peakCyc == 0 || ctx.CyclesTotal-peakCyc < lt.PeakGapMax)
+		if timeDiff > peak {
 			newPeak = true
 			peak = timeDiff
 			peakCyc = ctx.CyclesTotal
@@ -281,19 +258,17 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
 		}
 	}
 
-	if lrnNow == 0 && pcyc > 0 {
-		pcy := ctx.CyclesTotal - pcyc
-		if pcy == lt.PlusCycles {
+	if lrnNow == 0 && mcyc > 0 {
+		mcy := ctx.CyclesTotal - mcyc
+		if mcy == lt.MinCycles { // learn
 			lt.LearnNow(ctx, ni, di)
 			return true
-		}
-		if pcy < lt.PlusCycles {
-			if newPeak {
-				Neurons.Set(peak, int(ni), int(di), int(PlusPeak))
-				Neurons.Set(float32(peakCyc), int(ni), int(di), int(PlusPeakCyc))
+		} else {
+			if newPeak { // still going up
+				Neurons.Set(peak, int(ni), int(di), int(LearnPeak))
+				Neurons.Set(float32(peakCyc), int(ni), int(di), int(LearnPeakCyc))
 			}
 		}
-		return false
 	}
 
 	if belowThr {
@@ -301,33 +276,17 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
 			Neurons.Set(0.0, int(ni), int(di), int(LearnNow))
 			Neurons.Set(0.0, int(ni), int(di), int(LearnDiff))
 			lt.TimingReset(ctx, ni, di)
-		} else if mcyc > 0 && ctx.CyclesTotal-mcyc > lt.MinusCycles {
-			lt.TimingReset(ctx, ni, di)
 		}
 		return false
 	}
 	if lt.Refractory.IsTrue() && lrnNow > 0 {
 		return false
 	}
-
-	if mcyc > 0 {
-		mcy := ctx.CyclesTotal - mcyc
-		if mcy == lt.MinusCycles { // switch to plus phase
-			Neurons.Set(timeDiff, int(ni), int(di), int(PlusPeak))
-			Neurons.Set(float32(ctx.CyclesTotal), int(ni), int(di), int(PlusPeakCyc))
-			Neurons.Set(timeDiff, int(ni), int(di), int(TimeDiffPeak)) // now detect relative to our current
-		} else {
-			if newPeak { // still going up
-				Neurons.Set(peak, int(ni), int(di), int(MinusPeak))
-				Neurons.Set(float32(peakCyc), int(ni), int(di), int(MinusPeakCyc))
-			}
-		}
-	} else {
-		if newPeak && peak > lt.MinusThr { // get started
-			Neurons.Set(peak, int(ni), int(di), int(MinusPeak))
-			Neurons.Set(float32(peakCyc), int(ni), int(di), int(MinusPeakCyc))
-		}
+	if newPeak && peak > lt.StartThr { // start peak
+		Neurons.Set(peak, int(ni), int(di), int(LearnPeak))
+		Neurons.Set(float32(peakCyc), int(ni), int(di), int(LearnPeakCyc))
 	}
+
 	return false
 }
 
@@ -532,9 +491,8 @@ type LearnNeuronParams struct {
 	CaLearn LearnCaParams `display:"inline"`
 
 	// LearnTimingParams parameterizes the timing of Ca-driven Kinase
-	// algorithm learning, based on detecting the two peaks of differential
-	// fast - slow activity associated with the minus and plus phases:
-	// [MinusPeak] and [PlusPeak].
+	// algorithm learning, based on detecting the first major peak of
+	// differential fast - slow activity associated with the minus phase.
 	Timing LearnTimingParams `display:"inline"`
 
 	// CaSpike parameterizes the neuron-level spike-driven calcium signals:
@@ -615,10 +573,8 @@ func (ln *LearnNeuronParams) InitNeuronCa(ctx *Context, ni, di uint32) {
 	Neurons.Set(0.0, int(ni), int(di), int(TimeDiff))
 	Neurons.Set(0.0, int(ni), int(di), int(TimeDiffPeak))
 	Neurons.Set(0.0, int(ni), int(di), int(TimeDiffPeakCyc))
-	Neurons.Set(0.0, int(ni), int(di), int(MinusPeak))
-	Neurons.Set(0.0, int(ni), int(di), int(MinusPeakCyc))
-	Neurons.Set(0.0, int(ni), int(di), int(PlusPeak))
-	Neurons.Set(0.0, int(ni), int(di), int(PlusPeakCyc))
+	Neurons.Set(0.0, int(ni), int(di), int(LearnPeak))
+	Neurons.Set(0.0, int(ni), int(di), int(LearnPeakCyc))
 
 	Neurons.Set(0, int(ni), int(di), int(LearnDiff))
 	Neurons.Set(0, int(ni), int(di), int(LearnNow))
