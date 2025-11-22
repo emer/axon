@@ -60,7 +60,7 @@ fn LayerParams_PlusPhaseEndNeuron(ly: LayerParams, ctx: Context, ni: u32,di: u32
 	var modlr = NeuroModParams_LRMod(ly.Learn.NeuroMod, da, ach);
 	var dlr = f32(1);
 	var hasRew = (GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvHasRew), u32(di))]) > 0;
-	var stdRLRate = false;
+	var setRLRate = true;
 	switch (ly.Type) {
 	case DSPatchLayer: {
 		if (hasRew) { // reward time
@@ -91,15 +91,13 @@ fn LayerParams_PlusPhaseEndNeuron(ly: LayerParams, ctx: Context, ni: u32,di: u32
 		}
 	}
 	default: {
+		dlr = RLRateParams_RLRateDiff(ly.Learn.RLRate, nrnCaP, nrnCaD);
 		if (!LayerParams_IsTarget(ly)) {
-			stdRLRate = ly.Learn.Timing.On == 1; // computed at time of learning
-			dlr = RLRateParams_RLRateDiff(ly.Learn.RLRate, nrnCaP, nrnCaD);
-		} else {
-			dlr = RLRateParams_RLRateDiff(ly.Learn.RLRate, nrnCaP, nrnCaD);
+			setRLRate = ly.Learn.Timing.On == 0; // else computed at time of learning
 		}
 	}
 	}
-	if (!stdRLRate) {
+	if (setRLRate) {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(RLRate))] = mlr * dlr * modlr;
 	}
 	var tau: f32;

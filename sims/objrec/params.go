@@ -32,8 +32,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.CaLearn.Dt.MTau = 2                // 2 > 4 even with more ncycles
 				ly.Learn.CaSpike.Dt.MTau = 5                // 5 > 10 even with more ncycles
 
-				ly.Learn.Timing.On.SetBool(true)
-				ly.Learn.Timing.Refractory.SetBool(false) // very bad for time-based
+				ly.Learn.Timing.On.SetBool(false)
+				ly.Learn.Timing.Refractory.SetBool(false) // ?
 				ly.Learn.Timing.LearnThr = 0.1            // 0.1 best for trial-based
 				ly.Learn.Timing.SynCaCycles = 160         // 160 best for trial-based
 				ly.Learn.Timing.Cycles = 170              // 170 > 160

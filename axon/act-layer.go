@@ -1064,7 +1064,7 @@ func (ly *LayerParams) PlusPhaseEndNeuron(ctx *Context, ni, di uint32) {
 	modlr := ly.Learn.NeuroMod.LRMod(da, ach)
 	dlr := float32(1)
 	hasRew := (GlobalScalars.Value(int(GvHasRew), int(di))) > 0
-	stdRLRate := false
+	setRLRate := true
 
 	switch ly.Type {
 	case DSPatchLayer:
@@ -1106,14 +1106,12 @@ func (ly *LayerParams) PlusPhaseEndNeuron(ctx *Context, ni, di uint32) {
 			dlr = 0 // first pool is novelty / curiosity -- no learn
 		}
 	default:
+		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaP, nrnCaD)
 		if !ly.IsTarget() {
-			stdRLRate = ly.Learn.Timing.On.IsTrue() // computed at time of learning
-			dlr = ly.Learn.RLRate.RLRateDiff(nrnCaP, nrnCaD)
-		} else {
-			dlr = ly.Learn.RLRate.RLRateDiff(nrnCaP, nrnCaD)
+			setRLRate = ly.Learn.Timing.On.IsFalse() // else computed at time of learning
 		}
 	}
-	if !stdRLRate {
+	if setRLRate {
 		Neurons.Set(mlr*dlr*modlr, int(ni), int(di), int(RLRate))
 	}
 	var tau float32

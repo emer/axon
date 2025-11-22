@@ -46,8 +46,12 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.CaLearn.ETraceTau = 4               // 4 == 5
 				ly.Learn.CaLearn.ETraceScale = 0.1           // 0.1 > 0.05, 0.2 etc
 
-				ly.Learn.Timing.On.SetBool(true)
-				// ly.Learn.Timing.Cycles = 160
+				ly.Learn.Timing.On.SetBool(false)
+				// ly.Learn.Timing.Refractory.SetBool(true)
+				ly.Learn.Timing.LearnThr = 0.05
+				ly.Learn.Timing.SynCaCycles = 160
+				// ly.Learn.Timing.Cycles = 170
+				// ly.Learn.Timing.TimeDiffTau = 4
 
 				// ly.Learn.CaSpike.SpikeCaSyn = 8 // vs 12 in lvis -- 12 does NOT work here
 			}},

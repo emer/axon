@@ -195,29 +195,47 @@ func (lt *LearnTimingParams) ShouldDisplay(field string) bool {
 	}
 }
 
+// TimingReset resets [TimePeak] and [TimeCycle] to 0.
 func (lt *LearnTimingParams) TimingReset(ctx *Context, ni, di uint32) {
 	Neurons.Set(0.0, int(ni), int(di), int(TimePeak))
 	Neurons.Set(0.0, int(ni), int(di), int(TimeCycle))
 }
 
+// LearnNow sets [LearnNow] to CyclesTotal and sets the current
+// [LearnDiff] = [CaDiff].
 func (lt *LearnTimingParams) LearnNow(ctx *Context, ni, di uint32) {
 	Neurons.Set(float32(ctx.CyclesTotal), int(ni), int(di), int(LearnNow))
 	Neurons.Set(Neurons.Value(int(ni), int(di), int(CaDiff)), int(ni), int(di), int(LearnDiff))
+}
+
+// LearnNowOff sets [LearnNow] and [LearnDiff] to 0.
+func (lt *LearnTimingParams) LearnNowOff(ctx *Context, ni, di uint32) {
+	Neurons.Set(0.0, int(ni), int(di), int(LearnNow))
+	Neurons.Set(0.0, int(ni), int(di), int(LearnDiff))
 }
 
 // | ISI | Minus            | Plus    |
 // |-----|------------------|---------|
 //       ^ learn
 
+// LearnTrialEnd sets LearnNow at end of the ThetaCycles trial,
+// for timing=off case.
+func (lt *LearnTimingParams) LearnTrialEnd(ctx *Context, ni, di uint32) bool {
+	if ctx.Cycle == ctx.ThetaCycles-1 {
+		if Neurons.Value(int(ni), int(di), int(CaD)) > lt.LearnThr {
+			lt.LearnNow(ctx, ni, di)
+			return true
+		}
+		lt.LearnNowOff(ctx, ni, di)
+	}
+	return false
+}
+
 // LearnTiming determines whether it is time to learn, for given neuron.
 // returns true if just triggered learning.
 func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
 	if lt.On.IsFalse() {
-		if ctx.Cycle == ctx.ThetaCycles-1 {
-			lt.LearnNow(ctx, ni, di)
-			return true
-		}
-		return false
+		return lt.LearnTrialEnd(ctx, ni, di)
 	}
 
 	timeDiff := Neurons.Value(int(ni), int(di), int(TimeDiff))
@@ -239,8 +257,8 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
 	if tcyc >= lt.Cycles {
 		lt.TimingReset(ctx, ni, di)
 		if lt.Refractory.IsTrue() && lrnNow > 0 { // no learning once learned
-			if Neurons.Value(int(ni), int(di), int(CaD)) < lt.LearnThr {
-				Neurons.Set(0.0, int(ni), int(di), int(LearnNow))
+			if Neurons.Value(int(ni), int(di), int(CaD)) <= lt.LearnThr {
+				lt.LearnNowOff(ctx, ni, di)
 			}
 			return false
 		}

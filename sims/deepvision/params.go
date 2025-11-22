@@ -75,6 +75,13 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.RLRate.DiffThr = 0.02 // 0.02 def - todo
 				ly.Learn.RLRate.SpikeThr = 0.1 // 0.1 def
 				ly.Learn.RLRate.Min = 0.001
+
+				ly.Learn.Timing.On.SetBool(false)
+				// ly.Learn.Timing.Refractory.SetBool(true)
+				// ly.Learn.Timing.LearnThr = 0.1
+				// ly.Learn.Timing.SynCaCycles = 160
+				// ly.Learn.Timing.Cycles = 170
+				// ly.Learn.Timing.TimeDiffTau = 4
 			}},
 		{Sel: ".InputLayer", Doc: "all V1 input layers",
 			Set: func(ly *axon.LayerParams) {
@@ -349,7 +356,7 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".V1SCIT", Doc: "v1 shortcut to IT: TEO, TE",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.3          // 0.5 = weaker allows better invariant reps to form
+				pt.PathScale.Rel = 0.5          // 0.5 = weaker allows better invariant reps to form; .3 too low?
 				pt.SWts.Adapt.On.SetBool(false) // seems better
 			}},
 
