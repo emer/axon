@@ -1272,6 +1272,9 @@ func RunDebugLearn(t *testing.T, testNet *Network, printValues bool, gpu bool, i
 						fmt.Printf("\n")
 					}
 					for svi, snm := range SynapseVarNames {
+						if snm == "Tr" {
+							break
+						}
 						val := ly.RecvPaths[0].SynValDi(snm, ni, ni, di)
 						vkey := key + fmt.Sprintf("\t%s", snm)
 						valMap[vkey] = val

@@ -140,6 +140,7 @@ func (pt *PathParams) DWtSynSoftBound(ctx *Context, syni, di uint32, dwt float32
 func (pt *PathParams) DWtSynCortex(ctx *Context, rlay *LayerParams, syni, si, ri, lpi, pi, di uint32) {
 	learnNow := int32(Neurons[ri, di, LearnNow])
 	if learnNow - (ctx.CyclesTotal - ctx.ThetaCycles) < 0 { // not in this time window
+		SynapseTraces[syni, di, DTr] = 0.0
 		SynapseTraces[syni, di, DiDWt] = 0.0
 		return
 	}
