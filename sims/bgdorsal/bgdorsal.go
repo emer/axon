@@ -200,9 +200,10 @@ func (ss *Sim) ConfigRubicon(trn *MotorSeqEnv) {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ss.Config.Run.NData)
-	net.Context().SetThetaCycles(int32(ss.Config.Run.Cycles)).
+	net.Context().SetISICycles(int32(ss.Config.Run.ISICycles)).
+		SetMinusCycles(int32(ss.Config.Run.MinusCycles)).
 		SetPlusCycles(int32(ss.Config.Run.PlusCycles)).
-		SetSlowInterval(int32(ss.Config.Run.SlowInterval))
+		SetSlowInterval(int32(ss.Config.Run.SlowInterval)).Update()
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
 	ev := ss.Envs.ByModeDi(Train, 0).(*MotorSeqEnv)
@@ -405,7 +406,7 @@ func (ss *Sim) ConfigLoops() {
 
 	ev := ss.Envs.ByModeDi(Train, 0).(*MotorSeqEnv)
 	seqs := int(math32.IntMultipleGE(float32(ss.Config.Run.Sequences), float32(ss.Config.Run.NData)))
-	cycles := ss.Config.Run.Cycles
+	cycles := ss.Config.Run.Cycles()
 	seqLen := ev.SeqLen + 1 // 1 reward at end
 
 	ls.AddStack(Train, Trial).
@@ -1072,8 +1073,8 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	ss.GUI.MakeBody(b, ss, ss.Root, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
 	ss.GUI.StopLevel = Trial
 	nv := ss.GUI.AddNetView("Network")
-	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles
-	nv.Options.Raster.Max = ss.Config.Run.Cycles
+	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles()
+	nv.Options.Raster.Max = ss.Config.Run.Cycles()
 	nv.Options.LayerNameSize = 0.03
 	nv.SetNet(ss.Net)
 	ss.TrainUpdate.Config(nv, axon.Theta, ss.StatCounters)

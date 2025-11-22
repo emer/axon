@@ -1,9 +1,9 @@
-GUI = false
+GUI = true
 Debug = true
 
 [Env]
-    Config = "2.multi_cs.toml"
+	Config = "01_us_magnitude.toml"
 
 [Run]
-    GPU = false
-    NData = 1
+    GPU = true
+    NData = 8

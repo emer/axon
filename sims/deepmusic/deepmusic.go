@@ -200,8 +200,9 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ss.Config.Run.NData)
-	net.Context().SetThetaCycles(int32(ss.Config.Run.Cycles)).
-		SetPlusCycles(int32(ss.Config.Run.PlusCycles))
+	net.Context().SetISICycles(int32(ss.Config.Run.ISICycles)).
+		SetMinusCycles(int32(ss.Config.Run.MinusCycles)).
+		SetPlusCycles(int32(ss.Config.Run.PlusCycles)).Update()
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
 	ev := ss.Envs.ByMode(etime.Train).(*MusicEnv)
@@ -311,7 +312,7 @@ func (ss *Sim) ConfigLoops() {
 	ls := looper.NewStacks()
 
 	trials := int(math32.IntMultipleGE(float32(ss.Config.Run.Trials), float32(ss.Config.Run.NData)))
-	cycles := ss.Config.Run.Cycles
+	cycles := ss.Config.Run.Cycles()
 
 	ls.AddStack(Train, Trial).
 		AddLevel(Expt, 1).
@@ -715,8 +716,8 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	ss.GUI.CycleUpdateInterval = 10
 
 	nv := ss.GUI.AddNetView("Network")
-	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles
-	nv.Options.Raster.Max = ss.Config.Run.Cycles
+	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles()
+	nv.Options.Raster.Max = ss.Config.Run.Cycles()
 	nv.SetNet(ss.Net)
 	ss.TrainUpdate.Config(nv, axon.Theta, ss.StatCounters)
 	ss.TestUpdate.Config(nv, axon.Theta, ss.StatCounters)

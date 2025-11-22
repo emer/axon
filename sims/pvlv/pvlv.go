@@ -176,7 +176,9 @@ func (ss *Sim) ConfigRubicon() {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(1)
-	net.Context().ThetaCycles = int32(ss.Config.Run.Cycles)
+	net.Context().SetISICycles(int32(ss.Config.Run.ISICycles)).
+		SetMinusCycles(int32(ss.Config.Run.MinusCycles)).
+		SetPlusCycles(int32(ss.Config.Run.PlusCycles)).Update()
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
 	ev := ss.Envs.ByMode(Train).(*cond.CondEnv)
@@ -295,7 +297,7 @@ func (ss *Sim) NetViewUpdater(mode enums.Enum) *axon.NetViewUpdate {
 func (ss *Sim) ConfigLoops() {
 	ls := looper.NewStacks()
 
-	cycles := ss.Config.Run.Cycles
+	cycles := ss.Config.Run.Cycles()
 
 	// Note: actual max counters set by env
 	ls.AddStack(Train, Trial).
@@ -661,8 +663,8 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	ss.GUI.MakeBody(b, ss, ss.Root, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
 	ss.GUI.StopLevel = Trial
 	nv := ss.GUI.AddNetView("Network")
-	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles
-	nv.Options.Raster.Max = ss.Config.Run.Cycles
+	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles()
+	nv.Options.Raster.Max = ss.Config.Run.Cycles()
 	nv.Options.LayerNameSize = 0.02
 	nv.SetNet(ss.Net)
 	ss.TrainUpdate.Config(nv, axon.Theta, ss.StatCounters)

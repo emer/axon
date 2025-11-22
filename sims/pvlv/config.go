@@ -92,11 +92,20 @@ type RunConfig struct {
 	// Runs is the total number of runs to do when running Train, starting from Run.
 	Runs int `default:"25" min:"1"`
 
-	// Cycles is the total number of cycles per trial: at least 200.
-	Cycles int `default:"200"`
+	// ISICycles is the number of no-input inter-stimulus interval
+	// cycles at the start of the trial.
+	ISICycles int `default:"0"`
 
-	// PlusCycles is the total number of plus-phase cycles per trial. For Cycles=300, use 100.
+	// MinusCycles is the number of cycles in the minus phase per trial.
+	MinusCycles int `default:"150"`
+
+	// PlusCycles is the number of cycles in the plus phase per trial.
 	PlusCycles int `default:"50"`
+}
+
+// Cycles returns the total number of cycles per trial: ISI + Minus + Plus.
+func (rc *RunConfig) Cycles() int {
+	return rc.ISICycles + rc.MinusCycles + rc.PlusCycles
 }
 
 // LogConfig has config parameters related to logging data.

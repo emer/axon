@@ -122,15 +122,24 @@ type RunConfig struct {
 	// Should be an even multiple of NData.
 	Sequences int `default:"128"`
 
-	// Cycles is the total number of cycles per trial: at least 200.
-	Cycles int `default:"300"`
+	// ISICycles is the number of no-input inter-stimulus interval
+	// cycles at the start of the trial.
+	ISICycles int `default:"0"`
 
-	// PlusCycles is the total number of plus-phase cycles per trial. For Cycles=300, use 100.
+	// MinusCycles is the number of cycles in the minus phase per trial.
+	MinusCycles int `default:"250"`
+
+	// PlusCycles is the number of cycles in the plus phase per trial.
 	PlusCycles int `default:"50"`
 
 	// PCAInterval is how often (in epochs) to compute PCA on hidden
 	// representations to measure variance.
 	PCAInterval int `default:"10"`
+}
+
+// Cycles returns the total number of cycles per trial: ISI + Minus + Plus.
+func (rc *RunConfig) Cycles() int {
+	return rc.ISICycles + rc.MinusCycles + rc.PlusCycles
 }
 
 // LogConfig has config parameters related to logging data.

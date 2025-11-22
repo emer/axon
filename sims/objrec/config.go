@@ -111,13 +111,13 @@ type RunConfig struct {
 
 	// ISICycles is the number of no-input inter-stimulus interval
 	// cycles at the start of the trial.
-	ISICycles int `default:"0"`
+	ISICycles int `default:"10"`
 
 	// MinusCycles is the number of cycles in the minus phase per trial.
-	MinusCycles int `default:"150"`
+	MinusCycles int `default:"160"`
 
 	// PlusCycles is the number of cycles in the plus phase per trial.
-	PlusCycles int `default:"50"`
+	PlusCycles int `default:"60"`
 
 	// NZero is how many perfect, zero-error epochs before stopping a Run.
 	NZero int `default:"2"`

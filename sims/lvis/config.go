@@ -118,11 +118,15 @@ type RunConfig struct {
 	// Should be an even multiple of NData.
 	Trials int `default:"512"`
 
-	// Cycles is the total number of cycles per trial: at least 200.
-	Cycles int `default:"200"`
+	// ISICycles is the number of no-input inter-stimulus interval
+	// cycles at the start of the trial.
+	ISICycles int `default:"10"`
 
-	// PlusCycles is the total number of plus-phase cycles per trial. For Cycles=300, use 100.
-	PlusCycles int `default:"50"`
+	// MinusCycles is the number of cycles in the minus phase per trial.
+	MinusCycles int `default:"160"`
+
+	// PlusCycles is the number of cycles in the plus phase per trial.
+	PlusCycles int `default:"60"`
 
 	// NZero is how many perfect, zero-error epochs before stopping a Run.
 	NZero int `default:"2"`
@@ -143,6 +147,11 @@ type RunConfig struct {
 
 	// Epoch counter to set when loading start weights.
 	StartEpoch int
+}
+
+// Cycles returns the total number of cycles per trial: ISI + Minus + Plus.
+func (rc *RunConfig) Cycles() int {
+	return rc.ISICycles + rc.MinusCycles + rc.PlusCycles
 }
 
 // LogConfig has config parameters related to logging data.
