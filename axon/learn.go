@@ -222,6 +222,7 @@ func (lt *LearnTimingParams) LearnNowOff(ctx *Context, ni, di uint32) {
 // for timing=off case.
 func (lt *LearnTimingParams) LearnTrialEnd(ctx *Context, ni, di uint32) bool {
 	if ctx.Cycle == ctx.ThetaCycles-1 {
+		// todo: this is breaking the TestNDataLearn test, for DTr, Tr values :(
 		if Neurons.Value(int(ni), int(di), int(CaD)) > lt.LearnThr {
 			lt.LearnNow(ctx, ni, di)
 			return true
