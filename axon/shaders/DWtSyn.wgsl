@@ -1016,7 +1016,7 @@ fn PathParams_DWtSynCortex(pt: PathParams, ctx: Context, rlay: LayerParams, syni
 	SynapseTracesSet(tr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 	var dwt = f32(0);
 	if (syCa > pt.Learn.DWt.LearnThr) { // todo: elminate?
-		dwt = tr * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(RLRate))] * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnDiff))] * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(ETraceLearn))];
+		dwt = tr * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(RLRate))] * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnDiff))] * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(ETrLearn))];
 	}
 	PathParams_DWtSynSoftBound(pt, ctx, syni, di, dwt);
 }
@@ -1037,7 +1037,7 @@ fn PathParams_DWtSynCTCtxt(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u
 	var tr = DWtParams_SynTrace(pt.Learn.DWt, SynapseTracesGet(Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr))), syn);
 	SynapseTracesSet(tr, Index3D(TensorStrides[180], TensorStrides[181],
 	TensorStrides[182], u32(syni), u32(di), u32(Tr)));
-	var dwt = tr * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnCaP))] - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnCaD))]) * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(ETraceLearn))];
+	var dwt = tr * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnCaP))] - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnCaD))]) * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(ETrLearn))];
 	PathParams_DWtSynSoftBound(pt, ctx, syni, di, dwt);
 }
 fn PathParams_DWtSynHebb(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
@@ -1468,7 +1468,7 @@ const  TimeCycle: NeuronVars = 30;
 const  LearnNow: NeuronVars = 31;
 const  RLRate: NeuronVars = 32;
 const  ETrace: NeuronVars = 33;
-const  ETraceLearn: NeuronVars = 34;
+const  ETrLearn: NeuronVars = 34;
 const  GnmdaSyn: NeuronVars = 35;
 const  Gnmda: NeuronVars = 36;
 const  GnmdaLrn: NeuronVars = 37;

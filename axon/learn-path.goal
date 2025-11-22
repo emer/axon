@@ -146,14 +146,14 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, rlay *LayerParams, syni, si, ri
 	syCa := pt.SynCaTotal(ctx, si, ri, di, learnNow, rlay.Learn.Timing.SynCaCycles)
 
 	// integrate synaptic trace over time: this is actually beneficial in certain cases,
-	// in addition to the ETraceLearn factor.
+	// in addition to the ETrLearn factor.
 	SynapseTraces[syni, di, DTr] = syCa
 	tr := pt.Learn.DWt.SynTrace(SynapseTraces[syni, di, Tr], syCa)
 	SynapseTraces[syni, di, Tr] = tr
 	
 	dwt := float32(0)
 	if syCa > pt.Learn.DWt.LearnThr { // todo: elminate?
-		dwt = tr * Neurons[ri, di, RLRate] * Neurons[ri, di, LearnDiff] * Neurons[ri, di, ETraceLearn] 
+		dwt = tr * Neurons[ri, di, RLRate] * Neurons[ri, di, LearnDiff] * Neurons[ri, di, ETrLearn] 
 	}
 	pt.DWtSynSoftBound(ctx, syni, di, dwt)
 }
@@ -187,7 +187,7 @@ func (pt *PathParams) DWtSynCTCtxt(ctx *Context, syni, si, ri, lpi, pi, di uint3
 	SynapseTraces[syni, di, Tr] = tr
 
 	// note: not including RLRate here!
-	dwt := tr * (Neurons[ri, di, LearnCaP] - Neurons[ri, di, LearnCaD]) * Neurons[ri, di, ETraceLearn] 
+	dwt := tr * (Neurons[ri, di, LearnCaP] - Neurons[ri, di, LearnCaD]) * Neurons[ri, di, ETrLearn] 
 	pt.DWtSynSoftBound(ctx, syni, di, dwt)
 }
 
@@ -214,7 +214,7 @@ func (pt *PathParams) DWtSynHip(ctx *Context, syni, si, ri, lpi, pi, di uint32, 
 // 
 	// syn := syCaD               // synaptic activity co-product factor.
 	// // integrate synaptic trace over time: this is actually beneficial in certain cases,
-	// // in addition to the ETraceLearn factor.
+	// // in addition to the ETrLearn factor.
 	// SynapseTraces[syni, di, DTr] = syn
 	// tr := pt.Learn.DWt.SynTrace(SynapseTraces[syni, di, Tr], syn)
 	// SynapseTraces[syni, di, Tr] = tr
@@ -226,7 +226,7 @@ func (pt *PathParams) DWtSynHip(ctx *Context, syni, si, ri, lpi, pi, di uint32, 
 	// if isTarget {
 	// 	err = syCaP - syCaD // for target layers, syn Ca drives error signal directly
 	// } else {
-	// 	err = tr * (rLearnCaP - rLearnCaD) * Neurons[ri, di, ETraceLearn] 
+	// 	err = tr * (rLearnCaP - rLearnCaD) * Neurons[ri, di, ETrLearn] 
 	// }
 	// 
 	// // softbound immediately -- enters into zero sum.

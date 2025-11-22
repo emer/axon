@@ -230,8 +230,9 @@ const (
 	// ETrace is the eligibility trace for this neuron.
 	ETrace
 
-	// ETrace is the learning factor for the eligibility trace for this neuron.
-	ETraceLearn
+	// ETrLearn is the learning factor for the eligibility trace for this neuron.
+	// 1 + ETraceScale * [ETrace]
+	ETrLearn
 
 	//////// NMDA channels
 
@@ -631,9 +632,9 @@ var NeuronVarProps = map[string]string{
 	"LearnPeakCyc": `cat:"Learn" auto-scale:"+"`,
 	"LearnNow":     `cat:"Learn" auto-scale:"+"`,
 
-	"RLRate":      `cat:"Learn" auto-scale:"+"`,
-	"ETrace":      `cat:"Learn"`,
-	"ETraceLearn": `cat:"Learn" auto-scale:"+"`,
+	"RLRate":   `cat:"Learn" auto-scale:"+"`,
+	"ETrace":   `cat:"Learn"`,
+	"ETrLearn": `cat:"Learn" auto-scale:"+"`,
 
 	//////// NMDA channels
 

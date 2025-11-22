@@ -49,10 +49,12 @@ type LearnCaParams struct {
 
 	// ETraceTau is the time constant for integrating an eligibility trace factor,
 	// which computes an exponential integrator of local neuron-wise error gradients.
-	ETraceTau float32
+	ETraceTau float32 `default:"4"`
 
 	// ETraceScale multiplies the contribution of the ETrace to learning, determining
-	// the strength of its effect.
+	// the strength of its effect. This is definitely beneficial in cases that can
+	// benefit from longer traces, such as the deep music sim.
+	// Where beneficial, 0.1 or so is a useful value.
 	ETraceScale float32
 
 	pad, pad1 float32
@@ -132,7 +134,7 @@ func (lc *LearnCaParams) ETrace(ctx *Context, ni, di uint32, cad float32) {
 		etLrn = 0
 	}
 	Neurons.Set(et, int(ni), int(di), int(ETrace))
-	Neurons.Set(etLrn, int(ni), int(di), int(ETraceLearn))
+	Neurons.Set(etLrn, int(ni), int(di), int(ETrLearn))
 }
 
 // LearnTimingParams parameterizes the timing of Ca-driven Kinase
@@ -981,7 +983,7 @@ type DWtParams struct {
 	// produce longer time windows of integration, and should only be used when
 	// there is temporal structure to be learned across these longer timescales.
 	// This synaptic trace is beneficial in addition to the receiver-based
-	// eligibility trace ETraceLearn.
+	// eligibility trace [ETrLearn].
 	SynTraceTau float32 `default:"1,2,4"`
 
 	// LearnThr is the threshold for learning, applied to SynCa CaP and CaD for Kinase

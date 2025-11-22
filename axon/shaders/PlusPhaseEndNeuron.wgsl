@@ -823,7 +823,7 @@ fn LearnCaParams_ETrace(lc: LearnCaParams, ctx: Context, ni: u32,di: u32, cad: f
 	}
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(ETrace))] = et;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
-	u32(ni), u32(di), u32(ETraceLearn))] = etLrn;
+	u32(ni), u32(di), u32(ETrLearn))] = etLrn;
 }
 struct LearnTimingParams {
 	SynCaCycles: i32,
@@ -1101,7 +1101,7 @@ const  TimeCycle: NeuronVars = 30;
 const  LearnNow: NeuronVars = 31;
 const  RLRate: NeuronVars = 32;
 const  ETrace: NeuronVars = 33;
-const  ETraceLearn: NeuronVars = 34;
+const  ETrLearn: NeuronVars = 34;
 const  GnmdaSyn: NeuronVars = 35;
 const  Gnmda: NeuronVars = 36;
 const  GnmdaLrn: NeuronVars = 37;

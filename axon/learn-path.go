@@ -149,14 +149,14 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, rlay *LayerParams, syni, si, ri
 	syCa := pt.SynCaTotal(ctx, si, ri, di, learnNow, rlay.Learn.Timing.SynCaCycles)
 
 	// integrate synaptic trace over time: this is actually beneficial in certain cases,
-	// in addition to the ETraceLearn factor.
+	// in addition to the ETrLearn factor.
 	SynapseTraces.Set(syCa, int(syni), int(di), int(DTr))
 	tr := pt.Learn.DWt.SynTrace(SynapseTraces.Value(int(syni), int(di), int(Tr)), syCa)
 	SynapseTraces.Set(tr, int(syni), int(di), int(Tr))
 
 	dwt := float32(0)
 	if syCa > pt.Learn.DWt.LearnThr { // todo: elminate?
-		dwt = tr * Neurons.Value(int(ri), int(di), int(RLRate)) * Neurons.Value(int(ri), int(di), int(LearnDiff)) * Neurons.Value(int(ri), int(di), int(ETraceLearn))
+		dwt = tr * Neurons.Value(int(ri), int(di), int(RLRate)) * Neurons.Value(int(ri), int(di), int(LearnDiff)) * Neurons.Value(int(ri), int(di), int(ETrLearn))
 	}
 	pt.DWtSynSoftBound(ctx, syni, di, dwt)
 }
@@ -190,7 +190,7 @@ func (pt *PathParams) DWtSynCTCtxt(ctx *Context, syni, si, ri, lpi, pi, di uint3
 	SynapseTraces.Set(tr, int(syni), int(di), int(Tr))
 
 	// note: not including RLRate here!
-	dwt := tr * (Neurons.Value(int(ri), int(di), int(LearnCaP)) - Neurons.Value(int(ri), int(di), int(LearnCaD))) * Neurons.Value(int(ri), int(di), int(ETraceLearn))
+	dwt := tr * (Neurons.Value(int(ri), int(di), int(LearnCaP)) - Neurons.Value(int(ri), int(di), int(LearnCaD))) * Neurons.Value(int(ri), int(di), int(ETrLearn))
 	pt.DWtSynSoftBound(ctx, syni, di, dwt)
 }
 
@@ -217,7 +217,7 @@ func (pt *PathParams) DWtSynHip(ctx *Context, syni, si, ri, lpi, pi, di uint32, 
 	//
 	// syn := syCaD               // synaptic activity co-product factor.
 	// // integrate synaptic trace over time: this is actually beneficial in certain cases,
-	// // in addition to the ETraceLearn factor.
+	// // in addition to the ETrLearn factor.
 	// SynapseTraces[syni, di, DTr] = syn
 	// tr := pt.Learn.DWt.SynTrace(SynapseTraces[syni, di, Tr], syn)
 	// SynapseTraces[syni, di, Tr] = tr
@@ -231,7 +231,7 @@ func (pt *PathParams) DWtSynHip(ctx *Context, syni, si, ri, lpi, pi, di uint32, 
 	//		err = syCaP - syCaD // for target layers, syn Ca drives error signal directly
 	//	} else {
 	//
-	//		err = tr * (rLearnCaP - rLearnCaD) * Neurons[ri, di, ETraceLearn]
+	//		err = tr * (rLearnCaP - rLearnCaD) * Neurons[ri, di, ETrLearn]
 	//	}
 	//
 	// // softbound immediately -- enters into zero sum.

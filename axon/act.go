@@ -1009,7 +1009,7 @@ func (ac *ActParams) DecayLearnCa(ctx *Context, ni, di uint32, decay float32) {
 	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(LearnCaD)), int(ni), int(di), int(LearnCaD))
 
 	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(ETrace)), int(ni), int(di), int(ETrace))
-	Neurons.SetAdd(decay*(1.0-Neurons.Value(int(ni), int(di), int(ETraceLearn))), int(ni), int(di), int(ETraceLearn))
+	Neurons.SetAdd(decay*(1.0-Neurons.Value(int(ni), int(di), int(ETrLearn))), int(ni), int(di), int(ETrLearn))
 
 	// recovers
 	Neurons.SetAdd(decay*(1.0-Neurons.Value(int(ni), int(di), int(SKCaIn))), int(ni), int(di), int(SKCaIn))
@@ -1204,7 +1204,7 @@ func (ac *ActParams) InitLongActs(ctx *Context, ni, di uint32) {
 	Neurons.Set(0, int(ni), int(di), int(ActM))
 	Neurons.Set(0, int(ni), int(di), int(ActP))
 	Neurons.Set(0, int(ni), int(di), int(ETrace))
-	Neurons.Set(1, int(ni), int(di), int(ETraceLearn))
+	Neurons.Set(1, int(ni), int(di), int(ETrLearn))
 }
 
 ////////  Cycle
