@@ -369,12 +369,13 @@ func (pt *PathParams) DWtSynVSMatrix(ctx *Context, syni, si, ri, lpi, pi, di uin
 		}
 		dtr = 0
 		dwt = rlr * pt.Learn.LRate.Eff * tr
+		SynapseTraces[syni, di, Tr] = 0.0
 	} else {
 		dtr *= rlr
+		SynapseTraces[syni, di, Tr] += dtr
 	}
 	SynapseTraces[syni, di, DiDWt] = dwt
 	SynapseTraces[syni, di, DTr] = dtr
-	SynapseTraces[syni, di, Tr] += dtr
 }
 
 // DWtSynDSMatrix computes the weight change (learning) at given synapse,
@@ -389,6 +390,7 @@ func (pt *PathParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, lpi, pi, di uin
 	if GlobalScalars[GvHasRew, di] > 0 { // US time -- use DA and current recv activity
 		tr := SynapseTraces[syni, di, Tr]
 		dwt = rlr * pt.Learn.LRate.Eff * tr
+		SynapseTraces[syni, di, Tr] = 0.0
 	} else {
 		// pfmod := Pools[pi, di, fsfffb.ModAct]
 		pfmod := Neurons[ri, di, GModSyn] // syn value is always better
@@ -418,10 +420,10 @@ func (pt *PathParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, lpi, pi, di uin
 				dtr += pt.DSMatrix.OffTrace * pt.DSMatrix.PatchDA * (patchDAD2 - patchDAD1) * act 
 			}
 		}
+		SynapseTraces[syni, di, Tr] += dtr
 	}
 	SynapseTraces[syni, di, DiDWt] = dwt
 	SynapseTraces[syni, di, DTr] = dtr
-	SynapseTraces[syni, di, Tr] += dtr
 }
 
 // DWtSynVSPatch computes the weight change (learning) at given synapse,
@@ -454,15 +456,16 @@ func (pt *PathParams) DWtSynDSPatch(ctx *Context, syni, si, ri, lpi, pi, di uint
 	if GlobalScalars[GvHasRew, di] > 0 { // US time -- use DA * tr
 		tr := SynapseTraces[syni, di, Tr]
 		dwt = rlr * pt.Learn.LRate.Eff * tr
+		SynapseTraces[syni, di, Tr] = 0.0
 	} else {
 		pfmod := Neurons[ri, di, GModSyn] // so much better! todo: why!?
 		// pfmod := Pools[pi, di, fsfffb.ModAct]
 		sact := Neurons[si, di, CaD] // todo: use CaSyn instead of sact * ract? But BG is transient, so no?
 		dtr = pfmod * rlr * sact * ract // rlr is just sig deriv
+		SynapseTraces[syni, di, Tr] += dtr
 	}
 	SynapseTraces[syni, di, DiDWt] = dwt
 	SynapseTraces[syni, di, DTr] = dtr
-	SynapseTraces[syni, di, Tr] += dtr
 }
 
 // DWtSynCNeUp computes the weight change (learning) at given synapse,

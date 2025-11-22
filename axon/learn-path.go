@@ -376,12 +376,13 @@ func (pt *PathParams) DWtSynVSMatrix(ctx *Context, syni, si, ri, lpi, pi, di uin
 		}
 		dtr = 0
 		dwt = rlr * pt.Learn.LRate.Eff * tr
+		SynapseTraces.Set(0.0, int(syni), int(di), int(Tr))
 	} else {
 		dtr *= rlr
+		SynapseTraces.SetAdd(dtr, int(syni), int(di), int(Tr))
 	}
 	SynapseTraces.Set(dwt, int(syni), int(di), int(DiDWt))
 	SynapseTraces.Set(dtr, int(syni), int(di), int(DTr))
-	SynapseTraces.SetAdd(dtr, int(syni), int(di), int(Tr))
 }
 
 // DWtSynDSMatrix computes the weight change (learning) at given synapse,
@@ -396,6 +397,7 @@ func (pt *PathParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, lpi, pi, di uin
 	if GlobalScalars.Value(int(GvHasRew), int(di)) > 0 { // US time -- use DA and current recv activity
 		tr := SynapseTraces.Value(int(syni), int(di), int(Tr))
 		dwt = rlr * pt.Learn.LRate.Eff * tr
+		SynapseTraces.Set(0.0, int(syni), int(di), int(Tr))
 	} else {
 		// pfmod := Pools[pi, di, fsfffb.ModAct]
 		pfmod := Neurons.Value(int(ri), int(di), int(GModSyn)) // syn value is always better
@@ -425,10 +427,10 @@ func (pt *PathParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, lpi, pi, di uin
 				dtr += pt.DSMatrix.OffTrace * pt.DSMatrix.PatchDA * (patchDAD2 - patchDAD1) * act
 			}
 		}
+		SynapseTraces.SetAdd(dtr, int(syni), int(di), int(Tr))
 	}
 	SynapseTraces.Set(dwt, int(syni), int(di), int(DiDWt))
 	SynapseTraces.Set(dtr, int(syni), int(di), int(DTr))
-	SynapseTraces.SetAdd(dtr, int(syni), int(di), int(Tr))
 }
 
 // DWtSynVSPatch computes the weight change (learning) at given synapse,
@@ -461,15 +463,16 @@ func (pt *PathParams) DWtSynDSPatch(ctx *Context, syni, si, ri, lpi, pi, di uint
 	if GlobalScalars.Value(int(GvHasRew), int(di)) > 0 { // US time -- use DA * tr
 		tr := SynapseTraces.Value(int(syni), int(di), int(Tr))
 		dwt = rlr * pt.Learn.LRate.Eff * tr
+		SynapseTraces.Set(0.0, int(syni), int(di), int(Tr))
 	} else {
 		pfmod := Neurons.Value(int(ri), int(di), int(GModSyn)) // so much better! todo: why!?
 		// pfmod := Pools[pi, di, fsfffb.ModAct]
 		sact := Neurons.Value(int(si), int(di), int(CaD)) // todo: use CaSyn instead of sact * ract? But BG is transient, so no?
 		dtr = pfmod * rlr * sact * ract                   // rlr is just sig deriv
+		SynapseTraces.SetAdd(dtr, int(syni), int(di), int(Tr))
 	}
 	SynapseTraces.Set(dwt, int(syni), int(di), int(DiDWt))
 	SynapseTraces.Set(dtr, int(syni), int(di), int(DTr))
-	SynapseTraces.SetAdd(dtr, int(syni), int(di), int(Tr))
 }
 
 // DWtSynCNeUp computes the weight change (learning) at given synapse,

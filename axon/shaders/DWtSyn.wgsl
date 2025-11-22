@@ -1159,13 +1159,14 @@ fn PathParams_DWtSynVSMatrix(pt: PathParams, ctx: Context, syni: u32,si: u32,ri:
 		}
 		dtr = f32(0);
 		dwt = rlr * pt.Learn.LRate.Eff * tr;
+		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 	} else {
 		dtr *= rlr;
+		SynapseTracesSetAdd(dtr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 	}
 	SynapseTracesSet(dwt, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));
-	SynapseTracesSet(dtr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
-	SynapseTracesSetAdd(dtr, Index3D(TensorStrides[180], TensorStrides[181],
-	TensorStrides[182], u32(syni), u32(di), u32(Tr)));
+	SynapseTracesSet(dtr, Index3D(TensorStrides[180], TensorStrides[181],
+	TensorStrides[182], u32(syni), u32(di), u32(DTr)));
 }
 fn PathParams_DWtSynDSMatrix(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
 	var rlr = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(RLRate))];
@@ -1175,6 +1176,8 @@ fn PathParams_DWtSynDSMatrix(pt: PathParams, ctx: Context, syni: u32,si: u32,ri:
 	u32(GvHasRew), u32(di))] > 0) {
 		var tr = SynapseTracesGet(Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 		dwt = rlr * pt.Learn.LRate.Eff * tr;
+		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181],
+		TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 	} else {
 		var pfmod = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // syn value is always better
 		TensorStrides[72], u32(ri), u32(di), u32(GModSyn))];
@@ -1193,11 +1196,11 @@ fn PathParams_DWtSynDSMatrix(pt: PathParams, ctx: Context, syni: u32,si: u32,ri:
 				dtr += pt.DSMatrix.OffTrace * pt.DSMatrix.PatchDA * (patchDAD2 - patchDAD1) * act;
 			}
 		}
+		SynapseTracesSetAdd(dtr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 	}
 	SynapseTracesSet(dwt, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));
-	SynapseTracesSet(dtr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
-	SynapseTracesSetAdd(dtr, Index3D(TensorStrides[180], TensorStrides[181],
-	TensorStrides[182], u32(syni), u32(di), u32(Tr)));
+	SynapseTracesSet(dtr, Index3D(TensorStrides[180], TensorStrides[181],
+	TensorStrides[182], u32(syni), u32(di), u32(DTr)));
 }
 fn PathParams_DWtSynVSPatch(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
 	var ract = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // t-1
@@ -1223,17 +1226,18 @@ fn PathParams_DWtSynDSPatch(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: 
 	u32(GvHasRew), u32(di))] > 0) {
 		var tr = SynapseTracesGet(Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 		dwt = rlr * pt.Learn.LRate.Eff * tr;
+		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 	} else {
 		var pfmod = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // so much better! todo: why!?
 		TensorStrides[72], u32(ri), u32(di), u32(GModSyn))];
 		var sact = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // todo: use CaSyn instead of sact * ract? But BG is transient, so no?
 		TensorStrides[72], u32(si), u32(di), u32(CaD))];
 		dtr = pfmod * rlr * sact * ract; // rlr is just sig deriv
+		SynapseTracesSetAdd(dtr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 	}
 	SynapseTracesSet(dwt, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));
-	SynapseTracesSet(dtr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
-	SynapseTracesSetAdd(dtr, Index3D(TensorStrides[180], TensorStrides[181],
-	TensorStrides[182], u32(syni), u32(di), u32(Tr)));
+	SynapseTracesSet(dtr, Index3D(TensorStrides[180], TensorStrides[181],
+	TensorStrides[182], u32(syni), u32(di), u32(DTr)));
 }
 
 //////// import: "learn.go"
