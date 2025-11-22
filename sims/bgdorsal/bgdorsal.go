@@ -406,7 +406,6 @@ func (ss *Sim) ConfigLoops() {
 	ev := ss.Envs.ByModeDi(Train, 0).(*MotorSeqEnv)
 	seqs := int(math32.IntMultipleGE(float32(ss.Config.Run.Sequences), float32(ss.Config.Run.NData)))
 	cycles := ss.Config.Run.Cycles
-	plusPhase := ss.Config.Run.PlusCycles
 	seqLen := ev.SeqLen + 1 // 1 reward at end
 
 	ls.AddStack(Train, Trial).
@@ -423,13 +422,12 @@ func (ss *Sim) ConfigLoops() {
 		AddLevel(Trial, seqLen).
 		AddLevel(Cycle, cycles)
 
-	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, cycles-plusPhase, Cycle, Trial, Train)
-
+	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, Cycle, Trial, Train,
+		func(mode enums.Enum) { ss.Net.ClearInputs() },
+		func(mode enums.Enum) { ss.ApplyInputs(mode.(Modes)) },
+	)
 	ls.Stacks[Train].OnInit.Add("Init", ss.Init)
-
-	ls.AddOnStartToLoop(Trial, "ApplyInputs", func(mode enums.Enum) {
-		ss.ApplyInputs(mode.(Modes))
-	})
+	ls.Loop(Train, Run).OnStart.Add("NewRun", ss.NewRun)
 
 	for mode, st := range ls.Stacks {
 		plusPhase := st.Loops[Cycle].EventByName("MinusPhase:End")
@@ -445,8 +443,6 @@ func (ss *Sim) ConfigLoops() {
 		// 	return false
 		// })
 	}
-
-	ls.Loop(Train, Run).OnStart.Add("NewRun", ss.NewRun)
 
 	ls.Loop(Train, Epoch).IsDone.AddBool("StopCrit", func() bool {
 		epcDir := ss.Stats.Dir(Train.String()).Dir(Epoch.String())

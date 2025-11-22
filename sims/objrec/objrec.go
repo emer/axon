@@ -308,11 +308,10 @@ func (ss *Sim) ConfigLoops() {
 		AddLevelIncr(Trial, trials, ss.Config.Run.NData).
 		AddLevel(Cycle, cycles)
 
-	axon.LooperStandardISI(ls, ss.Net, ss.NetViewUpdater, isi, minus, Cycle, Trial, Train,
+	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, Cycle, Trial, Train,
 		func(mode enums.Enum) { ss.Net.ClearInputs() },
 		func(mode enums.Enum) { ss.ApplyInputs(mode.(Modes)) },
 	)
-
 	ls.Stacks[Train].OnInit.Add("Init", ss.Init)
 	ls.Loop(Train, Run).OnStart.Add("NewRun", ss.NewRun)
 

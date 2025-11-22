@@ -366,20 +366,17 @@ func (ss *Sim) ConfigLoops() {
 	ls := looper.NewStacks()
 
 	cycles := ss.Config.Run.Cycles
-	plusPhase := ss.Config.Run.PlusCycles
 
 	ls.AddStack(Test, Trial).
 		AddLevel(Epoch, 1).
 		AddLevelIncr(Trial, ss.Config.Run.Trials, 1).
 		AddLevel(Cycle, cycles)
 
-	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, cycles-plusPhase, Cycle, Trial, Train)
-
+	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, Cycle, Trial, Train,
+		func(mode enums.Enum) { ss.Net.ClearInputs() },
+		func(mode enums.Enum) { ss.ApplyInputs(mode.(Modes)) },
+	)
 	ls.Stacks[Test].OnInit.Add("Init", func() { ss.Init() })
-
-	ls.AddOnStartToLoop(Trial, "ApplyInputs", func(mode enums.Enum) {
-		ss.ApplyInputs(mode.(Modes))
-	})
 
 	ls.AddOnStartToAll("StatsStart", ss.StatsStart)
 	ls.AddOnEndToAll("StatsStep", ss.StatsStep)

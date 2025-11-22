@@ -21,7 +21,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.VGCC.Ge = 0
 				ly.Learn.CaSpike.SpikeCaSyn = 8
 
-				ly.Learn.Timing.On.SetBool(true)
+				ly.Learn.Timing.On.SetBool(false)
 				ly.Learn.Timing.Refractory.SetBool(false)
 				ly.Learn.Timing.SynCaCycles = 160
 				ly.Learn.Timing.Cycles = 170

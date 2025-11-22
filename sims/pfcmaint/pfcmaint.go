@@ -263,7 +263,6 @@ func (ss *Sim) ConfigLoops() {
 
 	trials := int(math32.IntMultipleGE(float32(ss.Config.Run.Trials), float32(ss.Config.Run.NData)))
 	cycles := ss.Config.Run.Cycles
-	plusPhase := ss.Config.Run.PlusCycles
 
 	ls.AddStack(Train, Trial).
 		AddLevel(Run, ss.Config.Run.Runs).
@@ -276,16 +275,16 @@ func (ss *Sim) ConfigLoops() {
 		AddLevelIncr(Trial, trials, ss.Config.Run.NData).
 		AddLevel(Cycle, cycles)
 
-	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, cycles-plusPhase, Cycle, Trial, Train)
+	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, Cycle, Trial, Train,
+		func(mode enums.Enum) { ss.Net.ClearInputs() },
+		func(mode enums.Enum) {
+			trial := ls.Stacks[mode].Loops[Trial].Counter.Cur
+			theta := ls.Stacks[mode].Loops[Trial].Counter.Cur
+			ss.ApplyInputs(mode.(Modes), trial, theta)
+		},
+	)
 
 	ls.Stacks[Train].OnInit.Add("Init", ss.Init)
-
-	ls.AddOnStartToLoop(Trial, "ApplyInputs", func(mode enums.Enum) {
-		trial := ls.Stacks[mode].Loops[Trial].Counter.Cur
-		theta := ls.Stacks[mode].Loops[Trial].Counter.Cur
-		ss.ApplyInputs(mode.(Modes), trial, theta)
-	})
-
 	ls.Loop(Train, Run).OnStart.Add("NewRun", ss.NewRun)
 
 	ls.AddOnStartToAll("StatsStart", ss.StatsStart)

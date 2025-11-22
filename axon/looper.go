@@ -12,29 +12,44 @@ import (
 
 // LooperStandard adds all the standard Axon Trial and Cycle level processing calls
 // to the given Looper Stacks. cycle and trial are the enums for the looper levels,
-// trainMode is the training mode enum value.
-//   - minus and plus phases of the theta cycle (trial), at plusStart (150) and plusEnd (199) cycles.
+// trainMode is the training mode enum value. Cycles obtained from net.Context.
+//   - ISI (inter-stimulus interval), minus and plus phases of the theta cycle (trial).
+//   - The clearInputs function is called at the start of the minus phase to begin
+//     the ISI period, and applyInputs is called after that to apply new inputs.
 //   - embedded beta phases within theta, that record Beta1 and Beta2 states.
 //   - net.Cycle() at every cycle step.
 //   - net.DWt() and net.WtFromDWt() learning calls in training mode, with netview update
 //     between these two calls if it is visible and viewing synapse variables.
-//   - netview update calls at appropriate levels (no-op if no GUI)
-func LooperStandard(ls *looper.Stacks, net *Network, viewFunc func(mode enums.Enum) *NetViewUpdate, plusStart int, cycle, trial, trainMode enums.Enum) {
-	ls.AddEventAllModes(cycle, "Beta1", 50, func() { net.Beta1() })
-	ls.AddEventAllModes(cycle, "Beta2", 100, func() { net.Beta2() })
+//   - netview update calls at appropriate levels (no-op if no GUI).
+func LooperStandard(ls *looper.Stacks, net *Network, viewFunc func(mode enums.Enum) *NetViewUpdate, cycle, trial, trainMode enums.Enum, clearInputs, applyInputs func(mode enums.Enum)) {
+	ctx := net.Context()
+	isiCycles := int(ctx.ISICycles)
+	minusCycles := int(ctx.MinusCycles)
+	plusStart := isiCycles + minusCycles
+
+	ls.AddEventAllModes(cycle, "Beta1", isiCycles+50, func() { net.Beta1() })
+	ls.AddEventAllModes(cycle, "Beta2", isiCycles+100, func() { net.Beta2() })
 
 	ls.AddEventAllModes(cycle, "MinusPhase:End", plusStart, func() { net.MinusPhaseEnd() })
 	ls.AddEventAllModes(cycle, "PlusPhase:Start", plusStart, func() { net.PlusPhaseStart() })
 
 	for mode, st := range ls.Stacks {
 		cycLoop := st.Loops[cycle]
-		cycLoop.OnStart.Add("Cycle", LooperCycleStartFunc(ls, net, viewFunc, cycle, mode))
-
 		trlLoop := st.Loops[trial]
 		testing := mode.Int64() != trainMode.Int64()
-		trlLoop.OnStart.Add("MinusPhase:Start", func() { net.ThetaCycleStart(mode, testing); net.MinusPhaseStart() })
+
+		cycLoop.OnStart.Add("Cycle", LooperCycleStartFunc(ls, net, viewFunc, cycle, mode))
+		if isiCycles > 0 && mode.Int64() == trainMode.Int64() {
+			cycLoop.AddEvent("UpdateWeights", isiCycles, LooperUpdateWeightsFunc(ls, net, viewFunc, mode))
+		}
+		cycLoop.AddEvent("MinusPhase:Start", isiCycles, func() {
+			net.MinusPhaseStart()
+			applyInputs(mode)
+		})
+
+		trlLoop.OnStart.Add("ISI:Start", func() { net.ThetaCycleStart(mode, testing); clearInputs(mode) })
 		trlLoop.OnEnd.Add("PlusPhase:End", func() { net.PlusPhaseEnd() })
-		if mode.Int64() == trainMode.Int64() {
+		if isiCycles == 0 && mode.Int64() == trainMode.Int64() {
 			trlLoop.OnEnd.Add("UpdateWeights", LooperUpdateWeightsFunc(ls, net, viewFunc, mode))
 		}
 	}
@@ -74,39 +89,6 @@ func LooperUpdateWeightsFunc(ls *looper.Stacks, net *Network, viewFunc func(mode
 		} else {
 			net.DWtToWt()
 		}
-	}
-}
-
-// LooperStandardISI is a version of [LooperStandard] that includes an
-// inter-stimulus-interval, which happens at the start of the trial,
-// so that the trial end state shows the final plus phase state.
-// The clearInputs function is called at the start of the trial to begin
-// the ISI period, and applyInputs is called after that to apply new inputs.
-func LooperStandardISI(ls *looper.Stacks, net *Network, viewFunc func(mode enums.Enum) *NetViewUpdate, isiCycles, minusCycles int, cycle, trial, trainMode enums.Enum, clearInputs, applyInputs func(mode enums.Enum)) {
-	plusStart := isiCycles + minusCycles
-
-	ls.AddEventAllModes(cycle, "Beta1", isiCycles+50, func() { net.Beta1() })
-	ls.AddEventAllModes(cycle, "Beta2", isiCycles+100, func() { net.Beta2() })
-
-	ls.AddEventAllModes(cycle, "MinusPhase:End", plusStart, func() { net.MinusPhaseEnd() })
-	ls.AddEventAllModes(cycle, "PlusPhase:Start", plusStart, func() { net.PlusPhaseStart() })
-
-	for mode, st := range ls.Stacks {
-		cycLoop := st.Loops[cycle]
-		trlLoop := st.Loops[trial]
-		testing := mode.Int64() != trainMode.Int64()
-
-		cycLoop.OnStart.Add("Cycle", LooperCycleStartFunc(ls, net, viewFunc, cycle, mode))
-		if mode.Int64() == trainMode.Int64() {
-			cycLoop.AddEvent("UpdateWeights", isiCycles, LooperUpdateWeightsFunc(ls, net, viewFunc, mode))
-		}
-		cycLoop.AddEvent("MinusPhase:Start", isiCycles, func() {
-			net.MinusPhaseStart()
-			applyInputs(mode)
-		})
-
-		trlLoop.OnStart.Add("ISI:Start", func() { net.ThetaCycleStart(mode, testing); clearInputs(mode) })
-		trlLoop.OnEnd.Add("PlusPhase:End", func() { net.PlusPhaseEnd() })
 	}
 }
 

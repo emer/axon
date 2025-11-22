@@ -309,7 +309,6 @@ func init() {
 		"LogFilename":                  reflect.ValueOf(axon.LogFilename),
 		"LooperCycleStartFunc":         reflect.ValueOf(axon.LooperCycleStartFunc),
 		"LooperStandard":               reflect.ValueOf(axon.LooperStandard),
-		"LooperStandardISI":            reflect.ValueOf(axon.LooperStandardISI),
 		"LooperUpdateNetView":          reflect.ValueOf(axon.LooperUpdateNetView),
 		"LooperUpdateWeightsFunc":      reflect.ValueOf(axon.LooperUpdateWeightsFunc),
 		"MahpN":                        reflect.ValueOf(axon.MahpN),

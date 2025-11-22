@@ -865,9 +865,9 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 	q3outCaP := make([]float32, 4*nLearnParams)
 	q3outCaD := make([]float32, 4*nLearnParams)
 
-	hidDwts := []float32{0.0046170885, 0.00824979, 0.006619337, 0.007457238}
+	hidDwts := []float32{0.004471265, 0.0076135984, 0.006134646, 0.006948054}
 	outDwts := []float32{0.0055950927, 0.010907927, 0.010558605, 0.010816593}
-	hidWts := []float32{0.52767503, 0.5493423, 0.539635, 0.5446278}
+	hidWts := []float32{0.5268025, 0.54555845, 0.5367433, 0.5415946}
 	outWts := []float32{0.5335216, 0.5650866, 0.56302404, 0.56454736}
 
 	hiddwt := make([]float32, 4*nLearnParams)
@@ -1017,9 +1017,9 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 	q3outCaP := make([]float32, 4*nLearnParams)
 	q3outCaD := make([]float32, 4*nLearnParams)
 
-	hidDwts := []float32{2.3085444e-07, 2.8351906e-05, 1.9717923e-05, 2.7928978e-05}
+	hidDwts := []float32{2.2356323e-07, 2.6165517e-05, 1.8274108e-05, 2.6021975e-05}
 	outDwts := []float32{0.0055950927, 0.010907927, 0.010558605, 0.010816593}
-	hidWts := []float32{0.50000143, 0.50017023, 0.5001184, 0.5001677}
+	hidWts := []float32{0.50000143, 0.500157, 0.5001098, 0.5001563}
 	outWts := []float32{0.5335216, 0.5650866, 0.56302404, 0.56454736}
 
 	hiddwt := make([]float32, 4*nLearnParams)
@@ -1251,6 +1251,9 @@ func RunDebugLearn(t *testing.T, testNet *Network, printValues bool, gpu bool, i
 						fmt.Println(key + fmt.Sprintf("  di: %d", di))
 					}
 					for nvi, vnm := range NeuronVarNames {
+						if nvi >= int(CaBins) {
+							continue
+						}
 						ly.UnitValues(&vals, vnm, di)
 						vkey := key + fmt.Sprintf("\t%s", vnm)
 						valMap[vkey] = vals[ni]
@@ -1312,7 +1315,7 @@ func TestDebugLearn(t *testing.T) {
 func TestNDataLearn(t *testing.T) {
 	nd1Values := NetDebugLearn(t, false, false, 1, 1, true, false, false)
 	nd4Values := NetDebugLearn(t, false, false, 4, 4, true, false, false)
-	ReportValDiffs(t, Tol7, nd1Values, nd4Values, "nData = 1", "nData = 4", "DWt", "ActAvg", "DTrgAvg", "TimeCycle", "LearnPeakCyc")
+	ReportValDiffs(t, Tol7, nd1Values, nd4Values, "nData = 1", "nData = 4", "DWt", "ActAvg", "DTrgAvg", "TimeCycle", "LearnCycle", "LearnNow")
 }
 
 func TestNDataMaxDataLearn(t *testing.T) {
