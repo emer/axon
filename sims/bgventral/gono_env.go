@@ -213,6 +213,7 @@ func (ev *GoNoEnv) Action(action string, nop tensor.Values) {
 	ev.Should = should
 	ev.Match = match
 	ev.Rew = rew
+	// fmt.Println(should, didGate, match, rew)
 	ev.ComputeDA(rew)
 }
 
