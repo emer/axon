@@ -16,16 +16,16 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.Layer.Gi = 1.05       // 1.05 > 1.1 for short-term; 1.1 better long-run stability
 				ly.Inhib.Layer.FB = 0.5        // 0.5 > 0.2 > 0.1 > 1.0 -- usu 1.0
-				ly.Inhib.ActAvg.Nominal = 0.06 // 0.6 > 0.5
+				ly.Inhib.ActAvg.Nominal = 0.06 // 0.06 > 0.05
 				ly.Acts.NMDA.MgC = 1.2         // 1.2 > 1.4 here, still..
 				ly.Acts.VGCC.Ge = 0
 				ly.Learn.CaSpike.SpikeCaSyn = 8
 
 				ly.Learn.Timing.On.SetBool(true)
-				ly.Learn.Timing.SynCaCycles = 100
-				ly.Learn.Timing.MinusCycles = 110
-				ly.Learn.Timing.PlusCycles = 40
-				ly.Learn.Timing.TimeDiffTau = 2
+				ly.Learn.Timing.Refractory.SetBool(false)
+				ly.Learn.Timing.SynCaCycles = 160
+				ly.Learn.Timing.Cycles = 170
+				ly.Learn.Timing.TimeDiffTau = 4
 
 				// ly.Learn.CaLearn.ETraceTau = 4
 				// ly.Learn.CaLearn.ETraceScale = 0.1 // 4,0.1 best in sequential

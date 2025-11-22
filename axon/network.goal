@@ -895,7 +895,11 @@ func (nt *Network) Build() error { //types:add
 	recvConIndex := 0
 	syIndex = 0
 	for _, ly := range nt.Layers {
+		isTarg := ly.Params.IsTarget()
 		for _, pt := range ly.RecvPaths {
+			if isTarg {
+				pt.AddClass("ToTarget")
+			}
 			nt.RecvPathIxs.Set(pt.Params.Index, rpathIndex)
 			pt.Params.Indexes.RecvConSt = uint32(recvConIndex)
 			pt.Params.Indexes.RecvSynSt = uint32(syIndex)

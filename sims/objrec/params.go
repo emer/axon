@@ -33,12 +33,11 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.CaSpike.Dt.MTau = 5                // 5 > 10 even with more ncycles
 
 				ly.Learn.Timing.On.SetBool(true)
-				ly.Learn.Timing.Refractory.SetBool(false)
-				ly.Learn.Timing.LearnThr = 0.1
-				ly.Learn.Timing.SynCaCycles = 160
-				ly.Learn.Timing.StartThr = 0.05
-				ly.Learn.Timing.Cycles = 160
-				ly.Learn.Timing.TimeDiffTau = 2
+				ly.Learn.Timing.Refractory.SetBool(false) // very bad for time-based
+				ly.Learn.Timing.LearnThr = 0.1            // 0.1 best for trial-based
+				ly.Learn.Timing.SynCaCycles = 160         // 160 best for trial-based
+				ly.Learn.Timing.Cycles = 170              // 170 > 160
+				ly.Learn.Timing.TimeDiffTau = 4           // 4 > 2
 			}},
 		{Sel: "#V1", Doc: "pool inhib (not used), initial activity",
 			Set: func(ly *axon.LayerParams) {
@@ -106,7 +105,7 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: "#ITToOutput", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.LRate.Base = 0.1 // 0.1 > 0.05
+				pt.Learn.LRate.Base = 0.05 // ?
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger",
 			Set: func(pt *axon.PathParams) {

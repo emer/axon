@@ -1643,10 +1643,10 @@ struct LearnTimingParams {
 	LearnThr: f32,
 	Refractory: i32,
 	On: i32,
-	StartThr: f32,
 	Cycles: i32,
 	TimeDiffTau: f32,
 	TimeDiffDt: f32,
+	pad: f32,
 }
 fn LearnTimingParams_TimingReset(lt: LearnTimingParams, ctx: Context, ni: u32,di: u32) {
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = 0.0;
@@ -1679,7 +1679,9 @@ fn LearnTimingParams_LearnTiming(lt: LearnTimingParams, ctx: Context, ni: u32,di
 	if (tcyc >= lt.Cycles) {
 		LearnTimingParams_TimingReset(lt, ctx, ni, di);
 		if (lt.Refractory == 1 && lrnNow > 0) { // no learning once learned
-			return false;
+			if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaD))] < lt.LearnThr) {
+				Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = 0.0;
+			}return false;
 		}
 		if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaD))] > lt.LearnThr) {
 			LearnTimingParams_LearnNow(lt, ctx, ni, di);return true;

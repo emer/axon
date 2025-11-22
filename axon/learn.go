@@ -138,7 +138,8 @@ func (lc *LearnCaParams) ETrace(ctx *Context, ni, di uint32, cad float32) {
 // LearnTimingParams parameterizes the timing of Ca-driven Kinase
 // algorithm learning, based on detecting the first major peak of
 // differential fast - slow activity associated with the start of
-// the minus phases: [TimePeak]. Learning can occur some number of ms later.
+// the minus phases: [TimePeak]. Learning occurs a fixed number of
+// Cycles (ms) offset from the peak.
 type LearnTimingParams struct {
 
 	// SynCaCycles is the number of cycles over which to integrate the synaptic
@@ -159,27 +160,25 @@ type LearnTimingParams struct {
 	// automatically.
 	On slbool.Bool
 
-	// StartThr is the threshold on the [TimeDiff] value to count as a peak.
-	StartThr float32 `default:"0.02"`
-
 	// Cycles is the number of cycles (ms) after the [TimePeak] before
 	// learning occurs, or the peak detection is reset to start anew.
-	Cycles int32 `default:"160"`
+	Cycles int32 `default:"170"`
 
 	// Time constant for integrating [TimeDiff] as the absolute value of
 	// CaDiff integrated over time to smooth out significant local bumps.
-	TimeDiffTau float32 `default:"2"`
+	TimeDiffTau float32 `default:"4"`
 
 	// Dt is 1/Tau
 	TimeDiffDt float32 `display:"-"`
+
+	pad float32
 }
 
 func (lt *LearnTimingParams) Defaults() {
 	lt.SynCaCycles = 160
 	lt.LearnThr = 0.1
-	lt.StartThr = 0.02
-	lt.Cycles = 160
-	lt.TimeDiffTau = 2
+	lt.Cycles = 170
+	lt.TimeDiffTau = 4
 	lt.Update()
 }
 
@@ -240,6 +239,9 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
 	if tcyc >= lt.Cycles {
 		lt.TimingReset(ctx, ni, di)
 		if lt.Refractory.IsTrue() && lrnNow > 0 { // no learning once learned
+			if Neurons.Value(int(ni), int(di), int(CaD)) < lt.LearnThr {
+				Neurons.Set(0.0, int(ni), int(di), int(LearnNow))
+			}
 			return false
 		}
 		if Neurons.Value(int(ni), int(di), int(CaD)) > lt.LearnThr {
@@ -453,7 +455,9 @@ type LearnNeuronParams struct {
 
 	// LearnTimingParams parameterizes the timing of Ca-driven Kinase
 	// algorithm learning, based on detecting the first major peak of
-	// differential fast - slow activity associated with the minus phase.
+	// differential fast - slow activity associated with the start of
+	// the minus phases: [TimePeak]. Learning occurs a fixed number of
+	// Cycles (ms) offset from the peak.
 	Timing LearnTimingParams `display:"inline"`
 
 	// CaSpike parameterizes the neuron-level spike-driven calcium signals:

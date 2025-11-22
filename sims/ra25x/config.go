@@ -83,7 +83,7 @@ type RunConfig struct {
 
 	// ISICycles is the number of no-input inter-stimulus interval
 	// cycles at the start of the trial.
-	ISICycles int `default:"0"`
+	ISICycles int `default:"0"` // note: > 0 bad for long-term stability
 
 	// MinusCycles is the number of cycles in the minus phase per trial.
 	MinusCycles int `default:"150"`

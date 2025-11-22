@@ -818,10 +818,10 @@ struct LearnTimingParams {
 	LearnThr: f32,
 	Refractory: i32,
 	On: i32,
-	StartThr: f32,
 	Cycles: i32,
 	TimeDiffTau: f32,
 	TimeDiffDt: f32,
+	pad: f32,
 }
 struct TrgAvgActParams {
 	GiBaseInit: f32,

@@ -13,7 +13,7 @@ var LayerParams = axon.LayerSheets{
 		{Sel: "Layer", Doc: "all defaults",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.06 // 0.06 > 0.05
-				ly.Inhib.Layer.Gi = 1.1        // 1.1 > 1.05 even for SSGi=2
+				ly.Inhib.Layer.Gi = 1.1        // 1.1 > 1.05
 				ly.Inhib.Layer.SS = 30         // 30 > others
 				ly.Inhib.Layer.FS0 = 0.1
 				ly.Inhib.Layer.FSTau = 6
@@ -62,7 +62,11 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.RLRate.SpikeThr = 0.1 // 0.1 def
 				ly.Learn.RLRate.Min = 0.001
 
-				ly.Learn.Timing.On.SetBool(true)
+				ly.Learn.Timing.On.SetBool(false)
+				ly.Learn.Timing.Refractory.SetBool(false)
+				ly.Learn.Timing.SynCaCycles = 160
+				ly.Learn.Timing.Cycles = 170
+				ly.Learn.Timing.TimeDiffTau = 4
 			}},
 		{Sel: "#Input", Doc: "critical now to specify the activity level",
 			Set: func(ly *axon.LayerParams) {
@@ -101,17 +105,17 @@ var PathParams = axon.PathSheets{
 	"Base": {
 		{Sel: "Path", Doc: "basic path params",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.LRate.Base = 0.1 // .1 def
-				pt.SWts.Adapt.LRate = 0.1 // .1 >= .2,
-				pt.SWts.Adapt.SubMean = 1 // key for stability
-				pt.SWts.Init.SPct = 0.5   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-				pt.Learn.DWt.SubMean = 1  // 1 > 0 for long-term stability
+				pt.Learn.LRate.Base = 0.06 // .06 from ra25
+				pt.SWts.Adapt.LRate = 0.1  // .1 >= .2,
+				pt.SWts.Adapt.SubMean = 1  // key for stability
+				pt.SWts.Init.SPct = 0.5    // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+				pt.Learn.DWt.SubMean = 1   // 1 > 0 for long-term stability
 				pt.Learn.DWt.LearnThr = .1
 			}},
-		{Sel: "#Hidden2ToOutput", Doc: "",
+		{Sel: ".ToTarget", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				// pt.Learn.LRate.Base =  0.1 // 0.1 is default
-				pt.SWts.Adapt.SigGain = 6 // 1 does not work
+				pt.Learn.LRate.Base = 0.03 // don't need diff lrate here
+				pt.SWts.Adapt.SigGain = 6  // 6 def; 1 does not work
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {
