@@ -242,25 +242,32 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	snc := net.AddLayer2D("SNc", axon.InputLayer, 1, 1)
 	_ = snc
+	snc.Doc = "SNc (substantia nigra pars compacta) is the dopamine nucleus that projects to the dorsal BG. This is just for visualization of the dopamine signal: actual dopamine is managed internally via the DA parameter."
 
 	// this doesn't have much effect -- slightly worse
 	// pt := errors.Log1(gpePr.RecvPathBySendName("DGPePr")).(*axon.Path)
 	// pt.Pattern = p1to1
 
 	state := net.AddLayer4D("State", axon.InputLayer, 1, np, nuPer, maxSeqAct)
+	state.Doc = "State reflects the visual and other sensory state, which provides a timing input to the network, so the network just has to learn which action to perform for a given state, and does not have to generate its own internal timing signal."
 	s1 := net.AddLayer4D("S1", axon.InputLayer, 1, np, nuPer, nAct+1)
+	s1.Doc = "S1 is primary somatosenory cortex, which represents the previous motor action taken."
 
 	targ := net.AddLayer2D("Target", axon.InputLayer, nuPer, nAct) // Target: just for vis
+	targ.Doc = "Target is just for visualization, is not connected to anything, showing the correct motor action."
 
 	motor := net.AddLayer4D("MotorBS", axon.TargetLayer, 1, nAct, nuPer, 1)
+	motor.Doc = "Motor brainstem (BS) proxy layer, that performs the final action selection process based on all the higher-level inputs, using a softmax function. There are multiple redundant neurons per action (in the Y, column axis), and the different actions are in the X horizontal axis. The outputs are to the PF (parafasicular thalamus) layer, which feeds back into the striatum, and the VL thalamus as a plus-phase driver layer."
 	pf.Shape.SetShapeSizes(nActPool, nAct, nuPer, 1)
 
 	vl := net.AddPulvLayer4D("VL", 1, nAct, nuPer, 1) // VL predicts brainstem Action
 	vl.SetBuildConfig("DriveLayName", motor.Name)
+	vl.Doc = "VL (ventrolateral) thalamus is the main ascending motor thalamus pathway with inputs from all over the motor brainstem (i.e., MotorBS in this model), which provides predictive learning into M1 motor cortex: M1 predicts in the minus phase what MotorBS activates in the plus phase."
 
 	// bool before space is selfmaint or not: selfcons much better (false)
 	m1, m1CT, m1PT, m1PTp, m1VM := net.AddPFC2D("M1", "VM", nuCtxY, nuCtxX, false, false, space)
 	_ = m1PT
+	m1.Doc = "M1 is primary motor cortex, which receives from State and S1, and generates top-down predictions on the VL thalamus for which action will be finally selected by the MotorBS, based on inputs from M1 layers. M1 itself represents the superficial cortical portion of M1, with corticothalamic (CT, layer 6), and deep layer 5 (PT=pyramidal tract, PTp=predictive PT) providing stable and dynamic active maintenance, respectively."
 	m1.SetBuildConfig("GateLayName", m1VM.Name)
 	m1CT.SetBuildConfig("GateLayName", m1VM.Name)
 	m1PT.SetBuildConfig("GateLayName", m1VM.Name)

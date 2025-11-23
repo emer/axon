@@ -8,6 +8,14 @@ import (
 	"github.com/emer/emergent/v2/paths"
 )
 
+var (
+	GPePrDoc = "GPePr is a prototypical GPe (globus pallidus, externa), which is tonically active and sends inhibition to the SNr/GPi output, so that Matrix No pathway disinhibition results in more output inhibition and thus less final output activity (No). It also inhibits other GPePr neurons, the GPeAk neurons, and the STN. The STN inhibition initiates the initial excitation of the GPe neurons."
+
+	GPeAkDoc = "GPeAk is the arkypallidal GPe (globus pallidus, externa) which is tonically active and receives inhibition from the MatrixGo D1 pathway and sends inhibition to the striatum Matrix layers. Thus inhibition of GPeAk disinhibits the striatum, while disinhibition (net excitation) of GPeAk via GPePr and the No pathway further inhibits the striatum. This dynamic allows the GPePr, GPeAk and Matrix pathways to dynamically interact over time to resolve the Go vs. No balance, acting like a drift-diffusion integrator."
+
+	GPiDoc = "SNr (substantia nigra pars reticulata) / GPi (globus pallidus interna) are the major output pathways from BG, with tonic levels of activity that can be inhibited to disinhibit the downstream targets of BG output"
+)
+
 // AddVentralBG adds Ventral Basal Ganglia layers, using the PCore Pallidal Core
 // framework where GPe plays a central role.
 // Returns VMatrixGo, VMatrixNo, VGPePr, VGPeAk, VSTN, VGPi layers,
@@ -22,8 +30,12 @@ func (net *Network) AddVentralBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX
 	gpi = net.AddGPiLayer2D(prefix+"VGPi", bglay, gpNeurY, gpNeurX)
 	gpePr = net.AddGPeLayer2D(prefix+"VGPePr", bglay, gpNeurY, gpNeurX)
 	gpePr.SetBuildConfig("GPType", "GPePr")
+	gpePr.Doc = GPePrDoc
+
 	gpeAk = net.AddGPeLayer2D(prefix+"VGPeAk", bglay, gpNeurY, gpNeurX)
 	gpeAk.SetBuildConfig("GPType", "GPeAk")
+	gpeAk.Doc = GPeAkDoc
+
 	stn = net.AddSTNLayer2D(prefix+"VSTN", "VSTNLayer", gpNeurY, gpNeurX)
 	matrixGo = net.AddVMatrixLayer(prefix+"VMatrixGo", nPoolsY, nPoolsX, nNeurY, nNeurX, D1Mod)
 	matrixNo = net.AddVMatrixLayer(prefix+"VMatrixNo", nPoolsY, nPoolsX, nNeurY, nNeurX, D2Mod)
@@ -93,8 +105,12 @@ func (net *Network) AddDorsalBG(prefix string, poolSTN bool, nPoolsY, nPoolsX, n
 	gpi = net.AddGPiLayer4D(prefix+"DGPi", bglay, nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpePr = net.AddGPeLayer4D(prefix+"DGPePr", bglay, nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpePr.SetBuildConfig("GPType", "GPePr")
+	gpePr.Doc = GPePrDoc
+
 	gpeAk = net.AddGPeLayer4D(prefix+"DGPeAk", bglay, nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpeAk.SetBuildConfig("GPType", "GPeAk")
+	gpeAk.Doc = GPeAkDoc
+
 	if poolSTN {
 		stn = net.AddSTNLayer4D(prefix+"DSTN", "DSTNLayer", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	} else {
@@ -110,6 +126,7 @@ func (net *Network) AddDorsalBG(prefix string, poolSTN bool, nPoolsY, nPoolsX, n
 	}
 	pf = net.AddLayer4D(prefix+"PF", SuperLayer, nPoolsY, nPoolsX, nNeurY, 1)
 	pf.AddDefaultParams(pfp)
+	pf.Doc = "PF is parafasicular thalamus, including CM (centromedian) and IL (intralaminar) areas, that provide feedback projections from the SNr / GPi BG output back into the striatum. It is critical for driving the striosomes (Patch) layers and the CIN (cholinergic interneurons) to provide localized dopaminergic training signals based on the final output activity of the each region of the BG."
 
 	matrixGo.SetBuildConfig("OtherName", matrixNo.Name)
 	matrixNo.SetBuildConfig("OtherName", matrixGo.Name)
@@ -252,7 +269,7 @@ func (net *Network) AddGPeLayer2D(name, class string, nNeurY, nNeurX int) *Layer
 // AddGPiLayer2D adds an SNr / GPiLayer of given size, with given name.
 func (net *Network) AddGPiLayer2D(name, class string, nNeurY, nNeurX int) *Layer {
 	ly := net.AddLayer2D(name, GPLayer, nNeurY, nNeurX)
-	ly.Doc = "SNr (substantia nigra pars reticulata) / GPi (globus pallidus interna) are the major output pathways from BG, with tonic levels of activity that can be inhibited to disinhibit the downstream targets of BG output"
+	ly.Doc = GPiDoc
 	ly.SetBuildConfig("GPType", "GPi")
 	ly.AddClass(class)
 	return ly
@@ -261,6 +278,7 @@ func (net *Network) AddGPiLayer2D(name, class string, nNeurY, nNeurX int) *Layer
 // AddSTNLayer2D adds a subthalamic nucleus Layer of given size, with given name.
 func (net *Network) AddSTNLayer2D(name, class string, nNeurY, nNeurX int) *Layer {
 	ly := net.AddLayer2D(name, STNLayer, nNeurY, nNeurX)
+	// note: type based doc is fine
 	ly.AddClass(class)
 	return ly
 }
@@ -277,7 +295,7 @@ func (net *Network) AddGPeLayer4D(name, class string, nPoolsY, nPoolsX, nNeurY, 
 // Makes a 4D structure with Pools representing separable gating domains.
 func (net *Network) AddGPiLayer4D(name, class string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
 	ly := net.AddLayer4D(name, GPLayer, nPoolsY, nPoolsX, nNeurY, nNeurX)
-	ly.Doc = "SNr (substantia nigra pars reticulata) / GPi (globus pallidus interna) are the major output pathways from BG, with tonic levels of activity that can be inhibited to disinhibit the downstream targets of BG output"
+	ly.Doc = GPiDoc
 	ly.SetBuildConfig("GPType", "GPi")
 	ly.AddClass(class)
 	return ly
@@ -287,6 +305,7 @@ func (net *Network) AddGPiLayer4D(name, class string, nPoolsY, nPoolsX, nNeurY, 
 // Makes a 4D structure with Pools representing separable gating domains.
 func (net *Network) AddSTNLayer4D(name, class string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
 	ly := net.AddLayer4D(name, STNLayer, nPoolsY, nPoolsX, nNeurY, nNeurX)
+	// note: type based doc is fine
 	ly.AddClass(class)
 	return ly
 }

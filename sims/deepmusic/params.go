@@ -33,7 +33,7 @@ var LayerParams = axon.LayerSheets{
 
 				ly.Learn.CaLearn.Dt.MTau = 2 // 2 > 5 actually
 				ly.Learn.CaLearn.ETraceTau = 4
-				ly.Learn.CaLearn.ETraceScale = 0.05 // 0.05 >= 0.1, 0.2, > 0 -- actually useful!
+				ly.Learn.CaLearn.ETraceScale = 0.05 // 0.05 > 0.1, 0.2, > 0 -- actually useful!
 
 				ly.Learn.Timing.On.SetBool(false)
 				// ly.Learn.Timing.Refractory.SetBool(true)

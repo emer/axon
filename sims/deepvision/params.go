@@ -52,8 +52,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.KNa.Slow.Gk = 0.1
 
 				ly.Learn.CaLearn.Dt.MTau = 2 // 2 == 5?
-				// ly.Learn.CaLearn.ETraceTau = 4
-				// ly.Learn.CaLearn.ETraceScale = 0.1 // 0.1 > 0.05, 0.2 etc
+				ly.Learn.CaLearn.ETraceTau = 4
+				ly.Learn.CaLearn.ETraceScale = 0.02 //
 
 				ly.Learn.CaSpike.SpikeCaM = 12   // 12 > 8 -- dv too (lvis)
 				ly.Learn.CaSpike.SpikeCaSyn = 12 // 12 >> 8 -- "
@@ -78,7 +78,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.RLRate.SpikeThr = 0.1 // 0.1 def
 				ly.Learn.RLRate.Min = 0.001
 
-				ly.Learn.Timing.On.SetBool(true)
+				ly.Learn.Timing.On.SetBool(false)
 				// ly.Learn.Timing.Refractory.SetBool(true)
 				// ly.Learn.Timing.LearnThr = 0.1
 				// ly.Learn.Timing.SynCaCycles = 160

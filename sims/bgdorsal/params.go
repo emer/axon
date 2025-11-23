@@ -17,6 +17,13 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Noise.On.SetBool(true) // true >= false (minor)
 				ly.Acts.Noise.Ge = 0.0001      // 0.0001 > others; could just be noise ;)
 				ly.Acts.Noise.Gi = 0.0001      // 0.0001 perhaps better than others
+
+				ly.Learn.Timing.On.SetBool(false)
+				// ly.Learn.Timing.Refractory.SetBool(true)
+				// ly.Learn.Timing.LearnThr = 0.1
+				ly.Learn.Timing.SynCaCycles = 180 // 200 > 220 > 250, 160 for 250/50 cyc
+				// ly.Learn.Timing.Cycles = 170
+				// ly.Learn.Timing.TimeDiffTau = 4
 			}},
 		{Sel: ".PFCLayer", Doc: "pfc",
 			Set: func(ly *axon.LayerParams) {
@@ -160,14 +167,12 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.02 // 0.02 > 0.04 > 0.01 -- still key
 				// note: MotorBS is a target, key for learning; SWts not used.
-				// pt.Learn.SynCaBin.Envelope = kinase.Env10
 				// pt.Learn.DWt.CaPScale = 1 // tbd in Env
 			}},
 		{Sel: ".VLM1", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.02 // 0.02 > 0.04 > 0.01 -- still key
 				// note: VL is a target layer; SWts not used.
-				// pt.Learn.SynCaBin.Envelope = kinase.Env10
 				// pt.Learn.DWt.CaPScale = 1 // tbd in Env
 			}},
 		{Sel: "#DGPiToM1VM", Doc: "final inhibition",
@@ -179,7 +184,6 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 3       // 3 >= 3.5 > 2.5
 				pt.Learn.LRate.Base = 0.04 // 0.04 > 0.02 > 0.0005 with STN 150
-				// pt.Learn.SynCaBin.Envelope = kinase.Env10
 				// pt.Learn.DWt.CaPScale = 1 // tbd in Env
 			}},
 		{Sel: "#DGPiToPF", Doc: "",
@@ -427,8 +431,6 @@ var PathParamsDefs = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.04         // 0.04 > 0.03
 				pt.Learn.DWt.SynTraceTau = 1       // 1 > 2
-				pt.Learn.DWt.CaPScale = 1.05       // 1.05 > 1 > 1.1
-				pt.Learn.DWt.SynCa20.SetBool(true) // 20 > 10
 				pt.SWts.Adapt.HiMeanDecay = 0.0008 // 0.0008 for 4x6, 0.005 for 3x10 -- not clear if real..
 				pt.Learn.DWt.SubMean = 0           // 0 >> 1 -- fails at 1
 				pt.Learn.DWt.LearnThr = 0          // 0 > .1
@@ -490,8 +492,17 @@ var PathParamsDefs = axon.PathSheets{
 			}},
 		{Sel: ".ToMotor", Doc: "all excitatory paths to MotorBS; see #DGPiToMotorBS too",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.LRate.Base = 0.02 // 0.02 > 0.04 > 0.01 -- still key
+				pt.Learn.LRate.Base = 0.02         // 0.02 > 0.04 > 0.01 -- still key
+				pt.Learn.DWt.CaPScale = 1.05       // 1.05 > 1 > 1.1
+				pt.Learn.DWt.SynCa20.SetBool(true) // 20 > 10
 				// note: MotorBS is a target, key for learning; SWts not used.
+				// pt.Learn.SynCaBin.Envelope = kinase.Env10
+				// pt.Learn.DWt.CaPScale = 1 // tbd in Env
+			}},
+		{Sel: "#DGPiToMotorBS", Doc: "final inhibition",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 3       // 3 >= 3.5 > 2.5
+				pt.Learn.LRate.Base = 0.04 // 0.04 > 0.02 > 0.0005 with STN 150
 				// pt.Learn.SynCaBin.Envelope = kinase.Env10
 				// pt.Learn.DWt.CaPScale = 1 // tbd in Env
 			}},
@@ -506,13 +517,6 @@ var PathParamsDefs = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 2 // 2 > 1.6, 2.4
 				// learn = false by default
-			}},
-		{Sel: "#DGPiToMotorBS", Doc: "final inhibition",
-			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 3       // 3 >= 3.5 > 2.5
-				pt.Learn.LRate.Base = 0.04 // 0.04 > 0.02 > 0.0005 with STN 150
-				// pt.Learn.SynCaBin.Envelope = kinase.Env10
-				// pt.Learn.DWt.CaPScale = 1 // tbd in Env
 			}},
 		{Sel: "#DGPiToPF", Doc: "",
 			Set: func(pt *axon.PathParams) {
