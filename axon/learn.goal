@@ -952,20 +952,6 @@ func (ls *LRateParams) Init() {
 // learning rules.
 type DWtParams struct {
 
-	// SynCa20 uses an effective 20msec time window for synaptic calcium computation
-	// from the [CaBins] values for send and recv neurons in computing the SynCa
-	// synaptic calcium value. The default is 10msec, i.e., 1 bin, which works well
-	// for most cases. This uses 2 bins if set.
-	SynCa20 slbool.Bool
-
-	// CaPScale is a separate multiplier for the CaP component of synaptic calcium, to
-	// allow separate weighting of potentiation (CaP) vs. depression (CaD) factors.
-	// An increased CaP level results in an overall potentiation bias, which acts
-	// like a hebbian learning factor, whereas a lower value produces more negatively
-	// biased synaptic weight changes, which may help with an overall hogging dynamic.
-	// The default of 1 works best in most cases.
-	CaPScale float32 `default:"1,0.95,1.05"`
-
 	// SubMean is the amount of the mean [dWt] to subtract for updating the online
 	// learning [LWt] values, producing a zero-sum effect. 1.0 = full zero-sum dWt.
 	// Only applies to non-zero DWts. There is a separate such factor for [SWt].
@@ -989,6 +975,24 @@ type DWtParams struct {
 	// In Matrix and VSPatch it applies to normalized GeIntNorm value: setting this relatively
 	// high encourages sparser representations.
 	LearnThr float32
+
+	// SynCa20 uses an effective 20msec time window for synaptic calcium computation
+	// from the [CaBins] values for send and recv neurons in computing the SynCa
+	// synaptic calcium value. The default is 10msec, i.e., 1 bin, which works well
+	// for most cases. This uses 2 bins if set.
+	// This is only applicable for pathways to [TargetLayer] layers
+	// (including [PulvinarLayer]), which use synaptic CaP - CaD directly for learning.
+	// Internal cortical layers use integrated CaD-like value directly, see SynCaCycles
+	// in [LearnTimingParams]. This is rarely used and typically 10ms bins are best.
+	SynCa20 slbool.Bool
+
+	// CaPScale is a separate multiplier for the CaP component of synaptic calcium, to
+	// allow separate weighting of potentiation (CaP) vs. depression (CaD) factors.
+	// Only applicable for pathways to [TargetLayer] layers (including [PulvinarLayer]).
+	// An increased CaP level results in an overall potentiation bias, which acts
+	// like a hebbian learning factor, whereas a lower value produces more negatively
+	// biased synaptic weight changes. The default of 1 works best in most cases.
+	CaPScale float32 `default:"1,0.95,1.05"`
 
 	// Dt rate = 1 / tau
 	SynTraceDt float32 `display:"-" json:"-" xml:"-" edit:"-"`

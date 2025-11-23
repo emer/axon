@@ -1009,7 +1009,6 @@ fn PathParams_DWtSynCortex(pt: PathParams, ctx: Context, rlay: LayerParams, syni
 	var learnNow = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnNow))]);
 	if (learnNow-(ctx.CyclesTotal-ctx.ThetaCycles) < 0) { // not in this time window
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
-		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));return;
 	}
 	var syCa = PathParams_SynCaTotal(pt, ctx, si, ri, di, learnNow, rlay.Learn.Timing.SynCaCycles);
@@ -1326,11 +1325,11 @@ struct LRateParams {
 	Eff: f32,
 }
 struct DWtParams {
-	SynCa20: i32,
-	CaPScale: f32,
 	SubMean: f32,
 	SynTraceTau: f32,
 	LearnThr: f32,
+	SynCa20: i32,
+	CaPScale: f32,
 	SynTraceDt: f32,
 	pad: f32,
 	pad1: f32,

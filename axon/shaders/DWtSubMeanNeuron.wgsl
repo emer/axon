@@ -831,11 +831,11 @@ struct LRateParams {
 	Eff: f32,
 }
 struct DWtParams {
-	SynCa20: i32,
-	CaPScale: f32,
 	SubMean: f32,
 	SynTraceTau: f32,
 	LearnThr: f32,
+	SynCa20: i32,
+	CaPScale: f32,
 	SynTraceDt: f32,
 	pad: f32,
 	pad1: f32,
