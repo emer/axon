@@ -357,17 +357,19 @@ fn LayerParams_GNeuroMod(ly: LayerParams, ctx: Context, ni: u32,di: u32) {
 fn LayerParams_SpikeFromG(ly: LayerParams, ctx: Context, lpi: u32,ni: u32,di: u32) {
 	ActParams_VmFromG(ly.Acts, ctx, ni, di);
 	ActParams_SpikeFromVm(ly.Acts, ctx, ni, di);
-	LearnNeuronParams_CaFromSpike(ly.Learn, ctx, ni, di);
-	if (!LayerParams_IsTarget(ly) && ly.Type != IOLayer) {
-		var learnNow = LearnTimingParams_LearnTiming(ly.Learn.Timing, ctx, ni, di);
-		if (learnNow) {
-			var da = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvDA), u32(di))];
-			var ach = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvACh), u32(di))];
-			var nrnCaD = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaD))];
-			var mlr = RLRateParams_RLRateSigDeriv(ly.Learn.RLRate, nrnCaD, PoolAvgMax(AMCaD, AMCycle, Max, lpi, di));
-			var modlr = NeuroModParams_LRMod(ly.Learn.NeuroMod, da, ach);
-			var dlr = RLRateParams_RLRateDiff(ly.Learn.RLRate, Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaP))], nrnCaD);
-			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(RLRate))] = mlr * dlr * modlr;
+	if (ly.Type != IOLayer) {
+		LearnNeuronParams_CaFromSpike(ly.Learn, ctx, ni, di);
+		if (!LayerParams_IsTarget(ly)) {
+			var learnNow = LearnTimingParams_LearnTiming(ly.Learn.Timing, ctx, ni, di);
+			if (learnNow) {
+				var da = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvDA), u32(di))];
+				var ach = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvACh), u32(di))];
+				var nrnCaD = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaD))];
+				var mlr = RLRateParams_RLRateSigDeriv(ly.Learn.RLRate, nrnCaD, PoolAvgMax(AMCaD, AMCycle, Max, lpi, di));
+				var modlr = NeuroModParams_LRMod(ly.Learn.NeuroMod, da, ach);
+				var dlr = RLRateParams_RLRateDiff(ly.Learn.RLRate, Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaP))], nrnCaD);
+				Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(RLRate))] = mlr * dlr * modlr;
+			}
 		}
 	}
 	var lmax = PoolAvgMax(AMGeInt, AMCycle, Max, lpi, di);
@@ -388,13 +390,7 @@ fn LayerParams_SpikeFromG(ly: LayerParams, ctx: Context, lpi: u32,ni: u32,di: u3
 		}
 	}
 	if (ly.Type != IOLayer) { // uses bins for itself
-		var bin = CaBinForCycle(ctx.CyclesTotal);
-		var incr = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaSyn))] / f32(CaBinCycles);
-		if (CaBinIsFirst(ctx.CyclesTotal)) {
-			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaBins + NeuronVars(bin)))] = incr;
-		} else {
-			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaBins + NeuronVars(bin)))] += incr;
-		}
+		CaBinIncrement(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaSyn))], ctx.CyclesTotal, ni, di);
 	}
 }
 
@@ -907,27 +903,21 @@ fn ActParams_SpikeFromVm(ac: ActParams, ctx: Context, ni: u32,di: u32) {
 
 //////// import: "cereb-layer.go"
 struct NuclearParams {
+	ActionEnv: i32,
+	SendTimeOff: i32,
 	ActTarget: f32,
+	Decay: f32,
 	IOLayIndex: i32,
 	pad: f32,
 	pad1: f32,
+	pad2: f32,
 }
 struct IOParams {
 	TimeOff: i32,
-	ActionEnv: i32,
 	ErrThr: f32,
 	EfferentThr: f32,
-	InhibBin: i32,
-	TimeBins: i32,
-	pad: i32,
-	pad1: i32,
-}
-struct CNeUpParams {
-	ActTarg: f32,
-	LearnThr: f32,
-	GeBaseLRate: f32,
-	PredLayIndex: i32,
-	SenseLayIndex: i32,
+	GeTau: f32,
+	GeDt: f32,
 	pad: f32,
 	pad1: f32,
 	pad2: f32,
@@ -1254,8 +1244,14 @@ fn Context_DataIndex(ctx: Context, idx: u32) -> u32 {
 fn CaBinForCycle(cycle: i32) -> i32 {
 	return (cycle / CaBinCycles) % NetworkIxs[0].NCaBins;
 }
-fn CaBinIsFirst(cycle: i32) -> bool {
-	return (cycle % CaBinCycles) == 0;
+fn CaBinIncrement(incr: f32, cycle: i32, ni: u32,di: u32) {
+	var bin = CaBinForCycle(cycle);
+	var incn = incr / f32(CaBinCycles);
+	if ((cycle % CaBinCycles) == 0) {
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaBins + NeuronVars(bin)))] = incn;
+	} else {
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaBins + NeuronVars(bin)))] += incn;
+	}
 }
 
 //////// import: "deep-layer.go"
@@ -1535,7 +1531,7 @@ struct LayerParams {
 	Striatum: StriatumParams,
 	GP: GPParams,
 	IO: IOParams,
-	CNeUp: CNeUpParams,
+	Nuclear: NuclearParams,
 	LDT: LDTParams,
 	VTA: VTAParams,
 	RWPred: RWPredParams,

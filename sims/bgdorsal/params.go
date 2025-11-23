@@ -21,7 +21,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.Timing.On.SetBool(false)
 				// ly.Learn.Timing.Refractory.SetBool(true)
 				// ly.Learn.Timing.LearnThr = 0.1
-				ly.Learn.Timing.SynCaCycles = 200 // 200 > 220 > 250, 160 for 250/50 cyc
+				ly.Learn.Timing.SynCaCycles = 200 // 200 > 180 > 220 > 250, 160 for 250/50 cyc
 				// ly.Learn.Timing.Cycles = 170
 				// ly.Learn.Timing.TimeDiffTau = 4
 			}},
@@ -84,8 +84,13 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.Layer.On.SetBool(true)
 				ly.Inhib.Pool.On.SetBool(false)
-				ly.Inhib.Layer.Gi = 0.2 // 0.2 > 0.3 > 0.1
-				ly.Acts.Clamp.Ge = 2.2  // 2 > 2.5 > 2.2 > 1.5, >> 1 -- absolutely critical given GPi inhib
+				ly.Inhib.Layer.Gi = 0.2 // 0.2 > 0.25 > 0.3 > 0.1
+				ly.Acts.Clamp.Ge = 2    // 2 > 2.2 > 2.5 > 2.2 > 1.5, >> 1 -- absolutely critical given GPi inhib
+			}},
+		{Sel: "#VL", Doc: "",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.Layer.Gi = 1.05     // def 1
+				ly.Pulvinar.DriveScale = 0.1 // 0.1 > 0.12, 0.15
 			}},
 		{Sel: "#DGPeAk", Doc: "arkypallidal",
 			Set: func(ly *axon.LayerParams) {
@@ -108,7 +113,7 @@ var PathParams = axon.PathSheets{
 		{Sel: "Path", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.04         // 0.04 > 0.03
-				pt.Learn.DWt.SynTraceTau = 1       // 1 > 2
+				pt.Learn.DWt.SynTraceTau = 1       // 1 > 2; todo: explore for pfc paths separately
 				pt.Learn.DWt.SynCa20.SetBool(true) // 20 > 10 for long 300 ms thetacycle; only for ToTarget paths
 				pt.SWts.Adapt.HiMeanDecay = 0.0008 // 0.0008 for 4x6, 0.005 for 3x10 -- not clear if real..
 				pt.Learn.DWt.SubMean = 0           // 0 >> 1 -- fails at 1
@@ -166,19 +171,19 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.02   // 0.02 > 0.04 > 0.01 -- still key
 				pt.Learn.DWt.SynTraceTau = 1 // 1 > 2
-				pt.Learn.DWt.CaPScale = 1    // 1.05 > 1 > 1.1
+				pt.Learn.DWt.CaPScale = 1.05 // 1.05 > 1 > 1.1; still key v.80, could not avoid.
 				// note: SWts not used for ToTarget layers.
 			}},
 		{Sel: "#DGPiToMotorBS", Doc: "ToTarget inhibition of MotorBS",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 3       // 3 >= 3.5 > 2.5
-				pt.Learn.LRate.Base = 0.04 // 0.04 > 0.02 > 0.0005 with STN 150
-				pt.Learn.DWt.CaPScale = 1  // 1.05 > 1 > 1.1
+				pt.PathScale.Abs = 3         // 3 >= 3.5 > 2.5
+				pt.Learn.LRate.Base = 0.04   // 0.04 > 0.02 > 0.0005 with STN 150
+				pt.Learn.DWt.CaPScale = 1.05 // 1.05 > 1 > 1.1; this is particularly key
 			}},
 		{Sel: ".VLM1", Doc: "ToTarget projections from M1 layers to VL",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.LRate.Base = 0.02   // 0.02 > 0.04 > 0.01 -- still key
-				pt.Learn.DWt.CaPScale = 1.05 // 1.05 > 1 > 1.1
+				pt.Learn.LRate.Base = 0.02 // 0.02 > 0.04 > 0.01 -- still key
+				pt.Learn.DWt.CaPScale = 1  // 1.0 == 1.05
 				// note: SWts not used for ToTarget layers.
 			}},
 		{Sel: "#DGPiToM1VM", Doc: "final inhibition",

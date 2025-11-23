@@ -211,10 +211,18 @@ func CaBinForCycle(cycle int32) int32 {
 	return (cycle / CaBinCycles) % NetworkIxs[0].NCaBins
 }
 
-// CaBinIsFirst returns true if given cycle is the first of the CaBinCycles
-// cycle. Used for initializing a new value versus adding to existing.
-func CaBinIsFirst(cycle int32) bool {
-	return (cycle % CaBinCycles) == 0
+// CaBinIncrement writes given increment to the [CaBins] for given absolute cycle
+// (CyclesTotal), initializing with value if it is the first one, and adding otherwise.
+// Given value is divided by CaBinCycles to keep it normalized as an average across the
+// CaBinCycles window.
+func CaBinIncrement(incr float32, cycle int32, ni, di uint32) {
+	bin := CaBinForCycle(cycle)
+	incn := incr / float32(CaBinCycles)
+	if (cycle % CaBinCycles) == 0 {
+		Neurons.Set(incn, int(ni), int(di), int(CaBins+NeuronVars(bin)))
+	} else {
+		Neurons.SetAdd(incn, int(ni), int(di), int(CaBins+NeuronVars(bin)))
+	}
 }
 
 //gosl:end

@@ -47,6 +47,9 @@ fn LayerParams_NewStateNeuron(ly: LayerParams, ctx: Context, ni: u32,di: u32) {
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaPMaxCa))] = 0.0;
 	ActParams_DecayState(ly.Acts, ctx, ni, di, ly.Acts.Decay.Act, ly.Acts.Decay.Glong, ly.Acts.Decay.AHP);
 	ActParams_KNaNewState(ly.Acts, ctx, ni, di);
+	if (ly.Type == IOLayer || ly.Type == CNiIOLayer || ly.Type == CNiUpLayer || ly.Type == CNeLayer) {
+		LayerParams_NuclearLearnReset(ly, ctx, ni, di);
+	}
 }
 
 //////// import: "act-net.go"
@@ -293,27 +296,38 @@ fn ActParams_KNaNewState(ac: ActParams, ctx: Context, ni: u32,di: u32) {
 
 //////// import: "cereb-layer.go"
 struct NuclearParams {
+	ActionEnv: i32,
+	SendTimeOff: i32,
 	ActTarget: f32,
+	Decay: f32,
 	IOLayIndex: i32,
 	pad: f32,
 	pad1: f32,
+	pad2: f32,
+}
+fn LayerParams_NuclearLearnReset(ly: LayerParams, ctx: Context, ni: u32,di: u32) {
+	var effAct = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeCycle))]);
+	if (effAct == 0) {
+		return;
+	}
+	if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // not done yet
+	u32(ni), u32(di), u32(LearnNow))] == 0.0) {
+		return;
+	}
+	var envCyc = ctx.CyclesTotal - effAct; // cycle within envelope
+	if (envCyc > ly.Nuclear.ActionEnv) {
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeCycle))] = 0.0;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = 0.0;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
+		u32(ni), u32(di), u32(LearnNow))] = 0.0;
+	}
 }
 struct IOParams {
 	TimeOff: i32,
-	ActionEnv: i32,
 	ErrThr: f32,
 	EfferentThr: f32,
-	InhibBin: i32,
-	TimeBins: i32,
-	pad: i32,
-	pad1: i32,
-}
-struct CNeUpParams {
-	ActTarg: f32,
-	LearnThr: f32,
-	GeBaseLRate: f32,
-	PredLayIndex: i32,
-	SenseLayIndex: i32,
+	GeTau: f32,
+	GeDt: f32,
 	pad: f32,
 	pad1: f32,
 	pad2: f32,
@@ -729,7 +743,7 @@ struct LayerParams {
 	Striatum: StriatumParams,
 	GP: GPParams,
 	IO: IOParams,
-	CNeUp: CNeUpParams,
+	Nuclear: NuclearParams,
 	LDT: LDTParams,
 	VTA: VTAParams,
 	RWPred: RWPredParams,

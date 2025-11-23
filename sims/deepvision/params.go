@@ -53,7 +53,7 @@ var LayerParams = axon.LayerSheets{
 
 				ly.Learn.CaLearn.Dt.MTau = 2 // 2 == 5?
 				ly.Learn.CaLearn.ETraceTau = 4
-				ly.Learn.CaLearn.ETraceScale = 0.02 //
+				ly.Learn.CaLearn.ETraceScale = 0.1 // 0.05 similar to 0
 
 				ly.Learn.CaSpike.SpikeCaM = 12   // 12 > 8 -- dv too (lvis)
 				ly.Learn.CaSpike.SpikeCaSyn = 12 // 12 >> 8 -- "

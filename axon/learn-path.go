@@ -35,9 +35,8 @@ func (pt *PathParams) DWtSyn(ctx *Context, rlay *LayerParams, syni, si, ri, di u
 		pt.DWtSynVSPatch(ctx, syni, si, ri, lpi, pi, di)
 	case DSPatchPath:
 		pt.DWtSynDSPatch(ctx, syni, si, ri, lpi, pi, di)
-	// case CNiIOToOutPath:
-	//
-	//	pt.DWtSynCNeUp(ctx, rlay, syni, si, ri, lpi, pi, di)
+	case CNIOPath:
+		pt.DWtCNIO(ctx, rlay, syni, si, ri, lpi, pi, di)
 	case RWPath:
 		pt.DWtSynRWPred(ctx, syni, si, ri, lpi, pi, di)
 	case TDPredPath:
@@ -476,17 +475,25 @@ func (pt *PathParams) DWtSynDSPatch(ctx *Context, syni, si, ri, lpi, pi, di uint
 	SynapseTraces.Set(dtr, int(syni), int(di), int(DTr))
 }
 
-// DWtSynCNeUp computes the weight change (learning) at given synapse,
-// for the CNiIOToOut inhibitory pathway, conditioned on there being
-// above-threshold activity in both excitatory and inhibitory pathways.
-// func (pt *PathParams) DWtSynCNeUp(ctx *Context, rlay *LayerParams, syni, si, ri, lpi, pi, di uint32) {
-// 	sact := Neurons[si, di, CaD] // sending activity
-// 	ract := Neurons[ri, di, CaD] // receiving activity
-// 	predSenseAct := Neurons[ri, di, RLRate] // CNiIO * Sense input activity, in PlusPhaseNeuron
-// 	dwt := -predSenseAct * sact * (rlay.CNeUp.ActTarg - ract) // minus sign due to inhibitory
-// 	// todo: softbound?
-// 	SynapseTraces[syni, di, DiDWt] = pt.Learn.LRate.Eff * dwt
-// }
+// DWtCNIO computes the weight change (learning) at given synapse,
+// for cerebellar neurons that learn from IO LearnNow signals.
+func (pt *PathParams) DWtCNIO(ctx *Context, rlay *LayerParams, syni, si, ri, lpi, pi, di uint32) {
+	learnNow := int32(Neurons.Value(int(ri), int(di), int(LearnNow)))
+	if learnNow-(ctx.CyclesTotal-ctx.ThetaCycles) < 0 { // not in this time window
+		SynapseTraces.Set(0.0, int(syni), int(di), int(DTr))
+		SynapseTraces.Set(0.0, int(syni), int(di), int(DiDWt))
+		return
+	}
+	bi := CaBinForCycle(learnNow - rlay.Nuclear.SendTimeOff)
+	sact := Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(bi))) // sending activity
+	// todo: rlrate? Neurons[ri, di, RLRate]
+	dwt := sact
+	if Neurons.Value(int(ri), int(di), int(TimePeak)) > 0 { // means that we got to end of cycle with no err: decay
+		dwt = -dwt * rlay.Nuclear.Decay
+	}
+	// todo: softbound?
+	SynapseTraces.Set(pt.Learn.LRate.Eff*dwt, int(syni), int(di), int(DiDWt))
+}
 
 //////// WtFromDWt
 

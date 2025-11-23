@@ -307,27 +307,21 @@ fn ActParams_DecayState(ac: ActParams, ctx: Context, ni: u32,di: u32, decay: f32
 
 //////// import: "cereb-layer.go"
 struct NuclearParams {
+	ActionEnv: i32,
+	SendTimeOff: i32,
 	ActTarget: f32,
+	Decay: f32,
 	IOLayIndex: i32,
 	pad: f32,
 	pad1: f32,
+	pad2: f32,
 }
 struct IOParams {
 	TimeOff: i32,
-	ActionEnv: i32,
 	ErrThr: f32,
 	EfferentThr: f32,
-	InhibBin: i32,
-	TimeBins: i32,
-	pad: i32,
-	pad1: i32,
-}
-struct CNeUpParams {
-	ActTarg: f32,
-	LearnThr: f32,
-	GeBaseLRate: f32,
-	PredLayIndex: i32,
-	SenseLayIndex: i32,
+	GeTau: f32,
+	GeDt: f32,
 	pad: f32,
 	pad1: f32,
 	pad2: f32,
@@ -737,7 +731,7 @@ struct LayerParams {
 	Striatum: StriatumParams,
 	GP: GPParams,
 	IO: IOParams,
-	CNeUp: CNeUpParams,
+	Nuclear: NuclearParams,
 	LDT: LDTParams,
 	VTA: VTAParams,
 	RWPred: RWPredParams,

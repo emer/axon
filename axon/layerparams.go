@@ -130,10 +130,9 @@ type LayerParams struct {
 	// above-threshold efferent copy motor trigger input (modulatory).
 	IO IOParams `display:"inline"`
 
-	// CNeUp has parameters for learning in the cerebellar nucleus
-	// output neurons, which are tonically active and learn to maintain a target
-	// activity level in the presence and absence of inputs.
-	CNeUp CNeUpParams `display:"inline"`
+	// Nuclear has parameters for learning in the cerebellum, according
+	// to the Nuclear model (not just nucleus neurons).
+	Nuclear NuclearParams `display:"inline"`
 
 	// LDT has parameters for laterodorsal tegmentum ACh salience neuromodulatory
 	// signal, driven by superior colliculus stimulus novelty, US input / absence,
@@ -209,7 +208,7 @@ func (ly *LayerParams) Update() {
 	ly.GP.Update()
 
 	ly.IO.Update()
-	ly.CNeUp.Update()
+	ly.Nuclear.Update()
 
 	ly.LDT.Update()
 	ly.VTA.Update()
@@ -237,7 +236,7 @@ func (ly *LayerParams) Defaults() {
 	ly.GP.Defaults()
 
 	ly.IO.Defaults()
-	ly.CNeUp.Defaults()
+	ly.Nuclear.Defaults()
 
 	ly.LDT.Defaults()
 	ly.VTA.Defaults()
@@ -264,8 +263,8 @@ func (ly *LayerParams) ShouldDisplay(field string) bool {
 		return ly.Type == GPLayer
 	case "IO":
 		return ly.Type == IOLayer
-	// case "CNeUp":
-	// 	return ly.Type == CNeUpLayer
+	case "Nuclear":
+		return ly.Type == CNiIOLayer || ly.Type == CNiUpLayer || ly.Type == CNeLayer
 	case "LDT":
 		return ly.Type == LDTLayer
 	case "VTA":

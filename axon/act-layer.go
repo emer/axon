@@ -525,17 +525,19 @@ func (ly *LayerParams) GNeuroMod(ctx *Context, ni, di uint32) {
 func (ly *LayerParams) SpikeFromG(ctx *Context, lpi, ni, di uint32) {
 	ly.Acts.VmFromG(ctx, ni, di)
 	ly.Acts.SpikeFromVm(ctx, ni, di)
-	ly.Learn.CaFromSpike(ctx, ni, di)
-	if !ly.IsTarget() && ly.Type != IOLayer {
-		learnNow := ly.Learn.Timing.LearnTiming(ctx, ni, di)
-		if learnNow {
-			da := GlobalScalars.Value(int(GvDA), int(di))
-			ach := GlobalScalars.Value(int(GvACh), int(di))
-			nrnCaD := Neurons.Value(int(ni), int(di), int(CaD))
-			mlr := ly.Learn.RLRate.RLRateSigDeriv(nrnCaD, PoolAvgMax(AMCaD, AMCycle, Max, lpi, di))
-			modlr := ly.Learn.NeuroMod.LRMod(da, ach)
-			dlr := ly.Learn.RLRate.RLRateDiff(Neurons.Value(int(ni), int(di), int(CaP)), nrnCaD)
-			Neurons.Set(mlr*dlr*modlr, int(ni), int(di), int(RLRate))
+	if ly.Type != IOLayer {
+		ly.Learn.CaFromSpike(ctx, ni, di)
+		if !ly.IsTarget() {
+			learnNow := ly.Learn.Timing.LearnTiming(ctx, ni, di)
+			if learnNow {
+				da := GlobalScalars.Value(int(GvDA), int(di))
+				ach := GlobalScalars.Value(int(GvACh), int(di))
+				nrnCaD := Neurons.Value(int(ni), int(di), int(CaD))
+				mlr := ly.Learn.RLRate.RLRateSigDeriv(nrnCaD, PoolAvgMax(AMCaD, AMCycle, Max, lpi, di))
+				modlr := ly.Learn.NeuroMod.LRMod(da, ach)
+				dlr := ly.Learn.RLRate.RLRateDiff(Neurons.Value(int(ni), int(di), int(CaP)), nrnCaD)
+				Neurons.Set(mlr*dlr*modlr, int(ni), int(di), int(RLRate))
+			}
 		}
 	}
 
@@ -557,13 +559,7 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, lpi, ni, di uint32) {
 		}
 	}
 	if ly.Type != IOLayer { // uses bins for itself
-		bin := CaBinForCycle(ctx.CyclesTotal)
-		incr := Neurons.Value(int(ni), int(di), int(CaSyn)) / float32(CaBinCycles)
-		if CaBinIsFirst(ctx.CyclesTotal) {
-			Neurons.Set(incr, int(ni), int(di), int(CaBins+NeuronVars(bin)))
-		} else {
-			Neurons.SetAdd(incr, int(ni), int(di), int(CaBins+NeuronVars(bin)))
-		}
+		CaBinIncrement(Neurons.Value(int(ni), int(di), int(CaSyn)), ctx.CyclesTotal, ni, di)
 	}
 }
 
@@ -968,6 +964,9 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32) {
 	ly.Acts.DecayState(ctx, ni, di, ly.Acts.Decay.Act, ly.Acts.Decay.Glong, ly.Acts.Decay.AHP)
 	// Note: synapse-level Ca decay happens in DWt
 	ly.Acts.KNaNewState(ctx, ni, di)
+	if ly.Type == IOLayer || ly.Type == CNiIOLayer || ly.Type == CNiUpLayer || ly.Type == CNeLayer {
+		ly.NuclearLearnReset(ctx, ni, di)
+	}
 }
 
 // Beta1Neuron does neuron level Beta1 updating.

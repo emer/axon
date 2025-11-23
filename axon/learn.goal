@@ -978,20 +978,20 @@ type DWtParams struct {
 
 	// SynCa20 uses an effective 20msec time window for synaptic calcium computation
 	// from the [CaBins] values for send and recv neurons in computing the SynCa
-	// synaptic calcium value. The default is 10msec, i.e., 1 bin, which works well
-	// for most cases. This uses 2 bins if set.
-	// This is only applicable for pathways to [TargetLayer] layers
+	// synaptic calcium value. Only applicable for pathways to [TargetLayer] layers
 	// (including [PulvinarLayer]), which use synaptic CaP - CaD directly for learning.
+	// Default of 10msec (1 bin), works well for most cases.
 	// Internal cortical layers use integrated CaD-like value directly, see SynCaCycles
-	// in [LearnTimingParams]. This is rarely used and typically 10ms bins are best.
+	// in [LearnTimingParams]. This is only used for long ThetaCycle window (> 250 ms).
 	SynCa20 slbool.Bool
 
 	// CaPScale is a separate multiplier for the CaP component of synaptic calcium, to
 	// allow separate weighting of potentiation (CaP) vs. depression (CaD) factors.
 	// Only applicable for pathways to [TargetLayer] layers (including [PulvinarLayer]).
+	// The default of 1 works best in most cases -- only adjust in special cases.
 	// An increased CaP level results in an overall potentiation bias, which acts
 	// like a hebbian learning factor, whereas a lower value produces more negatively
-	// biased synaptic weight changes. The default of 1 works best in most cases.
+	// biased synaptic weight changes.
 	CaPScale float32 `default:"1,0.95,1.05"`
 
 	// Dt rate = 1 / tau

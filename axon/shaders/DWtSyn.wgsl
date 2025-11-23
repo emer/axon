@@ -377,27 +377,21 @@ struct ActParams {
 
 //////// import: "cereb-layer.go"
 struct NuclearParams {
+	ActionEnv: i32,
+	SendTimeOff: i32,
 	ActTarget: f32,
+	Decay: f32,
 	IOLayIndex: i32,
 	pad: f32,
 	pad1: f32,
+	pad2: f32,
 }
 struct IOParams {
 	TimeOff: i32,
-	ActionEnv: i32,
 	ErrThr: f32,
 	EfferentThr: f32,
-	InhibBin: i32,
-	TimeBins: i32,
-	pad: i32,
-	pad1: i32,
-}
-struct CNeUpParams {
-	ActTarg: f32,
-	LearnThr: f32,
-	GeBaseLRate: f32,
-	PredLayIndex: i32,
-	SenseLayIndex: i32,
+	GeTau: f32,
+	GeDt: f32,
 	pad: f32,
 	pad1: f32,
 	pad2: f32,
@@ -816,7 +810,7 @@ struct LayerParams {
 	Striatum: StriatumParams,
 	GP: GPParams,
 	IO: IOParams,
-	CNeUp: CNeUpParams,
+	Nuclear: NuclearParams,
 	LDT: LDTParams,
 	VTA: VTAParams,
 	RWPred: RWPredParams,
@@ -923,6 +917,9 @@ fn PathParams_DWtSyn(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32,
 	}
 	case DSPatchPath: {
 		PathParams_DWtSynDSPatch(pt, ctx, syni, si, ri, lpi, pi, di);
+	}
+	case CNIOPath: {
+		PathParams_DWtCNIO(pt, ctx, rlay, syni, si, ri, lpi, pi, di);
 	}
 	case RWPath: {
 		PathParams_DWtSynRWPred(pt, ctx, syni, si, ri, lpi, pi, di);
@@ -1239,6 +1236,24 @@ fn PathParams_DWtSynDSPatch(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: 
 	SynapseTracesSet(dwt, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));
 	SynapseTracesSet(dtr, Index3D(TensorStrides[180], TensorStrides[181],
 	TensorStrides[182], u32(syni), u32(di), u32(DTr)));
+}
+fn PathParams_DWtCNIO(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
+	var learnNow = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnNow))]);
+	if (learnNow-(ctx.CyclesTotal-ctx.ThetaCycles) < 0) { // not in this time window
+		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
+		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));return;
+	}
+	var bi = CaBinForCycle(learnNow - rlay.Nuclear.SendTimeOff);
+	var sact = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // sending activity
+	u32(si), u32(di), u32(CaBins + NeuronVars(bi)))];
+	var dwt = sact;
+	if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // means that we got to end of cycle with no err: decay
+	u32(ri), u32(di), u32(TimePeak))] > 0) {
+		dwt = -dwt * rlay.Nuclear.Decay;
+	}
+	SynapseTracesSet(pt.Learn.LRate.Eff * dwt, Index3D(TensorStrides[180], TensorStrides[181],
+	TensorStrides[182],
+	u32(syni), u32(di), u32(DiDWt)));
 }
 
 //////// import: "learn.go"

@@ -452,75 +452,73 @@ struct ActParams {
 
 //////// import: "cereb-layer.go"
 struct NuclearParams {
+	ActionEnv: i32,
+	SendTimeOff: i32,
 	ActTarget: f32,
+	Decay: f32,
 	IOLayIndex: i32,
 	pad: f32,
 	pad1: f32,
+	pad2: f32,
 }
 fn LayerParams_IOLearn(ly: LayerParams, ctx: Context, lni: u32,lpi: u32,pi: u32,ni: u32,di: u32) {
+	var ioi = u32(ly.Nuclear.IOLayIndex);
+	let ioly = Layers[ioi];
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ioly.Indexes.NeurSt + lni), u32(di), u32(LearnNow))];
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ioly.Indexes.NeurSt + lni), u32(di), u32(TimePeak))];
 }
 struct IOParams {
 	TimeOff: i32,
-	ActionEnv: i32,
 	ErrThr: f32,
 	EfferentThr: f32,
-	InhibBin: i32,
-	TimeBins: i32,
-	pad: i32,
-	pad1: i32,
-}
-fn IOParams_RingIndex(tp: IOParams, i: i32) -> i32 {
-	var ri = i;
-	if (ri >= tp.TimeBins) {
-		ri -= tp.TimeBins;
-	}return ri;
+	GeTau: f32,
+	GeDt: f32,
+	pad: f32,
+	pad1: f32,
+	pad2: f32,
 }
 fn LayerParams_IOUpdate(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,di: u32) {
+	var gaM = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaM))];
+	gaM += ly.IO.GeDt * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeSyn))] - gaM);
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaM))] = gaM;
 	var cycTot = f32(ctx.CyclesTotal);
-	if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GModSyn))] > ly.IO.EfferentThr) {
+	if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // efferent always activates.
+	u32(ni), u32(di), u32(GModSyn))] > ly.IO.EfferentThr) {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // efferent activation cycle
 		u32(ni), u32(di), u32(TimeCycle))] = cycTot;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = 0.0;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = 0.0;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 0.0;return;
 	}
-	var effAct = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeCycle))];
+	var effAct = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeCycle))]);
 	if (effAct == 0) {
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 0.0;return;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
+		u32(ni), u32(di), u32(Spike))] = 0.0;return;
 	}
-	var envCyc = i32(cycTot - effAct); // cycle within envelope
-	if (envCyc > ly.IO.ActionEnv) {
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeCycle))] = 0.0;
+	var envCyc = ctx.CyclesTotal - effAct; // cycle within envelope
+	if (envCyc > ly.Nuclear.ActionEnv) {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], // records that we got to end of cycle
 		TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = 1.0;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = cycTot;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], // baseline spike
 		TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 1.0;return;
 	}
-	var envBin = envCyc / ly.IO.InhibBin;
-	var oldBin = IOParams_RingIndex(ly.IO, envBin % ly.IO.TimeBins);                // at start of buffer
-	var curBin = IOParams_RingIndex(ly.IO, envBin%ly.IO.TimeBins + ly.IO.TimeBins); // at end of buffer
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaBins + NeuronVars(curBin)))] += Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GiSyn))] / f32(ly.IO.TimeBins);
+	if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // already learned
+	u32(ni), u32(di), u32(LearnNow))] > 0) {
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 0.0;return;
+	}
+	CaBinIncrement(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GiSyn))], ctx.CyclesTotal, ni, di);
+	var bin = CaBinForCycle(ctx.CyclesTotal - ly.IO.TimeOff);
 	var oldInhib = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
-	u32(ni), u32(di), u32(CaBins + NeuronVars(oldBin)))];
-	if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeSyn))]-oldInhib > ly.IO.ErrThr) {
+	u32(ni), u32(di), u32(CaBins + NeuronVars(bin)))];
+	if (gaM-oldInhib > ly.IO.ErrThr) {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // error spike
 		u32(ni), u32(di), u32(Spike))] = 1.0;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // record point of error
 		u32(ni), u32(di), u32(LearnNow))] = cycTot;
 	} else {
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
-		u32(ni), u32(di), u32(Spike))] = 0.0;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 0.0;
 	}
-}
-struct CNeUpParams {
-	ActTarg: f32,
-	LearnThr: f32,
-	GeBaseLRate: f32,
-	PredLayIndex: i32,
-	SenseLayIndex: i32,
-	pad: f32,
-	pad1: f32,
-	pad2: f32,
 }
 
 //////// import: "chans-ak.go"
@@ -681,6 +679,18 @@ fn Context_ItemIndex(ctx: Context, idx: u32) -> u32 {
 }
 fn Context_DataIndex(ctx: Context, idx: u32) -> u32 {
 	return idx % ctx.NData;
+}
+fn CaBinForCycle(cycle: i32) -> i32 {
+	return (cycle / CaBinCycles) % NetworkIxs[0].NCaBins;
+}
+fn CaBinIncrement(incr: f32, cycle: i32, ni: u32,di: u32) {
+	var bin = CaBinForCycle(cycle);
+	var incn = incr / f32(CaBinCycles);
+	if ((cycle % CaBinCycles) == 0) {
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaBins + NeuronVars(bin)))] = incn;
+	} else {
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaBins + NeuronVars(bin)))] += incn;
+	}
 }
 
 //////// import: "deep-layer.go"
@@ -937,7 +947,7 @@ struct LayerParams {
 	Striatum: StriatumParams,
 	GP: GPParams,
 	IO: IOParams,
-	CNeUp: CNeUpParams,
+	Nuclear: NuclearParams,
 	LDT: LDTParams,
 	VTA: VTAParams,
 	RWPred: RWPredParams,
