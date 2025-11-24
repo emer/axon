@@ -41,7 +41,7 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 
 //////// import: "act-layer.go"
 fn LayerParams_IsTarget(ly: LayerParams) -> bool {
-	return ly.Type == TargetLayer || ly.Type == PulvinarLayer || ly.Type == CNiIOLayer;
+	return ly.Type == TargetLayer || ly.Type == PulvinarLayer;
 }
 fn LayerParams_IsInput(ly: LayerParams) -> bool {
 	return ly.Type == InputLayer;
@@ -209,28 +209,6 @@ struct ActParams {
 	SKCa: SKCaParams,
 	SMaint: SMaintParams,
 	PopCode: PopCodeParams,
-}
-
-//////// import: "cereb-layer.go"
-struct NuclearParams {
-	ActionEnv: i32,
-	SendTimeOff: i32,
-	ActTarget: f32,
-	Decay: f32,
-	IOLayIndex: i32,
-	pad: f32,
-	pad1: f32,
-	pad2: f32,
-}
-struct IOParams {
-	TimeOff: i32,
-	ErrThr: f32,
-	EfferentThr: f32,
-	GeTau: f32,
-	GeDt: f32,
-	pad: f32,
-	pad1: f32,
-	pad2: f32,
 }
 
 //////// import: "chans-ak.go"
@@ -821,8 +799,8 @@ struct LearnCaParams {
 struct LearnTimingParams {
 	SynCaCycles: i32,
 	LearnThr: f32,
-	Refractory: i32,
 	On: i32,
+	Refractory: i32,
 	Cycles: i32,
 	TimeDiffTau: f32,
 	TimeDiffDt: f32,
@@ -1106,6 +1084,28 @@ alias NeuronIndexVars = i32; //enums:enum
 const  NrnNeurIndex: NeuronIndexVars = 0;
 const  NrnLayIndex: NeuronIndexVars = 1;
 const  NrnSubPool: NeuronIndexVars = 2;
+
+//////// import: "nuclear-layer.go"
+struct NuclearParams {
+	ActionEnv: i32,
+	SendTimeOff: i32,
+	ActTarget: f32,
+	Decay: f32,
+	GeBaseLRate: f32,
+	IOLayIndex: i32,
+	pad: f32,
+	pad1: f32,
+}
+struct IOParams {
+	TimeOff: i32,
+	ErrThr: f32,
+	EfferentThr: f32,
+	EfferentOff: i32,
+	GeTau: f32,
+	GeDt: f32,
+	pad: f32,
+	pad1: f32,
+}
 
 //////// import: "pathparams.go"
 const  StartOff: i32 = 0;

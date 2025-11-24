@@ -264,7 +264,7 @@ func (ly *LayerParams) ShouldDisplay(field string) bool {
 	case "IO":
 		return ly.Type == IOLayer
 	case "Nuclear":
-		return ly.Type == CNiIOLayer || ly.Type == CNiUpLayer || ly.Type == CNeLayer
+		return ly.IsNuclear()
 	case "LDT":
 		return ly.Type == LDTLayer
 	case "VTA":

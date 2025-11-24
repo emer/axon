@@ -225,7 +225,7 @@ fn SynapseTracesSetDiv(vl: f32, ix: u32) {
 
 //////// import: "act-layer.go"
 fn LayerParams_IsTarget(ly: LayerParams) -> bool {
-	return ly.Type == TargetLayer || ly.Type == PulvinarLayer || ly.Type == CNiIOLayer;
+	return ly.Type == TargetLayer || ly.Type == PulvinarLayer;
 }
 
 //////// import: "act-net.go"
@@ -373,28 +373,6 @@ struct ActParams {
 	SKCa: SKCaParams,
 	SMaint: SMaintParams,
 	PopCode: PopCodeParams,
-}
-
-//////// import: "cereb-layer.go"
-struct NuclearParams {
-	ActionEnv: i32,
-	SendTimeOff: i32,
-	ActTarget: f32,
-	Decay: f32,
-	IOLayIndex: i32,
-	pad: f32,
-	pad1: f32,
-	pad2: f32,
-}
-struct IOParams {
-	TimeOff: i32,
-	ErrThr: f32,
-	EfferentThr: f32,
-	GeTau: f32,
-	GeDt: f32,
-	pad: f32,
-	pad1: f32,
-	pad2: f32,
 }
 
 //////// import: "chans-ak.go"
@@ -1249,7 +1227,8 @@ fn PathParams_DWtCNIO(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32
 	var dwt = sact;
 	if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // means that we got to end of cycle with no err: decay
 	u32(ri), u32(di), u32(TimePeak))] > 0) {
-		dwt = -dwt * rlay.Nuclear.Decay;
+		var aerr = rlay.Nuclear.ActTarget - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaD))];
+		dwt = sact * aerr * rlay.Nuclear.Decay;
 	}
 	SynapseTracesSet(pt.Learn.LRate.Eff * dwt, Index3D(TensorStrides[180], TensorStrides[181],
 	TensorStrides[182],
@@ -1275,8 +1254,8 @@ struct LearnCaParams {
 struct LearnTimingParams {
 	SynCaCycles: i32,
 	LearnThr: f32,
-	Refractory: i32,
 	On: i32,
+	Refractory: i32,
 	Cycles: i32,
 	TimeDiffTau: f32,
 	TimeDiffDt: f32,
@@ -1555,6 +1534,28 @@ alias NeuronIndexVars = i32; //enums:enum
 const  NrnNeurIndex: NeuronIndexVars = 0;
 const  NrnLayIndex: NeuronIndexVars = 1;
 const  NrnSubPool: NeuronIndexVars = 2;
+
+//////// import: "nuclear-layer.go"
+struct NuclearParams {
+	ActionEnv: i32,
+	SendTimeOff: i32,
+	ActTarget: f32,
+	Decay: f32,
+	GeBaseLRate: f32,
+	IOLayIndex: i32,
+	pad: f32,
+	pad1: f32,
+}
+struct IOParams {
+	TimeOff: i32,
+	ErrThr: f32,
+	EfferentThr: f32,
+	EfferentOff: i32,
+	GeTau: f32,
+	GeDt: f32,
+	pad: f32,
+	pad1: f32,
+}
 
 //////// import: "pathparams.go"
 const  StartOff: i32 = 0;

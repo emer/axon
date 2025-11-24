@@ -182,14 +182,14 @@ func (net *Network) AddDorsalBG(prefix string, poolSTN bool, nPoolsY, nPoolsX, n
 		pt.Com.GType = ModulatoryG
 		pt.PathScale.Abs = 1
 	}
-	pt = net.ConnectLayers(pf, matrixGo, p1to1, ForwardPath).AddClass("PFToDMatrix").EmerPath.(*Path)
+	pt = net.ConnectLayers(pf, matrixGo, p1to1, ForwardPath).AddClass("PFToDMatrix")
 	pt.AddDefaultParams(pfm)
-	pt = net.ConnectLayers(pf, matrixNo, p1to1, ForwardPath).AddClass("PFToDMatrix").EmerPath.(*Path)
+	pt = net.ConnectLayers(pf, matrixNo, p1to1, ForwardPath).AddClass("PFToDMatrix")
 	pt.AddDefaultParams(pfm)
 
-	pt = net.ConnectLayers(pf, patchD1, p1to1, ForwardPath).AddClass("PFToDPatch").EmerPath.(*Path)
+	pt = net.ConnectLayers(pf, patchD1, p1to1, ForwardPath).AddClass("PFToDPatch")
 	pt.AddDefaultParams(pfm)
-	pt = net.ConnectLayers(pf, patchD2, p1to1, ForwardPath).AddClass("PFToDPatch").EmerPath.(*Path)
+	pt = net.ConnectLayers(pf, patchD2, p1to1, ForwardPath).AddClass("PFToDPatch")
 	pt.AddDefaultParams(pfm)
 
 	gpePr.PlaceBehind(gpi, space)

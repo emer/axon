@@ -157,6 +157,8 @@ const (
 	// the effects of self-generated motor commands.
 	CNiUpLayer
 
+	// note: IsNuclear depends on CNiUpLayer being last, and IOLayer being first.
+
 	//////// Rubicon
 
 	// BLALayer represents a basolateral amygdala layer

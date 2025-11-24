@@ -349,7 +349,7 @@ func (net *Network) AddPTPredLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeu
 // ConnectPTPredSelf adds a Self (Lateral) pathway within a PTPredLayer,
 // which supports active maintenance, with a class of PTSelfMaint
 func (net *Network) ConnectPTPredSelf(ly *Layer, pat paths.Pattern) *Path {
-	return net.LateralConnectLayer(ly, pat).AddClass("PTSelfMaint").EmerPath.(*Path)
+	return net.LateralConnectLayer(ly, pat).AddClass("PTSelfMaint")
 }
 
 // ConnectPTToPulv connects PT, PTPred with given Pulv:

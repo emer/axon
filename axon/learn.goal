@@ -151,14 +151,14 @@ type LearnTimingParams struct {
 	// eligible for learning. Applies to non-timing based learning too.
 	LearnThr float32 `default:"0.1"`
 
-	// Refractory makes new learning depend on dropping below the learning
-	// threshold. Applies to non-timing based learning too.
-	Refractory slbool.Bool
-
 	// On indicates whether to use the timing parameters to drive
 	// learning timing, or instead just learn at the end of the trial
 	// automatically.
 	On slbool.Bool
+
+	// Refractory makes new learning depend on dropping below the learning
+	// threshold. Applies only to timing based learning.
+	Refractory slbool.Bool
 
 	// Cycles is the number of cycles (ms) after the [TimePeak] before
 	// learning occurs, or the peak detection is reset to start anew.
@@ -188,7 +188,7 @@ func (lt *LearnTimingParams) Update() {
 
 func (lt *LearnTimingParams) ShouldDisplay(field string) bool {
 	switch field {
-	case "On", "SynCaCycles", "LearnThr", "Refractory":
+	case "On", "SynCaCycles", "LearnThr":
 		return true
 	default:
 		return lt.On.IsTrue()

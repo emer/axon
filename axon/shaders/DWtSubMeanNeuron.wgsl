@@ -22,6 +22,10 @@ var<storage, read> RecvSynIxs: array<u32>;
 // // Ctx is the current context state (one only). This is read-only except in // specific kernels. 
 @group(2) @binding(0)
 var<storage, read_write> Ctx: array<Context>;
+@group(2) @binding(1)
+var<storage, read_write> Neurons: array<f32>;
+@group(2) @binding(2)
+var<storage, read_write> NeuronAvgs: array<f32>;
 // // PathGBuf is the conductance buffer for accumulating spikes. // Subslices are allocated to each pathway. // Uses int-encoded values for faster GPU atomic integration. // [NPathNeur][Data][MaxDel+1]; NPathNeur = [Layer][RecvPaths][RecvNeurons] 
 @group(3) @binding(2)
 var<storage, read_write> Synapses: array<f32>;
@@ -40,6 +44,10 @@ fn Index2D(s0: u32, s1: u32, i0: u32, i1: u32) -> u32 {
 
 fn Index1D(s0: u32, i0: u32) -> u32 {
 	return s0 * i0;
+}
+
+fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
+	return s0 * i0 + s1 * i1 + s2 * i2;
 }
 
 
@@ -192,28 +200,6 @@ struct ActParams {
 	SKCa: SKCaParams,
 	SMaint: SMaintParams,
 	PopCode: PopCodeParams,
-}
-
-//////// import: "cereb-layer.go"
-struct NuclearParams {
-	ActionEnv: i32,
-	SendTimeOff: i32,
-	ActTarget: f32,
-	Decay: f32,
-	IOLayIndex: i32,
-	pad: f32,
-	pad1: f32,
-	pad2: f32,
-}
-struct IOParams {
-	TimeOff: i32,
-	ErrThr: f32,
-	EfferentThr: f32,
-	GeTau: f32,
-	GeDt: f32,
-	pad: f32,
-	pad1: f32,
-	pad2: f32,
 }
 
 //////// import: "chans-ak.go"
@@ -686,6 +672,9 @@ const  LayerRewPredNeg: LayerVars = 11;
 
 //////// import: "learn-layer.go"
 fn LayerParams_DWtSubMean(ly: LayerParams, ctx: Context, ri: u32) {
+	if (LayerParams_IsNuclear(ly)) {
+		LayerParams_NuclearDWtNeuron(ly, ctx, ri);
+	}
 	var lni = ri - ly.Indexes.NeurSt;
 	var rn = ly.Indexes.RecvN;
 	for (var pi = u32(0); pi < rn; pi++) {
@@ -760,8 +749,8 @@ struct LearnCaParams {
 struct LearnTimingParams {
 	SynCaCycles: i32,
 	LearnThr: f32,
-	Refractory: i32,
 	On: i32,
+	Refractory: i32,
 	Cycles: i32,
 	TimeDiffTau: f32,
 	TimeDiffDt: f32,
@@ -1037,6 +1026,45 @@ alias NeuronIndexVars = i32; //enums:enum
 const  NrnNeurIndex: NeuronIndexVars = 0;
 const  NrnLayIndex: NeuronIndexVars = 1;
 const  NrnSubPool: NeuronIndexVars = 2;
+
+//////// import: "nuclear-layer.go"
+struct NuclearParams {
+	ActionEnv: i32,
+	SendTimeOff: i32,
+	ActTarget: f32,
+	Decay: f32,
+	GeBaseLRate: f32,
+	IOLayIndex: i32,
+	pad: f32,
+	pad1: f32,
+}
+fn LayerParams_IsNuclear(ly: LayerParams) -> bool {
+	return ly.Type >= IOLayer && ly.Type <= CNiUpLayer;
+}
+fn LayerParams_NuclearDWtNeuron(ly: LayerParams, ctx: Context, ni: u32) {
+	var dbase = f32(0);
+	for (var di = u32(0); di < ly.MaxData; di++) {
+		if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // non-baseline
+		u32(ni), u32(di), u32(TimePeak))] == 0.0) {
+			continue;
+		}
+		var aerr = ly.Nuclear.ActTarget - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaD))];
+		dbase += aerr;
+	}
+	dbase *= ly.Nuclear.GeBaseLRate;
+	NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81],
+	u32(ni), u32(GeBase))] += dbase;
+}
+struct IOParams {
+	TimeOff: i32,
+	ErrThr: f32,
+	EfferentThr: f32,
+	EfferentOff: i32,
+	GeTau: f32,
+	GeDt: f32,
+	pad: f32,
+	pad1: f32,
+}
 
 //////// import: "pathparams.go"
 const  StartOff: i32 = 0;

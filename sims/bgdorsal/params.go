@@ -18,11 +18,12 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Noise.Ge = 0.0001      // 0.0001 > others; could just be noise ;)
 				ly.Acts.Noise.Gi = 0.0001      // 0.0001 perhaps better than others
 
-				ly.Learn.Timing.On.SetBool(false)
+				ly.Learn.Timing.On.SetBool(true)
 				// ly.Learn.Timing.Refractory.SetBool(true)
-				// ly.Learn.Timing.LearnThr = 0.1
+				ly.Learn.Timing.LearnThr = 0.05
+
 				ly.Learn.Timing.SynCaCycles = 200 // 200 > 180 > 220 > 250, 160 for 250/50 cyc
-				// ly.Learn.Timing.Cycles = 170
+				ly.Learn.Timing.Cycles = 210      // 210 >= 200 >= 190 > 220
 				// ly.Learn.Timing.TimeDiffTau = 4
 			}},
 		{Sel: ".PFCLayer", Doc: "pfc",

@@ -96,7 +96,7 @@ func SetNeuronExtPosNeg(ctx *Context, ni, di uint32, val float32) {
 // It is used in SynScale to not apply it to target layers.
 // In both cases, Target layers are purely error-driven.
 func (ly *LayerParams) IsTarget() bool {
-	return ly.Type == TargetLayer || ly.Type == PulvinarLayer || ly.Type == CNiIOLayer
+	return ly.Type == TargetLayer || ly.Type == PulvinarLayer
 }
 
 // IsInput returns true if this layer is an Input layer.
@@ -308,14 +308,6 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, pi, ni, di uint32, drvGe float
 		Neurons.Set(dr, int(ni), int(di), int(GeRaw))
 		Neurons.Set(ly.Acts.Dt.GeSynFromRawSteady(dr), int(ni), int(di), int(GeSyn))
 
-	case CNiIOLayer:
-		if ctx.PlusPhase.IsFalse() {
-			break
-		}
-		// geSyn, goes into nrn.GeExt in PostGs, so inhibition gets it
-		saveVal = nonDrivePct*Neurons.Value(int(ni), int(di), int(GeSyn)) + ly.Acts.Dt.GeSynFromRawSteady(drvGe)
-		Neurons.Set(nonDrivePct*nrnGeRaw+drvGe, int(ni), int(di), int(GeRaw))
-		Neurons.Set(saveVal, int(ni), int(di), int(GeSyn))
 	case BLALayer:
 		if ly.Learn.NeuroMod.IsBLAExt() {
 			md := max(-GlobalScalars.Value(int(GvDA), int(di)), float32(0)) // ext is modulated by negative da
@@ -410,7 +402,7 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni, di uint32, saveVal float3
 	}
 
 	switch ly.Type {
-	case PulvinarLayer, CNiIOLayer, PTMaintLayer, CTLayer, BLALayer:
+	case PulvinarLayer, PTMaintLayer, CTLayer, BLALayer:
 		Neurons.Set(saveVal, int(ni), int(di), int(GeExt))
 	case PTPredLayer:
 		Neurons.Set(saveVal, int(ni), int(di), int(GeExt))
@@ -492,7 +484,7 @@ func (ly *LayerParams) GiInteg(ctx *Context, pi, ni, di uint32) {
 	ssgi := Pools.Value(int(pi), int(di), int(fsfffb.SSGi))
 	Neurons.Set(gi, int(ni), int(di), int(Gi))
 	Neurons.Set(0.0, int(ni), int(di), int(SSGiDend))
-	if ctx.PlusPhase.IsTrue() && (ly.Type == PulvinarLayer || ly.Type == CNiIOLayer) {
+	if ctx.PlusPhase.IsTrue() && (ly.Type == PulvinarLayer) {
 		ext := Neurons.Value(int(ni), int(di), int(Ext)) // nonDrivePct
 		Neurons.Set(ext*ly.Acts.Dend.SSGi*ssgi, int(ni), int(di), int(SSGiDend))
 	} else {
@@ -617,7 +609,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, lpi, pi, ni, di uint32) {
 
 	case IOLayer:
 		ly.IOUpdate(ctx, lpi, pi, ni, di)
-	case CNiIOLayer:
+	case CNeLayer, CNiIOLayer, CNiUpLayer:
 		ly.IOLearn(ctx, ni-ly.Indexes.NeurSt, lpi, pi, ni, di)
 	case BLALayer:
 		if ctx.Cycle == ctx.ThetaCycles-1 {
@@ -964,7 +956,7 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32) {
 	ly.Acts.DecayState(ctx, ni, di, ly.Acts.Decay.Act, ly.Acts.Decay.Glong, ly.Acts.Decay.AHP)
 	// Note: synapse-level Ca decay happens in DWt
 	ly.Acts.KNaNewState(ctx, ni, di)
-	if ly.Type == IOLayer || ly.Type == CNiIOLayer || ly.Type == CNiUpLayer || ly.Type == CNeLayer {
+	if ly.IsNuclear() {
 		ly.NuclearLearnReset(ctx, ni, di)
 	}
 }
@@ -1024,7 +1016,7 @@ func (ly *LayerParams) MinusPhasePost(ctx *Context) {
 	switch ly.Type {
 	case VSMatrixLayer, DSMatrixLayer:
 		ly.MatrixGated(ctx) // need gated state for decisions about action processing, so do in minus too
-	case PulvinarLayer, CNiIOLayer:
+	case PulvinarLayer:
 		ly.DecayStateNeuronsAll(ctx, 1, 1, 0)
 	default:
 	}
@@ -1083,22 +1075,6 @@ func (ly *LayerParams) PlusPhaseEndNeuron(ctx *Context, ni, di uint32) {
 		} else {
 			modlr = 1 // don't use mod
 		}
-	// case CNeUpLayer:
-	//
-	//	// use lratediff to signal learning status
-	//	lni := ni - ly.Indexes.NeurSt // layer-based
-	//	mlr = ly.CNeUpPredAct(ctx, lni, di)
-	//	dlr = ly.CNeUpSenseAct(ctx, lni, di)
-	//	if mlr < ly.CNeUp.LearnThr {
-	//		mlr = 0
-	//	}
-	//	if dlr < ly.CNeUp.LearnThr {
-	//		dlr = 0
-	//	}
-	//	modlr = 1
-	//	if mlr * dlr == 0 { // adapt GeBase only if both pathways inactive
-	//		NeuronAvgs[ni, GeBase] += ly.CNeUp.GeBaseLRate * (ly.CNeUp.ActTarg - nrnCaD)
-	//	}
 	case BLALayer:
 		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaP, Neurons.Value(int(ni), int(di), int(CaDPrev))) // delta on previous trial
 		if !ly.Learn.NeuroMod.IsBLAExt() && PoolIxs.Value(int(pi), int(PoolNeurSt)) == 0 {      // first pool

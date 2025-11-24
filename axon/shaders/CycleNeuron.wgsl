@@ -65,7 +65,7 @@ fn SetNeuronExtPosNeg(ctx: Context, ni: u32,di: u32, val: f32) {
 	}
 }
 fn LayerParams_IsTarget(ly: LayerParams) -> bool {
-	return ly.Type == TargetLayer || ly.Type == PulvinarLayer || ly.Type == CNiIOLayer;
+	return ly.Type == TargetLayer || ly.Type == PulvinarLayer;
 }
 fn LayerParams_IsInput(ly: LayerParams) -> bool {
 	return ly.Type == InputLayer;
@@ -135,14 +135,6 @@ fn LayerParams_SpecialPreGs(ly: LayerParams, ctx: Context, pi: u32,ni: u32,di: u
 		dr = abs(dr);
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeRaw))] = dr;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeSyn))] = DtParams_GeSynFromRawSteady(ly.Acts.Dt, dr);
-	}
-	case CNiIOLayer: {
-		if (ctx.PlusPhase == 0) {
-			break;
-		}
-		saveVal = nonDrivePct*Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeSyn))] + DtParams_GeSynFromRawSteady(ly.Acts.Dt, drvGe);
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeRaw))] = nonDrivePct*nrnGeRaw + drvGe;
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeSyn))] = saveVal;
 	}
 	case BLALayer: {
 		if (NeuroModParams_IsBLAExt(ly.Learn.NeuroMod)) {
@@ -245,7 +237,7 @@ fn LayerParams_SpecialPostGs(ly: LayerParams, ctx: Context, ni: u32,di: u32, sav
 		LayerParams_GNeuroMod(ly, ctx, ni, di);
 	}
 	switch (ly.Type) {
-	case PulvinarLayer, CNiIOLayer, PTMaintLayer, CTLayer, BLALayer: {
+	case PulvinarLayer, PTMaintLayer, CTLayer, BLALayer: {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeExt))] = saveVal;
 	}
 	case PTPredLayer: {
@@ -327,7 +319,7 @@ fn LayerParams_GiInteg(ly: LayerParams, ctx: Context, pi: u32,ni: u32,di: u32) {
 	var ssgi = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(SSGi))];
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Gi))] = gi;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SSGiDend))] = 0.0;
-	if (ctx.PlusPhase == 1 && (ly.Type == PulvinarLayer || ly.Type == CNiIOLayer)) {
+	if (ctx.PlusPhase == 1 && (ly.Type == PulvinarLayer)) {
 		var ext = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // nonDrivePct
 		TensorStrides[72], u32(ni), u32(di), u32(Ext))];
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SSGiDend))] = ext * ly.Acts.Dend.SSGi * ssgi;
@@ -899,28 +891,6 @@ fn ActParams_SpikeFromVm(ac: ActParams, ctx: Context, ni: u32,di: u32) {
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Spike))] = nrnSpike;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Spiked))] = nrnSpiked;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Act))] = nrnAct;
-}
-
-//////// import: "cereb-layer.go"
-struct NuclearParams {
-	ActionEnv: i32,
-	SendTimeOff: i32,
-	ActTarget: f32,
-	Decay: f32,
-	IOLayIndex: i32,
-	pad: f32,
-	pad1: f32,
-	pad2: f32,
-}
-struct IOParams {
-	TimeOff: i32,
-	ErrThr: f32,
-	EfferentThr: f32,
-	GeTau: f32,
-	GeDt: f32,
-	pad: f32,
-	pad1: f32,
-	pad2: f32,
 }
 
 //////// import: "chans-ak.go"
@@ -1637,8 +1607,8 @@ fn LearnCaParams_LearnCas(lc: LearnCaParams, ctx: Context, ni: u32,di: u32) {
 struct LearnTimingParams {
 	SynCaCycles: i32,
 	LearnThr: f32,
-	Refractory: i32,
 	On: i32,
+	Refractory: i32,
 	Cycles: i32,
 	TimeDiffTau: f32,
 	TimeDiffDt: f32,
@@ -2104,6 +2074,28 @@ alias NeuronIndexVars = i32; //enums:enum
 const  NrnNeurIndex: NeuronIndexVars = 0;
 const  NrnLayIndex: NeuronIndexVars = 1;
 const  NrnSubPool: NeuronIndexVars = 2;
+
+//////// import: "nuclear-layer.go"
+struct NuclearParams {
+	ActionEnv: i32,
+	SendTimeOff: i32,
+	ActTarget: f32,
+	Decay: f32,
+	GeBaseLRate: f32,
+	IOLayIndex: i32,
+	pad: f32,
+	pad1: f32,
+}
+struct IOParams {
+	TimeOff: i32,
+	ErrThr: f32,
+	EfferentThr: f32,
+	EfferentOff: i32,
+	GeTau: f32,
+	GeDt: f32,
+	pad: f32,
+	pad1: f32,
+}
 
 //////// import: "pathparams.go"
 const  StartOff: i32 = 0;

@@ -59,7 +59,7 @@ fn LayerParams_MinusPhasePost(ly: LayerParams, ctx: Context) {
 	case VSMatrixLayer, DSMatrixLayer: {
 		LayerParams_MatrixGated(ly, ctx);
 	} // need gated state for decisions about action processing, so do in minus too
-	case PulvinarLayer, CNiIOLayer: {
+	case PulvinarLayer: {
 		LayerParams_DecayStateNeuronsAll(ly, ctx, f32(f32(1)), f32(f32(1)), f32(f32(0)));
 	}
 	default: {
@@ -303,28 +303,6 @@ fn ActParams_DecayState(ac: ActParams, ctx: Context, ni: u32,di: u32, decay: f32
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(SSGiDend))] = 0.0;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeExt))] = 0.0;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CtxtGeOrig))] -= glong * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CtxtGeOrig))];
-}
-
-//////// import: "cereb-layer.go"
-struct NuclearParams {
-	ActionEnv: i32,
-	SendTimeOff: i32,
-	ActTarget: f32,
-	Decay: f32,
-	IOLayIndex: i32,
-	pad: f32,
-	pad1: f32,
-	pad2: f32,
-}
-struct IOParams {
-	TimeOff: i32,
-	ErrThr: f32,
-	EfferentThr: f32,
-	GeTau: f32,
-	GeDt: f32,
-	pad: f32,
-	pad1: f32,
-	pad2: f32,
 }
 
 //////// import: "chans-ak.go"
@@ -823,8 +801,8 @@ struct LearnCaParams {
 struct LearnTimingParams {
 	SynCaCycles: i32,
 	LearnThr: f32,
-	Refractory: i32,
 	On: i32,
+	Refractory: i32,
 	Cycles: i32,
 	TimeDiffTau: f32,
 	TimeDiffDt: f32,
@@ -1100,6 +1078,28 @@ alias NeuronIndexVars = i32; //enums:enum
 const  NrnNeurIndex: NeuronIndexVars = 0;
 const  NrnLayIndex: NeuronIndexVars = 1;
 const  NrnSubPool: NeuronIndexVars = 2;
+
+//////// import: "nuclear-layer.go"
+struct NuclearParams {
+	ActionEnv: i32,
+	SendTimeOff: i32,
+	ActTarget: f32,
+	Decay: f32,
+	GeBaseLRate: f32,
+	IOLayIndex: i32,
+	pad: f32,
+	pad1: f32,
+}
+struct IOParams {
+	TimeOff: i32,
+	ErrThr: f32,
+	EfferentThr: f32,
+	EfferentOff: i32,
+	GeTau: f32,
+	GeDt: f32,
+	pad: f32,
+	pad1: f32,
+}
 
 //////// import: "pathparams.go"
 const  StartOff: i32 = 0;

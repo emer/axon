@@ -47,7 +47,7 @@ fn LayerParams_NewStateNeuron(ly: LayerParams, ctx: Context, ni: u32,di: u32) {
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaPMaxCa))] = 0.0;
 	ActParams_DecayState(ly.Acts, ctx, ni, di, ly.Acts.Decay.Act, ly.Acts.Decay.Glong, ly.Acts.Decay.AHP);
 	ActParams_KNaNewState(ly.Acts, ctx, ni, di);
-	if (ly.Type == IOLayer || ly.Type == CNiIOLayer || ly.Type == CNiUpLayer || ly.Type == CNeLayer) {
+	if (LayerParams_IsNuclear(ly)) {
 		LayerParams_NuclearLearnReset(ly, ctx, ni, di);
 	}
 }
@@ -292,45 +292,6 @@ fn ActParams_KNaNewState(ac: ActParams, ctx: Context, ni: u32,di: u32) {
 	if (ac.KNa.On == 1 && ac.KNa.TrialSlow == 1) {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GknaSlow))] += ac.KNa.Slow.Gk * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaDPrev))];
 	}
-}
-
-//////// import: "cereb-layer.go"
-struct NuclearParams {
-	ActionEnv: i32,
-	SendTimeOff: i32,
-	ActTarget: f32,
-	Decay: f32,
-	IOLayIndex: i32,
-	pad: f32,
-	pad1: f32,
-	pad2: f32,
-}
-fn LayerParams_NuclearLearnReset(ly: LayerParams, ctx: Context, ni: u32,di: u32) {
-	var effAct = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeCycle))]);
-	if (effAct == 0) {
-		return;
-	}
-	if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // not done yet
-	u32(ni), u32(di), u32(LearnNow))] == 0.0) {
-		return;
-	}
-	var envCyc = ctx.CyclesTotal - effAct; // cycle within envelope
-	if (envCyc > ly.Nuclear.ActionEnv) {
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeCycle))] = 0.0;
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = 0.0;
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
-		u32(ni), u32(di), u32(LearnNow))] = 0.0;
-	}
-}
-struct IOParams {
-	TimeOff: i32,
-	ErrThr: f32,
-	EfferentThr: f32,
-	GeTau: f32,
-	GeDt: f32,
-	pad: f32,
-	pad1: f32,
-	pad2: f32,
 }
 
 //////// import: "chans-ak.go"
@@ -832,8 +793,8 @@ struct LearnCaParams {
 struct LearnTimingParams {
 	SynCaCycles: i32,
 	LearnThr: f32,
-	Refractory: i32,
 	On: i32,
+	Refractory: i32,
 	Cycles: i32,
 	TimeDiffTau: f32,
 	TimeDiffDt: f32,
@@ -1109,6 +1070,48 @@ alias NeuronIndexVars = i32; //enums:enum
 const  NrnNeurIndex: NeuronIndexVars = 0;
 const  NrnLayIndex: NeuronIndexVars = 1;
 const  NrnSubPool: NeuronIndexVars = 2;
+
+//////// import: "nuclear-layer.go"
+struct NuclearParams {
+	ActionEnv: i32,
+	SendTimeOff: i32,
+	ActTarget: f32,
+	Decay: f32,
+	GeBaseLRate: f32,
+	IOLayIndex: i32,
+	pad: f32,
+	pad1: f32,
+}
+fn LayerParams_IsNuclear(ly: LayerParams) -> bool {
+	return ly.Type >= IOLayer && ly.Type <= CNiUpLayer;
+}
+fn LayerParams_NuclearLearnReset(ly: LayerParams, ctx: Context, ni: u32,di: u32) {
+	var effAct = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeCycle))]);
+	if (effAct == 0) {
+		return;
+	}
+	if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // not done yet
+	u32(ni), u32(di), u32(LearnNow))] == 0.0) {
+		return;
+	}
+	var envCyc = ctx.CyclesTotal - effAct; // cycle within envelope
+	if (envCyc >= ly.Nuclear.ActionEnv) {
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeCycle))] = 0.0;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = 0.0;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
+		u32(ni), u32(di), u32(LearnNow))] = 0.0;
+	}
+}
+struct IOParams {
+	TimeOff: i32,
+	ErrThr: f32,
+	EfferentThr: f32,
+	EfferentOff: i32,
+	GeTau: f32,
+	GeDt: f32,
+	pad: f32,
+	pad1: f32,
+}
 
 //////// import: "pathparams.go"
 const  StartOff: i32 = 0;

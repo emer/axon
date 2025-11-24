@@ -101,6 +101,9 @@ func (ly *LayerParams) WtFromDWtLayer(ctx *Context) {
 
 // DWtSubMean subtracts the mean DWt for each recv neuron.
 func (ly *LayerParams) DWtSubMean(ctx *Context, ri uint32) {
+	if ly.Type == CNeLayer {
+		ly.NuclearDWtNeuron(ctx, ri)
+	}
 	lni := ri - ly.Indexes.NeurSt
 	rn := ly.Indexes.RecvN
 	for pi := uint32(0); pi < rn; pi++ {

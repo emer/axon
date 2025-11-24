@@ -180,6 +180,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		SetMinusCycles(int32(ss.Config.Run.MinusCycles)).
 		SetPlusCycles(int32(ss.Config.Run.PlusCycles)).Update()
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
+	cycles := ss.Config.Run.Cycles()
 
 	ev := ss.Envs.ByModeDi(Train, 0).(*emery.EmeryEnv)
 
@@ -241,11 +242,20 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	}
 
 	// cerebellum:
-	// output = copy of input that has subtraction
-	cneUp, cniPred := net.AddCerebellumNucleus(vvelIn, space)
+	// cycles-20 is sufficient to allow time for motor to engage
+	ioUp, cniIOUp, cniUp, cneUp := net.AddNuclearCNUp(vvelIn, rotAct, cycles-20, space)
+	_, _ = ioUp, cneUp
 
-	net.ConnectLayers(rotActPrev, cniPred, full, axon.ForwardPath).AddClass("ToCNiIO")
-	net.ConnectLayers(s1ct, cniPred, full, axon.ForwardPath).AddClass("ToCNiIO")
+	net.ConnectLayers(rotActPrev, cniIOUp, full, axon.CNIOPath).AddClass("MFUp", "MFToCNiIOUp")
+	net.ConnectLayers(s1ct, cniIOUp, full, axon.CNIOPath).AddClass("MFUp", "MFToCNiIOUp")
+	net.ConnectLayers(eyeRIn, cniIOUp, full, axon.CNIOPath).AddClass("MFUp", "MFToCNiIOUp")
+
+	net.ConnectLayers(rotActPrev, cniUp, full, axon.CNIOPath).AddClass("MFUp", "MFToCNiUp")
+	net.ConnectLayers(s1ct, cniUp, full, axon.CNIOPath).AddClass("MFUp", "MFToCNiUp")
+	net.ConnectLayers(eyeRIn, cniUp, full, axon.CNIOPath).AddClass("MFUp", "MFToCNiUp")
+
+	pt := net.ConnectLayers(vvelIn, cneUp, one2one, axon.ForwardPath).AddClass("SenseToCNeUp")
+	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
 
 	// position
 
@@ -257,7 +267,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	}
 	s1.PlaceAbove(rotAct)
 
-	cneUp.PlaceRightOf(s1, space)
+	cniIOUp.PlaceRightOf(s1, space)
 
 	// visHid.PlaceRightOf(s1, space)
 	// if ss.Config.Params.Hid2 {

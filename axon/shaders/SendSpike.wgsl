@@ -108,7 +108,7 @@ fn LayerParams_PostSpikeSpecial(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,
 	case IOLayer: {
 		LayerParams_IOUpdate(ly, ctx, lpi, pi, ni, di);
 	}
-	case CNiIOLayer: {
+	case CNeLayer, CNiIOLayer, CNiUpLayer: {
 		LayerParams_IOLearn(ly, ctx, ni-ly.Indexes.NeurSt, lpi, pi, ni, di);
 	}
 	case BLALayer: {
@@ -448,77 +448,6 @@ struct ActParams {
 	SKCa: SKCaParams,
 	SMaint: SMaintParams,
 	PopCode: PopCodeParams,
-}
-
-//////// import: "cereb-layer.go"
-struct NuclearParams {
-	ActionEnv: i32,
-	SendTimeOff: i32,
-	ActTarget: f32,
-	Decay: f32,
-	IOLayIndex: i32,
-	pad: f32,
-	pad1: f32,
-	pad2: f32,
-}
-fn LayerParams_IOLearn(ly: LayerParams, ctx: Context, lni: u32,lpi: u32,pi: u32,ni: u32,di: u32) {
-	var ioi = u32(ly.Nuclear.IOLayIndex);
-	let ioly = Layers[ioi];
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ioly.Indexes.NeurSt + lni), u32(di), u32(LearnNow))];
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ioly.Indexes.NeurSt + lni), u32(di), u32(TimePeak))];
-}
-struct IOParams {
-	TimeOff: i32,
-	ErrThr: f32,
-	EfferentThr: f32,
-	GeTau: f32,
-	GeDt: f32,
-	pad: f32,
-	pad1: f32,
-	pad2: f32,
-}
-fn LayerParams_IOUpdate(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,di: u32) {
-	var gaM = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaM))];
-	gaM += ly.IO.GeDt * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeSyn))] - gaM);
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaM))] = gaM;
-	var cycTot = f32(ctx.CyclesTotal);
-	if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // efferent always activates.
-	u32(ni), u32(di), u32(GModSyn))] > ly.IO.EfferentThr) {
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // efferent activation cycle
-		u32(ni), u32(di), u32(TimeCycle))] = cycTot;
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = 0.0;
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = 0.0;
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 0.0;return;
-	}
-	var effAct = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeCycle))]);
-	if (effAct == 0) {
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
-		u32(ni), u32(di), u32(Spike))] = 0.0;return;
-	}
-	var envCyc = ctx.CyclesTotal - effAct; // cycle within envelope
-	if (envCyc > ly.Nuclear.ActionEnv) {
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], // records that we got to end of cycle
-		TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = 1.0;
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = cycTot;
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], // baseline spike
-		TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 1.0;return;
-	}
-	if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // already learned
-	u32(ni), u32(di), u32(LearnNow))] > 0) {
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 0.0;return;
-	}
-	CaBinIncrement(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GiSyn))], ctx.CyclesTotal, ni, di);
-	var bin = CaBinForCycle(ctx.CyclesTotal - ly.IO.TimeOff);
-	var oldInhib = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
-	u32(ni), u32(di), u32(CaBins + NeuronVars(bin)))];
-	if (gaM-oldInhib > ly.IO.ErrThr) {
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // error spike
-		u32(ni), u32(di), u32(Spike))] = 1.0;
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // record point of error
-		u32(ni), u32(di), u32(LearnNow))] = cycTot;
-	} else {
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 0.0;
-	}
 }
 
 //////// import: "chans-ak.go"
@@ -1039,8 +968,8 @@ struct LearnCaParams {
 struct LearnTimingParams {
 	SynCaCycles: i32,
 	LearnThr: f32,
-	Refractory: i32,
 	On: i32,
+	Refractory: i32,
 	Cycles: i32,
 	TimeDiffTau: f32,
 	TimeDiffDt: f32,
@@ -1332,6 +1261,86 @@ alias NeuronIndexVars = i32; //enums:enum
 const  NrnNeurIndex: NeuronIndexVars = 0;
 const  NrnLayIndex: NeuronIndexVars = 1;
 const  NrnSubPool: NeuronIndexVars = 2;
+
+//////// import: "nuclear-layer.go"
+struct NuclearParams {
+	ActionEnv: i32,
+	SendTimeOff: i32,
+	ActTarget: f32,
+	Decay: f32,
+	GeBaseLRate: f32,
+	IOLayIndex: i32,
+	pad: f32,
+	pad1: f32,
+}
+fn LayerParams_IOLearn(ly: LayerParams, ctx: Context, lni: u32,lpi: u32,pi: u32,ni: u32,di: u32) {
+	var ioi = u32(ly.Nuclear.IOLayIndex);
+	let ioly = Layers[ioi];
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ioly.Indexes.NeurSt + lni), u32(di), u32(LearnNow))];
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ioly.Indexes.NeurSt + lni), u32(di), u32(TimePeak))];
+}
+struct IOParams {
+	TimeOff: i32,
+	ErrThr: f32,
+	EfferentThr: f32,
+	EfferentOff: i32,
+	GeTau: f32,
+	GeDt: f32,
+	pad: f32,
+	pad1: f32,
+}
+fn LayerParams_IOUpdate(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,di: u32) {
+	var cycTot = f32(ctx.CyclesTotal);
+	var effAct = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeCycle))]);
+	var envCyc = ctx.CyclesTotal - effAct; // cycle within envelope
+	var gaM = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaM))];
+	gaM += ly.IO.GeDt * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeSyn))] - gaM);
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaM))] = gaM;
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], // set below for display
+	TensorStrides[72], u32(ni), u32(di), u32(GaP))] = 0.0;
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], // default is no spike
+	TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 0.0;
+	var inhibAct = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GiSyn))];
+	if (effAct > 0 && envCyc < ly.IO.EfferentOff) {
+		inhibAct += f32(4.0);
+	}
+	CaBinIncrement(inhibAct, ctx.CyclesTotal, ni, di); // always store
+	var bin = CaBinForCycle(ctx.CyclesTotal - ly.IO.TimeOff);
+	var oldInhib = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaBins + NeuronVars(bin)))];
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaD))] = oldInhib;
+	if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // already learned, done until cleared in NuclearLearnReset
+	u32(ni), u32(di), u32(LearnNow))] > 0) {
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 0.0;return;
+	}
+	if (effAct == 0) {
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 0.0;
+		if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // efferent always activates.
+		u32(ni), u32(di), u32(GModSyn))] > ly.IO.EfferentThr) {
+			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // efferent activation cycle
+			u32(ni), u32(di), u32(TimeCycle))] = cycTot;
+			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = 0.0;
+			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = 0.0;
+		}return;
+	}
+	if (envCyc <= ly.IO.TimeOff) { // nothing until min
+		return;
+	}
+	if (envCyc >= ly.Nuclear.ActionEnv) { // no errors until the end of envelope: baseline spike
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], // records that we got to end of cycle
+		TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = 1.0;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = cycTot;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], // baseline spike
+		TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 1.0;return;
+	}
+	var errVal = gaM - oldInhib;
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))] = errVal;
+	if (errVal > ly.IO.ErrThr) {
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // error spike
+		u32(ni), u32(di), u32(Spike))] = 1.0;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // record point of error
+		u32(ni), u32(di), u32(LearnNow))] = cycTot;
+	}
+}
 
 //////// import: "pathparams.go"
 const  StartOff: i32 = 0;

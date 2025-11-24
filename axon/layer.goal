@@ -148,8 +148,12 @@ func (ly *Layer) Defaults() { //types:add
 
 	case IOLayer:
 		ly.Params.IODefaults()
-	// case CNeUpLayer:
-	// 	ly.CNeUpDefaults()
+	case CNiIOLayer:
+	 	ly.Params.CNiIODefaults()
+	case CNiUpLayer:
+	 	ly.Params.CNiUpDefaults()
+	case CNeLayer:
+	 	ly.Params.NuclearDefaults()
 		
 	case LDTLayer:
 		ly.LDTDefaults()
@@ -432,10 +436,8 @@ func (ly *Layer) PostBuild() {
 	case GPLayer:
 		ly.GPPostBuild()
 
-	// case CNiIOLayer:
-	// 	ly.CNiIOPostBuild()
-	// case CNeUpLayer:
-	// 	ly.CNeUpPostBuild()
+	case CNeLayer, CNiIOLayer, CNiUpLayer:
+	 	ly.NuclearPostBuild()
 		
 	case LDTLayer:
 		ly.LDTPostBuild()

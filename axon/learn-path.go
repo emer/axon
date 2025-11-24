@@ -489,7 +489,8 @@ func (pt *PathParams) DWtCNIO(ctx *Context, rlay *LayerParams, syni, si, ri, lpi
 	// todo: rlrate? Neurons[ri, di, RLRate]
 	dwt := sact
 	if Neurons.Value(int(ri), int(di), int(TimePeak)) > 0 { // means that we got to end of cycle with no err: decay
-		dwt = -dwt * rlay.Nuclear.Decay
+		aerr := rlay.Nuclear.ActTarget - Neurons.Value(int(ri), int(di), int(CaD))
+		dwt = sact * aerr * rlay.Nuclear.Decay
 	}
 	// todo: softbound?
 	SynapseTraces.Set(pt.Learn.LRate.Eff*dwt, int(syni), int(di), int(DiDWt))
