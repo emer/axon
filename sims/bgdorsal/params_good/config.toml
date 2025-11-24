@@ -36,10 +36,11 @@ GPU = true
   SlowInterval = 200
   NThreads = 0
   Run = 0
-  Runs = 50
+  Runs = 25
   Epochs = 200
   Sequences = 128
-  Cycles = 300
+  ISICycles = 0
+  MinusCycles = 250
   PlusCycles = 50
   PCAInterval = 10
 

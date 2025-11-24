@@ -4,6 +4,9 @@
     Decay     { Glong: 1 [0,0.6] }
     Clamp     { Ge: 1 [0.8,1.5] }
   }
+  Learn    {
+    Timing    { SynCaCycles: 200 [160] }
+  }
   ////////  Path: DGPePrToDGPi
     SWts      {
       Init  { Mean: 0.75 [0.5,0.4], Sym: false [true] }
@@ -25,6 +28,9 @@
     Init      { GeBase: 0.4 [0], GeVar: 0.2 [0], GiVar: 0.1 [0] }
     Decay     { Glong: 1 [0,0.6] }
     Clamp     { Ge: 1 [0.8,1.5] }
+  }
+  Learn    {
+    Timing    { SynCaCycles: 200 [160] }
   }
   ////////  Path: DMatrixNoToDGPePr
     SWts      {
@@ -48,6 +54,9 @@
     Init      { GeBase: 0.2 [0], GeVar: 0.1 [0], GiVar: 0.1 [0] }
     Decay     { Glong: 1 [0,0.6] }
     Clamp     { Ge: 1 [0.8,1.5] }
+  }
+  Learn    {
+    Timing    { SynCaCycles: 200 [160] }
   }
   ////////  Path: DGPePrToDGPeAk
     SWts      {
@@ -76,6 +85,9 @@
   Inhib    {
     Layer  { Gi: 0.5 [1,1.1,0.75,0.9], FB: 0 [0.5,1,4] }
     Pool   { Gi: 0.5 [1,1.1,0.75,0.9], FB: 0 [0.5,1,4] }
+  }
+  Learn    {
+    Timing    { SynCaCycles: 200 [160] }
   }
   ////////  Path: DGPePrToDSTN
     PathScale { Abs: 0.4 [1] }
@@ -106,6 +118,7 @@
     Pool   { Gi: 0.5 [1,1.1,0.75,0.9], FB: 0 [0.5,1,4] }
   }
   Learn    {
+    Timing    { SynCaCycles: 200 [160] }
     RLRate    { SigmoidMin: 0.001 [0.05,1] }
     NeuroMod  { BurstGain: 0.1 [1] }
   }
@@ -152,6 +165,7 @@
     Pool   { Gi: 0.5 [1,1.1,0.75,0.9], FB: 0 [0.5,1,4] }
   }
   Learn    {
+    Timing    { SynCaCycles: 200 [160] }
     RLRate    { SigmoidMin: 0.001 [0.05,1] }
     NeuroMod  { BurstGain: 0.1 [1] }
   }
@@ -196,6 +210,7 @@
     Pool   { Gi: 0.5 [1,1.1,0.75,0.9], FB: 0 [0.5,1,4] }
   }
   Learn    {
+    Timing    { SynCaCycles: 200 [160] }
     TrgAvgAct { GiBaseInit: 0.5 [0], RescaleOn: false [true] }
     RLRate    { SigmoidMin: 0.01 [0.05,1] }
   }
@@ -215,6 +230,7 @@
     Pool   { Gi: 0.5 [1,1.1,0.75,0.9], FB: 0 [0.5,1,4] }
   }
   Learn    {
+    Timing    { SynCaCycles: 200 [160] }
     TrgAvgAct { GiBaseInit: 0.5 [0], RescaleOn: false [true] }
     RLRate    { SigmoidMin: 0.01 [0.05,1] }
   }
@@ -228,6 +244,9 @@
   Acts     {
     Clamp     { Ge: 1 [0.8,1.5] }
   }
+  Learn    {
+    Timing    { SynCaCycles: 200 [160] }
+  }
   ////////  Path: DGPiToPF
     PathScale { Abs: 0.7 [1] }
   ////////  Path: MotorBSToPF
@@ -235,17 +254,29 @@
   Acts     {
     Clamp     { Ge: 1 [0.8,1.5] }
   }
+  Learn    {
+    Timing    { SynCaCycles: 200 [160] }
+  }
 ////////  Layer: State
   Acts     {
     Clamp     { Ge: 1 [0.8,1.5] }
+  }
+  Learn    {
+    Timing    { SynCaCycles: 200 [160] }
   }
 ////////  Layer: S1
   Acts     {
     Clamp     { Ge: 1 [0.8,1.5] }
   }
+  Learn    {
+    Timing    { SynCaCycles: 200 [160] }
+  }
 ////////  Layer: Target
   Acts     {
     Clamp     { Ge: 1 [0.8,1.5] }
+  }
+  Learn    {
+    Timing    { SynCaCycles: 200 [160] }
   }
 ////////  Layer: MotorBS
   Acts     {
@@ -253,6 +284,9 @@
   }
   Inhib    {
     Layer  { Gi: 0.2 [1,1.1,0.75,0.9] }
+  }
+  Learn    {
+    Timing    { SynCaCycles: 200 [160] }
   }
   ////////  Path: DGPiToMotorBS
     PathScale { Abs: 3 [1] }
@@ -269,6 +303,9 @@
 ////////  Layer: VL
   Acts     {
     Clamp     { Ge: 1 [0.8,1.5] }
+  }
+  Learn    {
+    Timing    { SynCaCycles: 200 [160] }
   }
   ////////  Path: M1CTToVL
     Learn     {
@@ -291,6 +328,9 @@
     Clamp     { Ge: 1 [0.8,1.5] }
     KNa       { Med: { Gk: 0.2 [0.1] }, Slow: { Gk: 0.2 [0.1] } }
   }
+  Learn    {
+    Timing    { SynCaCycles: 200 [160] }
+  }
   ////////  Path: VLToM1
     Learn     {
       LRate { Base: 0.02 [0.04,0.1,0.2] }
@@ -308,6 +348,9 @@
   Inhib    {
     Layer  { Gi: 1.2 [1,1.1,0.75,0.9] }
     Pool   { Gi: 2.2 [1,1.1,0.75,0.9] }
+  }
+  Learn    {
+    Timing    { SynCaCycles: 200 [160] }
   }
   CT       { GeGain: 5 [0.05,0.1,1,2], DecayTau: 100 [0,50,70] }
   ////////  Path: M1ToM1CT
@@ -327,6 +370,7 @@
     Pool   { Gi: 2.4 [1,1.1,0.75,0.9] }
   }
   Learn    {
+    Timing    { SynCaCycles: 200 [160] }
     TrgAvgAct { RescaleOn: false [true] }
   }
   ////////  Path: M1VMToM1PT
@@ -353,6 +397,9 @@
     Layer  { Gi: 0.6 [1,1.1,0.75,0.9] }
     Pool   { Gi: 0.6 [1,1.1,0.75,0.9] }
   }
+  Learn    {
+    Timing    { SynCaCycles: 200 [160] }
+  }
   ////////  Path: M1PTToM1VM
     SWts      {
       Init  { Mean: 0.75 [0.5,0.4], Var: 0 [0.25], Sym: false [true] }
@@ -378,6 +425,9 @@
   Inhib    {
     Layer  { Gi: 0.7 [1,1.1,0.75,0.9] }
     Pool   { Gi: 0.8 [1,1.1,0.75,0.9] }
+  }
+  Learn    {
+    Timing    { SynCaCycles: 200 [160] }
   }
   CT       { DecayTau: 100 [0,50,70] }
   ////////  Path: M1PTToM1PTp

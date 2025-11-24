@@ -89,7 +89,7 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: "#VL", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.Layer.Gi = 1.05     // def 1
+				ly.Inhib.Layer.Gi = 1.0      // 1 > 0.95 > 1.05 > 0.9
 				ly.Pulvinar.DriveScale = 0.1 // 0.1 > 0.12, 0.15
 			}},
 		{Sel: "#DGPeAk", Doc: "arkypallidal",

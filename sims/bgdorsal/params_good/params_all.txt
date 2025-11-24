@@ -33,6 +33,7 @@
   LayInhib { Index1: -1, Index2: -1, Index3: -1, Index4: -1 }
   Learn    {
     CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, ETraceTau: 4, ETraceScale: 0, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
+    Timing    { SynCaCycles: 200, LearnThr: 0.1, Refractory: false, On: false, Cycles: 170, TimeDiffTau: 4 }
     CaSpike   { SpikeCaM: 8, SpikeCaSyn: 8, CaSynTau: 30, Dt: { MTau: 5, PTau: 40, DTau: 40 } }
     LearnNMDA { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
     TrgAvgAct { GiBaseInit: 0, RescaleOn: true, ErrLRate: 0.02, SynScaleRate: 0.005, SubMean: 1, Permute: true, Pool: true, TrgRange: { Min: 0.5, Max: 2 } }
@@ -53,7 +54,7 @@
     Learn     {
       Learn false
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.013888889, Rel: 0.5 }
@@ -70,7 +71,7 @@
     Learn     {
       Learn false
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.045454547, Rel: 0.5 }
@@ -87,7 +88,7 @@
     Learn     {
       Learn false
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.040000003, Rel: 1 }
@@ -126,6 +127,7 @@
   LayInhib { Index1: -1, Index2: -1, Index3: -1, Index4: -1 }
   Learn    {
     CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, ETraceTau: 4, ETraceScale: 0, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
+    Timing    { SynCaCycles: 200, LearnThr: 0.1, Refractory: false, On: false, Cycles: 170, TimeDiffTau: 4 }
     CaSpike   { SpikeCaM: 8, SpikeCaSyn: 8, CaSynTau: 30, Dt: { MTau: 5, PTau: 40, DTau: 40 } }
     LearnNMDA { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
     TrgAvgAct { GiBaseInit: 0, RescaleOn: true, ErrLRate: 0.02, SynScaleRate: 0.005, SubMean: 1, Permute: true, Pool: true, TrgRange: { Min: 0.5, Max: 2 } }
@@ -146,7 +148,7 @@
     Learn     {
       Learn false
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.045454547, Rel: 0.5 }
@@ -163,7 +165,7 @@
     Learn     {
       Learn false
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.012569832, Rel: 0.5 }
@@ -180,7 +182,7 @@
     Learn     {
       Learn false
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.1, Rel: 1 }
@@ -219,6 +221,7 @@
   LayInhib { Index1: -1, Index2: -1, Index3: -1, Index4: -1 }
   Learn    {
     CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, ETraceTau: 4, ETraceScale: 0, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
+    Timing    { SynCaCycles: 200, LearnThr: 0.1, Refractory: false, On: false, Cycles: 170, TimeDiffTau: 4 }
     CaSpike   { SpikeCaM: 8, SpikeCaSyn: 8, CaSynTau: 30, Dt: { MTau: 5, PTau: 40, DTau: 40 } }
     LearnNMDA { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
     TrgAvgAct { GiBaseInit: 0, RescaleOn: true, ErrLRate: 0.02, SynScaleRate: 0.005, SubMean: 1, Permute: true, Pool: true, TrgRange: { Min: 0.5, Max: 2 } }
@@ -239,7 +242,7 @@
     Learn     {
       Learn false
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.013888889, Rel: 0.5 }
@@ -256,7 +259,7 @@
     Learn     {
       Learn false
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.02727273, Rel: 0.5 }
@@ -273,7 +276,7 @@
     Learn     {
       Learn false
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.020000001, Rel: 1 }
@@ -312,6 +315,7 @@
   LayInhib { Index1: -1, Index2: -1, Index3: -1, Index4: -1 }
   Learn    {
     CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, ETraceTau: 4, ETraceScale: 0, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
+    Timing    { SynCaCycles: 200, LearnThr: 0.1, Refractory: false, On: false, Cycles: 170, TimeDiffTau: 4 }
     CaSpike   { SpikeCaM: 8, SpikeCaSyn: 8, CaSynTau: 30, Dt: { MTau: 5, PTau: 40, DTau: 40 } }
     LearnNMDA { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
     TrgAvgAct { GiBaseInit: 0, RescaleOn: true, ErrLRate: 0.02, SynScaleRate: 0.005, SubMean: 1, Permute: true, Pool: true, TrgRange: { Min: 0.5, Max: 2 } }
@@ -331,7 +335,7 @@
     Learn     {
       Learn false
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.0022222223, Rel: 1 }
@@ -348,7 +352,7 @@
     Learn     {
       Learn false
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.33333334, Rel: 0.5 }
@@ -365,7 +369,7 @@
     Learn     {
       Learn false
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.33333334, Rel: 0.5 }
@@ -404,6 +408,7 @@
   LayInhib { Index1: -1, Index2: -1, Index3: -1, Index4: -1 }
   Learn    {
     CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, ETraceTau: 4, ETraceScale: 0, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
+    Timing    { SynCaCycles: 200, LearnThr: 0.1, Refractory: false, On: false, Cycles: 170, TimeDiffTau: 4 }
     CaSpike   { SpikeCaM: 8, SpikeCaSyn: 8, CaSynTau: 30, Dt: { MTau: 5, PTau: 40, DTau: 40 } }
     LearnNMDA { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
     TrgAvgAct { GiBaseInit: 0, RescaleOn: true, ErrLRate: 0.02, SynScaleRate: 0.005, SubMean: 1, Permute: true, Pool: true, TrgRange: { Min: 0.5, Max: 2 } }
@@ -425,7 +430,7 @@
     Learn     {
       Learn false
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.008264463, Rel: 0.09090909 }
@@ -442,7 +447,7 @@
     Learn     {
       Learn false
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.07575758, Rel: 0.9090909 }
@@ -459,7 +464,7 @@
     Learn     {
       Learn false
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.33333334, Rel: 1 }
@@ -476,7 +481,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.02, Sched: 1, Mod: 1, Eff: 0.02 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0.1 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0.1, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.2, Rel: 0.33333334 }
@@ -494,7 +499,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.02, Sched: 1, Mod: 1, Eff: 0.02 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0.1 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0.1, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.2, Rel: 0.33333334 }
@@ -512,7 +517,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.02, Sched: 1, Mod: 1, Eff: 0.02 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0.1 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0.1, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.14999999, Rel: 0.33333334 }
@@ -552,6 +557,7 @@
   LayInhib { Index1: -1, Index2: -1, Index3: -1, Index4: -1 }
   Learn    {
     CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, ETraceTau: 4, ETraceScale: 0, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
+    Timing    { SynCaCycles: 200, LearnThr: 0.1, Refractory: false, On: false, Cycles: 170, TimeDiffTau: 4 }
     CaSpike   { SpikeCaM: 8, SpikeCaSyn: 8, CaSynTau: 30, Dt: { MTau: 5, PTau: 40, DTau: 40 } }
     LearnNMDA { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
     TrgAvgAct { GiBaseInit: 0, RescaleOn: true, ErrLRate: 0.02, SynScaleRate: 0.005, SubMean: 1, Permute: true, Pool: true, TrgRange: { Min: 0.5, Max: 2 } }
@@ -573,7 +579,7 @@
     Learn     {
       Learn false
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.11111111, Rel: 1 }
@@ -590,7 +596,7 @@
     Learn     {
       Learn false
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.33333334, Rel: 1 }
@@ -607,7 +613,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.02, Sched: 1, Mod: 1, Eff: 0.02 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0.1 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0.1, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.2, Rel: 0.33333334 }
@@ -625,7 +631,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.02, Sched: 1, Mod: 1, Eff: 0.02 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0.1 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0.1, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.2, Rel: 0.33333334 }
@@ -643,7 +649,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.02, Sched: 1, Mod: 1, Eff: 0.02 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0.1 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0.1, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.14999999, Rel: 0.33333334 }
@@ -683,6 +689,7 @@
   LayInhib { Index1: -1, Index2: -1, Index3: -1, Index4: -1 }
   Learn    {
     CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, ETraceTau: 4, ETraceScale: 0, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
+    Timing    { SynCaCycles: 200, LearnThr: 0.1, Refractory: false, On: false, Cycles: 170, TimeDiffTau: 4 }
     CaSpike   { SpikeCaM: 8, SpikeCaSyn: 8, CaSynTau: 30, Dt: { MTau: 5, PTau: 40, DTau: 40 } }
     LearnNMDA { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
     TrgAvgAct { GiBaseInit: 0.5, RescaleOn: false, ErrLRate: 0.02, SynScaleRate: 0.005, SubMean: 1, Permute: true, Pool: true, TrgRange: { Min: 0.5, Max: 2 } }
@@ -703,7 +710,7 @@
     Learn     {
       Learn false
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.33333334, Rel: 1 }
@@ -720,7 +727,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.06666667, Rel: 0.2 }
@@ -737,7 +744,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.06666667, Rel: 0.2 }
@@ -754,7 +761,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.05, Rel: 0.2 }
@@ -771,7 +778,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.01818182, Rel: 0.2 }
@@ -788,7 +795,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.05, Rel: 0.2 }
@@ -827,6 +834,7 @@
   LayInhib { Index1: -1, Index2: -1, Index3: -1, Index4: -1 }
   Learn    {
     CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, ETraceTau: 4, ETraceScale: 0, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
+    Timing    { SynCaCycles: 200, LearnThr: 0.1, Refractory: false, On: false, Cycles: 170, TimeDiffTau: 4 }
     CaSpike   { SpikeCaM: 8, SpikeCaSyn: 8, CaSynTau: 30, Dt: { MTau: 5, PTau: 40, DTau: 40 } }
     LearnNMDA { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
     TrgAvgAct { GiBaseInit: 0.5, RescaleOn: false, ErrLRate: 0.02, SynScaleRate: 0.005, SubMean: 1, Permute: true, Pool: true, TrgRange: { Min: 0.5, Max: 2 } }
@@ -847,7 +855,7 @@
     Learn     {
       Learn false
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.33333334, Rel: 1 }
@@ -864,7 +872,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.06666667, Rel: 0.2 }
@@ -881,7 +889,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.06666667, Rel: 0.2 }
@@ -898,7 +906,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.05, Rel: 0.2 }
@@ -915,7 +923,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.01818182, Rel: 0.2 }
@@ -932,7 +940,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.05, Rel: 0.2 }
@@ -971,6 +979,7 @@
   LayInhib { Index1: -1, Index2: -1, Index3: -1, Index4: -1 }
   Learn    {
     CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, ETraceTau: 4, ETraceScale: 0, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
+    Timing    { SynCaCycles: 200, LearnThr: 0.1, Refractory: false, On: false, Cycles: 170, TimeDiffTau: 4 }
     CaSpike   { SpikeCaM: 8, SpikeCaSyn: 8, CaSynTau: 30, Dt: { MTau: 5, PTau: 40, DTau: 40 } }
     LearnNMDA { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
     TrgAvgAct { GiBaseInit: 0, RescaleOn: true, ErrLRate: 0.02, SynScaleRate: 0.005, SubMean: 1, Permute: true, Pool: true, TrgRange: { Min: 0.5, Max: 2 } }
@@ -991,7 +1000,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.019444445, Rel: 1 }
@@ -1008,7 +1017,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 1, Rel: 1 }
@@ -1047,6 +1056,7 @@
   LayInhib { Index1: -1, Index2: -1, Index3: -1, Index4: -1 }
   Learn    {
     CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, ETraceTau: 4, ETraceScale: 0, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
+    Timing    { SynCaCycles: 200, LearnThr: 0.1, Refractory: false, On: false, Cycles: 170, TimeDiffTau: 4 }
     CaSpike   { SpikeCaM: 8, SpikeCaSyn: 8, CaSynTau: 30, Dt: { MTau: 5, PTau: 40, DTau: 40 } }
     LearnNMDA { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
     TrgAvgAct { GiBaseInit: 0, RescaleOn: true, ErrLRate: 0.02, SynScaleRate: 0.005, SubMean: 0, Permute: true, Pool: true, TrgRange: { Min: 0.5, Max: 2 } }
@@ -1088,6 +1098,7 @@
   LayInhib { Index1: -1, Index2: -1, Index3: -1, Index4: -1 }
   Learn    {
     CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, ETraceTau: 4, ETraceScale: 0, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
+    Timing    { SynCaCycles: 200, LearnThr: 0.1, Refractory: false, On: false, Cycles: 170, TimeDiffTau: 4 }
     CaSpike   { SpikeCaM: 8, SpikeCaSyn: 8, CaSynTau: 30, Dt: { MTau: 5, PTau: 40, DTau: 40 } }
     LearnNMDA { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
     TrgAvgAct { GiBaseInit: 0, RescaleOn: true, ErrLRate: 0.02, SynScaleRate: 0.005, SubMean: 0, Permute: true, Pool: true, TrgRange: { Min: 0.5, Max: 2 } }
@@ -1129,6 +1140,7 @@
   LayInhib { Index1: -1, Index2: -1, Index3: -1, Index4: -1 }
   Learn    {
     CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, ETraceTau: 4, ETraceScale: 0, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
+    Timing    { SynCaCycles: 200, LearnThr: 0.1, Refractory: false, On: false, Cycles: 170, TimeDiffTau: 4 }
     CaSpike   { SpikeCaM: 8, SpikeCaSyn: 8, CaSynTau: 30, Dt: { MTau: 5, PTau: 40, DTau: 40 } }
     LearnNMDA { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
     TrgAvgAct { GiBaseInit: 0, RescaleOn: true, ErrLRate: 0.02, SynScaleRate: 0.005, SubMean: 0, Permute: true, Pool: true, TrgRange: { Min: 0.5, Max: 2 } }
@@ -1170,6 +1182,7 @@
   LayInhib { Index1: -1, Index2: -1, Index3: -1, Index4: -1 }
   Learn    {
     CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, ETraceTau: 4, ETraceScale: 0, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
+    Timing    { SynCaCycles: 200, LearnThr: 0.1, Refractory: false, On: false, Cycles: 170, TimeDiffTau: 4 }
     CaSpike   { SpikeCaM: 8, SpikeCaSyn: 8, CaSynTau: 30, Dt: { MTau: 5, PTau: 40, DTau: 40 } }
     LearnNMDA { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
     TrgAvgAct { GiBaseInit: 0, RescaleOn: true, ErrLRate: 0.02, SynScaleRate: 0.005, SubMean: 0, Permute: true, Pool: true, TrgRange: { Min: 0.5, Max: 2 } }
@@ -1211,6 +1224,7 @@
   LayInhib { Index1: -1, Index2: -1, Index3: -1, Index4: -1 }
   Learn    {
     CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, ETraceTau: 4, ETraceScale: 0, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
+    Timing    { SynCaCycles: 200, LearnThr: 0.1, Refractory: false, On: false, Cycles: 170, TimeDiffTau: 4 }
     CaSpike   { SpikeCaM: 8, SpikeCaSyn: 8, CaSynTau: 30, Dt: { MTau: 5, PTau: 40, DTau: 40 } }
     LearnNMDA { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
     TrgAvgAct { GiBaseInit: 0, RescaleOn: true, ErrLRate: 0.02, SynScaleRate: 0.005, SubMean: 0, Permute: true, Pool: true, TrgRange: { Min: 0.5, Max: 2 } }
@@ -1230,7 +1244,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1.05 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.083333336, Rel: 1 }
@@ -1247,7 +1261,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.02, Sched: 1, Mod: 1, Eff: 0.02 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1.05 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.09090909, Rel: 0.5 }
@@ -1264,7 +1278,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.02, Sched: 1, Mod: 1, Eff: 0.02 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1.05 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.1875, Rel: 0.5 }
@@ -1303,6 +1317,7 @@
   LayInhib { Index1: -1, Index2: -1, Index3: -1, Index4: -1 }
   Learn    {
     CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, ETraceTau: 4, ETraceScale: 0, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
+    Timing    { SynCaCycles: 200, LearnThr: 0.1, Refractory: false, On: false, Cycles: 170, TimeDiffTau: 4 }
     CaSpike   { SpikeCaM: 8, SpikeCaSyn: 8, CaSynTau: 30, Dt: { MTau: 5, PTau: 40, DTau: 40 } }
     LearnNMDA { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
     TrgAvgAct { GiBaseInit: 0, RescaleOn: true, ErrLRate: 0.02, SynScaleRate: 0.005, SubMean: 1, Permute: true, Pool: true, TrgRange: { Min: 0.5, Max: 2 } }
@@ -1323,7 +1338,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.02, Sched: 1, Mod: 1, Eff: 0.02 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.08064517, Rel: 0.32258067 }
@@ -1340,7 +1355,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.02, Sched: 1, Mod: 1, Eff: 0.02 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.0029325515, Rel: 0.032258067 }
@@ -1357,7 +1372,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.02, Sched: 1, Mod: 1, Eff: 0.02 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.08064517, Rel: 0.32258067 }
@@ -1374,7 +1389,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.02, Sched: 1, Mod: 1, Eff: 0.02 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.08064517, Rel: 0.32258067 }
@@ -1413,6 +1428,7 @@
   LayInhib { Index1: -1, Index2: -1, Index3: -1, Index4: -1 }
   Learn    {
     CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, ETraceTau: 4, ETraceScale: 0.02, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
+    Timing    { SynCaCycles: 200, LearnThr: 0.1, Refractory: false, On: false, Cycles: 170, TimeDiffTau: 4 }
     CaSpike   { SpikeCaM: 8, SpikeCaSyn: 8, CaSynTau: 30, Dt: { MTau: 5, PTau: 40, DTau: 40 } }
     LearnNMDA { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
     TrgAvgAct { GiBaseInit: 0, RescaleOn: true, ErrLRate: 0.02, SynScaleRate: 0.005, SubMean: 1, Permute: true, Pool: true, TrgRange: { Min: 0.5, Max: 2 } }
@@ -1433,7 +1449,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.02, Sched: 1, Mod: 1, Eff: 0.02 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.015873017, Rel: 0.047619052 }
@@ -1450,7 +1466,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.15873016, Rel: 0.4761905 }
@@ -1467,7 +1483,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.23809525, Rel: 0.4761905 }
@@ -1506,6 +1522,7 @@
   LayInhib { Index1: -1, Index2: -1, Index3: -1, Index4: -1 }
   Learn    {
     CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, ETraceTau: 4, ETraceScale: 0.02, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
+    Timing    { SynCaCycles: 200, LearnThr: 0.1, Refractory: false, On: false, Cycles: 170, TimeDiffTau: 4 }
     CaSpike   { SpikeCaM: 8, SpikeCaSyn: 8, CaSynTau: 30, Dt: { MTau: 5, PTau: 40, DTau: 40 } }
     LearnNMDA { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
     TrgAvgAct { GiBaseInit: 0, RescaleOn: true, ErrLRate: 0.02, SynScaleRate: 0.005, SubMean: 1, Permute: true, Pool: true, TrgRange: { Min: 0.5, Max: 2 } }
@@ -1526,7 +1543,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.4761905, Rel: 0.4761905 }
@@ -1543,7 +1560,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.043290045, Rel: 0.4761905 }
@@ -1560,7 +1577,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.02, Sched: 1, Mod: 1, Eff: 0.02 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.015873017, Rel: 0.047619052 }
@@ -1599,6 +1616,7 @@
   LayInhib { Index1: -1, Index2: -1, Index3: -1, Index4: -1 }
   Learn    {
     CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, ETraceTau: 4, ETraceScale: 0.02, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
+    Timing    { SynCaCycles: 200, LearnThr: 0.1, Refractory: false, On: false, Cycles: 170, TimeDiffTau: 4 }
     CaSpike   { SpikeCaM: 8, SpikeCaSyn: 8, CaSynTau: 30, Dt: { MTau: 5, PTau: 40, DTau: 40 } }
     LearnNMDA { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
     TrgAvgAct { GiBaseInit: 0, RescaleOn: false, ErrLRate: 0.02, SynScaleRate: 0.005, SubMean: 1, Permute: true, Pool: true, TrgRange: { Min: 0.5, Max: 2 } }
@@ -1618,7 +1636,7 @@
     Learn     {
       Learn false
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 1, Rel: 1 }
@@ -1635,7 +1653,7 @@
     Learn     {
       Learn false
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.5, Rel: 1 }
@@ -1652,7 +1670,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.0001, Sched: 1, Mod: 1, Eff: 0.0001 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.09090909, Rel: 1 }
@@ -1691,6 +1709,7 @@
   LayInhib { Index1: -1, Index2: -1, Index3: -1, Index4: -1 }
   Learn    {
     CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, ETraceTau: 4, ETraceScale: 0, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
+    Timing    { SynCaCycles: 200, LearnThr: 0.1, Refractory: false, On: false, Cycles: 170, TimeDiffTau: 4 }
     CaSpike   { SpikeCaM: 8, SpikeCaSyn: 8, CaSynTau: 30, Dt: { MTau: 5, PTau: 40, DTau: 40 } }
     LearnNMDA { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
     TrgAvgAct { GiBaseInit: 0, RescaleOn: true, ErrLRate: 0.02, SynScaleRate: 0.005, SubMean: 1, Permute: true, Pool: true, TrgRange: { Min: 0.5, Max: 2 } }
@@ -1710,7 +1729,7 @@
     Learn     {
       Learn false
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.5, Rel: 0.5 }
@@ -1727,7 +1746,7 @@
     Learn     {
       Learn false
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 1.5, Rel: 0.5 }
@@ -1744,7 +1763,7 @@
     Learn     {
       Learn false
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.011111111, Rel: 1 }
@@ -1783,6 +1802,7 @@
   LayInhib { Index1: -1, Index2: -1, Index3: -1, Index4: -1 }
   Learn    {
     CaLearn   { Norm: 80, SpikeVGCC: true, SpikeVgccCa: 35, VgccTau: 10, ETraceTau: 4, ETraceScale: 0.02, Dt: { MTau: 2, PTau: 40, DTau: 40 } }
+    Timing    { SynCaCycles: 200, LearnThr: 0.1, Refractory: false, On: false, Cycles: 170, TimeDiffTau: 4 }
     CaSpike   { SpikeCaM: 8, SpikeCaSyn: 8, CaSynTau: 30, Dt: { MTau: 5, PTau: 40, DTau: 40 } }
     LearnNMDA { Ge: 0.006, Tau: 100, ITau: 1, MgC: 1.4, Voff: 0 }
     TrgAvgAct { GiBaseInit: 0, RescaleOn: true, ErrLRate: 0.02, SynScaleRate: 0.005, SubMean: 1, Permute: true, Pool: true, TrgRange: { Min: 0.5, Max: 2 } }
@@ -1803,7 +1823,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.043290045, Rel: 0.4761905 }
@@ -1820,7 +1840,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.04, Sched: 1, Mod: 1, Eff: 0.04 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.23809525, Rel: 0.4761905 }
@@ -1837,7 +1857,7 @@
     Learn     {
       Learn true
       LRate { Base: 0.02, Sched: 1, Mod: 1, Eff: 0.02 }
-      DWt   { SynCa20: true, CaPScale: 1.05, SubMean: 0, SynTraceTau: 1, LearnThr: 0 }
+      DWt   { SubMean: 0, SynTraceTau: 1, LearnThr: 0, SynCa20: true, CaPScale: 1 }
       Hebb  { On: false, Up: 0.5, Down: 1 }
     }
     GScale    { Scale: 0.015873017, Rel: 0.047619052 }
