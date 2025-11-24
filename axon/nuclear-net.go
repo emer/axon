@@ -55,9 +55,9 @@ func (net *Network) AddNuclearCNUp(sense, actEff *Layer, actEnv int, space float
 		pt.SetFixedWts()
 	})
 
-	pt = net.ConnectLayers(cniUp, cneUp, one2one, InhibPath).AddClass("CNiToCNe")
+	pt = net.ConnectLayers(cniUp, cneUp, one2one, CNeUpPath).AddClass("CNiToCNe")
 	pt.AddDefaultParams(func(pt *PathParams) {
-		pt.SetFixedWts()
+		pt.Com.GType = InhibitoryG
 	})
 
 	// CNiIO in front, as most important learning

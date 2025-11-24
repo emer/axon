@@ -188,42 +188,59 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	full.SelfCon = true // unclear if this makes a diff for self cons at all
 	one2one := paths.NewOneToOne()
 	_ = one2one
+	p1to1 := paths.NewPoolOneToOne()
+	_ = p1to1
 
 	space := float32(2)
 	// eyeSz := image.Point{2, 1}
 
-	rotAct := net.AddLayer2D("ActRotate", axon.InputLayer, ev.UnitsPer, ev.LinearUnits)
-	rotAct.AddClass("LinearIn")
-	rotAct.Doc = "Full body lateral rotation action, population coded left to right with gaussian tuning curves for a range of degrees for each unit (X axis) and redundant units for population code in the Y axis."
+	addInput := func(nm string, doc string) (in, pop *axon.Layer) {
+		in = net.AddLayer4D(nm, axon.InputLayer, 1, 2, ev.UnitsPer, 1)
+		in.AddClass("RateIn")
+		in.Doc = "Rate code version. " + doc
 
-	rotActPrev := net.AddLayer2D("ActRotatePrev", axon.InputLayer, ev.UnitsPer, ev.LinearUnits)
-	rotActPrev.AddClass("LinearIn")
-	rotActPrev.Doc = "Previous trial's version of ActRotate. This should be implicitly maintained but currently is not."
-
-	vvelIn, vvelInp := net.AddInputPulv2D("VNCAngVel", ev.UnitsPer, ev.LinearUnits, space)
-	vvelIn.AddClass("LinearIn")
-	vvelInp.AddClass("LinearIn")
-	vvelIn.Doc = "Vestibular lateral rotation velocity, which is just a copy of rotAct given the assumption of accurate vestibular sensing. Population coded left to right with gaussian tuning curves for a range of degrees for each unit (X axis) and redundant units for population code in the Y axis."
-
-	eyeRIn, eyeRInp := net.AddInputPulv2D("EyeR", ev.UnitsPer, ev.LinearUnits, space)
-	eyeRIn.AddClass("LinearIn")
-	eyeRInp.AddClass("LinearIn")
-	eyeRIn.Doc = "Full-field visual motion computed from the right eye using retinal motion filter (see Env tab for visual environment). Population coded left to right with gaussian tuning curves for a range of velocities for each unit (X axis) and redundant units for population code in the Y axis."
-
-	var eyeLIn, eyeLInp *axon.Layer
-	if ev.LeftEye {
-		eyeLIn, eyeLInp = net.AddInputPulv2D("EyeL", ev.UnitsPer, ev.LinearUnits, space)
-		eyeLIn.AddClass("LinearIn")
-		eyeLInp.AddClass("LinearIn")
+		pop = net.AddLayer2D(nm+"Pop", axon.InputLayer, ev.UnitsPer, ev.LinearUnits)
+		pop.AddClass("LinearIn")
+		pop.Doc = "Population coded version. " + doc
+		pop.PlaceBehind(in, space)
+		return
 	}
+
+	rotAct, rotActPop := addInput("ActRotate", "Full body lateral rotation action, population coded left to right with gaussian tuning curves for a range of degrees for each unit (X axis) and redundant units for population code in the Y axis.")
+
+	rotActPrev, rotActPrevPop := addInput("ActRotatePrev", "Previous trial's version of ActRotate. This should be implicitly maintained but currently is not.")
+	_ = rotActPrevPop
+
+	addInputPulv := func(nm string, doc string) (in, pop, popP *axon.Layer) {
+		in = net.AddLayer4D(nm, axon.InputLayer, 1, 2, ev.UnitsPer, 1)
+		in.AddClass("RateIn")
+		in.Doc = "Rate code version. " + doc
+
+		pop, popP = net.AddInputPulv2D(nm+"Pop", ev.UnitsPer, ev.LinearUnits, space)
+		pop.AddClass("LinearIn")
+		popP.AddClass("LinearIn")
+		pop.Doc = "Population coded version. " + doc
+		pop.PlaceBehind(in, space)
+		return
+	}
+
+	vvelIn, vvelInPop, vvelInPopP := addInputPulv("VNCAngVel", "Vestibular lateral rotation velocity, which is just a copy of rotAct given the assumption of accurate vestibular sensing. Population coded left to right with gaussian tuning curves for a range of degrees for each unit (X axis) and redundant units for population code in the Y axis.")
+	_ = vvelInPopP
+
+	eyeRIn, eyeRInPop, eyeRInPopP := addInputPulv("EyeR", "Full-field visual motion computed from the eye using retinal motion filter (see Env tab for visual environment). Population coded left to right with gaussian tuning curves for a range of velocities for each unit (X axis) and redundant units for population code in the Y axis.")
+
+	// var eyeLIn, eyeLInPop, eyeLInPopP *axon.Layer
+	// if ev.LeftEye {
+	// 	eyeLIn, eyeLInPop, eyeLInPopP = addInputPulv("EyeL", "Full-field visual motion computed from the eye using retinal motion filter (see Env tab for visual environment). Population coded left to  with gaussian tuning curves for a range of velocities for each unit (X axis) and redundant units for population code in the Y axis.")
+	// }
 
 	s1, s1ct := net.AddSuperCT2D("S1", "", 10, 10, space, one2one) // one2one learn > full
 	s1.Doc = "Neocortical integrated vestibular and full-field visual motion processing. Does predictive learning on both input signals, more like S2 (secondary), but just using one for simplicity."
 	// net.ConnectCTSelf(s1ct, full, "") // self definitely doesn't make sense -- no need for 2-back ct
 	// net.LateralConnectLayer(s1ct, full).AddClass("CTSelfMaint") // no diff
-	net.ConnectToPulv(s1, s1ct, vvelInp, full, full, "")
-	net.ConnectLayers(rotAct, s1, full, axon.ForwardPath).AddClass("FFToHid", "FromAct")
-	net.ConnectLayers(vvelIn, s1, full, axon.ForwardPath).AddClass("FFToHid")
+	net.ConnectToPulv(s1, s1ct, vvelInPop, full, full, "")
+	net.ConnectLayers(rotActPop, s1, full, axon.ForwardPath).AddClass("FFToHid", "FromAct")
+	net.ConnectLayers(vvelInPop, s1, full, axon.ForwardPath).AddClass("FFToHid")
 
 	// visHid, visHidct := net.AddSuperCT2D("VisHid", "", 10, 10, space, one2one) // one2one learn > full
 
@@ -231,14 +248,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectLayers(rotAct, visHid, full, axon.ForwardPath).AddClass("FFToHid", "FromAct")
 	// net.ConnectLayers(eyeRIn, visHid, full, axon.ForwardPath).AddClass("FFToHid")
 
-	net.ConnectToPulv(s1, s1ct, eyeRInp, full, full, "")
-	net.ConnectLayers(eyeRIn, s1, full, axon.ForwardPath).AddClass("FFToHid")
+	net.ConnectToPulv(s1, s1ct, eyeRInPopP, full, full, "")
+	net.ConnectLayers(eyeRInPop, s1, full, axon.ForwardPath).AddClass("FFToHid")
 
-	// net.ConnectLayers(vvelIn, visHid, full, axon.ForwardPath).AddClass("FFToHid")
+	// net.ConnectLayers(vvelInPop, visHid, full, axon.ForwardPath).AddClass("FFToHid")
 
 	if ev.LeftEye {
-		// net.ConnectToPulv(visHid, visHidct, eyeLInp, full, full, "")
-		// net.ConnectLayers(eyeLIn, visHid, full, axon.ForwardPath).AddClass("FFToHid")
+		// net.ConnectToPulv(visHidPop, visHidct, eyeLInp, full, full, "")
+		// net.ConnectLayers(eyeLInPop, visHid, full, axon.ForwardPath).AddClass("FFToHid")
 	}
 
 	// cerebellum:
@@ -246,28 +263,28 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ioUp, cniIOUp, cniUp, cneUp := net.AddNuclearCNUp(vvelIn, rotAct, cycles-20, space)
 	_, _ = ioUp, cneUp
 
-	net.ConnectLayers(rotActPrev, cniIOUp, full, axon.CNIOPath).AddClass("MFUp", "MFToCNiIOUp")
-	net.ConnectLayers(s1ct, cniIOUp, full, axon.CNIOPath).AddClass("MFUp", "MFToCNiIOUp")
-	net.ConnectLayers(eyeRIn, cniIOUp, full, axon.CNIOPath).AddClass("MFUp", "MFToCNiIOUp")
-
-	net.ConnectLayers(rotActPrev, cniUp, full, axon.CNIOPath).AddClass("MFUp", "MFToCNiUp")
-	net.ConnectLayers(s1ct, cniUp, full, axon.CNIOPath).AddClass("MFUp", "MFToCNiUp")
-	net.ConnectLayers(eyeRIn, cniUp, full, axon.CNIOPath).AddClass("MFUp", "MFToCNiUp")
-
 	pt := net.ConnectLayers(vvelIn, cneUp, one2one, axon.ForwardPath).AddClass("SenseToCNeUp")
 	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
 
+	net.ConnectLayers(rotActPrev, cniIOUp, p1to1, axon.CNIOPath).AddClass("MFUp", "MFToCNiIOUp")
+	// net.ConnectLayers(s1ct, cniIOUp, p1to1, axon.CNIOPath).AddClass("MFUp", "MFToCNiIOUp")
+	net.ConnectLayers(eyeRIn, cniIOUp, p1to1, axon.CNIOPath).AddClass("MFUp", "MFToCNiIOUp")
+
+	net.ConnectLayers(rotActPrev, cniUp, p1to1, axon.CNIOPath).AddClass("MFUp", "MFToCNiUp")
+	// net.ConnectLayers(s1ct, cniUp, p1to1, axon.CNIOPath).AddClass("MFUp", "MFToCNiUp")
+	net.ConnectLayers(eyeRIn, cniUp, p1to1, axon.CNIOPath).AddClass("MFUp", "MFToCNiUp")
+
 	// position
 
-	rotActPrev.PlaceBehind(rotAct, space)
-	vvelIn.PlaceRightOf(rotAct, space)
-	eyeRIn.PlaceRightOf(vvelIn, space)
-	if ev.LeftEye {
-		eyeLIn.PlaceRightOf(eyeRIn, space)
-	}
+	rotActPrev.PlaceBehind(rotActPop, space)
+	vvelIn.PlaceRightOf(rotAct, float32(ev.LinearUnits))
+	eyeRIn.PlaceRightOf(vvelIn, float32(ev.LinearUnits))
+	// if ev.LeftEye {
+	// 	eyeLIn.PlaceRightOf(eyeRIn, space)
+	// }
 	s1.PlaceAbove(rotAct)
 
-	cniIOUp.PlaceRightOf(s1, space)
+	cniIOUp.PlaceRightOf(s1, space*3)
 
 	// visHid.PlaceRightOf(s1, space)
 	// if ss.Config.Params.Hid2 {
@@ -387,8 +404,10 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 			// 	lnm += "_Lateral"
 			// }
 			pats := ev.State(lnm)
-			if pats != nil {
+			if !reflectx.IsNil(reflect.ValueOf(pats)) {
 				ly.ApplyExt(di, pats)
+			} else {
+				fmt.Println("nil pats:", lnm)
 			}
 		}
 		curModeDir.StringValue("TrialName", ndata).SetString1D(ev.String(), int(di))
@@ -440,7 +459,7 @@ func (ss *Sim) AddStat(f func(mode Modes, level Levels, phase StatsPhase)) {
 func (ss *Sim) StatsStart(lmd, ltm enums.Enum) {
 	mode := lmd.(Modes)
 	level := ltm.(Levels)
-	if level <= Trial {
+	if level < Trial { // < not <=
 		return
 	}
 	ss.RunStats(mode, level-1, Start)
@@ -451,9 +470,9 @@ func (ss *Sim) StatsStart(lmd, ltm enums.Enum) {
 func (ss *Sim) StatsStep(lmd, ltm enums.Enum) {
 	mode := lmd.(Modes)
 	level := ltm.(Levels)
-	if level == Cycle {
-		return
-	}
+	// if level == Cycle {
+	// 	return
+	// }
 	ss.RunStats(mode, level, Step)
 	tensorfs.DirTable(axon.StatsNode(ss.Stats, mode, level), nil).WriteToLog()
 }
@@ -463,9 +482,14 @@ func (ss *Sim) RunStats(mode Modes, level Levels, phase StatsPhase) {
 	for _, sf := range ss.StatFuncs {
 		sf(mode, level, phase)
 	}
-	if phase == Step && ss.GUI.Tabs != nil {
-		nm := mode.String() + " " + level.String() + " Plot"
-		ss.GUI.Tabs.AsLab().GoUpdatePlot(nm)
+	if level > Cycle {
+		if phase == Step && ss.GUI.Tabs != nil {
+			nm := mode.String() + " " + level.String() + " Plot"
+			ss.GUI.Tabs.AsLab().GoUpdatePlot(nm)
+			if level == Trial {
+				ss.GUI.Tabs.AsLab().GoUpdatePlot("Train Cycle Plot")
+			}
+		}
 	}
 }
 
@@ -489,9 +513,9 @@ func (ss *Sim) StatsInit() {
 		mode := md.(Modes)
 		for _, lev := range st.Order {
 			level := lev.(Levels)
-			if level == Cycle {
-				continue
-			}
+			// if level == Cycle {
+			// 	continue
+			// }
 			ss.RunStats(mode, level, Start)
 		}
 	}
@@ -500,6 +524,7 @@ func (ss *Sim) StatsInit() {
 		_, idx := tbs.CurrentTab()
 		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Epoch))
 		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Trial))
+		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Cycle))
 		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Run))
 		tbs.SelectTabIndex(idx)
 	}
@@ -515,7 +540,7 @@ func (ss *Sim) ConfigStats() {
 	ss.SetRunName()
 
 	// last arg(s) are levels to exclude
-	counterFunc := axon.StatLoopCounters(ss.Stats, ss.Current, ss.Loops, net, Trial, Cycle)
+	counterFunc := axon.StatLoopCounters(ss.Stats, ss.Current, ss.Loops, net, Trial)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		counterFunc(mode, level, phase == Start)
 	})
@@ -543,6 +568,28 @@ func (ss *Sim) ConfigStats() {
 		prevCorFunc(mode, level, phase == Start)
 	})
 
+	ss.ConfigStatVis()
+	ss.ConfigStatNuclear()
+
+	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer, axon.InputLayer, axon.PulvinarLayer)
+	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		actGeFunc(mode, level, phase == Start)
+	})
+
+	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, Run, lays...)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		trnEpc := ss.Loops.Loop(Train, Epoch).Counter.Cur
+		pcaFunc(mode, level, phase == Start, trnEpc)
+	})
+
+	stateFunc := axon.StatLayerState(ss.Stats, net, Test, Trial, true, "ActM", "Depth", "DepthP", "HeadDir", "HeadDirP")
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		stateFunc(mode, level, phase == Start)
+	})
+}
+
+func (ss *Sim) ConfigStatVis() {
 	statNames := []string{"ActRot", "VisMot", "EmerAng", "MotActCor"}
 	statDescs := map[string]string{
 		"ActRot":    "Action rotation: degrees of body + head rotation",
@@ -551,6 +598,9 @@ func (ss *Sim) ConfigStats() {
 		"MotActCor": "Correlation between the VisMot and ActRot signals, indicating quality of visual motion filters",
 	}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		if level < Trial {
+			return
+		}
 		for _, name := range statNames {
 			if name == "MotActCor" {
 				if level == Trial {
@@ -607,23 +657,85 @@ func (ss *Sim) ConfigStats() {
 			}
 		}
 	})
+}
 
-	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer, axon.InputLayer, axon.PulvinarLayer)
-	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...)
+func (ss *Sim) ConfigStatNuclear() {
+	net := ss.Net
+	prefix := "VNCAngVel"
+	pool := 1 // 0 = layer pool, get first pool
+	layerNames := []string{"IO", "CNiIO", "CNiUp", "CNeUp"}
+	layers := make([]*axon.Layer, len(layerNames))
+	pools := make([]uint32, len(layerNames))
+	for li, lnm := range layerNames {
+		layers[li] = net.LayerByName(prefix + lnm)
+		pools[li] = layers[li].Params.PoolIndex(1) // 4D
+	}
+	statNames := []string{"IOenv", "IOe", "IOi", "IOerr", "IOspike", "CNiIO", "CNiUp", "CNeUp", "CNeUpGe", "CNeUpGi"}
+	statDescs := map[string]string{
+		"IOenv":   "IO envelope initiated by action input to IO neurons",
+		"IOe":     "Integrated excitatory input to IO",
+		"IOi":     "Integrated inhibitory input to IO, compared against IOe",
+		"IOerr":   "IOe - IOi (positive only): the error signal that drives IO spiking, if above threshold",
+		"IOspike": "IO spike, either from IOerr or at end of the IOenv for the baseline spiking",
+		"CNiIO":   "integrated activity (CaP) of CNiIO predictive inhibitory input to IO, generates IOi at a temporal offset 'in the future'",
+		"CNiUp":   "inhibitory interneuron that projects to CNeUp, learns to inhibit CNeUp just prior to its activation",
+		"CNeUp":   "excitatory output, driven directly by excitatory sensory input, which should be cancelled by CNiUp inputs",
+		"CNeUpGe": "excitatory conductance into CNeUp, from sensory input",
+		"CNeUpGi": "inhibitory conductance into CNeUp, from CNiUp",
+	}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		actGeFunc(mode, level, phase == Start)
+		if level != Cycle {
+			return
+		}
+		di := 0
+		diu := uint32(di)
+		for _, name := range statNames {
+			modeDir := ss.Stats.Dir(mode.String())
+			curModeDir := ss.Current.Dir(mode.String())
+			levelDir := modeDir.Dir(level.String())
+			tsr := levelDir.Float64(name)
+			ndata := 1
+			if phase == Start {
+				tsr.SetNumRows(0)
+				plot.SetFirstStyler(tsr, func(s *plot.Style) {
+					s.Range.SetMin(0).SetMax(1)
+					if name != "CNeUpGe" && name != "CNeUpGi" {
+						s.On = true
+					}
+				})
+				metadata.SetDoc(tsr, statDescs[name])
+				continue
+			}
+			var stat float32
+			switch name {
+			case "IOenv":
+				stat = layers[0].AvgMaxVarByPool("TimeCycle", pool, di).Avg
+				if stat > 0 {
+					stat = 1
+				}
+			case "IOe":
+				stat = layers[0].AvgMaxVarByPool("GaM", pool, di).Avg
+			case "IOi":
+				stat = layers[0].AvgMaxVarByPool("GaD", pool, di).Avg
+			case "IOerr":
+				stat = max(layers[0].AvgMaxVarByPool("GaP", pool, di).Avg, 0)
+			case "IOspike":
+				stat = layers[0].AvgMaxVarByPool("Spike", pool, di).Avg
+			case "CNiIO":
+				stat = axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pools[1], diu)
+			case "CNiUp":
+				stat = axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pools[2], diu)
+			case "CNeUp":
+				stat = axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pools[3], diu)
+			case "CNeUpGe":
+				stat = layers[3].AvgMaxVarByPool("Ge", pool, di).Avg
+			case "CNeUpGi":
+				stat = layers[3].AvgMaxVarByPool("Gi", pool, di).Avg
+			}
+			curModeDir.Float64(name, ndata).SetFloat1D(float64(stat), di)
+			tsr.AppendRowFloat(float64(stat))
+		}
 	})
-
-	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, Run, lays...)
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		trnEpc := ss.Loops.Loop(Train, Epoch).Counter.Cur
-		pcaFunc(mode, level, phase == Start, trnEpc)
-	})
-
-	// stateFunc := axon.StatLayerState(ss.Stats, net, Test, Trial, true, "ActM", "Depth", "DepthP", "HeadDir", "HeadDirP")
-	// ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-	// 	stateFunc(mode, level, phase == Start)
-	// })
 }
 
 // StatCounters returns counters string to show at bottom of netview.
@@ -709,6 +821,7 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	nv := ss.GUI.AddNetView("Network")
 	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles()
 	nv.Options.Raster.Max = ss.Config.Run.Cycles()
+	nv.Options.LayerNameSize = 0.03
 	nv.SetNet(ss.Net)
 	ss.TrainUpdate.Config(nv, axon.Theta, ss.StatCounters)
 	ss.GUI.OnStop = func(mode, level enums.Enum) {

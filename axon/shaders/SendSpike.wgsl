@@ -1302,7 +1302,7 @@ fn LayerParams_IOUpdate(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,
 	TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 0.0;
 	var inhibAct = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GiSyn))];
 	if (effAct > 0 && envCyc < ly.IO.EfferentOff) {
-		inhibAct += f32(4.0);
+		inhibAct = f32(1.0);
 	}
 	CaBinIncrement(inhibAct, ctx.CyclesTotal, ni, di); // always store
 	var bin = CaBinForCycle(ctx.CyclesTotal - ly.IO.TimeOff);
@@ -1322,7 +1322,7 @@ fn LayerParams_IOUpdate(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = 0.0;
 		}return;
 	}
-	if (envCyc <= ly.IO.TimeOff) { // nothing until min
+	if (envCyc <= (ly.IO.TimeOff + ly.IO.EfferentOff)) { // nothing until min
 		return;
 	}
 	if (envCyc >= ly.Nuclear.ActionEnv) { // no errors until the end of envelope: baseline spike
@@ -1402,7 +1402,7 @@ const  VSPatchPath: PathTypes = 6;
 const  VSMatrixPath: PathTypes = 7;
 const  DSMatrixPath: PathTypes = 8;
 const  CNIOPath: PathTypes = 9;
-const  CNePath: PathTypes = 10;
+const  CNeUpPath: PathTypes = 10;
 const  RWPath: PathTypes = 11;
 const  TDPredPath: PathTypes = 12;
 const  BLAPath: PathTypes = 13;

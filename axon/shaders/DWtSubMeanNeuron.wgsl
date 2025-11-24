@@ -672,7 +672,7 @@ const  LayerRewPredNeg: LayerVars = 11;
 
 //////// import: "learn-layer.go"
 fn LayerParams_DWtSubMean(ly: LayerParams, ctx: Context, ri: u32) {
-	if (LayerParams_IsNuclear(ly)) {
+	if (ly.Type == CNeLayer) {
 		LayerParams_NuclearDWtNeuron(ly, ctx, ri);
 	}
 	var lni = ri - ly.Indexes.NeurSt;
@@ -1038,9 +1038,6 @@ struct NuclearParams {
 	pad: f32,
 	pad1: f32,
 }
-fn LayerParams_IsNuclear(ly: LayerParams) -> bool {
-	return ly.Type >= IOLayer && ly.Type <= CNiUpLayer;
-}
 fn LayerParams_NuclearDWtNeuron(ly: LayerParams, ctx: Context, ni: u32) {
 	var dbase = f32(0);
 	for (var di = u32(0); di < ly.MaxData; di++) {
@@ -1052,8 +1049,13 @@ fn LayerParams_NuclearDWtNeuron(ly: LayerParams, ctx: Context, ni: u32) {
 		dbase += aerr;
 	}
 	dbase *= ly.Nuclear.GeBaseLRate;
+	var gbase = NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81], u32(ni), u32(GeBase))];
+	gbase += dbase;
+	if (gbase < 0) {
+		gbase = f32(0);
+	}
 	NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81],
-	u32(ni), u32(GeBase))] += dbase;
+	u32(ni), u32(GeBase))] = gbase;
 }
 struct IOParams {
 	TimeOff: i32,
@@ -1126,7 +1128,7 @@ const  VSPatchPath: PathTypes = 6;
 const  VSMatrixPath: PathTypes = 7;
 const  DSMatrixPath: PathTypes = 8;
 const  CNIOPath: PathTypes = 9;
-const  CNePath: PathTypes = 10;
+const  CNeUpPath: PathTypes = 10;
 const  RWPath: PathTypes = 11;
 const  TDPredPath: PathTypes = 12;
 const  BLAPath: PathTypes = 13;

@@ -181,7 +181,7 @@ func (ly *LayerParams) IOUpdate(ctx *Context, lpi, pi, ni, di uint32) {
 
 	inhibAct := Neurons.Value(int(ni), int(di), int(GiSyn))
 	if effAct > 0 && envCyc < ly.IO.EfferentOff {
-		inhibAct += 4.0
+		inhibAct = 1.0
 	}
 	CaBinIncrement(inhibAct, ctx.CyclesTotal, ni, di) // always store
 
@@ -202,7 +202,7 @@ func (ly *LayerParams) IOUpdate(ctx *Context, lpi, pi, ni, di uint32) {
 		}
 		return
 	}
-	if envCyc <= ly.IO.TimeOff { // nothing until min
+	if envCyc <= (ly.IO.TimeOff + ly.IO.EfferentOff) { // nothing until min
 		return
 	}
 	if envCyc >= ly.Nuclear.ActionEnv { // no errors until the end of envelope: baseline spike
@@ -227,6 +227,18 @@ func (ly *Layer) NuclearPostBuild() {
 	ly.Params.Nuclear.IOLayIndex = ly.BuildConfigFindLayer("IOLayName", true)
 }
 
+// LinearDefaults sets parameters to allow neurons to linearly encode
+// values in their rate of firing, to the extent possible.
+func (ly *LayerParams) LinearDefaults() {
+	// turn off accommodation currents
+	ly.Acts.Mahp.Gk = 0
+	ly.Acts.Sahp.Gk = 0
+	ly.Acts.KNa.On.SetBool(false)
+	// no sustained:
+	ly.Acts.NMDA.Ge = 0
+	ly.Acts.GabaB.Gk = 0
+}
+
 // NuclearDefaults called in Defaults for all Nuclear layers
 func (ly *LayerParams) NuclearDefaults() {
 	ly.Learn.TrgAvgAct.RescaleOn.SetBool(false)
@@ -236,13 +248,7 @@ func (ly *LayerParams) NuclearDefaults() {
 	ly.Acts.Decay.Glong = 0.0 // clear long
 	ly.Acts.Decay.AHP = 0.0   // clear long
 
-	// turn off accommodation currents
-	ly.Acts.Mahp.Gk = 0
-	ly.Acts.Sahp.Gk = 0
-	ly.Acts.KNa.On.SetBool(false)
-
-	// no sustained
-	ly.Acts.NMDA.Ge = 0
+	ly.LinearDefaults()
 
 	// ly.Learn.RLRate.SigmoidMin = 1.0 // 1.0 generally better but worth trying 0.05 too
 

@@ -23,6 +23,13 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.ActAvg.Nominal = 0.2 // 0.2 > 0.13, 0.2 accurate
 				ly.Inhib.Layer.Gi = 0.8       //
 			}},
+		{Sel: ".RateIn", Doc: "",
+			Set: func(ly *axon.LayerParams) {
+				ly.LinearDefaults()
+				ly.Acts.Clamp.Ge = 0.5
+				ly.Inhib.Layer.On.SetBool(false)
+				ly.Inhib.ActAvg.Nominal = 0.2
+			}},
 		{Sel: ".CTLayer", Doc: "CT NMDA gbar factor is key",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.12 // CT in general more active
@@ -50,15 +57,15 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".IOLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.IO.ErrThr = 0.01
+				ly.IO.ErrThr = 0.02
 			}},
 		{Sel: ".CNiIOLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Nuclear.Decay = 0.1
+				ly.Nuclear.Decay = 1
 			}},
 		{Sel: ".CNiUpLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Nuclear.Decay = 0.1
+				ly.Nuclear.Decay = 1
 			}},
 		{Sel: ".CNeLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
@@ -126,6 +133,7 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Init.Mean = 0.05 // weak initial
 				pt.SWts.Init.Var = 0
 				pt.SWts.Init.SPct = 0
+				pt.SWts.Adapt.On.SetBool(false)
 			}},
 		{Sel: ".MFToCNiUp", Doc: "initial weights",
 			Set: func(pt *axon.PathParams) {
@@ -133,6 +141,7 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Init.Mean = 0.05 // ?
 				pt.SWts.Init.Var = 0
 				pt.SWts.Init.SPct = 0
+				pt.SWts.Adapt.On.SetBool(false)
 			}},
 
 		/* not used
