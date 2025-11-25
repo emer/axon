@@ -65,7 +65,7 @@ func RunNeuron(t *testing.T, gpu bool) map[string]float32 {
 	sim.New()
 
 	sim.Config.GUI = false
-	sim.Config.Run.GPU = false // for CI
+	sim.Config..GPU = false // for CI
 	sim.Config.Run.NRuns = 1
 	sim.Config.Log.Cycle = false
 

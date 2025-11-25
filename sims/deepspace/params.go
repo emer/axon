@@ -12,7 +12,10 @@ var LayerParams = axon.LayerSheets{
 	"Base": {
 		{Sel: "Layer", Doc: "generic layer params",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.1 // 0.05 needed to get hidden2 high to .1, 0.1 keeps it too low!
+				ly.Inhib.ActAvg.Nominal = 0.1  // 0.05 needed to get hidden2 high to .1, 0.1 keeps it too low!
+				ly.Acts.Noise.On.SetBool(true) // true >= false (minor)
+				ly.Acts.Noise.Ge = 0.1         //
+				ly.Acts.Noise.Gi = 0.1
 			}},
 		{Sel: ".SuperLayer", Doc: "super layer params",
 			Set: func(ly *axon.LayerParams) {

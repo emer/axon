@@ -130,7 +130,7 @@ func RunTest(t *testing.T, runName string, expect []Expect) {
 	sim.New()
 
 	sim.Config.GUI = false
-	sim.Config.Run.GPU = false // for CI
+	sim.Config..GPU = false // for CI
 	sim.Config.Run.NRuns = 1
 	sim.Config.Log.Block = true // false
 	sim.Config.Log.Cond = true  // false

@@ -91,7 +91,7 @@ func RunPerfTest(t *testing.T, gpu bool, ndata int) {
 	sim.New()
 
 	sim.Config.GUI = false
-	sim.Config.Run.GPU = gpu
+	sim.Config..GPU = gpu
 	sim.Config.Run.NData = ndata
 	sim.Config.Run.NRuns = 1
 	sim.Config.Run.NEpochs = 5 // 4 works for all but CPUnData2
@@ -166,7 +166,7 @@ func RunStdTest(t *testing.T, gpu, excludeLays bool, ndata int) {
 	sim.New()
 
 	sim.Config.GUI = false
-	sim.Config.Run.GPU = gpu
+	sim.Config..GPU = gpu
 	sim.Config.Run.NData = ndata
 	sim.Config.Run.NRuns = 1
 	sim.Config.Run.NEpochs = 1
@@ -281,7 +281,7 @@ func RunNDataTest(t *testing.T, gpu bool) {
 	sim.New()
 
 	sim.Config.GUI = false
-	sim.Config.Run.GPU = gpu
+	sim.Config..GPU = gpu
 	sim.Config.Run.NData = 2
 	sim.Config.Run.NRuns = 1
 	sim.Config.Run.NEpochs = 1

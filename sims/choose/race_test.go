@@ -13,7 +13,7 @@ func TestRace(t *testing.T) {
 	sim.New()
 
 	sim.Config.GUI = false
-	sim.Config.Run.GPU = false
+	sim.Config..GPU = false
 	sim.Config.Run.NData = 2
 	sim.Config.Run.NRuns = 1
 	sim.Config.Run.NEpochs = 1

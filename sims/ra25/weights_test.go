@@ -22,7 +22,7 @@ func TestWeightsSave(t *testing.T) {
 
 	sim.Config.Log.Epoch = false
 	sim.Config.Log.Run = false
-	sim.Config.Run.GPU = false
+	sim.Config..GPU = false
 	sim.Config.Run.NRuns = 1
 
 	sim.ConfigAll()
@@ -93,7 +93,7 @@ func TestWeightsTrain(t *testing.T) {
 	sim.Config.GUI = false
 	sim.Config.Log.Epoch = false
 	sim.Config.Log.Run = false
-	sim.Config.Run.GPU = false
+	sim.Config..GPU = false
 	// note: gets a few errors and takes longer on GPU vs. CPU..  hmm..
 	sim.Config.Run.NRuns = 1
 	sim.Config.Run.StartWts = "wtstest.wts.gz"

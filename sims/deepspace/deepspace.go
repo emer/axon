@@ -122,7 +122,6 @@ func (ss *Sim) SetConfig(cfg *Config) { ss.Config = cfg }
 func (ss *Sim) Body() *core.Body      { return ss.GUI.Body }
 
 func (ss *Sim) ConfigSim() {
-	ss.Config.GPU = false
 	ss.Root, _ = tensorfs.NewDir("Root")
 	tensorfs.CurRoot = ss.Root
 	ss.Net = axon.NewNetwork(ss.Config.Name)
@@ -238,7 +237,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	s1.Doc = "Neocortical integrated vestibular and full-field visual motion processing. Does predictive learning on both input signals, more like S2 (secondary), but just using one for simplicity."
 	// net.ConnectCTSelf(s1ct, full, "") // self definitely doesn't make sense -- no need for 2-back ct
 	// net.LateralConnectLayer(s1ct, full).AddClass("CTSelfMaint") // no diff
-	net.ConnectToPulv(s1, s1ct, vvelInPop, full, full, "")
+	net.ConnectToPulv(s1, s1ct, vvelInPopP, full, full, "")
 	net.ConnectLayers(rotActPop, s1, full, axon.ForwardPath).AddClass("FFToHid", "FromAct")
 	net.ConnectLayers(vvelInPop, s1, full, axon.ForwardPath).AddClass("FFToHid")
 
@@ -568,6 +567,7 @@ func (ss *Sim) ConfigStats() {
 		prevCorFunc(mode, level, phase == Start)
 	})
 
+	ss.ConfigStatAdaptFilt()
 	ss.ConfigStatVis()
 	ss.ConfigStatNuclear()
 
@@ -734,6 +734,58 @@ func (ss *Sim) ConfigStatNuclear() {
 			}
 			curModeDir.Float64(name, ndata).SetFloat1D(float64(stat), di)
 			tsr.AppendRowFloat(float64(stat))
+		}
+	})
+}
+
+func (ss *Sim) ConfigStatAdaptFilt() {
+	net := ss.Net
+	layname := "VNCAngVelCNeUp"
+	ly := net.LayerByName(layname)
+	pi := ly.Params.PoolIndex(0)
+	// np := ly.Params.Indexes.NPools
+	statNames := []string{"CNeUpMax"}
+	statDescs := map[string]string{
+		"CNeUpMax": "Maximum activity across the trial for CNeUp Adaptive Filtering layer. Should be around .5 in general",
+	}
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		if level < Trial {
+			return
+		}
+		for _, name := range statNames {
+			modeDir := ss.Stats.Dir(mode.String())
+			curModeDir := ss.Current.Dir(mode.String())
+			levelDir := modeDir.Dir(level.String())
+			subDir := modeDir.Dir((level - 1).String()) // note: will fail for Cycle
+			tsr := levelDir.Float64(name)
+			ndata := int(ss.Net.Context().NData)
+			if phase == Start {
+				tsr.SetNumRows(0)
+				plot.SetFirstStyler(tsr, func(s *plot.Style) {
+					s.Range.SetMin(0).SetMax(1)
+					s.On = true
+				})
+				metadata.SetDoc(tsr, statDescs[name])
+				continue
+			}
+			switch level {
+			case Trial:
+				for di := range ndata {
+					var stat float32
+					switch name {
+					case "CNeUpMax":
+						stat = axon.PoolAvgMax(axon.AMCaPMax, axon.AMCycle, axon.Max, pi, uint32(di))
+						curModeDir.Float64(name, ndata).SetFloat1D(float64(stat), di)
+						tsr.AppendRowFloat(float64(stat))
+					}
+				}
+			case Run:
+				stat := stats.StatFinal.Call(subDir.Value(name)).Float1D(0)
+				tsr.AppendRowFloat(stat)
+			default:
+				stat := stats.StatMean.Call(subDir.Value(name)).Float1D(0)
+				tsr.AppendRowFloat(stat)
+			}
 		}
 	})
 }

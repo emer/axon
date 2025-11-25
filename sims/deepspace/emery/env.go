@@ -328,16 +328,21 @@ func (ev *EmeryEnv) RenderValue(snm string, val float32) {
 // RenderRate renders rate code state, as normalized 0-1 value
 // as both 0-1 and 1-0 coded value across X axis.
 func (ev *EmeryEnv) RenderRate(snm string, val float32) {
+	minVal := float32(0.1)
+	minScale := 1.0 - minVal
 	var nv, pv float32
 	if val < 0 {
 		nv = -val
 	} else {
 		pv = val
 	}
+	df := float32(0.9)
 	vs := ev.NextStates[snm]
 	for i := range ev.UnitsPer {
-		vs.Set(nv, i, 0)
-		vs.Set(pv, i, 1)
+		vs.Set(minVal+minScale*nv, i, 0)
+		vs.Set(minVal+minScale*pv, i, 1)
+		nv *= df // discount so values are different across units
+		pv *= df
 	}
 }
 

@@ -37,7 +37,7 @@ func (ss *Sim) RunParamTweak() {
 	}
 
 	ss.Loops.GetLoop(etime.Train, etime.Run).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.NRuns)
-	if ss.Config.Run.GPU {
+	if ss.Config..GPU {
 		ss.Net.ConfigGPUnoGUI(&ss.Context)
 	}
 	mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)

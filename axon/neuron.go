@@ -421,7 +421,7 @@ const (
 	//  of noise firing rate.
 	GeNoiseP
 
-	// GiNoise is integrated noise inhibotyr conductance, added into Gi.
+	// GiNoise is integrated noise inhibitory conductance, added into Gi.
 	GiNoise
 
 	// GiNoiseP is accumulating poisson probability factor for driving inhibitory

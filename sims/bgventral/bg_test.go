@@ -18,7 +18,7 @@ func TestPCore(t *testing.T) {
 	sim.New()
 
 	sim.Config.GUI = false
-	sim.Config.Run.GPU = false // for CI
+	sim.Config..GPU = false // for CI
 	sim.Config.Run.NRuns = 1
 	sim.Config.Log.Run = false
 	sim.Config.Log.Epoch = false

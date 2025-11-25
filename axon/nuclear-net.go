@@ -38,7 +38,7 @@ func (net *Network) AddNuclearCNUp(sense, actEff *Layer, actEnv int, space float
 	cneUp.AddDefaultParams(aep)
 
 	full := paths.NewFull()
-	one2one := paths.NewOneToOne()
+	one2one := paths.NewPoolOneToOne()
 
 	pt := net.ConnectLayers(actEff, ioUp, full, ForwardPath).AddClass("EffToIO")
 	pt.AddDefaultParams(func(pt *PathParams) {
