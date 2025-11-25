@@ -1042,7 +1042,7 @@ fn LayerParams_NuclearDWtNeuron(ly: LayerParams, ctx: Context, ni: u32) {
 	var dbase = f32(0);
 	for (var di = u32(0); di < ly.MaxData; di++) {
 		if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // non-baseline
-		u32(ni), u32(di), u32(TimePeak))] == 0.0) {
+		u32(ni), u32(di), u32(TimePeak))] == 1.0) {
 			continue;
 		}
 		var aerr = ly.Nuclear.ActTarget - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaD))];
@@ -1062,8 +1062,8 @@ struct IOParams {
 	ErrThr: f32,
 	EfferentThr: f32,
 	EfferentOff: i32,
-	GeTau: f32,
-	GeDt: f32,
+	GTau: f32,
+	GDt: f32,
 	pad: f32,
 	pad1: f32,
 }

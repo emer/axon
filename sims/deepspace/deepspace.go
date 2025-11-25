@@ -670,11 +670,12 @@ func (ss *Sim) ConfigStatNuclear() {
 		layers[li] = net.LayerByName(prefix + lnm)
 		pools[li] = layers[li].Params.PoolIndex(1) // 4D
 	}
-	statNames := []string{"IOenv", "IOe", "IOi", "IOerr", "IOspike", "CNiIO", "CNiUp", "CNeUp", "CNeUpGe", "CNeUpGi"}
+	statNames := []string{"IOenv", "IOe", "IOi", "IOioff", "IOerr", "IOspike", "CNiIO", "CNiUp", "CNeUp", "CNeUpGe", "CNeUpGi"}
 	statDescs := map[string]string{
 		"IOenv":   "IO envelope initiated by action input to IO neurons",
 		"IOe":     "Integrated excitatory input to IO",
-		"IOi":     "Integrated inhibitory input to IO, compared against IOe",
+		"IOi":     "Integrated inhibitory input to IO at the current time",
+		"IOioff":  "Integrated inhibitory input to IO offset from TimeOff, which is compared against IOe",
 		"IOerr":   "IOe - IOi (positive only): the error signal that drives IO spiking, if above threshold",
 		"IOspike": "IO spike, either from IOerr or at end of the IOenv for the baseline spiking",
 		"CNiIO":   "integrated activity (CaP) of CNiIO predictive inhibitory input to IO, generates IOi at a temporal offset 'in the future'",
@@ -714,11 +715,13 @@ func (ss *Sim) ConfigStatNuclear() {
 					stat = 1
 				}
 			case "IOe":
-				stat = layers[0].AvgMaxVarByPool("GaM", pool, di).Avg
+				stat = layers[0].AvgMaxVarByPool("GaP", pool, di).Avg
 			case "IOi":
+				stat = layers[0].AvgMaxVarByPool("GaM", pool, di).Avg
+			case "IOioff":
 				stat = layers[0].AvgMaxVarByPool("GaD", pool, di).Avg
 			case "IOerr":
-				stat = max(layers[0].AvgMaxVarByPool("GaP", pool, di).Avg, 0)
+				stat = max(layers[0].AvgMaxVarByPool("TimeDiff", pool, di).Avg, 0)
 			case "IOspike":
 				stat = layers[0].AvgMaxVarByPool("Spike", pool, di).Avg
 			case "CNiIO":
@@ -740,13 +743,15 @@ func (ss *Sim) ConfigStatNuclear() {
 
 func (ss *Sim) ConfigStatAdaptFilt() {
 	net := ss.Net
-	layname := "VNCAngVelCNeUp"
-	ly := net.LayerByName(layname)
-	pi := ly.Params.PoolIndex(0)
-	// np := ly.Params.Indexes.NPools
-	statNames := []string{"CNeUpMax"}
+	prefix := "VNCAngVel"
+	cnely := net.LayerByName(prefix + "CNeUp")
+	cnepi := cnely.Params.PoolIndex(0)
+	ioly := net.LayerByName(prefix + "IO")
+	// iopi := ioly.Params.PoolIndex(0)
+	statNames := []string{"CNeUpMax", "IOErrs"}
 	statDescs := map[string]string{
 		"CNeUpMax": "Maximum activity across the trial for CNeUp Adaptive Filtering layer. Should be around .5 in general",
+		"IOErrs":   "Average number of IO error spikes across trials",
 	}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		if level < Trial {
@@ -774,10 +779,12 @@ func (ss *Sim) ConfigStatAdaptFilt() {
 					var stat float32
 					switch name {
 					case "CNeUpMax":
-						stat = axon.PoolAvgMax(axon.AMCaPMax, axon.AMCycle, axon.Max, pi, uint32(di))
-						curModeDir.Float64(name, ndata).SetFloat1D(float64(stat), di)
-						tsr.AppendRowFloat(float64(stat))
+						stat = axon.PoolAvgMax(axon.AMCaPMax, axon.AMCycle, axon.Max, cnepi, uint32(di))
+					case "IOErrs":
+						stat = ioly.AvgMaxVarByPool("TimePeak", 0, di).Avg
 					}
+					curModeDir.Float64(name, ndata).SetFloat1D(float64(stat), di)
+					tsr.AppendRowFloat(float64(stat))
 				}
 			case Run:
 				stat := stats.StatFinal.Call(subDir.Value(name)).Float1D(0)

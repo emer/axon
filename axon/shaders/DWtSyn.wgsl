@@ -1229,7 +1229,7 @@ fn PathParams_DWtCNIO(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32
 	u32(si), u32(di), u32(CaBins + NeuronVars(bi)))];
 	var dwt = sact;
 	if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // means that we got to end of cycle with no err: decay
-	u32(ri), u32(di), u32(TimePeak))] > 0) {
+	u32(ri), u32(di), u32(TimePeak))] == 0) {
 		var aerr = rlay.Nuclear.ActTarget - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaD))];
 		dwt = sact * aerr * rlay.Nuclear.Decay;
 	}
@@ -1238,7 +1238,7 @@ fn PathParams_DWtCNIO(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32
 fn PathParams_DWtCNeUp(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
 	var learnNow = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnNow))]);
 	var timePeak = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(TimePeak))];
-	if (learnNow-(ctx.CyclesTotal-ctx.ThetaCycles) < 0 || timePeak > 0) { // not at baseline
+	if (learnNow-(ctx.CyclesTotal-ctx.ThetaCycles) < 0 || timePeak == 0) { // no learn at baseline
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));return;
 	}
@@ -1569,8 +1569,8 @@ struct IOParams {
 	ErrThr: f32,
 	EfferentThr: f32,
 	EfferentOff: i32,
-	GeTau: f32,
-	GeDt: f32,
+	GTau: f32,
+	GDt: f32,
 	pad: f32,
 	pad1: f32,
 }

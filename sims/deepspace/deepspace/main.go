@@ -9,4 +9,4 @@ import (
 	"github.com/emer/emergent/v2/egui"
 )
 
-func main() { egui.Run[deepspace.Sim, deepspace.Condffig]() }
+func main() { egui.Run[deepspace.Sim, deepspace.Config]() }

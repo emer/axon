@@ -12,6 +12,10 @@ var LayerParams = axon.LayerSheets{
 	"Base": {
 		{Sel: "Layer", Doc: "generic layer params",
 			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.1 // 0.05 needed to get hidden2 high to .1, 0.1 keeps it too low!
+			}},
+		{Sel: ".CNiLayer", Doc: "all cerebellar nucleus inhibitory neurons",
+			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.1  // 0.05 needed to get hidden2 high to .1, 0.1 keeps it too low!
 				ly.Acts.Noise.On.SetBool(true) // true >= false (minor)
 				ly.Acts.Noise.Ge = 0.1         //
@@ -64,11 +68,11 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".CNiIOLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Nuclear.Decay = 1
+				ly.Nuclear.Decay = 0.1
 			}},
 		{Sel: ".CNiUpLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Nuclear.Decay = 1
+				ly.Nuclear.Decay = 0.1
 			}},
 		{Sel: ".CNeLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {

@@ -28,6 +28,9 @@ func (net *Network) AddNuclearCNUp(sense, actEff *Layer, actEnv int, space float
 	cniIOUp.SetBuildConfig("IOLayName", ioUp.Name)
 	cniUp.SetBuildConfig("IOLayName", ioUp.Name)
 	cneUp.SetBuildConfig("IOLayName", ioUp.Name)
+	cniIOUp.AddClass("CNLayer", "CNiLayer")
+	cniUp.AddClass("CNLayer", "CNiLayer")
+	cneUp.AddClass("CNLayer")
 
 	aep := func(ly *LayerParams) {
 		ly.Nuclear.ActionEnv = int32(actEnv)

@@ -10,9 +10,6 @@ package axon
 
 //gosl:start
 
-// todo: record state online and use for learning at end.. can't learn more than
-// once per trial.
-
 // NuclearParams has parameters that apply to all cerebellum Nuclear model neurons.
 // Not just cerebellar nuclei neurons: also applies to PC.
 type NuclearParams struct {
@@ -93,7 +90,7 @@ func (ly *LayerParams) NuclearLearnReset(ctx *Context, ni, di uint32) {
 func (ly *LayerParams) NuclearDWtNeuron(ctx *Context, ni uint32) {
 	dbase := float32(0)
 	for di := uint32(0); di < ly.MaxData; di++ {
-		if Neurons.Value(int(ni), int(di), int(TimePeak)) == 0.0 { // non-baseline
+		if Neurons.Value(int(ni), int(di), int(TimePeak)) == 1.0 { // non-baseline
 			continue
 		}
 		aerr := ly.Nuclear.ActTarget - Neurons.Value(int(ni), int(di), int(CaD))
@@ -118,7 +115,7 @@ type IOParams struct {
 	// TimeOff is the time offset for earlier predictive inhibitory inputs to
 	// compare against current excitatory inputs to trigger an error,
 	// in ms (cycles). Must be an even multiple of [CaBinCycles].
-	TimeOff int32 `default:"80" min:"0"`
+	TimeOff int32 `default:"50" min:"0"`
 
 	// ErrThr is the threshold on the GeSyn - GiSyn_(t-TimeOff) difference
 	// to trigger an error.
@@ -136,28 +133,27 @@ type IOParams struct {
 	// in ms (cycles). Must be an even multiple of [CaBinCycles].
 	EfferentOff int32 `default:"20" min:"0"`
 
-	// GeTau is the time constant in ms for integrating [GeSyn] excitatory inputs
-	// for comparison with the prior GiIO inhibitory prediction inputs, which are
-	// automatically averaged into bins of 10 ms ([CaBinCycles]).
+	// GTau is the time constant in ms for integrating [GeSyn] and [GiSyn]
+	// excitatory and inhibitory conductances for comparison.
 	// Integration goes into GaM (only for IO neurons).
-	GeTau float32 `default:"8"`
+	GTau float32 `default:"20"`
 
 	// Dt = 1 / Tau
-	GeDt float32 `display:"-"`
+	GDt float32 `display:"-"`
 
 	pad, pad1 float32
 }
 
 func (tp *IOParams) Update() {
-	tp.GeDt = 1.0 / tp.GeTau
+	tp.GDt = 1.0 / tp.GTau
 }
 
 func (tp *IOParams) Defaults() {
-	tp.TimeOff = 80
+	tp.TimeOff = 50
 	tp.ErrThr = 0.1
 	tp.EfferentThr = 0.2
 	tp.EfferentOff = 20
-	tp.GeTau = 8
+	tp.GTau = 20
 	tp.Update()
 }
 
@@ -173,17 +169,22 @@ func (ly *LayerParams) IOUpdate(ctx *Context, lpi, pi, ni, di uint32) {
 	effAct := int32(Neurons.Value(int(ni), int(di), int(TimeCycle)))
 	envCyc := ctx.CyclesTotal - effAct // cycle within envelope
 
-	gaM := Neurons.Value(int(ni), int(di), int(GaM))
-	gaM += ly.IO.GeDt * (Neurons.Value(int(ni), int(di), int(GeSyn)) - gaM)
-	Neurons.Set(gaM, int(ni), int(di), int(GaM))
-	Neurons.Set(0.0, int(ni), int(di), int(GaP))   // set below for display
-	Neurons.Set(0.0, int(ni), int(di), int(Spike)) // default is no spike
+	gaP := Neurons.Value(int(ni), int(di), int(GaP))
+	gaP += ly.IO.GDt * (Neurons.Value(int(ni), int(di), int(GeSyn)) - gaP)
+	Neurons.Set(gaP, int(ni), int(di), int(GaP))
 
-	inhibAct := Neurons.Value(int(ni), int(di), int(GiSyn))
-	if effAct > 0 && envCyc < ly.IO.EfferentOff {
+	gaM := Neurons.Value(int(ni), int(di), int(GaM))
+	gaM += ly.IO.GDt * (Neurons.Value(int(ni), int(di), int(GiSyn)) - gaM)
+	Neurons.Set(gaM, int(ni), int(di), int(GaM))
+	inhibAct := gaM
+	// CaBinCycles to ensure that full bin is filled
+	if effAct > 0 && envCyc <= ly.IO.EfferentOff+CaBinCycles {
 		inhibAct = 1.0
 	}
 	CaBinIncrement(inhibAct, ctx.CyclesTotal, ni, di) // always store
+
+	Neurons.Set(0.0, int(ni), int(di), int(TimeDiff)) // set below for display
+	Neurons.Set(0.0, int(ni), int(di), int(Spike))    // default is no spike
 
 	bin := CaBinForCycle(ctx.CyclesTotal - ly.IO.TimeOff)
 	oldInhib := Neurons.Value(int(ni), int(di), int(CaBins+NeuronVars(bin)))
@@ -206,16 +207,16 @@ func (ly *LayerParams) IOUpdate(ctx *Context, lpi, pi, ni, di uint32) {
 		return
 	}
 	if envCyc >= ly.Nuclear.ActionEnv { // no errors until the end of envelope: baseline spike
-		Neurons.Set(1.0, int(ni), int(di), int(TimePeak)) // records that we got to end of cycle
 		Neurons.Set(cycTot, int(ni), int(di), int(LearnNow))
 		Neurons.Set(1.0, int(ni), int(di), int(Spike)) // baseline spike
 		return
 	}
-	errVal := gaM - oldInhib
-	Neurons.Set(errVal, int(ni), int(di), int(GaP))
+	errVal := gaP - oldInhib
+	Neurons.Set(errVal, int(ni), int(di), int(TimeDiff))
 	if errVal > ly.IO.ErrThr {
 		Neurons.Set(1.0, int(ni), int(di), int(Spike))       // error spike
 		Neurons.Set(cycTot, int(ni), int(di), int(LearnNow)) // record point of error
+		Neurons.Set(1.0, int(ni), int(di), int(TimePeak))    // records that we got err spike
 	}
 }
 

@@ -1284,8 +1284,8 @@ struct IOParams {
 	ErrThr: f32,
 	EfferentThr: f32,
 	EfferentOff: i32,
-	GeTau: f32,
-	GeDt: f32,
+	GTau: f32,
+	GDt: f32,
 	pad: f32,
 	pad1: f32,
 }
@@ -1293,18 +1293,22 @@ fn LayerParams_IOUpdate(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,
 	var cycTot = f32(ctx.CyclesTotal);
 	var effAct = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeCycle))]);
 	var envCyc = ctx.CyclesTotal - effAct; // cycle within envelope
+	var gaP = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))];
+	gaP += ly.IO.GDt * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeSyn))] - gaP);
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))] = gaP;
 	var gaM = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaM))];
-	gaM += ly.IO.GeDt * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeSyn))] - gaM);
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaM))] = gaM;
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], // set below for display
-	TensorStrides[72], u32(ni), u32(di), u32(GaP))] = 0.0;
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], // default is no spike
-	TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 0.0;
-	var inhibAct = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GiSyn))];
-	if (effAct > 0 && envCyc < ly.IO.EfferentOff) {
+	gaM += ly.IO.GDt * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GiSyn))] - gaM);
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
+	u32(ni), u32(di), u32(GaM))] = gaM;
+	var inhibAct = gaM;
+	if (effAct > 0 && envCyc <= ly.IO.EfferentOff+CaBinCycles) {
 		inhibAct = f32(1.0);
 	}
 	CaBinIncrement(inhibAct, ctx.CyclesTotal, ni, di); // always store
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], // set below for display
+	TensorStrides[72], u32(ni), u32(di), u32(TimeDiff))] = 0.0;
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], // default is no spike
+	TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 0.0;
 	var bin = CaBinForCycle(ctx.CyclesTotal - ly.IO.TimeOff);
 	var oldInhib = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaBins + NeuronVars(bin)))];
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaD))] = oldInhib;
@@ -1326,19 +1330,19 @@ fn LayerParams_IOUpdate(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,
 		return;
 	}
 	if (envCyc >= ly.Nuclear.ActionEnv) { // no errors until the end of envelope: baseline spike
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], // records that we got to end of cycle
-		TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = 1.0;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = cycTot;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], // baseline spike
 		TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 1.0;return;
 	}
-	var errVal = gaM - oldInhib;
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))] = errVal;
+	var errVal = gaP - oldInhib;
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeDiff))] = errVal;
 	if (errVal > ly.IO.ErrThr) {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // error spike
 		u32(ni), u32(di), u32(Spike))] = 1.0;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // record point of error
 		u32(ni), u32(di), u32(LearnNow))] = cycTot;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // records that we got err spike
+		u32(ni), u32(di), u32(TimePeak))] = 1.0;
 	}
 }
 

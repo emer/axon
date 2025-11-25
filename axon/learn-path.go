@@ -490,7 +490,7 @@ func (pt *PathParams) DWtCNIO(ctx *Context, rlay *LayerParams, syni, si, ri, lpi
 	sact := Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(bi))) // sending activity
 	// todo: rlrate? Neurons[ri, di, RLRate]
 	dwt := sact
-	if Neurons.Value(int(ri), int(di), int(TimePeak)) > 0 { // means that we got to end of cycle with no err: decay
+	if Neurons.Value(int(ri), int(di), int(TimePeak)) == 0 { // means that we got to end of cycle with no err: decay
 		aerr := rlay.Nuclear.ActTarget - Neurons.Value(int(ri), int(di), int(CaD))
 		dwt = sact * aerr * rlay.Nuclear.Decay
 	}
@@ -508,7 +508,7 @@ func (pt *PathParams) DWtCNIO(ctx *Context, rlay *LayerParams, syni, si, ri, lpi
 func (pt *PathParams) DWtCNeUp(ctx *Context, rlay *LayerParams, syni, si, ri, lpi, pi, di uint32) {
 	learnNow := int32(Neurons.Value(int(ri), int(di), int(LearnNow)))
 	timePeak := Neurons.Value(int(ri), int(di), int(TimePeak))
-	if learnNow-(ctx.CyclesTotal-ctx.ThetaCycles) < 0 || timePeak > 0 { // not at baseline
+	if learnNow-(ctx.CyclesTotal-ctx.ThetaCycles) < 0 || timePeak == 0 { // no learn at baseline
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DTr))
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DiDWt))
 		return

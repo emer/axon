@@ -1192,8 +1192,8 @@ struct IOParams {
 	ErrThr: f32,
 	EfferentThr: f32,
 	EfferentOff: i32,
-	GeTau: f32,
-	GeDt: f32,
+	GTau: f32,
+	GDt: f32,
 	pad: f32,
 	pad1: f32,
 }
