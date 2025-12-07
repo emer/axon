@@ -11,6 +11,11 @@ import (
 	"cogentcore.org/lab/gosl/sltype"
 )
 
+// ToGPUCtx copies Context var to the GPU
+func ToGPUCtx() {
+	ToGPU(CtxVar)
+}
+
 //gosl:start
 
 // CaBinCycles is the number of cycles per CaBin for integrating

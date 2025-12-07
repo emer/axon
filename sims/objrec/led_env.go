@@ -6,12 +6,15 @@ package objrec
 
 import (
 	"fmt"
+	"image"
 	"math/rand"
 
+	"cogentcore.org/core/gpu"
 	"cogentcore.org/core/paint"
 	"cogentcore.org/lab/tensor"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/v1vision/vfilter"
+	"github.com/emer/v1vision/v1std"
+	"github.com/emer/v1vision/v1vision"
 	"github.com/emer/v1vision/vxform"
 )
 
@@ -26,8 +29,11 @@ type LEDEnv struct {
 	// draws LEDs onto image
 	Draw LEDraw
 
-	// visual processing params
-	Vis Vis
+	// V1c does all the V1 processing.
+	V1c v1std.V1cGrey `new-window:"+"`
+
+	// Image manages setting image.
+	Image v1std.Image
 
 	// number of output units per LED item -- spiking benefits from replication
 	NOutPer int
@@ -65,10 +71,10 @@ func (ev *LEDEnv) Label() string { return ev.Name }
 func (ev *LEDEnv) State(element string) tensor.Values {
 	switch element {
 	case "Image":
-		vfilter.RGBToGrey(paint.RenderToImage(ev.Draw.Paint), &ev.OrigImg, 0, false) // pad for filt, bot zero
+		v1vision.RGBToGrey(paint.RenderToImage(ev.Draw.Paint), &ev.OrigImg, 0, false) // pad for filt, bot zero
 		return &ev.OrigImg
 	case "V1":
-		return &ev.Vis.V1AllTsr
+		return ev.V1c.Output
 	case "Output":
 		return &ev.Output
 	}
@@ -77,7 +83,10 @@ func (ev *LEDEnv) State(element string) tensor.Values {
 
 func (ev *LEDEnv) Defaults() {
 	ev.Draw.Defaults()
-	ev.Vis.Defaults()
+	ev.V1c.Defaults()
+	ev.Image.Defaults()
+	ev.Image.Size = image.Point{40, 40}
+	ev.V1c.SetSize(6, 2) // V1mF16 typically = 12, no border, spc = 4 -- using 1/2 that here
 	ev.NOutPer = 5
 	ev.XFormRand.TransX.Set(-0.25, 0.25)
 	ev.XFormRand.TransY.Set(-0.25, 0.25)
@@ -85,11 +94,16 @@ func (ev *LEDEnv) Defaults() {
 	ev.XFormRand.Rot.Set(-3.6, 3.6)
 }
 
+func (ev *LEDEnv) Config(netGPU *gpu.GPU) {
+	v1vision.ComputeGPU = netGPU
+	ev.V1c.Config(ev.Image.Size)
+	ev.Output.SetShapeSizes(4, 5, ev.NOutPer, 1)
+}
+
 func (ev *LEDEnv) Init(run int) {
 	ev.Draw.Init()
 	ev.Trial.Init()
 	ev.Trial.Cur = -1 // init state -- key so that first Step() = 0
-	ev.Output.SetShapeSizes(4, 5, ev.NOutPer, 1)
 }
 
 func (ev *LEDEnv) Step() bool {
@@ -97,7 +111,7 @@ func (ev *LEDEnv) Step() bool {
 	ev.DrawRandLED()
 	ev.FilterImg()
 	// debug only:
-	// vfilter.RGBToGrey(ev.Draw.Image, &ev.OrigImg, 0, false) // pad for filt, bot zero
+	// v1vision.RGBToGrey(ev.Draw.Image, &ev.OrigImg, 0, false) // pad for filt, bot zero
 	return true
 }
 
@@ -193,5 +207,5 @@ func (ev *LEDEnv) DrawLED(led int) {
 func (ev *LEDEnv) FilterImg() {
 	ev.XFormRand.Gen(&ev.XForm)
 	img := ev.XForm.Image(paint.RenderToImage(ev.Draw.Paint))
-	ev.Vis.Filter(img)
+	ev.V1c.RunImage(&ev.Image, img)
 }

@@ -186,6 +186,7 @@ func (ss *Sim) ConfigEnv() {
 		reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
 	}
 	trn.Trial.Max = ss.Config.Run.Trials
+	trn.Config(axon.ComputeGPU)
 
 	tst.Name = Test.String()
 	tst.Defaults()
@@ -205,6 +206,7 @@ func (ss *Sim) ConfigEnv() {
 		reflectx.SetFieldsFromMap(tst, ss.Config.Env.Env)
 	}
 	tst.Trial.Max = ss.Config.Run.Trials
+	tst.Config(axon.ComputeGPU)
 
 	// remove most confusable items
 	confuse := []string{"blade", "flashlight", "pckeyboard", "scissors", "screwdriver", "submarine"}
@@ -219,6 +221,8 @@ func (ss *Sim) ConfigEnv() {
 		tst.MPIAlloc()
 	}
 
+	trn.Init(0)
+	trn.Step() // needs an image to show
 	trn.Init(0)
 	tst.Init(0)
 
@@ -236,10 +240,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	trn := ss.Envs.ByMode(Train).(*ImagesEnv)
 
-	v1nrows := 5
-	if trn.V1m16.SepColor {
-		v1nrows += 4
-	}
+	v1nrows := trn.V1c.Out4Rows()
 	hi16 := trn.High16
 	cdog := trn.ColorDoG
 
@@ -1009,7 +1010,7 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	ss.StatsInit()
 
 	trn := ss.Envs.ByMode(Train).(*ImagesEnv)
-	img := &trn.Img.Tsr
+	img := trn.V1c.Image.Tsr
 	tensorcore.AddGridStylerTo(img, func(s *tensorcore.GridStyle) {
 		s.Image = true
 	})

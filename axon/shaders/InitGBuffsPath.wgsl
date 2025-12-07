@@ -42,6 +42,9 @@ fn Index2D(s0: u32, s1: u32, i0: u32, i1: u32) -> u32 {
 //////// import: "act-net.go"
 fn InitGBuffsPath(pti: u32) { //gosl:kernel
 	let ctx = Ctx[0];
+	if (pti >= NetworkIxs[0].NPaths) {
+		return;
+	}
 	let paths=Paths[pti]; PathParams_InitGBuffs(paths, ctx);
 }
 
@@ -799,6 +802,18 @@ const  Phase: ViewTimes = 5;
 const  Theta: ViewTimes = 6;
 
 //////// import: "math32-fastexp.go"
+
+//////// import: "math32-vector2.go"
+struct Vector2 {
+	X: f32,
+	Y: f32,
+}
+
+//////// import: "math32-vector2i.go"
+struct Vector2i {
+	X: i32,
+	Y: i32,
+}
 
 //////// import: "minmax-avgmax.go"
 const  MaxFloat32: f32 = 3.402823466e+38;

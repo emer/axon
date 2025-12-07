@@ -94,7 +94,7 @@ type LayerParams struct {
 	Inhib InhibParams `display:"add-fields"`
 
 	// LayInhib has indexes of layers that contribute between-layer inhibition
-	//  to this layer. Set these indexes via BuildConfig LayInhibXName (X = 1, 2...).
+	// to this layer. Set these indexes via BuildConfig LayInhibXName (X = 1, 2...).
 	LayInhib LayerInhibIndexes `display:"inline"`
 
 	// Learn has learning parameters and methods that operate at the neuron level.

@@ -269,6 +269,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Layer.Gi = 1.1 // 1
 				ly.Inhib.Pool.Gi = 1.1  // 1.05
 				// ly.Acts.Decay.Glong = 0 // 0.3 def > 0
+				ly.Learn.Timing.Refractory.SetBool(false)
 			}},
 		{Sel: "#TEOCT", Doc: "more activity",
 			Set: func(ly *axon.LayerParams) {
@@ -289,6 +290,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Layer.Gi = 1.1 // 1
 				ly.Inhib.Pool.Gi = 1.1  // 1.05
 				// ly.Acts.Decay.Glong = 0 // 0.3 def > 0
+				ly.Learn.Timing.Refractory.SetBool(false)
 			}},
 		{Sel: "#TECT", Doc: "more activity",
 			Set: func(ly *axon.LayerParams) {

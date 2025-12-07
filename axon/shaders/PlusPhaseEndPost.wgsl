@@ -7,6 +7,8 @@ var<storage, read> TensorStrides: array<u32>;
 @group(0) @binding(1)
 var<storage, read> Layers: array<LayerParams>;
 // // NetworkIxs have indexes and sizes for entire network (one only). 
+@group(1) @binding(0)
+var<storage, read> NetworkIxs: array<NetworkIndexes>;
 // // Ctx is the current context state (one only). This is read-only except in // specific kernels. 
 @group(2) @binding(0)
 var<storage, read_write> Ctx: array<Context>;
@@ -113,6 +115,9 @@ fn LayerParams_PlusPhaseEndActAvg(ly: LayerParams, ctx: Context) {
 //////// import: "act-net.go"
 fn PlusPhaseEndPost(li: u32) { //gosl:kernel
 	let ctx = Ctx[0];
+	if (li >= NetworkIxs[0].NLayers) {
+		return;
+	}
 	let layers=Layers[li]; LayerParams_PlusPhaseEndPost(layers, ctx);
 }
 
@@ -999,6 +1004,18 @@ const  Phase: ViewTimes = 5;
 const  Theta: ViewTimes = 6;
 
 //////// import: "math32-fastexp.go"
+
+//////// import: "math32-vector2.go"
+struct Vector2 {
+	X: f32,
+	Y: f32,
+}
+
+//////// import: "math32-vector2i.go"
+struct Vector2i {
+	X: i32,
+	Y: i32,
+}
 
 //////// import: "minmax-avgmax.go"
 const  MaxFloat32: f32 = 3.402823466e+38;

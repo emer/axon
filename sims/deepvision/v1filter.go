@@ -162,7 +162,7 @@ func (vi *Vis) Defaults(sz, spc int, img *V1Img) {
 	vi.V1sNeighInhib.Defaults()
 	vi.V1sKWTA.Defaults()
 	// values from lvis models
-	// vi.V1sKWTA.LayFFFB.Gi = 1.5
+	// vi.V1sKWTA.Layer.Gi = 1.5
 	// vi.V1sKWTA.XX1.Gain = 80
 	// vi.V1sKWTA.XX1.NVar = 0.01
 	vi.V1sGabor.ToTensor(&vi.V1sGaborTsr)

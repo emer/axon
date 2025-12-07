@@ -262,7 +262,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ioUp, cniIOUp, cniUp, cneUp := net.AddNuclearCNUp(vvelIn, rotAct, cycles-20, space)
 	_, _ = ioUp, cneUp
 
-	pt := net.ConnectLayers(vvelIn, cneUp, one2one, axon.ForwardPath).AddClass("SenseToCNeUp")
+	pt := net.ConnectLayers(vvelIn, cneUp, p1to1, axon.ForwardPath).AddClass("SenseToCNeUp")
 	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
 
 	net.ConnectLayers(rotActPrev, cniIOUp, p1to1, axon.CNIOPath).AddClass("MFUp", "MFToCNiIOUp")

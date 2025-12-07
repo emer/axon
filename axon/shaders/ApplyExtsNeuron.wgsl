@@ -857,6 +857,18 @@ const  Theta: ViewTimes = 6;
 
 //////// import: "math32-fastexp.go"
 
+//////// import: "math32-vector2.go"
+struct Vector2 {
+	X: f32,
+	Y: f32,
+}
+
+//////// import: "math32-vector2i.go"
+struct Vector2i {
+	X: i32,
+	Y: i32,
+}
+
 //////// import: "minmax-avgmax.go"
 const  MaxFloat32: f32 = 3.402823466e+38;
 const  MinFloat32: f32 = 1.175494351e-38;

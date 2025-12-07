@@ -18,8 +18,8 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.1  // 0.05 needed to get hidden2 high to .1, 0.1 keeps it too low!
 				ly.Acts.Noise.On.SetBool(true) // true >= false (minor)
-				ly.Acts.Noise.Ge = 0.1         //
-				ly.Acts.Noise.Gi = 0.1
+				ly.Acts.Noise.Ge = 0.05        // 0.05 >= 0.1?
+				ly.Acts.Noise.Gi = 0.05
 			}},
 		{Sel: ".SuperLayer", Doc: "super layer params",
 			Set: func(ly *axon.LayerParams) {
@@ -65,18 +65,25 @@ var LayerParams = axon.LayerSheets{
 		{Sel: ".IOLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.IO.ErrThr = 0.02
+				ly.IO.TimeOff = 50
+				ly.IO.EfferentOff = 30
+				ly.IO.GTau = 20
 			}},
 		{Sel: ".CNiIOLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Nuclear.Decay = 0.1
+				ly.Nuclear.Decay = 0.5
 			}},
 		{Sel: ".CNiUpLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Nuclear.Decay = 0.1
+				ly.Nuclear.Decay = 0.5
+				ly.Nuclear.SendTimeOff = 0 // 0 > 10?
 			}},
 		{Sel: ".CNeLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Init.GeBase = 0.2
+				ly.Nuclear.GeBaseLRate = 0.0001
+				ly.Acts.GabaB.Gk = 0 // 0 > 0.005 > 0.010 > 0.015 def
+				ly.Acts.NMDA.Ge = 0  // 0 > 0.006 def
 			}},
 	},
 }
@@ -136,16 +143,16 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".MFToCNiIOUp", Doc: "initial weights",
 			Set: func(pt *axon.PathParams) {
-				// pt.Learn.LRate.Base = 0.1 // 0.01 >= 0.02
-				pt.SWts.Init.Mean = 0.05 // weak initial
+				pt.Learn.LRate.Base = 0.01 //
+				pt.SWts.Init.Mean = 0.05   // weak initial
 				pt.SWts.Init.Var = 0
 				pt.SWts.Init.SPct = 0
 				pt.SWts.Adapt.On.SetBool(false)
 			}},
 		{Sel: ".MFToCNiUp", Doc: "initial weights",
 			Set: func(pt *axon.PathParams) {
-				// pt.Learn.LRate.Base = 0.1 // 0.01 >= 0.02
-				pt.SWts.Init.Mean = 0.05 // ?
+				pt.Learn.LRate.Base = 0.01 //
+				pt.SWts.Init.Mean = 0.05   // ?
 				pt.SWts.Init.Var = 0
 				pt.SWts.Init.SPct = 0
 				pt.SWts.Adapt.On.SetBool(false)

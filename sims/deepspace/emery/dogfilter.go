@@ -17,7 +17,7 @@ import (
 	"cogentcore.org/lab/tensorcore"
 	"github.com/emer/v1vision/dog"
 	"github.com/emer/v1vision/motion"
-	"github.com/emer/v1vision/vfilter"
+	"github.com/emer/v1vision/v1vision"
 )
 
 // Vis does DoG filtering on images
@@ -37,7 +37,7 @@ type Vis struct {
 	Motion motion.Params
 
 	// geometry of input, output
-	Geom vfilter.Geom `edit:"-" display:"inline"`
+	Geom v1vision.Geom `edit:"-" display:"inline"`
 
 	// target image size to use -- images will be rescaled to this size
 	ImageSize image.Point
@@ -85,16 +85,16 @@ func (vi *Vis) SetImage(img image.Image) {
 	isz := ibd.Size()
 	if isz == vi.ImageSize {
 		vi.Image = img
-		vfilter.RGBToGrey(vi.Image, &vi.ImageTsr, 0, false) // pad for filt, bot zero
+		v1vision.RGBToGrey(vi.Image, &vi.ImageTsr, 0, false) // pad for filt, bot zero
 	} else if vi.ClipToFit {
 		st := isz.Sub(insz).Div(2).Add(ibd.Min)
 		ed := st.Add(insz)
 		vi.Image = imagex.AsRGBA(img).SubImage(image.Rectangle{Min: st, Max: ed})
-		vfilter.RGBToGrey(vi.Image, &vi.ImageTsr, 0, false) // pad for filt, bot zero
+		v1vision.RGBToGrey(vi.Image, &vi.ImageTsr, 0, false) // pad for filt, bot zero
 	} else {
 		vi.Image = transform.Resize(vi.Image, vi.ImageSize.X, vi.ImageSize.Y, transform.Linear)
-		vfilter.RGBToGrey(vi.Image, &vi.ImageTsr, vi.Geom.FiltRt.X, false) // pad for filt, bot zero
-		vfilter.WrapPad(&vi.ImageTsr, vi.Geom.FiltRt.X)
+		v1vision.RGBToGrey(vi.Image, &vi.ImageTsr, vi.Geom.FiltRt.X, false) // pad for filt, bot zero
+		v1vision.WrapPad(&vi.ImageTsr, vi.Geom.FiltRt.X)
 	}
 }
 
@@ -102,7 +102,7 @@ func (vi *Vis) SetImage(img image.Image) {
 // must have valid Image in place to start.
 func (vi *Vis) LGNDoG(out *tensor.Float32) {
 	flt := vi.DoG.FilterTensor(&vi.DoGFilter, dog.Net)
-	vfilter.Conv1(&vi.Geom, flt, &vi.ImageTsr, out, vi.DoG.Gain)
+	v1vision.Conv1(&vi.Geom, flt, &vi.ImageTsr, out, vi.DoG.Gain)
 	// log norm is generally good it seems for dogs
 	n := out.Len()
 	for i := range n {

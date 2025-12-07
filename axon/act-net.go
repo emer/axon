@@ -318,6 +318,9 @@ func ApplyExtsNeuron(i uint32) { //gosl:kernel
 // which does new state on pools as well.
 func NewStateLayer(li uint32) { //gosl:kernel
 	ctx := GetCtx(0)
+	if li >= NetworkIxs[0].NLayers {
+		return
+	}
 	Layers[li].NewStateLayer(ctx)
 }
 
@@ -338,6 +341,9 @@ func NewStateNeuron(i uint32) { //gosl:kernel
 // initialize PathGBuf, PathGSyns.
 func InitGBuffsPath(pti uint32) { //gosl:kernel
 	ctx := GetCtx(0)
+	if pti >= NetworkIxs[0].NPaths {
+		return
+	}
 	Paths[pti].InitGBuffs(ctx)
 }
 
@@ -373,6 +379,9 @@ func Beta2Neuron(i uint32) { //gosl:kernel
 // do pool-level updating after end of minus phase.
 func MinusPhasePool(pi uint32) { //gosl:kernel
 	ctx := GetCtx(0)
+	if pi >= NetworkIxs[0].NPools {
+		return
+	}
 	li := PoolIxs.Value(int(pi), int(PoolLayerIdx))
 	Layers[li].MinusPhasePool(ctx, pi)
 }
@@ -393,6 +402,9 @@ func MinusPhaseNeuron(i uint32) { //gosl:kernel
 // MinusPhasePost does special algorithm post processing.
 func MinusPhasePost(li uint32) { //gosl:kernel
 	ctx := GetCtx(0)
+	if li >= NetworkIxs[0].NLayers {
+		return
+	}
 	Layers[li].MinusPhasePost(ctx)
 }
 
@@ -447,6 +459,9 @@ func PlusPhaseEndNeuron(i uint32) { //gosl:kernel
 // PlusPhaseEndPost does special algorithm post processing.
 func PlusPhaseEndPost(li uint32) { //gosl:kernel
 	ctx := GetCtx(0)
+	if li >= NetworkIxs[0].NLayers {
+		return
+	}
 	Layers[li].PlusPhaseEndPost(ctx)
 }
 

@@ -165,6 +165,7 @@ func (ss *Sim) ConfigEnv() {
 		reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
 	}
 	trn.Trial.Max = ss.Config.Run.Trials
+	trn.Config(axon.ComputeGPU)
 
 	novTrn.Name = NovelTrain.String()
 	novTrn.Defaults()
@@ -179,6 +180,7 @@ func (ss *Sim) ConfigEnv() {
 	novTrn.XFormRand.TransY.Set(-0.125, 0.125)
 	novTrn.XFormRand.Scale.Set(0.775, 0.925) // 1/2 around midpoint
 	novTrn.XFormRand.Rot.Set(-2, 2)
+	novTrn.Config(axon.ComputeGPU)
 
 	tst.Name = Test.String()
 	tst.Defaults()
@@ -189,7 +191,10 @@ func (ss *Sim) ConfigEnv() {
 	if ss.Config.Env.Env != nil {
 		reflectx.SetFieldsFromMap(tst, ss.Config.Env.Env)
 	}
+	tst.Config(axon.ComputeGPU)
 
+	trn.Init(0)
+	trn.Step() // needs an image to show
 	trn.Init(0)
 	novTrn.Init(0)
 	tst.Init(0)
@@ -476,7 +481,7 @@ func (ss *Sim) StatsInit() {
 		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Run))
 		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Test, Trial))
 		ev := ss.Envs.ByMode(Train).(*LEDEnv)
-		tbs.TensorGrid("Image", &ev.Vis.ImgTsr)
+		tbs.TensorGrid("Image", ev.Image.Tsr)
 		tbs.SelectTabIndex(idx)
 	}
 }
@@ -691,7 +696,7 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	ss.StatsInit()
 
 	trn := ss.Envs.ByMode(Train).(*LEDEnv)
-	img := &trn.Vis.ImgTsr
+	img := trn.Image.Tsr
 	tensorcore.AddGridStylerTo(img, func(s *tensorcore.GridStyle) {
 		s.Image = true
 	})

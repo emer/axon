@@ -7,6 +7,8 @@ var<storage, read> TensorStrides: array<u32>;
 @group(0) @binding(1)
 var<storage, read> Layers: array<LayerParams>;
 // // NetworkIxs have indexes and sizes for entire network (one only). 
+@group(1) @binding(0)
+var<storage, read> NetworkIxs: array<NetworkIndexes>;
 @group(1) @binding(1)
 var<storage, read> PoolIxs: array<u32>;
 // // Ctx is the current context state (one only). This is read-only except in // specific kernels. 
@@ -76,6 +78,9 @@ fn LayerParams_AvgGeM(ly: LayerParams, ctx: Context, di: u32, geIntMinusMax: f32
 //////// import: "act-net.go"
 fn MinusPhasePool(pi: u32) { //gosl:kernel
 	let ctx = Ctx[0];
+	if (pi >= NetworkIxs[0].NPools) {
+		return;
+	}
 	var li = PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolLayerIdx))];
 	let layers=Layers[li]; LayerParams_MinusPhasePool(layers, ctx, pi);
 }
@@ -819,6 +824,18 @@ const  Phase: ViewTimes = 5;
 const  Theta: ViewTimes = 6;
 
 //////// import: "math32-fastexp.go"
+
+//////// import: "math32-vector2.go"
+struct Vector2 {
+	X: f32,
+	Y: f32,
+}
+
+//////// import: "math32-vector2i.go"
+struct Vector2i {
+	X: i32,
+	Y: i32,
+}
 
 //////// import: "minmax-avgmax.go"
 const  MaxFloat32: f32 = 3.402823466e+38;

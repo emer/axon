@@ -1830,6 +1830,18 @@ fn FastExp(x: f32) -> f32 {
 	i += (((((((((((3537 * m) >> 16) + 13668) * m) >> 18) + 15817) * m) >> 14) - 80470) * m) >> 11);return bitcast<f32>(u32(i));
 }
 
+//////// import: "math32-vector2.go"
+struct Vector2 {
+	X: f32,
+	Y: f32,
+}
+
+//////// import: "math32-vector2i.go"
+struct Vector2i {
+	X: i32,
+	Y: i32,
+}
+
 //////// import: "minmax-avgmax.go"
 const  MaxFloat32: f32 = 3.402823466e+38;
 const  MinFloat32: f32 = 1.175494351e-38;

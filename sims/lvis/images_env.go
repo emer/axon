@@ -14,6 +14,7 @@ import (
 	"cogentcore.org/core/base/fsx"
 	"cogentcore.org/core/base/iox/imagex"
 	"cogentcore.org/core/base/iox/jsonx"
+	"cogentcore.org/core/gpu"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/math32/vecint"
@@ -24,6 +25,8 @@ import (
 	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensor/tensormpi"
 	"github.com/emer/emergent/v2/env"
+	"github.com/emer/v1vision/v1std"
+	"github.com/emer/v1vision/v1vision"
 	"golang.org/x/image/draw"
 	"golang.org/x/image/math/f64"
 )
@@ -43,10 +46,10 @@ type ImagesEnv struct {
 	// present items in sequential order -- else shuffled
 	Sequential bool
 
-	// compute high-res full field filtering
+	// compute high-res full field filtering. Off by default
 	High16 bool
 
-	// compute color DoG (blob) filtering
+	// compute color DoG (blob) filtering. On by default.
 	ColorDoG bool
 
 	// images list
@@ -64,35 +67,8 @@ type ImagesEnv struct {
 	// [def: 8] def 8 maximum degrees of rotation in plane -- image is rotated plus or minus in this range
 	RotateMax float32
 
-	// image that we operate upon -- one image shared among all filters
-	Img V1Img
-
-	// v1 16deg low resolution filtering of image -- V1AllTsr has result
-	V1l16 Vis
-
-	// v1 16deg medium resolution filtering of image -- V1AllTsr has result
-	V1m16 Vis
-
-	// v1 16deg high resolution filtering of image -- V1AllTsr has result
-	V1h16 Vis
-
-	// v1 8deg low resolution filtering of image -- V1AllTsr has result
-	V1l8 Vis
-
-	// v1 8deg medium resolution filtering of image -- V1AllTsr has result
-	V1m8 Vis
-
-	// v1 color 16deg low resolution filtering of image -- OutAll has result
-	V1Cl16 ColorVis
-
-	// v1 color 16deg medium resolution filtering of image -- OutAll has result
-	V1Cm16 ColorVis
-
-	// v1 color 8deg low resolution filtering of image -- OutAll has result
-	V1Cl8 ColorVis
-
-	// v1 color 8deg medium resolution filtering of image -- OutAll has result
-	V1Cm8 ColorVis
+	// V1c has the full set of V1c complex and DoG color contrast filters.
+	V1c v1std.V1cMulti
 
 	// maximum number of output categories representable here
 	MaxOut int
@@ -179,17 +155,10 @@ func (ev *ImagesEnv) Defaults() {
 	ev.RndPctOn = 0.2
 	ev.RndMinDiff = 0.5
 	ev.NOutPer = 5
-	ev.Img.Defaults()
-	ev.V1l16.Defaults(0, 24, 8, &ev.Img)
-	ev.V1m16.Defaults(0, 12, 4, &ev.Img)
-	ev.V1h16.Defaults(0, 6, 2, &ev.Img)
-	ev.V1l8.Defaults(32, 12, 4, &ev.Img)
-	ev.V1m8.Defaults(32, 6, 2, &ev.Img)
-
-	ev.V1Cl16.Defaults(0, 16, 16, &ev.Img)
-	ev.V1Cm16.Defaults(0, 8, 8, &ev.Img)
-	ev.V1Cl8.Defaults(32, 8, 8, &ev.Img)
-	ev.V1Cm8.Defaults(32, 4, 4, &ev.Img)
+	ev.V1c.Defaults()
+	// ev.V1c.GPU = false
+	// todo: ev.High16, ColorDoG options.
+	ev.V1c.StdLowMed16DegZoom1()
 }
 
 // ImageList returns the list of images -- train or test
@@ -208,6 +177,11 @@ func (ev *ImagesEnv) MPIAlloc() {
 	// mpi.PrintAllProcs = true
 	// mpi.Printf("allocated images: n: %d st: %d ed: %d\n", nim, ev.StRow, ev.EdRow)
 	// mpi.PrintAllProcs = false
+}
+
+func (ev *ImagesEnv) Config(netGPU *gpu.GPU) {
+	v1vision.ComputeGPU = netGPU
+	ev.V1c.Config()
 }
 
 func (ev *ImagesEnv) Init(run int) {
@@ -418,25 +392,11 @@ func (ev *ImagesEnv) TransformImage() {
 // FilterImage opens and filters current image
 func (ev *ImagesEnv) FilterImage() error {
 	err := ev.OpenImage()
-	if err != nil {
-		fmt.Println(err)
+	if errors.Log(err) != nil {
 		return err
 	}
 	ev.TransformImage()
-	ev.Img.SetImage(ev.Image, ev.V1l16.V1sGeom.FiltRt.X)
-	ev.V1l16.Filter()
-	ev.V1m16.Filter()
-	ev.V1l8.Filter()
-	ev.V1m8.Filter()
-	if ev.High16 {
-		ev.V1h16.Filter()
-	}
-	if ev.ColorDoG {
-		ev.V1Cl16.Filter()
-		ev.V1Cm16.Filter()
-		ev.V1Cl8.Filter()
-		ev.V1Cm8.Filter()
-	}
+	ev.V1c.RunImage(ev.Image)
 	return nil
 }
 
@@ -515,23 +475,23 @@ func (ev *ImagesEnv) Step() bool {
 func (ev *ImagesEnv) State(element string) tensor.Values {
 	switch element {
 	case "V1l16":
-		return &ev.V1l16.V1AllTsr
+		return &ev.V1c.V1cParams[0].Output
 	case "V1m16":
-		return &ev.V1m16.V1AllTsr
-	case "V1h16":
-		return &ev.V1h16.V1AllTsr
+		return &ev.V1c.V1cParams[1].Output
+	// case "V1h16":
+	// 	return &ev.V1h16.V1AllTsr
 	case "V1l8":
-		return &ev.V1l8.V1AllTsr
+		return &ev.V1c.V1cParams[2].Output
 	case "V1m8":
-		return &ev.V1m8.V1AllTsr
+		return &ev.V1c.V1cParams[3].Output
 	case "V1Cl16":
-		return &ev.V1Cl16.KwtaTsr
+		return &ev.V1c.DoGParams[0].Output
 	case "V1Cm16":
-		return &ev.V1Cm16.KwtaTsr
+		return &ev.V1c.DoGParams[1].Output
 	case "V1Cl8":
-		return &ev.V1Cl8.KwtaTsr
+		return &ev.V1c.DoGParams[2].Output
 	case "V1Cm8":
-		return &ev.V1Cm8.KwtaTsr
+		return &ev.V1c.DoGParams[3].Output
 	case "Output":
 		return &ev.Output
 	}
