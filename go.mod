@@ -3,13 +3,12 @@ module github.com/emer/axon/v2
 go 1.23.4
 
 require (
-	cogentcore.org/core v0.3.13-0.20251122080528-7dff9fe2d85b
-	cogentcore.org/lab v0.1.3-0.20251122082523-2efc956ff003
-	github.com/anthonynsimon/bild v0.13.0
+	cogentcore.org/core v0.3.13-0.20251130202947-2bd13fd91c96
+	cogentcore.org/lab v0.1.3-0.20251130204630-53a7c5b47a76
 	github.com/chewxy/math32 v1.10.1
 	github.com/cogentcore/yaegi v0.0.0-20250622201820-b7838bdd95eb
 	github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20251017224053-7004cc176576
-	github.com/emer/v1vision v0.1.1-0.20251015114716-db2109162a3b
+	github.com/emer/v1vision v0.1.1-0.20251207224442-d59a452b19b0
 	github.com/stretchr/testify v1.10.0
 	gitlab.com/gomidi/midi/v2 v2.0.30
 	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948
@@ -21,6 +20,7 @@ require (
 	github.com/Masterminds/vcs v1.13.3 // indirect
 	github.com/adrg/strutil v0.3.1 // indirect
 	github.com/alecthomas/chroma/v2 v2.13.0 // indirect
+	github.com/anthonynsimon/bild v0.13.0 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/bramvdbogaerde/go-scp v1.4.0 // indirect

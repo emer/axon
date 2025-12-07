@@ -13,12 +13,15 @@ import (
 	"cogentcore.org/core/base/fsx"
 	"cogentcore.org/core/base/iox/imagex"
 	"cogentcore.org/core/base/iox/jsonx"
+	"cogentcore.org/core/gpu"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/popcode"
+	"github.com/emer/v1vision/v1std"
+	"github.com/emer/v1vision/v1vision"
 )
 
 // Obj3DSacEnv provides the rendered results of the Obj3D + Saccade generator.
@@ -45,14 +48,8 @@ type Obj3DSacEnv struct {
 	// of object velocity.
 	ObjVelPop popcode.TwoD
 
-	// image that we operate upon -- one image shared among all filters
-	Img V1Img
-
-	// V1Med is the v1 medium resolution filtering of image -- V1AllTsr has result.
-	V1Med Vis
-
-	// V1Hi is the v1 higher resolution filtering of image -- V1AllTsr has result.
-	V1Hi Vis
+	// V1c has the full set of V1c complex and DoG color contrast filters.
+	V1c v1std.V1cMulti
 
 	// Objs is the list of objects, as cat/objfile.
 	Objs []string
@@ -118,16 +115,18 @@ func (ev *Obj3DSacEnv) Defaults() {
 	ev.ObjVelPop.Min.Set(-0.45, -0.45)
 	ev.ObjVelPop.Max.Set(0.45, 0.45)
 
-	ev.Img.Defaults()
-	ev.V1Med.Defaults(24, 8, &ev.Img)
-	ev.V1Hi.Defaults(12, 4, &ev.Img)
+	ev.V1c.Defaults()
+	ev.V1c.SplitColor = false // todo: try with split!
+	ev.V1c.StdLowMed16DegNoDoG()
 
 	ev.Tick.Max = 8 // important: must be sync'd with actual data
 }
 
-func (ev *Obj3DSacEnv) Config() {
-	ev.CurStates = make(map[string]*tensor.Float32)
+func (ev *Obj3DSacEnv) Config(netGPU *gpu.GPU) {
+	v1vision.ComputeGPU = netGPU
+	ev.V1c.Config()
 
+	ev.CurStates = make(map[string]*tensor.Float32)
 	ev.CurStates["EyePos"] = tensor.NewFloat32(21, 21)
 	ev.CurStates["SacPlan"] = tensor.NewFloat32(11, 11)
 	ev.CurStates["Saccade"] = tensor.NewFloat32(11, 11)
@@ -182,9 +181,7 @@ func (ev *Obj3DSacEnv) FilterImage() error {
 	if err != nil {
 		return err
 	}
-	ev.Img.SetImage(ev.Image, ev.V1Med.V1sGeom.FiltRt.X)
-	ev.V1Med.Filter()
-	ev.V1Hi.Filter()
+	ev.V1c.RunImage(ev.Image)
 	return nil
 }
 
@@ -240,10 +237,10 @@ func (ev *Obj3DSacEnv) Step() bool {
 
 func (ev *Obj3DSacEnv) State(element string) tensor.Values {
 	switch element {
-	case "V1m":
-		return &ev.V1Med.V1AllTsr
+	case "V1m": // todo: L and M actually
+		return &ev.V1c.V1cParams[0].Output
 	case "V1h":
-		return &ev.V1Hi.V1AllTsr
+		return &ev.V1c.V1cParams[1].Output
 	default:
 		return ev.CurStates[element]
 	}

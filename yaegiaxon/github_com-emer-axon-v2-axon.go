@@ -666,6 +666,7 @@ func init() {
 		"TimePeak":                     reflect.ValueOf(axon.TimePeak),
 		"ToGPU":                        reflect.ValueOf(axon.ToGPU),
 		"ToGPUAll":                     reflect.ValueOf(axon.ToGPUAll),
+		"ToGPUCtx":                     reflect.ValueOf(axon.ToGPUCtx),
 		"ToGPUCtxGlobal":               reflect.ValueOf(axon.ToGPUCtxGlobal),
 		"ToGPUExts":                    reflect.ValueOf(axon.ToGPUExts),
 		"ToGPUIndexes":                 reflect.ValueOf(axon.ToGPUIndexes),

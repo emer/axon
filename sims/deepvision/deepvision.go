@@ -179,7 +179,7 @@ func (ss *Sim) ConfigEnv() {
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
 		}
-		trn.Config()
+		trn.Config(axon.ComputeGPU)
 		if di == 0 {
 			trn.OpenTable()
 			objdata = trn.Table
@@ -196,7 +196,7 @@ func (ss *Sim) ConfigEnv() {
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(tst, ss.Config.Env.Env)
 		}
-		tst.Config()
+		tst.Config(axon.ComputeGPU)
 		tst.Table = objdata
 
 		// if ss.Config.Run.MPI {
@@ -207,6 +207,8 @@ func (ss *Sim) ConfigEnv() {
 		// 	tst.MPIAlloc()
 		// }
 
+		trn.Init(0)
+		trn.Step() // needs an image
 		trn.Init(0)
 		tst.Init(0)
 
@@ -1082,7 +1084,7 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	ss.StatsInit()
 
 	trn := ss.Envs.ByModeDi(Train, 0).(*Obj3DSacEnv)
-	img := &trn.Img.Tsr
+	img := trn.V1c.Image.Tsr
 	tensorcore.AddGridStylerTo(img, func(s *tensorcore.GridStyle) {
 		s.Image = true
 	})
