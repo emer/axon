@@ -939,18 +939,19 @@ func (ss *Sim) ConfigStats() {
 		perTrlFunc(mode, level, phase == Start)
 	})
 
-	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
-	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...)
+	laysAll := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer, axon.InputLayer)
+	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, laysAll...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		actGeFunc(mode, level, phase == Start)
 	})
 
-	giMultFunc := axon.StatLayerGiMult(ss.Stats, net, Train, Epoch, Run, lays...)
+	laysAdapt := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
+	giMultFunc := axon.StatLayerGiMult(ss.Stats, net, Train, Epoch, Run, laysAdapt...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		giMultFunc(mode, level, phase == Start)
 	})
 
-	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, Run, lays...)
+	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, Run, laysAdapt...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		trnEpc := ss.Loops.Loop(Train, Epoch).Counter.Cur
 		pcaFunc(mode, level, phase == Start, trnEpc)
