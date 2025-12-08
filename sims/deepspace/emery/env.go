@@ -19,6 +19,8 @@ import (
 	"cogentcore.org/lab/tensor"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/popcode"
+	"github.com/emer/v1vision/v1std"
+	"github.com/emer/v1vision/v1vision"
 )
 
 // Actions is a list of mutually exclusive states
@@ -58,8 +60,11 @@ type EmeryEnv struct {
 	// population code for linear values, -1..1, in normalized units
 	LinearCode popcode.OneD
 
-	// Vis is vision processing filters.
-	Vis Vis
+	// Visual motion processing
+	Motion v1std.MotionDoG
+
+	// Image processing for Motion.
+	MotionImage v1std.Image
 
 	// UnitsPer is the number of units per localist value.
 	UnitsPer int
@@ -129,11 +134,15 @@ func (ev *EmeryEnv) Defaults() {
 	ev.Camera.Defaults()
 	ev.Camera.FOV = 100
 	ev.Camera.Size = image.Point{64, 64}
-	ev.Vis.Defaults()
+	ev.Motion.Defaults()
+	ev.Motion.SetSize(8, 2)
+	ev.MotionImage.Size = ev.Camera.Size
 }
 
 // Config configures the environment
-func (ev *EmeryEnv) Config() {
+func (ev *EmeryEnv) Config(netGPU *gpu.GPU) {
+	v1vision.ComputeGPU = netGPU
+	ev.Motion.Config(ev.MotionImage.Size)
 	ev.Rand.NewRand(ev.RandSeed)
 
 	ev.CurStates = make(map[string]*tensor.Float32)
@@ -153,8 +162,7 @@ func (ev *EmeryEnv) Config() {
 	ev.CopyStateToState(true, "ActRotate", "ActRotatePrev")
 	ev.CopyStateToState(true, "ActRotatePop", "ActRotatePrevPop")
 
-	filters := []string{"DoG", "Slow", "Fast", "Star", "Insta", "Full", "Norm"}
-
+	filters := []string{"Full"}
 	for _, flt := range filters {
 		ev.NextStates["EyeR_"+flt] = tensor.NewFloat32(2, 2)
 		ev.NextStates["EyeL_"+flt] = tensor.NewFloat32(2, 2)
@@ -234,8 +242,9 @@ func (ev *EmeryEnv) Step() bool {
 func (ev *EmeryEnv) VisMotion() {
 	pw := ev.World.World
 	a := ev.NextAct.Action
-	val := ev.NextAct.Value / float32(ev.Vis.NFrames)
-	for range ev.Vis.NFrames {
+	nframes := 16
+	val := ev.NextAct.Value / float32(nframes)
+	for range nframes {
 		switch a {
 		case Rotate:
 			ev.Emery.Rel.RotateOnAxis(0, 1, 0, val) // val in deg
@@ -369,18 +378,9 @@ func (ev *EmeryEnv) FilterImage(snm string, img image.Image) {
 	if img == nil {
 		return
 	}
-	dout := ev.NextStates[snm+"_DoG"]
-	slow := ev.NextStates[snm+"_Slow"]
-	fast := ev.NextStates[snm+"_Fast"]
-	star := ev.NextStates[snm+"_Star"]
-	insta := ev.NextStates[snm+"_Insta"]
 	full := ev.NextStates[snm+"_Full"]
-	norm := ev.NextStates[snm+"_Norm"]
-	norm.SetShapeSizes(1)
-	nv := norm.Value1D(0)
-	ev.Vis.FilterImage(img, dout, slow, fast, star, insta, full, &nv)
-	norm.Set1D(nv, 0)
-	// fmt.Println("vis out sz:", ev.Vis.OutTsr.ShapeSizes())
+	ev.Motion.RunImage(&ev.MotionImage, img)
+	full.CopyFrom(&ev.Motion.FullField)
 }
 
 // Compile-time check that implements Env interface

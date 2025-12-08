@@ -64,8 +64,9 @@ type ImagesEnv struct {
 	// def 0.5 - 1.1 range of scale
 	ScaleRange minmax.F32
 
-	// [def: 8] def 8 maximum degrees of rotation in plane -- image is rotated plus or minus in this range
-	RotateMax float32
+	// maximum degrees of rotation in plane.
+	// image is rotated plus or minus in this range
+	RotateMax float32 `default:"8"`
 
 	// V1c has the full set of V1c complex and DoG color contrast filters.
 	V1c v1std.V1cMulti
@@ -85,14 +86,15 @@ type ImagesEnv struct {
 	// the output tensor geometry -- must be >= number of cats
 	OutSize vecint.Vector2i
 
-	// number of output units per category -- spiking may benefit from replication -- is Y inner dim of output tensor
+	// number of output units per category.
+	// Spiking may benefit from replication; is Y inner dim of output tensor
 	NOutPer int
 
-	// [view: no-inline] output patterns: either localist or random
-	Pats table.Table
+	// output patterns: either localist or random
+	Pats table.Table `display:"no-inline"`
 
-	// [view: -] random number generator for the env -- all random calls must use this
-	Rand randx.SysRand
+	// random number generator for the env -- all random calls must use this
+	Rand randx.SysRand `display:"-"`
 
 	// random seed
 	RndSeed int64 `edit"-"`
@@ -103,13 +105,13 @@ type ImagesEnv struct {
 	// starting row, e.g., for mpi allocation across processors
 	StRow int
 
-	// ending row -- if 0 it is ignored
+	// ending row, ignored if 0
 	EdRow int
 
 	// suffled list of entire set of images -- re-shuffle every time through imgidxs
 	Shuffle []int
 
-	// indexs of images to present -- from StRow to EdRow
+	// indexes of images to present -- from StRow to EdRow
 	ImgIdxs []int
 
 	// each object trajectory is one trial
@@ -158,12 +160,7 @@ func (ev *ImagesEnv) Defaults() {
 	ev.V1c.Defaults()
 	// ev.V1c.GPU = false
 	// todo: ev.High16, ColorDoG options.
-
-	// todo: kwta for DoG
-	// vi.KWTA.Defaults()
-	// vi.KWTA.LayFFFB.Gi = 0
-	// vi.KWTA.PoolFFFB.Gi = 1.2
-	ev.V1c.SplitColor = false
+	ev.V1c.SplitColor = true // split is better!
 
 	ev.V1c.StdLowMed16DegZoom1()
 }

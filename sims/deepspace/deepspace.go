@@ -164,7 +164,7 @@ func (ss *Sim) ConfigEnv() {
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
 		}
-		trn.Config()
+		trn.Config(axon.ComputeGPU)
 
 		trn.Init(0)
 
@@ -856,7 +856,7 @@ func (ss *Sim) MotionStats() {
 		}
 	}
 	cor := metric.Correlation(act, vis)
-	res := fmt.Sprintf("%#v Correlation: %7.4g", ev.Vis.Motion, cor.Float1D(0))
+	res := fmt.Sprintf("Correlation: %7.4g", cor.Float1D(0))
 	fmt.Println(res)
 	if ss.Config.GUI {
 		tbs := ss.GUI.Tabs.AsLab()
