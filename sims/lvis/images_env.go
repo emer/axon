@@ -158,6 +158,13 @@ func (ev *ImagesEnv) Defaults() {
 	ev.V1c.Defaults()
 	// ev.V1c.GPU = false
 	// todo: ev.High16, ColorDoG options.
+
+	// todo: kwta for DoG
+	// vi.KWTA.Defaults()
+	// vi.KWTA.LayFFFB.Gi = 0
+	// vi.KWTA.PoolFFFB.Gi = 1.2
+	ev.V1c.SplitColor = false
+
 	ev.V1c.StdLowMed16DegZoom1()
 }
 
