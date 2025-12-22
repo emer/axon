@@ -937,7 +937,8 @@ fn PathParams_SynCa(pt: PathParams, ctx: Context, si: u32,ri: u32,di: u32, syCaP
 	var cp = sp * GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvCaBinWts + GlobalScalarVars(0)), u32(0))];
 	var cd = sp * GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(cadSt + GlobalScalarVars(0)), u32(0))];
 	var syn20 = pt.Learn.DWt.SynCa20 == 1;
-	for (var i = i32(1); i < nbins; i++) {
+	for (var i = i32(1);
+	 i < nbins; i++) {
 		var bi = CaBinForCycle(stcyc + i*CaBinCycles);
 		var rt = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaBins + NeuronVars(bi)))];
 		var st = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(CaBins + NeuronVars(bi)))];
@@ -1376,18 +1377,6 @@ const  Phase: ViewTimes = 5;
 const  Theta: ViewTimes = 6;
 
 //////// import: "math32-fastexp.go"
-
-//////// import: "math32-vector2.go"
-struct Vector2 {
-	X: f32,
-	Y: f32,
-}
-
-//////// import: "math32-vector2i.go"
-struct Vector2i {
-	X: i32,
-	Y: i32,
-}
 
 //////// import: "minmax-avgmax.go"
 const  MaxFloat32: f32 = 3.402823466e+38;

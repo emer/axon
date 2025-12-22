@@ -527,7 +527,8 @@ fn ActAvgParams_Adapt(aa: ActAvgParams, gimult: ptr<function,f32>, act: f32) -> 
 	var trg = aa.Nominal + aa.Offset;
 	var del = (act - trg) / trg;
 	if (del < -aa.LoTol || del > aa.HiTol) {
-		*gimult += clamp(aa.AdaptRate*del, -aa.AdaptMax, aa.AdaptMax);return true;
+		*gimult += clamp(aa.AdaptRate*del, -aa.AdaptMax, aa.AdaptMax);
+	return true;
 	}return false;
 }
 struct InhibParams {
@@ -663,7 +664,8 @@ fn LayerParams_AdaptGi(ly: LayerParams, ctx: Context) {
 	if (ly.Inhib.ActAvg.AdaptGi == 0 || LayerParams_IsInput(ly)) {
 		return;
 	}
-	for (var di = u32(0); di < ctx.NData; di++) {
+	for (var di = u32(0);
+	 di < ctx.NData; di++) {
 		var giMult = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(ly.Index), u32(di), u32(LayerGiMult))];
 		var avg = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(ly.Index), u32(di), u32(LayerActMAvg))];
 		ActAvgParams_Adapt(ly.Inhib.ActAvg, &giMult, avg);
@@ -803,18 +805,6 @@ const  Phase: ViewTimes = 5;
 const  Theta: ViewTimes = 6;
 
 //////// import: "math32-fastexp.go"
-
-//////// import: "math32-vector2.go"
-struct Vector2 {
-	X: f32,
-	Y: f32,
-}
-
-//////// import: "math32-vector2i.go"
-struct Vector2i {
-	X: i32,
-	Y: i32,
-}
 
 //////// import: "minmax-avgmax.go"
 const  MaxFloat32: f32 = 3.402823466e+38;

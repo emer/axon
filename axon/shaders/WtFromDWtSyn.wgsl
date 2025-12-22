@@ -778,7 +778,8 @@ fn SigFun61(w: f32) -> f32 {
 	if (w >= 1) {
 		return f32(1);
 	}
-	var pw = (1 - w) / w;return (1 / (1 + pw*pw*pw*pw*pw*pw));
+	var pw = (1 - w) / w;
+return (1 / (1 + pw*pw*pw*pw*pw*pw));
 }
 struct SWtInitParams {
 	SPct: f32,
@@ -871,18 +872,6 @@ const  Phase: ViewTimes = 5;
 const  Theta: ViewTimes = 6;
 
 //////// import: "math32-fastexp.go"
-
-//////// import: "math32-vector2.go"
-struct Vector2 {
-	X: f32,
-	Y: f32,
-}
-
-//////// import: "math32-vector2i.go"
-struct Vector2i {
-	X: i32,
-	Y: i32,
-}
 
 //////// import: "minmax-avgmax.go"
 const  MaxFloat32: f32 = 3.402823466e+38;

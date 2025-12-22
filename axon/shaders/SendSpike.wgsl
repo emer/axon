@@ -63,7 +63,8 @@ fn LayerParams_SendSpike(ly: LayerParams, ctx: Context, ni: u32,di: u32) {
 	var lpi = LayerParams_PoolIndex(ly, u32(u32(0)));
 	var lni = ni - ly.Indexes.NeurSt;
 	LayerParams_PostSpike(ly, ctx, lpi, pi, ni, di);
-	for (var pti = u32(0); pti < ly.Indexes.SendN; pti++) {
+	for (var pti = u32(0);
+	 pti < ly.Indexes.SendN; pti++) {
 		let pt = Paths[ly.Indexes.SendSt + pti];
 		PathParams_SendSpike(pt, ctx, ni, di, lni);
 	}
@@ -279,7 +280,8 @@ fn PathParams_SendSpike(pt: PathParams, ctx: Context, ni: u32,di: u32,lni: u32) 
 	var cni = pt.Indexes.SendConSt + lni;
 	var synst = pt.Indexes.SynapseSt + PathSendCon[Index2D(TensorStrides[30], TensorStrides[31], u32(cni), u32(StartOff))];
 	var synn = PathSendCon[Index2D(TensorStrides[30], TensorStrides[31], u32(cni), u32(Nitems))];
-	for (var ci = u32(0); ci < synn; ci++) {
+	for (var ci = u32(0);
+	 ci < synn; ci++) {
 		var syni = synst + ci;
 		var ri = SynapseIxs[Index2D(TensorStrides[20], TensorStrides[21], u32(syni), u32(SynRecvIndex))];
 		var npti = npst + (ri - recvNeurSt);
@@ -403,7 +405,8 @@ fn PopCodeParams_ClampValue(pc: PopCodeParams, val: f32) -> f32 {
 	}return clipVal;
 }
 fn PopCodeParams_ProjectParam(pc: PopCodeParams, minParam: f32,maxParam: f32,clipVal: f32) -> f32 {
-	var normVal = (clipVal - pc.Min) / (pc.Max - pc.Min);return minParam + normVal*(maxParam-minParam);
+	var normVal = (clipVal - pc.Min) / (pc.Max - pc.Min);
+return minParam + normVal*(maxParam-minParam);
 }
 fn PopCodeParams_EncodeValue(pc: PopCodeParams, i: u32,n: u32, val: f32) -> f32 {
 	var eval = val;
@@ -423,7 +426,8 @@ fn PopCodeParams_EncodeValue(pc: PopCodeParams, i: u32,n: u32, val: f32) -> f32 
 	var gnrm = 1.0 / (rng * sig);
 	var incr = rng / f32(n-1);
 	var trg = pc.Min + incr*f32(i);
-	var dist = gnrm * (trg - eval);return act * FastExp(-(dist * dist));
+	var dist = gnrm * (trg - eval);
+return act * FastExp(-(dist * dist));
 }
 struct ActParams {
 	Spikes: SpikeParams,
@@ -631,7 +635,8 @@ struct BurstParams {
 }
 fn BurstParams_ThrFromAvgMax(bp: BurstParams, avg: f32,mx: f32) -> f32 {
 	var thr = avg + bp.ThrRel*(mx-avg);
-	thr = max(thr, bp.ThrAbs);return thr;
+	thr = max(thr, bp.ThrAbs);
+return thr;
 }
 struct CTParams {
 	GeGain: f32,
@@ -1075,19 +1080,8 @@ fn FastExp(x: f32) -> f32 {
 	}
 	var i = i32(12102203*x) + i32(127)*(i32(1)<<23);
 	var m = (i >> 7) & 0xFFFF; // copy mantissa
-	i += (((((((((((3537 * m) >> 16) + 13668) * m) >> 18) + 15817) * m) >> 14) - 80470) * m) >> 11);return bitcast<f32>(u32(i));
-}
-
-//////// import: "math32-vector2.go"
-struct Vector2 {
-	X: f32,
-	Y: f32,
-}
-
-//////// import: "math32-vector2i.go"
-struct Vector2i {
-	X: i32,
-	Y: i32,
+	i += (((((((((((3537 * m) >> 16) + 13668) * m) >> 18) + 15817) * m) >> 14) - 80470) * m) >> 11);
+return bitcast<f32>(u32(i));
 }
 
 //////// import: "minmax-avgmax.go"

@@ -46,7 +46,8 @@ fn LayerParams_IsTarget(ly: LayerParams) -> bool {
 	return ly.Type == TargetLayer || ly.Type == PulvinarLayer;
 }
 fn LayerParams_MinusPhasePool(ly: LayerParams, ctx: Context, pi: u32) {
-	for (var di = u32(0); di < ctx.NData; di++) {
+	for (var di = u32(0);
+	 di < ctx.NData; di++) {
 		PoolCycleToMinus(pi, di);
 		if (ly.Acts.Clamp.Add == 0 && LayerParams_IsTarget(ly)) {
 			PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(Clamped))] = 1;
@@ -57,11 +58,13 @@ fn LayerParams_MinusPhasePool(ly: LayerParams, ctx: Context, pi: u32) {
 	}
 	var geIntMinusMax = f32(0);
 	var giIntMinusMax = f32(0);
-	for (var di = u32(0); di < ctx.NData; di++) {
+	for (var di = u32(0);
+	 di < ctx.NData; di++) {
 		geIntMinusMax = max(geIntMinusMax, PoolAvgMax(AMGeInt, AMMinus, Max, pi, di));
 		giIntMinusMax = max(giIntMinusMax, PoolAvgMax(AMGiInt, AMMinus, Max, pi, di));
 	}
-	for (var di = u32(0); di < ctx.NData; di++) {
+	for (var di = u32(0);
+	 di < ctx.NData; di++) {
 		LayerParams_AvgGeM(ly, ctx, di, geIntMinusMax, giIntMinusMax);
 	}
 }
@@ -824,18 +827,6 @@ const  Phase: ViewTimes = 5;
 const  Theta: ViewTimes = 6;
 
 //////// import: "math32-fastexp.go"
-
-//////// import: "math32-vector2.go"
-struct Vector2 {
-	X: f32,
-	Y: f32,
-}
-
-//////// import: "math32-vector2i.go"
-struct Vector2i {
-	X: i32,
-	Y: i32,
-}
 
 //////// import: "minmax-avgmax.go"
 const  MaxFloat32: f32 = 3.402823466e+38;

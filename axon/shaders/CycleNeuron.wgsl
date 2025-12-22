@@ -444,7 +444,7 @@ fn SpikeParams_ActFromISI(sk: SpikeParams, isi: f32,timeInc: f32,integ: f32) -> 
 	if (isi <= 0) {
 		return f32(0);
 	}
-			var maxInt = 1.0 / (timeInc * integ * sk.MaxHz); // interval at max hz..
+	var maxInt = 1.0 / (timeInc * integ * sk.MaxHz); // interval at max hz..
 return maxInt / isi; // normalized
 }
 fn SpikeParams_AvgFromISI(sk: SpikeParams, avg: f32, isi: f32) -> f32 {
@@ -533,7 +533,8 @@ fn SpikeNoiseParams_PGe(an: SpikeNoiseParams, ctx: Context, p: ptr<function,f32>
 	var ndi = di*nix.NNeurons + ni;
 	*p *= GetRandomNumber(ndi, ctx.RandCounter.Counter, RandFunActPGe);
 	if (*p <= an.GeExpInt) {
-		*p = f32(1);return an.Ge;
+		*p = f32(1);
+	return an.Ge;
 	}return f32(
 0);
 }
@@ -542,7 +543,8 @@ fn SpikeNoiseParams_PGi(an: SpikeNoiseParams, ctx: Context, p: ptr<function,f32>
 	var ndi = di*nix.NNeurons + ni;
 	*p *= GetRandomNumber(ndi, ctx.RandCounter.Counter, RandFunActPGi);
 	if (*p <= an.GiExpInt) {
-		*p = f32(1);return an.Gi;
+		*p = f32(1);
+	return an.Gi;
 	}return f32(
 0);
 }
@@ -584,7 +586,8 @@ fn PopCodeParams_ClampValue(pc: PopCodeParams, val: f32) -> f32 {
 	}return clipVal;
 }
 fn PopCodeParams_ProjectParam(pc: PopCodeParams, minParam: f32,maxParam: f32,clipVal: f32) -> f32 {
-	var normVal = (clipVal - pc.Min) / (pc.Max - pc.Min);return minParam + normVal*(maxParam-minParam);
+	var normVal = (clipVal - pc.Min) / (pc.Max - pc.Min);
+return minParam + normVal*(maxParam-minParam);
 }
 fn PopCodeParams_EncodeValue(pc: PopCodeParams, i: u32,n: u32, val: f32) -> f32 {
 	var eval = val;
@@ -604,7 +607,8 @@ fn PopCodeParams_EncodeValue(pc: PopCodeParams, i: u32,n: u32, val: f32) -> f32 
 	var gnrm = 1.0 / (rng * sig);
 	var incr = rng / f32(n-1);
 	var trg = pc.Min + incr*f32(i);
-	var dist = gnrm * (trg - eval);return act * FastExp(-(dist * dist));
+	var dist = gnrm * (trg - eval);
+return act * FastExp(-(dist * dist));
 }
 fn PopCodeParams_EncodeGe(pc: PopCodeParams, i: u32,n: u32, val: f32) -> f32 {
 	return pc.Ge * PopCodeParams_EncodeValue(pc, i, n, val);
@@ -780,7 +784,8 @@ fn ActParams_VmFromInet(ac: ActParams, vm: f32,dt: f32,inet: f32) -> f32 {
 fn ActParams_VmInteg(ac: ActParams, vm: f32,dt: f32,ge: f32,gl: f32,gi: f32,gk: f32, nvm: ptr<function,f32>,inet: ptr<function,f32>) {
 	var dtEff = dt * ac.Dt.DtStep;
 	*nvm = vm;
-	for (var i = i32(0); i < ac.Dt.VmSteps; i++) {
+	for (var i = i32(0);
+	 i < ac.Dt.VmSteps; i++) {
 		*inet = ActParams_InetFromG(ac, *nvm, ge, gl, gi, gk);
 		*nvm = ActParams_VmFromInet(ac, *nvm, dtEff, *inet);
 	}
@@ -938,7 +943,8 @@ struct GABABParams {
 	pad2: f32,
 }
 fn GABABParams_GFromV(gp: GABABParams, v: f32) -> f32 {
-	var ve = max(v, -90.0);return (ve + 90.0) / (1.0 + FastExp(0.1*((ve+90.0)+10.0)));
+	var ve = max(v, -90.0);
+return (ve + 90.0) / (1.0 + FastExp(0.1*((ve+90.0)+10.0)));
 }
 fn GABABParams_GFromS(gp: GABABParams, s: f32) -> f32 {
 	var ss = s * gp.GiSpike;
@@ -952,7 +958,8 @@ fn GABABParams_DeltaM(gp: GABABParams, m: f32,x: f32) -> f32 {
 fn GABABParams_MX(gp: GABABParams, gi: f32, m: ptr<function,f32>,x: ptr<function,f32>) {
 	var dM = GABABParams_DeltaM(gp, *m, *x);
 	*x += GABABParams_GFromS(gp, gi) - (*x)*gp.DecayDt;
-	*m += dM;return;
+	*m += dM;
+return;
 }
 fn GABABParams_GgabaB(gp: GABABParams, m: f32,v: f32) -> f32 {
 	return gp.Gk * GABABParams_GFromV(gp, v) * (m + gp.Gbase);
@@ -974,7 +981,8 @@ fn KirParams_Minf(kp: KirParams, v: f32) -> f32 {
 }
 fn KirParams_MTau(kp: KirParams, v: f32) -> f32 {
 	var alpha = 0.1 * FastExp(-(v-kp.RiseOff)/kp.RiseTau);
-	var beta = 0.27 / (1.0 + FastExp(-(v-kp.DecayOff)/kp.DecayTau));return 1.0 / (alpha + beta);
+	var beta = 0.27 / (1.0 + FastExp(-(v-kp.DecayOff)/kp.DecayTau));
+return 1.0 / (alpha + beta);
 }
 fn KirParams_DM(kp: KirParams, v: f32,m: f32) -> f32 {
 	var minf = KirParams_Minf(kp, v);
@@ -1052,12 +1060,14 @@ fn MahpParams_DNFromV(mp: MahpParams, v: f32,n: f32) -> f32 {
 	var ninf: f32;
 	var tau: f32;
 	MahpParams_NinfTauFromV(mp, v, &ninf, &tau);
-	var dn = (ninf - n) / tau;return dn;
+	var dn = (ninf - n) / tau;
+return dn;
 }
 fn MahpParams_GmAHP(mp: MahpParams, v: f32, n: ptr<function,f32>) -> f32 {
 	var dn = MahpParams_DNFromV(mp, v, *n);
 	*n += dn;
-	var g = mp.Tadj * mp.Gk * *n;return g;
+	var g = mp.Tadj * mp.Gk * *n;
+return g;
 }
 
 //////// import: "chans-nmda.go"
@@ -1119,7 +1129,8 @@ struct SKCaParams {
 }
 fn SKCaParams_MAsympHill(sp: SKCaParams, cai: f32) -> f32 {
 	var caia = cai / sp.C50;
-	var capow = caia * caia * caia * caia;return capow / (1 + capow);
+	var capow = caia * caia * caia * caia;
+return capow / (1 + capow);
 }
 fn SKCaParams_CaInRFromSpike(sp: SKCaParams, spike: f32,caD: f32, caIn: ptr<function,f32>,caR: ptr<function,f32>) {
 	*caR -= *caR * sp.CaRDecayDt;
@@ -1168,10 +1179,12 @@ fn VGCCParams_HFromV(np: VGCCParams, v: f32) -> f32 {
 	}return 1.0 / (1.0 + FastExp((v+41)*2));
 }
 fn VGCCParams_DeltaMFromV(np: VGCCParams, v: f32,m: f32) -> f32 {
-	var vb = min(v, 0.0);return (VGCCParams_MFromV(np, vb) - m) / 3.6;
+	var vb = min(v, 0.0);
+return (VGCCParams_MFromV(np, vb) - m) / 3.6;
 }
 fn VGCCParams_DeltaHFromV(np: VGCCParams, v: f32,h: f32) -> f32 {
-	var vb = min(v, 0.0);return (VGCCParams_HFromV(np, vb) - h) / 29.0;
+	var vb = min(v, 0.0);
+return (VGCCParams_HFromV(np, vb) - h) / 29.0;
 }
 fn VGCCParams_Gvgcc(np: VGCCParams, v: f32,m: f32,h: f32) -> f32 {
 	return np.Ge * VGCCParams_GFromV(np, v) * m * m * m * h;
@@ -1461,7 +1474,8 @@ fn CaSpikeParams_CaMFromSpike(sp: CaSpikeParams, spike: f32, caM: ptr<function,f
 	CaDtParams_FromCa(sp.Dt, ca, caM, caP, caD);
 }
 fn CaSpikeParams_CaSynFromSpike(sp: CaSpikeParams, spike: f32, caSyn: f32) -> f32 {
-	var ca = sp.SpikeCaSyn * spike;return caSyn + sp.CaSynDt*(ca-caSyn);
+	var ca = sp.SpikeCaSyn * spike;
+return caSyn + sp.CaSynDt*(ca-caSyn);
 }
 
 //////// import: "layerparams.go"
@@ -1827,19 +1841,8 @@ fn FastExp(x: f32) -> f32 {
 	}
 	var i = i32(12102203*x) + i32(127)*(i32(1)<<23);
 	var m = (i >> 7) & 0xFFFF; // copy mantissa
-	i += (((((((((((3537 * m) >> 16) + 13668) * m) >> 18) + 15817) * m) >> 14) - 80470) * m) >> 11);return bitcast<f32>(u32(i));
-}
-
-//////// import: "math32-vector2.go"
-struct Vector2 {
-	X: f32,
-	Y: f32,
-}
-
-//////// import: "math32-vector2i.go"
-struct Vector2i {
-	X: i32,
-	Y: i32,
+	i += (((((((((((3537 * m) >> 16) + 13668) * m) >> 18) + 15817) * m) >> 14) - 80470) * m) >> 11);
+return bitcast<f32>(u32(i));
 }
 
 //////// import: "minmax-avgmax.go"
@@ -1917,7 +1920,8 @@ fn NeuroModParams_IsBLAExt(nm: NeuroModParams) -> bool {
 		(nm.Valence == Negative && nm.DAMod == D1Mod);
 }
 fn NeuroModParams_LRModFact(nm: NeuroModParams, pct: f32,val: f32) -> f32 {
-	var aval = clamp(abs(val), 0.0, 1.0);return 1.0 - pct*(1.0-aval);
+	var aval = clamp(abs(val), 0.0, 1.0);
+return 1.0 - pct*(1.0-aval);
 }
 fn NeuroModParams_DAGain(nm: NeuroModParams, da: f32) -> f32 {
 	var ada = da;

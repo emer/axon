@@ -693,13 +693,15 @@ fn LayerParams_DTrgSubMean(ly: LayerParams, ctx: Context) {
 	}
 	if (LayerParams_HasPoolInhib(ly) && ly.Learn.TrgAvgAct.Pool == 1) {
 		var np = ly.Indexes.NPools;
-		for (var spi = u32(1); spi < np; spi++) {
+		for (var spi = u32(1);
+		 spi < np; spi++) {
 			var pi = LayerParams_PoolIndex(ly, spi);
 			var nsi = PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolNeurSt))];
 			var nei = PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolNeurEd))];
 			var nn = 0;
 			var avg = f32(0);
-			for (var lni = nsi; lni < nei; lni++) {
+			for (var lni = nsi;
+			 lni < nei; lni++) {
 				var ni = ly.Indexes.NeurSt + u32(lni);
 				if (NeuronIsOff(ni)) {
 					continue;
@@ -712,7 +714,8 @@ fn LayerParams_DTrgSubMean(ly: LayerParams, ctx: Context) {
 			}
 			avg /= f32(nn);
 			avg *= submean;
-			for (var lni = nsi; lni < nei; lni++) {
+			for (var lni = nsi;
+			 lni < nei; lni++) {
 				var ni = ly.Indexes.NeurSt + u32(lni);
 				if (NeuronIsOff(ni)) {
 					continue;
@@ -724,7 +727,8 @@ fn LayerParams_DTrgSubMean(ly: LayerParams, ctx: Context) {
 		var nn = 0;
 		var avg = f32(0);
 		var tn = ly.Indexes.NNeurons;
-		for (var lni = u32(0); lni < tn; lni++) {
+		for (var lni = u32(0);
+		 lni < tn; lni++) {
 			var ni = ly.Indexes.NeurSt + lni;
 			if (NeuronIsOff(ni)) {
 				continue;
@@ -737,7 +741,8 @@ fn LayerParams_DTrgSubMean(ly: LayerParams, ctx: Context) {
 		}
 		avg /= f32(nn);
 		avg *= submean;
-		for (var lni = u32(0); lni < tn; lni++) {
+		for (var lni = u32(0);
+		 lni < tn; lni++) {
 			var ni = ly.Indexes.NeurSt + lni;
 			if (NeuronIsOff(ni)) {
 				continue;
@@ -753,7 +758,8 @@ fn LayerParams_TrgAvgFromD(ly: LayerParams, ctx: Context) {
 	}
 	LayerParams_DTrgSubMean(ly, ctx);
 	var nn = ly.Indexes.NNeurons;
-	for (var lni = u32(0); lni < nn; lni++) {
+	for (var lni = u32(0);
+	 lni < nn; lni++) {
 		var ni = ly.Indexes.NeurSt + lni;
 		if (NeuronIsOff(ni)) {
 			continue;
@@ -900,18 +906,6 @@ const  Phase: ViewTimes = 5;
 const  Theta: ViewTimes = 6;
 
 //////// import: "math32-fastexp.go"
-
-//////// import: "math32-vector2.go"
-struct Vector2 {
-	X: f32,
-	Y: f32,
-}
-
-//////// import: "math32-vector2i.go"
-struct Vector2i {
-	X: i32,
-	Y: i32,
-}
 
 //////// import: "minmax-avgmax.go"
 const  MaxFloat32: f32 = 3.402823466e+38;

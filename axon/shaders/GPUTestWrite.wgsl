@@ -39,7 +39,8 @@ fn GPUTestWrite(i: u32) { //gosl:kernel
 		return;
 	}
 	var di = Context_DataIndex(ctx, i);
-	for (var vi = Spike; vi < NeuronVarsN; vi++) {
+	for (var vi = Spike;
+	 vi < NeuronVarsN; vi++) {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(vi))] = f32(ni*1000 + u32(vi));
 	}
 }
@@ -789,18 +790,6 @@ const  Phase: ViewTimes = 5;
 const  Theta: ViewTimes = 6;
 
 //////// import: "math32-fastexp.go"
-
-//////// import: "math32-vector2.go"
-struct Vector2 {
-	X: f32,
-	Y: f32,
-}
-
-//////// import: "math32-vector2i.go"
-struct Vector2i {
-	X: i32,
-	Y: i32,
-}
 
 //////// import: "minmax-avgmax.go"
 const  MaxFloat32: f32 = 3.402823466e+38;

@@ -46,12 +46,14 @@ fn Index2D(s0: u32, s1: u32, i0: u32, i1: u32) -> u32 {
 //////// import: "act-layer.go"
 fn LayerParams_DecayStateNeuronsAll(ly: LayerParams, ctx: Context, decay: f32,glong: f32,ahp: f32) {
 	var nn = ly.Indexes.NNeurons;
-	for (var lni = u32(0); lni < nn; lni++) {
+	for (var lni = u32(0);
+	 lni < nn; lni++) {
 		var ni = ly.Indexes.NeurSt + lni;
 		if (NeuronIsOff(ni)) {
 			continue;
 		}
-		for (var di = u32(0); di < ctx.NData; di++) {
+		for (var di = u32(0);
+		 di < ctx.NData; di++) {
 			ActParams_DecayState(ly.Acts, ctx, ni, di, decay, glong, ahp);
 		}
 	}
@@ -908,18 +910,6 @@ const  Theta: ViewTimes = 6;
 
 //////// import: "math32-fastexp.go"
 
-//////// import: "math32-vector2.go"
-struct Vector2 {
-	X: f32,
-	Y: f32,
-}
-
-//////// import: "math32-vector2i.go"
-struct Vector2i {
-	X: i32,
-	Y: i32,
-}
-
 //////// import: "minmax-avgmax.go"
 const  MaxFloat32: f32 = 3.402823466e+38;
 const  MinFloat32: f32 = 1.175494351e-38;
@@ -1222,11 +1212,13 @@ fn LayerParams_MatrixGated(ly: LayerParams, ctx: Context) {
 	if (ly.Learn.NeuroMod.DAMod != D1Mod) {
 		var oly = Layers[ly.Striatum.OtherIndex];
 		var olpi = oly.PoolSt;
-		for (var di = u32(0); di < ctx.NData; di++) {
+		for (var di = u32(0);
+		 di < ctx.NData; di++) {
 			PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(lpi), u32(di), u32(PoolGated))] = PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(olpi), u32(di), u32(PoolGated))];
 		}return;
 	}
-	for (var di = u32(0); di < ctx.NData; di++) {
+	for (var di = u32(0);
+	 di < ctx.NData; di++) {
 		var mtxGated = PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(lpi), u32(di), u32(PoolGated))] > 0;
 		var thalGated = false;
 		if (ly.Striatum.ThalLay1Index >= 0) {
@@ -1267,7 +1259,8 @@ fn LayerParams_MatrixGated(ly: LayerParams, ctx: Context) {
 		}
 		mtxGated = mtxGated && thalGated;
 		if (!mtxGated) { // nobody did if thal didn't
-			for (var spi = u32(0); spi < ly.Indexes.NPools; spi++) {
+			for (var spi = u32(0);
+			 spi < ly.Indexes.NPools; spi++) {
 				var pi = LayerParams_PoolIndex(ly, spi);
 				PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(PoolGated))] = 0;
 			}
@@ -1276,7 +1269,8 @@ fn LayerParams_MatrixGated(ly: LayerParams, ctx: Context) {
 			GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvVSMatrixJustGated), u32(di))] = f32(mtxGated);
 			if (mtxGated) {
 				var poolIndex = i32(-1);
-				for (var spi = u32(1); spi < ly.Indexes.NPools; spi++) {
+				for (var spi = u32(1);
+				 spi < ly.Indexes.NPools; spi++) {
 					var pi = LayerParams_PoolIndex(ly, spi);
 					if (poolIndex < 0 && PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(PoolGated))] > 0) {
 						poolIndex = i32(spi);

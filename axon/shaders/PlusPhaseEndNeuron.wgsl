@@ -938,19 +938,8 @@ fn FastExp(x: f32) -> f32 {
 	}
 	var i = i32(12102203*x) + i32(127)*(i32(1)<<23);
 	var m = (i >> 7) & 0xFFFF; // copy mantissa
-	i += (((((((((((3537 * m) >> 16) + 13668) * m) >> 18) + 15817) * m) >> 14) - 80470) * m) >> 11);return bitcast<f32>(u32(i));
-}
-
-//////// import: "math32-vector2.go"
-struct Vector2 {
-	X: f32,
-	Y: f32,
-}
-
-//////// import: "math32-vector2i.go"
-struct Vector2i {
-	X: i32,
-	Y: i32,
+	i += (((((((((((3537 * m) >> 16) + 13668) * m) >> 18) + 15817) * m) >> 14) - 80470) * m) >> 11);
+return bitcast<f32>(u32(i));
 }
 
 //////// import: "minmax-avgmax.go"
@@ -1020,7 +1009,8 @@ fn NeuroModParams_IsBLAExt(nm: NeuroModParams) -> bool {
 		(nm.Valence == Negative && nm.DAMod == D1Mod);
 }
 fn NeuroModParams_LRModFact(nm: NeuroModParams, pct: f32,val: f32) -> f32 {
-	var aval = clamp(abs(val), 0.0, 1.0);return 1.0 - pct*(1.0-aval);
+	var aval = clamp(abs(val), 0.0, 1.0);
+return 1.0 - pct*(1.0-aval);
 }
 fn NeuroModParams_DAGain(nm: NeuroModParams, da: f32) -> f32 {
 	var ada = da;

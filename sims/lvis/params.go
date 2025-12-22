@@ -80,7 +80,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.RLRate.SpikeThr = 0.1 // 0.1 def
 				ly.Learn.RLRate.Min = 0.001
 
-				// ly.Learn.Timing.On.SetBool(true) // time > trial!
+				ly.Learn.Timing.On.SetBool(true) // time > trial!
 				// ly.Learn.Timing.Refractory.SetBool(true)
 				// ly.Learn.Timing.LearnThr = 0.1
 				// ly.Learn.Timing.SynCaCycles = 160
@@ -94,7 +94,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Pool.On.SetBool(true)
 				ly.Inhib.Layer.Gi = 0.9        // was 0.9
 				ly.Inhib.Pool.Gi = 0.9         // 0.9 >= 1.1 def -- more activity
-				ly.Inhib.ActAvg.Nominal = 0.04 // .06 for !SepColor actuals: V1m8: .04, V1m16: .03
+				ly.Inhib.ActAvg.Nominal = 0.03 // .04 prev; .06 for !SepColor actuals: V1m8: .04, V1m16: .03
 				ly.Acts.Clamp.Ge = 1.5         // was 1.0
 				ly.Acts.Decay.Act = 1          // these make no diff
 				ly.Acts.Decay.Glong = 1
@@ -123,21 +123,21 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".TEO", Doc: "initial activity",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.03         // .03 1.6.15 SSGi
-				ly.Inhib.ActAvg.Offset = 0.01          // 0.01 > lower, higher; nominal is lower to increase Ge
-				ly.Inhib.ActAvg.AdaptGi.SetBool(false) // true
-				ly.Inhib.Layer.On.SetBool(false)       // no layer!
-				ly.Inhib.Pool.On.SetBool(true)         // needs pool-level
+				ly.Inhib.ActAvg.Nominal = 0.03        // .03 1.6.15 SSGi
+				ly.Inhib.ActAvg.Offset = 0.01         // 0.01 > lower, higher; nominal is lower to increase Ge
+				ly.Inhib.ActAvg.AdaptGi.SetBool(true) // was false
+				ly.Inhib.Layer.On.SetBool(false)      // no layer!
+				ly.Inhib.Pool.On.SetBool(true)        // needs pool-level
 				ly.Inhib.Pool.FB = 4
 				ly.Inhib.Pool.Gi = 1.12 // 1.12 > others for non-adapt
 			}},
 		{Sel: "#TE", Doc: "initial activity",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.03         // .03 1.6.15 SSGi
-				ly.Inhib.ActAvg.Offset = 0.01          // 0.01 > lower, higher; nominal is lower to increase Ge
-				ly.Inhib.ActAvg.AdaptGi.SetBool(false) // true
-				ly.Inhib.Layer.On.SetBool(false)       // no layer!
-				ly.Inhib.Pool.On.SetBool(true)         // needs pool-level
+				ly.Inhib.ActAvg.Nominal = 0.03        // .03 1.6.15 SSGi
+				ly.Inhib.ActAvg.Offset = 0.01         // 0.01 > lower, higher; nominal is lower to increase Ge
+				ly.Inhib.ActAvg.AdaptGi.SetBool(true) // was false
+				ly.Inhib.Layer.On.SetBool(false)      // no layer!
+				ly.Inhib.Pool.On.SetBool(true)        // needs pool-level
 				ly.Inhib.Pool.FB = 4
 				ly.Inhib.Pool.Gi = 1.12 // 1.12 > others for non-adapt
 			}},
@@ -236,7 +236,7 @@ var PathParams = axon.PathSheets{
 					pt.IncGain =              1   // .5 def
 				}},
 		*/
-		{Sel: ".V1V2", Doc: "special SWt params",
+		{Sel: ".V1V2", Doc: "lower SWt for sparser activity",
 			Set: func(pt *axon.PathParams) {
 				pt.SWts.Init.Mean = 0.4 // .4 here is key!
 				pt.SWts.Limit.Min = 0.1 // .1-.7
@@ -247,7 +247,7 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 0.2
 			}},
-		{Sel: ".V2V4", Doc: "extra boost",
+		{Sel: ".V2V4", Doc: "lower SWt",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 1.0  // 1.0 prev, 1.2 not better
 				pt.SWts.Init.Mean = 0.4 // .4 a tiny bit better overall

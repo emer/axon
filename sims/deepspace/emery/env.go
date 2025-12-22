@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"image"
 
-	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/gpu"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/xyz/physics"
@@ -22,29 +21,6 @@ import (
 	"github.com/emer/v1vision/v1std"
 	"github.com/emer/v1vision/v1vision"
 )
-
-// Actions is a list of mutually exclusive states
-// for tracing the behavior and internal state of Emery
-type Actions int32 //enums:enum
-
-const (
-	Forward Actions = iota
-	Rotate
-	None
-)
-
-// Action represents a single action.
-type Action struct {
-	// Action is the action taken
-	Action Actions
-
-	// Value is the action parameter (e.g., rotation degrees)
-	Value float32
-}
-
-func (a *Action) String() string {
-	return fmt.Sprintf("%s_%g", a.Action.String(), a.Value)
-}
 
 // EmeryEnv is the emery rat environment.
 type EmeryEnv struct {
@@ -78,6 +54,9 @@ type EmeryEnv struct {
 	// Geom is the world geometry.
 	Geom Geom
 
+	// Params are sensory and motor parameters.
+	Params SensoryMotorParams
+
 	// Emery is the physics body for Emery.
 	Emery *physics.Group `display:"-"`
 
@@ -90,23 +69,28 @@ type EmeryEnv struct {
 	// World is the 3D world, including emery
 	World *world.World `display:"no-inline"`
 
-	// offscreen render camera settings
+	// Camera has offscreen render camera settings
 	Camera world.Camera
 
-	// NextAct is the next action to be taken.
-	NextAct Action
+	// CurrentTime is the current timestep in msec. Counts up every Step,
+	// 1 per msec (cycle).
+	CurrentTime int
 
-	// LastAct is the last action taken.
-	LastAct Action
+	// ActionStarts are points when actions have started, via inputs from
+	// the network.
+	ActionStarts ActionBuffer
+
+	// Actions are continuously-recorded action states (every cycle).
+	Actions ActionBuffer
+
+	// Senses are continuously-recorded sensory states (every cycle).
+	Senses SenseBuffer
 
 	// CurStates is the current rendered state tensors.
 	CurStates map[string]*tensor.Float32
 
 	// NextStates is the next rendered state tensors -- updated from actions.
 	NextStates map[string]*tensor.Float32
-
-	// MaxRotate is maximum rotation angle magnitude per action, in degrees.
-	MaxRotate float32
 
 	// Rand is the random number generator for the env.
 	// All random calls must use this.
@@ -122,10 +106,10 @@ func (ev *EmeryEnv) Label() string { return ev.Name }
 func (ev *EmeryEnv) Defaults() {
 	ev.LeftEye = false
 	ev.Geom.Defaults()
+	ev.Params.Defaults()
 	ev.UnitsPer = 4
 	ev.LinearUnits = 12 // 12 > 16 for both
 	ev.AngleUnits = 16
-	ev.MaxRotate = 5
 	popSigma := float32(0.2) // .15 > .2 for vnc, but opposite for eye
 	ev.LinearCode.Defaults()
 	ev.LinearCode.SetRange(-1.2, 1.2, popSigma) // 1.2 > 1.1 for eye
@@ -144,6 +128,10 @@ func (ev *EmeryEnv) Config(netGPU *gpu.GPU) {
 	v1vision.ComputeGPU = netGPU
 	ev.Motion.Config(ev.MotionImage.Size)
 	ev.Rand.NewRand(ev.RandSeed)
+
+	ev.ActionStarts.Init(20)
+	ev.Actions.Init(1000)
+	ev.Senses.Init(1000)
 
 	ev.CurStates = make(map[string]*tensor.Float32)
 	ev.NextStates = make(map[string]*tensor.Float32)
@@ -229,14 +217,21 @@ func (ev *EmeryEnv) CopyStateToState(next bool, from, to string) {
 
 func (ev *EmeryEnv) Init(run int) {
 	ev.World.Init()
+	ev.CurrentTime = 0
 }
 
-// Step is called to advance the environment state.
+// Step is called to advance the environment state at every msec..
 func (ev *EmeryEnv) Step() bool {
-	// action was already generated.
+	ev.UpdateActions()
 	ev.VisMotion() // compute motion vectors
+	ev.CurrentTime++
 	return true
 }
+
+func (ev *EmeryEnv) UpdateActions() {
+	nas := 
+}
+
 
 // VisMotion updates the visual motion value based on last action.
 func (ev *EmeryEnv) VisMotion() {
@@ -297,26 +292,14 @@ func (ev *EmeryEnv) EyeLateralVelocity() float32 {
 	return eyelv
 }
 
-// Action records the next action and its outcomes.
-// valIn must contain: 0 = body rotation in deg
-// Called at end of minus phase, new values will be used next time.
-// 0- Start --
-// 0+ R0 -> Next
-// 1- R0, R-1 State
-// 1+ R0 -> Cur; R1 -> Next
-// 2- R1, R0 State
-// ...
-func (ev *EmeryEnv) Action(action string, valIn tensor.Values) {
-	a := None
-	errors.Log(a.SetString(action))
-	val := float32(valIn.Float1D(0)) // rotation angle in degrees.
+// ActionStart initiates an action from the environment.
+// This will be updated as things evolve.
+// acts = bitmask of actions, vals = ordinal
+// list of parameters in order of actions.
+func (ev *EmeryEnv) ActionStart(acts Actions, vals ...float32) {
+	a := ev.ActionStarts.Add(ev.CurrentTime).Set(acts, vals)
 
-	ev.LastAct = ev.NextAct
-	ev.NextAct.SetAction(a).SetValue(val)
-
-	ev.CopyNextToCurAll()
-
-	normVal := val / ev.MaxRotate
+	normVal := val / ev.Params.MaxRotate
 
 	ev.RenderValue("VNCAngVel", normVal)
 	ev.RenderValue("ActRotate", normVal)

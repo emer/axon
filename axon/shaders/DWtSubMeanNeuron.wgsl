@@ -677,7 +677,8 @@ fn LayerParams_DWtSubMean(ly: LayerParams, ctx: Context, ri: u32) {
 	}
 	var lni = ri - ly.Indexes.NeurSt;
 	var rn = ly.Indexes.RecvN;
-	for (var pi = u32(0); pi < rn; pi++) {
+	for (var pi = u32(0);
+	 pi < rn; pi++) {
 		var pti = RecvPathIxs[Index1D(TensorStrides[40], u32(ly.Indexes.RecvSt + pi))];
 		let paths=Paths[pti]; PathParams_DWtSubMean(paths, ctx, pti, ri, lni);
 	}
@@ -710,7 +711,8 @@ fn PathParams_DWtSubMean(pt: PathParams, ctx: Context, pti: u32,ri: u32,lni: u32
 	var synst = pt.Indexes.RecvSynSt + PathRecvCon[Index2D(TensorStrides[50], TensorStrides[51], u32(cni), u32(StartOff))];
 	var sumDWt = f32(0);
 	var nnz = 0; // non-zero
-	for (var ci = u32(0); ci < synn; ci++) {
+	for (var ci = u32(0);
+	 ci < synn; ci++) {
 		var syni = RecvSynIxs[Index1D(TensorStrides[60], u32(synst + ci))];
 		var dw = Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(DWt))];
 		if (dw != 0) {
@@ -722,7 +724,8 @@ fn PathParams_DWtSubMean(pt: PathParams, ctx: Context, pti: u32,ri: u32,lni: u32
 		return;
 	}
 	sumDWt /= f32(nnz);
-	for (var ci = u32(0); ci < synn; ci++) {
+	for (var ci = u32(0);
+	 ci < synn; ci++) {
 		var syni = RecvSynIxs[Index1D(TensorStrides[60], u32(synst + ci))];
 		if (Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(DWt))] != 0) {
 			Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(DWt))] += -sm * sumDWt;
@@ -850,18 +853,6 @@ const  Phase: ViewTimes = 5;
 const  Theta: ViewTimes = 6;
 
 //////// import: "math32-fastexp.go"
-
-//////// import: "math32-vector2.go"
-struct Vector2 {
-	X: f32,
-	Y: f32,
-}
-
-//////// import: "math32-vector2i.go"
-struct Vector2i {
-	X: i32,
-	Y: i32,
-}
 
 //////// import: "minmax-avgmax.go"
 const  MaxFloat32: f32 = 3.402823466e+38;
@@ -1052,7 +1043,8 @@ struct NuclearParams {
 }
 fn LayerParams_NuclearDWtNeuron(ly: LayerParams, ctx: Context, ni: u32) {
 	var dbase = f32(0);
-	for (var di = u32(0); di < ly.MaxData; di++) {
+	for (var di = u32(0);
+	 di < ly.MaxData; di++) {
 		if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // non-baseline
 		u32(ni), u32(di), u32(TimePeak))] == 1.0) {
 			continue;

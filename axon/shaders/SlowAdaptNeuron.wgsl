@@ -679,7 +679,8 @@ const  LayerRewPredNeg: LayerVars = 11;
 fn LayerParams_SlowAdaptNeuron(ly: LayerParams, ctx: Context, ri: u32) {
 	var lni = ri - ly.Indexes.NeurSt;
 	var rn = ly.Indexes.RecvN;
-	for (var pi = u32(0); pi < rn; pi++) {
+	for (var pi = u32(0);
+	 pi < rn; pi++) {
 		var pti = RecvPathIxs[Index1D(TensorStrides[40], u32(ly.Indexes.RecvSt + pi))];
 		let paths=Paths[pti]; PathParams_SlowAdapt(paths, ctx, ly, pti, ri, lni);
 	}
@@ -715,7 +716,8 @@ fn PathParams_SWtFromWt(pt: PathParams, ctx: Context, rlay: LayerParams, pti: u3
 	var synst = pt.Indexes.RecvSynSt + PathRecvCon[Index2D(TensorStrides[50], TensorStrides[51], u32(cni), u32(StartOff))];
 	var avgDWt = f32(0);
 	var avgWt = f32(0);
-	for (var ci = u32(0); ci < synn; ci++) {
+	for (var ci = u32(0);
+	 ci < synn; ci++) {
 		var syni = RecvSynIxs[Index1D(TensorStrides[60], u32(synst + ci))];
 		var swt = Synapses[Index2D(TensorStrides[170], TensorStrides[171],
 		u32(syni), u32(SWt))];
@@ -731,7 +733,8 @@ fn PathParams_SWtFromWt(pt: PathParams, ctx: Context, rlay: LayerParams, pti: u3
 	avgWt /= f32(synn);
 	var hiDk = clamp(pt.SWts.Adapt.HiMeanDecay*(avgWt-pt.SWts.Adapt.HiMeanThr), 0.0, pt.SWts.Adapt.HiMeanDecay);
 	avgDWt *= pt.SWts.Adapt.SubMean;
-	for (var ci = u32(0); ci < synn; ci++) {
+	for (var ci = u32(0);
+	 ci < synn; ci++) {
 		var syni = RecvSynIxs[Index1D(TensorStrides[60], u32(synst + ci))];
 		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(SWt))] += lr * (Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(DSWt))] - avgDWt);
 		var swt = Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(SWt))];
@@ -755,7 +758,8 @@ fn PathParams_SynScale(pt: PathParams, ctx: Context, rlay: LayerParams, pti: u32
 	var synn = PathRecvCon[Index2D(TensorStrides[50], TensorStrides[51], u32(cni), u32(Nitems))];
 	var synst = pt.Indexes.RecvSynSt + PathRecvCon[Index2D(TensorStrides[50], TensorStrides[51], u32(cni), u32(StartOff))];
 	var adif = -lr * NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81], u32(ri), u32(AvgDif))];
-	for (var ci = u32(0); ci < synn; ci++) {
+	for (var ci = u32(0);
+	 ci < synn; ci++) {
 		var syni = RecvSynIxs[Index1D(TensorStrides[60], u32(synst + ci))];
 		var lwt = Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(LWt))];
 		var swt = Synapses[Index2D(TensorStrides[170], TensorStrides[171],
@@ -840,7 +844,8 @@ fn SigFun61(w: f32) -> f32 {
 	if (w >= 1) {
 		return f32(1);
 	}
-	var pw = (1 - w) / w;return (1 / (1 + pw*pw*pw*pw*pw*pw));
+	var pw = (1 - w) / w;
+return (1 / (1 + pw*pw*pw*pw*pw*pw));
 }
 fn SigInvFun(w: f32,gain: f32,off: f32) -> f32 {
 	if (w <= 0) {
@@ -857,7 +862,8 @@ fn SigInvFun61(w: f32) -> f32 {
 	if (w >= 1) {
 		return f32(1);
 	}
-	var rval = 1.0 / (1.0 + pow((1.0-w)/w, 1.0/6.0));return rval;
+	var rval = 1.0 / (1.0 + pow((1.0-w)/w, 1.0/6.0));
+return rval;
 }
 struct SWtInitParams {
 	SPct: f32,
@@ -908,7 +914,8 @@ fn SWtParams_LWtFromWt(sp: SWtParams, wt: f32) -> f32 {
 	}return SigInvFun(wte, sp.Adapt.SigGain, f32(f32(1)));
 }
 fn SWtParams_LWtFromWts(sp: SWtParams, wt: f32,swt: f32) -> f32 {
-	var rwt = wt / swt;return SWtParams_LWtFromWt(sp, rwt);
+	var rwt = wt / swt;
+return SWtParams_LWtFromWt(sp, rwt);
 }
 struct LRateParams {
 	Base: f32,
@@ -953,18 +960,6 @@ const  Phase: ViewTimes = 5;
 const  Theta: ViewTimes = 6;
 
 //////// import: "math32-fastexp.go"
-
-//////// import: "math32-vector2.go"
-struct Vector2 {
-	X: f32,
-	Y: f32,
-}
-
-//////// import: "math32-vector2i.go"
-struct Vector2i {
-	X: i32,
-	Y: i32,
-}
 
 //////// import: "minmax-avgmax.go"
 const  MaxFloat32: f32 = 3.402823466e+38;

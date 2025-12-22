@@ -59,7 +59,8 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 fn LayerParams_GatherSpikes(ly: LayerParams, ctx: Context, ni: u32,di: u32) {
 	var lni = ni - ly.Indexes.NeurSt;
 	LayerParams_GatherSpikesInit(ly, ctx, ni, di);
-	for (var pti = u32(0); pti < ly.Indexes.RecvN; pti++) {
+	for (var pti = u32(0);
+	 pti < ly.Indexes.RecvN; pti++) {
 		var npti = RecvPathIxs[Index1D(TensorStrides[40], u32(ly.Indexes.RecvSt + pti))];
 		let pt = Paths[npti];
 		PathParams_GatherSpikes(pt, ctx, ly, ni, di, lni);
@@ -918,18 +919,6 @@ const  Phase: ViewTimes = 5;
 const  Theta: ViewTimes = 6;
 
 //////// import: "math32-fastexp.go"
-
-//////// import: "math32-vector2.go"
-struct Vector2 {
-	X: f32,
-	Y: f32,
-}
-
-//////// import: "math32-vector2i.go"
-struct Vector2i {
-	X: i32,
-	Y: i32,
-}
 
 //////// import: "minmax-avgmax.go"
 const  MaxFloat32: f32 = 3.402823466e+38;

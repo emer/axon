@@ -116,7 +116,7 @@ func (ev *Obj3DSacEnv) Defaults() {
 	ev.ObjVelPop.Max.Set(0.45, 0.45)
 
 	ev.V1c.Defaults()
-	ev.V1c.SplitColor = false // todo: try with split!
+	ev.V1c.SplitColor = true // todo: try with split!
 	ev.V1c.StdLowMed16DegNoDoG()
 
 	ev.Tick.Max = 8 // important: must be sync'd with actual data

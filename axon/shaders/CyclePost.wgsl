@@ -53,7 +53,8 @@ fn LayerParams_CyclePost(ly: LayerParams, ctx: Context, di: u32) {
 	}
 	case DSMatrixLayer: {
 		LayerParams_GatedFromCaPMax(ly, ctx, di);
-		for (var spi = u32(1); spi < ly.Indexes.NPools; spi++) {
+		for (var spi = u32(1);
+		 spi < ly.Indexes.NPools; spi++) {
 			var pi = LayerParams_PoolIndex(ly, spi);
 			LayerParams_CyclePostDSMatrixLayer(ly, ctx, pi, di, i32(spi));
 		}
@@ -62,13 +63,15 @@ fn LayerParams_CyclePost(ly: LayerParams, ctx: Context, di: u32) {
 		LayerParams_CyclePostCeMLayer(ly, ctx, lpi, di);
 	}
 	case VSPatchLayer: {
-		for (var spi = u32(1); spi < ly.Indexes.NPools; spi++) {
+		for (var spi = u32(1);
+		 spi < ly.Indexes.NPools; spi++) {
 			var pi = LayerParams_PoolIndex(ly, spi);
 			LayerParams_CyclePostVSPatchLayer(ly, ctx, pi, di, i32(spi));
 		}
 	}
 	case DSPatchLayer: {
-		for (var spi = u32(1); spi < ly.Indexes.NPools; spi++) {
+		for (var spi = u32(1);
+		 spi < ly.Indexes.NPools; spi++) {
 			var pi = LayerParams_PoolIndex(ly, spi);
 			LayerParams_CyclePostDSPatchLayer(ly, ctx, pi, di, i32(spi));
 		}
@@ -115,7 +118,8 @@ fn LayerParams_LDTSrcLayAct(ly: LayerParams, layIndex: i32, di: u32) -> f32 {
 		return f32(0);
 	}
 	let oly = Layers[u32(layIndex)];
-	var opi = LayerParams_PoolIndex(oly, u32(u32(0)));return PoolAvgMax(AMCaP, AMCycle, Avg, opi, di);
+	var opi = LayerParams_PoolIndex(oly, u32(u32(0)));
+return PoolAvgMax(AMCaP, AMCycle, Avg, opi, di);
 }
 fn LayerParams_CyclePostLDTLayer(ly: LayerParams, ctx: Context, di: u32, srcLay1Act: f32,srcLay2Act: f32,srcLay3Act: f32,srcLay4Act: f32) {
 	var ach = LDTParams_ACh(ly.LDT, ctx, di, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act);
@@ -957,18 +961,6 @@ const  Theta: ViewTimes = 6;
 
 //////// import: "math32-fastexp.go"
 
-//////// import: "math32-vector2.go"
-struct Vector2 {
-	X: f32,
-	Y: f32,
-}
-
-//////// import: "math32-vector2i.go"
-struct Vector2i {
-	X: i32,
-	Y: i32,
-}
-
 //////// import: "minmax-avgmax.go"
 const  MaxFloat32: f32 = 3.402823466e+38;
 const  MinFloat32: f32 = 1.175494351e-38;
@@ -1292,7 +1284,8 @@ fn LayerParams_GatedFromCaPMax(ly: LayerParams, ctx: Context, di: u32) {
 	var lpi = LayerParams_PoolIndex(ly, u32(u32(0)));
 	var thr = ly.Striatum.GateThr;
 	if (ly.Indexes.NPools > 1) {
-		for (var spi = u32(1); spi < ly.Indexes.NPools; spi++) {
+		for (var spi = u32(1);
+		 spi < ly.Indexes.NPools; spi++) {
 			var pi = LayerParams_PoolIndex(ly, spi);
 			var spkavg = PoolAvgMax(AMCaPMax, AMCycle, Avg, pi, di);
 			var gthr = spkavg > thr;
@@ -1453,7 +1446,8 @@ fn LDTParams_Thr(lp: LDTParams, val: f32) -> f32 {
 1);
 }
 fn LDTParams_MaxSrcAct(lp: LDTParams, maxSrcAct: f32,srcLayAct: f32) -> f32 {
-	var act = LDTParams_Thr(lp, srcLayAct);return max(act, maxSrcAct);
+	var act = LDTParams_Thr(lp, srcLayAct);
+return max(act, maxSrcAct);
 }
 fn LDTParams_ACh(lp: LDTParams, ctx: Context, di: u32, srcLay1Act: f32,srcLay2Act: f32,srcLay3Act: f32,srcLay4Act: f32) -> f32 {
 	var maxSrcAct = f32(0);

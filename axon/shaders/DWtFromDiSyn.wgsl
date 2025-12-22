@@ -845,7 +845,8 @@ fn DWtFromDiSyn(syni: u32) { //gosl:kernel
 //////// import: "learn-path.go"
 fn PathParams_DWtFromDi(pt: PathParams, ctx: Context, syni: u32) {
 	var dwt = f32(0);
-	for (var di = u32(0); di < ctx.NData; di++) {
+	for (var di = u32(0);
+	 di < ctx.NData; di++) {
 		dwt += SynapseTracesGet(Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));
 	}
 	Synapses[Index2D(TensorStrides[170], TensorStrides[171],
@@ -972,18 +973,6 @@ const  Phase: ViewTimes = 5;
 const  Theta: ViewTimes = 6;
 
 //////// import: "math32-fastexp.go"
-
-//////// import: "math32-vector2.go"
-struct Vector2 {
-	X: f32,
-	Y: f32,
-}
-
-//////// import: "math32-vector2i.go"
-struct Vector2i {
-	X: i32,
-	Y: i32,
-}
 
 //////// import: "minmax-avgmax.go"
 const  MaxFloat32: f32 = 3.402823466e+38;

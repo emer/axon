@@ -234,15 +234,16 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	rndcut.PCon = 0.1
 	_ = rndcut
 
-	// trn := ss.Envs.ByModeDi(Train, 0).(*Obj3DSacEnv)
+	trn := ss.Envs.ByModeDi(Train, 0).(*Obj3DSacEnv)
+	v1nrows := trn.V1c.Out4Rows()
 
 	sample2 := func(ly *axon.Layer) {
 		ly.SetSampleShape(emer.CenterPoolIndexes(ly, 2), emer.CenterPoolShape(ly, 2))
 	}
 
 	// LIP network
-	v1m := net.AddLayer4D("V1m", axon.InputLayer, 8, 8, 5, 4).AddClass("V1m")
-	v1h := net.AddLayer4D("V1h", axon.InputLayer, 16, 16, 5, 4).AddClass("V1h")
+	v1m := net.AddLayer4D("V1m", axon.InputLayer, 8, 8, v1nrows, 4).AddClass("V1m")
+	v1h := net.AddLayer4D("V1h", axon.InputLayer, 16, 16, v1nrows, 4).AddClass("V1h")
 
 	sample2(v1m)
 	sample2(v1h)

@@ -73,9 +73,12 @@ fn PathParams_InitGBuffs(pt: PathParams, ctx: Context) {
 	var mdel = nix.MaxDelay + 1;
 	var rnn = pt.Indexes.RecvNeurN;
 	var npst = pt.Indexes.NPathNeurSt;
-	for (var ri = u32(0); ri < rnn; ri++) {
-		for (var di = u32(0); di < maxd; di++) {
-			for (var dl = u32(0); dl < mdel; dl++) {
+	for (var ri = u32(0);
+	 ri < rnn; ri++) {
+		for (var di = u32(0);
+		 di < maxd; di++) {
+			for (var dl = u32(0);
+			 dl < mdel; dl++) {
 				PathGBuf[Index3D(TensorStrides[150], TensorStrides[151], TensorStrides[152], u32(npst + ri), u32(di), u32(dl))] = 0;
 			}
 			PathGSyns[Index2D(TensorStrides[160], TensorStrides[161], u32(npst + ri), u32(di))] = 0.0;
@@ -802,18 +805,6 @@ const  Phase: ViewTimes = 5;
 const  Theta: ViewTimes = 6;
 
 //////// import: "math32-fastexp.go"
-
-//////// import: "math32-vector2.go"
-struct Vector2 {
-	X: f32,
-	Y: f32,
-}
-
-//////// import: "math32-vector2i.go"
-struct Vector2i {
-	X: i32,
-	Y: i32,
-}
 
 //////// import: "minmax-avgmax.go"
 const  MaxFloat32: f32 = 3.402823466e+38;

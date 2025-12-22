@@ -680,13 +680,15 @@ fn LayerParams_AvgDifFromTrgAvg(ly: LayerParams, ctx: Context) {
 		sp = u32(1);
 	}
 	var np = ly.Indexes.NPools;
-	for (var spi = sp; spi < np; spi++) {
+	for (var spi = sp;
+	 spi < np; spi++) {
 		var pi = LayerParams_PoolIndex(ly, spi);
 		var nsi = PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolNeurSt))];
 		var nei = PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolNeurEd))];
 		var plavg = f32(0);
 		var nn = 0;
-		for (var lni = nsi; lni < nei; lni++) {
+		for (var lni = nsi;
+		 lni < nei; lni++) {
 			var ni = ly.Indexes.NeurSt + u32(lni);
 			if (NeuronIsOff(ni)) {
 				continue;
@@ -702,7 +704,8 @@ fn LayerParams_AvgDifFromTrgAvg(ly: LayerParams, ctx: Context) {
 			continue;
 		}
 		PoolAvgDifInit(pi, u32(u32(0)));
-		for (var lni = nsi; lni < nei; lni++) {
+		for (var lni = nsi;
+		 lni < nei; lni++) {
 			var ni = ly.Indexes.NeurSt + u32(lni);
 			if (NeuronIsOff(ni)) {
 				continue;
@@ -714,7 +717,8 @@ fn LayerParams_AvgDifFromTrgAvg(ly: LayerParams, ctx: Context) {
 			PoolAvgDifUpdate(pi, u32(u32(0)), abs(adif));
 		}
 		PoolAvgDifCalc(pi, u32(u32(0)));
-		for (var di = u32(1); di < ctx.NData; di++) { // copy to other datas
+		for (var di = u32(1);
+		 di < ctx.NData; di++) { // copy to other datas
 			Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Avg)))] = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(0), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Avg)))];
 			Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Max)))] = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(0), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Max)))];
 		}
@@ -724,7 +728,8 @@ fn LayerParams_AvgDifFromTrgAvg(ly: LayerParams, ctx: Context) {
 		PoolAvgDifInit(lpi, u32(u32(0)));
 		var nsi = PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(lpi), u32(PoolNeurSt))];
 		var nei = PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(lpi), u32(PoolNeurEd))];
-		for (var lni = nsi; lni < nei; lni++) {
+		for (var lni = nsi;
+		 lni < nei; lni++) {
 			var ni = ly.Indexes.NeurSt + u32(lni);
 			if (NeuronIsOff(ni)) {
 				continue;
@@ -732,7 +737,8 @@ fn LayerParams_AvgDifFromTrgAvg(ly: LayerParams, ctx: Context) {
 			PoolAvgDifUpdate(lpi, u32(u32(0)), abs(NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81], u32(ni), u32(AvgDif))]));
 		}
 		PoolAvgDifCalc(lpi, u32(u32(0)));
-		for (var di = u32(1); di < ctx.NData; di++) { // copy to other datas
+		for (var di = u32(1);
+		 di < ctx.NData; di++) { // copy to other datas
 			Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(lpi), u32(di), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Avg)))] = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(lpi), u32(0), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Avg)))];
 			Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(lpi), u32(di), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Max)))] = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(lpi), u32(0), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Max)))];
 		}
@@ -870,18 +876,6 @@ const  Phase: ViewTimes = 5;
 const  Theta: ViewTimes = 6;
 
 //////// import: "math32-fastexp.go"
-
-//////// import: "math32-vector2.go"
-struct Vector2 {
-	X: f32,
-	Y: f32,
-}
-
-//////// import: "math32-vector2i.go"
-struct Vector2i {
-	X: i32,
-	Y: i32,
-}
 
 //////// import: "minmax-avgmax.go"
 const  MaxFloat32: f32 = 3.402823466e+38;

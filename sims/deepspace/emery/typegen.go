@@ -17,6 +17,34 @@ import (
 	"github.com/emer/v1vision/v1std"
 )
 
+var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Actions", IDName: "actions", Doc: "Actions are motor actions as abstracted coordinated plans\nthat unfold over time, at a level above individual muscles."})
+
+var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Action", IDName: "action", Doc: "Action represents an action state.", Fields: []types.Field{{Name: "Time", Doc: "Time is the timestamp (Cycles, ms) for this state."}, {Name: "Actions", Doc: "Actions has the bits of active actions."}, {Name: "Values", Doc: "Values are the action parameters for each action\n(e.g., rotation degrees)."}}})
+
+// SetTime sets the [Action.Time]:
+// Time is the timestamp (Cycles, ms) for this state.
+func (t *Action) SetTime(v int) *Action { t.Time = v; return t }
+
+// SetActions sets the [Action.Actions]:
+// Actions has the bits of active actions.
+func (t *Action) SetActions(v Actions) *Action { t.Actions = v; return t }
+
+// SetValues sets the [Action.Values]:
+// Values are the action parameters for each action
+// (e.g., rotation degrees).
+func (t *Action) SetValues(v ...float32) *Action { t.Values = v; return t }
+
+var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.ActionBuffer", IDName: "action-buffer", Doc: "ActionBuffer is a ring buffer for actions.", Fields: []types.Field{{Name: "States", Doc: "States are the action states."}, {Name: "WriteIndex", Doc: "WriteIndex is the current write index where a new item will be\nwritten (within range of States). Add post-increments."}}})
+
+// SetStates sets the [ActionBuffer.States]:
+// States are the action states.
+func (t *ActionBuffer) SetStates(v ...Action) *ActionBuffer { t.States = v; return t }
+
+// SetWriteIndex sets the [ActionBuffer.WriteIndex]:
+// WriteIndex is the current write index where a new item will be
+// written (within range of States). Add post-increments.
+func (t *ActionBuffer) SetWriteIndex(v int) *ActionBuffer { t.WriteIndex = v; return t }
+
 var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Geom", IDName: "geom", Doc: "Geom is overall geometry of the space", Fields: []types.Field{{Name: "Depth", Doc: "computed total depth, starts at 0 goes deep"}, {Name: "Width", Doc: "computed total width"}, {Name: "Thick", Doc: "thickness of walls, floor"}, {Name: "HalfWidth", Doc: "half width for centering on 0 X"}, {Name: "ObjWidth", Doc: "ObjWidth is the range in width of objects (landmarks)."}, {Name: "ObjHeight", Doc: "ObjHeight is the range in height of objects (landmarks)."}, {Name: "ObjSpace", Doc: "ObjSpace is the range in space between objects (landmarks) in degrees."}}})
 
 // SetDepth sets the [Geom.Depth]:
@@ -46,18 +74,6 @@ func (t *Geom) SetObjHeight(v minmax.F32) *Geom { t.ObjHeight = v; return t }
 // SetObjSpace sets the [Geom.ObjSpace]:
 // ObjSpace is the range in space between objects (landmarks) in degrees.
 func (t *Geom) SetObjSpace(v minmax.F32) *Geom { t.ObjSpace = v; return t }
-
-var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Actions", IDName: "actions", Doc: "Actions is a list of mutually exclusive states\nfor tracing the behavior and internal state of Emery"})
-
-var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Action", IDName: "action", Doc: "Action represents a single action.", Fields: []types.Field{{Name: "Action", Doc: "Action is the action taken"}, {Name: "Value", Doc: "Value is the action parameter (e.g., rotation degrees)"}}})
-
-// SetAction sets the [Action.Action]:
-// Action is the action taken
-func (t *Action) SetAction(v Actions) *Action { t.Action = v; return t }
-
-// SetValue sets the [Action.Value]:
-// Value is the action parameter (e.g., rotation degrees)
-func (t *Action) SetValue(v float32) *Action { t.Value = v; return t }
 
 var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.EmeryEnv", IDName: "emery-env", Doc: "EmeryEnv is the emery rat environment.", Fields: []types.Field{{Name: "Name", Doc: "name of this environment: Train or Test"}, {Name: "LeftEye", Doc: "LeftEye determines whether to process left eye image or not."}, {Name: "AngleCode", Doc: "angle population code values, in normalized units"}, {Name: "LinearCode", Doc: "population code for linear values, -1..1, in normalized units"}, {Name: "Motion", Doc: "Visual motion processing"}, {Name: "MotionImage", Doc: "Image processing for Motion."}, {Name: "UnitsPer", Doc: "UnitsPer is the number of units per localist value."}, {Name: "LinearUnits", Doc: "LinearUnits is the number of units per linear value."}, {Name: "AngleUnits", Doc: "AngleUnits is the number of units per angle value."}, {Name: "Geom", Doc: "Geom is the world geometry."}, {Name: "Emery", Doc: "Emery is the physics body for Emery."}, {Name: "EyeR", Doc: "Right and left eyes of emery"}, {Name: "EyeL", Doc: "Right and left eyes of emery"}, {Name: "EyeRImage", Doc: "captured images"}, {Name: "EyeLImage", Doc: "captured images"}, {Name: "World", Doc: "World is the 3D world, including emery"}, {Name: "Camera", Doc: "offscreen render camera settings"}, {Name: "NextAct", Doc: "NextAct is the next action to be taken."}, {Name: "LastAct", Doc: "LastAct is the last action taken."}, {Name: "CurStates", Doc: "CurStates is the current rendered state tensors."}, {Name: "NextStates", Doc: "NextStates is the next rendered state tensors -- updated from actions."}, {Name: "MaxRotate", Doc: "MaxRotate is maximum rotation angle magnitude per action, in degrees."}, {Name: "Rand", Doc: "Rand is the random number generator for the env.\nAll random calls must use this.\nSet seed here for weight initialization values."}, {Name: "RandSeed", Doc: "random seed"}}})
 
@@ -176,3 +192,30 @@ func (t *GUI) SetEyeRImageDisp(v *core.Image) *GUI { t.EyeRImageDisp = v; return
 // SetEyeLImageDisp sets the [GUI.EyeLImageDisp]:
 // first-person left-eye fovea view
 func (t *GUI) SetEyeLImageDisp(v *core.Image) *GUI { t.EyeLImageDisp = v; return t }
+
+var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Senses", IDName: "senses", Doc: "Senses are sensory inputs that unfold over time.\nCan also use to store abstracted sensory state."})
+
+var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Sense", IDName: "sense", Doc: "Sense represents a sensory state.", Fields: []types.Field{{Name: "Time", Doc: "Time is the timestamp (Cycles, ms) for this state."}, {Name: "Senses", Doc: "Senses has the bits of active senses."}, {Name: "Values", Doc: "Values are the values for each sense."}}})
+
+// SetTime sets the [Sense.Time]:
+// Time is the timestamp (Cycles, ms) for this state.
+func (t *Sense) SetTime(v int) *Sense { t.Time = v; return t }
+
+// SetSenses sets the [Sense.Senses]:
+// Senses has the bits of active senses.
+func (t *Sense) SetSenses(v Senses) *Sense { t.Senses = v; return t }
+
+// SetValues sets the [Sense.Values]:
+// Values are the values for each sense.
+func (t *Sense) SetValues(v ...float32) *Sense { t.Values = v; return t }
+
+var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.SenseBuffer", IDName: "sense-buffer", Doc: "SenseBuffer is a ring buffer for senses.", Fields: []types.Field{{Name: "States", Doc: "States are the action states."}, {Name: "WriteIndex", Doc: "WriteIndex is the current write index where a new item will be\nwritten (within range of States). Add post-increments."}}})
+
+// SetStates sets the [SenseBuffer.States]:
+// States are the action states.
+func (t *SenseBuffer) SetStates(v ...Sense) *SenseBuffer { t.States = v; return t }
+
+// SetWriteIndex sets the [SenseBuffer.WriteIndex]:
+// WriteIndex is the current write index where a new item will be
+// written (within range of States). Add post-increments.
+func (t *SenseBuffer) SetWriteIndex(v int) *SenseBuffer { t.WriteIndex = v; return t }

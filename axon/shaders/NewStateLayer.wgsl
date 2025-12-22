@@ -43,13 +43,15 @@ fn LayerParams_NewStateLayer(ly: LayerParams, ctx: Context) {
 	var actMinusAvg = f32(0);
 	var actPlusAvg = f32(0);
 	var np = u32(ly.Indexes.NPools);
-	for (var di = u32(0); di < ctx.NData; di++) {
+	for (var di = u32(0);
+	 di < ctx.NData; di++) {
 		var lpi = LayerParams_PoolIndex(ly, u32(u32(0)));
 		actMinusAvg += PoolAvgMax(AMAct, AMMinus, Avg, lpi, di);
 		actPlusAvg += PoolAvgMax(AMAct, AMPlus, Avg, lpi, di);
 		LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(ly.Index), u32(di), u32(LayerRT))] = -1.0;
 		LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(ly.Index), u32(di), u32(GatedRT))] = -1.0;
-		for (var spi = u32(0); spi < np; spi++) {
+		for (var spi = u32(0);
+		 spi < np; spi++) {
 			var pi = LayerParams_PoolIndex(ly, spi);
 			LayerParams_NewStatePool(ly, ctx, pi, di); // also calls DecayState on pool
 		}
@@ -57,7 +59,8 @@ fn LayerParams_NewStateLayer(ly: LayerParams, ctx: Context) {
 	var davg = 1 / f32(ctx.NData);
 	actMinusAvg *= davg;
 	actPlusAvg *= davg;
-	for (var di = u32(0); di < ctx.NData; di++) {
+	for (var di = u32(0);
+	 di < ctx.NData; di++) {
 		LayerParams_NewStateLayerActAvg(ly, ctx, di, actMinusAvg, actPlusAvg);
 	}
 }
@@ -849,18 +852,6 @@ const  Phase: ViewTimes = 5;
 const  Theta: ViewTimes = 6;
 
 //////// import: "math32-fastexp.go"
-
-//////// import: "math32-vector2.go"
-struct Vector2 {
-	X: f32,
-	Y: f32,
-}
-
-//////// import: "math32-vector2i.go"
-struct Vector2i {
-	X: i32,
-	Y: i32,
-}
 
 //////// import: "minmax-avgmax.go"
 const  MaxFloat32: f32 = 3.402823466e+38;
