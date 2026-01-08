@@ -7,10 +7,11 @@ package objrec
 import (
 	"fmt"
 	"image"
-	"math/rand"
 
+	"cogentcore.org/core/base/slicesx"
 	"cogentcore.org/core/gpu"
 	"cogentcore.org/core/paint"
+	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/lab/tensor"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/v1vision/v1std"
@@ -18,12 +19,42 @@ import (
 	"github.com/emer/v1vision/vxform"
 )
 
-// LEDEnv generates images of old-school "LED" style "letters" composed of a set of horizontal
-// and vertical elements. All possible such combinations of 3 out of 6 line segments are created.
+// TrialState contains the state for a given trial.
+// Trials are processed data-parallel per Step().
+type TrialState struct {
+	// LED number that was drawn
+	LED int `edit:"-"`
+
+	// current -- prev transforms
+	XForm vxform.XForm
+
+	// DrawImage is the image as drawn by the LED drawer.
+	DrawImage image.Image
+
+	// DrawImageTsr is the image as drawn by the LED drawer.
+	DrawImageTsr tensor.Float32
+
+	// XFormImage is the transformed image, from XForm.
+	XFormImage image.Image
+}
+
+func (st *TrialState) String() string {
+	return fmt.Sprintf("Obj: %02d, %s", st.LED, st.XForm.String())
+}
+
+// LEDEnv generates images of old-school "LED" style "letters"
+// composed of a set of horizontal and vertical elements.
+// All possible such combinations of 3 out of 6 line segments are created.
 type LEDEnv struct {
 
 	// name of this environment
 	Name string
+
+	// NData is the number of steps to process in data-parallel.
+	NData int
+
+	// Trials has NData state per trial for last Step()
+	Trials []TrialState
 
 	// draws LEDs onto image
 	Draw LEDraw
@@ -43,26 +74,21 @@ type LEDEnv struct {
 	// maximum LED number to draw (0-19)
 	MaxLED int `min:"0" max:"19"`
 
-	// current LED number that was drawn
-	CurLED int `edit:"-"`
-
-	// previous LED number that was drawn
-	PrvLED int `edit:"-"`
-
 	// random transform parameters
 	XFormRand vxform.Rand
 
-	// current -- prev transforms
-	XForm vxform.XForm
-
-	// trial is the step counter for items
-	Trial env.Counter `display:"inline"`
-
-	// original image prior to random transforms
-	OrigImg tensor.Float32
-
-	// CurLED one-hot output tensor
+	// CurLED one-hot output tensor, dims: [NData][4][5][NOutPer][1]
 	Output tensor.Float32
+
+	// random number generator for the env -- all random calls must use this
+	Rand randx.SysRand `display:"-"`
+
+	// random seed: set this to control sequence
+	RandSeed int64 `edit:"-"`
+}
+
+func (ev *LEDEnv) Trial(di int) *TrialState {
+	return &ev.Trials[di]
 }
 
 func (ev *LEDEnv) Label() string { return ev.Name }
@@ -70,8 +96,9 @@ func (ev *LEDEnv) Label() string { return ev.Name }
 func (ev *LEDEnv) State(element string) tensor.Values {
 	switch element {
 	case "Image":
-		v1vision.RGBToGrey(paint.RenderToImage(ev.Draw.Paint), &ev.OrigImg, 0, false) // pad for filt, bot zero
-		return &ev.OrigImg
+		// todo:
+		// v1vision.RGBToGrey(paint.RenderToImage(ev.Draw.Paint), &ev.OrigImg, 0, false) // pad for filt, bot zero
+		// return &ev.OrigImg
 	case "V1":
 		return ev.V1c.Output
 	case "Output":
@@ -93,31 +120,35 @@ func (ev *LEDEnv) Defaults() {
 	ev.XFormRand.Rot.Set(-3.6, 3.6)
 }
 
-func (ev *LEDEnv) Config(netGPU *gpu.GPU) {
+func (ev *LEDEnv) Config(ndata int, netGPU *gpu.GPU) {
+	ev.NData = ndata
+	ev.Trials = slicesx.SetLength(ev.Trials, ndata)
 	v1vision.ComputeGPU = netGPU
-	ev.V1c.Config(ev.Image.Size)
-	ev.Output.SetShapeSizes(4, 5, ev.NOutPer, 1)
+	ev.V1c.Config(ndata, ev.Image.Size)
+	ev.Output.SetShapeSizes(ndata, 4, 5, ev.NOutPer, 1)
+	ev.RandSeed = 73
+	if ev.Rand.Rand == nil {
+		ev.Rand.NewRand(ev.RandSeed)
+	} else {
+		ev.Rand.Seed(ev.RandSeed)
+	}
 }
 
 func (ev *LEDEnv) Init(run int) {
 	ev.Draw.Init()
-	ev.Trial.Init()
-	ev.Trial.Cur = -1 // init state -- key so that first Step() = 0
+	ev.RandSeed = int64(73 + run)
+	ev.Rand.Seed(ev.RandSeed)
 }
 
 func (ev *LEDEnv) Step() bool {
-	ev.Trial.Incr()
-	ev.DrawRandLED()
-	ev.FilterImg()
-	// debug only:
-	// v1vision.RGBToGrey(ev.Draw.Image, &ev.OrigImg, 0, false) // pad for filt, bot zero
+	imgs := make([]image.Image, ev.NData)
+	for di := range ev.NData {
+		st := ev.Trial(di)
+		ev.DrawRandLED(di, st)
+		imgs[di] = st.XFormImage
+	}
+	ev.V1c.RunImages(&ev.Image, imgs...)
 	return true
-}
-
-// DoObject renders specific object (LED number)
-func (ev *LEDEnv) DoObject(objno int) {
-	ev.DrawLED(objno)
-	ev.FilterImg()
 }
 
 func (ev *LEDEnv) Action(element string, input tensor.Values) {
@@ -127,25 +158,32 @@ func (ev *LEDEnv) Action(element string, input tensor.Values) {
 // Compile-time check that implements Env interface
 var _ env.Env = (*LEDEnv)(nil)
 
-// String returns the string rep of the LED env state
 func (ev *LEDEnv) String() string {
-	return fmt.Sprintf("Obj: %02d, %s", ev.CurLED, ev.XForm.String())
+	return ev.TrialName(0)
 }
 
-// SetOutput sets the output LED bit
-func (ev *LEDEnv) SetOutput(out int) {
-	ev.Output.SetZeros()
+// TrialName returns the string rep of the LED env state
+func (ev *LEDEnv) TrialName(di int) string {
+	st := ev.Trial(di)
+	return st.String()
+}
+
+// SetOutput sets the output LED bit for given data item
+func (ev *LEDEnv) SetOutput(out, di int) {
+	ot := ev.Output.SubSpace(di).(*tensor.Float32)
+	ot.SetZeros()
 	si := ev.NOutPer * out
 	for i := 0; i < ev.NOutPer; i++ {
-		ev.Output.SetFloat1D(1, si+i)
+		ot.SetFloat1D(1, si+i)
 	}
 }
 
 // OutErr scores the output activity of network, returning the index of
 // item with max overall activity, and 1 if that is error, 0 if correct.
 // also returns a top-two error: if 2nd most active output was correct.
-func (ev *LEDEnv) OutErr(tsr *tensor.Float64, corLED int) (maxi int, err, err2 float64) {
-	nc := ev.Output.Len() / ev.NOutPer
+func (ev *LEDEnv) OutErr(tsr *tensor.Float64, di, corLED int) (maxi int, err, err2 float64) {
+	ot := ev.Output.SubSpace(di).(*tensor.Float32)
+	nc := ot.Len() / ev.NOutPer
 	maxi = 0
 	maxv := 0.0
 	for i := 0; i < nc; i++ {
@@ -187,24 +225,19 @@ func (ev *LEDEnv) OutErr(tsr *tensor.Float64, corLED int) (maxi int, err, err2 f
 }
 
 // DrawRandLED picks a new random LED and draws it
-func (ev *LEDEnv) DrawRandLED() {
+func (ev *LEDEnv) DrawRandLED(di int, st *TrialState) {
 	rng := 1 + ev.MaxLED - ev.MinLED
-	led := ev.MinLED + rand.Intn(rng)
+	led := ev.MinLED + ev.Rand.Intn(rng)
 	ev.DrawLED(led)
+	st.LED = led
+	st.DrawImage = paint.RenderToImage(ev.Draw.Paint)
+	ev.SetOutput(led, di)
+	ev.XFormRand.Gen(&st.XForm, &ev.Rand)
+	st.XFormImage = st.XForm.Image(st.DrawImage)
 }
 
 // DrawLED draw specified LED
 func (ev *LEDEnv) DrawLED(led int) {
 	ev.Draw.Clear()
 	ev.Draw.DrawLED(led)
-	ev.PrvLED = ev.CurLED
-	ev.CurLED = led
-	ev.SetOutput(ev.CurLED)
-}
-
-// FilterImg filters the image from LED
-func (ev *LEDEnv) FilterImg() {
-	ev.XFormRand.Gen(&ev.XForm)
-	img := ev.XForm.Image(paint.RenderToImage(ev.Draw.Paint))
-	ev.V1c.RunImage(&ev.Image, img)
 }

@@ -8,6 +8,7 @@ package axon
 
 import (
 	// "fmt"
+	"cogentcore.org/core/gpu"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/tensor"
 	"github.com/emer/axon/v2/fsfffb"
@@ -1173,6 +1174,25 @@ func (ly *Layer) InitExt() {
 			Exts.Set(-1, int(ly.Params.Indexes.ExtsSt+lni), int(di)) // missing by default
 		}
 	}
+}
+
+// ApplyExtAll applies external input in the form of a tensor.Float32 or 64.
+// Negative values and NaNs are not valid, and will be interpreted as missing inputs.
+// This version applies all NData data parallel inputs at once, with outer dimension
+// equal to NData.
+// If dimensionality of tensor matches that of layer, and is 2D or 4D,
+// then each dimension is iterated separately, so any mismatch preserves
+// dimensional structure.
+// Otherwise, the flat 1D view of the tensor is used.
+// If the layer is a Target or Compare layer type, then it goes in Target
+// otherwise it goes in Ext.
+// Also sets the Exts values on layer, which are used for the GPU version,
+// which requires calling the network ApplyExts() method -- is a no-op for CPU.
+func (ly *Layer) ApplyExtAll(ctx *Context, ext tensor.Values) {
+	gpu.VectorizeFunc(0, int(ctx.NData), func(idx uint32) {
+		ed := ext.SubSpace(int(idx))
+		ly.ApplyExt(idx, ed)
+	})
 }
 
 // ApplyExt applies external input in the form of an tensor.Float32 or 64.

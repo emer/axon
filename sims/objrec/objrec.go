@@ -164,8 +164,7 @@ func (ss *Sim) ConfigEnv() {
 	if ss.Config.Env.Env != nil {
 		reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
 	}
-	trn.Trial.Max = ss.Config.Run.Trials
-	trn.Config(axon.ComputeGPU)
+	trn.Config(ss.Config.Run.NData, axon.ComputeGPU)
 
 	novTrn.Name = NovelTrain.String()
 	novTrn.Defaults()
@@ -175,23 +174,21 @@ func (ss *Sim) ConfigEnv() {
 	if ss.Config.Env.Env != nil {
 		reflectx.SetFieldsFromMap(novTrn, ss.Config.Env.Env)
 	}
-	novTrn.Trial.Max = ss.Config.Run.Trials
 	novTrn.XFormRand.TransX.Set(-0.125, 0.125)
 	novTrn.XFormRand.TransY.Set(-0.125, 0.125)
 	novTrn.XFormRand.Scale.Set(0.775, 0.925) // 1/2 around midpoint
 	novTrn.XFormRand.Rot.Set(-2, 2)
-	novTrn.Config(axon.ComputeGPU)
+	novTrn.Config(ss.Config.Run.NData, axon.ComputeGPU)
 
 	tst.Name = Test.String()
 	tst.Defaults()
 	tst.MinLED = 0
 	tst.MaxLED = 19 // all by default
 	tst.NOutPer = ss.Config.Env.NOutPer
-	tst.Trial.Max = 64 // 0 // 1000 is too long!
 	if ss.Config.Env.Env != nil {
 		reflectx.SetFieldsFromMap(tst, ss.Config.Env.Env)
 	}
-	tst.Config(axon.ComputeGPU)
+	tst.Config(ss.Config.Run.NData, axon.ComputeGPU)
 
 	trn.Init(0)
 	trn.Step() // needs an image to show
@@ -364,22 +361,23 @@ func (ss *Sim) ConfigLoops() {
 // Any other start-of-trial logic can also be put here.
 func (ss *Sim) ApplyInputs(mode Modes) {
 	net := ss.Net
-	ndata := int(net.Context().NData)
+	ctx := net.Context()
+	ndata := int(ctx.NData)
 	curModeDir := ss.Current.Dir(mode.String())
 	ev := ss.Envs.ByMode(mode).(*LEDEnv)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	net.InitExt()
-	for di := range ndata {
-		ev.Step()
-		curModeDir.StringValue("TrialName", ndata).SetString1D(ev.String(), di)
-		curModeDir.Int("Cat", ndata).SetInt1D(ev.CurLED, di)
-		for _, lnm := range lays {
-			ly := ss.Net.LayerByName(lnm)
-			st := ev.State(ly.Name)
-			if st != nil {
-				ly.ApplyExt(uint32(di), st)
-			}
+	ev.Step()
+	for _, lnm := range lays {
+		ly := ss.Net.LayerByName(lnm)
+		st := ev.State(ly.Name)
+		if st != nil {
+			ly.ApplyExtAll(ctx, st)
 		}
+	}
+	for di := range ndata {
+		curModeDir.StringValue("TrialName", ndata).SetString1D(ev.String(), di)
+		curModeDir.Int("Cat", ndata).SetInt1D(ev.Trial(di).LED, di)
 	}
 	net.ApplyExts()
 	ss.UpdateImage()
@@ -388,9 +386,10 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 // NewRun intializes a new Run level of the model.
 func (ss *Sim) NewRun() {
 	ctx := ss.Net.Context()
-	ss.InitRandSeed(ss.Loops.Loop(Train, Run).Counter.Cur)
-	ss.Envs.ByMode(Train).Init(0)
-	ss.Envs.ByMode(Test).Init(0)
+	run := ss.Loops.Loop(Train, Run).Counter.Cur
+	ss.InitRandSeed(run)
+	ss.Envs.ByMode(Train).Init(run)
+	ss.Envs.ByMode(Test).Init(run)
 	ctx.Reset()
 	ss.Net.InitWeights()
 	if ss.Config.Run.StartWeights != "" {
@@ -565,7 +564,7 @@ func (ss *Sim) ConfigStats() {
 					case "Err":
 						out.UnitValuesSampleTensor(ltsr, "ActM", di)
 						cat := curModeDir.Int("Cat", ndata).Int1D(di)
-						rsp, trlErr, trlErr2 := ev.OutErr(ltsr, cat)
+						rsp, trlErr, trlErr2 := ev.OutErr(ltsr, di, cat)
 						curModeDir.Float64("Resp", ndata).SetInt1D(rsp, di)
 						curModeDir.Float64("Err2", ndata).SetFloat1D(trlErr2, di)
 						stat = trlErr

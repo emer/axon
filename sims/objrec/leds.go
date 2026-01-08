@@ -97,8 +97,7 @@ func (ld *LEDraw) DrawLED(num int) {
 	}
 }
 
-//////////////////////////////////////////////////////////////////////////
-//  LED data
+////////  LED data
 
 // LEDSegs are the led segments
 type LEDSegs int32

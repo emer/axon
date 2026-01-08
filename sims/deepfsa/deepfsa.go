@@ -371,10 +371,11 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 // NewRun intializes a new Run level of the model.
 func (ss *Sim) NewRun() {
 	ctx := ss.Net.Context()
-	ss.InitRandSeed(ss.Loops.Loop(Train, Run).Counter.Cur)
+	run := ss.Loops.Loop(Train, Run).Counter.Cur
+	ss.InitRandSeed(run)
 	for di := 0; di < int(ctx.NData); di++ {
-		ss.Envs.ByModeDi(Train, di).Init(0)
-		ss.Envs.ByModeDi(Test, di).Init(0)
+		ss.Envs.ByModeDi(Train, di).Init(run)
+		ss.Envs.ByModeDi(Test, di).Init(run)
 	}
 	ctx.Reset()
 	ss.Net.InitWeights()
