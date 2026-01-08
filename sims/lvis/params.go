@@ -80,7 +80,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.RLRate.SpikeThr = 0.1 // 0.1 def
 				ly.Learn.RLRate.Min = 0.001
 
-				ly.Learn.Timing.On.SetBool(true) // time > trial!
+				ly.Learn.Timing.On.SetBool(false) // time fails after a bit.
 				// ly.Learn.Timing.Refractory.SetBool(true)
 				// ly.Learn.Timing.LearnThr = 0.1
 				// ly.Learn.Timing.SynCaCycles = 160
@@ -123,21 +123,21 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".TEO", Doc: "initial activity",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.03        // .03 1.6.15 SSGi
-				ly.Inhib.ActAvg.Offset = 0.01         // 0.01 > lower, higher; nominal is lower to increase Ge
-				ly.Inhib.ActAvg.AdaptGi.SetBool(true) // was false
-				ly.Inhib.Layer.On.SetBool(false)      // no layer!
-				ly.Inhib.Pool.On.SetBool(true)        // needs pool-level
+				ly.Inhib.ActAvg.Nominal = 0.03         // .03 1.6.15 SSGi
+				ly.Inhib.ActAvg.Offset = 0.01          // 0.01 > lower, higher; nominal is lower to increase Ge
+				ly.Inhib.ActAvg.AdaptGi.SetBool(false) // false
+				ly.Inhib.Layer.On.SetBool(false)       // no layer!
+				ly.Inhib.Pool.On.SetBool(true)         // needs pool-level
 				ly.Inhib.Pool.FB = 4
 				ly.Inhib.Pool.Gi = 1.12 // 1.12 > others for non-adapt
 			}},
 		{Sel: "#TE", Doc: "initial activity",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.03        // .03 1.6.15 SSGi
-				ly.Inhib.ActAvg.Offset = 0.01         // 0.01 > lower, higher; nominal is lower to increase Ge
-				ly.Inhib.ActAvg.AdaptGi.SetBool(true) // was false
-				ly.Inhib.Layer.On.SetBool(false)      // no layer!
-				ly.Inhib.Pool.On.SetBool(true)        // needs pool-level
+				ly.Inhib.ActAvg.Nominal = 0.03         // .03 1.6.15 SSGi
+				ly.Inhib.ActAvg.Offset = 0.01          // 0.01 > lower, higher; nominal is lower to increase Ge
+				ly.Inhib.ActAvg.AdaptGi.SetBool(false) // false
+				ly.Inhib.Layer.On.SetBool(false)       // no layer!
+				ly.Inhib.Pool.On.SetBool(true)         // needs pool-level
 				ly.Inhib.Pool.FB = 4
 				ly.Inhib.Pool.Gi = 1.12 // 1.12 > others for non-adapt
 			}},
