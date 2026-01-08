@@ -47,6 +47,10 @@ type LearnCaParams struct {
 	// into NMDA Ca in [LearnCa].
 	VgccTau float32 `default:"10"`
 
+	// PosBias is a multiplier on [LearnCaP] in computing [CaDiff] that drives learning.
+	// In some rare cases this can be useful in adjusting overall weight dynamics.
+	PosBias float32 `default:"1"`
+
 	// ETraceTau is the time constant for integrating an eligibility trace factor,
 	// which computes an exponential integrator of local neuron-wise error gradients.
 	ETraceTau float32 `default:"4"`
@@ -57,7 +61,7 @@ type LearnCaParams struct {
 	// Where beneficial, 0.1 or so is a useful value.
 	ETraceScale float32
 
-	pad, pad1 float32
+	pad float32
 
 	// Dt are time constants for integrating [LearnCa] across
 	// M, P and D cascading levels.
@@ -80,6 +84,7 @@ func (lc *LearnCaParams) Defaults() {
 	lc.SpikeVGCC.SetBool(true)
 	lc.SpikeVgccCa = 35
 	lc.VgccTau = 10
+	lc.PosBias = 1
 	lc.ETraceTau = 4
 	lc.ETraceScale = 0
 	lc.Dt.Defaults()
@@ -122,7 +127,7 @@ func (lc *LearnCaParams) LearnCas(ctx *Context, ni, di uint32) {
 	Neurons.SetAdd(lc.Dt.MDt*(Neurons.Value(int(ni), int(di), int(LearnCa))-Neurons.Value(int(ni), int(di), int(LearnCaM))), int(ni), int(di), int(LearnCaM))
 	Neurons.SetAdd(lc.Dt.PDt*(Neurons.Value(int(ni), int(di), int(LearnCaM))-Neurons.Value(int(ni), int(di), int(LearnCaP))), int(ni), int(di), int(LearnCaP))
 	Neurons.SetAdd(lc.Dt.DDt*(Neurons.Value(int(ni), int(di), int(LearnCaP))-Neurons.Value(int(ni), int(di), int(LearnCaD))), int(ni), int(di), int(LearnCaD))
-	Neurons.Set(Neurons.Value(int(ni), int(di), int(LearnCaP))-Neurons.Value(int(ni), int(di), int(LearnCaD)), int(ni), int(di), int(CaDiff))
+	Neurons.Set(lc.PosBias*Neurons.Value(int(ni), int(di), int(LearnCaP))-Neurons.Value(int(ni), int(di), int(LearnCaD)), int(ni), int(di), int(CaDiff))
 }
 
 func (lc *LearnCaParams) ETrace(ctx *Context, ni, di uint32, cad float32) {

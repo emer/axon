@@ -80,7 +80,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.RLRate.SpikeThr = 0.1 // 0.1 def
 				ly.Learn.RLRate.Min = 0.001
 
-				ly.Learn.Timing.On.SetBool(false) // time fails after a bit.
+				ly.Learn.Timing.On.SetBool(true) // time fails after a bit.
 				// ly.Learn.Timing.Refractory.SetBool(true)
 				// ly.Learn.Timing.LearnThr = 0.1
 				// ly.Learn.Timing.SynCaCycles = 160
@@ -107,8 +107,9 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Pool.On.SetBool(true)        // needs pool-level
 				ly.Inhib.Layer.FB = 1                 //
 				ly.Inhib.Pool.FB = 4
-				ly.Inhib.Layer.Gi = 1.0 // 1.1?
-				ly.Inhib.Pool.Gi = 1.05 // was 0.95 but gi mult goes up..
+				ly.Inhib.Layer.Gi = 1.0      // 1.1?
+				ly.Inhib.Pool.Gi = 1.05      // was 0.95 but gi mult goes up..
+				ly.Learn.CaLearn.PosBias = 1 // time needs more?
 			}},
 		{Sel: ".V4", Doc: "pool inhib, sparse activity",
 			Set: func(ly *axon.LayerParams) {
@@ -241,7 +242,7 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Init.Mean = 0.4 // .4 here is key!
 				pt.SWts.Limit.Min = 0.1 // .1-.7
 				pt.SWts.Limit.Max = 0.7 //
-				pt.PathScale.Abs = 1.4  // 1.4 > 2.0 for color -- extra boost to get more v2 early on
+				pt.PathScale.Abs = 1.8  // 1.4 > 2.0 for color -- extra boost to get more v2 early on
 			}},
 		{Sel: ".V1V2fmSm", Doc: "weaker",
 			Set: func(pt *axon.PathParams) {

@@ -126,18 +126,16 @@ func (ev *LEDEnv) Config(ndata int, netGPU *gpu.GPU) {
 	v1vision.ComputeGPU = netGPU
 	ev.V1c.Config(ndata, ev.Image.Size)
 	ev.Output.SetShapeSizes(ndata, 4, 5, ev.NOutPer, 1)
-	ev.RandSeed = 73
-	if ev.Rand.Rand == nil {
-		ev.Rand.NewRand(ev.RandSeed)
-	} else {
-		ev.Rand.Seed(ev.RandSeed)
-	}
 }
 
 func (ev *LEDEnv) Init(run int) {
 	ev.Draw.Init()
 	ev.RandSeed = int64(73 + run)
-	ev.Rand.Seed(ev.RandSeed)
+	if ev.Rand.Rand == nil {
+		ev.Rand.NewRand(ev.RandSeed)
+	} else {
+		ev.Rand.Seed(ev.RandSeed)
+	}
 }
 
 func (ev *LEDEnv) Step() bool {
