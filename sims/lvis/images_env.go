@@ -486,7 +486,6 @@ func (ev *ImagesEnv) Step() bool {
 			ev.NewShuffle()
 		}
 		ev.RandTransforms(st)
-		ev.SetOutput(di, st.CatIdx)
 		img, err := ev.OpenImage(st)
 		if err != nil {
 			continue
@@ -494,6 +493,7 @@ func (ev *ImagesEnv) Step() bool {
 		img = ev.TransformImage(st, img)
 		st.Image = img
 		imgs[di] = img
+		ev.SetOutput(di, st.CatIdx)
 	}
 	ev.V1c.RunImages(imgs...)
 	return true
