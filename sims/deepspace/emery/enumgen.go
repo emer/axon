@@ -67,20 +67,20 @@ func (i Actions) MarshalText() ([]byte, error) { return []byte(i.String()), nil 
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *Actions) UnmarshalText(text []byte) error { return enums.UnmarshalText(i, text, "Actions") }
 
-var _SensesValues = []Senses{0, 1, 2, 3, 4}
+var _SensesValues = []Senses{0, 1, 2, 3, 4, 5}
 
 // SensesN is the highest valid value for type Senses, plus one.
 //
 //gosl:start
-const SensesN Senses = 5
+const SensesN Senses = 6
 
 //gosl:end
 
-var _SensesValueMap = map[string]Senses{`LinearAccel`: 0, `LinearVel`: 1, `RotationAccel`: 2, `RotationVel`: 3, `RotationDir`: 4}
+var _SensesValueMap = map[string]Senses{`VSLinearAccel`: 0, `VSLinearVel`: 1, `VSRotHAccel`: 2, `VSRotHVel`: 3, `VSRotHDir`: 4, `VMRotVel`: 5}
 
-var _SensesDescMap = map[Senses]string{0: `LinearAccel is linear acceleration.`, 1: `LinearVel is linear velocity.`, 2: `RotationAccel is rotational acceleration.`, 3: `RotationVel is rotational velocity.`, 4: `RotationDir is abstracted current rotational direction.`}
+var _SensesDescMap = map[Senses]string{0: `VSLinearAccel is vestibular linear acceleration.`, 1: `VSLinearVel is vestibular linear velocity.`, 2: `VSRotHAccel is vestibular rotational acceleration (horiz plane).`, 3: `VSRotHVel is vestibular rotational velocity (horiz plane).`, 4: `VSRotHDir is abstracted current horiz rotational direction (vestibular timing).`, 5: `VMRotVel is full-field visual-motion rotation (horiz plane).`}
 
-var _SensesMap = map[Senses]string{0: `LinearAccel`, 1: `LinearVel`, 2: `RotationAccel`, 3: `RotationVel`, 4: `RotationDir`}
+var _SensesMap = map[Senses]string{0: `VSLinearAccel`, 1: `VSLinearVel`, 2: `VSRotHAccel`, 3: `VSRotHVel`, 4: `VSRotHDir`, 5: `VMRotVel`}
 
 // String returns the string representation of this Senses value.
 func (i Senses) String() string { return enums.BitFlagString(i, _SensesValues) }

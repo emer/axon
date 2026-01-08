@@ -12,8 +12,6 @@ import (
 
 	"cogentcore.org/core/gpu"
 	"cogentcore.org/core/math32"
-	"cogentcore.org/core/xyz/physics"
-	"cogentcore.org/core/xyz/physics/world"
 	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/lab/tensor"
 	"github.com/emer/emergent/v2/env"
@@ -57,21 +55,21 @@ type EmeryEnv struct {
 	// Params are sensory and motor parameters.
 	Params SensoryMotorParams
 
-	// Emery is the physics body for Emery.
-	Emery *physics.Group `display:"-"`
+	// // Emery is the physics body for Emery.
+	// Emery *physics.Group `display:"-"`
 
-	// Right and left eyes of emery
-	EyeR, EyeL physics.Body `display:"-"`
+	// // Right and left eyes of emery
+	// EyeR, EyeL physics.Body `display:"-"`
 
 	// captured images
 	EyeRImage, EyeLImage image.Image `display:"-"`
 
-	// World is the 3D world, including emery
-	World *world.World `display:"no-inline"`
+	// // World is the 3D world, including emery
+	// World *world.World `display:"no-inline"`
 
-	// Camera has offscreen render camera settings
-	Camera world.Camera
-
+	// // Camera has offscreen render camera settings
+	// Camera world.Camera
+	
 	// CurrentTime is the current timestep in msec. Counts up every Step,
 	// 1 per msec (cycle).
 	CurrentTime int

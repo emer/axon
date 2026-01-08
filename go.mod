@@ -3,12 +3,12 @@ module github.com/emer/axon/v2
 go 1.23.4
 
 require (
-	cogentcore.org/core v0.3.13-0.20251130203041-3ceef306c713
-	cogentcore.org/lab v0.1.3-0.20251130204630-53a7c5b47a76
+	cogentcore.org/core v0.3.13
+	cogentcore.org/lab v0.1.3-0.20260106153658-0557c97a5cea
 	github.com/chewxy/math32 v1.10.1
 	github.com/cogentcore/yaegi v0.0.0-20250622201820-b7838bdd95eb
-	github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20251017224053-7004cc176576
-	github.com/emer/v1vision v0.1.1-0.20251208171621-6513e551d731
+	github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20260107180834-a1df5d7febdb
+	github.com/emer/v1vision v0.1.1-0.20260107181240-9654b9fc1665
 	github.com/stretchr/testify v1.10.0
 	gitlab.com/gomidi/midi/v2 v2.0.30
 	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948
