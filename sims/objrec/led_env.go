@@ -169,7 +169,7 @@ func (ev *LEDEnv) TrialName(di int) string {
 }
 
 // SetOutput sets the output LED bit for given data item
-func (ev *LEDEnv) SetOutput(out, di int) {
+func (ev *LEDEnv) SetOutput(di, out int) {
 	ot := ev.Output.SubSpace(di).(*tensor.Float32)
 	ot.SetZeros()
 	si := ev.NOutPer * out
@@ -231,7 +231,7 @@ func (ev *LEDEnv) DrawRandLED(di int, st *TrialState) {
 	ev.DrawLED(led)
 	st.LED = led
 	st.DrawImage = paint.RenderToImage(ev.Draw.Paint)
-	ev.SetOutput(led, di)
+	ev.SetOutput(di, led)
 	ev.XFormRand.Gen(&st.XForm, &ev.Rand)
 	st.XFormImage = st.XForm.Image(st.DrawImage)
 }

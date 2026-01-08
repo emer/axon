@@ -28,6 +28,7 @@ import (
 	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/stats/stats"
+	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensorcore"
 	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/axon/v2/axon"
@@ -171,7 +172,6 @@ func (ss *Sim) ConfigEnv() {
 
 	trn.Name = Train.String()
 	trn.Defaults()
-	trn.RndSeed = 73
 	trn.NOutPer = ss.Config.Env.NOutPer
 	trn.High16 = false // not useful -- may need more tuning?
 	trn.ColorDoG = true
@@ -185,12 +185,10 @@ func (ss *Sim) ConfigEnv() {
 	if ss.Config.Env.Env != nil {
 		reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
 	}
-	trn.Trial.Max = ss.Config.Run.Trials
-	trn.Config(axon.ComputeGPU)
+	trn.Config(ss.Config.Run.NData, axon.ComputeGPU)
 
 	tst.Name = Test.String()
 	tst.Defaults()
-	tst.RndSeed = 73
 	tst.NOutPer = ss.Config.Env.NOutPer
 	tst.High16 = trn.High16
 	tst.ColorDoG = trn.ColorDoG
@@ -205,8 +203,7 @@ func (ss *Sim) ConfigEnv() {
 	if ss.Config.Env.Env != nil {
 		reflectx.SetFieldsFromMap(tst, ss.Config.Env.Env)
 	}
-	tst.Trial.Max = ss.Config.Run.Trials
-	tst.Config(axon.ComputeGPU)
+	tst.Config(ss.Config.Run.NData, axon.ComputeGPU)
 
 	// remove most confusable items
 	confuse := []string{"blade", "flashlight", "pckeyboard", "scissors", "screwdriver", "submarine"}
@@ -675,23 +672,25 @@ func (ss *Sim) ConfigLoops() {
 // Any other start-of-trial logic can also be put here.
 func (ss *Sim) ApplyInputs(mode Modes) {
 	net := ss.Net
-	ndata := int(net.Context().NData)
+	ctx := net.Context()
+	ndata := int(ctx.NData)
 	curModeDir := ss.Current.Dir(mode.String())
 	ev := ss.Envs.ByMode(mode).(*ImagesEnv)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	net.InitExt()
-	for di := range ndata {
-		ev.Step()
-		curModeDir.StringValue("TrialName", ndata).SetString1D(ev.String(), di)
-		curModeDir.StringValue("Cat", ndata).SetString1D(ev.CurCat, di)
-		curModeDir.Int("CatIdx", ndata).SetInt1D(ev.CurCatIdx, di)
-		for _, lnm := range lays {
-			ly := ss.Net.LayerByName(lnm)
-			st := ev.State(ly.Name)
-			if st != nil {
-				ly.ApplyExt(uint32(di), st)
-			}
+	ev.Step()
+	for _, lnm := range lays {
+		ly := ss.Net.LayerByName(lnm)
+		st := ev.State(ly.Name)
+		if st != nil {
+			ly.ApplyExtAll(ctx, st)
 		}
+	}
+	for di := range ndata {
+		st := ev.Trial(di)
+		curModeDir.StringValue("TrialName", ndata).SetString1D(ev.TrialName(di), di)
+		curModeDir.StringValue("Cat", ndata).SetString1D(st.Cat, di)
+		curModeDir.Int("CatIdx", ndata).SetInt1D(st.CatIdx, di)
 	}
 	net.ApplyExts()
 	ss.UpdateImage()
@@ -1012,9 +1011,10 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	ss.StatsInit()
 
 	trn := ss.Envs.ByMode(Train).(*ImagesEnv)
-	img := trn.V1c.Image.Tsr
+	img := trn.V1c.Image.Tsr.SubSpace(0).(*tensor.Float32)
 	tensorcore.AddGridStylerTo(img, func(s *tensorcore.GridStyle) {
 		s.Image = true
+		s.Range.SetMin(0)
 	})
 	ss.GUI.Tabs.TensorGrid("Image", img)
 

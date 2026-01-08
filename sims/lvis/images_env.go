@@ -14,6 +14,7 @@ import (
 	"cogentcore.org/core/base/fsx"
 	"cogentcore.org/core/base/iox/imagex"
 	"cogentcore.org/core/base/iox/jsonx"
+	"cogentcore.org/core/base/slicesx"
 	"cogentcore.org/core/gpu"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
@@ -31,11 +32,46 @@ import (
 	"golang.org/x/image/math/f64"
 )
 
+// TrialState contains the state for a given trial.
+// Trials are processed data-parallel per Step().
+type TrialState struct {
+	// current category
+	Cat string
+
+	// index of current category
+	CatIdx int
+
+	// current image
+	Img string
+
+	// current translation
+	Trans math32.Vector2
+
+	// current scaling
+	Scale float32
+
+	// current rotation
+	Rot float32
+
+	// rendered image as loaded
+	Image image.Image `display:"-"`
+}
+
+func (st *TrialState) String() string {
+	return fmt.Sprintf("%s:%s", st.Cat, st.Img)
+}
+
 // ImagesEnv provides the rendered results of the Obj3D + Saccade generator.
 type ImagesEnv struct {
 
 	// Name of this environment (Train, Test mode).
 	Name string
+
+	// NData is the number of steps to process in data-parallel.
+	NData int
+
+	// Trials has NData state per trial for last Step()
+	Trials []TrialState
 
 	// image file name
 	ImageFile string
@@ -114,35 +150,15 @@ type ImagesEnv struct {
 	// indexes of images to present -- from StRow to EdRow
 	ImgIdxs []int
 
-	// each object trajectory is one trial
-	Trial env.Counter `display:"inline"`
-
 	// Row of item list  -- this is actual counter driving everything
 	Row env.Counter `display:"inline"`
-
-	// current category
-	CurCat string
-
-	// index of current category
-	CurCatIdx int
-
-	// current image
-	CurImg string
-
-	// current translation
-	CurTrans math32.Vector2
-
-	// current scaling
-	CurScale float32
-
-	// current rotation
-	CurRot float32
-
-	// rendered image as loaded
-	Image image.Image `display:"-"`
 }
 
 func (ev *ImagesEnv) Label() string { return ev.Name }
+
+func (ev *ImagesEnv) Trial(di int) *TrialState {
+	return &ev.Trials[di]
+}
 
 func (ev *ImagesEnv) Defaults() {
 	ev.TransSigma = 0
@@ -183,18 +199,20 @@ func (ev *ImagesEnv) MPIAlloc() {
 	// mpi.PrintAllProcs = false
 }
 
-func (ev *ImagesEnv) Config(netGPU *gpu.GPU) {
+func (ev *ImagesEnv) Config(ndata int, netGPU *gpu.GPU) {
+	ev.NData = ndata
 	v1vision.ComputeGPU = netGPU
-	ev.V1c.Config()
+	ev.Trials = slicesx.SetLength(ev.Trials, ndata)
+	ev.V1c.Config(ndata)
 }
 
 func (ev *ImagesEnv) Init(run int) {
+	ev.RndSeed = int64(73 + run)
 	if ev.Rand.Rand == nil {
 		ev.Rand.NewRand(ev.RndSeed)
 	} else {
 		ev.Rand.Seed(ev.RndSeed)
 	}
-	ev.Trial.Init()
 	ev.Row.Cur = -1 // init state -- key so that first Step() = 0
 	nitm := len(ev.ImageList())
 	if ev.EdRow > 0 {
@@ -264,7 +282,7 @@ func (ev *ImagesEnv) ConfigPatsName() {
 // with pools for each sub-pool
 func (ev *ImagesEnv) ConfigPatsLocalistPools() {
 	oshp := []int{ev.OutSize.Y, ev.OutSize.X, ev.NOutPer, 1}
-	ev.Output.SetShapeSizes(oshp...)
+	ev.Output.SetShapeSizes(ev.NData, ev.OutSize.Y, ev.OutSize.X, ev.NOutPer, 1)
 	ev.Pats.AddStringColumn("Name")
 	out := ev.Pats.AddFloat32Column("Output", oshp...)
 	ev.Pats.SetNumRows(ev.MaxOut)
@@ -282,7 +300,7 @@ func (ev *ImagesEnv) ConfigPatsLocalistPools() {
 // as an overall 2D layer -- NOutPer goes along X axis to be contiguous
 func (ev *ImagesEnv) ConfigPatsLocalist2D() {
 	oshp := []int{ev.OutSize.Y, ev.OutSize.X * ev.NOutPer}
-	ev.Output.SetShapeSizes(oshp...)
+	ev.Output.SetShapeSizes(ev.NData, ev.OutSize.Y, ev.OutSize.X*ev.NOutPer)
 	ev.Pats.Init()
 	ev.Pats.AddStringColumn("Name")
 	out := ev.Pats.AddFloat32Column("Output", oshp...)
@@ -328,7 +346,7 @@ func (ev *ImagesEnv) NewShuffle() {
 }
 
 // CurImage returns current image based on row and
-func (ev *ImagesEnv) CurImage() string {
+func (ev *ImagesEnv) CurImage(st *TrialState) string {
 	il := ev.ImageList()
 	sz := len(ev.ImgIdxs)
 	if ev.Row.Cur >= sz {
@@ -344,71 +362,60 @@ func (ev *ImagesEnv) CurImage() string {
 	if !ev.Sequential {
 		i = ev.Shuffle[i]
 	}
-	ev.CurImg = il[i]
-	ev.CurCat = ev.Images.Cat(ev.CurImg)
-	ev.CurCatIdx = ev.Images.CatMap[ev.CurCat]
-	return ev.CurImg
+	st.Img = il[i]
+	st.Cat = ev.Images.Cat(st.Img)
+	st.CatIdx = ev.Images.CatMap[st.Cat]
+	return st.Img
 }
 
 // OpenImage opens current image
-func (ev *ImagesEnv) OpenImage() error {
-	img := ev.CurImage()
-	fnm := filepath.Join(ev.Images.Path, img)
-	var err error
-	ev.Image, _, err = imagex.Open(fnm)
-	return errors.Log(err)
+func (ev *ImagesEnv) OpenImage(st *TrialState) (image.Image, error) {
+	imgNm := ev.CurImage(st)
+	fnm := filepath.Join(ev.Images.Path, imgNm)
+	img, _, err := imagex.Open(fnm)
+	return img, errors.Log(err)
 }
 
 // RandTransforms generates random transforms
-func (ev *ImagesEnv) RandTransforms() {
+func (ev *ImagesEnv) RandTransforms(st *TrialState) {
 	if ev.TransSigma > 0 {
-		ev.CurTrans.X = float32(randx.GaussianGen(0, float64(ev.TransSigma), &ev.Rand))
-		ev.CurTrans.X = math32.Clamp(ev.CurTrans.X, -ev.TransMax.X, ev.TransMax.X)
-		ev.CurTrans.Y = float32(randx.GaussianGen(0, float64(ev.TransSigma), &ev.Rand))
-		ev.CurTrans.Y = math32.Clamp(ev.CurTrans.Y, -ev.TransMax.Y, ev.TransMax.Y)
+		st.Trans.X = float32(randx.GaussianGen(0, float64(ev.TransSigma), &ev.Rand))
+		st.Trans.X = math32.Clamp(st.Trans.X, -ev.TransMax.X, ev.TransMax.X)
+		st.Trans.Y = float32(randx.GaussianGen(0, float64(ev.TransSigma), &ev.Rand))
+		st.Trans.Y = math32.Clamp(st.Trans.Y, -ev.TransMax.Y, ev.TransMax.Y)
 	} else {
-		ev.CurTrans.X = (ev.Rand.Float32()*2 - 1) * ev.TransMax.X
-		ev.CurTrans.Y = (ev.Rand.Float32()*2 - 1) * ev.TransMax.Y
+		st.Trans.X = (ev.Rand.Float32()*2 - 1) * ev.TransMax.X
+		st.Trans.Y = (ev.Rand.Float32()*2 - 1) * ev.TransMax.Y
 	}
-	ev.CurScale = ev.ScaleRange.Min + ev.ScaleRange.Range()*ev.Rand.Float32()
-	ev.CurRot = (ev.Rand.Float32()*2 - 1) * ev.RotateMax
+	st.Scale = ev.ScaleRange.Min + ev.ScaleRange.Range()*ev.Rand.Float32()
+	st.Rot = (ev.Rand.Float32()*2 - 1) * ev.RotateMax
 }
 
 // TransformImage transforms the image according to current translation and scaling
-func (ev *ImagesEnv) TransformImage() {
-	s := math32.FromPoint(ev.Image.Bounds().Size())
+func (ev *ImagesEnv) TransformImage(st *TrialState, img image.Image) image.Image {
+	s := math32.FromPoint(img.Bounds().Size())
 	transformer := draw.BiLinear
-	tx := 0.5 * ev.CurTrans.X * s.X
-	ty := 0.5 * ev.CurTrans.Y * s.Y
-	m := math32.Translate2D(s.X*.5+tx, s.Y*.5+ty).Scale(ev.CurScale, ev.CurScale).Rotate(math32.DegToRad(ev.CurRot)).Translate(-s.X*.5, -s.Y*.5)
+	tx := 0.5 * st.Trans.X * s.X
+	ty := 0.5 * st.Trans.Y * s.Y
+	m := math32.Translate2D(s.X*.5+tx, s.Y*.5+ty).Scale(st.Scale, st.Scale).Rotate(math32.DegToRad(st.Rot)).Translate(-s.X*.5, -s.Y*.5)
 	s2d := f64.Aff3{float64(m.XX), float64(m.XY), float64(m.X0), float64(m.YX), float64(m.YY), float64(m.Y0)}
 
 	// use first color in upper left as fill color
-	clr := ev.Image.At(0, 0)
-	dst := image.NewRGBA(ev.Image.Bounds())
+	clr := img.At(0, 0)
+	dst := image.NewRGBA(img.Bounds())
 	src := image.NewUniform(clr)
 	draw.Draw(dst, dst.Bounds(), src, image.ZP, draw.Src)
 
-	transformer.Transform(dst, s2d, ev.Image, ev.Image.Bounds(), draw.Over, nil) // Over superimposes over bg
-	ev.Image = dst
-}
-
-// FilterImage opens and filters current image
-func (ev *ImagesEnv) FilterImage() error {
-	err := ev.OpenImage()
-	if errors.Log(err) != nil {
-		return err
-	}
-	ev.TransformImage()
-	ev.V1c.RunImage(ev.Image)
-	return nil
+	transformer.Transform(dst, s2d, img, img.Bounds(), draw.Over, nil) // Over superimposes over bg
+	return dst
 }
 
 // SetOutput sets output by category
-func (ev *ImagesEnv) SetOutput(out int) {
-	ev.Output.SetZeros()
-	ot := ev.Pats.Column("Output").SubSpace(out)
-	ev.Output.CopyCellsFrom(ot, 0, 0, ev.Output.Len())
+func (ev *ImagesEnv) SetOutput(di, out int) {
+	ot := ev.Output.SubSpace(di).(*tensor.Float32)
+	ot.SetZeros()
+	otc := ev.Pats.Column("Output").SubSpace(out)
+	ot.CopyCellsFrom(otc, 0, 0, ot.Len())
 }
 
 // FloatIdx32 contains a float32 value and its index
@@ -462,17 +469,33 @@ func (ev *ImagesEnv) OutErr(tsr *tensor.Float64, curCatIdx int) (maxi int, err, 
 }
 
 func (ev *ImagesEnv) String() string {
-	return fmt.Sprintf("%s:%s_%d", ev.CurCat, ev.CurImg, ev.Trial.Cur)
+	return ev.TrialName(0)
+}
+
+// TrialName returns the string rep of the env state
+func (ev *ImagesEnv) TrialName(di int) string {
+	st := ev.Trial(di)
+	return st.String()
 }
 
 func (ev *ImagesEnv) Step() bool {
-	if ev.Row.Incr() {
-		ev.NewShuffle()
+	imgs := make([]image.Image, ev.NData)
+	for di := range ev.NData {
+		st := ev.Trial(di)
+		if ev.Row.Incr() {
+			ev.NewShuffle()
+		}
+		ev.RandTransforms(st)
+		ev.SetOutput(di, st.CatIdx)
+		img, err := ev.OpenImage(st)
+		if err != nil {
+			continue
+		}
+		img = ev.TransformImage(st, img)
+		st.Image = img
+		imgs[di] = img
 	}
-	ev.Trial.Incr()
-	ev.RandTransforms()
-	ev.FilterImage()
-	ev.SetOutput(ev.CurCatIdx)
+	ev.V1c.RunImages(imgs...)
 	return true
 }
 

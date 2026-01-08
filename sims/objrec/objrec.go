@@ -26,6 +26,7 @@ import (
 	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/stats/stats"
+	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensorcore"
 	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/axon/v2/axon"
@@ -376,7 +377,7 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 		}
 	}
 	for di := range ndata {
-		curModeDir.StringValue("TrialName", ndata).SetString1D(ev.String(), di)
+		curModeDir.StringValue("TrialName", ndata).SetString1D(ev.TrialName(di), di)
 		curModeDir.Int("Cat", ndata).SetInt1D(ev.Trial(di).LED, di)
 	}
 	net.ApplyExts()
@@ -480,7 +481,12 @@ func (ss *Sim) StatsInit() {
 		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Run))
 		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Test, Trial))
 		ev := ss.Envs.ByMode(Train).(*LEDEnv)
-		tbs.TensorGrid("Image", ev.Image.Tsr)
+		img := ev.Image.Tsr.SubSpace(0)
+		tensorcore.AddGridStylerTo(img, func(s *tensorcore.GridStyle) {
+			s.Image = true
+			s.Range.SetMin(0)
+		})
+		tbs.TensorGrid("Image", img)
 		tbs.SelectTabIndex(idx)
 	}
 }
@@ -695,9 +701,10 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	ss.StatsInit()
 
 	trn := ss.Envs.ByMode(Train).(*LEDEnv)
-	img := trn.Image.Tsr
+	img := trn.Image.Tsr.SubSpace(0).(*tensor.Float32)
 	tensorcore.AddGridStylerTo(img, func(s *tensorcore.GridStyle) {
 		s.Image = true
+		s.Range.SetMin(0)
 	})
 	ss.GUI.Tabs.TensorGrid("Image", img)
 
