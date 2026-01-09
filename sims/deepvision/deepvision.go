@@ -29,7 +29,7 @@ import (
 	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/stats/metric"
 	"cogentcore.org/lab/stats/stats"
-	"cogentcore.org/lab/table"
+	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensorcore"
 	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/axon/v2/axon"
@@ -156,64 +156,46 @@ func (ss *Sim) ConfigSim() {
 }
 
 func (ss *Sim) ConfigEnv() {
-	// Can be called multiple times -- don't re-create
-	newEnv := (len(ss.Envs) == 0)
 	ndata := ss.Config.Run.NData
-	var objdata *table.Table
-
-	for di := 0; di < ndata; di++ {
-		var trn, tst *Obj3DSacEnv
-		if newEnv {
-			trn = &Obj3DSacEnv{}
-			tst = &Obj3DSacEnv{}
-		} else {
-			trn = ss.Envs.ByModeDi(Train, di).(*Obj3DSacEnv)
-			tst = ss.Envs.ByModeDi(Test, di).(*Obj3DSacEnv)
-		}
-
-		trn.Name = env.ModeDi(Train, di)
-		trn.Defaults()
-		trn.NData = ndata
-		trn.Di = di
-		trn.RandSeed = 73 + int64(di)*73
-		if ss.Config.Env.Env != nil {
-			reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
-		}
-		trn.Config(axon.ComputeGPU)
-		if di == 0 {
-			trn.OpenTable()
-			objdata = trn.Table
-		} else {
-			trn.Table = objdata
-		}
-
-		tst.Name = env.ModeDi(Test, di)
-		tst.Defaults()
-		tst.NData = ndata
-		tst.Di = di
-		tst.RandSeed = 181 + int64(di)*181
-		// tst.Test = true
-		if ss.Config.Env.Env != nil {
-			reflectx.SetFieldsFromMap(tst, ss.Config.Env.Env)
-		}
-		tst.Config(axon.ComputeGPU)
-		tst.Table = objdata
-
-		// if ss.Config.Run.MPI {
-		// 	if ss.Config.Debug {
-		// 		mpi.Printf("Did Env MPIAlloc\n")
-		// 	}
-		// 	trn.MPIAlloc()
-		// 	tst.MPIAlloc()
-		// }
-
-		trn.Init(0)
-		trn.Step() // needs an image
-		trn.Init(0)
-		tst.Init(0)
-
-		ss.Envs.Add(trn, tst)
+	// Can be called multiple times -- don't re-create
+	var trn, tst *Obj3DSacEnv
+	if len(ss.Envs) == 0 {
+		trn = &Obj3DSacEnv{}
+		tst = &Obj3DSacEnv{}
+	} else {
+		trn = ss.Envs.ByMode(Train).(*Obj3DSacEnv)
+		tst = ss.Envs.ByMode(Test).(*Obj3DSacEnv)
 	}
+	trn.Name = Train.String()
+	trn.Defaults()
+	if ss.Config.Env.Env != nil {
+		reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
+	}
+	trn.Config(ndata, axon.ComputeGPU)
+	trn.OpenTable()
+
+	tst.Name = Test.String()
+	tst.Defaults()
+	if ss.Config.Env.Env != nil {
+		reflectx.SetFieldsFromMap(tst, ss.Config.Env.Env)
+	}
+	tst.Config(ndata, axon.ComputeGPU)
+	tst.Table = trn.Table
+
+	// if ss.Config.Run.MPI {
+	// 	if ss.Config.Debug {
+	// 		mpi.Printf("Did Env MPIAlloc\n")
+	// 	}
+	// 	trn.MPIAlloc()
+	// 	tst.MPIAlloc()
+	// }
+
+	trn.Init(0)
+	trn.Step() // needs an image
+	trn.Init(0)
+	tst.Init(0)
+
+	ss.Envs.Add(trn, tst)
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
@@ -234,7 +216,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	rndcut.PCon = 0.1
 	_ = rndcut
 
-	trn := ss.Envs.ByModeDi(Train, 0).(*Obj3DSacEnv)
+	trn := ss.Envs.ByMode(Train).(*Obj3DSacEnv)
 	v1nrows := trn.V1c.Out4Rows()
 
 	sample2 := func(ly *axon.Layer) {
@@ -688,21 +670,21 @@ func (ss *Sim) ConfigLoops() {
 func (ss *Sim) ApplyInputs(mode Modes) {
 	net := ss.Net
 	ctx := ss.Net.Context()
-	ndata := int(net.Context().NData)
+	ndata := int(ctx.NData)
 	curModeDir := ss.Current.Dir(mode.String())
+	ev := ss.Envs.ByMode(mode).(*Obj3DSacEnv)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	net.InitExt()
-	for di := uint32(0); di < ctx.NData; di++ {
-		ev := ss.Envs.ByModeDi(mode, int(di)).(*Obj3DSacEnv)
-		ev.Step()
-		curModeDir.StringValue("TrialName", ndata).SetString1D(ev.String(), int(di))
-		for _, lnm := range lays {
-			ly := ss.Net.LayerByName(lnm)
-			st := ev.State(ly.Name)
-			if st != nil {
-				ly.ApplyExt(uint32(di), st)
-			}
+	ev.Step()
+	for _, lnm := range lays {
+		ly := ss.Net.LayerByName(lnm)
+		st := ev.State(ly.Name)
+		if st != nil {
+			ly.ApplyExtAll(ctx, st)
 		}
+	}
+	for di := uint32(0); di < ctx.NData; di++ {
+		curModeDir.StringValue("TrialName", ndata).SetString1D(ev.TrialName(int(di)), int(di))
 	}
 	net.ApplyExts()
 	ss.UpdateImage()
@@ -713,10 +695,8 @@ func (ss *Sim) NewRun() {
 	ctx := ss.Net.Context()
 	run := ss.Loops.Loop(Train, Run).Counter.Cur
 	ss.InitRandSeed(run)
-	for di := 0; di < int(ctx.NData); di++ {
-		ss.Envs.ByModeDi(Train, di).Init(run)
-		ss.Envs.ByModeDi(Test, di).Init(run)
-	}
+	ss.Envs.ByMode(Train).Init(run)
+	ss.Envs.ByMode(Test).Init(run)
 	ctx.Reset()
 	ss.ApplyParams() // must reapply due to changes @250
 	ss.Net.InitWeights()
@@ -728,10 +708,7 @@ func (ss *Sim) NewRun() {
 
 // TestAll runs through the full set of testing items
 func (ss *Sim) TestAll() {
-	ctx := ss.Net.Context()
-	for di := 0; di < int(ctx.NData); di++ {
-		ss.Envs.ByModeDi(Test, di).Init(0)
-	}
+	ss.Envs.ByMode(Test).Init(0)
 	ss.Loops.ResetAndRun(Test)
 	ss.Loops.Mode = Train // important because this is called from Train Run: go back.
 }
@@ -915,9 +892,9 @@ func (ss *Sim) StatCorSim() func(mode Modes, level Levels, phase StatsPhase) {
 				}
 				switch level {
 				case Trial:
+					ev := ss.Envs.ByMode(mode).(*Obj3DSacEnv)
+					tick := ev.Tick.Cur
 					for di := range ndata {
-						ev := ss.Envs.ByModeDi(mode, di).(*Obj3DSacEnv)
-						tick := ev.Tick.Cur
 						nan := math.NaN()
 						stat := 1.0 - float64(axon.LayerStates.Value(int(li), int(di), int(axon.LayerPhaseDiff)))
 						switch t {
@@ -986,9 +963,9 @@ func (ss *Sim) StatPrevCorSim() func(mode Modes, level Levels, phase StatsPhase)
 						actP := curModeDir.Float64(lnm+"_ActP", ly.GetSampleShape().Sizes...)
 						// note: CaD is sufficiently stable that it is fine to compare with ActM and ActP
 						prev := curModeDir.Float64(lnm+"_CaDPrev", ly.GetSampleShape().Sizes...)
+						ev := ss.Envs.ByMode(mode).(*Obj3DSacEnv)
+						tick := ev.Tick.Cur
 						for di := range ndata {
-							ev := ss.Envs.ByModeDi(mode, di).(*Obj3DSacEnv)
-							tick := ev.Tick.Cur
 							nan := math.NaN()
 							ly.UnitValuesSampleTensor(prev, "CaDPrev", di)
 							prev.SetShapeSizes(prev.Len()) // set to 1D -- inexpensive and faster for computation
@@ -1048,7 +1025,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 		return counters
 	}
 	counters += fmt.Sprintf(" TrialName: %s", curModeDir.StringValue("TrialName").String1D(di))
-	ev := ss.Envs.ByModeDi(mode, di).(*Obj3DSacEnv)
+	ev := ss.Envs.ByMode(mode).(*Obj3DSacEnv)
 	counters += fmt.Sprintf(" Tick: %d", ev.Tick.Cur)
 	if level == Cycle {
 		return counters
@@ -1085,10 +1062,11 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 
 	ss.StatsInit()
 
-	trn := ss.Envs.ByModeDi(Train, 0).(*Obj3DSacEnv)
-	img := trn.V1c.Image.Tsr
+	trn := ss.Envs.ByMode(Train).(*Obj3DSacEnv)
+	img := trn.V1c.Image.Tsr.SubSpace(0).(*tensor.Float32)
 	tensorcore.AddGridStylerTo(img, func(s *tensorcore.GridStyle) {
 		s.Image = true
+		s.Range.SetMin(0)
 	})
 	ss.GUI.Tabs.TensorGrid("Image", img)
 

@@ -133,7 +133,7 @@ type ImagesEnv struct {
 	Rand randx.SysRand `display:"-"`
 
 	// random seed
-	RndSeed int64 `edit"-"`
+	RandSeed int64 `edit"-"`
 
 	// output pattern for current item
 	Output tensor.Float32
@@ -207,11 +207,11 @@ func (ev *ImagesEnv) Config(ndata int, netGPU *gpu.GPU) {
 }
 
 func (ev *ImagesEnv) Init(run int) {
-	ev.RndSeed = int64(73 + run)
+	ev.RandSeed = int64(73 + run)
 	if ev.Rand.Rand == nil {
-		ev.Rand.NewRand(ev.RndSeed)
+		ev.Rand.NewRand(ev.RandSeed)
 	} else {
-		ev.Rand.Seed(ev.RndSeed)
+		ev.Rand.Seed(ev.RandSeed)
 	}
 	ev.Row.Cur = -1 // init state -- key so that first Step() = 0
 	nitm := len(ev.ImageList())

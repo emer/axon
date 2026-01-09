@@ -130,11 +130,11 @@ func (ss *Sim) StatRSA(layers ...string) func(mode Modes, level Levels, phase St
 		ndata := int(net.Context().NData)
 		for li, lnm := range layers {
 			if level == Trial {
+				ev := ss.Envs.ByMode(mode).(*Obj3DSacEnv)
+				tick := ev.Tick.Cur
 				for di := range ndata {
-					ev := ss.Envs.ByModeDi(mode, di).(*Obj3DSacEnv)
-					tick := ev.Tick.Cur
 					if tick == 2 { // using tick 2 for all data
-						ss.rsaTrial(curModeDir, lnm, ev.CurCat, di)
+						ss.rsaTrial(curModeDir, lnm, ev.Trial(di).Cat, di)
 					}
 				}
 				continue // no actual stats at trial level
