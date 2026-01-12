@@ -78,8 +78,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.RLRate.SpikeThr = 0.1 // 0.1 def
 				ly.Learn.RLRate.Min = 0.001
 
-				ly.Learn.Timing.On.SetBool(true) // time > trial!
-				ly.Learn.Timing.Refractory.SetBool(true)
+				ly.Learn.Timing.On.SetBool(false)        // time > trial!
+				ly.Learn.Timing.Refractory.SetBool(true) // ref > not
 				// ly.Learn.Timing.LearnThr = 0.1
 				// ly.Learn.Timing.SynCaCycles = 160
 				// ly.Learn.Timing.Cycles = 170
@@ -313,7 +313,7 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Adapt.HiMeanDecay = 0.0008 // 0.0008 best
 				pt.SWts.Adapt.HiMeanThr = 0.5      // 0.5, 0.0008 goes the distance
 				pt.SWts.Init.SPct = 1              // 1 > 0.5
-				pt.Learn.LRate.Base = 0.001        // 0.001 > 0.005 > higher
+				pt.Learn.LRate.Base = 0.0005       // 0.001 > 0.005 > higher
 				pt.Learn.DWt.SubMean = 1           // 1 > 0 for trgavg weaker
 				pt.Learn.DWt.CaPScale = 1          // Env10: 1
 				pt.Learn.DWt.SynCa20.SetBool(false)

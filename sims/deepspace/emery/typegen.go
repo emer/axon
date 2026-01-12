@@ -6,52 +6,65 @@ import (
 	"image"
 
 	"cogentcore.org/core/core"
+	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/types"
 	"cogentcore.org/core/xyz/xyzcore"
 	"cogentcore.org/lab/base/randx"
+	"cogentcore.org/lab/physics/builder"
+	"cogentcore.org/lab/physics/phyxyz"
 	"cogentcore.org/lab/tensor"
+	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/emergent/v2/popcode"
 	"github.com/emer/v1vision/v1std"
 )
 
-var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Actions", IDName: "actions", Doc: "Actions are motor actions as abstracted coordinated plans\nthat unfold over time, at a level above individual muscles."})
+var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Actions", IDName: "actions", Doc: "Actions are motor actions as abstracted coordinated plans\nthat unfold over time, at a level above individual muscles.\nThey are recorded in data continuously, with 0 meaning no\naction being taken, and non-zero indicating strength of action."})
 
-var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Action", IDName: "action", Doc: "Action represents an action state.", Fields: []types.Field{{Name: "Time", Doc: "Time is the timestamp (Cycles, ms) for this state."}, {Name: "Actions", Doc: "Actions has the bits of active actions."}, {Name: "Values", Doc: "Values are the action parameters for each action\n(e.g., rotation degrees)."}, {Name: "Durations", Doc: "Durations are the number of cycles for the actions (from start),\ncomputed from the Value and the type of action."}}})
+var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Emery", IDName: "emery", Doc: "Emery encapsulates all the emery agent config and physics.", Fields: []types.Field{{Name: "Length", Doc: "full length of emery"}, {Name: "Obj", Doc: "emery object"}, {Name: "XZ", Doc: "PlaneXZ joint for controlling 2D position."}, {Name: "Neck", Doc: "joint for the neck."}, {Name: "EyeR", Doc: "Right eye of emery"}}})
 
-// SetTime sets the [Action.Time]:
-// Time is the timestamp (Cycles, ms) for this state.
-func (t *Action) SetTime(v int) *Action { t.Time = v; return t }
+// SetLength sets the [Emery.Length]:
+// full length of emery
+func (t *Emery) SetLength(v float32) *Emery { t.Length = v; return t }
 
-// SetActions sets the [Action.Actions]:
-// Actions has the bits of active actions.
-func (t *Action) SetActions(v Actions) *Action { t.Actions = v; return t }
+// SetObj sets the [Emery.Obj]:
+// emery object
+func (t *Emery) SetObj(v *builder.Object) *Emery { t.Obj = v; return t }
 
-// SetValues sets the [Action.Values]:
-// Values are the action parameters for each action
-// (e.g., rotation degrees).
-func (t *Action) SetValues(v ...float32) *Action { t.Values = v; return t }
+// SetXZ sets the [Emery.XZ]:
+// PlaneXZ joint for controlling 2D position.
+func (t *Emery) SetXZ(v *builder.Joint) *Emery { t.XZ = v; return t }
 
-// SetDurations sets the [Action.Durations]:
-// Durations are the number of cycles for the actions (from start),
-// computed from the Value and the type of action.
-func (t *Action) SetDurations(v ...int) *Action { t.Durations = v; return t }
+// SetNeck sets the [Emery.Neck]:
+// joint for the neck.
+func (t *Emery) SetNeck(v *builder.Joint) *Emery { t.Neck = v; return t }
 
-var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.ActionBuffer", IDName: "action-buffer", Doc: "ActionBuffer is a ring buffer for actions.", Fields: []types.Field{{Name: "States", Doc: "States are the action states."}, {Name: "WriteIndex", Doc: "WriteIndex is the current write index where a new item will be\nwritten (within range of States). Add post-increments."}}})
+// SetEyeR sets the [Emery.EyeR]:
+// Right eye of emery
+func (t *Emery) SetEyeR(v *builder.Body) *Emery { t.EyeR = v; return t }
 
-// SetStates sets the [ActionBuffer.States]:
-// States are the action states.
-func (t *ActionBuffer) SetStates(v ...Action) *ActionBuffer { t.States = v; return t }
+var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.EmeryState", IDName: "emery-state", Doc: "EmeryState has all the state info for each Emery instance.", Fields: []types.Field{{Name: "SenseValues", Doc: "SenseValues has the current sensory values from physics world."}, {Name: "EyeRImage", Doc: "captured images"}, {Name: "EyeLImage", Doc: "captured images"}}})
 
-// SetWriteIndex sets the [ActionBuffer.WriteIndex]:
-// WriteIndex is the current write index where a new item will be
-// written (within range of States). Add post-increments.
-func (t *ActionBuffer) SetWriteIndex(v int) *ActionBuffer { t.WriteIndex = v; return t }
+// SetSenseValues sets the [EmeryState.SenseValues]:
+// SenseValues has the current sensory values from physics world.
+func (t *EmeryState) SetSenseValues(v [SensesN]float32) *EmeryState { t.SenseValues = v; return t }
 
-var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.EmeryEnv", IDName: "emery-env", Doc: "EmeryEnv is the emery rat environment.", Fields: []types.Field{{Name: "Name", Doc: "name of this environment: Train or Test"}, {Name: "LeftEye", Doc: "LeftEye determines whether to process left eye image or not."}, {Name: "AngleCode", Doc: "angle population code values, in normalized units"}, {Name: "LinearCode", Doc: "population code for linear values, -1..1, in normalized units"}, {Name: "Motion", Doc: "Visual motion processing"}, {Name: "MotionImage", Doc: "Image processing for Motion."}, {Name: "UnitsPer", Doc: "UnitsPer is the number of units per localist value."}, {Name: "LinearUnits", Doc: "LinearUnits is the number of units per linear value."}, {Name: "AngleUnits", Doc: "AngleUnits is the number of units per angle value."}, {Name: "Geom", Doc: "Geom is the world geometry."}, {Name: "Params", Doc: "Params are sensory and motor parameters."}, {Name: "EyeRImage", Doc: "captured images"}, {Name: "EyeLImage", Doc: "captured images"}, {Name: "CurrentTime", Doc: "CurrentTime is the current timestep in msec. Counts up every Step,\n1 per msec (cycle)."}, {Name: "ActionStarts", Doc: "ActionStarts are points when actions have started, via inputs from\nthe network."}, {Name: "Actions", Doc: "Actions are continuously-recorded action states (every cycle)."}, {Name: "Senses", Doc: "Senses are continuously-recorded sensory states (every cycle)."}, {Name: "CurStates", Doc: "CurStates is the current rendered state tensors."}, {Name: "NextStates", Doc: "NextStates is the next rendered state tensors -- updated from actions."}, {Name: "Rand", Doc: "Rand is the random number generator for the env.\nAll random calls must use this.\nSet seed here for weight initialization values."}, {Name: "RandSeed", Doc: "random seed"}}})
+// SetEyeRImage sets the [EmeryState.EyeRImage]:
+// captured images
+func (t *EmeryState) SetEyeRImage(v image.Image) *EmeryState { t.EyeRImage = v; return t }
+
+// SetEyeLImage sets the [EmeryState.EyeLImage]:
+// captured images
+func (t *EmeryState) SetEyeLImage(v image.Image) *EmeryState { t.EyeLImage = v; return t }
+
+var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.EmeryEnv", IDName: "emery-env", Doc: "EmeryEnv is the emery rat environment.", Fields: []types.Field{{Name: "Name", Doc: "name of this environment: Train or Test"}, {Name: "NData", Doc: "NData is number of data-parallel Emery's to run."}, {Name: "LeftEye", Doc: "LeftEye determines whether to process left eye image or not."}, {Name: "AngleCode", Doc: "angle population code values, in normalized units"}, {Name: "LinearCode", Doc: "population code for linear values, -1..1, in normalized units"}, {Name: "Motion", Doc: "Visual motion processing"}, {Name: "MotionImage", Doc: "Image processing for Motion."}, {Name: "UnitsPer", Doc: "UnitsPer is the number of units per localist value."}, {Name: "LinearUnits", Doc: "LinearUnits is the number of units per linear value."}, {Name: "AngleUnits", Doc: "AngleUnits is the number of units per angle value."}, {Name: "World", Doc: "World specifies the physical world parameters."}, {Name: "Emery", Doc: "Emery has the parameters for (the first) Emery."}, {Name: "Params", Doc: "Params are sensory and motor parameters."}, {Name: "Physics", Doc: "The core physics elements: Model, Builder, Scene"}, {Name: "Camera", Doc: "Camera has offscreen render camera settings"}, {Name: "CurrentTime", Doc: "CurrentTime is the current timestep in msec. Counts up every Step,\n1 per msec (cycle)."}, {Name: "SenseData", Doc: "SenseData records the sensory data for each emery agent."}, {Name: "ActionData", Doc: "ActionData records the motor action data for each emery agent."}, {Name: "BufferSize", Doc: "BufferSize is the number of time steps (ms) to retain in the tensorfs\nsensory and motor state buffers."}, {Name: "WriteIndex", Doc: "WriteIndex is the current write index in tensorfs sensory and motor data.\nAdd post-increments."}, {Name: "Emerys", Doc: "Emerys has the state values for each NData emery."}, {Name: "States", Doc: "States is the current rendered state tensors."}, {Name: "Rand", Doc: "Rand is the random number generator for the env.\nAll random calls must use this.\nSet seed here for weight initialization values."}, {Name: "RandSeed", Doc: "random seed"}}})
 
 // SetName sets the [EmeryEnv.Name]:
 // name of this environment: Train or Test
 func (t *EmeryEnv) SetName(v string) *EmeryEnv { t.Name = v; return t }
+
+// SetNData sets the [EmeryEnv.NData]:
+// NData is number of data-parallel Emery's to run.
+func (t *EmeryEnv) SetNData(v int) *EmeryEnv { t.NData = v; return t }
 
 // SetLeftEye sets the [EmeryEnv.LeftEye]:
 // LeftEye determines whether to process left eye image or not.
@@ -85,47 +98,56 @@ func (t *EmeryEnv) SetLinearUnits(v int) *EmeryEnv { t.LinearUnits = v; return t
 // AngleUnits is the number of units per angle value.
 func (t *EmeryEnv) SetAngleUnits(v int) *EmeryEnv { t.AngleUnits = v; return t }
 
-// SetGeom sets the [EmeryEnv.Geom]:
-// Geom is the world geometry.
-func (t *EmeryEnv) SetGeom(v Geom) *EmeryEnv { t.Geom = v; return t }
+// SetWorld sets the [EmeryEnv.World]:
+// World specifies the physical world parameters.
+func (t *EmeryEnv) SetWorld(v World) *EmeryEnv { t.World = v; return t }
+
+// SetEmery sets the [EmeryEnv.Emery]:
+// Emery has the parameters for (the first) Emery.
+func (t *EmeryEnv) SetEmery(v Emery) *EmeryEnv { t.Emery = v; return t }
 
 // SetParams sets the [EmeryEnv.Params]:
 // Params are sensory and motor parameters.
 func (t *EmeryEnv) SetParams(v SensoryMotorParams) *EmeryEnv { t.Params = v; return t }
 
-// SetEyeRImage sets the [EmeryEnv.EyeRImage]:
-// captured images
-func (t *EmeryEnv) SetEyeRImage(v image.Image) *EmeryEnv { t.EyeRImage = v; return t }
+// SetPhysics sets the [EmeryEnv.Physics]:
+// The core physics elements: Model, Builder, Scene
+func (t *EmeryEnv) SetPhysics(v builder.Physics) *EmeryEnv { t.Physics = v; return t }
 
-// SetEyeLImage sets the [EmeryEnv.EyeLImage]:
-// captured images
-func (t *EmeryEnv) SetEyeLImage(v image.Image) *EmeryEnv { t.EyeLImage = v; return t }
+// SetCamera sets the [EmeryEnv.Camera]:
+// Camera has offscreen render camera settings
+func (t *EmeryEnv) SetCamera(v phyxyz.Camera) *EmeryEnv { t.Camera = v; return t }
 
 // SetCurrentTime sets the [EmeryEnv.CurrentTime]:
 // CurrentTime is the current timestep in msec. Counts up every Step,
 // 1 per msec (cycle).
 func (t *EmeryEnv) SetCurrentTime(v int) *EmeryEnv { t.CurrentTime = v; return t }
 
-// SetActionStarts sets the [EmeryEnv.ActionStarts]:
-// ActionStarts are points when actions have started, via inputs from
-// the network.
-func (t *EmeryEnv) SetActionStarts(v ActionBuffer) *EmeryEnv { t.ActionStarts = v; return t }
+// SetSenseData sets the [EmeryEnv.SenseData]:
+// SenseData records the sensory data for each emery agent.
+func (t *EmeryEnv) SetSenseData(v *tensorfs.Node) *EmeryEnv { t.SenseData = v; return t }
 
-// SetActions sets the [EmeryEnv.Actions]:
-// Actions are continuously-recorded action states (every cycle).
-func (t *EmeryEnv) SetActions(v ActionBuffer) *EmeryEnv { t.Actions = v; return t }
+// SetActionData sets the [EmeryEnv.ActionData]:
+// ActionData records the motor action data for each emery agent.
+func (t *EmeryEnv) SetActionData(v *tensorfs.Node) *EmeryEnv { t.ActionData = v; return t }
 
-// SetSenses sets the [EmeryEnv.Senses]:
-// Senses are continuously-recorded sensory states (every cycle).
-func (t *EmeryEnv) SetSenses(v SenseBuffer) *EmeryEnv { t.Senses = v; return t }
+// SetBufferSize sets the [EmeryEnv.BufferSize]:
+// BufferSize is the number of time steps (ms) to retain in the tensorfs
+// sensory and motor state buffers.
+func (t *EmeryEnv) SetBufferSize(v int) *EmeryEnv { t.BufferSize = v; return t }
 
-// SetCurStates sets the [EmeryEnv.CurStates]:
-// CurStates is the current rendered state tensors.
-func (t *EmeryEnv) SetCurStates(v map[string]*tensor.Float32) *EmeryEnv { t.CurStates = v; return t }
+// SetWriteIndex sets the [EmeryEnv.WriteIndex]:
+// WriteIndex is the current write index in tensorfs sensory and motor data.
+// Add post-increments.
+func (t *EmeryEnv) SetWriteIndex(v int) *EmeryEnv { t.WriteIndex = v; return t }
 
-// SetNextStates sets the [EmeryEnv.NextStates]:
-// NextStates is the next rendered state tensors -- updated from actions.
-func (t *EmeryEnv) SetNextStates(v map[string]*tensor.Float32) *EmeryEnv { t.NextStates = v; return t }
+// SetEmerys sets the [EmeryEnv.Emerys]:
+// Emerys has the state values for each NData emery.
+func (t *EmeryEnv) SetEmerys(v ...EmeryState) *EmeryEnv { t.Emerys = v; return t }
+
+// SetStates sets the [EmeryEnv.States]:
+// States is the current rendered state tensors.
+func (t *EmeryEnv) SetStates(v map[string]*tensor.Float32) *EmeryEnv { t.States = v; return t }
 
 // SetRand sets the [EmeryEnv.Rand]:
 // Rand is the random number generator for the env.
@@ -137,11 +159,15 @@ func (t *EmeryEnv) SetRand(v randx.SysRand) *EmeryEnv { t.Rand = v; return t }
 // random seed
 func (t *EmeryEnv) SetRandSeed(v int64) *EmeryEnv { t.RandSeed = v; return t }
 
-var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.GUI", IDName: "gui", Doc: "GUI provides a GUI view onto the EmeryEnv", Fields: []types.Field{{Name: "Env", Doc: "Env is the environment we're viewing"}, {Name: "SceneEditor", Doc: "3D visualization of the Scene"}, {Name: "EyeRImageDisp", Doc: "first-person right-eye full field view"}, {Name: "EyeLImageDisp", Doc: "first-person left-eye fovea view"}}})
+var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.GUI", IDName: "gui", Doc: "GUI provides a GUI view onto the EmeryEnv", Fields: []types.Field{{Name: "Env", Doc: "Env is the environment we're viewing"}, {Name: "Di", Doc: "Di is the data parallel item to view."}, {Name: "SceneEditor", Doc: "3D visualization of the Scene"}, {Name: "EyeRImageDisp", Doc: "first-person right-eye full field view"}, {Name: "EyeLImageDisp", Doc: "first-person left-eye fovea view"}}})
 
 // SetEnv sets the [GUI.Env]:
 // Env is the environment we're viewing
 func (t *GUI) SetEnv(v *EmeryEnv) *GUI { t.Env = v; return t }
+
+// SetDi sets the [GUI.Di]:
+// Di is the data parallel item to view.
+func (t *GUI) SetDi(v int) *GUI { t.Di = v; return t }
 
 // SetSceneEditor sets the [GUI.SceneEditor]:
 // 3D visualization of the Scene
@@ -156,31 +182,6 @@ func (t *GUI) SetEyeRImageDisp(v *core.Image) *GUI { t.EyeRImageDisp = v; return
 func (t *GUI) SetEyeLImageDisp(v *core.Image) *GUI { t.EyeLImageDisp = v; return t }
 
 var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Senses", IDName: "senses", Doc: "Senses are sensory inputs that unfold over time.\nCan also use to store abstracted sensory state."})
-
-var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Sense", IDName: "sense", Doc: "Sense represents a sensory state.", Fields: []types.Field{{Name: "Time", Doc: "Time is the timestamp (Cycles, ms) for this state."}, {Name: "Senses", Doc: "Senses has the bits of active senses."}, {Name: "Values", Doc: "Values are the values for each sense."}}})
-
-// SetTime sets the [Sense.Time]:
-// Time is the timestamp (Cycles, ms) for this state.
-func (t *Sense) SetTime(v int) *Sense { t.Time = v; return t }
-
-// SetSenses sets the [Sense.Senses]:
-// Senses has the bits of active senses.
-func (t *Sense) SetSenses(v Senses) *Sense { t.Senses = v; return t }
-
-// SetValues sets the [Sense.Values]:
-// Values are the values for each sense.
-func (t *Sense) SetValues(v ...float32) *Sense { t.Values = v; return t }
-
-var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.SenseBuffer", IDName: "sense-buffer", Doc: "SenseBuffer is a ring buffer for senses.", Fields: []types.Field{{Name: "States", Doc: "States are the action states."}, {Name: "WriteIndex", Doc: "WriteIndex is the current write index where a new item will be\nwritten (within range of States). Add post-increments."}}})
-
-// SetStates sets the [SenseBuffer.States]:
-// States are the action states.
-func (t *SenseBuffer) SetStates(v ...Sense) *SenseBuffer { t.States = v; return t }
-
-// SetWriteIndex sets the [SenseBuffer.WriteIndex]:
-// WriteIndex is the current write index where a new item will be
-// written (within range of States). Add post-increments.
-func (t *SenseBuffer) SetWriteIndex(v int) *SenseBuffer { t.WriteIndex = v; return t }
 
 var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.SensoryDelays", IDName: "sensory-delays", Doc: "SensoryDelays are delays from motor actions for different sensory modalities.", Fields: []types.Field{{Name: "Vestibular"}, {Name: "Visual"}}})
 
@@ -199,3 +200,33 @@ func (t *SensoryMotorParams) SetMaxRotate(v float32) *SensoryMotorParams { t.Max
 // SetDelays sets the [SensoryMotorParams.Delays]:
 // Delays are sensory delays
 func (t *SensoryMotorParams) SetDelays(v SensoryDelays) *SensoryMotorParams { t.Delays = v; return t }
+
+var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.World", IDName: "world", Doc: "World describes the physics world parameters.", Fields: []types.Field{{Name: "Depth", Doc: "computed total depth, starts at 0 goes deep"}, {Name: "Width", Doc: "computed total width"}, {Name: "Thick", Doc: "thickness of walls"}, {Name: "HalfWidth", Doc: "half width for centering on 0 X"}, {Name: "ObjWidth", Doc: "ObjWidth is the range in width of objects (landmarks)."}, {Name: "ObjHeight", Doc: "ObjHeight is the range in height of objects (landmarks)."}, {Name: "ObjSpace", Doc: "ObjSpace is the range in space between objects (landmarks) in degrees."}}})
+
+// SetDepth sets the [World.Depth]:
+// computed total depth, starts at 0 goes deep
+func (t *World) SetDepth(v float32) *World { t.Depth = v; return t }
+
+// SetWidth sets the [World.Width]:
+// computed total width
+func (t *World) SetWidth(v float32) *World { t.Width = v; return t }
+
+// SetThick sets the [World.Thick]:
+// thickness of walls
+func (t *World) SetThick(v float32) *World { t.Thick = v; return t }
+
+// SetHalfWidth sets the [World.HalfWidth]:
+// half width for centering on 0 X
+func (t *World) SetHalfWidth(v float32) *World { t.HalfWidth = v; return t }
+
+// SetObjWidth sets the [World.ObjWidth]:
+// ObjWidth is the range in width of objects (landmarks).
+func (t *World) SetObjWidth(v minmax.F32) *World { t.ObjWidth = v; return t }
+
+// SetObjHeight sets the [World.ObjHeight]:
+// ObjHeight is the range in height of objects (landmarks).
+func (t *World) SetObjHeight(v minmax.F32) *World { t.ObjHeight = v; return t }
+
+// SetObjSpace sets the [World.ObjSpace]:
+// ObjSpace is the range in space between objects (landmarks) in degrees.
+func (t *World) SetObjSpace(v minmax.F32) *World { t.ObjSpace = v; return t }

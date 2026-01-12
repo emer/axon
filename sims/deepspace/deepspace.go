@@ -8,9 +8,6 @@ package deepspace
 
 //go:generate core generate -add-types -add-funcs -gosl
 
-// TODO: increase decay tau on reg gaba instead of using gaba b.
-// timing of prediction vs. excitation is wrong: sensory should be delayed!!
-
 import (
 	"fmt"
 	"os"
@@ -29,7 +26,6 @@ import (
 	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/stats/metric"
 	"cogentcore.org/lab/stats/stats"
-	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/axon/v2/sims/deepspace/emery"
@@ -146,31 +142,26 @@ func (ss *Sim) ConfigSim() {
 
 func (ss *Sim) ConfigEnv() {
 	// Can be called multiple times -- don't re-create
-	newEnv := (len(ss.Envs) == 0)
-
-	for di := 0; di < ss.Config.Run.NData; di++ {
-		var trn *emery.EmeryEnv
-		if newEnv {
-			trn = &emery.EmeryEnv{}
-		} else {
-			trn = ss.Envs.ByModeDi(Train, di).(*emery.EmeryEnv)
-		}
-
-		// note: names must be standard here!
-		trn.Defaults()
-		trn.Name = env.ModeDi(Train, di)
-		trn.RandSeed = 73 + int64(di)*73
-		trn.UnitsPer = ss.Config.Env.UnitsPer
-		if ss.Config.Env.Env != nil {
-			reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
-		}
-		trn.Config(axon.ComputeGPU)
-
-		trn.Init(0)
-
-		// note: names must be in place when adding
-		ss.Envs.Add(trn)
+	ndata := ss.Config.Run.NData
+	var trn *emery.EmeryEnv
+	if len(ss.Envs) == 0 {
+		trn = &emery.EmeryEnv{}
+	} else {
+		trn = ss.Envs.ByMode(Train).(*emery.EmeryEnv)
 	}
+
+	// note: names must be standard here!
+	trn.Defaults()
+	trn.Name = Train.String()
+	trn.UnitsPer = ss.Config.Env.UnitsPer
+	if ss.Config.Env.Env != nil {
+		reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
+	}
+	trn.Config(ndata, ss.Root.Dir("env"), axon.ComputeGPU)
+	trn.Init(0)
+
+	// note: names must be in place when adding
+	ss.Envs.Add(trn)
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
@@ -181,7 +172,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 	cycles := ss.Config.Run.Cycles()
 
-	ev := ss.Envs.ByModeDi(Train, 0).(*emery.EmeryEnv)
+	ev := ss.Envs.ByMode(Train).(*emery.EmeryEnv)
 
 	full := paths.NewFull()
 	full.SelfCon = true // unclear if this makes a diff for self cons at all
@@ -394,21 +385,21 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 	curModeDir := ss.Current.Dir(mode.String())
 
 	net.InitExt()
-	for di := uint32(0); di < ctx.NData; di++ {
-		ev := ss.Envs.ByModeDi(mode, int(di)).(*emery.EmeryEnv)
-		ev.Step()
-		for _, lnm := range lays {
-			ly := ss.Net.LayerByName(lnm)
-			// if lnm == "EyeL" || lnm == "EyeR" {
-			// 	lnm += "_Lateral"
-			// }
-			pats := ev.State(lnm)
-			if !reflectx.IsNil(reflect.ValueOf(pats)) {
-				ly.ApplyExt(di, pats)
-			} else {
-				fmt.Println("nil pats:", lnm)
-			}
+	ev := ss.Envs.ByMode(mode).(*emery.EmeryEnv)
+	ev.Step()
+	for _, lnm := range lays {
+		ly := ss.Net.LayerByName(lnm)
+		// if lnm == "EyeL" || lnm == "EyeR" {
+		// 	lnm += "_Lateral"
+		// }
+		pats := ev.State(lnm)
+		if !reflectx.IsNil(reflect.ValueOf(pats)) {
+			ly.ApplyExtAll(ctx, pats)
+		} else {
+			fmt.Println("nil pats:", lnm)
 		}
+	}
+	for di := uint32(0); di < ctx.NData; di++ {
 		curModeDir.StringValue("TrialName", ndata).SetString1D(ev.String(), int(di))
 	}
 	ss.Net.ApplyExts()
@@ -422,11 +413,11 @@ func (ss *Sim) TakeAction(net *axon.Network, mode Modes) {
 	ctx := net.Context()
 	// curModeDir := ss.Current.Dir(mode.String())
 	ndata := int(ctx.NData)
+	ev := ss.Envs.ByMode(mode).(*emery.EmeryEnv)
 
 	for di := 0; di < ndata; di++ {
-		ev := ss.Envs.ByModeDi(mode, di).(*emery.EmeryEnv)
-		ang := 2.0 * (ev.Rand.Float32() - 0.5) * ev.MaxRotate
-		ev.Action("Rotate", tensor.NewFloat32FromValues(ang))
+		ang := 2.0 * (ev.Rand.Float32() - 0.5) * ev.Params.MaxRotate
+		ev.Action(di, emery.Rotate, ang)
 	}
 }
 
@@ -435,9 +426,7 @@ func (ss *Sim) NewRun() {
 	ctx := ss.Net.Context()
 	run := ss.Loops.Loop(Train, Run).Counter.Cur
 	ss.InitRandSeed(run)
-	for di := 0; di < int(ctx.NData); di++ {
-		ss.Envs.ByModeDi(Train, di).Init(run)
-	}
+	ss.Envs.ByMode(Train).Init(run)
 	ctx.Reset()
 	ss.Net.InitWeights()
 	if ss.Config.Run.StartWeights != "" { // this is just for testing -- not usually needed
@@ -629,16 +618,16 @@ func (ss *Sim) ConfigStatVis() {
 			switch level {
 			case Trial:
 				for di := range ndata {
-					ev := ss.Envs.ByModeDi(mode, di).(*emery.EmeryEnv)
+					// ev := ss.Envs.ByMode(mode).(*emery.EmeryEnv)
 					var stat float32
-					switch name {
-					case "ActRot":
-						stat = ev.LastActRotationDeg() / ev.MaxRotate
-					case "VisMot":
-						stat = ev.EyeLateralVelocity()
-					case "EmerAng":
-						stat = ev.EmeryAngleDeg()
-					}
+					// switch name {
+					// case "ActRot":
+					// 	stat = ev.LastActRotationDeg() / ev.MaxRotate
+					// case "VisMot":
+					// 	stat = ev.EyeLateralVelocity()
+					// case "EmerAng":
+					// 	stat = ev.EmeryAngleDeg()
+					// }
 					curModeDir.Float64(name, ndata).SetFloat1D(float64(stat), di)
 					tsr.AppendRowFloat(float64(stat))
 				}
@@ -827,7 +816,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 func (ss *Sim) MotionStats() {
 	curModeDir := ss.Current.Dir("Test")
 	dir := curModeDir.Dir("Motion")
-	ev := ss.Envs.ByModeDi(Train, 0).(*emery.EmeryEnv)
+	ev := ss.Envs.ByMode(Train).(*emery.EmeryEnv)
 	n := 500
 	act := dir.Float32("Act", n)
 	vis := dir.Float32("Vis", n)
@@ -846,12 +835,13 @@ func (ss *Sim) MotionStats() {
 		s.Role = plot.Size
 	})
 	for i := range n {
-		rang := 2.0 * (ev.Rand.Float32() - 0.5) * ev.MaxRotate
-		ev.Action("Rotate", tensor.NewFloat32FromValues(rang))
+		_ = i
+		rang := 2.0 * (ev.Rand.Float32() - 0.5) * ev.Params.MaxRotate
+		ev.Action(0, emery.Rotate, rang)
 		ev.Step()
-		act.Set1D(ev.NextActRotationDeg()/ev.MaxRotate, i)
-		vis.Set1D(ev.EyeLateralVelocity(), i)
-		ang.Set1D(ev.EmeryAngleDeg(), i)
+		// act.Set1D(ev.NextActRotationDeg()/ev.MaxRotate, i)
+		// vis.Set1D(ev.EyeLateralVelocity(), i)
+		// ang.Set1D(ev.EmeryAngleDeg(), i)
 		if ss.Config.GUI {
 			ss.EnvGUI.Update()
 		}
@@ -891,9 +881,10 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	ss.ConfigNetView(nv)
 
 	evtab, _ := ss.GUI.Tabs.NewTab("Env")
-	ev := ss.Envs.ByModeDi(etime.Train, 0).(*emery.EmeryEnv)
+	ev := ss.Envs.ByMode(etime.Train).(*emery.EmeryEnv)
 	ss.EnvGUI = &emery.GUI{}
 	ss.EnvGUI.ConfigGUI(ev, evtab)
+	ev.ConfigPhysics(ss.EnvGUI.SceneEditor.SceneXYZ())
 
 	ss.StatsInit()
 

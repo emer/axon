@@ -10,10 +10,15 @@ import (
 	"fmt"
 	"image"
 
+	"cogentcore.org/core/colors"
 	"cogentcore.org/core/gpu"
-	"cogentcore.org/core/math32"
+	"cogentcore.org/core/xyz"
 	"cogentcore.org/lab/base/randx"
+	"cogentcore.org/lab/physics"
+	"cogentcore.org/lab/physics/builder"
+	"cogentcore.org/lab/physics/phyxyz"
 	"cogentcore.org/lab/tensor"
+	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/popcode"
 	"github.com/emer/v1vision/v1std"
@@ -25,8 +30,18 @@ type EmeryEnv struct {
 	// name of this environment: Train or Test
 	Name string
 
+	// NData is number of data-parallel Emery's to run.
+	NData int
+
 	// LeftEye determines whether to process left eye image or not.
 	LeftEye bool
+
+	// Number of model steps per env Step. This is on top of the
+	// physics SubSteps.
+	ModelSteps int
+
+	// ActionStiff is the stiffness for performing actions.
+	ActionStiff float32
 
 	// angle population code values, in normalized units
 	AngleCode popcode.Ring
@@ -49,46 +64,44 @@ type EmeryEnv struct {
 	// AngleUnits is the number of units per angle value.
 	AngleUnits int
 
-	// Geom is the world geometry.
-	Geom Geom
+	// World specifies the physical world parameters.
+	World World
+
+	// Emery has the parameters for (the first) Emery.
+	Emery Emery
 
 	// Params are sensory and motor parameters.
 	Params SensoryMotorParams
 
-	// // Emery is the physics body for Emery.
-	// Emery *physics.Group `display:"-"`
+	// The core physics elements: Model, Builder, Scene
+	Physics builder.Physics
 
-	// // Right and left eyes of emery
-	// EyeR, EyeL physics.Body `display:"-"`
+	// Camera has offscreen render camera settings
+	Camera phyxyz.Camera
 
-	// captured images
-	EyeRImage, EyeLImage image.Image `display:"-"`
-
-	// // World is the 3D world, including emery
-	// World *world.World `display:"no-inline"`
-
-	// // Camera has offscreen render camera settings
-	// Camera world.Camera
-	
 	// CurrentTime is the current timestep in msec. Counts up every Step,
 	// 1 per msec (cycle).
 	CurrentTime int
 
-	// ActionStarts are points when actions have started, via inputs from
-	// the network.
-	ActionStarts ActionBuffer
+	// SenseData records the sensory data for each emery agent.
+	SenseData *tensorfs.Node
 
-	// Actions are continuously-recorded action states (every cycle).
-	Actions ActionBuffer
+	// ActionData records the motor action data for each emery agent.
+	ActionData *tensorfs.Node
 
-	// Senses are continuously-recorded sensory states (every cycle).
-	Senses SenseBuffer
+	// BufferSize is the number of time steps (ms) to retain in the tensorfs
+	// sensory and motor state buffers.
+	BufferSize int `default:"4000" edit:"-"`
 
-	// CurStates is the current rendered state tensors.
-	CurStates map[string]*tensor.Float32
+	// WriteIndex is the current write index in tensorfs sensory and motor data.
+	// Add post-increments.
+	WriteIndex int `edit:"-"`
 
-	// NextStates is the next rendered state tensors -- updated from actions.
-	NextStates map[string]*tensor.Float32
+	// Emerys has the state values for each NData emery.
+	Emerys []EmeryState
+
+	// States is the current rendered state tensors.
+	States map[string]*tensor.Float32
 
 	// Rand is the random number generator for the env.
 	// All random calls must use this.
@@ -101,13 +114,18 @@ type EmeryEnv struct {
 
 func (ev *EmeryEnv) Label() string { return ev.Name }
 
+func (ev *EmeryEnv) EmeryState(di int) *EmeryState { return &ev.Emerys[di] }
+
 func (ev *EmeryEnv) Defaults() {
 	ev.LeftEye = false
-	ev.Geom.Defaults()
+	ev.Emery.Defaults()
+	ev.World.Defaults()
 	ev.Params.Defaults()
 	ev.UnitsPer = 4
 	ev.LinearUnits = 12 // 12 > 16 for both
 	ev.AngleUnits = 16
+	ev.ModelSteps = 1
+	ev.ActionStiff = 1000
 	popSigma := float32(0.2) // .15 > .2 for vnc, but opposite for eye
 	ev.LinearCode.Defaults()
 	ev.LinearCode.SetRange(-1.2, 1.2, popSigma) // 1.2 > 1.1 for eye
@@ -119,205 +137,162 @@ func (ev *EmeryEnv) Defaults() {
 	ev.Motion.Defaults()
 	ev.Motion.SetSize(8, 2)
 	ev.MotionImage.Size = ev.Camera.Size
+	ev.BufferSize = 4000
 }
 
 // Config configures the environment
-func (ev *EmeryEnv) Config(netGPU *gpu.GPU) {
+func (ev *EmeryEnv) Config(ndata int, dataNode *tensorfs.Node, netGPU *gpu.GPU) {
+	ev.NData = ndata
 	v1vision.ComputeGPU = netGPU
-	ev.Motion.Config(ev.MotionImage.Size)
-	ev.Rand.NewRand(ev.RandSeed)
+	ev.Motion.Config(ndata, ev.MotionImage.Size)
 
-	ev.ActionStarts.Init(20)
-	ev.Actions.Init(1000)
-	ev.Senses.Init(1000)
+	ev.Emerys = make([]EmeryState, ndata)
 
-	ev.CurStates = make(map[string]*tensor.Float32)
-	ev.NextStates = make(map[string]*tensor.Float32)
+	ev.SenseData = dataNode.Dir("Senses")
+	ev.ActionData = dataNode.Dir("Actions")
+
+	ev.States = make(map[string]*tensor.Float32)
 
 	// No extension = rate code, Pop = population code version for cortex
 	// rate code has up and down versions, with redundancy
-	ev.NextStates["ActRotate"] = tensor.NewFloat32(ev.UnitsPer, 2) // motor command
-	ev.NextStates["VNCAngVel"] = tensor.NewFloat32(ev.UnitsPer, 2) // vestib
-	ev.NextStates["EyeR"] = tensor.NewFloat32(ev.UnitsPer, 2)      // eye motion bump
-	ev.NextStates["EyeL"] = tensor.NewFloat32(ev.UnitsPer, 2)      // eye motion bump
 
-	ev.NextStates["ActRotatePop"] = tensor.NewFloat32(ev.UnitsPer, ev.LinearUnits) // motor command
-	ev.NextStates["VNCAngVelPop"] = tensor.NewFloat32(ev.UnitsPer, ev.LinearUnits) // vestib
-	ev.NextStates["EyeRPop"] = tensor.NewFloat32(ev.UnitsPer, ev.LinearUnits)      // eye motion bump
-	ev.NextStates["EyeLPop"] = tensor.NewFloat32(ev.UnitsPer, ev.LinearUnits)      // eye motion bump
-	ev.CopyStateToState(true, "ActRotate", "ActRotatePrev")
-	ev.CopyStateToState(true, "ActRotatePop", "ActRotatePrevPop")
+	ev.States["EyeR"] = tensor.NewFloat32(ndata, ev.UnitsPer, 2) // eye motion bump
 
-	filters := []string{"Full"}
-	for _, flt := range filters {
-		ev.NextStates["EyeR_"+flt] = tensor.NewFloat32(2, 2)
-		ev.NextStates["EyeL_"+flt] = tensor.NewFloat32(2, 2)
+	// todo: cue this off of actions and senses
+	ev.States["ActRotate"] = tensor.NewFloat32(ndata, ev.UnitsPer, 2) // motor command
+	ev.States["VNCAngVel"] = tensor.NewFloat32(ndata, ev.UnitsPer, 2) // vestib
+
+	ev.States["ActRotatePop"] = tensor.NewFloat32(ndata, ev.UnitsPer, ev.LinearUnits) // motor command
+	ev.States["VNCAngVelPop"] = tensor.NewFloat32(ndata, ev.UnitsPer, ev.LinearUnits) // vestib
+	ev.States["EyeRPop"] = tensor.NewFloat32(ndata, ev.UnitsPer, ev.LinearUnits)      // eye motion bump
+	ev.States["EyeLPop"] = tensor.NewFloat32(ndata, ev.UnitsPer, ev.LinearUnits)      // eye motion bump
+}
+
+func (ev *EmeryEnv) Init(run int) {
+	ev.RandSeed = int64(73 + run)
+	if ev.Rand.Rand == nil {
+		ev.Rand.NewRand(ev.RandSeed)
+	} else {
+		ev.Rand.Seed(ev.RandSeed)
 	}
+	if ev.Physics.Model != nil {
+		ev.Physics.InitState()
+	}
+	ev.CurrentTime = 0
+	ev.WriteIndex = 0
+}
 
-	ev.CopyNextToCurAll()
+func (ev *EmeryEnv) ConfigPhysics(sc *xyz.Scene) {
+	ev.Physics.Model = physics.NewModel()
+	ev.Physics.Builder = builder.NewBuilder()
+	ev.Physics.Model.GPU = false // todo: true, set GPU
 
+	sc.Background = colors.Scheme.Select.Container
+	xyz.NewAmbient(sc, "ambient", 0.3, xyz.DirectSun)
+
+	dir := xyz.NewDirectional(sc, "dir", 1, xyz.DirectSun)
+	dir.Pos.Set(0, 2, 1) // default: 0,1,1 = above and behind us (we are at 0,0,X)
+
+	ev.Physics.Scene = phyxyz.NewScene(sc)
+
+	wl := ev.Physics.Builder.NewGlobalWorld()
+	ev.World.Make(wl, ev.Physics.Scene, ev)
+
+	ew := ev.Physics.Builder.NewWorld()
+	ev.Emery.Make(ew, ev.Physics.Scene, ev)
+	ev.Physics.Builder.ReplicateWorld(ev.Physics.Scene, 1, 1, ev.NData)
+	ev.Physics.Build()
+}
+
+func (ev *EmeryEnv) StepPhysics() {
+	for range ev.ModelSteps {
+		ev.Physics.Step(1)
+	}
+}
+
+// ConfigNoGUI runs the model without a GUI, for background / server mode.
+func (ev *EmeryEnv) ConfigNoGUI() {
 	gp, dev, err := gpu.NoDisplayGPU()
 	if err != nil {
 		panic(err)
 	}
-	sc := world.NoDisplayScene(gp, dev)
-	pw := ev.MakePhysicsWorld()
-	ev.MakeWorld(sc, pw)
+	sc := phyxyz.NoDisplayScene(gp, dev)
+	ev.ConfigPhysics(sc)
+}
+
+// WriteIncr increments the WriteIndex, after writing current row.
+// Wraps around at BufferSize.
+func (ev *EmeryEnv) WriteIncr() {
+	ev.WriteIndex++
+	if ev.WriteIndex >= ev.BufferSize {
+		ev.WriteIndex = 0
+	}
+}
+
+// PriorIndex returns index into tensorfs data relative to the
+// current WriteIndex, for n steps (ms) prior states,
+// where 0 = last-added data, and e.g., 40 = 40 msec (steps) prior.
+// Does the necessary wrapping.
+func (ev *EmeryEnv) PriorIndex(nPrior int) int {
+	ix := ev.WriteIndex - nPrior
+	for ix < 0 {
+		ix += ev.BufferSize
+	}
+	return ix
+}
+
+// WriteData writes sensory / action data to given tensorfs dir, for given
+// di data parallel index, state name, and value. Writes to WriteIndex.
+func (ev *EmeryEnv) WriteData(dir *tensorfs.Node, di int, name string, val float32) {
+	dinm := fmt.Sprintf("%02d", di)
+	dd := dir.Dir(dinm)
+	dd.Float32(name, ev.BufferSize).SetFloat1D(float64(val), ev.WriteIndex)
+	// fmt.Println("write:", ev.WriteIndex, name, val)
+}
+
+// ReadData reads sensory / action data from given tensorfs dir, for given
+// di data parallel index, state name, and time prior offset (PriorIndex).
+func (ev *EmeryEnv) ReadData(dir *tensorfs.Node, di int, name string, nPrior int) float32 {
+	dinm := fmt.Sprintf("%02d", di)
+	dd := dir.Dir(dinm)
+	pidx := ev.PriorIndex(nPrior)
+	val := float32(dd.Float32(name, ev.BufferSize).Float1D(pidx))
+	// fmt.Println("read:", pidx, name, val)
+	return val
 }
 
 func (ev *EmeryEnv) State(element string) tensor.Values {
-	return ev.CurStates[element]
+	return ev.States[element]
 }
 
 // String returns the current state as a string
 func (ev *EmeryEnv) String() string {
-	if ev.Emery == nil {
-		return "nil"
-	}
-	ps := &ev.Emery.Rel
-	ang := math32.RadToDeg(ps.Quat.ToAxisAngle().W)
-	return fmt.Sprintf("Pos_%g_%g_Ang_%g_Act_%s", ps.Pos.X, ps.Pos.Y, ang, ev.LastAct.String())
+	// return fmt.Sprintf("Pos_%g_%g_Ang_%g_Act_%s", ps.Pos.X, ps.Pos.Y, ang, ev.LastAct.String())
+	return "todo"
 }
 
-// CopyNextToCurAll copy next state to current state.
-func (ev *EmeryEnv) CopyNextToCurAll() {
-	for k := range ev.NextStates {
-		ev.CopyNextToCur(k)
-	}
-}
-
-// CopyNextToCur copy next state to current state for specific state
-func (ev *EmeryEnv) CopyNextToCur(state string) {
-	ns := ev.NextStates[state]
-	cs, ok := ev.CurStates[state]
-	if !ok {
-		ev.CurStates[state] = ns.Clone().(*tensor.Float32)
-	} else {
-		cs.CopyFrom(ns)
-	}
-}
-
-// CopyStateToState copy one state to another. If next,
-// do it in NextStates, else CurStates.
-func (ev *EmeryEnv) CopyStateToState(next bool, from, to string) {
-	st := ev.CurStates
-	if next {
-		st = ev.NextStates
-	}
-	fs := st[from]
-	ts, ok := st[to]
-	if !ok {
-		st[to] = fs.Clone().(*tensor.Float32)
-	} else {
-		ts.CopyFrom(fs)
-	}
-}
-
-func (ev *EmeryEnv) Init(run int) {
-	ev.World.Init()
-	ev.CurrentTime = 0
-}
-
-// Step is called to advance the environment state at every msec..
+// Step is called to advance the environment state at every cycle.
+// Actions set after the prior step are taken first.
 func (ev *EmeryEnv) Step() bool {
-	ev.UpdateActions()
-	ev.VisMotion() // compute motion vectors
+	ev.TakeActions()
+	ev.StepPhysics()
+	ev.GetSenses()
 	ev.CurrentTime++
+	ev.WriteIncr()
+	ev.PersistActions()
 	return true
-}
-
-func (ev *EmeryEnv) UpdateActions() {
-	nas := 
-}
-
-
-// VisMotion updates the visual motion value based on last action.
-func (ev *EmeryEnv) VisMotion() {
-	pw := ev.World.World
-	a := ev.NextAct.Action
-	nframes := 16
-	val := ev.NextAct.Value / float32(nframes)
-	for range nframes {
-		switch a {
-		case Rotate:
-			ev.Emery.Rel.RotateOnAxis(0, 1, 0, val) // val in deg
-		case Forward:
-		case None:
-		}
-
-		pw.Update()
-		pw.WorldRelToAbs()
-		ev.World.Update()
-		ev.GrabEyeImg()
-		// new image location
-		ev.FilterImage("EyeR", ev.EyeRImage)
-		if ev.LeftEye {
-			ev.FilterImage("EyeL", ev.EyeLImage)
-		}
-	}
-	eyes := []string{"EyeR"}
-	if ev.LeftEye {
-		eyes = append(eyes, "EyeL")
-	}
-
-	for _, eye := range eyes {
-		full := ev.NextStates[eye+"_Full"]
-		eyelv := full.Value1D(1) - full.Value1D(0)
-		ev.RenderValue(eye, eyelv)
-	}
-}
-
-// EmeryAngleDeg returns the current lateral-plane rotation of Emery.
-func (ev *EmeryEnv) EmeryAngleDeg() float32 {
-	return math32.RadToDeg(ev.Emery.Rel.Quat.ToAxisAngle().W)
-}
-
-// NextActRotationDeg returns the rotation degrees from the next action.
-func (ev *EmeryEnv) NextActRotationDeg() float32 {
-	return ev.NextAct.Value
-}
-
-// LastActRotationDeg returns the rotation degrees from the last action.
-func (ev *EmeryEnv) LastActRotationDeg() float32 {
-	return ev.LastAct.Value
-}
-
-// EyeLateralVelocity returns the lateral velocity (-1..+1) computed
-// from the right eye.
-func (ev *EmeryEnv) EyeLateralVelocity() float32 {
-	full := ev.NextStates["EyeR_Full"]
-	eyelv := full.Value1D(1) - full.Value1D(0)
-	return eyelv
-}
-
-// ActionStart initiates an action from the environment.
-// This will be updated as things evolve.
-// acts = bitmask of actions, vals = ordinal
-// list of parameters in order of actions.
-func (ev *EmeryEnv) ActionStart(acts Actions, vals ...float32) {
-	a := ev.ActionStarts.Add(ev.CurrentTime).Set(acts, vals)
-
-	normVal := val / ev.Params.MaxRotate
-
-	ev.RenderValue("VNCAngVel", normVal)
-	ev.RenderValue("ActRotate", normVal)
-
-	ev.CopyStateToState(false, "ActRotate", "ActRotatePrev")
-	ev.CopyStateToState(false, "ActRotatePop", "ActRotatePrevPop")
-	ev.CopyNextToCur("ActRotate")    // action needs to be current
-	ev.CopyNextToCur("ActRotatePop") // action needs to be current
 }
 
 // RenderValue renders rate code and population-code state,
 // as normalized 0-1 value.
-func (ev *EmeryEnv) RenderValue(snm string, val float32) {
-	ev.RenderRate(snm, val)
-	ev.RenderLinear(snm+"Pop", val)
+func (ev *EmeryEnv) RenderValue(di int, snm string, val float32) {
+	ev.RenderRate(di, snm, val)
+	ev.RenderLinear(di, snm+"Pop", val)
 }
 
 // RenderRate renders rate code state, as normalized 0-1 value
 // as both 0-1 and 1-0 coded value across X axis.
-func (ev *EmeryEnv) RenderRate(snm string, val float32) {
+func (ev *EmeryEnv) RenderRate(di int, snm string, val float32) {
 	minVal := float32(0.1)
 	minScale := 1.0 - minVal
 	var nv, pv float32
@@ -327,41 +302,31 @@ func (ev *EmeryEnv) RenderRate(snm string, val float32) {
 		pv = val
 	}
 	df := float32(0.9)
-	vs := ev.NextStates[snm]
+	vs := ev.States[snm]
 	for i := range ev.UnitsPer {
-		vs.Set(minVal+minScale*nv, i, 0)
-		vs.Set(minVal+minScale*pv, i, 1)
+		vs.Set(minVal+minScale*nv, di, i, 0)
+		vs.Set(minVal+minScale*pv, di, i, 1)
 		nv *= df // discount so values are different across units
 		pv *= df
 	}
 }
 
 // RenderLinear renders linear state.
-func (ev *EmeryEnv) RenderLinear(snm string, val float32) {
-	vs := ev.NextStates[snm]
+func (ev *EmeryEnv) RenderLinear(di int, snm string, val float32) {
+	vs := ev.States[snm]
 	for i := range ev.UnitsPer {
-		sv := vs.SubSpace(i).(*tensor.Float32)
+		sv := vs.SubSpace(di, i).(*tensor.Float32)
 		ev.LinearCode.Encode(&sv.Values, val, ev.LinearUnits, popcode.Set)
 	}
 }
 
 // RenderAngle renders angle state.
-func (ev *EmeryEnv) RenderAngle(snm string, val float32) {
-	vs := ev.NextStates[snm]
+func (ev *EmeryEnv) RenderAngle(di int, snm string, val float32) {
+	vs := ev.States[snm]
 	for i := range ev.UnitsPer {
-		sv := vs.SubSpace(i).(*tensor.Float32)
+		sv := vs.SubSpace(di, i).(*tensor.Float32)
 		ev.AngleCode.Encode(&sv.Values, val, ev.AngleUnits)
 	}
-}
-
-// FilterImage does vision filtering on image, storing to given state name.
-func (ev *EmeryEnv) FilterImage(snm string, img image.Image) {
-	if img == nil {
-		return
-	}
-	full := ev.NextStates[snm+"_Full"]
-	ev.Motion.RunImage(&ev.MotionImage, img)
-	full.CopyFrom(&ev.Motion.FullField)
 }
 
 // Compile-time check that implements Env interface

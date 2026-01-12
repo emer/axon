@@ -4,11 +4,9 @@
 
 package emery
 
-import "fmt"
-
 // Senses are sensory inputs that unfold over time.
 // Can also use to store abstracted sensory state.
-type Senses int64 //enums:bitflag
+type Senses int32 //enums:enum
 
 const (
 	// VSLinearAccel is vestibular linear acceleration.
@@ -30,74 +28,29 @@ const (
 	VMRotVel
 )
 
-// Sense represents a sensory state.
-type Sense struct {
-	// Time is the timestamp (Cycles, ms) for this state.
-	Time int
-
-	// Senses has the bits of active senses.
-	Senses Senses
-
-	// Values are the values for each sense.
-	Values []float32
-}
-
-// Init initializes state for given timestamp (ms).
-func (a *Sense) Init(ms int) {
-	a.Time = ms
-	a.Senses = 0
-	a.Time = 0
-	a.Values = make([]float32, SensesN)
-}
-
-func (a *Sense) String() string {
-	s := fmt.Sprintf("t:%d", a.Time)
-	for ai := range a.Senses {
-		if a.Senses.HasFlag(ai) {
-			s += fmt.Sprintf(" %s_%g", ai.String(), a.Values[ai])
+// GetSenses records sensses
+func (ev *EmeryEnv) GetSenses() {
+	ev.Emery.Obj.RunSensors()
+	for di := range ev.NData {
+		es := ev.EmeryState(di)
+		for sense := range SensesN {
+			val := es.SenseValues[sense]
+			ev.WriteData(ev.SenseData, di, sense.String(), val)
 		}
 	}
-	return s
+	ev.VisMotion()
 }
 
-// SenseBuffer is a ring buffer for senses.
-type SenseBuffer struct {
-	// States are the action states.
-	States []Sense
-
-	// WriteIndex is the current write index where a new item will be
-	// written (within range of States). Add post-increments.
-	WriteIndex int
-}
-
-func (ab *SenseBuffer) Init(n int) {
-	ab.States = make([]Sense, n)
-	ab.WriteIndex = 0
-	for i := range n {
-		a := &ab.States[i]
-		a.Init(0)
+// VisMotion updates the visual motion value based on last action.
+func (ev *EmeryEnv) VisMotion() {
+	eyesk := ev.Emery.EyeR.Skin
+	imgs := ev.Physics.Scene.RenderFrom(eyesk, &ev.Camera)
+	ev.Motion.RunImages(&ev.MotionImage, imgs...)
+	full := ev.Motion.FullField
+	for di := range ev.NData {
+		es := ev.EmeryState(di)
+		es.EyeRImage = imgs[di]
+		eyelv := full.Value(di, 0, 1) - full.Value(di, 0, 0)
+		ev.RenderValue(di, "EyeR", eyelv)
 	}
-}
-
-// Add adds a new action at given time stamp (ms).
-// Returns pointer to an existing state per ring buffer logic.
-func (ab *SenseBuffer) Add(ms int) *Sense {
-	a := &ab.States[ab.WriteIndex]
-	a.Init(ms)
-	ab.WriteIndex++
-	if ab.WriteIndex >= len(ab.States) {
-		ab.WriteIndex = 0
-	}
-	return a
-}
-
-// Prior returns action state that is given number of items
-// prior to the last-added item. 0 = last-added item.
-func (ab *SenseBuffer) Prior(nPrior int) *Sense {
-	n := len(ab.States)
-	ix := (ab.WriteIndex - 1) - nPrior
-	for ix < 0 {
-		ix += n
-	}
-	return &ab.States[ix]
 }

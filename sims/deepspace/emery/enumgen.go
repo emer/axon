@@ -22,22 +22,12 @@ var _ActionsDescMap = map[Actions]string{0: ``, 1: ``}
 var _ActionsMap = map[Actions]string{0: `Forward`, 1: `Rotate`}
 
 // String returns the string representation of this Actions value.
-func (i Actions) String() string { return enums.BitFlagString(i, _ActionsValues) }
-
-// BitIndexString returns the string representation of this Actions value
-// if it is a bit index value (typically an enum constant), and
-// not an actual bit flag value.
-func (i Actions) BitIndexString() string { return enums.String(i, _ActionsMap) }
+func (i Actions) String() string { return enums.String(i, _ActionsMap) }
 
 // SetString sets the Actions value from its string representation,
 // and returns an error if the string is invalid.
-func (i *Actions) SetString(s string) error { *i = 0; return i.SetStringOr(s) }
-
-// SetStringOr sets the Actions value from its string representation
-// while preserving any bit flags already set, and returns an
-// error if the string is invalid.
-func (i *Actions) SetStringOr(s string) error {
-	return enums.SetStringOr(i, s, _ActionsValueMap, "Actions")
+func (i *Actions) SetString(s string) error {
+	return enums.SetString(i, s, _ActionsValueMap, "Actions")
 }
 
 // Int64 returns the Actions value as an int64.
@@ -54,12 +44,6 @@ func ActionsValues() []Actions { return _ActionsValues }
 
 // Values returns all possible values for the type Actions.
 func (i Actions) Values() []enums.Enum { return enums.Values(_ActionsValues) }
-
-// HasFlag returns whether these bit flags have the given bit flag set.
-func (i *Actions) HasFlag(f enums.BitFlag) bool { return enums.HasFlag((*int64)(i), f) }
-
-// SetFlag sets the value of the given flags in these flags to the given value.
-func (i *Actions) SetFlag(on bool, f ...enums.BitFlag) { enums.SetFlag((*int64)(i), on, f...) }
 
 // MarshalText implements the [encoding.TextMarshaler] interface.
 func (i Actions) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
@@ -83,23 +67,11 @@ var _SensesDescMap = map[Senses]string{0: `VSLinearAccel is vestibular linear ac
 var _SensesMap = map[Senses]string{0: `VSLinearAccel`, 1: `VSLinearVel`, 2: `VSRotHAccel`, 3: `VSRotHVel`, 4: `VSRotHDir`, 5: `VMRotVel`}
 
 // String returns the string representation of this Senses value.
-func (i Senses) String() string { return enums.BitFlagString(i, _SensesValues) }
-
-// BitIndexString returns the string representation of this Senses value
-// if it is a bit index value (typically an enum constant), and
-// not an actual bit flag value.
-func (i Senses) BitIndexString() string { return enums.String(i, _SensesMap) }
+func (i Senses) String() string { return enums.String(i, _SensesMap) }
 
 // SetString sets the Senses value from its string representation,
 // and returns an error if the string is invalid.
-func (i *Senses) SetString(s string) error { *i = 0; return i.SetStringOr(s) }
-
-// SetStringOr sets the Senses value from its string representation
-// while preserving any bit flags already set, and returns an
-// error if the string is invalid.
-func (i *Senses) SetStringOr(s string) error {
-	return enums.SetStringOr(i, s, _SensesValueMap, "Senses")
-}
+func (i *Senses) SetString(s string) error { return enums.SetString(i, s, _SensesValueMap, "Senses") }
 
 // Int64 returns the Senses value as an int64.
 func (i Senses) Int64() int64 { return int64(i) }
@@ -115,12 +87,6 @@ func SensesValues() []Senses { return _SensesValues }
 
 // Values returns all possible values for the type Senses.
 func (i Senses) Values() []enums.Enum { return enums.Values(_SensesValues) }
-
-// HasFlag returns whether these bit flags have the given bit flag set.
-func (i *Senses) HasFlag(f enums.BitFlag) bool { return enums.HasFlag((*int64)(i), f) }
-
-// SetFlag sets the value of the given flags in these flags to the given value.
-func (i *Senses) SetFlag(on bool, f ...enums.BitFlag) { enums.SetFlag((*int64)(i), on, f...) }
 
 // MarshalText implements the [encoding.TextMarshaler] interface.
 func (i Senses) MarshalText() ([]byte, error) { return []byte(i.String()), nil }

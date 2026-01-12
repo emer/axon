@@ -159,7 +159,7 @@ func (vw *GUI) ConfigGUI(ev *Env, b core.Widget) {
 	vw.SceneEditor = xyzcore.NewSceneEditor(split)
 	vw.SceneEditor.UpdateWidget()
 	sc := vw.SceneEditor.SceneXYZ()
-	vw.MakeModel(sc)
+	vw.ConfigPhysics(sc)
 
 	sc.Camera.Pose.Pos = math32.Vec3(0, 29, -4)
 	sc.Camera.LookAt(math32.Vec3(0, 4, -5), math32.Vec3(0, 1, 0))
@@ -214,8 +214,8 @@ func (vw *GUI) MakeToolbar(p *tree.Plan) {
 	})
 }
 
-// MakeModel makes the physics Model
-func (vw *GUI) MakeModel(sc *xyz.Scene) {
+// ConfigPhysics makes the physics Model
+func (vw *GUI) ConfigPhysics(sc *xyz.Scene) {
 	vw.Physics.Model = physics.NewModel()
 	vw.Physics.Builder = builder.NewBuilder()
 	vw.Physics.Model.GPU = false

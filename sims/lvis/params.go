@@ -109,7 +109,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Pool.FB = 4
 				ly.Inhib.Layer.Gi = 1.0        // 1.1?
 				ly.Inhib.Pool.Gi = 1.05        // was 0.95 but gi mult goes up..
-				ly.Learn.CaLearn.PosBias = 1.1 // time needs more?
+				ly.Learn.CaLearn.PosBias = 1.1 // time: 1.1 > others
 			}},
 		{Sel: ".V4", Doc: "pool inhib, sparse activity",
 			Set: func(ly *axon.LayerParams) {

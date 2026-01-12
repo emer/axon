@@ -22,6 +22,9 @@ type GUI struct {
 	// Env is the environment we're viewing
 	Env *EmeryEnv
 
+	// Di is the data parallel item to view.
+	Di int
+
 	// 3D visualization of the Scene
 	SceneEditor *xyzcore.SceneEditor
 
@@ -67,7 +70,7 @@ func (ge *GUI) ConfigGUI(ev *EmeryEnv, b core.Widget) {
 	ge.EyeRImageDisp.Image = image.NewRGBA(image.Rectangle{Max: ev.Camera.Size})
 
 	// re-use existing scene!
-	ge.SceneEditor = xyzcore.NewSceneEditorForScene(fr, ev.World.Scene)
+	ge.SceneEditor = xyzcore.NewSceneEditor(fr)
 	ge.SceneEditor.UpdateWidget()
 	sc := ge.SceneEditor.SceneXYZ()
 
@@ -86,12 +89,13 @@ func (ge *GUI) Update() {
 		return
 	}
 	ev := ge.Env
-	if ev.EyeRImage != nil {
-		ge.EyeRImageDisp.SetImage(ev.EyeRImage)
+	es := ev.EmeryState(ge.Di)
+	if es.EyeRImage != nil {
+		ge.EyeRImageDisp.SetImage(es.EyeRImage)
 		ge.EyeRImageDisp.NeedsRender()
 	}
-	if ev.EyeLImage != nil {
-		ge.EyeLImageDisp.SetImage(ev.EyeLImage)
+	if es.EyeLImage != nil {
+		ge.EyeLImageDisp.SetImage(es.EyeLImage)
 		ge.EyeLImageDisp.NeedsRender()
 	}
 	ge.SceneEditor.NeedsRender()
