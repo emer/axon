@@ -52,5 +52,6 @@ func (ev *EmeryEnv) VisMotion() {
 		es.EyeRImage = imgs[di]
 		eyelv := full.Value(di, 0, 1) - full.Value(di, 0, 0)
 		ev.RenderValue(di, "EyeR", eyelv)
+		ev.SetSenseValue(di, VMRotVel, eyelv)
 	}
 }

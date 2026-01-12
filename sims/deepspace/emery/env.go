@@ -187,6 +187,11 @@ func (ev *EmeryEnv) ConfigPhysics(sc *xyz.Scene) {
 	ev.Physics.Builder = builder.NewBuilder()
 	ev.Physics.Model.GPU = false // todo: true, set GPU
 
+	params := physics.GetParams(0)
+	// params.Gravity.Y = 0
+	params.ControlDt = 0.1
+	// params.SubSteps = 1
+
 	sc.Background = colors.Scheme.Select.Container
 	xyz.NewAmbient(sc, "ambient", 0.3, xyz.DirectSun)
 
@@ -279,7 +284,7 @@ func (ev *EmeryEnv) Step() bool {
 	ev.GetSenses()
 	ev.CurrentTime++
 	ev.WriteIncr()
-	ev.PersistActions()
+	ev.ZeroActions()
 	return true
 }
 

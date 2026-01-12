@@ -62,7 +62,7 @@ func (em *Emery) Make(wl *builder.World, sc *phyxyz.Scene, ev *EmeryEnv) {
 
 	headPos := math32.Vec3(0, hh, -(hl + headsz))
 	head := obj.NewDynamicSkin(sc, name+"_head", physics.Box, "tan", mass*.1, math32.Vec3(headsz, headsz, headsz), headPos, rot)
-	em.Neck = obj.NewJointFixed(emr, head, math32.Vec3(0, hh, -hl), math32.Vec3(0, 0, headsz))
+	em.Neck = obj.NewJointFixed(emr, head, math32.Vec3(0, 0, -hl), math32.Vec3(0, 0, headsz))
 	em.Neck.ParentFixed = true
 	em.Neck.NoLinearRotation = true
 
@@ -75,9 +75,13 @@ func (em *Emery) Make(wl *builder.World, sc *phyxyz.Scene, ev *EmeryEnv) {
 		av = physics.DynamicAcc(hd.DynamicIndex, params.Next)
 		ev.SetSenseValue(world, VSLinearAccel, av.Length())
 		av = physics.AngularVelocityAt(hd.DynamicIndex, math32.Vec3(headsz, 0, 0), math32.Vec3(0, 1, 0))
-		ev.SetSenseValue(world, VSRotHVel, av.Z)
+		ev.SetSenseValue(world, VSRotHVel, -av.Z)
 		av = physics.AngularAccelAt(hd.DynamicIndex, math32.Vec3(headsz, 0, 0), math32.Vec3(0, 1, 0))
 		ev.SetSenseValue(world, VSRotHAccel, av.Z)
+
+		bd := obj.Body(0)
+		av = physics.DynamicQuat(bd.DynamicIndex, params.Next).ToEuler()
+		ev.SetSenseValue(world, VSRotHDir, math32.RadToDeg(av.Y))
 	})
 
 	eyeoff := math32.Vec3(-headsz*.6, headsz*.1, -(headsz + eyesz*.3))

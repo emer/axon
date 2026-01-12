@@ -4,10 +4,6 @@
 
 package emery
 
-import (
-	"fmt"
-)
-
 // Actions are motor actions as abstracted coordinated plans
 // that unfold over time, at a level above individual muscles.
 // They are recorded in data continuously, with 0 meaning no
@@ -30,7 +26,7 @@ func (ev *EmeryEnv) Action(di int, act Actions, val float32) {
 func (ev *EmeryEnv) TakeActions() {
 	for di := range ev.NData {
 		for act := range ActionsN {
-			val := ev.ReadData(ev.ActionData, di, act.String(), 0) // 0 = last written
+			val := ev.ReadData(ev.ActionData, di, act.String(), 10) // 0 = last written
 			ev.TakeAction(di, act, val)
 		}
 	}
@@ -47,14 +43,23 @@ func (ev *EmeryEnv) PersistActions() {
 	}
 }
 
+// ZeroActions zero action values after WriteIndex has been incremented.
+func (ev *EmeryEnv) ZeroActions() {
+	for di := range ev.NData {
+		for act := range ActionsN {
+			ev.WriteData(ev.ActionData, di, act.String(), 0)
+		}
+	}
+}
+
 // TakeAction performs given action in Emery
 func (ev *EmeryEnv) TakeAction(di int, act Actions, val float32) {
-	fmt.Println("Action:", di, act, val)
+	// fmt.Println("Action:", di, act, val)
 	jd := ev.Physics.Builder.ReplicaJoint(ev.Emery.XZ, di)
 	switch act {
 	case Forward:
 		// todo:
 	case Rotate:
-		jd.SetTargetPos(2, val, ev.ActionStiff)
+		jd.AddTargetAngle(2, val, ev.ActionStiff)
 	}
 }

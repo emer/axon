@@ -157,7 +157,7 @@ func (ss *Sim) ConfigEnv() {
 	if ss.Config.Env.Env != nil {
 		reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
 	}
-	trn.Config(ndata, ss.Root.Dir("env"), axon.ComputeGPU)
+	trn.Config(ndata, ss.Root.Dir("Env"), axon.ComputeGPU)
 	trn.Init(0)
 
 	// note: names must be in place when adding
@@ -337,8 +337,9 @@ func (ss *Sim) ConfigLoops() {
 
 	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, Cycle, Trial, Train,
 		func(mode enums.Enum) { ss.Net.ClearInputs() },
-		func(mode enums.Enum) { ss.ApplyInputs(mode.(Modes)) },
+		func(mode enums.Enum) {},
 	)
+	ls.Loop(Train, Cycle).OnStart.Add("ApplyInputs", func() { ss.ApplyInputs(Train) })
 	ls.Stacks[Train].OnInit.Add("Init", ss.Init)
 	ls.Loop(Train, Run).OnStart.Add("NewRun", ss.NewRun)
 
@@ -396,13 +397,16 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 		if !reflectx.IsNil(reflect.ValueOf(pats)) {
 			ly.ApplyExtAll(ctx, pats)
 		} else {
-			fmt.Println("nil pats:", lnm)
+			// fmt.Println("nil pats:", lnm)
 		}
 	}
 	for di := uint32(0); di < ctx.NData; di++ {
 		curModeDir.StringValue("TrialName", ndata).SetString1D(ev.String(), int(di))
 	}
 	ss.Net.ApplyExts()
+	// if ss.Config.GUI {
+	// 	ss.UpdateEnvGUI(mode)
+	// }
 }
 
 // TakeAction takes action for this step, using either decoded cortical
