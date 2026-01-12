@@ -15,11 +15,11 @@ const ActionsN Actions = 2
 
 //gosl:end
 
-var _ActionsValueMap = map[string]Actions{`Forward`: 0, `Rotate`: 1}
+var _ActionsValueMap = map[string]Actions{`Rotate`: 0, `Forward`: 1}
 
 var _ActionsDescMap = map[Actions]string{0: ``, 1: ``}
 
-var _ActionsMap = map[Actions]string{0: `Forward`, 1: `Rotate`}
+var _ActionsMap = map[Actions]string{0: `Rotate`, 1: `Forward`}
 
 // String returns the string representation of this Actions value.
 func (i Actions) String() string { return enums.String(i, _ActionsMap) }
@@ -51,6 +51,53 @@ func (i Actions) MarshalText() ([]byte, error) { return []byte(i.String()), nil 
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *Actions) UnmarshalText(text []byte) error { return enums.UnmarshalText(i, text, "Actions") }
 
+var _EmeryBodiesValues = []EmeryBodies{0, 1, 2, 3}
+
+// EmeryBodiesN is the highest valid value for type EmeryBodies, plus one.
+//
+//gosl:start
+const EmeryBodiesN EmeryBodies = 4
+
+//gosl:end
+
+var _EmeryBodiesValueMap = map[string]EmeryBodies{`EmeryBody`: 0, `EmeryHead`: 1, `EmeryEyeL`: 2, `EmeryEyeR`: 3}
+
+var _EmeryBodiesDescMap = map[EmeryBodies]string{0: ``, 1: ``, 2: ``, 3: ``}
+
+var _EmeryBodiesMap = map[EmeryBodies]string{0: `EmeryBody`, 1: `EmeryHead`, 2: `EmeryEyeL`, 3: `EmeryEyeR`}
+
+// String returns the string representation of this EmeryBodies value.
+func (i EmeryBodies) String() string { return enums.String(i, _EmeryBodiesMap) }
+
+// SetString sets the EmeryBodies value from its string representation,
+// and returns an error if the string is invalid.
+func (i *EmeryBodies) SetString(s string) error {
+	return enums.SetString(i, s, _EmeryBodiesValueMap, "EmeryBodies")
+}
+
+// Int64 returns the EmeryBodies value as an int64.
+func (i EmeryBodies) Int64() int64 { return int64(i) }
+
+// SetInt64 sets the EmeryBodies value from an int64.
+func (i *EmeryBodies) SetInt64(in int64) { *i = EmeryBodies(in) }
+
+// Desc returns the description of the EmeryBodies value.
+func (i EmeryBodies) Desc() string { return enums.Desc(i, _EmeryBodiesDescMap) }
+
+// EmeryBodiesValues returns all possible values for the type EmeryBodies.
+func EmeryBodiesValues() []EmeryBodies { return _EmeryBodiesValues }
+
+// Values returns all possible values for the type EmeryBodies.
+func (i EmeryBodies) Values() []enums.Enum { return enums.Values(_EmeryBodiesValues) }
+
+// MarshalText implements the [encoding.TextMarshaler] interface.
+func (i EmeryBodies) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
+
+// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
+func (i *EmeryBodies) UnmarshalText(text []byte) error {
+	return enums.UnmarshalText(i, text, "EmeryBodies")
+}
+
 var _SensesValues = []Senses{0, 1, 2, 3, 4, 5}
 
 // SensesN is the highest valid value for type Senses, plus one.
@@ -60,11 +107,11 @@ const SensesN Senses = 6
 
 //gosl:end
 
-var _SensesValueMap = map[string]Senses{`VSLinearAccel`: 0, `VSLinearVel`: 1, `VSRotHAccel`: 2, `VSRotHVel`: 3, `VSRotHDir`: 4, `VMRotVel`: 5}
+var _SensesValueMap = map[string]Senses{`VSRotHVel`: 0, `VMRotHVel`: 1, `VSRotHDir`: 2, `VSRotHAccel`: 3, `VSLinearVel`: 4, `VSLinearAccel`: 5}
 
-var _SensesDescMap = map[Senses]string{0: `VSLinearAccel is vestibular linear acceleration.`, 1: `VSLinearVel is vestibular linear velocity.`, 2: `VSRotHAccel is vestibular rotational acceleration (horiz plane).`, 3: `VSRotHVel is vestibular rotational velocity (horiz plane).`, 4: `VSRotHDir is abstracted current horiz rotational direction (vestibular timing).`, 5: `VMRotVel is full-field visual-motion rotation (horiz plane).`}
+var _SensesDescMap = map[Senses]string{0: `VSRotHVel is vestibular rotational head velocity (horiz plane).`, 1: `VMRotHVel is full-field visual-motion rotation (horiz plane).`, 2: `VSRotHDir is the ground-truth actual head direction (horiz plane).`, 3: `VSRotHAccel is vestibular rotational head acceleration (horiz plane).`, 4: `VSLinearVel is vestibular linear velocity. This is not actually something that can be sensed directly by the vestibular system: only linear accel.`, 5: `VSLinearAccel is vestibular linear acceleration.`}
 
-var _SensesMap = map[Senses]string{0: `VSLinearAccel`, 1: `VSLinearVel`, 2: `VSRotHAccel`, 3: `VSRotHVel`, 4: `VSRotHDir`, 5: `VMRotVel`}
+var _SensesMap = map[Senses]string{0: `VSRotHVel`, 1: `VMRotHVel`, 2: `VSRotHDir`, 3: `VSRotHAccel`, 4: `VSLinearVel`, 5: `VSLinearAccel`}
 
 // String returns the string representation of this Senses value.
 func (i Senses) String() string { return enums.String(i, _SensesMap) }

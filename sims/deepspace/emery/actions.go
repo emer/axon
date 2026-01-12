@@ -4,6 +4,8 @@
 
 package emery
 
+import "cogentcore.org/core/math32"
+
 // Actions are motor actions as abstracted coordinated plans
 // that unfold over time, at a level above individual muscles.
 // They are recorded in data continuously, with 0 meaning no
@@ -11,15 +13,35 @@ package emery
 type Actions int32 //enums:enum
 
 const (
-	Forward Actions = iota
-	Rotate
+	Rotate Actions = iota
+	Forward
 )
 
-// Action specifies the value for given action, for given data parallel agent.
-// Actions persist at prior value until updated.
+// NextAction specifies the next value for given action, for given data parallel agent.
+// This simulates the sequence of planning a new action followed by that action
+// actually being executed. The planning state is critical for predictive learning.
 // Multiple calls can be made per step, for as many actions as need updating.
-func (ev *EmeryEnv) Action(di int, act Actions, val float32) {
-	ev.WriteData(ev.ActionData, di, act.String(), val)
+// Call RenderNextActions when done specifying NextAction's, so they are presented
+// to the sim.
+func (ev *EmeryEnv) NextAction(di int, act Actions, val float32) {
+	es := ev.EmeryState(di)
+	es.NextActions[act] = val
+}
+
+// TakeNextActions actually starts performing in the physics model the
+// actions specified by prior NextAction calls, copying NextActions
+// to CurActions and activating them in the model.
+// This calls RenderCurAction so the current action is shown to the sim.
+func (ev *EmeryEnv) TakeNextActions() {
+	for di := range ev.NData {
+		es := ev.EmeryState(di)
+		for act := range ActionsN {
+			val := es.NextActions[act]
+			es.CurActions[act] = val
+			ev.WriteData(ev.ActionData, di, act.String(), val)
+		}
+	}
+	ev.RenderCurActions()
 }
 
 // TakeActions applies current actions to physics.
@@ -28,17 +50,6 @@ func (ev *EmeryEnv) TakeActions() {
 		for act := range ActionsN {
 			val := ev.ReadData(ev.ActionData, di, act.String(), 10) // 0 = last written
 			ev.TakeAction(di, act, val)
-		}
-	}
-}
-
-// PersistActions copies action values from prior row, after WriteIndex
-// has been incremented.
-func (ev *EmeryEnv) PersistActions() {
-	for di := range ev.NData {
-		for act := range ActionsN {
-			val := ev.ReadData(ev.ActionData, di, act.String(), 1) // 1 prior
-			ev.WriteData(ev.ActionData, di, act.String(), val)
 		}
 	}
 }
@@ -52,14 +63,41 @@ func (ev *EmeryEnv) ZeroActions() {
 	}
 }
 
-// TakeAction performs given action in Emery
+// TakeAction performs given action in Emery.
 func (ev *EmeryEnv) TakeAction(di int, act Actions, val float32) {
 	// fmt.Println("Action:", di, act, val)
 	jd := ev.Physics.Builder.ReplicaJoint(ev.Emery.XZ, di)
 	switch act {
-	case Forward:
-		// todo:
 	case Rotate:
 		jd.AddTargetAngle(2, val, ev.ActionStiff)
+	case Forward:
+		ang := math32.Pi*.5 - jd.DoF(2).Current.Pos
+		jd.AddPlaneXZPos(ang, val, ev.ActionStiff)
+	}
+}
+
+//////// Rendering
+
+// RenderNextActions renders the action values specified in NextAction calls.
+func (ev *EmeryEnv) RenderNextActions() {
+	ev.renderActions(false)
+}
+
+// RenderCurActions renders the current action values, from TakeNextActions.
+func (ev *EmeryEnv) RenderCurActions() {
+	ev.renderActions(true)
+}
+
+// renderActions renders sensory states for current sensory values.
+func (ev *EmeryEnv) renderActions(cur bool) {
+	for act := range Forward { // only render below Forward for now
+		for di := range ev.NData {
+			es := ev.EmeryState(di)
+			val := es.NextActions[act]
+			if cur {
+				val = es.CurActions[act]
+			}
+			ev.RenderValue(di, act.String(), val)
+		}
 	}
 }

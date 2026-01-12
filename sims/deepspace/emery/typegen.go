@@ -20,6 +20,8 @@ import (
 
 var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Actions", IDName: "actions", Doc: "Actions are motor actions as abstracted coordinated plans\nthat unfold over time, at a level above individual muscles.\nThey are recorded in data continuously, with 0 meaning no\naction being taken, and non-zero indicating strength of action."})
 
+var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.EmeryBodies", IDName: "emery-bodies", Doc: "EmeryBodies are indexes for the physics body elements of Emery."})
+
 var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Emery", IDName: "emery", Doc: "Emery encapsulates all the emery agent config and physics.", Fields: []types.Field{{Name: "Length", Doc: "full length of emery"}, {Name: "Obj", Doc: "emery object"}, {Name: "XZ", Doc: "PlaneXZ joint for controlling 2D position."}, {Name: "Neck", Doc: "joint for the neck."}, {Name: "EyeR", Doc: "Right eye of emery"}}})
 
 // SetLength sets the [Emery.Length]:
@@ -42,21 +44,42 @@ func (t *Emery) SetNeck(v *builder.Joint) *Emery { t.Neck = v; return t }
 // Right eye of emery
 func (t *Emery) SetEyeR(v *builder.Body) *Emery { t.EyeR = v; return t }
 
-var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.EmeryState", IDName: "emery-state", Doc: "EmeryState has all the state info for each Emery instance.", Fields: []types.Field{{Name: "SenseValues", Doc: "SenseValues has the current sensory values from physics world."}, {Name: "EyeRImage", Doc: "captured images"}, {Name: "EyeLImage", Doc: "captured images"}}})
+var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.EmeryState", IDName: "emery-state", Doc: "EmeryState has all the state info for each Emery instance.", Fields: []types.Field{{Name: "SenseValues", Doc: "SenseValues has the current sensory values from physics model,\nstored here by the Sensor function for subsequent recording."}, {Name: "SenseAverages", Doc: "SenseAverages has the average delayed sensory values over\nSensoryWindow, which goes into SenseNormed for rendering."}, {Name: "SenseNormed", Doc: "SenseNormed has the normalized versions of SenseAverages,\nwhich is what is actually rendered."}, {Name: "EyeRImage", Doc: "current captured images"}, {Name: "EyeLImage", Doc: "current captured images"}, {Name: "NextActions", Doc: "NextActions are the next action values set by sim, and rendered\ndepending on RenderNextAction value."}, {Name: "CurActions", Doc: "CurActions are the current action values, updated by TakeNextAction,\nand rendered depending on RenderNextAction value."}}})
 
 // SetSenseValues sets the [EmeryState.SenseValues]:
-// SenseValues has the current sensory values from physics world.
+// SenseValues has the current sensory values from physics model,
+// stored here by the Sensor function for subsequent recording.
 func (t *EmeryState) SetSenseValues(v [SensesN]float32) *EmeryState { t.SenseValues = v; return t }
 
+// SetSenseAverages sets the [EmeryState.SenseAverages]:
+// SenseAverages has the average delayed sensory values over
+// SensoryWindow, which goes into SenseNormed for rendering.
+func (t *EmeryState) SetSenseAverages(v [SensesN]float32) *EmeryState { t.SenseAverages = v; return t }
+
+// SetSenseNormed sets the [EmeryState.SenseNormed]:
+// SenseNormed has the normalized versions of SenseAverages,
+// which is what is actually rendered.
+func (t *EmeryState) SetSenseNormed(v [SensesN]float32) *EmeryState { t.SenseNormed = v; return t }
+
 // SetEyeRImage sets the [EmeryState.EyeRImage]:
-// captured images
+// current captured images
 func (t *EmeryState) SetEyeRImage(v image.Image) *EmeryState { t.EyeRImage = v; return t }
 
 // SetEyeLImage sets the [EmeryState.EyeLImage]:
-// captured images
+// current captured images
 func (t *EmeryState) SetEyeLImage(v image.Image) *EmeryState { t.EyeLImage = v; return t }
 
-var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.EmeryEnv", IDName: "emery-env", Doc: "EmeryEnv is the emery rat environment.", Fields: []types.Field{{Name: "Name", Doc: "name of this environment: Train or Test"}, {Name: "NData", Doc: "NData is number of data-parallel Emery's to run."}, {Name: "LeftEye", Doc: "LeftEye determines whether to process left eye image or not."}, {Name: "AngleCode", Doc: "angle population code values, in normalized units"}, {Name: "LinearCode", Doc: "population code for linear values, -1..1, in normalized units"}, {Name: "Motion", Doc: "Visual motion processing"}, {Name: "MotionImage", Doc: "Image processing for Motion."}, {Name: "UnitsPer", Doc: "UnitsPer is the number of units per localist value."}, {Name: "LinearUnits", Doc: "LinearUnits is the number of units per linear value."}, {Name: "AngleUnits", Doc: "AngleUnits is the number of units per angle value."}, {Name: "World", Doc: "World specifies the physical world parameters."}, {Name: "Emery", Doc: "Emery has the parameters for (the first) Emery."}, {Name: "Params", Doc: "Params are sensory and motor parameters."}, {Name: "Physics", Doc: "The core physics elements: Model, Builder, Scene"}, {Name: "Camera", Doc: "Camera has offscreen render camera settings"}, {Name: "CurrentTime", Doc: "CurrentTime is the current timestep in msec. Counts up every Step,\n1 per msec (cycle)."}, {Name: "SenseData", Doc: "SenseData records the sensory data for each emery agent."}, {Name: "ActionData", Doc: "ActionData records the motor action data for each emery agent."}, {Name: "BufferSize", Doc: "BufferSize is the number of time steps (ms) to retain in the tensorfs\nsensory and motor state buffers."}, {Name: "WriteIndex", Doc: "WriteIndex is the current write index in tensorfs sensory and motor data.\nAdd post-increments."}, {Name: "Emerys", Doc: "Emerys has the state values for each NData emery."}, {Name: "States", Doc: "States is the current rendered state tensors."}, {Name: "Rand", Doc: "Rand is the random number generator for the env.\nAll random calls must use this.\nSet seed here for weight initialization values."}, {Name: "RandSeed", Doc: "random seed"}}})
+// SetNextActions sets the [EmeryState.NextActions]:
+// NextActions are the next action values set by sim, and rendered
+// depending on RenderNextAction value.
+func (t *EmeryState) SetNextActions(v [ActionsN]float32) *EmeryState { t.NextActions = v; return t }
+
+// SetCurActions sets the [EmeryState.CurActions]:
+// CurActions are the current action values, updated by TakeNextAction,
+// and rendered depending on RenderNextAction value.
+func (t *EmeryState) SetCurActions(v [ActionsN]float32) *EmeryState { t.CurActions = v; return t }
+
+var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.EmeryEnv", IDName: "emery-env", Doc: "EmeryEnv is the emery rat environment.", Fields: []types.Field{{Name: "Name", Doc: "name of this environment: Train or Test"}, {Name: "NData", Doc: "NData is number of data-parallel Emery's to run."}, {Name: "RenderStates", Doc: "RenderStates should be updated by sim prior to running Step.\nIt tells Step to render States input for the model.\nOtherwise, physics is updated and sensory state is recorded, but\nno rendering. Rendered states average over SensoryWindow."}, {Name: "SensoryWindow", Doc: "SensoryWindow is the time window in Steps (ms) over which the sensory\nstate is averaged, for the purposes of rendering state."}, {Name: "ModelSteps", Doc: "Number of model steps per env Step. This is on top of the\nphysics SubSteps."}, {Name: "ActionStiff", Doc: "ActionStiff is the stiffness for performing actions."}, {Name: "AngleCode", Doc: "angle population code values, in normalized units"}, {Name: "LinearCode", Doc: "population code for linear values, -1..1, in normalized units"}, {Name: "Motion", Doc: "Visual motion processing"}, {Name: "MotionImage", Doc: "Image processing for Motion."}, {Name: "UnitsPer", Doc: "UnitsPer is the number of units per localist value."}, {Name: "LinearUnits", Doc: "LinearUnits is the number of units per linear value."}, {Name: "AngleUnits", Doc: "AngleUnits is the number of units per angle value."}, {Name: "LeftEye", Doc: "LeftEye determines whether to process left eye image or not."}, {Name: "World", Doc: "World specifies the physical world parameters."}, {Name: "Emery", Doc: "Emery has the parameters for (the first) Emery."}, {Name: "Params", Doc: "Params are sensory and motor parameters."}, {Name: "Physics", Doc: "The core physics elements: Model, Builder, Scene"}, {Name: "Camera", Doc: "Camera has offscreen render camera settings"}, {Name: "CurrentTime", Doc: "CurrentTime is the current timestep in msec. Counts up every Step,\n1 per msec (cycle)."}, {Name: "SenseData", Doc: "SenseData records the sensory data for each emery agent."}, {Name: "ActionData", Doc: "ActionData records the motor action data for each emery agent."}, {Name: "BufferSize", Doc: "BufferSize is the number of time steps (ms) to retain in the tensorfs\nsensory and motor state buffers."}, {Name: "WriteIndex", Doc: "WriteIndex is the current write index in tensorfs sensory and motor data.\nAdd post-increments."}, {Name: "SensoryDelays", Doc: "SensoryDelays are the actual delays for each sense: from [SensoryDelays]\nparams."}, {Name: "SenseNorms", Doc: "SenseNorms are the normalization factors for each sense (1/typical max)."}, {Name: "Emerys", Doc: "Emerys has the state values for each NData emery."}, {Name: "States", Doc: "States is the current rendered state tensors."}, {Name: "Rand", Doc: "Rand is the random number generator for the env.\nAll random calls must use this.\nSet seed here for weight initialization values."}, {Name: "RandSeed", Doc: "random seed"}}})
 
 // SetName sets the [EmeryEnv.Name]:
 // name of this environment: Train or Test
@@ -66,9 +89,26 @@ func (t *EmeryEnv) SetName(v string) *EmeryEnv { t.Name = v; return t }
 // NData is number of data-parallel Emery's to run.
 func (t *EmeryEnv) SetNData(v int) *EmeryEnv { t.NData = v; return t }
 
-// SetLeftEye sets the [EmeryEnv.LeftEye]:
-// LeftEye determines whether to process left eye image or not.
-func (t *EmeryEnv) SetLeftEye(v bool) *EmeryEnv { t.LeftEye = v; return t }
+// SetRenderStates sets the [EmeryEnv.RenderStates]:
+// RenderStates should be updated by sim prior to running Step.
+// It tells Step to render States input for the model.
+// Otherwise, physics is updated and sensory state is recorded, but
+// no rendering. Rendered states average over SensoryWindow.
+func (t *EmeryEnv) SetRenderStates(v bool) *EmeryEnv { t.RenderStates = v; return t }
+
+// SetSensoryWindow sets the [EmeryEnv.SensoryWindow]:
+// SensoryWindow is the time window in Steps (ms) over which the sensory
+// state is averaged, for the purposes of rendering state.
+func (t *EmeryEnv) SetSensoryWindow(v int) *EmeryEnv { t.SensoryWindow = v; return t }
+
+// SetModelSteps sets the [EmeryEnv.ModelSteps]:
+// Number of model steps per env Step. This is on top of the
+// physics SubSteps.
+func (t *EmeryEnv) SetModelSteps(v int) *EmeryEnv { t.ModelSteps = v; return t }
+
+// SetActionStiff sets the [EmeryEnv.ActionStiff]:
+// ActionStiff is the stiffness for performing actions.
+func (t *EmeryEnv) SetActionStiff(v float32) *EmeryEnv { t.ActionStiff = v; return t }
 
 // SetAngleCode sets the [EmeryEnv.AngleCode]:
 // angle population code values, in normalized units
@@ -97,6 +137,10 @@ func (t *EmeryEnv) SetLinearUnits(v int) *EmeryEnv { t.LinearUnits = v; return t
 // SetAngleUnits sets the [EmeryEnv.AngleUnits]:
 // AngleUnits is the number of units per angle value.
 func (t *EmeryEnv) SetAngleUnits(v int) *EmeryEnv { t.AngleUnits = v; return t }
+
+// SetLeftEye sets the [EmeryEnv.LeftEye]:
+// LeftEye determines whether to process left eye image or not.
+func (t *EmeryEnv) SetLeftEye(v bool) *EmeryEnv { t.LeftEye = v; return t }
 
 // SetWorld sets the [EmeryEnv.World]:
 // World specifies the physical world parameters.
@@ -140,6 +184,15 @@ func (t *EmeryEnv) SetBufferSize(v int) *EmeryEnv { t.BufferSize = v; return t }
 // WriteIndex is the current write index in tensorfs sensory and motor data.
 // Add post-increments.
 func (t *EmeryEnv) SetWriteIndex(v int) *EmeryEnv { t.WriteIndex = v; return t }
+
+// SetSensoryDelays sets the [EmeryEnv.SensoryDelays]:
+// SensoryDelays are the actual delays for each sense: from [SensoryDelays]
+// params.
+func (t *EmeryEnv) SetSensoryDelays(v [SensesN]int) *EmeryEnv { t.SensoryDelays = v; return t }
+
+// SetSenseNorms sets the [EmeryEnv.SenseNorms]:
+// SenseNorms are the normalization factors for each sense (1/typical max).
+func (t *EmeryEnv) SetSenseNorms(v [SensesN]float32) *EmeryEnv { t.SenseNorms = v; return t }
 
 // SetEmerys sets the [EmeryEnv.Emerys]:
 // Emerys has the state values for each NData emery.
@@ -186,10 +239,10 @@ var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/
 var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.SensoryDelays", IDName: "sensory-delays", Doc: "SensoryDelays are delays from motor actions for different sensory modalities.", Fields: []types.Field{{Name: "Vestibular"}, {Name: "Visual"}}})
 
 // SetVestibular sets the [SensoryDelays.Vestibular]
-func (t *SensoryDelays) SetVestibular(v float32) *SensoryDelays { t.Vestibular = v; return t }
+func (t *SensoryDelays) SetVestibular(v int) *SensoryDelays { t.Vestibular = v; return t }
 
 // SetVisual sets the [SensoryDelays.Visual]
-func (t *SensoryDelays) SetVisual(v float32) *SensoryDelays { t.Visual = v; return t }
+func (t *SensoryDelays) SetVisual(v int) *SensoryDelays { t.Visual = v; return t }
 
 var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.SensoryMotorParams", IDName: "sensory-motor-params", Doc: "SensoryMotorParams are parameters for sensory and motor properties.", Fields: []types.Field{{Name: "MaxRotate", Doc: "MaxRotate is maximum rotation angle magnitude per action, in degrees."}, {Name: "Delays", Doc: "Delays are sensory delays"}}})
 

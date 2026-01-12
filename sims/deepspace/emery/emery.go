@@ -13,6 +13,16 @@ import (
 	"cogentcore.org/lab/physics/phyxyz"
 )
 
+// EmeryBodies are indexes for the physics body elements of Emery.
+type EmeryBodies int32 //enums:enum
+
+const (
+	EmeryBody EmeryBodies = iota
+	EmeryHead
+	EmeryEyeL
+	EmeryEyeR
+)
+
 // Emery encapsulates all the emery agent config and physics.
 type Emery struct {
 	// full length of emery
@@ -67,21 +77,25 @@ func (em *Emery) Make(wl *builder.World, sc *phyxyz.Scene, ev *EmeryEnv) {
 	em.Neck.NoLinearRotation = true
 
 	obj.NewSensor(func(obj *builder.Object) {
-		hd := obj.Body(1)
+		hd := obj.Body(int(EmeryHead))
 		world := obj.WorldIndex - 1
 		params := physics.GetParams(0)
-		av := physics.DynamicVel(hd.DynamicIndex, params.Next)
-		ev.SetSenseValue(world, VSLinearVel, av.Length())
-		av = physics.DynamicAcc(hd.DynamicIndex, params.Next)
-		ev.SetSenseValue(world, VSLinearAccel, av.Length())
-		av = physics.AngularVelocityAt(hd.DynamicIndex, math32.Vec3(headsz, 0, 0), math32.Vec3(0, 1, 0))
+
+		av := physics.AngularVelocityAt(hd.DynamicIndex, math32.Vec3(headsz, 0, 0), math32.Vec3(0, 1, 0))
 		ev.SetSenseValue(world, VSRotHVel, -av.Z)
+
+		bd := obj.Body(int(EmeryBody))
+		av = physics.DynamicQuat(bd.DynamicIndex, params.Next).ToEuler()
+		ev.SetSenseValue(world, VSRotHDir, math32.RadToDeg(av.Y))
+
 		av = physics.AngularAccelAt(hd.DynamicIndex, math32.Vec3(headsz, 0, 0), math32.Vec3(0, 1, 0))
 		ev.SetSenseValue(world, VSRotHAccel, av.Z)
 
-		bd := obj.Body(0)
-		av = physics.DynamicQuat(bd.DynamicIndex, params.Next).ToEuler()
-		ev.SetSenseValue(world, VSRotHDir, math32.RadToDeg(av.Y))
+		av = physics.DynamicVel(hd.DynamicIndex, params.Next)
+		ev.SetSenseValue(world, VSLinearVel, av.Length())
+
+		av = physics.DynamicAcc(hd.DynamicIndex, params.Next)
+		ev.SetSenseValue(world, VSLinearAccel, av.Length())
 	})
 
 	eyeoff := math32.Vec3(-headsz*.6, headsz*.1, -(headsz + eyesz*.3))
@@ -104,11 +118,28 @@ func (em *Emery) Make(wl *builder.World, sc *phyxyz.Scene, ev *EmeryEnv) {
 // EmeryState has all the state info for each Emery instance.
 type EmeryState struct {
 
-	// SenseValues has the current sensory values from physics world.
+	// SenseValues has the current sensory values from physics model,
+	// stored here by the Sensor function for subsequent recording.
 	SenseValues [SensesN]float32
 
-	// captured images
+	// SenseAverages has the average delayed sensory values over
+	// SensoryWindow, which goes into SenseNormed for rendering.
+	SenseAverages [SensesN]float32
+
+	// SenseNormed has the normalized versions of SenseAverages,
+	// which is what is actually rendered.
+	SenseNormed [SensesN]float32
+
+	// current captured images
 	EyeRImage, EyeLImage image.Image `display:"-"`
+
+	// NextActions are the next action values set by sim, and rendered
+	// depending on RenderNextAction value.
+	NextActions [ActionsN]float32
+
+	// CurActions are the current action values, updated by TakeNextAction,
+	// and rendered depending on RenderNextAction value.
+	CurActions [ActionsN]float32
 }
 
 // SetSenseValue sets the current sense value from the physics sensor.

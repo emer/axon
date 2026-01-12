@@ -6,8 +6,8 @@ package emery
 
 // SensoryDelays are delays from motor actions for different sensory modalities.
 type SensoryDelays struct {
-	Vestibular float32 `default:"40"`
-	Visual     float32 `default:"50"`
+	Vestibular int `default:"40"`
+	Visual     int `default:"50"`
 }
 
 func (sd *SensoryDelays) Defaults() {

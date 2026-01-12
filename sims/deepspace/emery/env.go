@@ -33,8 +33,15 @@ type EmeryEnv struct {
 	// NData is number of data-parallel Emery's to run.
 	NData int
 
-	// LeftEye determines whether to process left eye image or not.
-	LeftEye bool
+	// RenderStates should be updated by sim prior to running Step.
+	// It tells Step to render States input for the model.
+	// Otherwise, physics is updated and sensory state is recorded, but
+	// no rendering. Rendered states average over SensoryWindow.
+	RenderStates bool
+
+	// SensoryWindow is the time window in Steps (ms) over which the sensory
+	// state is averaged, for the purposes of rendering state.
+	SensoryWindow int
 
 	// Number of model steps per env Step. This is on top of the
 	// physics SubSteps.
@@ -63,6 +70,9 @@ type EmeryEnv struct {
 
 	// AngleUnits is the number of units per angle value.
 	AngleUnits int
+
+	// LeftEye determines whether to process left eye image or not.
+	LeftEye bool
 
 	// World specifies the physical world parameters.
 	World World
@@ -97,6 +107,13 @@ type EmeryEnv struct {
 	// Add post-increments.
 	WriteIndex int `edit:"-"`
 
+	// SensoryDelays are the actual delays for each sense: from [SensoryDelays]
+	// params.
+	SensoryDelays [SensesN]int
+
+	// SenseNorms are the normalization factors for each sense (1/typical max).
+	SenseNorms [SensesN]float32
+
 	// Emerys has the state values for each NData emery.
 	Emerys []EmeryState
 
@@ -121,6 +138,7 @@ func (ev *EmeryEnv) Defaults() {
 	ev.Emery.Defaults()
 	ev.World.Defaults()
 	ev.Params.Defaults()
+	ev.SensoryWindow = 10
 	ev.UnitsPer = 4
 	ev.LinearUnits = 12 // 12 > 16 for both
 	ev.AngleUnits = 16
@@ -138,6 +156,9 @@ func (ev *EmeryEnv) Defaults() {
 	ev.Motion.SetSize(8, 2)
 	ev.MotionImage.Size = ev.Camera.Size
 	ev.BufferSize = 4000
+	for s := range SensesN {
+		ev.SenseNorms[s] = 1.0 / SenseMaxValues[s]
+	}
 }
 
 // Config configures the environment
@@ -151,21 +172,22 @@ func (ev *EmeryEnv) Config(ndata int, dataNode *tensorfs.Node, netGPU *gpu.GPU) 
 	ev.SenseData = dataNode.Dir("Senses")
 	ev.ActionData = dataNode.Dir("Actions")
 
+	ev.ConfigSensoryDelays()
+
 	ev.States = make(map[string]*tensor.Float32)
 
 	// No extension = rate code, Pop = population code version for cortex
 	// rate code has up and down versions, with redundancy
 
-	ev.States["EyeR"] = tensor.NewFloat32(ndata, ev.UnitsPer, 2) // eye motion bump
+	for s := range VSRotHDir { // only render below VSRotHDir ground truth
+		ev.States[s.String()] = tensor.NewFloat32(ndata, ev.UnitsPer, 2)
+		ev.States[s.String()+"Pop"] = tensor.NewFloat32(ndata, ev.UnitsPer, ev.LinearUnits)
+	}
 
-	// todo: cue this off of actions and senses
-	ev.States["ActRotate"] = tensor.NewFloat32(ndata, ev.UnitsPer, 2) // motor command
-	ev.States["VNCAngVel"] = tensor.NewFloat32(ndata, ev.UnitsPer, 2) // vestib
-
-	ev.States["ActRotatePop"] = tensor.NewFloat32(ndata, ev.UnitsPer, ev.LinearUnits) // motor command
-	ev.States["VNCAngVelPop"] = tensor.NewFloat32(ndata, ev.UnitsPer, ev.LinearUnits) // vestib
-	ev.States["EyeRPop"] = tensor.NewFloat32(ndata, ev.UnitsPer, ev.LinearUnits)      // eye motion bump
-	ev.States["EyeLPop"] = tensor.NewFloat32(ndata, ev.UnitsPer, ev.LinearUnits)      // eye motion bump
+	for a := range Forward { // only rotate now
+		ev.States[a.String()] = tensor.NewFloat32(ndata, ev.UnitsPer, 2)
+		ev.States[a.String()+"Pop"] = tensor.NewFloat32(ndata, ev.UnitsPer, ev.LinearUnits)
+	}
 }
 
 func (ev *EmeryEnv) Init(run int) {
@@ -190,7 +212,8 @@ func (ev *EmeryEnv) ConfigPhysics(sc *xyz.Scene) {
 	params := physics.GetParams(0)
 	// params.Gravity.Y = 0
 	params.ControlDt = 0.1
-	// params.SubSteps = 1
+	params.SubSteps = 1
+	params.Dt = 0.001
 
 	sc.Background = colors.Scheme.Select.Container
 	xyz.NewAmbient(sc, "ambient", 0.3, xyz.DirectSun)
@@ -210,9 +233,7 @@ func (ev *EmeryEnv) ConfigPhysics(sc *xyz.Scene) {
 }
 
 func (ev *EmeryEnv) StepPhysics() {
-	for range ev.ModelSteps {
-		ev.Physics.Step(1)
-	}
+	ev.Physics.Step(ev.ModelSteps)
 }
 
 // ConfigNoGUI runs the model without a GUI, for background / server mode.
@@ -246,11 +267,15 @@ func (ev *EmeryEnv) PriorIndex(nPrior int) int {
 	return ix
 }
 
+// diName is the string rep for given data parallel index, for tensorfs.
+func (ev *EmeryEnv) diName(di int) string {
+	return fmt.Sprintf("%02d", di)
+}
+
 // WriteData writes sensory / action data to given tensorfs dir, for given
 // di data parallel index, state name, and value. Writes to WriteIndex.
 func (ev *EmeryEnv) WriteData(dir *tensorfs.Node, di int, name string, val float32) {
-	dinm := fmt.Sprintf("%02d", di)
-	dd := dir.Dir(dinm)
+	dd := dir.Dir(ev.diName(di))
 	dd.Float32(name, ev.BufferSize).SetFloat1D(float64(val), ev.WriteIndex)
 	// fmt.Println("write:", ev.WriteIndex, name, val)
 }
@@ -258,8 +283,7 @@ func (ev *EmeryEnv) WriteData(dir *tensorfs.Node, di int, name string, val float
 // ReadData reads sensory / action data from given tensorfs dir, for given
 // di data parallel index, state name, and time prior offset (PriorIndex).
 func (ev *EmeryEnv) ReadData(dir *tensorfs.Node, di int, name string, nPrior int) float32 {
-	dinm := fmt.Sprintf("%02d", di)
-	dd := dir.Dir(dinm)
+	dd := dir.Dir(ev.diName(di))
 	pidx := ev.PriorIndex(nPrior)
 	val := float32(dd.Float32(name, ev.BufferSize).Float1D(pidx))
 	// fmt.Println("read:", pidx, name, val)
@@ -281,7 +305,10 @@ func (ev *EmeryEnv) String() string {
 func (ev *EmeryEnv) Step() bool {
 	ev.TakeActions()
 	ev.StepPhysics()
-	ev.GetSenses()
+	ev.RecordSenses()
+	if ev.RenderStates {
+		ev.RenderSenses()
+	}
 	ev.CurrentTime++
 	ev.WriteIncr()
 	ev.ZeroActions()
