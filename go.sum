@@ -42,8 +42,8 @@ github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dlclark/regexp2 v1.11.0 h1:G/nrcoOa7ZXlpoa/91N3X7mM3r8eIlMBBJZvsz/mxKI=
 github.com/dlclark/regexp2 v1.11.0/go.mod h1:DHkYz0B9wPfa6wondMfaivmHpzrQ3v9q8cnmRbL6yW8=
-github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20260107180834-a1df5d7febdb h1:N8oNUhxkWxZtjdxGHnGlV6WqpC6iv11VEdA+YmQphJI=
-github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20260107180834-a1df5d7febdb/go.mod h1:LWVaWC+jR6aD2n4iLCqKcOf9W5khMTNF+edl9amdI9M=
+github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20260112164245-4090cb871bf0 h1:5lInnd18wL42MtyFO4BiU41l9BdYoeFxSceO7PgOtiA=
+github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20260112164245-4090cb871bf0/go.mod h1:dhGVUWIAbMFBowRohqorEEqssbJBFTm6eCNFMfg7uvM=
 github.com/emer/v1vision v0.1.1-0.20260110184635-19c91b207a09 h1:mJeVyjptMkoISciI2nDtbsA1qm3N4EP1yVonVNKnVEI=
 github.com/emer/v1vision v0.1.1-0.20260110184635-19c91b207a09/go.mod h1:dWPdEAUHJtcfNzA5dVWaSoBYnyIv7R93eT4PKdS5yJY=
 github.com/ericchiang/css v1.3.0 h1:e0vS+vpujMjtT3/SYu7qTHn1LVzXWcLCCDjlfq3YlLY=

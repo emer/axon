@@ -5,9 +5,8 @@ go 1.23.4
 require (
 	cogentcore.org/core v0.3.13
 	cogentcore.org/lab v0.1.3-0.20260111225809-4f12ee287b54
-	github.com/chewxy/math32 v1.10.1
 	github.com/cogentcore/yaegi v0.0.0-20250622201820-b7838bdd95eb
-	github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20260107180834-a1df5d7febdb
+	github.com/emer/emergent/v2 v2.0.0-dev0.1.7.0.20260112164245-4090cb871bf0
 	github.com/emer/v1vision v0.1.1-0.20260110184635-19c91b207a09
 	github.com/stretchr/testify v1.10.0
 	gitlab.com/gomidi/midi/v2 v2.0.30
@@ -24,6 +23,7 @@ require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/bramvdbogaerde/go-scp v1.4.0 // indirect
+	github.com/chewxy/math32 v1.10.1 // indirect
 	github.com/cogentcore/readline v0.1.3 // indirect
 	github.com/cogentcore/webgpu v0.23.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect

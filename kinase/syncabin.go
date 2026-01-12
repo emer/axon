@@ -5,7 +5,7 @@
 package kinase
 
 import (
-	"github.com/chewxy/math32"
+	"cogentcore.org/core/math32"
 )
 
 // CaBinWts generates the weighting factors for integrating [CaBins] neuron
