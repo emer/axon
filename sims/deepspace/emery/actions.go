@@ -4,8 +4,6 @@
 
 package emery
 
-import "cogentcore.org/core/math32"
-
 // Actions are motor actions as abstracted coordinated plans
 // that unfold over time, at a level above individual muscles.
 // They are recorded in data continuously, with 0 meaning no
@@ -16,6 +14,9 @@ const (
 	Rotate Actions = iota
 	Forward
 )
+
+// ActionMaxValues are expected max sensory value, for normalizing.
+var ActionMaxValues = [ActionsN]float32{2, 2}
 
 // NextAction specifies the next value for given action, for given data parallel agent.
 // This simulates the sequence of planning a new action followed by that action
@@ -63,19 +64,6 @@ func (ev *EmeryEnv) ZeroActions() {
 	}
 }
 
-// TakeAction performs given action in Emery.
-func (ev *EmeryEnv) TakeAction(di int, act Actions, val float32) {
-	// fmt.Println("Action:", di, act, val)
-	jd := ev.Physics.Builder.ReplicaJoint(ev.Emery.XZ, di)
-	switch act {
-	case Rotate:
-		jd.AddTargetAngle(2, val, ev.ActionStiff)
-	case Forward:
-		ang := math32.Pi*.5 - jd.DoF(2).Current.Pos
-		jd.AddPlaneXZPos(ang, val, ev.ActionStiff)
-	}
-}
-
 //////// Rendering
 
 // RenderNextActions renders the action values specified in NextAction calls.
@@ -97,6 +85,7 @@ func (ev *EmeryEnv) renderActions(cur bool) {
 			if cur {
 				val = es.CurActions[act]
 			}
+			val /= ActionMaxValues[act]
 			ev.RenderValue(di, act.String(), val)
 		}
 	}

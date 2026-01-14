@@ -5,8 +5,6 @@
 package emery
 
 import (
-	"fmt"
-
 	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/stats/metric"
 )
@@ -110,8 +108,9 @@ func (ev *EmeryEnv) AverageSenses() {
 			es.SenseNormed[s] = nrm
 		}
 	}
-	es := ev.EmeryState(0)
-	fmt.Println(es.SenseAverages)
+	// es := ev.EmeryState(0)
+	// fmt.Println("avgs: ", es.SenseAverages)
+	// fmt.Println("norms:", es.SenseNormed)
 }
 
 // RenderSenses renders sensory states for current sensory values.
@@ -120,7 +119,7 @@ func (ev *EmeryEnv) RenderSenses() {
 	for s := range VSRotHDir { // only render below VSRotHDir ground truth
 		for di := range ev.NData {
 			es := ev.EmeryState(di)
-			val := es.SenseAverages[s]
+			val := es.SenseNormed[s]
 			ev.RenderValue(di, s.String(), val)
 		}
 	}

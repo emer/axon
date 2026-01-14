@@ -302,6 +302,7 @@ func (ss *Sim) Init() {
 	ss.NewRun()
 	ss.TrainUpdate.RecordSyns()
 	ss.TrainUpdate.Update(Train, Trial)
+	ss.UpdateEnvGUI(Train)
 }
 
 // InitRandSeed initializes the random seed based on current training run number
@@ -860,6 +861,7 @@ func (ss *Sim) UpdateEnvGUI(mode Modes) {
 	if vu == nil || vu.View == nil || ss.EnvGUI == nil {
 		return
 	}
+	ss.EnvGUI.Di = vu.View.Di
 	ss.EnvGUI.Update()
 }
 

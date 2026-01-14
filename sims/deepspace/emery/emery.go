@@ -147,3 +147,23 @@ func (ev *EmeryEnv) SetSenseValue(di int, sense Senses, val float32) {
 	es := ev.EmeryState(di)
 	es.SenseValues[sense] = val
 }
+
+// TakeAction performs given action in Emery.
+func (ev *EmeryEnv) TakeAction(di int, act Actions, val float32) {
+	// fmt.Println("Action:", di, act, val)
+	jd := ev.Physics.Builder.ReplicaJoint(ev.Emery.XZ, di)
+	switch act {
+	case Rotate:
+		jd.AddTargetAngle(2, val, ev.ActionStiff)
+	case Forward:
+		ang := math32.Pi*.5 - jd.DoF(2).Current.Pos
+		jd.AddPlaneXZPos(ang, val, ev.ActionStiff)
+	}
+}
+
+// SetEmeryInitConfig sets the initial configuration of emery per di.
+func (ev *EmeryEnv) SetEmeryInitConfig(di int) {
+	ang := -180 + 360*ev.Rand.Float32()
+	obj := ev.Physics.Builder.ReplicaObject(ev.Emery.Obj, di)
+	obj.RotateAroundBody(0, math32.NewQuatAxisAngle(math32.Vec3(0, 1, 0), math32.DegToRad(ang)))
+}

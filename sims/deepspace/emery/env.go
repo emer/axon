@@ -197,11 +197,15 @@ func (ev *EmeryEnv) Init(run int) {
 	} else {
 		ev.Rand.Seed(ev.RandSeed)
 	}
-	if ev.Physics.Model != nil {
-		ev.Physics.InitState()
-	}
 	ev.CurrentTime = 0
 	ev.WriteIndex = 0
+	if ev.Physics.Model != nil {
+		fmt.Println("init")
+		ev.Physics.InitState()
+		for di := range ev.NData {
+			ev.SetEmeryInitConfig(di)
+		}
+	}
 }
 
 func (ev *EmeryEnv) ConfigPhysics(sc *xyz.Scene) {

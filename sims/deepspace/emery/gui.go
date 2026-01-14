@@ -109,4 +109,20 @@ func (ge *GUI) MakeToolbar(p *tree.Plan) {
 				ge.Env.Init(0)
 			})
 	})
+	tt := "Data Parallel (di) world to view"
+	tree.Add(p, func(w *core.Text) { w.SetText("Di:").SetTooltip(tt) })
+
+	tree.Add(p, func(w *core.Spinner) {
+		core.Bind(&ge.Di, w)
+		w.SetMin(0).SetTooltip(tt)
+		w.Styler(func(s *styles.Style) {
+			replN := ge.Env.NData
+			w.SetMax(float32(replN - 1))
+			s.SetEnabled(replN > 1)
+		})
+		w.OnChange(func(e events.Event) {
+			ge.Env.Physics.Scene.Update()
+			ge.SceneEditor.NeedsRender()
+		})
+	})
 }
