@@ -7,6 +7,7 @@ package emery
 import (
 	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/stats/metric"
+	"cogentcore.org/lab/tensor"
 )
 
 // Senses are sensory inputs that unfold over time.
@@ -45,7 +46,7 @@ func (s Senses) IsVestibular() bool {
 }
 
 // SenseMaxValues are expected max sensory value, for normalizing.
-var SenseMaxValues = [SensesN]float32{.4, .1, 180, 10, 1, 10}
+var SenseMaxValues = [SensesN]float32{.2, .2, 180, 10, 1, 10}
 
 // ConfigSensoryDelays sets the sensory delays for each sense.
 func (ev *EmeryEnv) ConfigSensoryDelays() {
@@ -60,15 +61,29 @@ func (ev *EmeryEnv) ConfigSensoryDelays() {
 
 // RecordSenses records senses, every step.
 func (ev *EmeryEnv) RecordSenses() {
-	ev.Emery.Obj.RunSensors()
+	ev.Physics.Builder.RunSensors()
+	if ev.Cycle.Cur%ev.Params.VisMotionInterval == 0 {
+		// note: due to https://github.com/gfx-rs/wgpu/issues/8119
+		// this is very slow in reading back images from the GPU
+		// so until that is fixed, we need a reasonably large interval
+		// which is generally fine once the time-averaging is taken into account.
+		ev.VisMotion()
+	}
+	dir := ev.SenseData.Dir("Cycle")
 	for di := range ev.NData {
 		es := ev.EmeryState(di)
 		for sense := range SensesN {
+			snm := sense.String()
 			val := es.SenseValues[sense]
-			ev.WriteData(ev.SenseData, di, sense.String(), val)
+			if sense.IsVestibular() {
+				for t := range ev.Params.VisMotionInterval {
+					val += ev.ReadData(dir, di, snm, t)
+				}
+				val /= float32(1 + float32(ev.Params.VisMotionInterval))
+			}
+			ev.WriteData(dir, di, snm, val)
 		}
 	}
-	ev.VisMotion()
 }
 
 // VisMotion updates the visual motion value based on last action.
@@ -88,11 +103,15 @@ func (ev *EmeryEnv) VisMotion() {
 // AverageSenses computes time-lagged sensory averages over SensoryWindow.
 // These are the values that are actually rendered for input to the model.
 func (ev *EmeryEnv) AverageSenses() {
+	dir := ev.SenseData.Dir("Cycle")
+	avgDir := ev.SenseData.Dir("Avg")
+	avgBufSz := ev.BufferSize / 10
 	for s := range SensesN {
 		del := ev.SensoryDelays[s]
 		for di := range ev.NData {
 			es := ev.EmeryState(di)
-			ts := ev.SenseData.Dir(ev.diName(di)).Float32(s.String(), ev.BufferSize)
+			diName := ev.diName(di)
+			ts := dir.Dir(diName).Float32(s.String(), ev.BufferSize)
 			avg := float64(0)
 			for t := range ev.SensoryWindow {
 				pidx := ev.PriorIndex(t + del)
@@ -102,12 +121,13 @@ func (ev *EmeryEnv) AverageSenses() {
 			es.SenseAverages[s] = float32(avg)
 			nrm := float32(avg) * ev.SenseNorms[s]
 			if math32.Abs(nrm) > 1 {
-				//				fmt.Println("sense over max:", s, "val:", nrm, "max:", SenseMaxValues[s])
 				nrm = math32.Sign(nrm)
 			}
 			es.SenseNormed[s] = nrm
+			avgDir.Dir(diName).Float32(s.String(), avgBufSz).SetFloat1D(float64(nrm), ev.AvgWriteIndex)
 		}
 	}
+	ev.AvgWriteIncr()
 	// es := ev.EmeryState(0)
 	// fmt.Println("avgs: ", es.SenseAverages)
 	// fmt.Println("norms:", es.SenseNormed)
@@ -125,13 +145,27 @@ func (ev *EmeryEnv) RenderSenses() {
 	}
 }
 
-// VisVestibCorrel returns the correlation between the visual (VMRotHVel)
-// and vestibular (VSRotHVel) signals, for tuning the visual motion params
-// (VSRotHVel is ground truth).
-func (ev *EmeryEnv) VisMotorCorrel(di int) float64 {
-	dd := ev.SenseData.Dir(ev.diName(di))
+// VisVestibCorrelCycle returns the correlation between the visual (VMRotHVel)
+// and vestibular (VSRotHVel) signals at the cycle level,
+// for tuning the visual motion params (VSRotHVel is ground truth).
+func (ev *EmeryEnv) VisVestibCorrelCycle(di int) float64 {
+	dd := ev.SenseData.Dir("Cycle").Dir(ev.diName(di))
 	vm := dd.Float32(VMRotHVel.String(), ev.BufferSize)
+	madj := tensor.NewFloat32FromValues(vm.Values[ev.Params.VisMotionInterval:]...)
 	vs := dd.Float32(VSRotHVel.String(), ev.BufferSize)
+	sadj := tensor.NewFloat32FromValues(vs.Values[:ev.BufferSize-ev.Params.VisMotionInterval]...)
+	cor := metric.Correlation(madj, sadj).Float1D(0)
+	return cor
+}
+
+// VisVestibCorrelAvg returns the correlation between the visual (VMRotHVel)
+// and vestibular (VSRotHVel) signals at the averaged and normalized level.
+// for tuning the visual motion params (VSRotHVel is ground truth).
+func (ev *EmeryEnv) VisVestibCorrelAvg(di int) float64 {
+	avgBufSz := ev.BufferSize / 10
+	dd := ev.SenseData.Dir("Avg").Dir(ev.diName(di))
+	vm := dd.Float32(VMRotHVel.String(), avgBufSz)
+	vs := dd.Float32(VSRotHVel.String(), avgBufSz)
 	cor := metric.Correlation(vm, vs).Float1D(0)
 	return cor
 }
@@ -143,6 +177,6 @@ func (ev *EmeryEnv) SenseValue(di int, sense Senses, delayed bool) float32 {
 	if delayed {
 		nPrior = ev.SensoryDelays[sense]
 	}
-	val := ev.ReadData(ev.SenseData, di, sense.String(), nPrior)
+	val := ev.ReadData(ev.SenseData.Dir("Cycle"), di, sense.String(), nPrior)
 	return val
 }

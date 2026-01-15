@@ -131,7 +131,7 @@ type EmeryState struct {
 	SenseNormed [SensesN]float32
 
 	// current captured images
-	EyeRImage, EyeLImage image.Image `display:"-"`
+	EyeRImage, EyeLImage image.Image
 
 	// NextActions are the next action values set by sim, and rendered
 	// depending on RenderNextAction value.
@@ -163,7 +163,10 @@ func (ev *EmeryEnv) TakeAction(di int, act Actions, val float32) {
 
 // SetEmeryInitConfig sets the initial configuration of emery per di.
 func (ev *EmeryEnv) SetEmeryInitConfig(di int) {
-	ang := -180 + 360*ev.Rand.Float32()
+	// ang := -5 + 10*ev.Rand.Float32()
+	// ang := float32(di) * 20
+	ang := float32(0)
 	obj := ev.Physics.Builder.ReplicaObject(ev.Emery.Obj, di)
-	obj.RotateAroundBody(0, math32.NewQuatAxisAngle(math32.Vec3(0, 1, 0), math32.DegToRad(ang)))
+	obj.RotateOnAxisBody(0, 0, 1, 0, ang)
+	obj.PoseToPhysics()
 }

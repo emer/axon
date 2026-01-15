@@ -106,8 +106,8 @@ type Sim struct {
 	// GUI manages all the GUI elements
 	GUI egui.GUI `display:"-"`
 
-	// GUI for viewing env.
-	EnvGUI *emery.GUI `display:"-"`
+	// GUI for viewing env. `display:"-"`
+	EnvGUI *emery.GUI
 
 	// RandSeeds is a list of random seeds to use for each run.
 	RandSeeds randx.Seeds `display:"-"`
@@ -156,7 +156,7 @@ func (ss *Sim) ConfigEnv() {
 	if ss.Config.Env.Env != nil {
 		reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
 	}
-	trn.Config(ndata, ss.Root.Dir("Env"), axon.ComputeGPU)
+	trn.Config(ndata, ss.Config.Run.Cycles(), ss.Root.Dir("Env"), axon.ComputeGPU)
 	trn.Init(0)
 
 	// note: names must be in place when adding
@@ -584,10 +584,10 @@ func (ss *Sim) ConfigStats() {
 }
 
 func (ss *Sim) ConfigStatVis() {
-	statNames := []string{"VisVestCor", "EmeryAng"}
+	statNames := []string{"VisVestibCor", "EmeryAng"}
 	statDescs := map[string]string{
-		"VisVestCor": "Correlation between the visual motion and vestibular rotation velocity signals, indicating quality of visual motion filters",
-		"EmeryAng":   "Emery's current body angle",
+		"VisVestibCor": "Correlation between the visual motion and vestibular rotation velocity signals, indicating quality of visual motion filters",
+		"EmeryAng":     "Emery's current body angle",
 	}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		if level < Trial {
@@ -614,8 +614,8 @@ func (ss *Sim) ConfigStatVis() {
 				for di := range ndata {
 					var stat float64
 					switch name {
-					case "VisVestCor":
-						stat = ev.VisMotorCorrel(di)
+					case "VisVestibCor":
+						stat = ev.VisVestibCorrelCycle(di)
 					case "EmeryAng":
 						stat = float64(ev.SenseValue(di, emery.VSRotHDir, false)) // current
 					}
@@ -824,7 +824,6 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	ev := ss.Envs.ByMode(etime.Train).(*emery.EmeryEnv)
 	ss.EnvGUI = &emery.GUI{}
 	ss.EnvGUI.ConfigGUI(ev, evtab)
-	ev.ConfigPhysics(ss.EnvGUI.SceneEditor.SceneXYZ())
 
 	ss.StatsInit()
 
@@ -861,11 +860,11 @@ func (ss *Sim) UpdateEnvGUI(mode Modes) {
 	if vu == nil || vu.View == nil || ss.EnvGUI == nil {
 		return
 	}
-	ss.EnvGUI.Di = vu.View.Di
 	ss.EnvGUI.Update()
 }
 
 func (ss *Sim) RunNoGUI() {
+	// profile.Profiling = true
 	ss.Init()
 
 	if ss.Config.Params.Note != "" {
@@ -884,6 +883,8 @@ func (ss *Sim) RunNoGUI() {
 	ss.Loops.Loop(Train, Run).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.Runs)
 
 	ss.Loops.Run(Train)
+
+	// profile.Report(time.Millisecond)
 
 	axon.CloseLogFiles(ss.Loops, ss.Stats, Cycle)
 	axon.GPURelease()

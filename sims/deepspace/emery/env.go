@@ -103,9 +103,13 @@ type EmeryEnv struct {
 	// sensory and motor state buffers.
 	BufferSize int `default:"4000" edit:"-"`
 
-	// WriteIndex is the current write index in tensorfs sensory and motor data.
-	// Add post-increments.
+	// WriteIndex is the current write index in tensorfs Cycle-level
+	// sensory and motor data. Add post-increments.
 	WriteIndex int `edit:"-"`
+
+	// AvgWriteIndex is the current write index for averages data,
+	// which is less frequently updated.
+	AvgWriteIndex int `edit:"-"`
 
 	// SensoryDelays are the actual delays for each sense: from [SensoryDelays]
 	// params.
@@ -124,6 +128,9 @@ type EmeryEnv struct {
 	// All random calls must use this.
 	// Set seed here for weight initialization values.
 	Rand randx.SysRand `display:"-"`
+
+	// Cycle tracks cycles, for interval-based updates etc.
+	Cycle env.Counter
 
 	// random seed
 	RandSeed int64 `edit:"-"`
@@ -162,8 +169,9 @@ func (ev *EmeryEnv) Defaults() {
 }
 
 // Config configures the environment
-func (ev *EmeryEnv) Config(ndata int, dataNode *tensorfs.Node, netGPU *gpu.GPU) {
+func (ev *EmeryEnv) Config(ndata, ncycles int, dataNode *tensorfs.Node, netGPU *gpu.GPU) {
 	ev.NData = ndata
+	ev.Cycle.Max = ncycles
 	v1vision.ComputeGPU = netGPU
 	ev.Motion.Config(ndata, ev.MotionImage.Size)
 
@@ -188,6 +196,14 @@ func (ev *EmeryEnv) Config(ndata int, dataNode *tensorfs.Node, netGPU *gpu.GPU) 
 		ev.States[a.String()] = tensor.NewFloat32(ndata, ev.UnitsPer, 2)
 		ev.States[a.String()+"Pop"] = tensor.NewFloat32(ndata, ev.UnitsPer, ev.LinearUnits)
 	}
+	dev, err := gpu.NewDevice(netGPU)
+	if err != nil {
+		panic(err)
+	}
+	// gp, dev, err = gpu.NoDisplayGPU() // note: significantly faster to use netGPU
+
+	sc := phyxyz.NoDisplayScene(netGPU, dev)
+	ev.ConfigPhysics(sc)
 }
 
 func (ev *EmeryEnv) Init(run int) {
@@ -199,12 +215,15 @@ func (ev *EmeryEnv) Init(run int) {
 	}
 	ev.CurrentTime = 0
 	ev.WriteIndex = 0
+	ev.Motion.Init()
+	ev.Cycle.Init()
+	ev.Cycle.Cur = -1
 	if ev.Physics.Model != nil {
-		fmt.Println("init")
 		ev.Physics.InitState()
 		for di := range ev.NData {
 			ev.SetEmeryInitConfig(di)
 		}
+		physics.ToGPU(physics.DynamicsVar)
 	}
 }
 
@@ -218,36 +237,28 @@ func (ev *EmeryEnv) ConfigPhysics(sc *xyz.Scene) {
 	params.ControlDt = 0.1
 	params.SubSteps = 1
 	params.Dt = 0.001
-
-	sc.Background = colors.Scheme.Select.Container
-	xyz.NewAmbient(sc, "ambient", 0.3, xyz.DirectSun)
-
-	dir := xyz.NewDirectional(sc, "dir", 1, xyz.DirectSun)
-	dir.Pos.Set(0, 2, 1) // default: 0,1,1 = above and behind us (we are at 0,0,X)
-
+	ev.ConfigXYZScene(sc)
 	ev.Physics.Scene = phyxyz.NewScene(sc)
-
 	wl := ev.Physics.Builder.NewGlobalWorld()
 	ev.World.Make(wl, ev.Physics.Scene, ev)
 
 	ew := ev.Physics.Builder.NewWorld()
 	ev.Emery.Make(ew, ev.Physics.Scene, ev)
-	ev.Physics.Builder.ReplicateWorld(ev.Physics.Scene, 1, 1, ev.NData)
+	ev.Physics.Builder.ReplicateWorld(nil, 1, 1, ev.NData)
+	// note: critical to not include scene, so skins only for first body
 	ev.Physics.Build()
 }
 
-func (ev *EmeryEnv) StepPhysics() {
-	ev.Physics.Step(ev.ModelSteps)
+func (ev *EmeryEnv) ConfigXYZScene(sc *xyz.Scene) {
+	sc.Background = colors.Scheme.Select.Container
+	xyz.NewAmbient(sc, "ambient", 0.3, xyz.DirectSun)
+
+	dir := xyz.NewDirectional(sc, "dir", 1, xyz.DirectSun)
+	dir.Pos.Set(0, 2, 1) // default: 0,1,1 = above and behind us (we are at 0,0,X)
 }
 
-// ConfigNoGUI runs the model without a GUI, for background / server mode.
-func (ev *EmeryEnv) ConfigNoGUI() {
-	gp, dev, err := gpu.NoDisplayGPU()
-	if err != nil {
-		panic(err)
-	}
-	sc := phyxyz.NoDisplayScene(gp, dev)
-	ev.ConfigPhysics(sc)
+func (ev *EmeryEnv) StepPhysics() {
+	ev.Physics.StepQuiet(ev.ModelSteps)
 }
 
 // WriteIncr increments the WriteIndex, after writing current row.
@@ -256,6 +267,15 @@ func (ev *EmeryEnv) WriteIncr() {
 	ev.WriteIndex++
 	if ev.WriteIndex >= ev.BufferSize {
 		ev.WriteIndex = 0
+	}
+}
+
+// AvgWriteIncr increments the AvgWriteIndex, after writing current row.
+// Wraps around at BufferSize.
+func (ev *EmeryEnv) AvgWriteIncr() {
+	ev.AvgWriteIndex++
+	if ev.AvgWriteIndex >= ev.BufferSize/10 {
+		ev.AvgWriteIndex = 0
 	}
 }
 
@@ -281,7 +301,6 @@ func (ev *EmeryEnv) diName(di int) string {
 func (ev *EmeryEnv) WriteData(dir *tensorfs.Node, di int, name string, val float32) {
 	dd := dir.Dir(ev.diName(di))
 	dd.Float32(name, ev.BufferSize).SetFloat1D(float64(val), ev.WriteIndex)
-	// fmt.Println("write:", ev.WriteIndex, name, val)
 }
 
 // ReadData reads sensory / action data from given tensorfs dir, for given
@@ -290,7 +309,6 @@ func (ev *EmeryEnv) ReadData(dir *tensorfs.Node, di int, name string, nPrior int
 	dd := dir.Dir(ev.diName(di))
 	pidx := ev.PriorIndex(nPrior)
 	val := float32(dd.Float32(name, ev.BufferSize).Float1D(pidx))
-	// fmt.Println("read:", pidx, name, val)
 	return val
 }
 
@@ -307,6 +325,7 @@ func (ev *EmeryEnv) String() string {
 // Step is called to advance the environment state at every cycle.
 // Actions set after the prior step are taken first.
 func (ev *EmeryEnv) Step() bool {
+	ev.Cycle.Incr()
 	ev.TakeActions()
 	ev.StepPhysics()
 	ev.RecordSenses()
@@ -327,7 +346,8 @@ func (ev *EmeryEnv) RenderValue(di int, snm string, val float32) {
 }
 
 // RenderRate renders rate code state, as normalized 0-1 value
-// as both 0-1 and 1-0 coded value across X axis.
+// as both 0-1 and 1-0 coded value across X axis, Y axis is
+// positive vs. negative numbers.
 func (ev *EmeryEnv) RenderRate(di int, snm string, val float32) {
 	minVal := float32(0.1)
 	minScale := 1.0 - minVal

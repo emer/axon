@@ -15,6 +15,7 @@ import (
 	"cogentcore.org/core/styles/units"
 	"cogentcore.org/core/tree"
 	"cogentcore.org/core/xyz/xyzcore"
+	"cogentcore.org/lab/physics/phyxyz"
 )
 
 // GUI provides a GUI view onto the EmeryEnv
@@ -24,6 +25,9 @@ type GUI struct {
 
 	// Di is the data parallel item to view.
 	Di int
+
+	// GUI version of scene
+	Scene *phyxyz.Scene
 
 	// 3D visualization of the Scene
 	SceneEditor *xyzcore.SceneEditor
@@ -82,6 +86,11 @@ func (ge *GUI) ConfigGUI(ev *EmeryEnv, b core.Widget) {
 	sc.Camera.LookAt(math32.Vec3(0, 3.6, 0), math32.Vec3(0, 1, 0))
 	sc.SaveCamera("1")
 	sc.SaveCamera("default")
+
+	ge.Env.ConfigXYZScene(sc)
+	ge.Scene = phyxyz.NewScene(sc)
+	ge.Env.Physics.Builder.CloneSkins(ge.Scene)
+	ge.Scene.Init(ge.Env.Physics.Model)
 }
 
 func (ge *GUI) Update() {
@@ -98,6 +107,7 @@ func (ge *GUI) Update() {
 		ge.EyeLImageDisp.SetImage(es.EyeLImage)
 		ge.EyeLImageDisp.NeedsRender()
 	}
+	ge.Scene.Update()
 	ge.SceneEditor.NeedsRender()
 }
 
@@ -121,8 +131,10 @@ func (ge *GUI) MakeToolbar(p *tree.Plan) {
 			s.SetEnabled(replN > 1)
 		})
 		w.OnChange(func(e events.Event) {
-			ge.Env.Physics.Scene.Update()
-			ge.SceneEditor.NeedsRender()
+			sc := ge.Scene
+			sc.ReplicasIndex = ge.Di
+			sc.Update()
+			ge.Update()
 		})
 	})
 }
