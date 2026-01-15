@@ -152,10 +152,10 @@ func (ss *Sim) ConfigEnv() {
 	// note: names must be standard here!
 	trn.Defaults()
 	trn.Name = Train.String()
-	trn.UnitsPer = ss.Config.Env.UnitsPer
-	if ss.Config.Env.Env != nil {
-		reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
-	}
+	trn.Params.UnitsPer = ss.Config.Env.UnitsPer
+	// if ss.Config.Env.Env != nil {
+	// 	reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
+	// }
 	trn.Config(ndata, ss.Config.Run.Cycles(), ss.Root.Dir("Env"), axon.ComputeGPU)
 	trn.Init(0)
 
@@ -183,48 +183,53 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	space := float32(2)
 	// eyeSz := image.Point{2, 1}
 
-	addInput := func(nm string, doc string) (in, pop *axon.Layer) {
-		in = net.AddLayer4D(nm, axon.InputLayer, 1, 2, ev.UnitsPer, 1)
+	addInput := func(nm string, doc string) (in, mf, thal *axon.Layer) {
+		in = net.AddLayer4D(nm, axon.InputLayer, 1, 2, ev.Params.UnitsPer, 1)
 		in.AddClass("RateIn")
 		in.Doc = "Rate code version. " + doc
 
-		pop = net.AddLayer2D(nm+"Pop", axon.InputLayer, ev.UnitsPer, ev.LinearUnits)
-		pop.AddClass("LinearIn")
-		pop.Doc = "Population coded version. " + doc
-		pop.PlaceBehind(in, space)
+		mf = net.AddLayer4D(nm+"MF", axon.InputLayer, ev.Params.TimeBins, 1, 1, ev.Params.PopCodeUnits)
+		mf.AddClass("MFIn")
+		mf.Doc = "MF mossy fiber input, transient population code. " + doc
+		mf.PlaceBehind(in, space)
+
+		thal = net.AddLayer4D(nm+"Thal", axon.InputLayer, ev.Params.TimeBins, 1, 1, ev.Params.PopCodeUnits)
+		thal.AddClass("ThalIn")
+		thal.Doc = "Thalamic input, integrated population code. " + doc
+		thal.PlaceBehind(mf, space)
 		return
 	}
 
-	rotAct, rotActPop := addInput("Rotate", "Full body horizontal rotation action, population coded left to right with gaussian tuning curves for a range of degrees for each unit (X axis) and redundant units for population code in the Y axis.")
+	rotAct, rotActMF, rotActThal := addInput("Rotate", "Full body horizontal rotation action, population coded left to right with gaussian tuning curves for a range of degrees for each unit (X axis) and redundant units for population code in the Y axis.")
 
 	// rotActPrev, rotActPrevPop := addInput("ActRotatePrev", "Previous trial's version of ActRotate. This should be implicitly maintained but currently is not.")
 	// _ = rotActPrevPop
 
-	addInputPulv := func(nm string, doc string) (in, pop, popP *axon.Layer) {
-		in = net.AddLayer4D(nm, axon.InputLayer, 1, 2, ev.UnitsPer, 1)
+	addInputPulv := func(nm string, doc string) (in, thal, thalP *axon.Layer) {
+		in = net.AddLayer4D(nm, axon.InputLayer, 1, 2, ev.Params.UnitsPer, 1)
 		in.AddClass("RateIn")
 		in.Doc = "Rate code version. " + doc
 
-		pop, popP = net.AddInputPulv2D(nm+"Pop", ev.UnitsPer, ev.LinearUnits, space)
-		pop.AddClass("LinearIn")
-		popP.AddClass("LinearIn")
-		pop.Doc = "Population coded version. " + doc
-		pop.PlaceBehind(in, space)
+		thal, thalP = net.AddInputPulv4D(nm+"Thal", ev.Params.TimeBins, 1, 1, ev.Params.PopCodeUnits, space)
+		thal.AddClass("ThalIn")
+		thalP.AddClass("ThalIn")
+		thal.Doc = "Thalamic input, integrated population code. " + doc
+		thal.PlaceBehind(in, space)
 		return
 	}
 
-	vsRotVel, vsRotVelPop, vsRotVelPopP := addInputPulv("VSRotHVel", "Vestibular horizontal rotation velocity, computed from the physics model over time. Population coded left to right with gaussian tuning curves for a range of degrees for each unit (X axis) and redundant units for population code in the Y axis.")
-	_ = vsRotVelPopP
+	vsRotVel, vsRotVelThal, vsRotVelThalP := addInputPulv("VSRotHVel", "Vestibular horizontal rotation velocity, computed from the physics model over time. Population coded left to right with gaussian tuning curves for a range of degrees for each unit (X axis) and redundant units for population code in the Y axis.")
+	_ = vsRotVelThalP
 
-	vmRotVel, vmRotVelPop, vmRotVelPopP := addInputPulv("VMRotHVel", "Full-field visual motion computed from the eye using retinal motion filter (see Env tab for visual environment). Population coded left to right with gaussian tuning curves for a range of velocities for each unit (X axis) and redundant units for population code in the Y axis.")
+	vmRotVel, vmRotVelThal, vmRotVelThalP := addInputPulv("VMRotHVel", "Full-field visual motion computed from the eye using retinal motion filter (see Env tab for visual environment). Population coded left to right with gaussian tuning curves for a range of velocities for each unit (X axis) and redundant units for population code in the Y axis.")
 
 	s1, s1ct := net.AddSuperCT2D("S1", "", 10, 10, space, one2one) // one2one learn > full
 	s1.Doc = "Neocortical integrated vestibular and full-field visual motion processing. Does predictive learning on both input signals, more like S2 (secondary), but just using one for simplicity."
 	// net.ConnectCTSelf(s1ct, full, "") // self definitely doesn't make sense -- no need for 2-back ct
 	// net.LateralConnectLayer(s1ct, full).AddClass("CTSelfMaint") // no diff
-	net.ConnectToPulv(s1, s1ct, vsRotVelPopP, full, full, "")
-	net.ConnectLayers(rotActPop, s1, full, axon.ForwardPath).AddClass("FFToHid", "FromAct")
-	net.ConnectLayers(vsRotVelPop, s1, full, axon.ForwardPath).AddClass("FFToHid")
+	net.ConnectToPulv(s1, s1ct, vsRotVelThalP, full, full, "")
+	net.ConnectLayers(rotActThal, s1, full, axon.ForwardPath).AddClass("FFToHid", "FromAct")
+	net.ConnectLayers(vsRotVelThal, s1, full, axon.ForwardPath).AddClass("FFToHid")
 
 	// visHid, visHidct := net.AddSuperCT2D("VisHid", "", 10, 10, space, one2one) // one2one learn > full
 
@@ -232,14 +237,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectLayers(rotAct, visHid, full, axon.ForwardPath).AddClass("FFToHid", "FromAct")
 	// net.ConnectLayers(vmRotVel, visHid, full, axon.ForwardPath).AddClass("FFToHid")
 
-	net.ConnectToPulv(s1, s1ct, vmRotVelPopP, full, full, "")
-	net.ConnectLayers(vmRotVelPop, s1, full, axon.ForwardPath).AddClass("FFToHid")
+	net.ConnectToPulv(s1, s1ct, vmRotVelThalP, full, full, "")
+	net.ConnectLayers(vmRotVelThal, s1, full, axon.ForwardPath).AddClass("FFToHid")
 
-	// net.ConnectLayers(vsRotVelPop, visHid, full, axon.ForwardPath).AddClass("FFToHid")
+	// net.ConnectLayers(vsRotVelThal, visHid, full, axon.ForwardPath).AddClass("FFToHid")
 
-	if ev.LeftEye {
-		// net.ConnectToPulv(visHidPop, visHidct, eyeLInp, full, full, "")
-		// net.ConnectLayers(eyeLInPop, visHid, full, axon.ForwardPath).AddClass("FFToHid")
+	if ev.Params.LeftEye {
+		// net.ConnectToPulv(visHidThal, visHidct, eyeLInp, full, full, "")
+		// net.ConnectLayers(eyeLInThal, visHid, full, axon.ForwardPath).AddClass("FFToHid")
 	}
 
 	// cerebellum:
@@ -252,17 +257,17 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	// net.ConnectLayers(rotActPrev, cniIOUp, p1to1, axon.CNIOPath).AddClass("MFUp", "MFToCNiIOUp")
 	// net.ConnectLayers(s1ct, cniIOUp, p1to1, axon.CNIOPath).AddClass("MFUp", "MFToCNiIOUp")
-	net.ConnectLayers(vmRotVel, cniIOUp, p1to1, axon.CNIOPath).AddClass("MFUp", "MFToCNiIOUp")
+	net.ConnectLayers(rotActMF, cniIOUp, full, axon.CNIOPath).AddClass("MFUp", "MFToCNiIOUp")
 
 	// net.ConnectLayers(rotActPrev, cniUp, p1to1, axon.CNIOPath).AddClass("MFUp", "MFToCNiUp")
 	// net.ConnectLayers(s1ct, cniUp, p1to1, axon.CNIOPath).AddClass("MFUp", "MFToCNiUp")
-	net.ConnectLayers(vmRotVel, cniUp, p1to1, axon.CNIOPath).AddClass("MFUp", "MFToCNiUp")
+	net.ConnectLayers(rotActMF, cniUp, full, axon.CNIOPath).AddClass("MFUp", "MFToCNiUp")
 
 	// position
 
-	// rotActPrev.PlaceBehind(rotActPop, space)
-	vsRotVel.PlaceRightOf(rotAct, float32(ev.LinearUnits))
-	vmRotVel.PlaceRightOf(vsRotVel, float32(ev.LinearUnits))
+	// rotActPrev.PlaceBehind(rotActThal, space)
+	vsRotVel.PlaceRightOf(rotAct, float32(ev.Params.PopCodeUnits))
+	vmRotVel.PlaceRightOf(vsRotVel, float32(ev.Params.PopCodeUnits))
 	// if ev.LeftEye {
 	// 	eyeLIn.PlaceRightOf(vmRotVel, space)
 	// }
@@ -381,7 +386,7 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 	curModeDir := ss.Current.Dir(mode.String())
 	ev := ss.Envs.ByMode(mode).(*emery.EmeryEnv)
 	cyc := ss.Loops.Loop(mode, Cycle).Counter.Cur
-	render := cyc%ss.Config.Run.NewInputCycles == 0
+	render := cyc%ev.Params.TimeBinCycles == 0
 	ev.RenderStates = render
 	ev.Step()
 	if !render {
@@ -695,7 +700,7 @@ func (ss *Sim) ConfigStatNuclear() {
 			case "IOioff":
 				stat = layers[0].AvgMaxVarByPool("GaD", pool, di).Avg
 			case "IOerr":
-				stat = max(layers[0].AvgMaxVarByPool("TimeDiff", pool, di).Avg, 0)
+				stat = layers[0].AvgMaxVarByPool("TimeDiff", pool, di).Avg
 			case "IOspike":
 				stat = layers[0].AvgMaxVarByPool("Spike", pool, di).Avg
 			case "CNiIO":
@@ -813,7 +818,7 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	nv.Options.Raster.Max = ss.Config.Run.Cycles()
 	nv.Options.LayerNameSize = 0.03
 	nv.SetNet(ss.Net)
-	ss.TrainUpdate.Config(nv, axon.Theta, ss.StatCounters)
+	ss.TrainUpdate.Config(nv, axon.Cycle, ss.StatCounters) // Theta
 	ss.GUI.OnStop = func(mode, level enums.Enum) {
 		vu := ss.NetViewUpdater(mode)
 		vu.UpdateWhenStopped(mode, level)

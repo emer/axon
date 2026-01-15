@@ -154,10 +154,10 @@ func (ev *EmeryEnv) TakeAction(di int, act Actions, val float32) {
 	jd := ev.Physics.Builder.ReplicaJoint(ev.Emery.XZ, di)
 	switch act {
 	case Rotate:
-		jd.AddTargetAngle(2, val, ev.ActionStiff)
+		jd.AddTargetAngle(2, val, ev.Params.ActionStiff)
 	case Forward:
 		ang := math32.Pi*.5 - jd.DoF(2).Current.Pos
-		jd.AddPlaneXZPos(ang, val, ev.ActionStiff)
+		jd.AddPlaneXZPos(ang, val, ev.Params.ActionStiff)
 	}
 }
 

@@ -7,6 +7,7 @@
 package axon
 
 import (
+	// "fmt"
 	"cogentcore.org/core/math32"
 	"github.com/emer/axon/v2/fsfffb"
 )
@@ -486,8 +487,14 @@ func (pt *PathParams) DWtCNIO(ctx *Context, rlay *LayerParams, syni, si, ri, lpi
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DiDWt))
 		return
 	}
-	bi := CaBinForCycle(learnNow - rlay.Nuclear.SendTimeOff)
-	sact := Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(bi))) // sending activity
+	stcyc := learnNow - rlay.Nuclear.SendTimeOff
+	nbins := rlay.Nuclear.SendTimeOff / CaBinCycles
+	nbins = max(1, nbins-1) // /2)
+	sact := float32(0)
+	for i := range nbins {
+		bi := CaBinForCycle(stcyc + i*CaBinCycles)
+		sact += Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(bi)))
+	}
 	// todo: rlrate? Neurons[ri, di, RLRate]
 	dwt := sact
 	if Neurons.Value(int(ri), int(di), int(TimePeak)) == 0 { // means that we got to end of cycle with no err: decay

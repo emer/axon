@@ -25,10 +25,15 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.05
 			}},
-		{Sel: ".LinearIn", Doc: "",
+		{Sel: ".ThalIn", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.2 // 0.2 > 0.13, 0.2 accurate
 				ly.Inhib.Layer.Gi = 0.8       //
+			}},
+		{Sel: ".MFIn", Doc: "",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.05 // 0.2 > 0.13, 0.2 accurate
+				ly.Inhib.Layer.Gi = 0.8        //
 			}},
 		{Sel: ".RateIn", Doc: "",
 			Set: func(ly *axon.LayerParams) {
@@ -72,6 +77,7 @@ var LayerParams = axon.LayerSheets{
 		{Sel: ".CNiIOLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Nuclear.Decay = 0.5
+				ly.Nuclear.SendTimeOff = 40
 			}},
 		{Sel: ".CNiUpLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {

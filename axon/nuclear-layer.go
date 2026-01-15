@@ -169,7 +169,7 @@ func (ly *LayerParams) IOUpdate(ctx *Context, lpi, pi, ni, di uint32) {
 	effAct := int32(Neurons.Value(int(ni), int(di), int(TimeCycle)))
 	envCyc := ctx.CyclesTotal - effAct // cycle within envelope
 
-	gaP := Neurons.Value(int(ni), int(di), int(GaP))
+	gaP := Neurons.Value(int(ni), int(di), int(GaP)) // IOe excitatory input
 	gaP += ly.IO.GDt * (Neurons.Value(int(ni), int(di), int(GeSyn)) - gaP)
 	Neurons.Set(gaP, int(ni), int(di), int(GaP))
 
@@ -186,8 +186,15 @@ func (ly *LayerParams) IOUpdate(ctx *Context, lpi, pi, ni, di uint32) {
 	Neurons.Set(0.0, int(ni), int(di), int(TimeDiff)) // set below for display
 	Neurons.Set(0.0, int(ni), int(di), int(Spike))    // default is no spike
 
-	bin := CaBinForCycle(ctx.CyclesTotal - ly.IO.TimeOff)
-	oldInhib := Neurons.Value(int(ni), int(di), int(CaBins+NeuronVars(bin)))
+	oldInhib := float32(0)
+	nbins := ly.IO.TimeOff / CaBinCycles
+	nbins = max(1, nbins-1)
+	stcyc := ctx.CyclesTotal - ly.IO.TimeOff
+	for i := range nbins {
+		bi := CaBinForCycle(stcyc + i*CaBinCycles)
+		oldInhib += Neurons.Value(int(ni), int(di), int(CaBins+NeuronVars(bi)))
+	}
+	oldInhib /= float32(nbins)
 	Neurons.Set(oldInhib, int(ni), int(di), int(GaD))
 
 	if Neurons.Value(int(ni), int(di), int(LearnNow)) > 0 { // already learned, done until cleared in NuclearLearnReset
@@ -213,7 +220,10 @@ func (ly *LayerParams) IOUpdate(ctx *Context, lpi, pi, ni, di uint32) {
 	}
 	errVal := gaP - oldInhib
 	Neurons.Set(errVal, int(ni), int(di), int(TimeDiff))
-	if errVal > ly.IO.ErrThr {
+	if gaP > ly.Learn.Timing.LearnThr && errVal > ly.IO.ErrThr {
+		//	if ni == 1664 {
+		//		fmt.Println("act:", gaP, oldInhib, errVal)
+		//	}
 		Neurons.Set(1.0, int(ni), int(di), int(Spike))       // error spike
 		Neurons.Set(cycTot, int(ni), int(di), int(LearnNow)) // record point of error
 		Neurons.Set(1.0, int(ni), int(di), int(TimePeak))    // records that we got err spike

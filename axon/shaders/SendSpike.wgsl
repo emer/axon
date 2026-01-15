@@ -1299,7 +1299,8 @@ fn LayerParams_IOUpdate(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,
 	var cycTot = f32(ctx.CyclesTotal);
 	var effAct = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeCycle))]);
 	var envCyc = ctx.CyclesTotal - effAct; // cycle within envelope
-	var gaP = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))];
+	var gaP = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // IOe excitatory input
+	TensorStrides[72], u32(ni), u32(di), u32(GaP))];
 	gaP += ly.IO.GDt * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeSyn))] - gaP);
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))] = gaP;
 	var gaM = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaM))];
@@ -1315,8 +1316,15 @@ fn LayerParams_IOUpdate(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,
 	TensorStrides[72], u32(ni), u32(di), u32(TimeDiff))] = 0.0;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], // default is no spike
 	TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 0.0;
-	var bin = CaBinForCycle(ctx.CyclesTotal - ly.IO.TimeOff);
-	var oldInhib = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaBins + NeuronVars(bin)))];
+	var oldInhib = f32(0);
+	var nbins = ly.IO.TimeOff / CaBinCycles;
+	nbins = max(1, nbins-1);
+	var stcyc = ctx.CyclesTotal - ly.IO.TimeOff;
+	for (var i=0; i<nbins; i++) {
+		var bi = CaBinForCycle(stcyc + i*CaBinCycles);
+		oldInhib += Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaBins + NeuronVars(bi)))];
+	}
+	oldInhib /= f32(nbins);
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaD))] = oldInhib;
 	if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // already learned, done until cleared in NuclearLearnReset
 	u32(ni), u32(di), u32(LearnNow))] > 0) {
@@ -1342,7 +1350,7 @@ fn LayerParams_IOUpdate(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,
 	}
 	var errVal = gaP - oldInhib;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeDiff))] = errVal;
-	if (errVal > ly.IO.ErrThr) {
+	if (gaP > ly.Learn.Timing.LearnThr && errVal > ly.IO.ErrThr) {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // error spike
 		u32(ni), u32(di), u32(Spike))] = 1.0;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // record point of error

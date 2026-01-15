@@ -105,19 +105,19 @@ func (ev *EmeryEnv) VisMotion() {
 func (ev *EmeryEnv) AverageSenses() {
 	dir := ev.SenseData.Dir("Cycle")
 	avgDir := ev.SenseData.Dir("Avg")
-	avgBufSz := ev.BufferSize / 10
+	avgBufSz := ev.Params.BufferSize / 10
 	for s := range SensesN {
 		del := ev.SensoryDelays[s]
 		for di := range ev.NData {
 			es := ev.EmeryState(di)
 			diName := ev.diName(di)
-			ts := dir.Dir(diName).Float32(s.String(), ev.BufferSize)
+			ts := dir.Dir(diName).Float32(s.String(), ev.Params.BufferSize)
 			avg := float64(0)
-			for t := range ev.SensoryWindow {
+			for t := range ev.Params.AvgWindow {
 				pidx := ev.PriorIndex(t + del)
 				avg += ts.Float1D(pidx)
 			}
-			avg /= float64(ev.SensoryWindow)
+			avg /= float64(ev.Params.AvgWindow)
 			es.SenseAverages[s] = float32(avg)
 			nrm := float32(avg) * ev.SenseNorms[s]
 			if math32.Abs(nrm) > 1 {
@@ -150,10 +150,10 @@ func (ev *EmeryEnv) RenderSenses() {
 // for tuning the visual motion params (VSRotHVel is ground truth).
 func (ev *EmeryEnv) VisVestibCorrelCycle(di int) float64 {
 	dd := ev.SenseData.Dir("Cycle").Dir(ev.diName(di))
-	vm := dd.Float32(VMRotHVel.String(), ev.BufferSize)
+	vm := dd.Float32(VMRotHVel.String(), ev.Params.BufferSize)
 	madj := tensor.NewFloat32FromValues(vm.Values[ev.Params.VisMotionInterval:]...)
-	vs := dd.Float32(VSRotHVel.String(), ev.BufferSize)
-	sadj := tensor.NewFloat32FromValues(vs.Values[:ev.BufferSize-ev.Params.VisMotionInterval]...)
+	vs := dd.Float32(VSRotHVel.String(), ev.Params.BufferSize)
+	sadj := tensor.NewFloat32FromValues(vs.Values[:ev.Params.BufferSize-ev.Params.VisMotionInterval]...)
 	cor := metric.Correlation(madj, sadj).Float1D(0)
 	return cor
 }
@@ -162,7 +162,7 @@ func (ev *EmeryEnv) VisVestibCorrelCycle(di int) float64 {
 // and vestibular (VSRotHVel) signals at the averaged and normalized level.
 // for tuning the visual motion params (VSRotHVel is ground truth).
 func (ev *EmeryEnv) VisVestibCorrelAvg(di int) float64 {
-	avgBufSz := ev.BufferSize / 10
+	avgBufSz := ev.Params.BufferSize / 10
 	dd := ev.SenseData.Dir("Avg").Dir(ev.diName(di))
 	vm := dd.Float32(VMRotHVel.String(), avgBufSz)
 	vs := dd.Float32(VSRotHVel.String(), avgBufSz)

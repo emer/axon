@@ -16,7 +16,7 @@ const (
 )
 
 // ActionMaxValues are expected max sensory value, for normalizing.
-var ActionMaxValues = [ActionsN]float32{2, 2}
+var ActionMaxValues = [ActionsN]float32{3, 3}
 
 // NextAction specifies the next value for given action, for given data parallel agent.
 // This simulates the sequence of planning a new action followed by that action

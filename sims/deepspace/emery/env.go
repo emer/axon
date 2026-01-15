@@ -33,28 +33,14 @@ type EmeryEnv struct {
 	// NData is number of data-parallel Emery's to run.
 	NData int
 
+	// Params has all the parameters for the environment.
+	Params Params
+
 	// RenderStates should be updated by sim prior to running Step.
 	// It tells Step to render States input for the model.
 	// Otherwise, physics is updated and sensory state is recorded, but
 	// no rendering. Rendered states average over SensoryWindow.
 	RenderStates bool
-
-	// SensoryWindow is the time window in Steps (ms) over which the sensory
-	// state is averaged, for the purposes of rendering state.
-	SensoryWindow int
-
-	// Number of model steps per env Step. This is on top of the
-	// physics SubSteps.
-	ModelSteps int
-
-	// ActionStiff is the stiffness for performing actions.
-	ActionStiff float32
-
-	// angle population code values, in normalized units
-	AngleCode popcode.Ring
-
-	// population code for linear values, -1..1, in normalized units
-	LinearCode popcode.OneD
 
 	// Visual motion processing
 	Motion v1std.MotionDoG
@@ -62,26 +48,11 @@ type EmeryEnv struct {
 	// Image processing for Motion.
 	MotionImage v1std.Image
 
-	// UnitsPer is the number of units per localist value.
-	UnitsPer int
-
-	// LinearUnits is the number of units per linear value.
-	LinearUnits int
-
-	// AngleUnits is the number of units per angle value.
-	AngleUnits int
-
-	// LeftEye determines whether to process left eye image or not.
-	LeftEye bool
-
 	// World specifies the physical world parameters.
 	World World
 
 	// Emery has the parameters for (the first) Emery.
 	Emery Emery
-
-	// Params are sensory and motor parameters.
-	Params SensoryMotorParams
 
 	// The core physics elements: Model, Builder, Scene
 	Physics builder.Physics
@@ -98,10 +69,6 @@ type EmeryEnv struct {
 
 	// ActionData records the motor action data for each emery agent.
 	ActionData *tensorfs.Node
-
-	// BufferSize is the number of time steps (ms) to retain in the tensorfs
-	// sensory and motor state buffers.
-	BufferSize int `default:"4000" edit:"-"`
 
 	// WriteIndex is the current write index in tensorfs Cycle-level
 	// sensory and motor data. Add post-increments.
@@ -141,28 +108,15 @@ func (ev *EmeryEnv) Label() string { return ev.Name }
 func (ev *EmeryEnv) EmeryState(di int) *EmeryState { return &ev.Emerys[di] }
 
 func (ev *EmeryEnv) Defaults() {
-	ev.LeftEye = false
+	ev.Params.Defaults()
 	ev.Emery.Defaults()
 	ev.World.Defaults()
-	ev.Params.Defaults()
-	ev.SensoryWindow = 10
-	ev.UnitsPer = 4
-	ev.LinearUnits = 12 // 12 > 16 for both
-	ev.AngleUnits = 16
-	ev.ModelSteps = 1
-	ev.ActionStiff = 1000
-	popSigma := float32(0.2) // .15 > .2 for vnc, but opposite for eye
-	ev.LinearCode.Defaults()
-	ev.LinearCode.SetRange(-1.2, 1.2, popSigma) // 1.2 > 1.1 for eye
-	ev.AngleCode.Defaults()
-	ev.AngleCode.SetRange(0, 1, popSigma)
 	ev.Camera.Defaults()
 	ev.Camera.FOV = 100
 	ev.Camera.Size = image.Point{64, 64}
 	ev.Motion.Defaults()
 	ev.Motion.SetSize(8, 2)
 	ev.MotionImage.Size = ev.Camera.Size
-	ev.BufferSize = 4000
 	for s := range SensesN {
 		ev.SenseNorms[s] = 1.0 / SenseMaxValues[s]
 	}
@@ -172,11 +126,10 @@ func (ev *EmeryEnv) Defaults() {
 func (ev *EmeryEnv) Config(ndata, ncycles int, dataNode *tensorfs.Node, netGPU *gpu.GPU) {
 	ev.NData = ndata
 	ev.Cycle.Max = ncycles
+	ev.Params.TimeBins = ncycles / ev.Params.TimeBinCycles
 	v1vision.ComputeGPU = netGPU
 	ev.Motion.Config(ndata, ev.MotionImage.Size)
-
 	ev.Emerys = make([]EmeryState, ndata)
-
 	ev.SenseData = dataNode.Dir("Senses")
 	ev.ActionData = dataNode.Dir("Actions")
 
@@ -188,21 +141,28 @@ func (ev *EmeryEnv) Config(ndata, ncycles int, dataNode *tensorfs.Node, netGPU *
 	// rate code has up and down versions, with redundancy
 
 	for s := range VSRotHDir { // only render below VSRotHDir ground truth
-		ev.States[s.String()] = tensor.NewFloat32(ndata, ev.UnitsPer, 2)
-		ev.States[s.String()+"Pop"] = tensor.NewFloat32(ndata, ev.UnitsPer, ev.LinearUnits)
+		ev.States[s.String()] = tensor.NewFloat32(ndata, ev.Params.UnitsPer, 2)
+		ev.States[s.String()+"MF"] = tensor.NewFloat32(ndata, ev.Params.TimeBins, 1, 1, ev.Params.PopCodeUnits)
+		ev.States[s.String()+"Thal"] = tensor.NewFloat32(ndata, ev.Params.TimeBins, 1, 1, ev.Params.PopCodeUnits)
 	}
 
 	for a := range Forward { // only rotate now
-		ev.States[a.String()] = tensor.NewFloat32(ndata, ev.UnitsPer, 2)
-		ev.States[a.String()+"Pop"] = tensor.NewFloat32(ndata, ev.UnitsPer, ev.LinearUnits)
+		ev.States[a.String()] = tensor.NewFloat32(ndata, ev.Params.UnitsPer, 2)
+		ev.States[a.String()+"MF"] = tensor.NewFloat32(ndata, ev.Params.TimeBins, 1, 1, ev.Params.PopCodeUnits)
+		ev.States[a.String()+"Thal"] = tensor.NewFloat32(ndata, ev.Params.TimeBins, 1, 1, ev.Params.PopCodeUnits)
 	}
-	dev, err := gpu.NewDevice(netGPU)
+	gp := netGPU
+	var dev *gpu.Device
+	var err error
+	if gp == nil {
+		gp, dev, err = gpu.NoDisplayGPU()
+	} else {
+		dev, err = gpu.NewDevice(netGPU)
+	}
 	if err != nil {
 		panic(err)
 	}
-	// gp, dev, err = gpu.NoDisplayGPU() // note: significantly faster to use netGPU
-
-	sc := phyxyz.NoDisplayScene(netGPU, dev)
+	sc := phyxyz.NoDisplayScene(gp, dev)
 	ev.ConfigPhysics(sc)
 }
 
@@ -258,14 +218,14 @@ func (ev *EmeryEnv) ConfigXYZScene(sc *xyz.Scene) {
 }
 
 func (ev *EmeryEnv) StepPhysics() {
-	ev.Physics.StepQuiet(ev.ModelSteps)
+	ev.Physics.StepQuiet(1)
 }
 
 // WriteIncr increments the WriteIndex, after writing current row.
 // Wraps around at BufferSize.
 func (ev *EmeryEnv) WriteIncr() {
 	ev.WriteIndex++
-	if ev.WriteIndex >= ev.BufferSize {
+	if ev.WriteIndex >= ev.Params.BufferSize {
 		ev.WriteIndex = 0
 	}
 }
@@ -274,7 +234,7 @@ func (ev *EmeryEnv) WriteIncr() {
 // Wraps around at BufferSize.
 func (ev *EmeryEnv) AvgWriteIncr() {
 	ev.AvgWriteIndex++
-	if ev.AvgWriteIndex >= ev.BufferSize/10 {
+	if ev.AvgWriteIndex >= ev.Params.BufferSize/10 {
 		ev.AvgWriteIndex = 0
 	}
 }
@@ -286,7 +246,7 @@ func (ev *EmeryEnv) AvgWriteIncr() {
 func (ev *EmeryEnv) PriorIndex(nPrior int) int {
 	ix := ev.WriteIndex - nPrior
 	for ix < 0 {
-		ix += ev.BufferSize
+		ix += ev.Params.BufferSize
 	}
 	return ix
 }
@@ -300,7 +260,7 @@ func (ev *EmeryEnv) diName(di int) string {
 // di data parallel index, state name, and value. Writes to WriteIndex.
 func (ev *EmeryEnv) WriteData(dir *tensorfs.Node, di int, name string, val float32) {
 	dd := dir.Dir(ev.diName(di))
-	dd.Float32(name, ev.BufferSize).SetFloat1D(float64(val), ev.WriteIndex)
+	dd.Float32(name, ev.Params.BufferSize).SetFloat1D(float64(val), ev.WriteIndex)
 }
 
 // ReadData reads sensory / action data from given tensorfs dir, for given
@@ -308,7 +268,7 @@ func (ev *EmeryEnv) WriteData(dir *tensorfs.Node, di int, name string, val float
 func (ev *EmeryEnv) ReadData(dir *tensorfs.Node, di int, name string, nPrior int) float32 {
 	dd := dir.Dir(ev.diName(di))
 	pidx := ev.PriorIndex(nPrior)
-	val := float32(dd.Float32(name, ev.BufferSize).Float1D(pidx))
+	val := float32(dd.Float32(name, ev.Params.BufferSize).Float1D(pidx))
 	return val
 }
 
@@ -331,6 +291,7 @@ func (ev *EmeryEnv) Step() bool {
 	ev.RecordSenses()
 	if ev.RenderStates {
 		ev.RenderSenses()
+		ev.RenderCurActions()
 	}
 	ev.CurrentTime++
 	ev.WriteIncr()
@@ -342,7 +303,9 @@ func (ev *EmeryEnv) Step() bool {
 // as normalized 0-1 value.
 func (ev *EmeryEnv) RenderValue(di int, snm string, val float32) {
 	ev.RenderRate(di, snm, val)
-	ev.RenderLinear(di, snm+"Pop", val)
+	bin := max(ev.Cycle.Cur/ev.Params.TimeBinCycles, 0)
+	ev.RenderPop(di, bin, true, snm+"MF", val)
+	ev.RenderPop(di, bin, (bin == 0), snm+"Thal", val)
 }
 
 // RenderRate renders rate code state, as normalized 0-1 value
@@ -359,7 +322,7 @@ func (ev *EmeryEnv) RenderRate(di int, snm string, val float32) {
 	}
 	df := float32(0.9)
 	vs := ev.States[snm]
-	for i := range ev.UnitsPer {
+	for i := range ev.Params.UnitsPer {
 		vs.Set(minVal+minScale*nv, di, i, 0)
 		vs.Set(minVal+minScale*pv, di, i, 1)
 		nv *= df // discount so values are different across units
@@ -367,22 +330,18 @@ func (ev *EmeryEnv) RenderRate(di int, snm string, val float32) {
 	}
 }
 
-// RenderLinear renders linear state.
-func (ev *EmeryEnv) RenderLinear(di int, snm string, val float32) {
+// RenderPop renders population code state into given time bin.
+// clear resets other values before rendering.
+func (ev *EmeryEnv) RenderPop(di, bin int, clear bool, snm string, val float32) {
 	vs := ev.States[snm]
-	for i := range ev.UnitsPer {
-		sv := vs.SubSpace(di, i).(*tensor.Float32)
-		ev.LinearCode.Encode(&sv.Values, val, ev.LinearUnits, popcode.Set)
+	if clear {
+		for i := range ev.Params.TimeBins {
+			sv := vs.SubSpace(di, i, 0).(*tensor.Float32)
+			tensor.SetAllFloat64(sv, 0)
+		}
 	}
-}
-
-// RenderAngle renders angle state.
-func (ev *EmeryEnv) RenderAngle(di int, snm string, val float32) {
-	vs := ev.States[snm]
-	for i := range ev.UnitsPer {
-		sv := vs.SubSpace(di, i).(*tensor.Float32)
-		ev.AngleCode.Encode(&sv.Values, val, ev.AngleUnits)
-	}
+	sv := vs.SubSpace(di, bin, 0).(*tensor.Float32)
+	ev.Params.PopCode.Encode(&sv.Values, val, ev.Params.PopCodeUnits, popcode.Set)
 }
 
 // Compile-time check that implements Env interface

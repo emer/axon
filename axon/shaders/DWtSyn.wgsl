@@ -1225,9 +1225,15 @@ fn PathParams_DWtCNIO(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));return;
 	}
-	var bi = CaBinForCycle(learnNow - rlay.Nuclear.SendTimeOff);
-	var sact = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // sending activity
-	u32(si), u32(di), u32(CaBins + NeuronVars(bi)))];
+	var stcyc = learnNow - rlay.Nuclear.SendTimeOff;
+	var nbins = rlay.Nuclear.SendTimeOff / CaBinCycles;
+	nbins = max(1, nbins-1); // /2)
+	var sact = f32(0);
+	for (var i=0; i<nbins; i++) {
+		var bi = CaBinForCycle(stcyc + i*CaBinCycles);
+		sact += Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
+		u32(si), u32(di), u32(CaBins + NeuronVars(bi)))];
+	}
 	var dwt = sact;
 	if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // means that we got to end of cycle with no err: decay
 	u32(ri), u32(di), u32(TimePeak))] == 0) {

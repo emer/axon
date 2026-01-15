@@ -97,11 +97,6 @@ type RunConfig struct { //types:add
 	// PlusCycles is the number of cycles in the plus phase per trial.
 	PlusCycles int `default:"50"`
 
-	// NewInputCycles is the interval between applying new inputs to network.
-	// Also coordinate this with env.SensoryWindow for time-averaging (e.g.,
-	// window = 2x this value).
-	NewInputCycles int `default:"10"`
-
 	// TestInterval is how often (in epochs) to run through all the test patterns,
 	// in terms of training epochs. Can use 0 or -1 for no testing.
 	TestInterval int `default:"0"`

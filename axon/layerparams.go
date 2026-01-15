@@ -161,7 +161,7 @@ type LayerParams struct {
 	TDDa TDDaParams `display:"inline"`
 
 	// Indexes has recv and send pathway array access info.
-	Indexes LayerIndexes `display:"-"`
+	Indexes LayerIndexes `new-window:"+"`
 }
 
 // PoolIndex returns the global network index for pool with given
