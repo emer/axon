@@ -1226,8 +1226,7 @@ fn PathParams_DWtCNIO(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));return;
 	}
 	var stcyc = learnNow - rlay.Nuclear.SendTimeOff;
-	var nbins = rlay.Nuclear.SendTimeOff / CaBinCycles;
-	nbins = max(1, nbins-1); // /2)
+	var nbins = rlay.Nuclear.SendTimeBins;
 	var sact = f32(0);
 	for (var i=0; i<nbins; i++) {
 		var bi = CaBinForCycle(stcyc + i*CaBinCycles);
@@ -1564,12 +1563,12 @@ const  NrnSubPool: NeuronIndexVars = 2;
 struct NuclearParams {
 	ActionEnv: i32,
 	SendTimeOff: i32,
+	SendTimeWindow: i32,
 	ActTarget: f32,
 	Decay: f32,
 	GeBaseLRate: f32,
 	IOLayIndex: i32,
-	pad: f32,
-	pad1: f32,
+	SendTimeBins: i32,
 }
 struct IOParams {
 	TimeOff: i32,

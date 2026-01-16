@@ -607,9 +607,9 @@ func (ss *Sim) ConfigStatVis() {
 			ndata := int(ss.Net.Context().NData)
 			if phase == Start {
 				tsr.SetNumRows(0)
-				plot.SetFirstStyler(tsr, func(s *plot.Style) {
-					s.On = true
-				})
+				// plot.SetFirstStyler(tsr, func(s *plot.Style) {
+				// 	s.On = true
+				// })
 				metadata.SetDoc(tsr, statDescs[name])
 				continue
 			}

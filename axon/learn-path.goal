@@ -482,8 +482,7 @@ func (pt *PathParams) DWtCNIO(ctx *Context, rlay *LayerParams, syni, si, ri, lpi
 		return
 	}
 	stcyc := learnNow - rlay.Nuclear.SendTimeOff
-	nbins := rlay.Nuclear.SendTimeOff / CaBinCycles
-	nbins = max(1, nbins-1) // /2)
+	nbins := rlay.Nuclear.SendTimeBins
 	sact := float32(0)
 	for i := range nbins {
 		bi := CaBinForCycle(stcyc + i * CaBinCycles)

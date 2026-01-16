@@ -1034,12 +1034,12 @@ const  NrnSubPool: NeuronIndexVars = 2;
 struct NuclearParams {
 	ActionEnv: i32,
 	SendTimeOff: i32,
+	SendTimeWindow: i32,
 	ActTarget: f32,
 	Decay: f32,
 	GeBaseLRate: f32,
 	IOLayIndex: i32,
-	pad: f32,
-	pad1: f32,
+	SendTimeBins: i32,
 }
 fn LayerParams_NuclearDWtNeuron(ly: LayerParams, ctx: Context, ni: u32) {
 	var dbase = f32(0);

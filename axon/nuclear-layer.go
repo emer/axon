@@ -16,12 +16,16 @@ type NuclearParams struct {
 
 	// ActionEnv is the total time envelope for actions to be tracked,
 	// in ms (cycles). Must be consistent across microzone elements.
-	ActionEnv int32 `default:"1000" min:"0"`
+	ActionEnv int32 `default:"180" min:"0"`
 
 	// SendTimeOff is the time offset for sending activations used in learning,
-	// relative to the IO-driven LearnNow time.
+	// relative to the IO-driven LearnNow time. Should be 0 for CNiUp.
 	// Must be an even multiple of [CaBinCycles].
-	SendTimeOff int32 `default:"80" min:"0"`
+	SendTimeOff int32 `default:"40,0" min:"0"`
+
+	// SendTimeWindow is the time window to integrate sending activations
+	// used in learning. Must be an even multiple of [CaBinCycles].
+	SendTimeWindow int32 `default:"30" min:"0"`
 
 	// ActTarget is the target activity level, as measured by CaD.
 	// GeBase is adapted, along with excitatory MF inputs in proportion to activity,
@@ -40,18 +44,22 @@ type NuclearParams struct {
 	// to this layer. Set via SetBuildConfig(IOLayName) setting.
 	IOLayIndex int32 `edit:"-"`
 
-	pad, pad1 float32
+	// SendTimeBins = SendTimeWindow / [CaBinCycles].
+	SendTimeBins int32 `edit:"-"`
 }
 
 func (tp *NuclearParams) Update() {
+	tp.SendTimeBins = tp.SendTimeWindow / CaBinCycles
 }
 
 func (tp *NuclearParams) Defaults() {
-	tp.ActionEnv = 1000
-	tp.SendTimeOff = 80
+	tp.ActionEnv = 180
+	tp.SendTimeOff = 40
+	tp.SendTimeWindow = 30
 	tp.ActTarget = 0.5
 	tp.Decay = 0.01
 	tp.GeBaseLRate = 0.01
+	tp.Update()
 }
 
 // IsNuclear returns true if layer type is cerebellum (Nuclear model).
