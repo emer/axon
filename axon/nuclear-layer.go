@@ -294,7 +294,7 @@ func (ly *LayerParams) CNiIODefaults() {
 	ly.NuclearDefaults()
 	ly.Acts.Init.GeBase = 0
 	ly.Nuclear.ActTarget = 0
-	ly.Nuclear.SendTimeOff = 80
+	ly.Nuclear.SendTimeOff = 40
 }
 
 // called in Defaults for [CNiUpLayer] type
