@@ -1,9 +1,12 @@
 # Axon Neural Modeling Framework
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/emer/axon)](https://goreportcard.com/report/github.com/emer/axon)
-[![GoDoc](https://godoc.org/github.com/emer/axon?status.svg)](https://godoc.org/github.com/emer/axon)
-[![codecov](https://codecov.io/gh/emer/axon/branch/main/graph/badge.svg)](https://codecov.io/gh/emer/axon)
-![CI](https://github.com/emer/axon/actions/workflows/build.yml/badge.svg?branch=master)
+<p align="center">
+    <a href="https://goreportcard.com/report/github.com/emer/axon"><img src="https://goreportcard.com/badge/github.com/emer/axon" alt="Go Report Card"></a>
+    <a href="https://pkg.go.dev/github.com/emer/axon"><img src="https://img.shields.io/badge/dev-reference-007d9c?logo=go&logoColor=white&style=flat" alt="pkg.go.dev docs"></a>
+    <a href="https://github.com/emer/axon/actions"><img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/emer/axon/go.yml"></a>
+    <a href="https://raw.githack.com/wiki/emer/axon/coverage.html"><img alt="Test Coverage" src="https://github.com/emer/axon/wiki/coverage.svg"></a>
+    <a href="https://github.com/emer/axon/tags"><img alt="Version" src="https://img.shields.io/github/v/tag/emer/axon?label=version&color=blue"></a>
+</p>
 
 This is the Go implementation of the Axon algorithm for spiking, biologically based models of cognition, based on the [emergent](https://github.com/emer/emergent) framework. Development of Axon is supported by the Obelisk project at https://astera.org/ and by collaborations with scientists at the University of California Davis, and other institutions around the world.
 
