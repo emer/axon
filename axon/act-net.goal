@@ -29,26 +29,9 @@ func (nt *Network) Cycle(getNeurons bool) {
 
 	if getNeurons {
 		RunDoneLayersNeurons()
+	} else {
+		RunDone() // note: this is critical for Nuclear cerebellum model IOUpdate code! very minor perf penalty
 	}
-
-	// todo: fix this:
-	// var ldt, vta *Layer
-	// for _, ly := range nt.Layers {
-	// 	if ly.Type == VTALayer {
-	// 		vta = ly
-	// 	} else if ly.Type == LDTLayer {
-	// 		ldt = ly
-	// 	} else {
-	// 		ly.CyclePost(ctx)
-	// 	}
-	// }
-	// // ordering of these is important
-	// if ldt != nil {
-	// 	ldt.CyclePost(ctx)
-	// }
-	// if vta != nil {
-	// 	vta.CyclePost(ctx)
-	// }
 }
 
 // ThetaCycleStart starts a new theta cycle, resetting the ctx.Cycle counter
@@ -160,7 +143,6 @@ func (nt *Network) PlusPhaseEnd() {
 	RunPlusPhaseEndNeuron(nd)
 	RunPlusPhaseEndPost(int(nix.NLayers))
 	RunDoneLayersNeurons()
-	// fmt.Println("plus post sync:", ctx.Cycle)
 }
 
 // TargToExt sets external input Ext from target values Target

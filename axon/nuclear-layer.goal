@@ -183,6 +183,7 @@ func (ly *LayerParams) IOUpdate(ctx *Context, lpi, pi, ni, di uint32) {
 	gaM := Neurons[ni, di, GaM]
 	gaM += ly.IO.GDt * (Neurons[ni, di, GiSyn] - gaM)
 	Neurons[ni, di, GaM] = gaM
+	
 	inhibAct := gaM
 	// CaBinCycles to ensure that full bin is filled
 	if effAct > 0 && envCyc <= ly.IO.EfferentOff + CaBinCycles {
@@ -228,9 +229,6 @@ func (ly *LayerParams) IOUpdate(ctx *Context, lpi, pi, ni, di uint32) {
 	errVal := gaP - oldInhib
 	Neurons[ni, di, TimeDiff] = errVal
 	if gaP > ly.Learn.Timing.LearnThr && errVal > ly.IO.ErrThr {
-		// if ni == 1664 {
-		// 	fmt.Println("act:", gaP, oldInhib, errVal)
-		// }
 		Neurons[ni, di, Spike] = 1.0 // error spike
 		Neurons[ni, di, LearnNow] = cycTot // record point of error
 		Neurons[ni, di, TimePeak] = 1.0 // records that we got err spike

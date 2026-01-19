@@ -349,8 +349,9 @@ fn LayerParams_GNeuroMod(ly: LayerParams, ctx: Context, ni: u32,di: u32) {
 fn LayerParams_SpikeFromG(ly: LayerParams, ctx: Context, lpi: u32,ni: u32,di: u32) {
 	ActParams_VmFromG(ly.Acts, ctx, ni, di);
 	ActParams_SpikeFromVm(ly.Acts, ctx, ni, di);
+	LearnNeuronParams_CaFromSpike(ly.Learn, ctx, ni, di);
 	if (ly.Type != IOLayer) {
-		LearnNeuronParams_CaFromSpike(ly.Learn, ctx, ni, di);
+		LearnNeuronParams_GaMFromSpike(ly.Learn, ctx, ni, di);
 		if (!LayerParams_IsTarget(ly)) {
 			var learnNow = LearnTimingParams_LearnTiming(ly.Learn.Timing, ctx, ni, di);
 			if (learnNow) {
@@ -1758,6 +1759,12 @@ fn LearnNeuronParams_CaFromSpike(ln: LearnNeuronParams, ctx: Context, ni: u32,di
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaM))] = caM;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaP))] = caP;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaD))] = caD;
+	var caSyn = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaSyn))];
+	caSyn = CaSpikeParams_CaSynFromSpike(ln.CaSpike, spike, caSyn);
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaSyn))] = caSyn;
+	LearnCaParams_LearnCas(ln.CaLearn, ctx, ni, di);
+}
+fn LearnNeuronParams_GaMFromSpike(ln: LearnNeuronParams, ctx: Context, ni: u32,di: u32) {
 	var ga = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Ge))] + Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Gi))];
 	var gaM = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaM))];
 	var gaP = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))];
@@ -1765,11 +1772,9 @@ fn LearnNeuronParams_CaFromSpike(ln: LearnNeuronParams, ctx: Context, ni: u32,di
 	CaDtParams_FromCa(ln.CaSpike.Dt, ga, &gaM, &gaP, &gaD);
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaM))] = gaM;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))] = gaP;
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaD))] = gaD;
-	var caSyn = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaSyn))];
-	caSyn = CaSpikeParams_CaSynFromSpike(ln.CaSpike, spike, caSyn);
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaSyn))] = caSyn;
-	LearnCaParams_LearnCas(ln.CaLearn, ctx, ni, di);
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71],
+	TensorStrides[72],
+	u32(ni), u32(di), u32(GaD))] = gaD;
 }
 struct SWtInitParams {
 	SPct: f32,

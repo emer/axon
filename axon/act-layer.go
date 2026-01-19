@@ -518,8 +518,9 @@ func (ly *LayerParams) GNeuroMod(ctx *Context, ni, di uint32) {
 func (ly *LayerParams) SpikeFromG(ctx *Context, lpi, ni, di uint32) {
 	ly.Acts.VmFromG(ctx, ni, di)
 	ly.Acts.SpikeFromVm(ctx, ni, di)
+	ly.Learn.CaFromSpike(ctx, ni, di)
 	if ly.Type != IOLayer {
-		ly.Learn.CaFromSpike(ctx, ni, di)
+		ly.Learn.GaMFromSpike(ctx, ni, di)
 		if !ly.IsTarget() {
 			learnNow := ly.Learn.Timing.LearnTiming(ctx, ni, di)
 			if learnNow {

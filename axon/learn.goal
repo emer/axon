@@ -591,6 +591,15 @@ func (ln *LearnNeuronParams) CaFromSpike(ctx *Context, ni, di uint32) {
 	Neurons[ni, di, CaP] = caP
 	Neurons[ni, di, CaD] = caD
 
+	caSyn := Neurons[ni, di, CaSyn]
+	caSyn = ln.CaSpike.CaSynFromSpike(spike, caSyn)
+	Neurons[ni, di, CaSyn] = caSyn
+
+	ln.CaLearn.LearnCas(ctx, ni, di)
+}
+
+// GaMFromSpike updates GaM, GaP, and GaD, used for timing learning.
+func (ln *LearnNeuronParams) GaMFromSpike(ctx *Context, ni, di uint32) {
 	ga := Neurons[ni, di, Ge] + Neurons[ni, di, Gi]
 	gaM := Neurons[ni, di, GaM]
 	gaP := Neurons[ni, di, GaP]
@@ -599,12 +608,6 @@ func (ln *LearnNeuronParams) CaFromSpike(ctx *Context, ni, di uint32) {
 	Neurons[ni, di, GaM] = gaM
 	Neurons[ni, di, GaP] = gaP
 	Neurons[ni, di, GaD] = gaD
-
-	caSyn := Neurons[ni, di, CaSyn]
-	caSyn = ln.CaSpike.CaSynFromSpike(spike, caSyn)
-	Neurons[ni, di, CaSyn] = caSyn
-
-	ln.CaLearn.LearnCas(ctx, ni, di)
 }
 
 ////////  SWtParams

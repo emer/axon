@@ -568,7 +568,7 @@ func (ss *Sim) ConfigStats() {
 
 	ss.ConfigStatAdaptFilt()
 	ss.ConfigStatVis()
-	ss.ConfigStatNuclear()
+	ss.ConfigStatNuclearCycle()
 
 	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer, axon.InputLayer, axon.PulvinarLayer)
 	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...)
@@ -638,7 +638,7 @@ func (ss *Sim) ConfigStatVis() {
 	})
 }
 
-func (ss *Sim) ConfigStatNuclear() {
+func (ss *Sim) ConfigStatNuclearCycle() {
 	net := ss.Net
 	prefix := "VSRotHVel"
 	pool := 1 // 0 = layer pool, get first pool
@@ -818,7 +818,7 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	nv.Options.Raster.Max = ss.Config.Run.Cycles()
 	nv.Options.LayerNameSize = 0.03
 	nv.SetNet(ss.Net)
-	ss.TrainUpdate.Config(nv, axon.Cycle, ss.StatCounters) // Theta
+	ss.TrainUpdate.Config(nv, axon.Theta, ss.StatCounters) // Theta
 	ss.GUI.OnStop = func(mode, level enums.Enum) {
 		vu := ss.NetViewUpdater(mode)
 		vu.UpdateWhenStopped(mode, level)

@@ -593,6 +593,15 @@ func (ln *LearnNeuronParams) CaFromSpike(ctx *Context, ni, di uint32) {
 	Neurons.Set(caP, int(ni), int(di), int(CaP))
 	Neurons.Set(caD, int(ni), int(di), int(CaD))
 
+	caSyn := Neurons.Value(int(ni), int(di), int(CaSyn))
+	caSyn = ln.CaSpike.CaSynFromSpike(spike, caSyn)
+	Neurons.Set(caSyn, int(ni), int(di), int(CaSyn))
+
+	ln.CaLearn.LearnCas(ctx, ni, di)
+}
+
+// GaMFromSpike updates GaM, GaP, and GaD, used for timing learning.
+func (ln *LearnNeuronParams) GaMFromSpike(ctx *Context, ni, di uint32) {
 	ga := Neurons.Value(int(ni), int(di), int(Ge)) + Neurons.Value(int(ni), int(di), int(Gi))
 	gaM := Neurons.Value(int(ni), int(di), int(GaM))
 	gaP := Neurons.Value(int(ni), int(di), int(GaP))
@@ -601,12 +610,6 @@ func (ln *LearnNeuronParams) CaFromSpike(ctx *Context, ni, di uint32) {
 	Neurons.Set(gaM, int(ni), int(di), int(GaM))
 	Neurons.Set(gaP, int(ni), int(di), int(GaP))
 	Neurons.Set(gaD, int(ni), int(di), int(GaD))
-
-	caSyn := Neurons.Value(int(ni), int(di), int(CaSyn))
-	caSyn = ln.CaSpike.CaSynFromSpike(spike, caSyn)
-	Neurons.Set(caSyn, int(ni), int(di), int(CaSyn))
-
-	ln.CaLearn.LearnCas(ctx, ni, di)
 }
 
 ////////  SWtParams
