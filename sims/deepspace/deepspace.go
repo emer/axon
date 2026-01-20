@@ -649,19 +649,22 @@ func (ss *Sim) ConfigStatNuclearCycle() {
 		layers[li] = net.LayerByName(prefix + lnm)
 		pools[li] = layers[li].Params.PoolIndex(1) // 4D
 	}
-	statNames := []string{"IOenv", "IOe", "IOi", "IOioff", "IOerr", "IOspike", "CNiIO", "CNiUp", "CNeUp", "CNeUpGe", "CNeUpGi"}
+	statNames := []string{"IOenv", "IOe", "IOi", "IOioff", "IOerr", "IOspike", "CNiIO", "CNiUp", "CNeUp", "CNeUpGe", "CNeUpGi", "CNeUpLearn", "CNeUpAbsDev", "CNeUpNegDev"}
 	statDescs := map[string]string{
-		"IOenv":   "IO envelope initiated by action input to IO neurons",
-		"IOe":     "Integrated excitatory input to IO",
-		"IOi":     "Integrated inhibitory input to IO at the current time",
-		"IOioff":  "Integrated inhibitory input to IO offset from TimeOff, which is compared against IOe",
-		"IOerr":   "IOe - IOi (positive only): the error signal that drives IO spiking, if above threshold",
-		"IOspike": "IO spike, either from IOerr or at end of the IOenv for the baseline spiking",
-		"CNiIO":   "integrated activity (CaP) of CNiIO predictive inhibitory input to IO, generates IOi at a temporal offset 'in the future'",
-		"CNiUp":   "inhibitory interneuron that projects to CNeUp, learns to inhibit CNeUp just prior to its activation",
-		"CNeUp":   "excitatory output, driven directly by excitatory sensory input, which should be cancelled by CNiUp inputs",
-		"CNeUpGe": "excitatory conductance into CNeUp, from sensory input",
-		"CNeUpGi": "inhibitory conductance into CNeUp, from CNiUp",
+		"IOenv":       "IO envelope initiated by action input to IO neurons",
+		"IOe":         "Integrated excitatory input to IO",
+		"IOi":         "Integrated inhibitory input to IO at the current time",
+		"IOioff":      "Integrated inhibitory input to IO offset from TimeOff, which is compared against IOe",
+		"IOerr":       "IOe - IOi (positive only): the error signal that drives IO spiking, if above threshold",
+		"IOspike":     "IO spike, either from IOerr or at end of the IOenv for the baseline spiking",
+		"CNiIO":       "integrated activity (CaP) of CNiIO predictive inhibitory input to IO, generates IOi at a temporal offset 'in the future'",
+		"CNiUp":       "inhibitory interneuron that projects to CNeUp, learns to inhibit CNeUp just prior to its activation",
+		"CNeUp":       "excitatory output, driven directly by excitatory sensory input, which should be cancelled by CNiUp inputs",
+		"CNeUpGe":     "excitatory conductance into CNeUp, from sensory input",
+		"CNeUpGi":     "inhibitory conductance into CNeUp, from CNiUp",
+		"CNeUpLearn":  "CNeUp learning point",
+		"CNeUpAbsDev": "CNeUp max absolute deviation from target",
+		"CNeUpNegDev": "CNeUp max negative deviation from target",
 	}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		if level != Cycle {
@@ -713,6 +716,12 @@ func (ss *Sim) ConfigStatNuclearCycle() {
 				stat = layers[3].AvgMaxVarByPool("Ge", pool, di).Avg
 			case "CNeUpGi":
 				stat = layers[3].AvgMaxVarByPool("Gi", pool, di).Avg
+			case "CNeUpLearn":
+				stat = layers[3].AvgMaxVarByPool("TimePeak", pool, di).Avg
+			case "CNeUpAbsDev":
+				stat = layers[3].AvgMaxVarByPool("GaP", pool, di).Avg
+			case "CNeUpNegDev":
+				stat = layers[3].AvgMaxVarByPool("GaD", pool, di).Avg
 			}
 			curModeDir.Float64(name, ndata).SetFloat1D(float64(stat), di)
 			tsr.AppendRowFloat(float64(stat))
@@ -727,9 +736,10 @@ func (ss *Sim) ConfigStatAdaptFilt() {
 	cnepi := cnely.Params.PoolIndex(0)
 	ioly := net.LayerByName(prefix + "IO")
 	// iopi := ioly.Params.PoolIndex(0)
-	statNames := []string{"CNeUpMax", "IOErrs"}
+	statNames := []string{"CNeUpMax", "CNeUpDev", "IOErrs"}
 	statDescs := map[string]string{
-		"CNeUpMax": "Maximum activity across the trial for CNeUp Adaptive Filtering layer. Should be around .5 in general",
+		"CNeUpMax": "Maximum activity across the trial for CNeUp Adaptive Filtering layer. Should be around .5 (ActTarget) in general",
+		"CNeUpDev": "Maximum negative deviation from ActTarget, with larger values indicating excessive inhibition from CNi",
 		"IOErrs":   "Average number of IO error spikes across trials",
 	}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
@@ -759,6 +769,8 @@ func (ss *Sim) ConfigStatAdaptFilt() {
 					switch name {
 					case "CNeUpMax":
 						stat = axon.PoolAvgMax(axon.AMCaPMax, axon.AMCycle, axon.Max, cnepi, uint32(di))
+					case "CNeUpDev":
+						stat = cnely.AvgMaxVarByPool("GaD", 0, di).Avg
 					case "IOErrs":
 						stat = ioly.AvgMaxVarByPool("TimePeak", 0, di).Avg
 					}

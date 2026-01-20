@@ -107,10 +107,13 @@ fn LayerParams_PostSpikeSpecial(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Act))] = dr;
 	}
 	case IOLayer: {
-		LayerParams_IOUpdate(ly, ctx, lpi, pi, ni, di);
+		LayerParams_IOLearn(ly, ctx, lpi, pi, ni, di);
 	}
-	case CNeLayer, CNiIOLayer, CNiUpLayer: {
-		LayerParams_IOLearn(ly, ctx, ni-ly.Indexes.NeurSt, lpi, pi, ni, di);
+	case CNeLayer: {
+		LayerParams_CNeLearn(ly, ctx, lpi, pi, ni, di);
+	}
+	case CNiIOLayer, CNiUpLayer: {
+		LayerParams_IOCopy(ly, ctx, ni-ly.Indexes.NeurSt, lpi, pi, ni, di);
 	}
 	case BLALayer: {
 		if (ctx.Cycle == ctx.ThetaCycles-1) {
@@ -1279,12 +1282,6 @@ struct NuclearParams {
 	IOLayIndex: i32,
 	SendTimeBins: i32,
 }
-fn LayerParams_IOLearn(ly: LayerParams, ctx: Context, lni: u32,lpi: u32,pi: u32,ni: u32,di: u32) {
-	var ioi = u32(ly.Nuclear.IOLayIndex);
-	let ioly = Layers[ioi];
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ioly.Indexes.NeurSt + lni), u32(di), u32(LearnNow))];
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ioly.Indexes.NeurSt + lni), u32(di), u32(TimePeak))];
-}
 struct IOParams {
 	TimeOff: i32,
 	ErrThr: f32,
@@ -1295,7 +1292,14 @@ struct IOParams {
 	pad: f32,
 	pad1: f32,
 }
-fn LayerParams_IOUpdate(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,di: u32) {
+fn LayerParams_IOCopy(ly: LayerParams, ctx: Context, lni: u32,lpi: u32,pi: u32,ni: u32,di: u32) {
+	var ioi = u32(ly.Nuclear.IOLayIndex);
+	let ioly = Layers[ioi];
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ioly.Indexes.NeurSt + lni), u32(di), u32(LearnNow))];
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ioly.Indexes.NeurSt + lni), u32(di), u32(TimePeak))];
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeCycle))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ioly.Indexes.NeurSt + lni), u32(di), u32(TimeCycle))];
+}
+fn LayerParams_IOLearn(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,di: u32) {
 	var cycTot = f32(ctx.CyclesTotal);
 	var effAct = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeCycle))]);
 	var envCyc = ctx.CyclesTotal - effAct; // cycle within envelope
@@ -1357,6 +1361,27 @@ fn LayerParams_IOUpdate(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,
 		u32(ni), u32(di), u32(LearnNow))] = cycTot;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // records that we got err spike
 		u32(ni), u32(di), u32(TimePeak))] = 1.0;
+	}
+}
+fn LayerParams_CNeLearn(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,di: u32) {
+	var cycTot = f32(ctx.CyclesTotal);
+	var act = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaP))];
+	var dev = ly.Nuclear.ActTarget - act; // deviation
+	if (act < ly.Nuclear.ActTarget) {
+		if (dev > Neurons[Index3D(TensorStrides[70], TensorStrides[71], // record stats
+		TensorStrides[72], u32(ni), u32(di), u32(GaD))]) {
+			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaD))] = dev;
+		}
+	}
+	var adev = abs(dev);
+	if (adev > Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))]) {
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))] = adev;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // learn at max
+		u32(ni), u32(di), u32(LearnNow))] = cycTot;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // for visualization
+		u32(ni), u32(di), u32(TimePeak))] = 1.0;
+	} else {
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = 0.0;
 	}
 }
 

@@ -350,7 +350,7 @@ fn LayerParams_SpikeFromG(ly: LayerParams, ctx: Context, lpi: u32,ni: u32,di: u3
 	ActParams_VmFromG(ly.Acts, ctx, ni, di);
 	ActParams_SpikeFromVm(ly.Acts, ctx, ni, di);
 	LearnNeuronParams_CaFromSpike(ly.Learn, ctx, ni, di);
-	if (ly.Type != IOLayer) {
+	if (ly.Type != IOLayer && ly.Type != CNeLayer) {
 		LearnNeuronParams_GaMFromSpike(ly.Learn, ctx, ni, di);
 		if (!LayerParams_IsTarget(ly)) {
 			var learnNow = LearnTimingParams_LearnTiming(ly.Learn.Timing, ctx, ni, di);

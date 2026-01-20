@@ -513,14 +513,18 @@ func (pt *PathParams) DWtCNIO(ctx *Context, rlay *LayerParams, syni, si, ri, lpi
 // if below, decrease inhib. This is only used on the inhib pathway.
 func (pt *PathParams) DWtCNeUp(ctx *Context, rlay *LayerParams, syni, si, ri, lpi, pi, di uint32) {
 	learnNow := int32(Neurons.Value(int(ri), int(di), int(LearnNow)))
-	timePeak := Neurons.Value(int(ri), int(di), int(TimePeak))
-	if learnNow-(ctx.CyclesTotal-ctx.ThetaCycles) < 0 || timePeak == 0 { // no learn at baseline
+	if learnNow-(ctx.CyclesTotal-ctx.ThetaCycles) < 0 {
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DTr))
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DiDWt))
 		return
 	}
-	bi := CaBinForCycle(learnNow - rlay.Nuclear.SendTimeOff)
-	sact := Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(bi))) // sending activity
+	stcyc := CaBinForCycle(learnNow - rlay.Nuclear.SendTimeOff)
+	nbins := rlay.Nuclear.SendTimeBins
+	sact := float32(0)
+	for i := range nbins {
+		bi := CaBinForCycle(stcyc + i*CaBinCycles)
+		sact += Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(bi)))
+	}
 	// todo: rlrate? Neurons[ri, di, RLRate]
 	aerr := rlay.Nuclear.ActTarget - Neurons.Value(int(ri), int(di), int(CaP)) // shorter time window here
 	dwt := -sact * aerr                                                        // opposite sign because inhibitory

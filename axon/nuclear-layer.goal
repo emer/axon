@@ -4,7 +4,10 @@
 
 package axon
 
-// import "fmt"
+import (
+	// "fmt"
+	"cogentcore.org/core/math32"
+)
 
 //gosl:start
 
@@ -66,21 +69,23 @@ func (ly *LayerParams) IsNuclear() bool {
 }
 
 
-// IOLearn gets the IO layer [LearnNow] signal.
-func (ly *LayerParams) IOLearn(ctx *Context, lni, lpi, pi, ni, di uint32) {
-	ioi := uint32(ly.Nuclear.IOLayIndex)
-	ioly := GetLayers(ioi)
-	Neurons[ni, di, LearnNow] = Neurons[ioly.Indexes.NeurSt+lni, di, LearnNow]
-	Neurons[ni, di, TimePeak] = Neurons[ioly.Indexes.NeurSt+lni, di, TimePeak]
-}
-
 // NuclearLearnReset resets LearnNow if past envelope time, in new state
 func (ly *LayerParams) NuclearLearnReset(ctx *Context, ni, di uint32) {
-	effAct := int32(Neurons[ni, di, TimeCycle]) 
-	if effAct == 0 {
+	if Neurons[ni, di, LearnNow] == 0.0 { // not done yet
 		return
 	}
-	if Neurons[ni, di, LearnNow] == 0.0 { // not done yet
+	
+	if ly.Type == CNeLayer {
+		Neurons[ni, di, LearnNow] = 0.0
+		Neurons[ni, di, TimePeak] = 0.0
+		Neurons[ni, di, GaM] = 0.0
+		Neurons[ni, di, GaP] = 0.0
+		Neurons[ni, di, GaD] = 0.0
+		return
+	}
+	
+	effAct := int32(Neurons[ni, di, TimeCycle]) 
+	if effAct == 0 {
 		return
 	}
 	envCyc := ctx.CyclesTotal-effAct // cycle within envelope
@@ -164,14 +169,23 @@ func (tp *IOParams) Defaults() {
 	tp.Update()
 }
 
+// IOCopy copies the IO layer [LearnNow] signal.
+func (ly *LayerParams) IOCopy(ctx *Context, lni, lpi, pi, ni, di uint32) {
+	ioi := uint32(ly.Nuclear.IOLayIndex)
+	ioly := GetLayers(ioi)
+	Neurons[ni, di, LearnNow] = Neurons[ioly.Indexes.NeurSt+lni, di, LearnNow]
+	Neurons[ni, di, TimePeak] = Neurons[ioly.Indexes.NeurSt+lni, di, TimePeak]
+	Neurons[ni, di, TimeCycle] = Neurons[ioly.Indexes.NeurSt+lni, di, TimeCycle]
+}
+
 // TODO: IO neurons integrate across many distinct comparisons!
 // here, we just have 1 IO per pairwise comparison.
 // Need to get layer and do indexing or something. Figure out 
 // best way to organize later.
 
-// IOUpdate is the main IO update routine, called in
-// LayerParams::PostSpikeSpecial
-func (ly *LayerParams) IOUpdate(ctx *Context, lpi, pi, ni, di uint32) {
+// IOLearn computes when an IO learning spike occurs.
+// Called in LayerParams::PostSpikeSpecial.
+func (ly *LayerParams) IOLearn(ctx *Context, lpi, pi, ni, di uint32) {
 	cycTot := float32(ctx.CyclesTotal)
 	effAct := int32(Neurons[ni, di, TimeCycle])
 	envCyc := ctx.CyclesTotal-effAct // cycle within envelope
@@ -232,6 +246,35 @@ func (ly *LayerParams) IOUpdate(ctx *Context, lpi, pi, ni, di uint32) {
 		Neurons[ni, di, Spike] = 1.0 // error spike
 		Neurons[ni, di, LearnNow] = cycTot // record point of error
 		Neurons[ni, di, TimePeak] = 1.0 // records that we got err spike
+	}
+}
+
+// CNeLearn updates LearnNow for CNeLayer, based on maximum excitatory
+// deviation from target. Also records max negative deviation in GaD.
+// called in LayerParams::PostSpikeSpecial
+func (ly *LayerParams) CNeLearn(ctx *Context, lpi, pi, ni, di uint32) {
+	// lni := ni - ly.Indexes.NeurSt
+	// ioi := uint32(ly.Nuclear.IOLayIndex)
+	// ioly := GetLayers(ioi)
+	// Neurons[ni, di, TimeCycle] = Neurons[ioly.Indexes.NeurSt+lni, di, TimeCycle]
+
+	cycTot := float32(ctx.CyclesTotal)
+
+	act := Neurons[ni, di, CaP]
+	dev := ly.Nuclear.ActTarget - act // deviation
+	if act < ly.Nuclear.ActTarget {
+		if dev > Neurons[ni, di, GaD] { // record stats
+			Neurons[ni, di, GaD] = dev
+		}
+	}
+	
+	adev := math32.Abs(dev) 
+	if adev > Neurons[ni, di, GaP] {
+		Neurons[ni, di, GaP] = adev
+		Neurons[ni, di, LearnNow] = cycTot // learn at max
+		Neurons[ni, di, TimePeak] = 1.0 // for visualization
+	} else {
+		Neurons[ni, di, TimePeak] = 0.0
 	}
 }
 

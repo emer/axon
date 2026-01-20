@@ -1243,14 +1243,18 @@ fn PathParams_DWtCNIO(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32
 }
 fn PathParams_DWtCNeUp(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
 	var learnNow = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnNow))]);
-	var timePeak = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(TimePeak))];
-	if (learnNow-(ctx.CyclesTotal-ctx.ThetaCycles) < 0 || timePeak == 0) { // no learn at baseline
+	if (learnNow-(ctx.CyclesTotal-ctx.ThetaCycles) < 0) {
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));return;
 	}
-	var bi = CaBinForCycle(learnNow - rlay.Nuclear.SendTimeOff);
-	var sact = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // sending activity
-	u32(si), u32(di), u32(CaBins + NeuronVars(bi)))];
+	var stcyc = CaBinForCycle(learnNow - rlay.Nuclear.SendTimeOff);
+	var nbins = rlay.Nuclear.SendTimeBins;
+	var sact = f32(0);
+	for (var i=0; i<nbins; i++) {
+		var bi = CaBinForCycle(stcyc + i*CaBinCycles);
+		sact += Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
+		u32(si), u32(di), u32(CaBins + NeuronVars(bi)))];
+	}
 	var aerr = rlay.Nuclear.ActTarget - Neurons[Index3D(TensorStrides[70], TensorStrides[71], // shorter time window here
 	TensorStrides[72], u32(ri), u32(di), u32(CaP))];
 	var dwt = -sact * aerr; // opposite sign because inhibitory
