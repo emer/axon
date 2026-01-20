@@ -170,7 +170,8 @@ func (tp *IOParams) Defaults() {
 }
 
 // IOCopy copies the IO layer [LearnNow] signal.
-func (ly *LayerParams) IOCopy(ctx *Context, lni, lpi, pi, ni, di uint32) {
+func (ly *LayerParams) IOCopy(ctx *Context, lpi, pi, ni, di uint32) {
+	lni := ni - ly.Indexes.NeurSt
 	ioi := uint32(ly.Nuclear.IOLayIndex)
 	ioly := GetLayers(ioi)
 	Neurons[ni, di, LearnNow] = Neurons[ioly.Indexes.NeurSt+lni, di, LearnNow]
@@ -271,10 +272,28 @@ func (ly *LayerParams) CNeLearn(ctx *Context, lpi, pi, ni, di uint32) {
 	adev := math32.Abs(dev) 
 	if adev > Neurons[ni, di, GaP] {
 		Neurons[ni, di, GaP] = adev
+		Neurons[ni, di, GaM] = dev // actual direction for learning
 		Neurons[ni, di, LearnNow] = cycTot // learn at max
 		Neurons[ni, di, TimePeak] = 1.0 // for visualization
 	} else {
 		Neurons[ni, di, TimePeak] = 0.0
+	}
+}
+
+// CNiLearn updates LearnNow for CNiLayer, based on maximum 
+// activity time.
+// called in LayerParams::PostSpikeSpecial
+func (ly *LayerParams) CNiLearn(ctx *Context, lpi, pi, ni, di uint32) {
+	ly.IOCopy(ctx, lpi, pi, ni, di)
+	cycTot := float32(ctx.CyclesTotal)
+
+	act := Neurons[ni, di, CaP]
+	if act > Neurons[ni, di, GaP] {
+		Neurons[ni, di, GaP] = act
+		Neurons[ni, di, TimeDiff] = cycTot // learn at max
+		Neurons[ni, di, GaD] = 1.0 // for visualization
+	} else {
+		Neurons[ni, di, GaD] = 0.0
 	}
 }
 

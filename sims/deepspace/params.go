@@ -76,13 +76,13 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".CNiIOLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Nuclear.Decay = 2
+				ly.Nuclear.Decay = 0.1
 				ly.Nuclear.SendTimeOff = 60
 				ly.Nuclear.SendTimeWindow = 30
 			}},
 		{Sel: ".CNiUpLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Nuclear.Decay = 2
+				ly.Nuclear.Decay = 0.1
 				ly.Nuclear.SendTimeOff = 10
 				ly.Nuclear.SendTimeWindow = 30
 			}},

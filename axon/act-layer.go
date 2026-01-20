@@ -519,7 +519,7 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, lpi, ni, di uint32) {
 	ly.Acts.VmFromG(ctx, ni, di)
 	ly.Acts.SpikeFromVm(ctx, ni, di)
 	ly.Learn.CaFromSpike(ctx, ni, di)
-	if ly.Type != IOLayer && ly.Type != CNeLayer {
+	if !ly.IsNuclear() {
 		ly.Learn.GaMFromSpike(ctx, ni, di)
 		if !ly.IsTarget() {
 			learnNow := ly.Learn.Timing.LearnTiming(ctx, ni, di)
@@ -614,7 +614,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, lpi, pi, ni, di uint32) {
 	case CNeLayer:
 		ly.CNeLearn(ctx, lpi, pi, ni, di)
 	case CNiIOLayer, CNiUpLayer:
-		ly.IOCopy(ctx, ni-ly.Indexes.NeurSt, lpi, pi, ni, di)
+		ly.CNiLearn(ctx, lpi, pi, ni, di)
 	case BLALayer:
 		if ctx.Cycle == ctx.ThetaCycles-1 {
 			if hasRew {

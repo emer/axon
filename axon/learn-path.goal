@@ -481,6 +481,10 @@ func (pt *PathParams) DWtCNIO(ctx *Context, rlay *LayerParams, syni, si, ri, lpi
 		SynapseTraces[syni, di, DiDWt] = 0.0
 		return
 	}
+	isErrSpike := Neurons[ri, di, TimePeak] == 1
+	if !isErrSpike {
+		learnNow = int32(Neurons[ri, di, TimeDiff]) // learn at peak
+	}
 	stcyc := learnNow - rlay.Nuclear.SendTimeOff
 	nbins := rlay.Nuclear.SendTimeBins
 	sact := float32(0)
@@ -491,8 +495,8 @@ func (pt *PathParams) DWtCNIO(ctx *Context, rlay *LayerParams, syni, si, ri, lpi
 	// todo: rlrate? Neurons[ri, di, RLRate]
 	dwt := sact 
 	if Neurons[ri, di, TimePeak] == 0 { // means that we got to end of cycle with no err: decay
-		aerr := rlay.Nuclear.ActTarget - Neurons[ri, di, CaD]
-		dwt = sact * aerr * rlay.Nuclear.Decay
+		ract := Neurons[ri, di, GaP] // peak act
+		dwt = -sact * ract * rlay.Nuclear.Decay
 	}
 	// todo: softbound?
 	pt.DWtSynSoftBound(ctx, syni, di, dwt)
@@ -520,7 +524,7 @@ func (pt *PathParams) DWtCNeUp(ctx *Context, rlay *LayerParams, syni, si, ri, lp
 		sact += Neurons[si, di, CaBins + NeuronVars(bi)]
 	}
 	// todo: rlrate? Neurons[ri, di, RLRate]
-	aerr := rlay.Nuclear.ActTarget - Neurons[ri, di, CaP] // shorter time window here
+	aerr := Neurons[ri, di, GaM] // signed deviation, target - act, at point of max
 	dwt := -sact * aerr // opposite sign because inhibitory
 	// todo: softbound?
 	SynapseTraces[syni, di, DiDWt] = pt.Learn.LRate.Eff * dwt

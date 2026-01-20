@@ -1225,6 +1225,11 @@ fn PathParams_DWtCNIO(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));return;
 	}
+	var isErrSpike = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(TimePeak))] == 1;
+	if (!isErrSpike) {
+		learnNow = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], // learn at peak
+		TensorStrides[72], u32(ri), u32(di), u32(TimeDiff))]);
+	}
 	var stcyc = learnNow - rlay.Nuclear.SendTimeOff;
 	var nbins = rlay.Nuclear.SendTimeBins;
 	var sact = f32(0);
@@ -1236,8 +1241,9 @@ fn PathParams_DWtCNIO(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32
 	var dwt = sact;
 	if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // means that we got to end of cycle with no err: decay
 	u32(ri), u32(di), u32(TimePeak))] == 0) {
-		var aerr = rlay.Nuclear.ActTarget - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(CaD))];
-		dwt = sact * aerr * rlay.Nuclear.Decay;
+		var ract = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // peak act
+		TensorStrides[72], u32(ri), u32(di), u32(GaP))];
+		dwt = -sact * ract * rlay.Nuclear.Decay;
 	}
 	PathParams_DWtSynSoftBound(pt, ctx, syni, di, dwt);
 }
@@ -1255,8 +1261,8 @@ fn PathParams_DWtCNeUp(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u3
 		sact += Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
 		u32(si), u32(di), u32(CaBins + NeuronVars(bi)))];
 	}
-	var aerr = rlay.Nuclear.ActTarget - Neurons[Index3D(TensorStrides[70], TensorStrides[71], // shorter time window here
-	TensorStrides[72], u32(ri), u32(di), u32(CaP))];
+	var aerr = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // signed deviation, target - act, at point of max
+	TensorStrides[72], u32(ri), u32(di), u32(GaM))];
 	var dwt = -sact * aerr; // opposite sign because inhibitory
 	SynapseTracesSet(pt.Learn.LRate.Eff * dwt, Index3D(TensorStrides[180], TensorStrides[181],
 	TensorStrides[182],

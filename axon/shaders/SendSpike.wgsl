@@ -113,7 +113,7 @@ fn LayerParams_PostSpikeSpecial(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,
 		LayerParams_CNeLearn(ly, ctx, lpi, pi, ni, di);
 	}
 	case CNiIOLayer, CNiUpLayer: {
-		LayerParams_IOCopy(ly, ctx, ni-ly.Indexes.NeurSt, lpi, pi, ni, di);
+		LayerParams_CNiLearn(ly, ctx, lpi, pi, ni, di);
 	}
 	case BLALayer: {
 		if (ctx.Cycle == ctx.ThetaCycles-1) {
@@ -1292,7 +1292,8 @@ struct IOParams {
 	pad: f32,
 	pad1: f32,
 }
-fn LayerParams_IOCopy(ly: LayerParams, ctx: Context, lni: u32,lpi: u32,pi: u32,ni: u32,di: u32) {
+fn LayerParams_IOCopy(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,di: u32) {
+	var lni = ni - ly.Indexes.NeurSt;
 	var ioi = u32(ly.Nuclear.IOLayIndex);
 	let ioly = Layers[ioi];
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ioly.Indexes.NeurSt + lni), u32(di), u32(LearnNow))];
@@ -1376,12 +1377,29 @@ fn LayerParams_CNeLearn(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,
 	var adev = abs(dev);
 	if (adev > Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))]) {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))] = adev;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // actual direction for learning
+		u32(ni), u32(di), u32(GaM))] = dev;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // learn at max
 		u32(ni), u32(di), u32(LearnNow))] = cycTot;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // for visualization
 		u32(ni), u32(di), u32(TimePeak))] = 1.0;
 	} else {
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = 0.0;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
+		u32(ni), u32(di), u32(TimePeak))] = 0.0;
+	}
+}
+fn LayerParams_CNiLearn(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,di: u32) {
+	LayerParams_IOCopy(ly, ctx, lpi, pi, ni, di);
+	var cycTot = f32(ctx.CyclesTotal);
+	var act = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaP))];
+	if (act > Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))]) {
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))] = act;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // learn at max
+		u32(ni), u32(di), u32(TimeDiff))] = cycTot;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // for visualization
+		u32(ni), u32(di), u32(GaD))] = 1.0;
+	} else {
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaD))] = 0.0;
 	}
 }
 
