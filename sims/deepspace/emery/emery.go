@@ -69,7 +69,7 @@ func (em *Emery) Make(wl *builder.World, sc *phyxyz.Scene, ev *EmeryEnv) {
 	// 	})
 	// }
 	em.XZ = obj.NewJointPlaneXZ(nil, emr, math32.Vec3(0, 0, 0), math32.Vec3(0, -hh, 0))
-	em.XZ.DoF(2).Limit.Set(-2.5, 2.5)
+	em.XZ.DoF(2).Limit.Set(-2, 2)
 
 	headPos := math32.Vec3(0, hh, -(hl + headsz))
 	head := obj.NewDynamicSkin(sc, name+"_head", physics.Box, "tan", mass*.1, math32.Vec3(headsz, headsz, headsz), headPos, rot)

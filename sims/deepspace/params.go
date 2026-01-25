@@ -83,12 +83,13 @@ var LayerParams = axon.LayerSheets{
 		{Sel: ".CNiUpLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Nuclear.Decay = 0.1
-				ly.Nuclear.SendTimeOff = 10
+				ly.Nuclear.SendTimeOff = 20
 				ly.Nuclear.SendTimeWindow = 30
 			}},
 		{Sel: ".CNeLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Init.GeBase = 0.2
+				ly.Acts.Erev.I = -55
 				ly.Nuclear.GeBaseLRate = 0.0001
 				ly.Acts.GabaB.Gk = 0 // 0 > 0.005 > 0.010 > 0.015 def
 				ly.Acts.NMDA.Ge = 0  // 0 > 0.006 def
@@ -153,7 +154,7 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".CNeUpPath", Doc: "initial weights",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 0.5
+				pt.PathScale.Abs = 2
 				pt.Learn.LRate.Base = 0.02 //
 				pt.SWts.Init.Mean = 0.5    // std initial
 				pt.SWts.Init.Var = 0

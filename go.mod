@@ -3,7 +3,7 @@ module github.com/emer/axon/v2
 go 1.25.6
 
 require (
-	cogentcore.org/core v0.3.14
+	cogentcore.org/core v0.3.15
 	cogentcore.org/lab v0.1.3
 	github.com/cogentcore/yaegi v0.0.0-20260116172027-700fbf8949f3
 	github.com/emer/emergent/v2 v2.0.0-dev0.1.8
