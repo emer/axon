@@ -55,11 +55,12 @@ func (em *Emery) Make(wl *builder.World, sc *phyxyz.Scene, ev *EmeryEnv) {
 	headsz := hh * 0.75
 	eyesz := headsz * .2
 	rot := math32.NewQuatIdentity()
+	off := float32(0.01) // levitate until https://github.com/cogentcore/lab/issues/47 fixed.
 
 	obj := wl.NewObject()
 	em.Obj = obj
 
-	emr := obj.NewDynamicSkin(sc, name+"_body", physics.Box, "purple", mass, math32.Vec3(hw, hh, hl), math32.Vec3(0, hh, 0), rot)
+	emr := obj.NewDynamicSkin(sc, name+"_body", physics.Box, "purple", mass, math32.Vec3(hw, hh, hl), math32.Vec3(0, hh+off, 0), rot)
 	// esk := emr.Skin
 	// esk.InitSkin = func(sld *xyz.Solid) {
 	// 	esk.BoxInit(sld)
@@ -68,8 +69,8 @@ func (em *Emery) Make(wl *builder.World, sc *phyxyz.Scene, ev *EmeryEnv) {
 	// 		esk.UpdateColor(esk.Color, sld)
 	// 	})
 	// }
-	em.XZ = obj.NewJointPlaneXZ(nil, emr, math32.Vec3(0, 0, 0), math32.Vec3(0, -hh, 0))
-	em.XZ.DoF(2).Limit.Set(-2, 2)
+	em.XZ = obj.NewJointPlaneXZ(nil, emr, math32.Vec3(0, off, 0), math32.Vec3(0, -hh, 0))
+	// em.XZ.DoF(2).Limit.Set(-3, 3)
 
 	headPos := math32.Vec3(0, hh, -(hl + headsz))
 	head := obj.NewDynamicSkin(sc, name+"_head", physics.Box, "tan", mass*.1, math32.Vec3(headsz, headsz, headsz), headPos, rot)

@@ -144,10 +144,6 @@ const (
 	// TimeDiff = GaP - GaD, TimePeak = 1 if error spike.
 	IOLayer
 
-	// CNeLayer represents the cerebellar nuclei excitatory neurons,
-	// which have slow learning to maintain a target average firing rate.
-	CNeLayer
-
 	// CNiIOLayer represents the cerebellar nuclei inhibitory prediction
 	// neurons, which learn to predict the activity of a specific sensory input,
 	// and inhibit it in the corresponding CNeUpLayer
@@ -159,7 +155,19 @@ const (
 	// the effects of self-generated motor commands.
 	CNiUpLayer
 
-	// note: IsNuclear depends on CNiUpLayer being last, and IOLayer being first.
+	// CNeUpLayer represents the cerebellar nuclei excitatory neurons,
+	// which have slow learning to maintain a target average firing rate,
+	// for the upbound microzones, with specialized mechanisms for direct
+	// inhibitory shunting (from [CNiUpLayer]) of excitatory synaptic input
+	// from specific sensory inputs.
+	CNeUpLayer
+
+	// CNeDnLayer represents the cerebellar nuclei excitatory neurons,
+	// which have slow learning to maintain a target average firing rate,
+	// for the downbound microzones.
+	CNeDnLayer
+
+	// note: IsNuclear depends on CNeCnLayer being last, and IOLayer being first.
 
 	//////// Rubicon
 

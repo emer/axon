@@ -86,10 +86,10 @@ var LayerParams = axon.LayerSheets{
 				ly.Nuclear.SendTimeOff = 20
 				ly.Nuclear.SendTimeWindow = 30
 			}},
-		{Sel: ".CNeLayer", Doc: "",
+		{Sel: ".CNeUpLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Acts.Init.GeBase = 0.2
-				ly.Acts.Erev.I = -55
+				ly.Acts.Init.GeBase = 0.17
+				ly.Acts.Dt.GiTau = 7
 				ly.Nuclear.GeBaseLRate = 0.0001
 				ly.Acts.GabaB.Gk = 0 // 0 > 0.005 > 0.010 > 0.015 def
 				ly.Acts.NMDA.Ge = 0  // 0 > 0.006 def
@@ -150,11 +150,11 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".SenseToCNeUp", Doc: "excitation to CNeUp",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1
+				pt.PathScale.Abs = 0.5 // 0.5 gives reasonable proportionality to responses
 			}},
-		{Sel: ".CNeUpPath", Doc: "initial weights",
+		{Sel: ".CNeUpPath", Doc: "inhibition to CNeUp",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 2
+				pt.PathScale.Abs = 1
 				pt.Learn.LRate.Base = 0.02 //
 				pt.SWts.Init.Mean = 0.5    // std initial
 				pt.SWts.Init.Var = 0

@@ -193,8 +193,8 @@ func (ev *EmeryEnv) ConfigPhysics(sc *xyz.Scene) {
 	ev.Physics.Model.GPU = false // todo: true, set GPU
 
 	params := physics.GetParams(0)
-	// params.Gravity.Y = 0
-	params.ControlDt = 0.1
+	params.Gravity.Y = 0 // note: essential until https://github.com/cogentcore/lab/issues/47 fixed
+	params.ControlDt = 1
 	params.SubSteps = 1
 	params.Dt = 0.001
 	ev.ConfigXYZScene(sc)

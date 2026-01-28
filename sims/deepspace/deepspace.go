@@ -649,7 +649,7 @@ func (ss *Sim) ConfigStatNuclearCycle() {
 		layers[li] = net.LayerByName(prefix + lnm)
 		pools[li] = layers[li].Params.PoolIndex(1) // 4D
 	}
-	statNames := []string{"IOenv", "IOe", "IOi", "IOioff", "IOerr", "IOspike", "CNiIO", "CNiUp", "CNeUp", "CNeUpGe", "CNeUpGi", "CNeUpLearn", "CNeUpAbsDev", "CNeUpNegDev"}
+	statNames := []string{"IOenv", "IOe", "IOi", "IOioff", "IOerr", "IOspike", "CNiIO", "CNiUp", "CNeUp", "CNeUpGe", "CNeUpGi", "CNeUpLearn", "CNeUpAbsDev"}
 	statDescs := map[string]string{
 		"IOenv":       "IO envelope initiated by action input to IO neurons",
 		"IOe":         "Integrated excitatory input to IO",
@@ -664,7 +664,6 @@ func (ss *Sim) ConfigStatNuclearCycle() {
 		"CNeUpGi":     "inhibitory conductance into CNeUp, from CNiUp",
 		"CNeUpLearn":  "CNeUp learning point",
 		"CNeUpAbsDev": "CNeUp max absolute deviation from target",
-		"CNeUpNegDev": "CNeUp max negative deviation from target",
 	}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		if level != Cycle {
@@ -720,8 +719,6 @@ func (ss *Sim) ConfigStatNuclearCycle() {
 				stat = layers[3].AvgMaxVarByPool("TimePeak", pool, di).Avg
 			case "CNeUpAbsDev":
 				stat = layers[3].AvgMaxVarByPool("GaP", pool, di).Avg
-			case "CNeUpNegDev":
-				stat = layers[3].AvgMaxVarByPool("GaD", pool, di).Avg
 			}
 			curModeDir.Float64(name, ndata).SetFloat1D(float64(stat), di)
 			tsr.AppendRowFloat(float64(stat))
@@ -736,10 +733,9 @@ func (ss *Sim) ConfigStatAdaptFilt() {
 	cnepi := cnely.Params.PoolIndex(0)
 	ioly := net.LayerByName(prefix + "IO")
 	// iopi := ioly.Params.PoolIndex(0)
-	statNames := []string{"CNeUpMax", "CNeUpDev", "IOErrs"}
+	statNames := []string{"CNeUpMax", "IOErrs"}
 	statDescs := map[string]string{
 		"CNeUpMax": "Maximum activity across the trial for CNeUp Adaptive Filtering layer. Should be around .5 (ActTarget) in general",
-		"CNeUpDev": "Maximum negative deviation from ActTarget, with larger values indicating excessive inhibition from CNi",
 		"IOErrs":   "Average number of IO error spikes across trials",
 	}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
@@ -769,8 +765,6 @@ func (ss *Sim) ConfigStatAdaptFilt() {
 					switch name {
 					case "CNeUpMax":
 						stat = axon.PoolAvgMax(axon.AMCaPMax, axon.AMCycle, axon.Max, cnepi, uint32(di))
-					case "CNeUpDev":
-						stat = cnely.AvgMaxVarByPool("GaD", 0, di).Avg
 					case "IOErrs":
 						stat = ioly.AvgMaxVarByPool("TimePeak", 0, di).Avg
 					}

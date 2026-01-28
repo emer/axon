@@ -479,7 +479,7 @@ const PathGTypesN: PathGTypes = 5;
 const GlobalScalarVarsN: GlobalScalarVars = 58;
 const GlobalVectorVarsN: GlobalVectorVars = 10;
 const GPUVarsN: GPUVars = 23;
-const LayerTypesN: LayerTypes = 36;
+const LayerTypesN: LayerTypes = 37;
 const LayerVarsN: LayerVars = 12;
 const ViewTimesN: ViewTimes = 7;
 const DAModTypesN: DAModTypes = 4;
@@ -733,25 +733,26 @@ const  GPLayer: LayerTypes = 13;
 const  BGThalLayer: LayerTypes = 14;
 const  VSGatedLayer: LayerTypes = 15;
 const  IOLayer: LayerTypes = 16;
-const  CNeLayer: LayerTypes = 17;
-const  CNiIOLayer: LayerTypes = 18;
-const  CNiUpLayer: LayerTypes = 19;
-const  BLALayer: LayerTypes = 20;
-const  CeMLayer: LayerTypes = 21;
-const  VSPatchLayer: LayerTypes = 22;
-const  LHbLayer: LayerTypes = 23;
-const  DrivesLayer: LayerTypes = 24;
-const  UrgencyLayer: LayerTypes = 25;
-const  USLayer: LayerTypes = 26;
-const  PVLayer: LayerTypes = 27;
-const  LDTLayer: LayerTypes = 28;
-const  VTALayer: LayerTypes = 29;
-const  RewLayer: LayerTypes = 30;
-const  RWPredLayer: LayerTypes = 31;
-const  RWDaLayer: LayerTypes = 32;
-const  TDPredLayer: LayerTypes = 33;
-const  TDIntegLayer: LayerTypes = 34;
-const  TDDaLayer: LayerTypes = 35;
+const  CNiIOLayer: LayerTypes = 17;
+const  CNiUpLayer: LayerTypes = 18;
+const  CNeUpLayer: LayerTypes = 19;
+const  CNeDnLayer: LayerTypes = 20;
+const  BLALayer: LayerTypes = 21;
+const  CeMLayer: LayerTypes = 22;
+const  VSPatchLayer: LayerTypes = 23;
+const  LHbLayer: LayerTypes = 24;
+const  DrivesLayer: LayerTypes = 25;
+const  UrgencyLayer: LayerTypes = 26;
+const  USLayer: LayerTypes = 27;
+const  PVLayer: LayerTypes = 28;
+const  LDTLayer: LayerTypes = 29;
+const  VTALayer: LayerTypes = 30;
+const  RewLayer: LayerTypes = 31;
+const  RWPredLayer: LayerTypes = 32;
+const  RWDaLayer: LayerTypes = 33;
+const  TDPredLayer: LayerTypes = 34;
+const  TDIntegLayer: LayerTypes = 35;
+const  TDDaLayer: LayerTypes = 36;
 
 //////// import: "layervars.go"
 alias LayerVars = i32; //enums:enum
@@ -1083,14 +1084,14 @@ struct NuclearParams {
 	SendTimeBins: i32,
 }
 fn LayerParams_IsNuclear(ly: LayerParams) -> bool {
-	return ly.Type >= IOLayer && ly.Type <= CNiUpLayer;
+	return ly.Type >= IOLayer && ly.Type <= CNeDnLayer;
 }
 fn LayerParams_NuclearLearnReset(ly: LayerParams, ctx: Context, ni: u32,di: u32) {
 	if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // not done yet
 	u32(ni), u32(di), u32(LearnNow))] == 0.0) {
 		return;
 	}
-	if (ly.Type == CNeLayer) {
+	if (ly.Type == CNeUpLayer || ly.Type == CNeDnLayer) {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = 0.0;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = 0.0;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaM))] = 0.0;

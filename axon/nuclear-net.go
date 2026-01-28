@@ -18,12 +18,12 @@ func (net *Network) AddNuclearCNUp(sense, actEff *Layer, actEnv int, space float
 		ioUp = net.AddLayer2D(name+"IO", IOLayer, shp.DimSize(0), shp.DimSize(1))
 		cniIOUp = net.AddLayer2D(name+"CNiIO", CNiIOLayer, shp.DimSize(0), shp.DimSize(1))
 		cniUp = net.AddLayer2D(name+"CNiUp", CNiUpLayer, shp.DimSize(0), shp.DimSize(1))
-		cneUp = net.AddLayer2D(name+"CNeUp", CNeLayer, shp.DimSize(0), shp.DimSize(1))
+		cneUp = net.AddLayer2D(name+"CNeUp", CNeUpLayer, shp.DimSize(0), shp.DimSize(1))
 	} else {
 		ioUp = net.AddLayer4D(name+"IO", IOLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
 		cniIOUp = net.AddLayer4D(name+"CNiIO", CNiIOLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
 		cniUp = net.AddLayer4D(name+"CNiUp", CNiUpLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
-		cneUp = net.AddLayer4D(name+"CNeUp", CNeLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
+		cneUp = net.AddLayer4D(name+"CNeUp", CNeUpLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
 	}
 	cniIOUp.SetBuildConfig("IOLayName", ioUp.Name)
 	cniUp.SetBuildConfig("IOLayName", ioUp.Name)

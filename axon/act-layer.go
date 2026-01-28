@@ -421,6 +421,16 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni, di uint32, saveVal float3
 			Neurons.SetMul(ggain, int(ni), int(di), int(Ge))
 			Neurons.SetMul(ggain, int(ni), int(di), int(Gi))
 		}
+	case CNeUpLayer:
+		ggain := float32(0)
+		geb := NeuronAvgs.Value(int(ni), int(GeBase))
+		ge := Neurons.Value(int(ni), int(di), int(Ge)) - geb
+		if ge > 0 {
+			ggain = max(1.0-(Neurons.Value(int(ni), int(di), int(Gi))/ge), 0.0)
+		}
+		Neurons.Set(geb+ge*ggain, int(ni), int(di), int(Ge))
+		Neurons.Set(0.0, int(ni), int(di), int(Gi))
+
 	default:
 	}
 }
@@ -611,7 +621,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, lpi, pi, ni, di uint32) {
 
 	case IOLayer:
 		ly.IOLearn(ctx, lpi, pi, ni, di)
-	case CNeLayer:
+	case CNeUpLayer, CNeDnLayer:
 		ly.CNeLearn(ctx, lpi, pi, ni, di)
 	case CNiIOLayer, CNiUpLayer:
 		ly.CNiLearn(ctx, lpi, pi, ni, di)

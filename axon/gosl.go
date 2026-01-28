@@ -198,6 +198,7 @@ func GPUInit() {
 		pl.AddVarUsed(2, "LayerStates")
 		pl.AddVarUsed(0, "Layers")
 		pl.AddVarUsed(1, "NetworkIxs")
+		pl.AddVarUsed(2, "NeuronAvgs")
 		pl.AddVarUsed(1, "NeuronIxs")
 		pl.AddVarUsed(2, "Neurons")
 		pl.AddVarUsed(1, "PoolIxs")

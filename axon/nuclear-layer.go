@@ -67,7 +67,7 @@ func (tp *NuclearParams) Defaults() {
 
 // IsNuclear returns true if layer type is cerebellum (Nuclear model).
 func (ly *LayerParams) IsNuclear() bool {
-	return ly.Type >= IOLayer && ly.Type <= CNiUpLayer
+	return ly.Type >= IOLayer && ly.Type <= CNeDnLayer
 }
 
 // NuclearLearnReset resets LearnNow if past envelope time, in new state
@@ -76,7 +76,7 @@ func (ly *LayerParams) NuclearLearnReset(ctx *Context, ni, di uint32) {
 		return
 	}
 
-	if ly.Type == CNeLayer {
+	if ly.Type == CNeUpLayer || ly.Type == CNeDnLayer {
 		Neurons.Set(0.0, int(ni), int(di), int(LearnNow))
 		Neurons.Set(0.0, int(ni), int(di), int(TimePeak))
 		Neurons.Set(0.0, int(ni), int(di), int(GaM))
@@ -98,7 +98,7 @@ func (ly *LayerParams) NuclearLearnReset(ctx *Context, ni, di uint32) {
 }
 
 // NuclearDWtNeuron is the neuron-level learning rule for tonically-active
-// Nuclear layers (e.g., [CNeLayer]).
+// Nuclear layers (e.g., [CNeUpLayer], [CNeDnLayer]).
 // Used to adjust the GeBase levels per neuron.
 func (ly *LayerParams) NuclearDWtNeuron(ctx *Context, ni uint32) {
 	dbase := float32(0)
@@ -251,8 +251,9 @@ func (ly *LayerParams) IOLearn(ctx *Context, lpi, pi, ni, di uint32) {
 	}
 }
 
-// CNeLearn updates LearnNow for CNeLayer, based on maximum excitatory
-// deviation from target. Also records max negative deviation in GaD.
+// CNeLearn updates LearnNow for [CNeUpLayer], [CNeDnLayer], based on
+// maximum excitatory deviation from target. Also records max negative
+// deviation in GaD.
 // called in LayerParams::PostSpikeSpecial
 func (ly *LayerParams) CNeLearn(ctx *Context, lpi, pi, ni, di uint32) {
 	// lni := ni - ly.Indexes.NeurSt
@@ -264,12 +265,6 @@ func (ly *LayerParams) CNeLearn(ctx *Context, lpi, pi, ni, di uint32) {
 
 	act := Neurons.Value(int(ni), int(di), int(CaP))
 	dev := ly.Nuclear.ActTarget - act // deviation
-	if act < ly.Nuclear.ActTarget {
-		if dev > Neurons.Value(int(ni), int(di), int(GaD)) { // record stats
-			Neurons.Set(dev, int(ni), int(di), int(GaD))
-		}
-	}
-
 	adev := math32.Abs(dev)
 	if adev > Neurons.Value(int(ni), int(di), int(GaP)) {
 		Neurons.Set(adev, int(ni), int(di), int(GaP))

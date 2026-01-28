@@ -109,7 +109,7 @@ fn LayerParams_PostSpikeSpecial(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,
 	case IOLayer: {
 		LayerParams_IOLearn(ly, ctx, lpi, pi, ni, di);
 	}
-	case CNeLayer: {
+	case CNeUpLayer, CNeDnLayer: {
 		LayerParams_CNeLearn(ly, ctx, lpi, pi, ni, di);
 	}
 	case CNiIOLayer, CNiUpLayer: {
@@ -659,7 +659,7 @@ const PathGTypesN: PathGTypes = 5;
 const GlobalScalarVarsN: GlobalScalarVars = 58;
 const GlobalVectorVarsN: GlobalVectorVars = 10;
 const GPUVarsN: GPUVars = 23;
-const LayerTypesN: LayerTypes = 36;
+const LayerTypesN: LayerTypes = 37;
 const LayerVarsN: LayerVars = 12;
 const ViewTimesN: ViewTimes = 7;
 const DAModTypesN: DAModTypes = 4;
@@ -916,25 +916,26 @@ const  GPLayer: LayerTypes = 13;
 const  BGThalLayer: LayerTypes = 14;
 const  VSGatedLayer: LayerTypes = 15;
 const  IOLayer: LayerTypes = 16;
-const  CNeLayer: LayerTypes = 17;
-const  CNiIOLayer: LayerTypes = 18;
-const  CNiUpLayer: LayerTypes = 19;
-const  BLALayer: LayerTypes = 20;
-const  CeMLayer: LayerTypes = 21;
-const  VSPatchLayer: LayerTypes = 22;
-const  LHbLayer: LayerTypes = 23;
-const  DrivesLayer: LayerTypes = 24;
-const  UrgencyLayer: LayerTypes = 25;
-const  USLayer: LayerTypes = 26;
-const  PVLayer: LayerTypes = 27;
-const  LDTLayer: LayerTypes = 28;
-const  VTALayer: LayerTypes = 29;
-const  RewLayer: LayerTypes = 30;
-const  RWPredLayer: LayerTypes = 31;
-const  RWDaLayer: LayerTypes = 32;
-const  TDPredLayer: LayerTypes = 33;
-const  TDIntegLayer: LayerTypes = 34;
-const  TDDaLayer: LayerTypes = 35;
+const  CNiIOLayer: LayerTypes = 17;
+const  CNiUpLayer: LayerTypes = 18;
+const  CNeUpLayer: LayerTypes = 19;
+const  CNeDnLayer: LayerTypes = 20;
+const  BLALayer: LayerTypes = 21;
+const  CeMLayer: LayerTypes = 22;
+const  VSPatchLayer: LayerTypes = 23;
+const  LHbLayer: LayerTypes = 24;
+const  DrivesLayer: LayerTypes = 25;
+const  UrgencyLayer: LayerTypes = 26;
+const  USLayer: LayerTypes = 27;
+const  PVLayer: LayerTypes = 28;
+const  LDTLayer: LayerTypes = 29;
+const  VTALayer: LayerTypes = 30;
+const  RewLayer: LayerTypes = 31;
+const  RWPredLayer: LayerTypes = 32;
+const  RWDaLayer: LayerTypes = 33;
+const  TDPredLayer: LayerTypes = 34;
+const  TDIntegLayer: LayerTypes = 35;
+const  TDDaLayer: LayerTypes = 36;
 
 //////// import: "layervars.go"
 alias LayerVars = i32; //enums:enum
@@ -1368,12 +1369,6 @@ fn LayerParams_CNeLearn(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,
 	var cycTot = f32(ctx.CyclesTotal);
 	var act = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaP))];
 	var dev = ly.Nuclear.ActTarget - act; // deviation
-	if (act < ly.Nuclear.ActTarget) {
-		if (dev > Neurons[Index3D(TensorStrides[70], TensorStrides[71], // record stats
-		TensorStrides[72], u32(ni), u32(di), u32(GaD))]) {
-			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaD))] = dev;
-		}
-	}
 	var adev = abs(dev);
 	if (adev > Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))]) {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))] = adev;
