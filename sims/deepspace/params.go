@@ -89,7 +89,7 @@ var LayerParams = axon.LayerSheets{
 		{Sel: ".CNeUpLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Init.GeBase = 0.17
-				ly.Acts.Dt.GiTau = 7
+				ly.Acts.Dt.GiTau = 15
 				ly.Nuclear.GeBaseLRate = 0.0001
 				ly.Acts.GabaB.Gk = 0 // 0 > 0.005 > 0.010 > 0.015 def
 				ly.Acts.NMDA.Ge = 0  // 0 > 0.006 def
@@ -152,27 +152,22 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 0.5 // 0.5 gives reasonable proportionality to responses
 			}},
-		{Sel: ".CNeUpPath", Doc: "inhibition to CNeUp",
+		{Sel: ".CNiToCNeUp", Doc: "inhibition to CNeUp",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1
-				pt.Learn.LRate.Base = 0.02 //
-				pt.SWts.Init.Mean = 0.5    // std initial
-				pt.SWts.Init.Var = 0
-				pt.SWts.Init.SPct = 0
-				pt.SWts.Adapt.On.SetBool(false)
+				pt.PathScale.Abs = 1 // 1 == 2
 			}},
 		{Sel: ".MFToCNiIOUp", Doc: "initial weights",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.LRate.Base = 0.01 //
-				pt.SWts.Init.Mean = 0.05   // weak initial
+				pt.Learn.LRate.Base = 0.001 // 0.001 > higher
+				pt.SWts.Init.Mean = 0.05    // weak initial
 				pt.SWts.Init.Var = 0
 				pt.SWts.Init.SPct = 0
 				pt.SWts.Adapt.On.SetBool(false)
 			}},
 		{Sel: ".MFToCNiUp", Doc: "initial weights",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.LRate.Base = 0.01 //
-				pt.SWts.Init.Mean = 0.05   // ?
+				pt.Learn.LRate.Base = 0.002 // 0.002 > higher for IO .001
+				pt.SWts.Init.Mean = 0.05    // ?
 				pt.SWts.Init.Var = 0
 				pt.SWts.Init.SPct = 0
 				pt.SWts.Adapt.On.SetBool(false)

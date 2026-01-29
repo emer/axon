@@ -69,11 +69,6 @@ const (
 	// CNIOPath is a cerebellar nucleus pathway trained by IO error signals.
 	CNIOPath
 
-	// CNeUpPath is a cerebellar excitatory output neuron pathway,
-	// for upbound microzones, which learns drive the output neurons at their
-	// target baseline activity level by adapting the inhibitory input strength.
-	CNeUpPath
-
 	// RWPath does dopamine-modulated learning for reward prediction:
 	// Da * Send.CaP (integrated current spiking activity).
 	// Uses RLPredPath parameters.

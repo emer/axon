@@ -500,7 +500,7 @@ const NeuronFlagsN: NeuronFlags = 9;
 const NeuronVarsN: NeuronVars = 93;
 const NeuronAvgVarsN: NeuronAvgVars = 7;
 const NeuronIndexVarsN: NeuronIndexVars = 3;
-const PathTypesN: PathTypes = 15;
+const PathTypesN: PathTypes = 14;
 const GPLayerTypesN: GPLayerTypes = 3;
 const PoolIndexVarsN: PoolIndexVars = 4;
 const PoolIntVarsN: PoolIntVars = 6;
@@ -1169,11 +1169,10 @@ const  VSPatchPath: PathTypes = 6;
 const  VSMatrixPath: PathTypes = 7;
 const  DSMatrixPath: PathTypes = 8;
 const  CNIOPath: PathTypes = 9;
-const  CNeUpPath: PathTypes = 10;
-const  RWPath: PathTypes = 11;
-const  TDPredPath: PathTypes = 12;
-const  BLAPath: PathTypes = 13;
-const  HipPath: PathTypes = 14;
+const  RWPath: PathTypes = 10;
+const  TDPredPath: PathTypes = 11;
+const  BLAPath: PathTypes = 12;
+const  HipPath: PathTypes = 13;
 
 //////// import: "pcore-layer.go"
 struct DSMatrixParams {

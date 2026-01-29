@@ -572,7 +572,7 @@ const NeuronFlagsN: NeuronFlags = 9;
 const NeuronVarsN: NeuronVars = 93;
 const NeuronAvgVarsN: NeuronAvgVars = 7;
 const NeuronIndexVarsN: NeuronIndexVars = 3;
-const PathTypesN: PathTypes = 15;
+const PathTypesN: PathTypes = 14;
 const GPLayerTypesN: GPLayerTypes = 3;
 const PoolIndexVarsN: PoolIndexVars = 4;
 const PoolIntVarsN: PoolIntVars = 6;
@@ -899,9 +899,6 @@ fn PathParams_DWtSyn(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32,
 	}
 	case CNIOPath: {
 		PathParams_DWtCNIO(pt, ctx, rlay, syni, si, ri, lpi, pi, di);
-	}
-	case CNeUpPath: {
-		PathParams_DWtCNeUp(pt, ctx, rlay, syni, si, ri, lpi, pi, di);
 	}
 	case RWPath: {
 		PathParams_DWtSynRWPred(pt, ctx, syni, si, ri, lpi, pi, di);
@@ -1247,27 +1244,6 @@ fn PathParams_DWtCNIO(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32
 		dwt = -sact * ract * rlay.Nuclear.Decay;
 	}
 	PathParams_DWtSynSoftBound(pt, ctx, syni, di, dwt);
-}
-fn PathParams_DWtCNeUp(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
-	var learnNow = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnNow))]);
-	if (learnNow-(ctx.CyclesTotal-ctx.ThetaCycles) < 0) {
-		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
-		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));return;
-	}
-	var stcyc = CaBinForCycle(learnNow - rlay.Nuclear.SendTimeOff);
-	var nbins = rlay.Nuclear.SendTimeBins;
-	var sact = f32(0);
-	for (var i=0; i<nbins; i++) {
-		var bi = CaBinForCycle(stcyc + i*CaBinCycles);
-		sact += Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
-		u32(si), u32(di), u32(CaBins + NeuronVars(bi)))];
-	}
-	var aerr = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // signed deviation, target - act, at point of max
-	TensorStrides[72], u32(ri), u32(di), u32(GaM))];
-	var dwt = -sact * aerr; // opposite sign because inhibitory
-	SynapseTracesSet(pt.Learn.LRate.Eff * dwt, Index3D(TensorStrides[180], TensorStrides[181],
-	TensorStrides[182],
-	u32(syni), u32(di), u32(DiDWt)));
 }
 
 //////// import: "learn.go"
@@ -1652,11 +1628,10 @@ const  VSPatchPath: PathTypes = 6;
 const  VSMatrixPath: PathTypes = 7;
 const  DSMatrixPath: PathTypes = 8;
 const  CNIOPath: PathTypes = 9;
-const  CNeUpPath: PathTypes = 10;
-const  RWPath: PathTypes = 11;
-const  TDPredPath: PathTypes = 12;
-const  BLAPath: PathTypes = 13;
-const  HipPath: PathTypes = 14;
+const  RWPath: PathTypes = 10;
+const  TDPredPath: PathTypes = 11;
+const  BLAPath: PathTypes = 12;
+const  HipPath: PathTypes = 13;
 
 //////// import: "pcore-layer.go"
 struct DSMatrixParams {

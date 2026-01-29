@@ -38,8 +38,6 @@ func (pt *PathParams) DWtSyn(ctx *Context, rlay *LayerParams, syni, si, ri, di u
 		pt.DWtSynDSPatch(ctx, syni, si, ri, lpi, pi, di)
 	case CNIOPath:
 		pt.DWtCNIO(ctx, rlay, syni, si, ri, lpi, pi, di)
-	case CNeUpPath:
-		pt.DWtCNeUp(ctx, rlay, syni, si, ri, lpi, pi, di)
 	case RWPath:
 		pt.DWtSynRWPred(ctx, syni, si, ri, lpi, pi, di)
 	case TDPredPath:
@@ -507,33 +505,6 @@ func (pt *PathParams) DWtCNIO(ctx *Context, rlay *LayerParams, syni, si, ri, lpi
 	// todo: softbound?
 	pt.DWtSynSoftBound(ctx, syni, di, dwt)
 	// SynapseTraces[syni, di, DiDWt] = pt.Learn.LRate.Eff * dwt
-}
-
-// DWtCNeUp computes the weight change (learning) at given synapse,
-// for [CNeUpPath] pathways. We assume that the actual inhib input
-// is correct (it will be eventually), and adapt inhib to get closer
-// to target baseline activity (cancellation), leaving the excite
-// input alone because it is ground truth. If too active, increase inhib
-// if below, decrease inhib. This is only used on the inhib pathway.
-func (pt *PathParams) DWtCNeUp(ctx *Context, rlay *LayerParams, syni, si, ri, lpi, pi, di uint32) {
-	learnNow := int32(Neurons.Value(int(ri), int(di), int(LearnNow)))
-	if learnNow-(ctx.CyclesTotal-ctx.ThetaCycles) < 0 {
-		SynapseTraces.Set(0.0, int(syni), int(di), int(DTr))
-		SynapseTraces.Set(0.0, int(syni), int(di), int(DiDWt))
-		return
-	}
-	stcyc := CaBinForCycle(learnNow - rlay.Nuclear.SendTimeOff)
-	nbins := rlay.Nuclear.SendTimeBins
-	sact := float32(0)
-	for i := range nbins {
-		bi := CaBinForCycle(stcyc + i*CaBinCycles)
-		sact += Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(bi)))
-	}
-	// todo: rlrate? Neurons[ri, di, RLRate]
-	aerr := Neurons.Value(int(ri), int(di), int(GaM)) // signed deviation, target - act, at point of max
-	dwt := -sact * aerr                               // opposite sign because inhibitory
-	// todo: softbound?
-	SynapseTraces.Set(pt.Learn.LRate.Eff*dwt, int(syni), int(di), int(DiDWt))
 }
 
 //////// WtFromDWt
