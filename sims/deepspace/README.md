@@ -1,6 +1,13 @@
 # deepspace
 
-TODO: do VOR
+
+## TODO
+
+* test env that presents:
+	- sensory without motor: this is the key error signal
+	- omit visual -- this is what will happen with VOR -- need separate input that indicates expected absence of visual input.
+
+### VOR
 
 ## Mossy fiber inputs
 
