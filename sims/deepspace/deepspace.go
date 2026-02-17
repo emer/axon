@@ -252,16 +252,26 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ioUp, cniIOUp, cniUp, cneUp := net.AddNuclearCNUp(vsRotVel, rotAct, cycles-20, space)
 	_, _ = ioUp, cneUp
 
+	ioDn, cniIODn, cniDn, cneDn := net.AddNuclearCNDn(vsRotVel, rotAct, cycles-20, space)
+	_, _, _ = ioDn, cneDn, cniDn
+
+	// upgoing forward model
 	pt := net.ConnectLayers(vsRotVel, cneUp, p1to1, axon.ForwardPath).AddClass("SenseToCNeUp")
 	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
 
-	// net.ConnectLayers(rotActPrev, cniIOUp, p1to1, axon.CNIOPath).AddClass("MFUp", "MFToCNiIOUp")
-	// net.ConnectLayers(s1ct, cniIOUp, p1to1, axon.CNIOPath).AddClass("MFUp", "MFToCNiIOUp")
-	net.ConnectLayers(rotActMF, cniIOUp, full, axon.CNIOPath).AddClass("MFUp", "MFToCNiIOUp")
+	// net.ConnectLayers(rotActPrev, cniIOUp, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiIOUp")
+	// net.ConnectLayers(s1ct, cniIOUp, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiIOUp")
+	net.ConnectLayers(rotActMF, cniIOUp, full, axon.CNIOPath).AddClass("MF", "MFToCNiIOUp")
 
-	// net.ConnectLayers(rotActPrev, cniUp, p1to1, axon.CNIOPath).AddClass("MFUp", "MFToCNiUp")
-	// net.ConnectLayers(s1ct, cniUp, p1to1, axon.CNIOPath).AddClass("MFUp", "MFToCNiUp")
-	net.ConnectLayers(rotActMF, cniUp, full, axon.CNIOPath).AddClass("MFUp", "MFToCNiUp")
+	// net.ConnectLayers(rotActPrev, cniUp, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiUp")
+	// net.ConnectLayers(s1ct, cniUp, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiUp")
+	net.ConnectLayers(rotActMF, cniUp, full, axon.CNIOPath).AddClass("MF", "MFToCNiUp")
+
+	// downgoing forward model
+
+	// net.ConnectLayers(rotActPrev, cniIODn, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiIODn")
+	// net.ConnectLayers(s1ct, cniIODn, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiIODn")
+	net.ConnectLayers(rotActMF, cniIODn, full, axon.CNIOPath).AddClass("MF", "MFToCNiIODn")
 
 	// position
 
@@ -274,6 +284,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	s1.PlaceAbove(rotAct)
 
 	cniIOUp.PlaceRightOf(s1, space*3)
+	cniIODn.PlaceRightOf(cniIOUp, space*3)
 
 	// visHid.PlaceRightOf(s1, space)
 	// if ss.Config.Params.Hid2 {
@@ -642,14 +653,14 @@ func (ss *Sim) ConfigStatNuclearCycle() {
 	net := ss.Net
 	prefix := "VSRotHVel"
 	pool := 1 // 0 = layer pool, get first pool
-	layerNames := []string{"IO", "CNiIO", "CNiUp", "CNeUp"}
+	layerNames := []string{"IOUp", "CNiIOUp", "CNiUp", "CNeUp", "CNiDn", "CNeDn"}
 	layers := make([]*axon.Layer, len(layerNames))
 	pools := make([]uint32, len(layerNames))
 	for li, lnm := range layerNames {
 		layers[li] = net.LayerByName(prefix + lnm)
 		pools[li] = layers[li].Params.PoolIndex(1) // 4D
 	}
-	statNames := []string{"IOenv", "IOe", "IOi", "IOioff", "IOerr", "IOspike", "CNiIO", "CNiUp", "CNeUp", "CNeUpGe", "CNeUpGi", "CNeUpLearn", "CNeUpAbsDev"}
+	statNames := []string{"IOenv", "IOe", "IOi", "IOioff", "IOerr", "IOspike", "CNiIO", "CNiUp", "CNeUp", "CNeUpGe", "CNeUpGi", "CNeUpLearn", "CNeUpAbsDev", "CNiDn", "CNeDn"}
 	statDescs := map[string]string{
 		"IOenv":       "IO envelope initiated by action input to IO neurons",
 		"IOe":         "Integrated excitatory input to IO",
@@ -664,6 +675,8 @@ func (ss *Sim) ConfigStatNuclearCycle() {
 		"CNeUpGi":     "inhibitory conductance into CNeUp, from CNiUp",
 		"CNeUpLearn":  "CNeUp learning point",
 		"CNeUpAbsDev": "CNeUp max absolute deviation from target",
+		"CNiDn":       "inhibitory interneuron that projects to CNeDn, is inhibited by CNiIODn, and thus disinhibits CNeDn",
+		"CNeDn":       "excitatory output of forward model predictive side",
 	}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		if level != Cycle {
@@ -719,6 +732,10 @@ func (ss *Sim) ConfigStatNuclearCycle() {
 				stat = layers[3].AvgMaxVarByPool("TimePeak", pool, di).Avg
 			case "CNeUpAbsDev":
 				stat = layers[3].AvgMaxVarByPool("GaP", pool, di).Avg
+			case "CNiDn":
+				stat = axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pools[4], diu)
+			case "CNeDn":
+				stat = axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pools[5], diu)
 			}
 			curModeDir.Float64(name, ndata).SetFloat1D(float64(stat), di)
 			tsr.AppendRowFloat(float64(stat))
@@ -731,7 +748,7 @@ func (ss *Sim) ConfigStatAdaptFilt() {
 	prefix := "VSRotHVel"
 	cnely := net.LayerByName(prefix + "CNeUp")
 	cnepi := cnely.Params.PoolIndex(0)
-	ioly := net.LayerByName(prefix + "IO")
+	ioly := net.LayerByName(prefix + "IOUp")
 	// iopi := ioly.Params.PoolIndex(0)
 	statNames := []string{"CNeUpMax", "IOErrs"}
 	statDescs := map[string]string{
@@ -810,7 +827,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 
 func (ss *Sim) ConfigNetView(nv *netview.NetView) {
 	// nv.ViewDefaults()
-	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 2.1, 2.0)
+	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 2.0, 2.1)
 	nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
 }
 

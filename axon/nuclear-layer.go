@@ -359,3 +359,11 @@ func (ly *LayerParams) CNiUpDefaults() {
 	ly.Nuclear.ActTarget = 0
 	ly.Nuclear.SendTimeOff = 10 // match the excitatory
 }
+
+// called in Defaults for [CNiDnLayer] type
+func (ly *LayerParams) CNiDnDefaults() {
+	ly.NuclearDefaults()
+	ly.Acts.Init.GeBase = 0.25
+	ly.Nuclear.ActTarget = 0.5
+	ly.Nuclear.SendTimeOff = 20
+}

@@ -156,7 +156,11 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 1 // 1 == 2
 			}},
-		{Sel: ".MFToCNiIOUp", Doc: "initial weights",
+		{Sel: ".CNiToCNeDn", Doc: "inhibition to CNeUp",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 4
+			}},
+		{Sel: ".MF", Doc: "all mossy fiber inputs",
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.001 // 0.001 > higher
 				pt.SWts.Init.Mean = 0.05    // weak initial
@@ -167,10 +171,6 @@ var PathParams = axon.PathSheets{
 		{Sel: ".MFToCNiUp", Doc: "initial weights",
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.002 // 0.002 > higher for IO .001
-				pt.SWts.Init.Mean = 0.05    // ?
-				pt.SWts.Init.Var = 0
-				pt.SWts.Init.SPct = 0
-				pt.SWts.Adapt.On.SetBool(false)
 			}},
 
 		/* not used

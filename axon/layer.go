@@ -154,6 +154,8 @@ func (ly *Layer) Defaults() { //types:add
 		ly.Params.CNiIODefaults()
 	case CNiUpLayer:
 		ly.Params.CNiUpDefaults()
+	case CNiDnLayer:
+		ly.Params.CNiDnDefaults()
 	case CNeUpLayer, CNeDnLayer:
 		ly.Params.NuclearDefaults()
 

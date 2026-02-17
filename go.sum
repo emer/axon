@@ -1,9 +1,9 @@
 codeberg.org/go-pdf/fpdf v0.11.0 h1:n3I8WISQ1cr0S2rvx9DOlE/GypbcimMWqLpel3slHmY=
 codeberg.org/go-pdf/fpdf v0.11.0/go.mod h1:Y0DGRAdZ0OmnZPvjbMp/1bYxmIPxm0ws4tfoPOc4LjU=
-cogentcore.org/core v0.3.17 h1:jpOOQMvxFMjeHAs2HoTjQMun74jVlmrLV2NfkXCHSnA=
-cogentcore.org/core v0.3.17/go.mod h1:IQBEleZr+h6O/UjnymY875ve9kY0yokLK8YJ/JUPPBg=
-cogentcore.org/lab v0.1.4 h1:39s8LKzk0xtOpckdaO/0uUb/phOGZvm2c6ipuPBmy84=
-cogentcore.org/lab v0.1.4/go.mod h1:EOhfU6GCpnwLpq31YDr9qkj4AfRcKe2lUdRDsIe2COw=
+cogentcore.org/core v0.3.18 h1:xJXwUfrIg7bX9BJe3DEbOjn2a3TkIhFOvjeIzY3L0GU=
+cogentcore.org/core v0.3.18/go.mod h1:IQBEleZr+h6O/UjnymY875ve9kY0yokLK8YJ/JUPPBg=
+cogentcore.org/lab v0.1.5 h1:aOkT7/4bVQtl8XjDBmSqMe/mzVOY10k/Ob4UJK78u1A=
+cogentcore.org/lab v0.1.5/go.mod h1:hzgSHiKVTcuZ1WbFlIKw47pWaP23ec6ocrbdRXpWRDs=
 git.sr.ht/~sbinet/cmpimg v0.1.0 h1:E0zPRk2muWuCqSKSVZIWsgtU9pjsw3eKHi8VmQeScxo=
 git.sr.ht/~sbinet/cmpimg v0.1.0/go.mod h1:FU12psLbF4TfNXkKH2ZZQ29crIqoiqTZmeQ7dkp/pxE=
 github.com/Bios-Marcel/wastebasket/v2 v2.0.3 h1:TkoDPcSqluhLGE+EssHu7UGmLgUEkWg7kNyHyyJ3Q9g=

@@ -302,7 +302,7 @@ func (pt *PathParams) SendSpike(ctx *Context, ni, di, lni uint32) {
 
 // InitGBuffs initializes the per-pathway synaptic conductance buffers.
 // This is not typically needed (called during InitWeights, InitActs)
-// but can be called when needed.  Must be called to completely initialize
+// but can be called when needed. Must be called to completely initialize
 // prior activity, e.g., full Glong clearing.
 func (pt *PathParams) InitGBuffs(ctx *Context) {
 	nix := GetNetworkIxs(0)

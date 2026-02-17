@@ -15,13 +15,13 @@ func (net *Network) AddNuclearCNUp(sense, actEff *Layer, actEnv int, space float
 	name := sense.Name
 	shp := sense.Shape
 	if shp.NumDims() == 2 {
-		ioUp = net.AddLayer2D(name+"IO", IOLayer, shp.DimSize(0), shp.DimSize(1))
-		cniIOUp = net.AddLayer2D(name+"CNiIO", CNiIOLayer, shp.DimSize(0), shp.DimSize(1))
+		ioUp = net.AddLayer2D(name+"IOUp", IOLayer, shp.DimSize(0), shp.DimSize(1))
+		cniIOUp = net.AddLayer2D(name+"CNiIOup", CNiIOLayer, shp.DimSize(0), shp.DimSize(1))
 		cniUp = net.AddLayer2D(name+"CNiUp", CNiUpLayer, shp.DimSize(0), shp.DimSize(1))
 		cneUp = net.AddLayer2D(name+"CNeUp", CNeUpLayer, shp.DimSize(0), shp.DimSize(1))
 	} else {
-		ioUp = net.AddLayer4D(name+"IO", IOLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
-		cniIOUp = net.AddLayer4D(name+"CNiIO", CNiIOLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
+		ioUp = net.AddLayer4D(name+"IOUp", IOLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
+		cniIOUp = net.AddLayer4D(name+"CNiIOUp", CNiIOLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
 		cniUp = net.AddLayer4D(name+"CNiUp", CNiUpLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
 		cneUp = net.AddLayer4D(name+"CNeUp", CNeUpLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
 	}
@@ -67,5 +67,74 @@ func (net *Network) AddNuclearCNUp(sense, actEff *Layer, actEnv int, space float
 	cniUp.PlaceBehind(cniIOUp, space)
 	cneUp.PlaceBehind(cniUp, space)
 	ioUp.PlaceBehind(cneUp, space)
+	return
+}
+
+// AddNuclearCNDn adds Nuclear model cerebellar downbound nucleus
+// for forward model learning from given sensory input layer,
+// from which they copy their shape. actEff layer is the efferent
+// copy of the action layer, which sends a full modulatory projection.
+// actEnv is the default ActionEnv environment timing value in cycles.
+func (net *Network) AddNuclearCNDn(sense, actEff *Layer, actEnv int, space float32) (ioDn, cniIODn, cniDn, cneDn *Layer) {
+	name := sense.Name
+	shp := sense.Shape
+	if shp.NumDims() == 2 {
+		ioDn = net.AddLayer2D(name+"IODn", IOLayer, shp.DimSize(0), shp.DimSize(1))
+		cniIODn = net.AddLayer2D(name+"CNiIODn", CNiIOLayer, shp.DimSize(0), shp.DimSize(1))
+		cniDn = net.AddLayer2D(name+"CNiDn", CNiDnLayer, shp.DimSize(0), shp.DimSize(1))
+		cneDn = net.AddLayer2D(name+"CNeDn", CNeDnLayer, shp.DimSize(0), shp.DimSize(1))
+	} else {
+		ioDn = net.AddLayer4D(name+"IODn", IOLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
+		cniIODn = net.AddLayer4D(name+"CNiIODn", CNiIOLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
+		cniDn = net.AddLayer4D(name+"CNiDn", CNiDnLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
+		cneDn = net.AddLayer4D(name+"CNeDn", CNeDnLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
+	}
+	cniIODn.SetBuildConfig("IOLayName", ioDn.Name)
+	cniDn.SetBuildConfig("IOLayName", ioDn.Name)
+	cneDn.SetBuildConfig("IOLayName", ioDn.Name)
+	cniIODn.AddClass("CNLayer", "CNiLayer")
+	cniDn.AddClass("CNLayer", "CNiLayer")
+	cneDn.AddClass("CNLayer")
+
+	aep := func(ly *LayerParams) {
+		ly.Nuclear.ActionEnv = int32(actEnv)
+	}
+	ioDn.AddDefaultParams(aep)
+	cniIODn.AddDefaultParams(aep)
+	cniDn.AddDefaultParams(aep)
+	cneDn.AddDefaultParams(aep)
+
+	full := paths.NewFull()
+	one2one := paths.NewPoolOneToOne()
+
+	pt := net.ConnectLayers(actEff, ioDn, full, ForwardPath).AddClass("EffToIO")
+	pt.AddDefaultParams(func(pt *PathParams) {
+		pt.SetFixedWts()
+		pt.Com.GType = ModulatoryG
+	})
+	pt = net.ConnectLayers(sense, ioDn, one2one, ForwardPath).AddClass("SenseToIO")
+	pt.AddDefaultParams(func(pt *PathParams) {
+		pt.SetFixedWts()
+	})
+
+	pt = net.ConnectLayers(cniIODn, ioDn, one2one, InhibPath).AddClass("CNiIOToIO")
+	pt.AddDefaultParams(func(pt *PathParams) {
+		pt.SetFixedWts()
+	})
+
+	pt = net.ConnectLayers(cniIODn, cniDn, one2one, InhibPath).AddClass("CNiIOToCNi")
+	pt.AddDefaultParams(func(pt *PathParams) {
+		pt.SetFixedWts()
+	})
+
+	pt = net.ConnectLayers(cniDn, cneDn, one2one, InhibPath).AddClass("CNiToCNeDn")
+	pt.AddDefaultParams(func(pt *PathParams) {
+		pt.SetFixedWts()
+	})
+
+	// CNiIO in front, as most important learning
+	cniDn.PlaceBehind(cniIODn, space)
+	cneDn.PlaceBehind(cniDn, space)
+	ioDn.PlaceBehind(cneDn, space)
 	return
 }
