@@ -6,9 +6,13 @@
 var<storage, read> TensorStrides: array<u32>;
 @group(0) @binding(1)
 var<storage, read> Layers: array<LayerParams>;
+@group(0) @binding(2)
+var<storage, read> Paths: array<PathParams>;
 // // NetworkIxs have indexes and sizes for entire network (one only). 
 @group(1) @binding(0)
 var<storage, read> NetworkIxs: array<NetworkIndexes>;
+@group(1) @binding(5)
+var<storage, read> RecvPathIxs: array<u32>;
 // // Ctx is the current context state (one only). This is read-only except in // specific kernels. 
 @group(2) @binding(0)
 var<storage, read_write> Ctx: array<Context>;
@@ -19,6 +23,10 @@ var<storage, read_write> Pools: array<f32>;
 @group(2) @binding(8)
 var<storage, read_write> PoolsInt: array<i32>;
 // // PathGBuf is the conductance buffer for accumulating spikes. // Subslices are allocated to each pathway. // Uses int-encoded values for faster GPU atomic integration. // [NPathNeur][Data][MaxDel+1]; NPathNeur = [Layer][RecvPaths][RecvNeurons] 
+@group(3) @binding(0)
+var<storage, read_write> PathGBuf: array<i32>;
+@group(3) @binding(1)
+var<storage, read_write> PathGSyns: array<f32>;
 
 alias GPUVars = i32;
 
@@ -28,8 +36,16 @@ fn main(@builtin(workgroup_id) wgid: vec3<u32>, @builtin(num_workgroups) nwg: ve
 	NewStateLayer(idx);
 }
 
+fn Index1D(s0: u32, i0: u32) -> u32 {
+	return s0 * i0;
+}
+
 fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 	return s0 * i0 + s1 * i1 + s2 * i2;
+}
+
+fn Index2D(s0: u32, s1: u32, i0: u32, i1: u32) -> u32 {
+	return s0 * i0 + s1 * i1;
 }
 
 
@@ -62,6 +78,14 @@ fn LayerParams_NewStateLayer(ly: LayerParams, ctx: Context) {
 	for (var di = u32(0);
 	 di < ctx.NData; di++) {
 		LayerParams_NewStateLayerActAvg(ly, ctx, di, actMinusAvg, actPlusAvg);
+	}
+	if (ly.Acts.Decay.GBuffs == 1) {
+		for (var pti = u32(0);
+		 pti < ly.Indexes.RecvN; pti++) {
+			var npti = RecvPathIxs[Index1D(TensorStrides[40], u32(ly.Indexes.RecvSt + pti))];
+			let pt = Paths[npti];
+			PathParams_InitGBuffs(pt, ctx);
+		}
 	}
 }
 fn LayerParams_NewStateLayerActAvg(ly: LayerParams, ctx: Context, di: u32, actMinusAvg: f32,actPlusAvg: f32) {
@@ -110,6 +134,24 @@ struct PathScaleParams {
 	pad: f32,
 	pad1: f32,
 }
+fn PathParams_InitGBuffs(pt: PathParams, ctx: Context) {
+	let nix = NetworkIxs[0];
+	var maxd = nix.MaxData;
+	var mdel = nix.MaxDelay + 1;
+	var rnn = pt.Indexes.RecvNeurN;
+	var npst = pt.Indexes.NPathNeurSt;
+	for (var ri = u32(0);
+	 ri < rnn; ri++) {
+		for (var di = u32(0);
+		 di < maxd; di++) {
+			for (var dl = u32(0);
+			 dl < mdel; dl++) {
+				PathGBuf[Index3D(TensorStrides[150], TensorStrides[151], TensorStrides[152], u32(npst + ri), u32(di), u32(dl))] = 0;
+			}
+			PathGSyns[Index2D(TensorStrides[160], TensorStrides[161], u32(npst + ri), u32(di))] = 0.0;
+		}
+	}
+}
 
 //////// import: "act.go"
 struct SpikeParams {
@@ -152,9 +194,9 @@ struct DecayParams {
 	AHP: f32,
 	LearnCa: f32,
 	OnRew: i32,
+	GBuffs: i32,
 	pad: f32,
 	pad1: f32,
-	pad2: f32,
 }
 struct DtParams {
 	Integ: f32,

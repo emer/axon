@@ -126,9 +126,9 @@ struct DecayParams {
 	AHP: f32,
 	LearnCa: f32,
 	OnRew: i32,
+	GBuffs: i32,
 	pad: f32,
 	pad1: f32,
-	pad2: f32,
 }
 struct DtParams {
 	Integ: f32,

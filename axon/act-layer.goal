@@ -937,6 +937,14 @@ func (ly *LayerParams) NewStateLayer(ctx *Context) {
 	for di := uint32(0); di < ctx.NData; di++ {
 		ly.NewStateLayerActAvg(ctx, di, actMinusAvg, actPlusAvg)
 	}
+
+	if ly.Acts.Decay.GBuffs.IsTrue() {
+		for pti := uint32(0); pti < ly.Indexes.RecvN; pti++ {
+			npti := RecvPathIxs.Value1D(int(ly.Indexes.RecvSt+pti))
+			pt := GetPaths(npti)
+			pt.InitGBuffs(ctx)
+		}
+	}
 }
 
 // NewStateLayerActAvg updates ActAvg.ActMAvg and ActPAvg based on current values

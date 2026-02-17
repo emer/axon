@@ -18,7 +18,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Noise.Ge = 0.0001      // 0.0001 > others; could just be noise ;)
 				ly.Acts.Noise.Gi = 0.0001      // 0.0001 perhaps better than others
 
-				ly.Learn.Timing.On.SetBool(true)
+				ly.Learn.Timing.On.SetBool(false)
 				// ly.Learn.Timing.Refractory.SetBool(true)
 				ly.Learn.Timing.LearnThr = 0.05
 
@@ -33,7 +33,8 @@ var LayerParams = axon.LayerSheets{
 				// ly.Learn.NeuroMod.DipGain = 0                // 0 > higher
 				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // false >> true; orig = true
 
-				ly.Acts.Decay.Glong = 0             // 0 ==? 0.1; > higher
+				ly.Acts.Decay.Glong = 0 // 0 ==? 0.1; > higher
+				ly.Acts.Decay.Act = 0.01
 				ly.Learn.CaLearn.ETraceTau = 4      // 4 > 3?
 				ly.Learn.CaLearn.ETraceScale = 0.02 // 0 == 0.02 >= 0.05 > 0.1 -- todo..
 
@@ -292,6 +293,7 @@ var LayerParamsDefs = axon.LayerSheets{
 				ly.Acts.Noise.On.SetBool(true) // true >= false (minor)
 				ly.Acts.Noise.Ge = 0.0001      // 0.0001 > others; could just be noise ;)
 				ly.Acts.Noise.Gi = 0.0001      // 0.0001 perhaps better than others
+				ly.Acts.Decay.Act = 0.2
 			}},
 		{Sel: ".PFCLayer", Doc: "pfc",
 			Set: func(ly *axon.LayerParams) {

@@ -56,10 +56,6 @@ func (nt *Network) MinusPhaseStart() {
 	ToGPUCtxGlobal()
 	RunNewStateLayer(int(nix.NLayers))
 	RunNewStateNeuron(nd)
-	// note: we used to call this to initialize at start of minus, but it is generally
-	// not needed and creates artifactual blips at start for various models.
-	// RunInitGBuffsPath(int(nix.NPaths))
-	// note: not completed until run cycles
 }
 
 // InitExt initializes external input state.

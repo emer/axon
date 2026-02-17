@@ -341,7 +341,11 @@ type DecayParams struct {
 	// true by default for PTPred, PTMaint and PFC Super layers.
 	OnRew slbool.Bool
 
-	pad, pad1, pad2 float32
+	// GBuffs resets the spike conductance buffers for receiving pathways into
+	// this layer, creating a mild form of decay that cuts off prior inputs.
+	GBuffs slbool.Bool
+	
+	pad, pad1 float32
 }
 
 func (dp *DecayParams) Update() {
