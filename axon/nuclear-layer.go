@@ -43,12 +43,19 @@ type NuclearParams struct {
 	// excitatory conductance, to maintain target activity levels.
 	GeBaseLRate float32 `default:"0.01"`
 
+	// CNeDnGiThr is the threshold on integrated GiSyn for triggering learning
+	// in CNeCn excitatory downgoing forward-model neurons, which are disinhibited
+	// by CNiIO -> CNiDn. Lower values are more stringent (more disinhibition).
+	CNeDnGiThr float32 `default:"0.2"`
+
 	// IOLayIndex of IO (inferior olive) layer for sending error signals
 	// to this layer. Set via SetBuildConfig(IOLayName) setting.
 	IOLayIndex int32 `edit:"-"`
 
 	// SendTimeBins = SendTimeWindow / [CaBinCycles].
 	SendTimeBins int32 `edit:"-"`
+
+	pad, pad1, pad2 int32
 }
 
 func (tp *NuclearParams) Update() {
@@ -62,6 +69,7 @@ func (tp *NuclearParams) Defaults() {
 	tp.ActTarget = 0.5
 	tp.Decay = 0.01
 	tp.GeBaseLRate = 0.01
+	tp.CNeDnGiThr = 0.2
 	tp.Update()
 }
 
@@ -365,5 +373,14 @@ func (ly *LayerParams) CNiDnDefaults() {
 	ly.NuclearDefaults()
 	ly.Acts.Init.GeBase = 0.25
 	ly.Nuclear.ActTarget = 0.5
+	ly.Nuclear.SendTimeOff = 20
+}
+
+// called in Defaults for [CNeDnLayer] type
+func (ly *LayerParams) CNeDnDefaults() {
+	ly.NuclearDefaults()
+	ly.Acts.Init.GeBase = 0.25
+	ly.Nuclear.ActTarget = 0.0
+	ly.Nuclear.GeBaseLRate = 0
 	ly.Nuclear.SendTimeOff = 20
 }

@@ -74,7 +74,7 @@ func (pr *Params) Defaults() {
 	pr.PopCodeUnits = 12 // 12 > 16 for both
 	pr.ActionStiff = 1000
 	pr.BufferSize = 4000
-	popSigma := float32(0.2) // .15 > .2 for vnc, but opposite for eye
+	popSigma := float32(0.15) // .15 > .2 for vnc, but opposite for eye
 	pr.PopCode.Defaults()
 	pr.PopCode.SetRange(-1.2, 1.2, popSigma) // 1.2 > 1.1 for eye
 }

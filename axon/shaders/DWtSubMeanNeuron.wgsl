@@ -1040,8 +1040,12 @@ struct NuclearParams {
 	ActTarget: f32,
 	Decay: f32,
 	GeBaseLRate: f32,
+	CNeDnGiThr: f32,
 	IOLayIndex: i32,
 	SendTimeBins: i32,
+	pad: i32,
+	pad1: i32,
+	pad2: i32,
 }
 fn LayerParams_NuclearDWtNeuron(ly: LayerParams, ctx: Context, ni: u32) {
 	var dbase = f32(0);

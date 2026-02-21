@@ -27,16 +27,17 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.ActAvg.HiTol = 0.0
 				ly.Acts.Dt.LongAvgTau = 200 // 200 > 20 for smoothing ripples
 
-				ly.Acts.Decay.Act = 0.0   // 0 == .2
-				ly.Acts.Decay.Glong = 0.6 // 0.6 def
-				ly.Acts.Dend.SSGi = 2     // 2 new default
-				ly.Acts.Dend.GExp = 0.2   // 0.2 > 0.1 > 0
-				ly.Acts.Dend.GR = 3       // 2 good for 0.2
-				ly.Acts.Dt.VmDendC = 500  // 500 def
-				ly.Acts.GabaB.Gk = 0.012  // 0.012 > 0.015 confirmed latest dev.34
-				ly.Acts.NMDA.Ge = 0.006   // 0.006 def
-				ly.Acts.NMDA.MgC = 1.4    // mg1, voff0, gbarexp.2, gbarr3 = better
-				ly.Acts.NMDA.Voff = 0     // mg1, voff0 = mg1.4, voff5 w best params
+				ly.Acts.Decay.GBuffs.SetBool(true) // true is significantly better
+				ly.Acts.Decay.Act = 0              // does not replace GBuffs init
+				ly.Acts.Decay.Glong = 0.8          // 0.6 > 0 -- todo try time with 0?
+				ly.Acts.Dend.SSGi = 2              // 2 new default
+				ly.Acts.Dend.GExp = 0.2            // 0.2 > 0.1 > 0
+				ly.Acts.Dend.GR = 3                // 2 good for 0.2
+				ly.Acts.Dt.VmDendC = 500           // 500 def
+				ly.Acts.GabaB.Gk = 0.012           // 0.012 > 0.015 confirmed latest dev.34
+				ly.Acts.NMDA.Ge = 0.006            // 0.006 def
+				ly.Acts.NMDA.MgC = 1.4             // mg1, voff0, gbarexp.2, gbarr3 = better
+				ly.Acts.NMDA.Voff = 0              // mg1, voff0 = mg1.4, voff5 w best params
 				ly.Acts.AK.Gk = 0.1
 				ly.Acts.VGCC.Ge = 0.02 // non nmda: 0.15 good, 0.3 blows up, nmda: .02 best
 				ly.Acts.VGCC.Ca = 25   // 25 / 10tau same as SpkVGCC

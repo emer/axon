@@ -619,9 +619,9 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, lpi, pi, ni, di uint32) {
 
 	case IOLayer:
 		ly.IOLearn(ctx, lpi, pi, ni, di)
-	case CNeUpLayer, CNeDnLayer:
+	case CNeUpLayer:
 		ly.CNeLearn(ctx, lpi, pi, ni, di)
-	case CNiIOLayer, CNiUpLayer:
+	case CNiIOLayer, CNiUpLayer, CNeDnLayer:
 		ly.CNiLearn(ctx, lpi, pi, ni, di)
 	case BLALayer:
 		if ctx.Cycle == ctx.ThetaCycles-1 {

@@ -96,6 +96,12 @@ var LayerParams = axon.LayerSheets{
 				ly.Nuclear.SendTimeOff = 10
 				ly.Nuclear.SendTimeWindow = 30
 			}},
+		{Sel: ".CNeDnLayer", Doc: "",
+			Set: func(ly *axon.LayerParams) {
+				ly.Acts.Init.GeBase = 0.25
+				ly.Nuclear.SendTimeOff = 80
+				ly.Nuclear.SendTimeWindow = 30
+			}},
 	},
 }
 
@@ -156,9 +162,13 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 1 // 1 == 2
 			}},
-		{Sel: ".CNiToCNeDn", Doc: "inhibition to CNeUp",
+		{Sel: ".CNiIOToCNi", Doc: "CNiIO inhibition to CNi, for dn only",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 4
+				pt.PathScale.Abs = 8 // very strong b/c typically weak
+			}},
+		{Sel: ".CNiToCNeDn", Doc: "inhibition to CNeDn",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 0.2
 			}},
 		{Sel: ".MF", Doc: "all mossy fiber inputs",
 			Set: func(pt *axon.PathParams) {
@@ -171,6 +181,10 @@ var PathParams = axon.PathSheets{
 		{Sel: ".MFToCNiUp", Doc: "initial weights",
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.002 // 0.002 > higher for IO .001
+			}},
+		{Sel: ".MFToCNeDn", Doc: "initial weights",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 4
 			}},
 
 		/* not used

@@ -8,6 +8,8 @@ package deepspace
 
 //go:generate core generate -add-types -add-funcs -gosl
 
+// TODO: add learned specific sense -> CNeDn just like in Upbound -- useful for getting faster anticipatory activity after all. indeed, why not have it just learn like that guy? maybe from MF?
+
 import (
 	"fmt"
 	"os"
@@ -272,6 +274,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectLayers(rotActPrev, cniIODn, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiIODn")
 	// net.ConnectLayers(s1ct, cniIODn, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiIODn")
 	net.ConnectLayers(rotActMF, cniIODn, full, axon.CNIOPath).AddClass("MF", "MFToCNiIODn")
+
+	net.ConnectLayers(rotActMF, cneDn, full, axon.CNIOPath).AddClass("MF", "MFToCNeDn")
 
 	// position
 

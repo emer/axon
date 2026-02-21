@@ -18,9 +18,11 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Noise.Ge = 0.0001      // 0.0001 > others; could just be noise ;)
 				ly.Acts.Noise.Gi = 0.0001      // 0.0001 perhaps better than others
 
+				ly.Acts.Decay.GBuffs.SetBool(true)
+
 				ly.Learn.Timing.On.SetBool(false)
 				// ly.Learn.Timing.Refractory.SetBool(true)
-				ly.Learn.Timing.LearnThr = 0.05
+				ly.Learn.Timing.LearnThr = 0.1 // 0.1 > 0.15 > 0.05 -- key even without timing!!!
 
 				ly.Learn.Timing.SynCaCycles = 200 // 200 > 180 > 220 > 250, 160 for 250/50 cyc
 				ly.Learn.Timing.Cycles = 210      // 210 >= 200 >= 190 > 220
@@ -34,7 +36,9 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.RLRate.SigmoidLinear.SetBool(false) // false >> true; orig = true
 
 				ly.Acts.Decay.Glong = 0 // 0 ==? 0.1; > higher
-				ly.Acts.Decay.Act = 0.01
+				ly.Acts.Decay.Act = 0   // 0.2 best w/out GBuffs, but much worse that Decay.GBuffs
+				// ly.Acts.Decay.GBuffs.SetBool(false) // PFC not essential for this (false is ok)
+
 				ly.Learn.CaLearn.ETraceTau = 4      // 4 > 3?
 				ly.Learn.CaLearn.ETraceScale = 0.02 // 0 == 0.02 >= 0.05 > 0.1 -- todo..
 
@@ -293,7 +297,6 @@ var LayerParamsDefs = axon.LayerSheets{
 				ly.Acts.Noise.On.SetBool(true) // true >= false (minor)
 				ly.Acts.Noise.Ge = 0.0001      // 0.0001 > others; could just be noise ;)
 				ly.Acts.Noise.Gi = 0.0001      // 0.0001 perhaps better than others
-				ly.Acts.Decay.Act = 0.2
 			}},
 		{Sel: ".PFCLayer", Doc: "pfc",
 			Set: func(ly *axon.LayerParams) {

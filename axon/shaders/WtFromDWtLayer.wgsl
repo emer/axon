@@ -1101,8 +1101,12 @@ struct NuclearParams {
 	ActTarget: f32,
 	Decay: f32,
 	GeBaseLRate: f32,
+	CNeDnGiThr: f32,
 	IOLayIndex: i32,
 	SendTimeBins: i32,
+	pad: i32,
+	pad1: i32,
+	pad2: i32,
 }
 struct IOParams {
 	TimeOff: i32,

@@ -28,6 +28,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.ActAvg.HiTol = 0.0
 				ly.Acts.Dt.LongAvgTau = 100 // 100 >= 200
 
+				// ly.Acts.Decay.GBuffs.SetBool(true)
 				ly.Acts.Decay.Act = 0.0   // 0 == .2
 				ly.Acts.Decay.Glong = 0.3 // 0.3 > 0.2, 0.1, higher
 				ly.Acts.Dend.SSGi = 2     // 2 new default
@@ -213,6 +214,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Pool.Gi = 1.05 // 1.05 > 1
 				// ly.Acts.GabaB.Gk = 0.015  // 0.015 > 0.012 with shortcuts
 				// ly.Acts.Decay.Glong = 0.3 // 0.3 > 0.6
+				ly.Acts.Decay.GBuffs.SetBool(true)
 			}},
 		{Sel: "#V3CT", Doc: "more activity",
 			Set: func(ly *axon.LayerParams) {
@@ -231,6 +233,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Pool.FB = 4
 				ly.Inhib.Layer.Gi = 1.0 // 1
 				ly.Inhib.Pool.Gi = 1.05 // 1.05 > 1
+				ly.Acts.Decay.GBuffs.SetBool(true)
 			}},
 		{Sel: "#DPCT", Doc: "more activity",
 			Set: func(ly *axon.LayerParams) {
@@ -269,6 +272,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Layer.Gi = 1.1 // 1
 				ly.Inhib.Pool.Gi = 1.1  // 1.05
 				// ly.Acts.Decay.Glong = 0 // 0.3 def > 0
+				ly.Acts.Decay.GBuffs.SetBool(true)
 				ly.Learn.Timing.Refractory.SetBool(false)
 			}},
 		{Sel: "#TEOCT", Doc: "more activity",
@@ -290,6 +294,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Layer.Gi = 1.1 // 1
 				ly.Inhib.Pool.Gi = 1.1  // 1.05
 				// ly.Acts.Decay.Glong = 0 // 0.3 def > 0
+				ly.Acts.Decay.GBuffs.SetBool(true)
 				ly.Learn.Timing.Refractory.SetBool(false)
 			}},
 		{Sel: "#TECT", Doc: "more activity",

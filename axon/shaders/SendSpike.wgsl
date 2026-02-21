@@ -109,10 +109,10 @@ fn LayerParams_PostSpikeSpecial(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,
 	case IOLayer: {
 		LayerParams_IOLearn(ly, ctx, lpi, pi, ni, di);
 	}
-	case CNeUpLayer, CNeDnLayer: {
+	case CNeUpLayer: {
 		LayerParams_CNeLearn(ly, ctx, lpi, pi, ni, di);
 	}
-	case CNiIOLayer, CNiUpLayer: {
+	case CNiIOLayer, CNiUpLayer, CNeDnLayer: {
 		LayerParams_CNiLearn(ly, ctx, lpi, pi, ni, di);
 	}
 	case BLALayer: {
@@ -1281,8 +1281,12 @@ struct NuclearParams {
 	ActTarget: f32,
 	Decay: f32,
 	GeBaseLRate: f32,
+	CNeDnGiThr: f32,
 	IOLayIndex: i32,
 	SendTimeBins: i32,
+	pad: i32,
+	pad1: i32,
+	pad2: i32,
 }
 struct IOParams {
 	TimeOff: i32,

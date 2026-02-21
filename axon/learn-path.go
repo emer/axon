@@ -502,9 +502,7 @@ func (pt *PathParams) DWtCNIO(ctx *Context, rlay *LayerParams, syni, si, ri, lpi
 		ract := Neurons.Value(int(ri), int(di), int(GaP)) // peak act
 		dwt = -sact * ract * rlay.Nuclear.Decay
 	}
-	// todo: softbound?
 	pt.DWtSynSoftBound(ctx, syni, di, dwt)
-	// SynapseTraces[syni, di, DiDWt] = pt.Learn.LRate.Eff * dwt
 }
 
 //////// WtFromDWt

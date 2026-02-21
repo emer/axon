@@ -66,7 +66,9 @@ const (
 	// Trace is reset at time of reward based on ACh level (from CINs in biology).
 	DSMatrixPath
 
-	// CNIOPath is a cerebellar nucleus pathway trained by IO error signals.
+	// CNIOPath is a cerebellar nucleus mossy fiber sensory input pathway
+	// trained by IO error signals. It is used for inputs to CNiIO layers, CNiUp,
+	// and CNeDn.
 	CNIOPath
 
 	// RWPath does dopamine-modulated learning for reward prediction:
