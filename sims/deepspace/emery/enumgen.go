@@ -17,7 +17,7 @@ const ActionsN Actions = 2
 
 var _ActionsValueMap = map[string]Actions{`Rotate`: 0, `Forward`: 1}
 
-var _ActionsDescMap = map[Actions]string{0: ``, 1: ``}
+var _ActionsDescMap = map[Actions]string{0: `Rotate is overall body rotation. Positive or negative for left vs. right.`, 1: `Forward moving forward or backward.`}
 
 var _ActionsMap = map[Actions]string{0: `Rotate`, 1: `Forward`}
 

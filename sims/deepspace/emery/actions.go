@@ -11,7 +11,11 @@ package emery
 type Actions int32 //enums:enum
 
 const (
+	// Rotate is overall body rotation.
+	// Positive or negative for left vs. right.
 	Rotate Actions = iota
+
+	// Forward moving forward or backward.
 	Forward
 )
 
