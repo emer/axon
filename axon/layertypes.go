@@ -162,9 +162,6 @@ const (
 	// from specific sensory inputs.
 	CNeUpLayer
 
-	// CNiDnLayer represents the cerebellar nuclei inhibitory downgoing neurons.
-	CNiDnLayer
-
 	// CNeDnLayer represents the cerebellar nuclei excitatory neurons,
 	// which have slow learning to maintain a target average firing rate,
 	// for the downbound microzones.

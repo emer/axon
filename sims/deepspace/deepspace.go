@@ -254,8 +254,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ioUp, cniIOUp, cniUp, cneUp := net.AddNuclearCNUp(vsRotVel, rotAct, cycles-20, space)
 	_, _ = ioUp, cneUp
 
-	ioDn, cniIODn, cniDn, cneDn := net.AddNuclearCNDn(vsRotVel, rotAct, cycles-20, space)
-	_, _, _ = ioDn, cneDn, cniDn
+	ioDn, cniIODn, cneDn := net.AddNuclearCNDn(vsRotVel, rotAct, cycles-20, space)
+	_, _ = ioDn, cneDn
 
 	// upgoing forward model
 	pt := net.ConnectLayers(vsRotVel, cneUp, p1to1, axon.ForwardPath).AddClass("SenseToCNeUp")
@@ -657,14 +657,14 @@ func (ss *Sim) ConfigStatNuclearCycle() {
 	net := ss.Net
 	prefix := "VSRotHVel"
 	pool := 1 // 0 = layer pool, get first pool
-	layerNames := []string{"IOUp", "CNiIOUp", "CNiUp", "CNeUp", "CNiDn", "CNeDn"}
+	layerNames := []string{"IOUp", "CNiIOUp", "CNiUp", "CNeUp", "CNeDn"}
 	layers := make([]*axon.Layer, len(layerNames))
 	pools := make([]uint32, len(layerNames))
 	for li, lnm := range layerNames {
 		layers[li] = net.LayerByName(prefix + lnm)
 		pools[li] = layers[li].Params.PoolIndex(1) // 4D
 	}
-	statNames := []string{"IOenv", "IOe", "IOi", "IOioff", "IOerr", "IOspike", "CNiIO", "CNiUp", "CNeUp", "CNeUpGe", "CNeUpGi", "CNeUpLearn", "CNeUpAbsDev", "CNiDn", "CNeDn"}
+	statNames := []string{"IOenv", "IOe", "IOi", "IOioff", "IOerr", "IOspike", "CNiIO", "CNiUp", "CNeUp", "CNeUpGe", "CNeUpGi", "CNeUpLearn", "CNeUpAbsDev", "CNeDn"}
 	statDescs := map[string]string{
 		"IOenv":       "IO envelope initiated by action input to IO neurons",
 		"IOe":         "Integrated excitatory input to IO",
@@ -679,7 +679,6 @@ func (ss *Sim) ConfigStatNuclearCycle() {
 		"CNeUpGi":     "inhibitory conductance into CNeUp, from CNiUp",
 		"CNeUpLearn":  "CNeUp learning point",
 		"CNeUpAbsDev": "CNeUp max absolute deviation from target",
-		"CNiDn":       "inhibitory interneuron that projects to CNeDn, is inhibited by CNiIODn, and thus disinhibits CNeDn",
 		"CNeDn":       "excitatory output of forward model predictive side",
 	}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
@@ -736,10 +735,8 @@ func (ss *Sim) ConfigStatNuclearCycle() {
 				stat = layers[3].AvgMaxVarByPool("TimePeak", pool, di).Avg
 			case "CNeUpAbsDev":
 				stat = layers[3].AvgMaxVarByPool("GaP", pool, di).Avg
-			case "CNiDn":
-				stat = axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pools[4], diu)
 			case "CNeDn":
-				stat = axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pools[5], diu)
+				stat = axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pools[4], diu)
 			}
 			curModeDir.Float64(name, ndata).SetFloat1D(float64(stat), di)
 			tsr.AppendRowFloat(float64(stat))
