@@ -63,7 +63,6 @@ func init() {
 		"CNIOPath":                     reflect.ValueOf(axon.CNIOPath),
 		"CNeDnLayer":                   reflect.ValueOf(axon.CNeDnLayer),
 		"CNeUpLayer":                   reflect.ValueOf(axon.CNeUpLayer),
-		"CNiDnLayer":                   reflect.ValueOf(axon.CNiDnLayer),
 		"CNiIOLayer":                   reflect.ValueOf(axon.CNiIOLayer),
 		"CNiUpLayer":                   reflect.ValueOf(axon.CNiUpLayer),
 		"CTCtxtPath":                   reflect.ValueOf(axon.CTCtxtPath),
