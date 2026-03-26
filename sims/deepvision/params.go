@@ -253,6 +253,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Pool.FB = 4
 				ly.Inhib.Layer.Gi = 1.0 // 1
 				ly.Inhib.Pool.Gi = 1.05 // 1.05 > 1
+				ly.Acts.Decay.GBuffs.SetBool(true)
 			}},
 		{Sel: "#V4CT", Doc: "more activity",
 			Set: func(ly *axon.LayerParams) {

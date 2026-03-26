@@ -18,7 +18,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Noise.Ge = 0.0001      // 0.0001 > others; could just be noise ;)
 				ly.Acts.Noise.Gi = 0.0001      // 0.0001 perhaps better than others
 
-				ly.Acts.Decay.GBuffs.SetBool(true)
+				ly.Acts.Decay.GBuffs.SetBool(true) // this is important for non-PFC layers
 
 				ly.Learn.Timing.On.SetBool(false)
 				// ly.Learn.Timing.Refractory.SetBool(true)

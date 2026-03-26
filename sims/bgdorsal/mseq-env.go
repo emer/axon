@@ -142,6 +142,7 @@ func (ev *MotorSeqEnv) String() string {
 }
 
 func (ev *MotorSeqEnv) Init(run int) {
+	ev.Rand.NewRand(ev.RandSeed + int64(run)*113)
 	ev.Trial.Max = ev.SeqLen + 1 // rew
 	ev.Trial.Init()
 	ev.Trial.Cur = 0

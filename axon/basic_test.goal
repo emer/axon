@@ -48,6 +48,7 @@ var layerParams = LayerSheets{
 		{Sel: "Layer", Doc: "layer defaults",
 			Set: func(ly *LayerParams) {
 				ly.Acts.Gbar.L =      20
+				ly.Acts.Decay.GBuffs.SetBool(true)
 				ly.Learn.RLRate.On.SetBool(false)
 				ly.Inhib.Layer.FB =   0.5
 			}},

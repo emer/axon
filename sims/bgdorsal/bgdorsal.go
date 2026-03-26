@@ -228,9 +228,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_ = one2one
 	full := paths.NewFull()
 	_ = full
-	mtxRandPath := paths.NewUniformRand()
-	mtxRandPath.PCon = 0.5
-	_ = mtxRandPath
+	// mtxRandPath := paths.NewUniformRand()
+	// mtxRandPath.PCon = 0.5
 	actPath := paths.NewPoolRect()
 	actPath.Size.Set(1, nActPool)
 	actPath.AutoScale = true
@@ -1081,6 +1080,7 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	ss.GUI.MakeBody(b, ss, ss.Root, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
 	ss.GUI.StopLevel = Trial
 	nv := ss.GUI.AddNetView("Network")
+	nv.Options.Paths = false
 	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles()
 	nv.Options.Raster.Max = ss.Config.Run.Cycles()
 	nv.Options.LayerNameSize = 0.03
