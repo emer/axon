@@ -142,13 +142,13 @@ func (pt *PathParams) DWtSynSoftBound(ctx *Context, syni, di uint32, dwt float32
 // synaptic activation credit assignment factor computed from synaptic co-product CaD values.
 func (pt *PathParams) DWtSynCortex(ctx *Context, rlay *LayerParams, syni, si, ri, lpi, pi, di uint32) {
 	learnNow := int32(Neurons.Value(int(ri), int(di), int(LearnNow)))
+	learnCyc := learnNow
 	winSt := ctx.CyclesTotal - ctx.ThetaCycles
 	winEd := ctx.CyclesTotal
 	if rlay.Learn.Timing.On.IsTrue() {
-		winSt = ctx.CyclesTotal - 2*ctx.ThetaCycles
-		winEd = ctx.CyclesTotal - (ctx.ThetaCycles + 40) //  fudge factor
+		learnCyc = int32(Neurons.Value(int(ri), int(di), int(MinusCycle))) // within this trial
 	}
-	if learnNow < winSt || learnNow > winEd { // not in this time window
+	if learnCyc < winSt || learnCyc > winEd { // not in this time window
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DTr))
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DiDWt))
 		return

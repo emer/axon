@@ -720,11 +720,11 @@ struct LearnTimingParams {
 	NUps: i32,
 	MaxUpGap: i32,
 	Cycles: i32,
+	ThrCycles: i32,
 	TimeDiffTau: f32,
 	TimeDiffDt: f32,
-	pad: f32,
-	pad1: f32,
-	pad2: f32,
+	DecayTau: f32,
+	DecayDt: f32,
 }
 struct TrgAvgActParams {
 	GiBaseInit: f32,

@@ -1619,11 +1619,11 @@ struct LearnTimingParams {
 	NUps: i32,
 	MaxUpGap: i32,
 	Cycles: i32,
+	ThrCycles: i32,
 	TimeDiffTau: f32,
 	TimeDiffDt: f32,
-	pad: f32,
-	pad1: f32,
-	pad2: f32,
+	DecayTau: f32,
+	DecayDt: f32,
 }
 fn LearnTimingParams_TimingReset(lt: LearnTimingParams, ctx: Context, ni: u32,di: u32) {
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = 0.0;
@@ -1662,13 +1662,14 @@ fn LearnTimingParams_LearnTiming(lt: LearnTimingParams, ctx: Context, ni: u32,di
 	var peak = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))];
 	var peakCyc = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeCycle))]);
 	if (!hasPups) {
+		var newPeak = timeDiff > peak;
 		if (ctx.CyclesTotal-peakCyc >= lt.MaxUpGap) {
+			peak -= lt.DecayDt * peak;
+			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = peak;
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(PeakUps))] = 0.0;
 		}
-		if (timeDiff <= peak) {
-			if (ctx.CyclesTotal-peakCyc > 50) {
-				LearnTimingParams_TimingReset(lt, ctx, ni, di);
-			}return false;
+		if (!newPeak) {
+			return false;
 		}
 		peak = timeDiff;
 		peakCyc = ctx.CyclesTotal;
@@ -1678,9 +1679,7 @@ fn LearnTimingParams_LearnTiming(lt: LearnTimingParams, ctx: Context, ni: u32,di
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
 		u32(ni), u32(di), u32(PeakUps))] = f32(pups);
 		if (pups < lt.NUps) {
-			if (ctx.CyclesTotal-peakCyc > 50) {
-				LearnTimingParams_TimingReset(lt, ctx, ni, di);
-			}return false;
+			return false;
 		}
 	}
 	var lrnNow = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))]);
@@ -1691,7 +1690,7 @@ fn LearnTimingParams_LearnTiming(lt: LearnTimingParams, ctx: Context, ni: u32,di
 			LearnTimingParams_LearnNowOff(lt, ctx, ni, di);
 		}return false;
 	}
-	if (ctx.CyclesTotal-peakCyc > 50) {
+	if (ctx.CyclesTotal-peakCyc > lt.ThrCycles) {
 		LearnTimingParams_TimingReset(lt, ctx, ni, di);
 	}
 	if (caP <= lt.LearnThr) {
@@ -1701,6 +1700,9 @@ fn LearnTimingParams_LearnTiming(lt: LearnTimingParams, ctx: Context, ni: u32,di
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(MinusPeak))] = peak;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(MinusCycle))] = f32(peakCyc);
 	var lnow = peakCyc + lt.Cycles;
+	if (lnow == ctx.CyclesTotal-ctx.Cycle) { // don't hit right at start
+		lnow--;
+	}
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
 	u32(ni), u32(di), u32(LearnNow))] = f32(lnow);return true;
 }

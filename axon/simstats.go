@@ -712,14 +712,15 @@ func StatLevelAll(statsDir *tensorfs.Node, srcMode, srcLevel enums.Enum, styleFu
 	}
 }
 
-// StatLearnNow returns a Stats function that records the mean
-// and std deviation of the LearnNow signal in the given layers.
-// This is useful for tracking the continuous learning mechanism.
-func StatLearnNow(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel, runLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
-	statNames := []string{"LrnNowMean", "LrnNowStDev", "TimeCycle"}
+// StatLearnTiming returns a Stats function that records the learning timing
+// parameters, including the MinusCycle (and StdDev) and LearnNow values
+// in the given layers.
+func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel, runLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
+	statNames := []string{"MinusCycMean", "MinusCycStDev", "LearnNow"}
 	statDocs := map[string]string{
+		"MinusCycMean": "Mean MinusCycle, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
+		"LrnNowStdDev": "Standard deviation of MinusCycle.",
 		"LrnNowMean":   "Mean LearnNow cycle, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
-		"LrnNowStdDev": "Standard deviation of LearnNow cycle.",
 	}
 	levels := make([]enums.Enum, 10) // should be enough
 	levels[0] = trialLevel
@@ -758,18 +759,15 @@ func StatLearnNow(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel,
 					for di := range ndata {
 						switch si {
 						case 2:
-							ly.UnitValuesSampleTensor(anow, "TimeCycle", di)
-						default:
 							ly.UnitValuesSampleTensor(anow, "LearnNow", di)
+						default:
+							ly.UnitValuesSampleTensor(anow, "MinusCycle", di)
 						}
 						n := anow.Len()
 						anow.SetShapeSizes(n) // set to 1D -- faster
 						for i := range n {
 							v := int32(anow.Float1D(i)) - stCyc
-							if si < 2 && ly.Params.Learn.Timing.On.IsTrue() {
-								v += ly.Params.Learn.Timing.Cycles
-							}
-							if v < 0 {
+							if v == -stCyc || v < -50 {
 								anow.SetFloat1D(nan, i)
 							} else if isiCyc > 0 {
 								if v <= isiCyc {
