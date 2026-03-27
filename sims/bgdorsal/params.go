@@ -128,7 +128,6 @@ var PathParams = axon.PathSheets{
 		// {Sel: ".PFCPath", Doc: "",
 		// 	Set: func(pt *axon.PathParams) {
 		// 		pt.Learn.DWt.CaPScale = 1
-		// 		pt.Learn.SynCaBin.Envelope = kinase.Env30
 		// 	}},
 		{Sel: ".CTCtxtPath", Doc: "all CT context paths",
 			Set: func(pt *axon.PathParams) {
@@ -449,7 +448,6 @@ var PathParamsDefs = axon.PathSheets{
 		// {Sel: ".PFCPath", Doc: "",
 		// 	Set: func(pt *axon.PathParams) {
 		// 		pt.Learn.DWt.CaPScale = 1
-		// 		pt.Learn.SynCaBin.Envelope = kinase.Env30
 		// 	}},
 		{Sel: ".CTCtxtPath", Doc: "all CT context paths",
 			Set: func(pt *axon.PathParams) {
@@ -507,21 +505,18 @@ var PathParamsDefs = axon.PathSheets{
 				pt.Learn.DWt.CaPScale = 1.05       // 1.05 > 1 > 1.1
 				pt.Learn.DWt.SynCa20.SetBool(true) // 20 > 10
 				// note: MotorBS is a target, key for learning; SWts not used.
-				// pt.Learn.SynCaBin.Envelope = kinase.Env10
 				// pt.Learn.DWt.CaPScale = 1 // tbd in Env
 			}},
 		{Sel: "#DGPiToMotorBS", Doc: "final inhibition",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 3       // 3 >= 3.5 > 2.5
 				pt.Learn.LRate.Base = 0.04 // 0.04 > 0.02 > 0.0005 with STN 150
-				// pt.Learn.SynCaBin.Envelope = kinase.Env10
 				// pt.Learn.DWt.CaPScale = 1 // tbd in Env
 			}},
 		{Sel: ".VLM1", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.02 // 0.02 > 0.04 > 0.01 -- still key
 				// note: VL is a target layer; SWts not used.
-				// pt.Learn.SynCaBin.Envelope = kinase.Env10
 				// pt.Learn.DWt.CaPScale = 1 // tbd in Env
 			}},
 		{Sel: "#DGPiToM1VM", Doc: "final inhibition",

@@ -18,11 +18,18 @@ func ToGPUCtx() {
 
 //gosl:start
 
-// CaBinCycles is the number of cycles per CaBin for integrating
-// calcium-based activity values ([CaSyn]) that are used for computing
-// a synaptic-level (pre * post) credit assignment factor for learning.
-// This is a constant because other pre-computed factors depend on it.
-const CaBinCycles = 10
+const (
+	// NeuronTraceCycles is the number of cycles per NeuronTrace for integrating
+	// calcium-based activity values ([CaSyn]) that are used for computing
+	// a synaptic-level (pre * post) credit assignment factor for learning,
+	// stored in Neuron NeuronTraces variable.
+	// This is a constant because other pre-computed factors depend on it.
+	NeuronTraceCycles = 10
+
+	// NeuronTraceThetas is the number of theta cycles worth of values to store
+	// in the NeuronTraces per-neuron variable.
+	NeuronTraceThetas = 2
+)
 
 // Context contains all of the global context state info
 // that is shared across every step of the computation.
@@ -46,7 +53,7 @@ type Context struct { //types:add -setters
 
 	// MinusPhase is true if this is the minus phase, when a stimulus is present
 	// and learning is occuring. Could also be in a non-learning phase when
-	// no stimulus is present. This affects accumulation of CaBins values only.
+	// no stimulus is present.
 	MinusPhase slbool.Bool
 
 	// PlusPhase is true if this is the plus phase, when the outcome / bursting
@@ -197,36 +204,47 @@ func (ctx *Context) PlusPhaseStart() {
 	ctx.PlusPhase.SetBool(true)
 }
 
-// NCaBins returns 2 * ThetaCycles / CaBinCycles: stored in NetworkIxs.NCaBins.
-func (ctx *Context) NCaBins() int32 {
-	return 2 * (ctx.ThetaCycles / CaBinCycles)
+// NNeuronTraceBins returns [NeuronTraceThetas] * (ThetaCycles / [NeuronTraceCycles]):
+// stored in NetworkIxs.NNeuronTraceBins.
+func (ctx *Context) NNeuronTraceBins() int32 {
+	return NeuronTraceThetas * (ctx.ThetaCycles / NeuronTraceCycles)
 }
 
-// NCaWeights returns (MinusCycles + PlusCycles) / CaBinCycles:
+// NNeuronTraces returns NeuronTracesVarsN * [NeuronTraceThetas] *
+// (ThetaCycles / [NeuronTraceCycles]): stored in NetworkIxs.NNeuronTraces.
+func (ctx *Context) NNeuronTraces() int32 {
+	return int32(NeuronTracesVarsN) * ctx.NNeuronTraceBins()
+}
+
+// NSynCaWeights returns (MinusCycles + PlusCycles) / NeuronTraceCycles:
 // number of weights set for SynCa weighted computation of SynCaP, SynCaD.
 // Weights are stored in [GlobalScalars]
-func (ctx *Context) NCaWeights() int32 {
-	return (ctx.MinusCycles + ctx.PlusCycles) / CaBinCycles
+func (ctx *Context) NSynCaWeights() int32 {
+	return (ctx.MinusCycles + ctx.PlusCycles) / NeuronTraceCycles
 }
 
-// CaBinForCycle returns the [CaBins] bin number for given CyclesTotal
-// cycle index. Two ThetaCycles worth of data are stored at a CaBinCycles
+// NeuronTraceForCycle returns the [NeuronTraces] bin number for given CyclesTotal
+// cycle index, for given [NeuronTracesVars] variable.
+// [NeuronTraceThetas] ThetaCycles worth of data are stored at a [NeuronTraceCycles]
 // resolution, allowing learning to use any subset of data within that window.
-func CaBinForCycle(cycle int32) int32 {
-	return (cycle / CaBinCycles) % NetworkIxs[0].NCaBins
+func NeuronTraceForCycle(trVar NeuronTracesVars, cycle int32) int32 {
+	binsPer := NetworkIxs[0].NNeuronTraceBins
+	cbin := (cycle / NeuronTraceCycles) % binsPer
+	return int32(trVar)*binsPer + cbin
 }
 
-// CaBinIncrement writes given increment to the [CaBins] for given absolute cycle
-// (CyclesTotal), initializing with value if it is the first one, and adding otherwise.
-// Given value is divided by CaBinCycles to keep it normalized as an average across the
-// CaBinCycles window.
-func CaBinIncrement(incr float32, cycle int32, ni, di uint32) {
-	bin := CaBinForCycle(cycle)
-	incn := incr / float32(CaBinCycles)
-	if (cycle % CaBinCycles) == 0 {
-		Neurons.Set(incn, int(ni), int(di), int(CaBins+NeuronVars(bin)))
+// NeuronTraceIncrement writes given increment to the [NeuronTraces]
+// for given absolute cycle (CyclesTotal), for given [NeuronTracesVars] variable.
+// Initializes with value if it is the first one, and adding otherwise.
+// Given value is divided by NeuronTraceCycles to keep it normalized
+// as an average across the NeuronTraceCycles window.
+func NeuronTraceIncrement(incr float32, trVar NeuronTracesVars, cycle int32, ni, di uint32) {
+	bin := NeuronTraceForCycle(trVar, cycle)
+	incn := incr / float32(NeuronTraceCycles)
+	if (cycle % NeuronTraceCycles) == 0 {
+		Neurons.Set(incn, int(ni), int(di), int(NeuronTraces+NeuronVars(bin)))
 	} else {
-		Neurons.SetAdd(incn, int(ni), int(di), int(CaBins+NeuronVars(bin)))
+		Neurons.SetAdd(incn, int(ni), int(di), int(NeuronTraces+NeuronVars(bin)))
 	}
 }
 

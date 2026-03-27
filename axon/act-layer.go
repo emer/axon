@@ -532,16 +532,7 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, lpi, ni, di uint32) {
 	if !ly.IsNuclear() {
 		ly.Learn.GaMFromSpike(ctx, ni, di)
 		if !ly.IsTarget() {
-			learnNow := ly.Learn.Timing.LearnTiming(ctx, ni, di)
-			if learnNow {
-				da := GlobalScalars.Value(int(GvDA), int(di))
-				ach := GlobalScalars.Value(int(GvACh), int(di))
-				nrnCaD := Neurons.Value(int(ni), int(di), int(CaD))
-				mlr := ly.Learn.RLRate.RLRateSigDeriv(nrnCaD, PoolAvgMax(AMCaD, AMCycle, Max, lpi, di))
-				modlr := ly.Learn.NeuroMod.LRMod(da, ach)
-				dlr := ly.Learn.RLRate.RLRateDiff(Neurons.Value(int(ni), int(di), int(CaP)), nrnCaD)
-				Neurons.Set(mlr*dlr*modlr, int(ni), int(di), int(RLRate))
-			}
+			ly.Learn.Timing.LearnTiming(ctx, ni, di)
 		}
 	}
 
@@ -561,9 +552,6 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, lpi, ni, di uint32) {
 		if spkmax > Neurons.Value(int(ni), int(di), int(CaPMax)) {
 			Neurons.Set(spkmax, int(ni), int(di), int(CaPMax))
 		}
-	}
-	if ly.Type != IOLayer { // uses bins for itself
-		CaBinIncrement(Neurons.Value(int(ni), int(di), int(CaSyn)), ctx.CyclesTotal, ni, di)
 	}
 }
 
@@ -714,10 +702,54 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, lpi, pi, ni, di uint32) {
 	}
 }
 
+// RLRate computes neuron level recv learning rate value based on activity
+// and neuromodulation variables.
+func (ly *LayerParams) RLRate(ctx *Context, lpi, pi, ni, di uint32) {
+	nrnCaP := Neurons.Value(int(ni), int(di), int(CaP))
+	nrnCaD := Neurons.Value(int(ni), int(di), int(CaD))
+	ly.Learn.CaLearn.ETrace(ctx, ni, di, nrnCaD)
+
+	da := GlobalScalars.Value(int(GvDA), int(di))
+	ach := GlobalScalars.Value(int(GvACh), int(di))
+	mlr := ly.Learn.RLRate.RLRateSigDeriv(nrnCaD, PoolAvgMax(AMCaD, AMCycle, Max, lpi, di))
+	modlr := ly.Learn.NeuroMod.LRMod(da, ach)
+	dlr := float32(1)
+	hasRew := (GlobalScalars.Value(int(GvHasRew), int(di))) > 0
+
+	switch ly.Type {
+	case DSPatchLayer:
+		if hasRew { // reward time
+			mlr = 1 // don't use sig deriv
+		} else {
+			modlr = 1 // don't use mod
+		}
+	case VSPatchLayer:
+		da = GlobalScalars.Value(int(GvVSPatchPosRPE), int(di)) // our own personal
+		modlr = ly.Learn.NeuroMod.LRMod(da, ach)
+		mlr = ly.Learn.RLRate.RLRateSigDeriv(Neurons.Value(int(ni), int(di), int(CaDPrev)), 1) // note: don't have proper max here
+	case VSMatrixLayer, DSMatrixLayer:
+		// note: modlr is further modulated by PF in PostPlus
+		if hasRew { // reward time
+			mlr = 1 // don't use sig deriv
+		} else {
+			modlr = 1 // don't use mod
+		}
+	case BLALayer:
+		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaP, Neurons.Value(int(ni), int(di), int(CaDPrev))) // delta on previous trial
+		if !ly.Learn.NeuroMod.IsBLAExt() && PoolIxs.Value(int(pi), int(PoolNeurSt)) == 0 {      // first pool
+			dlr = 0 // first pool is novelty / curiosity -- no learn
+		}
+	default:
+		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaP, nrnCaD)
+	}
+	Neurons.Set(mlr*dlr*modlr, int(ni), int(di), int(RLRate))
+}
+
 // PostSpike does updates at neuron level after spiking has been computed.
 // It calls PostSpikeSpecial.  It also updates the CaPCyc stats.
 func (ly *LayerParams) PostSpike(ctx *Context, lpi, pi, ni, di uint32) {
 	ly.PostSpikeSpecial(ctx, lpi, pi, ni, di)
+	ly.RLRate(ctx, lpi, pi, ni, di)
 	intdt := ly.Acts.Dt.IntDt
 	Neurons.SetAdd(intdt*(Neurons.Value(int(ni), int(di), int(Ge))-Neurons.Value(int(ni), int(di), int(GeInt))), int(ni), int(di), int(GeInt))
 	Neurons.SetAdd(intdt*(Neurons.Value(int(ni), int(di), int(GiSyn))-Neurons.Value(int(ni), int(di), int(GiInt))), int(ni), int(di), int(GiInt))
@@ -727,6 +759,11 @@ func (ly *LayerParams) PostSpike(ctx *Context, lpi, pi, ni, di uint32) {
 	}
 	// using reg act here now
 	Neurons.SetAdd(intdt*(Neurons.Value(int(ni), int(di), int(Act))-Neurons.Value(int(ni), int(di), int(ActInt))), int(ni), int(di), int(ActInt))
+	if ly.Type != IOLayer { // uses bins for itself
+		NeuronTraceIncrement(Neurons.Value(int(ni), int(di), int(CaSyn)), CaSynTrace, ctx.CyclesTotal, ni, di)
+		lrn := Neurons.Value(int(ni), int(di), int(CaDiff)) * Neurons.Value(int(ni), int(di), int(RLRate)) * Neurons.Value(int(ni), int(di), int(ETrLearn))
+		NeuronTraceIncrement(lrn, RecvLearnTrace, ctx.CyclesTotal, ni, di)
+	}
 }
 
 // CyclePost is called after the standard Cycle update, as a separate
@@ -1064,53 +1101,8 @@ func (ly *LayerParams) PlusPhaseEndPool(ctx *Context, pi, di uint32) {
 
 // PlusPhaseEndNeuron does neuron level plus-phase end updating.
 func (ly *LayerParams) PlusPhaseEndNeuron(ctx *Context, ni, di uint32) {
-	pi := ly.PoolIndex(NeuronIxs.Value(int(ni), int(NrnSubPool)))
-	lpi := ly.PoolIndex(0)
 	Neurons.Set(Neurons.Value(int(ni), int(di), int(ActInt)), int(ni), int(di), int(ActP))
-	nrnCaP := Neurons.Value(int(ni), int(di), int(CaP))
 	nrnCaD := Neurons.Value(int(ni), int(di), int(CaD))
-	ly.Learn.CaLearn.ETrace(ctx, ni, di, nrnCaD)
-
-	da := GlobalScalars.Value(int(GvDA), int(di))
-	ach := GlobalScalars.Value(int(GvACh), int(di))
-	mlr := ly.Learn.RLRate.RLRateSigDeriv(nrnCaD, PoolAvgMax(AMCaD, AMCycle, Max, lpi, di))
-	modlr := ly.Learn.NeuroMod.LRMod(da, ach)
-	dlr := float32(1)
-	hasRew := (GlobalScalars.Value(int(GvHasRew), int(di))) > 0
-	setRLRate := true
-
-	switch ly.Type {
-	case DSPatchLayer:
-		if hasRew { // reward time
-			mlr = 1 // don't use sig deriv
-		} else {
-			modlr = 1 // don't use mod
-		}
-	case VSPatchLayer:
-		da = GlobalScalars.Value(int(GvVSPatchPosRPE), int(di)) // our own personal
-		modlr = ly.Learn.NeuroMod.LRMod(da, ach)
-		mlr = ly.Learn.RLRate.RLRateSigDeriv(Neurons.Value(int(ni), int(di), int(CaDPrev)), 1) // note: don't have proper max here
-	case VSMatrixLayer, DSMatrixLayer:
-		// note: modlr is further modulated by PF in PostPlus
-		if hasRew { // reward time
-			mlr = 1 // don't use sig deriv
-		} else {
-			modlr = 1 // don't use mod
-		}
-	case BLALayer:
-		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaP, Neurons.Value(int(ni), int(di), int(CaDPrev))) // delta on previous trial
-		if !ly.Learn.NeuroMod.IsBLAExt() && PoolIxs.Value(int(pi), int(PoolNeurSt)) == 0 {      // first pool
-			dlr = 0 // first pool is novelty / curiosity -- no learn
-		}
-	default:
-		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaP, nrnCaD)
-		if !ly.IsTarget() {
-			setRLRate = ly.Learn.Timing.On.IsFalse() // else computed at time of learning
-		}
-	}
-	if setRLRate {
-		Neurons.Set(mlr*dlr*modlr, int(ni), int(di), int(RLRate))
-	}
 	var tau float32
 	sahpN := Neurons.Value(int(ni), int(di), int(SahpN))
 	nrnSaphCa := Neurons.Value(int(ni), int(di), int(SahpCa))

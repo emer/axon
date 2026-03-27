@@ -494,7 +494,7 @@ func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
 	}
 	ni := ly.NeurStIndex + uint32(idx)
 	nvars := ly.UnitVarNum()
-	neurVars := int(CaBins) + NNeuronCaBins
+	neurVars := int(NeuronTraces) + int(NeuronTracesVarsN)*NNeuronTraces
 	layVarSt := nvars-NNeuronLayerVars
 	pi := ly.Params.PoolIndex(NeuronIxs[ni, NrnSubPool])
 	if varIndex >= layVarSt {
@@ -519,14 +519,16 @@ func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
 		}
 	} else if varIndex >= neurVars {
 		return NeuronAvgs[ni, NeuronVars(varIndex-neurVars)]
-	} else if varIndex < int(CaBins) {
+	} else if varIndex < int(NeuronTraces) {
 		return Neurons[ni, di, varIndex]
 	} else {
-		sbin := varIndex - int(CaBins)
-		if sbin >= int(NetworkIxs[0].NCaBins) {
+		bi := (varIndex - int(NeuronTraces)) % NNeuronTraces
+		if bi >= int(NetworkIxs[0].NNeuronTraceBins) {
 			return math32.NaN()
 		}
-		return Neurons[ni, di, varIndex]
+		vi := (varIndex - int(NeuronTraces)) / NNeuronTraces
+		bin := NeuronTraceForCycle(NeuronTracesVars(vi), int32(bi * NeuronTraceCycles))
+		return Neurons[ni, di, int(NeuronTraces) + int(bin)]
 	}
 	return math32.NaN()
 }

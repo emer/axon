@@ -58,39 +58,39 @@ func (pt *PathParams) DWtSyn(ctx *Context, rlay *LayerParams, syni, si, ri, di u
 }
 
 // SynCa gets the synaptic calcium P (potentiation) and D (depression)
-// values, using an optimized integration of neuron-level [CaBins] values,
+// values, using an optimized integration of neuron-level [NeuronTraces] values,
 // and weight factors to capture the different CaP vs. CaD time constants.
 func (pt *PathParams) SynCa(ctx *Context, si, ri, di uint32, syCaP, syCaD *float32) {
 	edcyc := ctx.CyclesTotal
 	stcyc := edcyc - (ctx.MinusCycles + ctx.PlusCycles)
-	nbins := (edcyc - stcyc) / CaBinCycles
-	cadSt := GvCaBinWts + GlobalScalarVars(nbins)
+	nbins := (edcyc - stcyc) / NeuronTraceCycles
+	cadSt := GvSynCaWts + GlobalScalarVars(nbins)
 
-	b0 := CaBinForCycle(stcyc)
+	b0 := NeuronTraceForCycle(CaSynTrace, stcyc)
 
 	// T0
-	r0 := Neurons.Value(int(ri), int(di), int(CaBins+NeuronVars(b0)))
-	s0 := Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(b0)))
+	r0 := Neurons.Value(int(ri), int(di), int(NeuronTraces+NeuronVars(b0)))
+	s0 := Neurons.Value(int(si), int(di), int(NeuronTraces+NeuronVars(b0)))
 	sp := r0 * s0
-	cp := sp * GlobalScalars.Value(int(GvCaBinWts+GlobalScalarVars(0)), int(0))
+	cp := sp * GlobalScalars.Value(int(GvSynCaWts+GlobalScalarVars(0)), int(0))
 	cd := sp * GlobalScalars.Value(int(cadSt+GlobalScalarVars(0)), int(0))
 
 	syn20 := pt.Learn.DWt.SynCa20.IsTrue()
 
 	for i := int32(1); i < nbins; i++ {
-		bi := CaBinForCycle(stcyc + i*CaBinCycles)
-		rt := Neurons.Value(int(ri), int(di), int(CaBins+NeuronVars(bi)))
-		st := Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(bi)))
+		bi := NeuronTraceForCycle(CaSynTrace, stcyc+i*NeuronTraceCycles)
+		rt := Neurons.Value(int(ri), int(di), int(NeuronTraces+NeuronVars(bi)))
+		st := Neurons.Value(int(si), int(di), int(NeuronTraces+NeuronVars(bi)))
 		sp := float32(0)
 		if syn20 {
-			bm := CaBinForCycle(stcyc + (i-1)*CaBinCycles)
-			rt1 := Neurons.Value(int(ri), int(di), int(CaBins+NeuronVars(bm)))
-			st1 := Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(bm)))
+			bm := NeuronTraceForCycle(CaSynTrace, stcyc+(i-1)*NeuronTraceCycles)
+			rt1 := Neurons.Value(int(ri), int(di), int(NeuronTraces+NeuronVars(bm)))
+			st1 := Neurons.Value(int(si), int(di), int(NeuronTraces+NeuronVars(bm)))
 			sp = 0.25 * (rt + rt1) * (st + st1)
 		} else {
 			sp = rt * st
 		}
-		cp += sp * GlobalScalars.Value(int(GvCaBinWts+GlobalScalarVars(i)), int(0))
+		cp += sp * GlobalScalars.Value(int(GvSynCaWts+GlobalScalarVars(i)), int(0))
 		cd += sp * GlobalScalars.Value(int(cadSt+GlobalScalarVars(i)), int(0))
 	}
 	*syCaP = pt.Learn.DWt.CaPScale * cp
@@ -99,16 +99,16 @@ func (pt *PathParams) SynCa(ctx *Context, si, ri, di uint32, syCaP, syCaD *float
 
 // SynCaTotal gets the total synaptic calcium coproduct from
 // given ending cycle (total elapsed cycles) and number of cycles prior,
-// using an optimized integration of neuron-level [CaBins] values.
+// using an optimized integration of neuron-level [NeuronTraces] values.
 func (pt *PathParams) SynCaTotal(ctx *Context, si, ri, di uint32, edcyc, ncyc int32) float32 {
-	nbins := ncyc / CaBinCycles
+	nbins := ncyc / NeuronTraceCycles
 	stcyc := edcyc - ncyc
 
 	sum := float32(0)
 	for i := range nbins {
-		bi := CaBinForCycle(stcyc + i*CaBinCycles)
-		rc := Neurons.Value(int(ri), int(di), int(CaBins+NeuronVars(bi)))
-		sc := Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(bi)))
+		bi := NeuronTraceForCycle(CaSynTrace, stcyc+i*NeuronTraceCycles)
+		rc := Neurons.Value(int(ri), int(di), int(NeuronTraces+NeuronVars(bi)))
+		sc := Neurons.Value(int(si), int(di), int(NeuronTraces+NeuronVars(bi)))
 		sum += rc * sc
 	}
 	return sum * (8.0 / float32(nbins)) // original 150/50 weights sum to 8
@@ -142,7 +142,13 @@ func (pt *PathParams) DWtSynSoftBound(ctx *Context, syni, di uint32, dwt float32
 // synaptic activation credit assignment factor computed from synaptic co-product CaD values.
 func (pt *PathParams) DWtSynCortex(ctx *Context, rlay *LayerParams, syni, si, ri, lpi, pi, di uint32) {
 	learnNow := int32(Neurons.Value(int(ri), int(di), int(LearnNow)))
-	if learnNow-(ctx.CyclesTotal-ctx.ThetaCycles) < 0 { // not in this time window
+	winSt := ctx.CyclesTotal - ctx.ThetaCycles
+	winEd := ctx.CyclesTotal
+	if rlay.Learn.Timing.On.IsTrue() {
+		winSt = ctx.CyclesTotal - 2*ctx.ThetaCycles
+		winEd = ctx.CyclesTotal - (ctx.ThetaCycles + 40) //  fudge factor
+	}
+	if learnNow < winSt || learnNow > winEd { // not in this time window
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DTr))
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DiDWt))
 		return
@@ -157,7 +163,10 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, rlay *LayerParams, syni, si, ri
 
 	dwt := float32(0)
 	if syCa > pt.Learn.DWt.LearnThr { // todo: elminate?
-		dwt = tr * Neurons.Value(int(ri), int(di), int(RLRate)) * Neurons.Value(int(ri), int(di), int(LearnDiff)) * Neurons.Value(int(ri), int(di), int(ETrLearn))
+		bi := NeuronTraceForCycle(RecvLearnTrace, learnNow)
+		rLrn := Neurons.Value(int(ri), int(di), int(NeuronTraces+NeuronVars(bi))) // TimeDiff * RLRate * ETrLearn
+		// rLrn := Neurons[ri, di, RLRate] * Neurons[ri, di, CaDiff] * Neurons[ri, di, ETrLearn]
+		dwt = tr * rLrn
 	}
 	pt.DWtSynSoftBound(ctx, syni, di, dwt)
 }
@@ -493,8 +502,8 @@ func (pt *PathParams) DWtCNIO(ctx *Context, rlay *LayerParams, syni, si, ri, lpi
 	nbins := rlay.Nuclear.SendTimeBins
 	sact := float32(0)
 	for i := range nbins {
-		bi := CaBinForCycle(stcyc + i*CaBinCycles)
-		sact += Neurons.Value(int(si), int(di), int(CaBins+NeuronVars(bi)))
+		bi := NeuronTraceForCycle(CaSynTrace, stcyc+i*NeuronTraceCycles)
+		sact += Neurons.Value(int(si), int(di), int(NeuronTraces+NeuronVars(bi)))
 	}
 	// todo: rlrate? Neurons[ri, di, RLRate]
 	dwt := sact

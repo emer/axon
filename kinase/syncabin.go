@@ -8,28 +8,28 @@ import (
 	"cogentcore.org/core/math32"
 )
 
-// CaBinWts generates the weighting factors for integrating [CaBins] neuron
-// level SynCa that have been multiplied send * recv to generate a synapse-level
+// SynCaWts generates the weighting factors for integrating neuron-level
+// SynCa that have been multiplied send * recv to generate a synapse-level
 // synaptic calcium coincidence factor, used for the trace in the kinase learning rule.
 // There are separate weights for two time scales of integration: CaP and CaD (cp, cd).
 // PlusCycles is the number of cycles in the final plus phase, which determines shape.
 // These values are precomputed for given fixed thetaCycles and plusCycles values.
 // Fortunately, one set of regression weights works reasonably for the different
 // envelope values.
-func CaBinWts(plusCycles int, cp, cd []float32) {
+func SynCaWts(plusCycles int, cp, cd []float32) {
 	nplus := int(math32.Round(float32(plusCycles) / 10))
-	caBinWts(nplus, cp, cd)
+	synCaWts(nplus, cp, cd)
 }
 
-// caBinWts generates the weighting factors for integrating [CaBins] neuron
-// level SynCa that have been multiplied send * recv to generate a synapse-level
+// synCaWts generates the weighting factors for integrating neuron-level
+// SynCa that have been multiplied send * recv to generate a synapse-level
 // synaptic calcium coincidence factor, used for the trace in the kinase learning rule.
 // There are separate weights for two time scales of integration: CaP and CaD.
 // nplus is the number of ca bins associated with the plus phase,
 // which sets the natural timescale of the integration: total ca bins can
 // be proportional to the plus phase (e.g., 4x for standard 200 / 50 total / plus),
 // or longer if there is a longer minus phase window (which is downweighted).
-func caBinWts(nplus int, cp, cd []float32) {
+func synCaWts(nplus int, cp, cd []float32) {
 	n := len(cp)
 	nminus := n - nplus
 

@@ -23,11 +23,11 @@ type NuclearParams struct {
 
 	// SendTimeOff is the time offset for sending activations used in learning,
 	// relative to the IO-driven LearnNow time. Should be 0 for CNiUp.
-	// Must be an even multiple of [CaBinCycles].
+	// Must be an even multiple of [NeuronTraceCycles].
 	SendTimeOff int32 `default:"40,0" min:"0"`
 
 	// SendTimeWindow is the time window to integrate sending activations
-	// used in learning. Must be an even multiple of [CaBinCycles].
+	// used in learning. Must be an even multiple of [NeuronTraceCycles].
 	SendTimeWindow int32 `default:"30" min:"0"`
 
 	// ActTarget is the target activity level, as measured by CaD.
@@ -52,14 +52,14 @@ type NuclearParams struct {
 	// to this layer. Set via SetBuildConfig(IOLayName) setting.
 	IOLayIndex int32 `edit:"-"`
 
-	// SendTimeBins = SendTimeWindow / [CaBinCycles].
+	// SendTimeBins = SendTimeWindow / [NeuronTraceCycles].
 	SendTimeBins int32 `edit:"-"`
 
 	pad, pad1, pad2 int32
 }
 
 func (tp *NuclearParams) Update() {
-	tp.SendTimeBins = tp.SendTimeWindow / CaBinCycles
+	tp.SendTimeBins = tp.SendTimeWindow / NeuronTraceCycles
 }
 
 func (tp *NuclearParams) Defaults() {
@@ -130,12 +130,12 @@ func (ly *LayerParams) NuclearDWtNeuron(ctx *Context, ni uint32) {
 // which compute a temporal offset error signal between CNiIO inhibitory
 // predictions and excitatory sensory input, contingent on initial
 // above-threshold efferent copy motor trigger input (modulatory).
-// Neuron [CaBins] are used to store TimeOff past inhibitory inputs.
+// Neuron [NeuronTraces] are used to store TimeOff past inhibitory inputs.
 type IOParams struct {
 
 	// TimeOff is the time offset for earlier predictive inhibitory inputs to
 	// compare against current excitatory inputs to trigger an error,
-	// in ms (cycles). Must be an even multiple of [CaBinCycles].
+	// in ms (cycles). Must be an even multiple of [NeuronTraceCycles].
 	TimeOff int32 `default:"50" min:"0"`
 
 	// ErrThr is the threshold on the GeSyn - GiSyn_(t-TimeOff) difference
@@ -151,7 +151,7 @@ type IOParams struct {
 	// EfferentOff is the offset from the time of the efferent signal before
 	// meaningful sensory comparison can occur. The inhibitory prediction values
 	// are assumed to be strongly activated at this time.
-	// in ms (cycles). Must be an even multiple of [CaBinCycles].
+	// in ms (cycles). Must be an even multiple of [NeuronTraceCycles].
 	EfferentOff int32 `default:"20" min:"0"`
 
 	// GTau is the time constant in ms for integrating [GeSyn] and [GiSyn]
@@ -209,22 +209,22 @@ func (ly *LayerParams) IOLearn(ctx *Context, lpi, pi, ni, di uint32) {
 	Neurons.Set(gaM, int(ni), int(di), int(GaM))
 
 	inhibAct := gaM
-	// CaBinCycles to ensure that full bin is filled
-	if effAct > 0 && envCyc <= ly.IO.EfferentOff+CaBinCycles {
+	// NeuronTraceCycles to ensure that full bin is filled
+	if effAct > 0 && envCyc <= ly.IO.EfferentOff+NeuronTraceCycles {
 		inhibAct = 1.0
 	}
-	CaBinIncrement(inhibAct, ctx.CyclesTotal, ni, di) // always store
+	NeuronTraceIncrement(inhibAct, CaSynTrace, ctx.CyclesTotal, ni, di) // always store
 
 	Neurons.Set(0.0, int(ni), int(di), int(TimeDiff)) // set below for display
 	Neurons.Set(0.0, int(ni), int(di), int(Spike))    // default is no spike
 
 	oldInhib := float32(0)
-	nbins := ly.IO.TimeOff / CaBinCycles
+	nbins := ly.IO.TimeOff / NeuronTraceCycles
 	nbins = max(1, nbins-1)
 	stcyc := ctx.CyclesTotal - ly.IO.TimeOff
 	for i := range nbins {
-		bi := CaBinForCycle(stcyc + i*CaBinCycles)
-		oldInhib += Neurons.Value(int(ni), int(di), int(CaBins+NeuronVars(bi)))
+		bi := NeuronTraceForCycle(CaSynTrace, stcyc+i*NeuronTraceCycles)
+		oldInhib += Neurons.Value(int(ni), int(di), int(NeuronTraces+NeuronVars(bi)))
 	}
 	oldInhib /= float32(nbins)
 	Neurons.Set(oldInhib, int(ni), int(di), int(GaD))

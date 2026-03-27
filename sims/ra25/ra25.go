@@ -636,6 +636,12 @@ func (ss *Sim) ConfigStats() {
 		actGeFunc(mode, level, phase == Start)
 	})
 
+	superLays := net.LayersByType(axon.SuperLayer, axon.CTLayer)
+	learnNowFunc := axon.StatLearnNow(ss.Stats, ss.Current, net, Trial, Run, superLays...)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		learnNowFunc(mode, level, phase == Start)
+	})
+
 	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, Run, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		trnEpc := ss.Loops.Loop(Train, Epoch).Counter.Cur

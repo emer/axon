@@ -53,9 +53,13 @@ type NetworkIndexes struct {
 	// [Network.Build]. This determines the size of the spike sending delay buffers.
 	MaxDelay uint32 `edit:-"-"`
 
-	// NCaBins is the total number of [CaBins] in the neuron state variables.
-	// Set to [Context.ThetaCycles] / [Context.CaBinCycles] in Build.
-	NCaBins int32 `edit:"-"`
+	// NNeuronTraces is the total number of [NeuronTraces] in the neuron state variables.
+	// Set to Context.NNeuronTraces() in Build.
+	NNeuronTraces int32 `edit:"-"`
+
+	// NNeuronTraceBins is the total number of [NeuronTraces] in the neuron state variables,
+	// per trace variable. Set to Context.NNeuronTraceBins() in Build.
+	NNeuronTraceBins int32 `edit:"-"`
 
 	// NLayers is the number of layers in the network.
 	NLayers uint32 `edit:"-"`
@@ -80,8 +84,6 @@ type NetworkIndexes struct {
 
 	// RubiconNNegUSs is the total number of .Rubicon Negative USs.
 	RubiconNNegUSs uint32 `edit:"-"`
-
-	pad uint32
 }
 
 //gosl:end
@@ -205,7 +207,7 @@ type Network struct {
 	LayerStates tensor.Float32 `display:"-"`
 
 	// GlobalScalars are the global scalar state variables.
-	// [GlobalScalarVarsN+2*NCaWeights][Data]
+	// [GlobalScalarVarsN+2*NSynCaWeights][Data]
 	GlobalScalars tensor.Float32 `display:"-"`
 
 	// GlobalVectors are the global vector state variables.
@@ -516,11 +518,11 @@ func (nt *Network) AllGlobals() string {
 	nix := nt.NetIxs()
 	md := nix.MaxData
 	ctx := nt.Context()
-	nCaWts := ctx.NCaWeights()
+	nSynCaWts := ctx.NSynCaWeights()
 	str := ""
 	for di := uint32(0); di < md; di++ {
 		str += fmt.Sprintf("\n###############################\nData Index: %02d\n\n", di)
-		for vv := GvRew; vv < GvCaBinWts; vv++ {
+		for vv := GvRew; vv < GvSynCaWts; vv++ {
 			str += fmt.Sprintf("%20s:\t%7.4f\n", vv.String(), GlobalScalars.Value(int(vv), int(di)))
 		}
 		for vv := GvCost; vv <= GvCostRaw; vv++ {
@@ -546,12 +548,12 @@ func (nt *Network) AllGlobals() string {
 		}
 	}
 	str += "\n###############################\nSpike Bin Weights\n\n"
-	for i := range nCaWts {
-		str += fmt.Sprintf("CaBinWtsCaP%02d:\t%7.4f\n", i, GlobalScalars.Value(int(GvCaBinWts+GlobalScalarVars(i)), int(0)))
+	for i := range nSynCaWts {
+		str += fmt.Sprintf("SynCaWtsCaP%02d:\t%7.4f\n", i, GlobalScalars.Value(int(GvSynCaWts+GlobalScalarVars(i)), int(0)))
 	}
 	str += "#### CaD\n"
-	for i := range nCaWts {
-		str += fmt.Sprintf("CaBinWtsCaD%02d:\t%7.4f\n", i, GlobalScalars.Value(int(GvCaBinWts+GlobalScalarVars(nCaWts+i)), int(0)))
+	for i := range nSynCaWts {
+		str += fmt.Sprintf("SynCaWtsCaD%02d:\t%7.4f\n", i, GlobalScalars.Value(int(GvSynCaWts+GlobalScalarVars(nSynCaWts+i)), int(0)))
 	}
 	return str
 }
@@ -568,7 +570,7 @@ func (nt *Network) AllGlobalValues(ctrKey string, vals map[string]float32) {
 	nix := nt.NetIxs()
 	md := nix.MaxData
 	for di := uint32(0); di < md; di++ {
-		for vv := GvRew; vv < GvCaBinWts; vv++ {
+		for vv := GvRew; vv < GvSynCaWts; vv++ {
 			key := fmt.Sprintf("%s  Di: %d\t%s", ctrKey, di, vv.String())
 			vals[key] = GlobalScalars.Value(int(vv), int(di))
 		}
@@ -710,13 +712,14 @@ func (nt *Network) LateralConnectLayerPath(lay *Layer, pat paths.Pattern, pt *Pa
 // Build constructs the layer and pathway state based on the layer shapes
 // and patterns of interconnectivity. Everything in the network must have been
 // configured by this point, including key values in Context such as ThetaCycles
-// and CaBinCycles which drive allocation of number of [CaBins] neuron
-// variables and corresponding [GvCaBinWts] global scalar variables.
+// and NeuronTraceCycles which drive allocation of number of [NeuronTraces] neuron
+// variables and corresponding [GvSynCaWts] global scalar variables.
 func (nt *Network) Build() error { //types:add
 	nix := nt.NetIxs()
 	ctx := nt.Context()
-	maxBins := ctx.NCaBins()
-	nix.NCaBins = maxBins
+	maxBins := ctx.NNeuronTraces()
+	nix.NNeuronTraceBins = ctx.NNeuronTraceBins()
+	nix.NNeuronTraces = maxBins
 	nt.UpdateLayerMaps()
 	if nt.Rubicon.NPosUSs == 0 {
 		nt.Rubicon.SetNUSs(1, 1)
@@ -761,8 +764,8 @@ func (nt *Network) Build() error { //types:add
 	nt.NeuronAvgs.SetShapeSizes(totNeurons, int(NeuronAvgVarsN))
 	nt.NeuronIxs.SetShapeSizes(totNeurons, int(NeuronIndexVarsN))
 	nt.Exts.SetShapeSizes(totExts, maxData)
-	nCaWts := ctx.NCaWeights()
-	nt.GlobalScalars.SetShapeSizes(int(GlobalScalarVarsN)+int(2*nCaWts), maxData)
+	nSynCaWts := ctx.NSynCaWeights()
+	nt.GlobalScalars.SetShapeSizes(int(GlobalScalarVarsN)+int(2*nSynCaWts), maxData)
 	nt.GlobalVectors.SetShapeSizes(int(GlobalVectorVarsN), int(MaxGlobalVecN), maxData)
 
 	nt.SetAsCurrent()
@@ -925,23 +928,24 @@ func (nt *Network) Build() error { //types:add
 		}
 	}
 	nix.NSyns = uint32(syIndex)
-	nt.SetCaBinWts()
+	nt.SetSynCaWts()
 	nt.LayoutLayers()
 	nt.SetAsCurrent()
 	return errors.Join(errs...)
 }
 
-// SetCaBinWts sets the [GvCaBinWts] global ca bin weights for kinase
-// trace learning rule integration of [CaBins] neuron-level spike values.
-func (nt *Network) SetCaBinWts() {
+// SetSynCaWts sets the [GvSynCaWts] global ca bin weights for kinase
+// trace learning rule integration of [SynCa] neuron-level spike values
+// stored in [NeuronTraces].
+func (nt *Network) SetSynCaWts() {
 	ctx := nt.Context()
-	nCaWts := ctx.NCaWeights()
-	cp := make([]float32, nCaWts)
-	cd := make([]float32, nCaWts)
-	kinase.CaBinWts(int(ctx.PlusCycles), cp, cd)
-	for i := range nCaWts {
-		nt.GlobalScalars.Set(cp[i], int(GvCaBinWts+GlobalScalarVars(i)), int(0))
-		nt.GlobalScalars.Set(cd[i], int(GvCaBinWts+GlobalScalarVars(nCaWts+i)), int(0))
+	nSynCaWts := ctx.NSynCaWeights()
+	cp := make([]float32, nSynCaWts)
+	cd := make([]float32, nSynCaWts)
+	kinase.SynCaWts(int(ctx.PlusCycles), cp, cd)
+	for i := range nSynCaWts {
+		nt.GlobalScalars.Set(cp[i], int(GvSynCaWts+GlobalScalarVars(i)), int(0))
+		nt.GlobalScalars.Set(cd[i], int(GvSynCaWts+GlobalScalarVars(nSynCaWts+i)), int(0))
 	}
 }
 
@@ -1212,7 +1216,7 @@ func (nt *Network) SizeReport(detail bool) string {
 	synVarBytes := 4
 	nix := nt.NetIxs()
 	maxData := int(nix.MaxData)
-	memNeuron := (int(NeuronVarsN)+int(nix.NCaBins))*maxData*varBytes + int(NeuronAvgVarsN)*varBytes + int(NeuronIndexVarsN)*varBytes
+	memNeuron := (int(NeuronVarsN)+int(nix.NNeuronTraces))*maxData*varBytes + int(NeuronAvgVarsN)*varBytes + int(NeuronIndexVarsN)*varBytes
 	memSynapse := int(SynapseVarsN)*varBytes + int(SynapseTraceVarsN)*maxData*varBytes + int(SynapseIndexVarsN)*varBytes
 
 	globalProjIndexes := 0

@@ -9,14 +9,14 @@ import (
 	"testing"
 )
 
-func TestCaBinWts(t *testing.T) {
+func TestSynCaWts(t *testing.T) {
 	caBinCycles := 10
 	thetaCycles := 200
 	plusCycles := 50
 	nbins := thetaCycles / caBinCycles
 	cp := make([]float32, nbins)
 	cd := make([]float32, nbins)
-	CaBinWts(plusCycles, cp, cd)
+	SynCaWts(plusCycles, cp, cd)
 	fmt.Println("CaP:", cp)
 	fmt.Println("CaD:", cd)
 	var cpsum, cdsum float32

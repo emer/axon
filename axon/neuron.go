@@ -34,8 +34,8 @@ const (
 )
 
 // NeuronVars are the neuron variables representing current active state,
-// specific to each input data state.
-// See NeuronAvgVars for vars shared across data.
+// specific to each data-parallel ndata input data state.
+// See NeuronAvgVars for vars shared across data parallel states.
 type NeuronVars int32 //enums:enum
 
 const (
@@ -148,7 +148,7 @@ const (
 	// credit assignment factor for learning.
 	// This value is driven directly by spikes, with an exponential integration time
 	// constant of 30 msec (default), which captures the coincidence window for pre*post
-	// firing on NMDA receptor opening. The neuron [CaBins] values record the temporal
+	// firing on NMDA receptor opening. The neuron [NeuronTraces] values record the temporal
 	// trajectory of CaSyn over the course of the theta cycle window, and then the
 	// pre*post product is integrated over these bins at the synaptic level.
 	CaSyn
@@ -180,11 +180,6 @@ const (
 	// signal that drives error-driven learning.
 	CaDiff
 
-	// LearnDiff is the actual difference signal that drives learning, which is
-	// computed from [CaDiff] for neocortical neurons, but specifically at the
-	// point of learning ([LearnNow]).
-	LearnDiff
-
 	//////// Learning Timing
 
 	// GaM is first-level integration of all input conductances g_a,
@@ -211,15 +206,30 @@ const (
 
 	// TimePeak is the value of the current peak (local maximum) of [TimeDiff].
 	// This typically occurs at the onset of the minus phase, and drives
-	// the timing of learning a given number of cycles after that.
+	// the timing of learning a given number of cycles relative to that.
+	// This value will be cleared once the minus phase peak has been detected,
+	// but MinusPeak will record the final value.
 	TimePeak
 
 	// TimeCycle is the absolute cycle where [TimePeak] occurred.
 	TimeCycle
 
+	// PeakUps is the number of successive increments in TimePeak (with minimal gaps).
+	// When this exceeds a threshold, then the minus phase peak is detected.
+	PeakUps
+
+	// MinusPeak is the value of the last detected minus-phase peak of [TimeDiff].
+	// This typically occurs at the onset of the minus phase, and drives
+	// the timing of learning a given number of cycles after that.
+	MinusPeak
+
+	// MinusCycle is the absolute cycle (ms, CyclesTotal) when the minus-phase
+	// peak was detected.
+	MinusCycle
+
 	// LearnNow is the absolute cycle (ms, CyclesTotal) when the receiving
 	// neuron learns. For neocortex, either at end of theta cycle or based
-	// on timing computed from [TimeCycle] per [LearnTimingParams].
+	// on timing computed from [MinusCycle] per [LearnTimingParams].
 	LearnNow
 
 	// RLRate is recv-unit based learning rate multiplier, reflecting the sigmoid
@@ -503,16 +513,31 @@ const (
 	// differential per data (for ext inputs) and are writable (indexes are read only).
 	NeurFlags
 
-	// CaBins is a vector of values starting here, with aggregated [CaSyn] values
-	// in time bins of [CaBinCycles] across two theta cycles,
-	// for computing synaptic calcium efficiently. Each bin = Sum(CaSyn / CaBinCycles).
-	// Total number of bins = 2 * [Context.ThetaCycles] / CaBinCycles.
-	// Use [CaBinForCycle] to access.
-	// Synaptic calcium is integrated from sender * receiver CaBins values,
+	// NeuronTraces is a vector of values starting here, with aggregated [CaSyn] values
+	// in time bins of [NeuronTraceCycles] across two theta cycles,
+	// for computing synaptic calcium efficiently. Each bin = Sum(CaSyn / NeuronTraceCycles).
+	// Total number of bins = 2 * [Context.ThetaCycles] / NeuronTraceCycles.
+	// Use [NeuronTraceForCycle] to access.
+	// Synaptic calcium is integrated from sender * receiver NeuronTraces values,
 	// with weights for CaP vs CaD that reflect their faster vs. slower time constants,
 	// respectively. CaD is used for the credit assignment factor, while CaP - CaD is
 	// used directly for error-driven learning at Target layers.
-	CaBins
+	NeuronTraces
+)
+
+// NeuronTracesVars are the neuron variables to store in the NeuronTraces neuron state.
+// For each variable, [NeuronTraceThetas] * [Context.ThetaCycles] / [NeuronTraceCycles]
+// worth of state is encoded.
+type NeuronTracesVars int32 //enums:enum
+
+const (
+	// CaSynTrace is the [NeuronTraces] variable for storing a trace over multiple
+	// ThetaCycles of [CaSyn] values for computing the synaptic calcium approximation efficiently.
+	CaSynTrace NeuronTracesVars = iota
+
+	// RecvLearnTrace is the [NeuronTraces] variable for storing a trace over multiple
+	// ThetaCycles of [CaDiff] * [RLRate] * [ETrLearn] values for Timing-based learning.
+	RecvLearnTrace
 )
 
 // NeuronAvgVars are mostly neuron variables involved in longer-term average activity
@@ -581,7 +606,7 @@ var VarCategories = []emer.VarCategory{
 	{"Stats", "statistics and aggregate values"},
 	{"Gmisc", "more detailed conductance (G) variables for integration and other computational values"},
 	{"Avg", "longer-term average variables and homeostatic regulation"},
-	{"Spikes", "Binned spike counts used for learning"},
+	{"Trace", "Trace values recorded in bins over time, for asynchronous learning"},
 	{"Wts", "weights and other synaptic-level variables"},
 }
 
@@ -612,13 +637,12 @@ var NeuronVarProps = map[string]string{
 	"CaD":     `cat:"Learn"`,
 	"CaDPrev": `cat:"Learn"`,
 
-	"CaSyn":     `cat:"Learn"`,
-	"LearnCa":   `cat:"Learn"`,
-	"LearnCaM":  `cat:"Learn"`,
-	"LearnCaP":  `cat:"Learn"`,
-	"LearnCaD":  `cat:"Learn"`,
-	"CaDiff":    `cat:"Learn"`,
-	"LearnDiff": `cat:"Learn"`,
+	"CaSyn":    `cat:"Learn"`,
+	"LearnCa":  `cat:"Learn"`,
+	"LearnCaM": `cat:"Learn"`,
+	"LearnCaP": `cat:"Learn"`,
+	"LearnCaD": `cat:"Learn"`,
+	"CaDiff":   `cat:"Learn"`,
 
 	"GaM": `cat:"Learn"`,
 	"GaP": `cat:"Learn"`,
@@ -626,11 +650,13 @@ var NeuronVarProps = map[string]string{
 
 	"TimeDiff": `cat:"Learn"`,
 
-	"TimePeak":     `cat:"Learn"`,
-	"TimeCycle":    `cat:"Learn" auto-scale:"+"`,
-	"LearnPeak":    `cat:"Learn"`,
-	"LearnPeakCyc": `cat:"Learn" auto-scale:"+"`,
-	"LearnNow":     `cat:"Learn" auto-scale:"+"`,
+	"TimePeak":  `cat:"Learn"`,
+	"TimeCycle": `cat:"Learn" auto-scale:"+"`,
+	"PeakUps":   `cat:"Learn" auto-scale:"+"`,
+
+	"MinusPeak":  `cat:"Learn"`,
+	"MinusCycle": `cat:"Learn" auto-scale:"+"`,
+	"LearnNow":   `cat:"Learn" auto-scale:"+"`,
 
 	"RLRate":   `cat:"Learn" auto-scale:"+"`,
 	"ETrace":   `cat:"Learn"`,
@@ -725,7 +751,8 @@ var NeuronVarProps = map[string]string{
 
 	"NeurFlags": `display:"-"`,
 
-	"CaBins": `cat:"Spikes"`,
+	"CaSynTr":     `cat:"Trace"`,
+	"RecvLearnTr": `cat:"Trace"`,
 
 	//////// Long-term average activation, set point for synaptic scaling
 
@@ -758,26 +785,29 @@ var (
 var (
 	NeuronLayerVars  = []string{"DA", "ACh", "NE", "Ser", "Gated", "ModAct", "PoolDAD1", "PoolDAD2"}
 	NNeuronLayerVars = len(NeuronLayerVars)
-	NNeuronCaBins    = 20 // generic max for display
+	NNeuronTraces    = 20 // max of NeuronTraces per variable to display
 )
 
 func init() {
 	NeuronVarsMap = make(map[string]int, int(NeuronVarsN)+int(NeuronAvgVarsN)+NNeuronLayerVars)
-	for i := Spike; i < CaBins; i++ {
+	for i := Spike; i < NeuronTraces; i++ {
 		vnm := i.String()
 		NeuronVarNames = append(NeuronVarNames, vnm)
 		NeuronVarsMap[vnm] = int(i)
 		tag := NeuronVarProps[vnm]
 		NeuronVarProps[vnm] = tag + ` doc:"` + strings.ReplaceAll(i.Desc(), "\n", " ") + `"`
 	}
-	for i := range NNeuronCaBins {
-		vnm := fmt.Sprintf("CaBin%02d", i)
-		NeuronVarNames = append(NeuronVarNames, vnm)
-		NeuronVarsMap[vnm] = int(CaBins) + i
-		tag := NeuronVarProps[CaBins.String()]
-		NeuronVarProps[vnm] = tag + ` doc:"` + strings.ReplaceAll(CaBins.Desc(), "\n", " ") + `"`
+	for j := range NeuronTracesVarsN {
+		vnm := strings.TrimSuffix(j.String(), "Trace") + "Tr"
+		for i := range NNeuronTraces {
+			vnmi := fmt.Sprintf("%s%02d", vnm, i)
+			NeuronVarNames = append(NeuronVarNames, vnmi)
+			NeuronVarsMap[vnmi] = int(NeuronTraces) + int(j)*(NNeuronTraces) + i
+			tag := NeuronVarProps[vnm]
+			NeuronVarProps[vnmi] = tag + ` doc:"` + strings.ReplaceAll(j.Desc(), "\n", " ") + `"`
+		}
 	}
-	nVars := int(CaBins) + NNeuronCaBins
+	nVars := int(NeuronTraces) + int(NeuronTracesVarsN)*NNeuronTraces
 	for i := ActAvg; i < NeuronAvgVarsN; i++ {
 		vnm := i.String()
 		NeuronVarNames = append(NeuronVarNames, vnm)

@@ -766,6 +766,9 @@ func StatLearnNow(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel,
 						anow.SetShapeSizes(n) // set to 1D -- faster
 						for i := range n {
 							v := int32(anow.Float1D(i)) - stCyc
+							if si < 2 && ly.Params.Learn.Timing.On.IsTrue() {
+								v += ly.Params.Learn.Timing.Cycles
+							}
 							if v < 0 {
 								anow.SetFloat1D(nan, i)
 							} else if isiCyc > 0 {

@@ -92,7 +92,7 @@ var (
 	Ctx []Context
 
 	// Neurons are all the neuron state variables.
-	// [Neurons][Data][NeuronVarsN+NCaBins]
+	// [Neurons][Data][NeuronVarsN+NNeuronTraces]
 	//gosl:dims 3
 	Neurons *tensor.Float32
 

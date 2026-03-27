@@ -38,7 +38,7 @@ The learned weights to the BG clearly show that it is disinhibiting the appropri
 # TODO:
 
 * Set number of cycles per trial in terms of BG motor gating timing: constant offset from onset of VM gating timing, with a cutoff for "nothing happening" trials.
-    * Attempted an impl but is difficult with CaBins -- tried shifting bins but awk..
+    * Attempted an impl but is difficult with NeuronTraces -- tried shifting bins but awk..
 
 * "CL" not beneficial (implemented as direct MotorBS -> Matrix pathways): rel weight of 0.002 is OK but starts to actually impair above that.  Likely that a functional cerebellum is needed to make this useful.  Also, investigate other modulatory inputs to CL that might alter its signal.  Key ref for diffs between CL and PF: LaceyBolamMagill07: C. J. Lacey, J. P. Bolam, P. J. Magill, Novel and distinct operational principles of intralaminar thalamic neurons and their striatal pathways. J. Neurosci. 27, 4374–4384 (2007).
 

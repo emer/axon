@@ -1252,7 +1252,7 @@ func RunDebugLearn(t *testing.T, testNet *Network, printValues bool, gpu bool, i
 						fmt.Println(key + fmt.Sprintf("  di: %d", di))
 					}
 					for nvi, vnm := range NeuronVarNames {
-						if nvi >= int(CaBins) {
+						if nvi >= int(NeuronTraces) {
 							continue
 						}
 						ly.UnitValues(&vals, vnm, di)
@@ -1676,24 +1676,24 @@ func TestRubiconGiveUp(t *testing.T) {
 // 	ni := uint32(0)
 // 	di := uint32(0)
 // 	for i := range 8 {
-// 		Neurons[ni, di, CaBin0 + NeuronVars(i)] = float32(i)
+// 		Neurons[ni, di, NeuronTrace0 + NeuronVars(i)] = float32(i)
 // 	}
 // 	ly := &Layers[0]
 // 	ly.Learn.GateSync.ShiftBins(1, minusBins, plusBins, ni, di)
 // 	for i := range minusBins {
-// 		// fmt.Println(i, Neurons[ni, di, CaBin0 + NeuronVars(i)])
-// 		assert.Equal(t, float32(i+1), Neurons[ni, di, CaBin0 + NeuronVars(i)])
+// 		// fmt.Println(i, Neurons[ni, di, NeuronTrace0 + NeuronVars(i)])
+// 		assert.Equal(t, float32(i+1), Neurons[ni, di, NeuronTrace0 + NeuronVars(i)])
 // 	}
 // 	for i := range plusBins {
-// 		assert.Equal(t, float32(0), Neurons[ni, di, CaBin0 + NeuronVars(minusBins+i)])
+// 		assert.Equal(t, float32(0), Neurons[ni, di, NeuronTrace0 + NeuronVars(minusBins+i)])
 // 	}
 // 	ly.Learn.GateSync.ShiftBins(-1, 6, 2, ni, di)
 // 	for i := range minusBins {
-// 		// fmt.Println(i, Neurons[ni, di, CaBin0 + NeuronVars(i)])
-// 		assert.Equal(t, float32(max(i,1)), Neurons[ni, di, CaBin0 + NeuronVars(i)])
+// 		// fmt.Println(i, Neurons[ni, di, NeuronTrace0 + NeuronVars(i)])
+// 		assert.Equal(t, float32(max(i,1)), Neurons[ni, di, NeuronTrace0 + NeuronVars(i)])
 // 	}
 // 	for i := range plusBins {
-// 		assert.Equal(t, float32(0), Neurons[ni, di, CaBin0 + NeuronVars(minusBins+i)])
+// 		assert.Equal(t, float32(0), Neurons[ni, di, NeuronTrace0 + NeuronVars(minusBins+i)])
 // 	}
 // }
 
