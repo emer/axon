@@ -51,6 +51,12 @@ func (pt *PathParams) DWtSyn(ctx *Context, rlay *LayerParams, syni, si, ri, di u
 			pt.DWtSynHebb(ctx, syni, si, ri, lpi, pi, di)
 		} else if isTarget {
 			pt.DWtSynTarget(ctx, syni, si, ri, lpi, pi, di)
+		} else if rlay.Learn.Timing.On.IsTrue() {
+			if rlay.Learn.Timing.Cycles < 0 {
+				pt.DWtSynCortexEnabled(ctx, rlay, syni, si, ri, lpi, pi, di)
+			} else {
+				pt.DWtSynCortex(ctx, rlay, syni, si, ri, lpi, pi, di)
+			}
 		} else {
 			pt.DWtSynCortex(ctx, rlay, syni, si, ri, lpi, pi, di)
 		}
@@ -142,13 +148,9 @@ func (pt *PathParams) DWtSynSoftBound(ctx *Context, syni, di uint32, dwt float32
 // synaptic activation credit assignment factor computed from synaptic co-product CaD values.
 func (pt *PathParams) DWtSynCortex(ctx *Context, rlay *LayerParams, syni, si, ri, lpi, pi, di uint32) {
 	learnNow := int32(Neurons.Value(int(ri), int(di), int(LearnNow)))
-	learnCyc := learnNow
 	winSt := ctx.CyclesTotal - ctx.ThetaCycles
 	winEd := ctx.CyclesTotal
-	if rlay.Learn.Timing.On.IsTrue() {
-		learnCyc = int32(Neurons.Value(int(ri), int(di), int(MinusCycle))) // within this trial
-	}
-	if learnCyc < winSt || learnCyc > winEd { // not in this time window
+	if learnNow < winSt || learnNow > winEd { // not in this time window
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DTr))
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DiDWt))
 		return
@@ -165,7 +167,38 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, rlay *LayerParams, syni, si, ri
 	if syCa > pt.Learn.DWt.LearnThr { // todo: elminate?
 		bi := NeuronTraceForCycle(RecvLearnTrace, learnNow)
 		rLrn := Neurons.Value(int(ri), int(di), int(NeuronTraces+NeuronVars(bi))) // TimeDiff * RLRate * ETrLearn
-		// rLrn := Neurons[ri, di, RLRate] * Neurons[ri, di, CaDiff] * Neurons[ri, di, ETrLearn]
+		// rLrn := Neurons[ri, di, CaDiff] * Neurons[ri, di, RLRate] * Neurons[ri, di, ETrLearn]
+		// rLrn *= Neurons[ri, di, RLRate] // * Neurons[ri, di, ETrLearn]
+		dwt = tr * rLrn
+	}
+	pt.DWtSynSoftBound(ctx, syni, di, dwt)
+}
+
+// DWtSynCortexEnabled is timing enabled version of DWtSynCortex
+func (pt *PathParams) DWtSynCortexEnabled(ctx *Context, rlay *LayerParams, syni, si, ri, lpi, pi, di uint32) {
+	learnNow := int32(Neurons.Value(int(ri), int(di), int(LearnNow)))
+	enabled := int32(Neurons.Value(int(ri), int(di), int(LearnEnabled)))
+	winSt := ctx.CyclesTotal - 2*ctx.ThetaCycles
+	winEd := ctx.CyclesTotal - ctx.ThetaCycles
+	if enabled > learnNow || learnNow < winSt || learnNow > winEd { // not in this time window
+		SynapseTraces.Set(0.0, int(syni), int(di), int(DTr))
+		SynapseTraces.Set(0.0, int(syni), int(di), int(DiDWt))
+		return
+	}
+	syCa := pt.SynCaTotal(ctx, si, ri, di, learnNow, rlay.Learn.Timing.SynCaCycles)
+
+	// integrate synaptic trace over time: this is actually beneficial in certain cases,
+	// in addition to the ETrLearn factor.
+	SynapseTraces.Set(syCa, int(syni), int(di), int(DTr))
+	tr := pt.Learn.DWt.SynTrace(SynapseTraces.Value(int(syni), int(di), int(Tr)), syCa)
+	SynapseTraces.Set(tr, int(syni), int(di), int(Tr))
+
+	dwt := float32(0)
+	if syCa > pt.Learn.DWt.LearnThr { // todo: elminate?
+		bi := learnNow - enabled                                                  // guaranteed to be in bounds here
+		rLrn := Neurons.Value(int(ri), int(di), int(NeuronTraces+NeuronVars(bi))) // TimeDiff * RLRate * ETrLearn
+		// rLrn := Neurons[ri, di, CaDiff] * Neurons[ri, di, RLRate] * Neurons[ri, di, ETrLearn]
+		// rLrn *= Neurons[ri, di, RLRate] // * Neurons[ri, di, ETrLearn]
 		dwt = tr * rLrn
 	}
 	pt.DWtSynSoftBound(ctx, syni, di, dwt)

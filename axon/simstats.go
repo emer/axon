@@ -716,11 +716,12 @@ func StatLevelAll(statsDir *tensorfs.Node, srcMode, srcLevel enums.Enum, styleFu
 // parameters, including the MinusCycle (and StdDev) and LearnNow values
 // in the given layers.
 func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel, runLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
-	statNames := []string{"MinusCycMean", "MinusCycStDev", "LearnNow"}
+	statNames := []string{"MinusCycMean", "MinusCycStDev", "EnabledCyc", "LearnNow"}
 	statDocs := map[string]string{
-		"MinusCycMean": "Mean MinusCycle, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
-		"LrnNowStdDev": "Standard deviation of MinusCycle.",
-		"LrnNowMean":   "Mean LearnNow cycle, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
+		"MinusCycMean":   "Mean MinusCycle, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
+		"MinusCycStdDev": "Standard deviation of MinusCycle.",
+		"EnabledCyc":     "Mean LearnEnabled cycle, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
+		"LearnNow":       "Mean LearnNow cycle, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
 	}
 	levels := make([]enums.Enum, 10) // should be enough
 	levels[0] = trialLevel
@@ -760,6 +761,8 @@ func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLev
 						switch si {
 						case 2:
 							ly.UnitValuesSampleTensor(anow, "LearnNow", di)
+						case 3:
+							ly.UnitValuesSampleTensor(anow, "LearnEnabled", di)
 						default:
 							ly.UnitValuesSampleTensor(anow, "MinusCycle", di)
 						}

@@ -759,8 +759,7 @@ func (ly *LayerParams) PostSpike(ctx *Context, lpi, pi, ni, di uint32) {
 	Neurons[ni, di, ActInt] += intdt * (Neurons[ni, di, Act] - Neurons[ni, di, ActInt])
 	if ly.Type != IOLayer { // uses bins for itself
 		NeuronTraceIncrement(Neurons[ni, di, CaSyn], CaSynTrace, ctx.CyclesTotal, ni, di)
-		lrn := Neurons[ni, di, CaDiff] * Neurons[ni, di, RLRate] * Neurons[ni, di, ETrLearn]
-		NeuronTraceIncrement(lrn, RecvLearnTrace, ctx.CyclesTotal, ni, di)
+		ly.Learn.Timing.LearnRecvTrace(ctx, ni, di)
 	}
 }
 

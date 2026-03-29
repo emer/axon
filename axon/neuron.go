@@ -227,9 +227,19 @@ const (
 	// peak was detected.
 	MinusCycle
 
+	// LearnEnabled is the absolute cycle (ms, CyclesTotal) when the receiving
+	// neuron is above threshold for learning.
+	// For neocortex, this is after a minimum number of cycles after the
+	// minus phase peak [MinusCycle], or at the end of theta cycle
+	// if not using continuous time peak-based learning timing.
+	// See [LearnTimingParams].
+	LearnEnabled
+
 	// LearnNow is the absolute cycle (ms, CyclesTotal) when the receiving
-	// neuron learns. For neocortex, either at end of theta cycle or based
-	// on timing computed from [MinusCycle] per [LearnTimingParams].
+	// neuron actually learns. See [LearnEnabled] for enabling conditions,
+	// and [LearnTimingParams] for parameters. For neocortex, this can be
+	// based on going back from the subsequent minus phase peak, after
+	// being enabled.
 	LearnNow
 
 	// RLRate is recv-unit based learning rate multiplier, reflecting the sigmoid
@@ -654,9 +664,10 @@ var NeuronVarProps = map[string]string{
 	"TimeCycle": `cat:"Learn" auto-scale:"+"`,
 	"PeakUps":   `cat:"Learn" auto-scale:"+"`,
 
-	"MinusPeak":  `cat:"Learn"`,
-	"MinusCycle": `cat:"Learn" auto-scale:"+"`,
-	"LearnNow":   `cat:"Learn" auto-scale:"+"`,
+	"MinusPeak":    `cat:"Learn"`,
+	"MinusCycle":   `cat:"Learn" auto-scale:"+"`,
+	"LearnEnabled": `cat:"Learn" auto-scale:"+"`,
+	"LearnNow":     `cat:"Learn" auto-scale:"+"`,
 
 	"RLRate":   `cat:"Learn" auto-scale:"+"`,
 	"ETrace":   `cat:"Learn"`,

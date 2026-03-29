@@ -28,7 +28,7 @@ const (
 
 	// NeuronTraceThetas is the number of theta cycles worth of values to store
 	// in the NeuronTraces per-neuron variable.
-	NeuronTraceThetas = 2
+	NeuronTraceThetas = 3
 )
 
 // Context contains all of the global context state info
@@ -246,6 +246,14 @@ func NeuronTraceIncrement(incr float32, trVar NeuronTracesVars, cycle int32, ni,
 	} else {
 		Neurons.SetAdd(incn, int(ni), int(di), int(NeuronTraces+NeuronVars(bin)))
 	}
+}
+
+// NeuronTraceSet writes given increment to the [NeuronTraces]
+// for given absolute cycle (CyclesTotal), for given [NeuronTracesVars] variable.
+// Always just sets the value directly, so the last one will be final.
+func NeuronTraceSet(incr float32, trVar NeuronTracesVars, cycle int32, ni, di uint32) {
+	bin := NeuronTraceForCycle(trVar, cycle)
+	Neurons.Set(incr, int(ni), int(di), int(NeuronTraces+NeuronVars(bin)))
 }
 
 //gosl:end
