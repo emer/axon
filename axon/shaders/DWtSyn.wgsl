@@ -996,7 +996,7 @@ fn PathParams_DWtSynCortex(pt: PathParams, ctx: Context, rlay: LayerParams, syni
 	var learnNow = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnNow))]);
 	var winSt = ctx.CyclesTotal - ctx.ThetaCycles;
 	var winEd = ctx.CyclesTotal;
-	if (learnNow < winSt || learnNow > winEd) { // not in this time window
+	if (learnNow == 0 || learnNow < winSt || learnNow > winEd) { // not in this time window
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));return;
 	}

@@ -760,9 +760,9 @@ func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLev
 					for di := range ndata {
 						switch si {
 						case 2:
-							ly.UnitValuesSampleTensor(anow, "LearnNow", di)
-						case 3:
 							ly.UnitValuesSampleTensor(anow, "LearnEnabled", di)
+						case 3:
+							ly.UnitValuesSampleTensor(anow, "LearnNow", di)
 						default:
 							ly.UnitValuesSampleTensor(anow, "MinusCycle", di)
 						}

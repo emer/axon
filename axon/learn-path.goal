@@ -148,7 +148,7 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, rlay *LayerParams, syni, si, ri
 	learnNow := int32(Neurons[ri, di, LearnNow])
 	winSt := ctx.CyclesTotal - ctx.ThetaCycles
 	winEd := ctx.CyclesTotal
-	if learnNow < winSt || learnNow > winEd { // not in this time window
+	if learnNow == 0 || learnNow < winSt || learnNow > winEd { // not in this time window
 		SynapseTraces[syni, di, DTr] = 0.0
 		SynapseTraces[syni, di, DiDWt] = 0.0
 		return
@@ -165,6 +165,10 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, rlay *LayerParams, syni, si, ri
 	if syCa > pt.Learn.DWt.LearnThr { // todo: elminate?
 		bi := NeuronTraceForCycle(RecvLearnTrace, learnNow)
 		rLrn := Neurons[ri, di, NeuronTraces + NeuronVars(bi)] // TimeDiff * RLRate * ETrLearn
+		// if ri == 28 && si == 0 {
+		// 	st := (ctx.CyclesTotal / ctx.ThetaCycles) * ctx.ThetaCycles
+		// 	fmt.Println("userecv:", learnNow-st, ctx.CyclesTotal-st, rLrn)
+		// }
 		// rLrn := Neurons[ri, di, CaDiff] * Neurons[ri, di, RLRate] * Neurons[ri, di, ETrLearn] 
 		// rLrn *= Neurons[ri, di, RLRate] // * Neurons[ri, di, ETrLearn] 
 		dwt = tr * rLrn
