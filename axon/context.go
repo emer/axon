@@ -223,14 +223,21 @@ func (ctx *Context) NSynCaWeights() int32 {
 	return (ctx.MinusCycles + ctx.PlusCycles) / NeuronTraceCycles
 }
 
-// NeuronTraceForCycle returns the [NeuronTraces] bin number for given CyclesTotal
+// NeuronTraceIndex returns the [NeuronTraces] index for given CyclesTotal
 // cycle index, for given [NeuronTracesVars] variable.
 // [NeuronTraceThetas] ThetaCycles worth of data are stored at a [NeuronTraceCycles]
 // resolution, allowing learning to use any subset of data within that window.
-func NeuronTraceForCycle(trVar NeuronTracesVars, cycle int32) int32 {
+func NeuronTraceIndex(trVar NeuronTracesVars, cycle int32) int32 {
 	binsPer := NetworkIxs[0].NNeuronTraceBins
 	cbin := (cycle / NeuronTraceCycles) % binsPer
 	return int32(trVar)*binsPer + cbin
+}
+
+// NeuronTraceBinIndex returns the [NeuronTraces] index for given bin number,
+// for given [NeuronTracesVars] variable.
+func NeuronTraceBinIndex(trVar NeuronTracesVars, bin int32) int32 {
+	binsPer := NetworkIxs[0].NNeuronTraceBins
+	return int32(trVar)*binsPer + bin
 }
 
 // NeuronTraceIncrement writes given increment to the [NeuronTraces]
@@ -239,7 +246,7 @@ func NeuronTraceForCycle(trVar NeuronTracesVars, cycle int32) int32 {
 // Given value is divided by NeuronTraceCycles to keep it normalized
 // as an average across the NeuronTraceCycles window.
 func NeuronTraceIncrement(incr float32, trVar NeuronTracesVars, cycle int32, ni, di uint32) {
-	bin := NeuronTraceForCycle(trVar, cycle)
+	bin := NeuronTraceIndex(trVar, cycle)
 	incn := incr / float32(NeuronTraceCycles)
 	if (cycle % NeuronTraceCycles) == 0 {
 		Neurons.Set(incn, int(ni), int(di), int(NeuronTraces+NeuronVars(bin)))
@@ -248,12 +255,19 @@ func NeuronTraceIncrement(incr float32, trVar NeuronTracesVars, cycle int32, ni,
 	}
 }
 
-// NeuronTraceSet writes given increment to the [NeuronTraces]
+// NeuronTraceSet writes given value to the [NeuronTraces] variable
 // for given absolute cycle (CyclesTotal), for given [NeuronTracesVars] variable.
-// Always just sets the value directly, so the last one will be final.
-func NeuronTraceSet(incr float32, trVar NeuronTracesVars, cycle int32, ni, di uint32) {
-	bin := NeuronTraceForCycle(trVar, cycle)
-	Neurons.Set(incr, int(ni), int(di), int(NeuronTraces+NeuronVars(bin)))
+// Always sets the value directly, so the last one will be final.
+func NeuronTraceSet(val float32, trVar NeuronTracesVars, cycle int32, ni, di uint32) {
+	bin := NeuronTraceIndex(trVar, cycle)
+	Neurons.Set(val, int(ni), int(di), int(NeuronTraces+NeuronVars(bin)))
+}
+
+// NeuronTraceSetBin writes given value to the [NeuronTraces] variable
+// for given bin number, for given [NeuronTracesVars] variable.
+func NeuronTraceSetBin(val float32, trVar NeuronTracesVars, cycle int32, ni, di uint32) {
+	bin := NeuronTraceIndex(trVar, cycle)
+	Neurons.Set(val, int(ni), int(di), int(NeuronTraces+NeuronVars(bin)))
 }
 
 //gosl:end

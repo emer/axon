@@ -535,10 +535,14 @@ fn Context_ItemIndex(ctx: Context, idx: u32) -> u32 {
 fn Context_DataIndex(ctx: Context, idx: u32) -> u32 {
 	return idx % ctx.NData;
 }
-fn NeuronTraceForCycle(trVar: NeuronTracesVars, cycle: i32) -> i32 {
+fn NeuronTraceIndex(trVar: NeuronTracesVars, cycle: i32) -> i32 {
 	var binsPer = NetworkIxs[0].NNeuronTraceBins;
 	var cbin = (cycle / NeuronTraceCycles) % binsPer;
 return i32(trVar)*binsPer + cbin;
+}
+fn NeuronTraceBinIndex(trVar: NeuronTracesVars, bin: i32) -> i32 {
+	var binsPer = NetworkIxs[0].NNeuronTraceBins;
+return i32(trVar)*binsPer + bin;
 }
 
 //////// import: "deep-layer.go"
@@ -938,7 +942,7 @@ fn PathParams_SynCa(pt: PathParams, ctx: Context, si: u32,ri: u32,di: u32, syCaP
 	var stcyc = edcyc - (ctx.MinusCycles + ctx.PlusCycles);
 	var nbins = (edcyc - stcyc) / NeuronTraceCycles;
 	var cadSt = GvSynCaWts + GlobalScalarVars(nbins);
-	var b0 = NeuronTraceForCycle(CaSynTrace, stcyc);
+	var b0 = NeuronTraceIndex(CaSynTrace, stcyc);
 	var r0 = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(NeuronTraces + NeuronVars(b0)))];
 	var s0 = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(NeuronTraces + NeuronVars(b0)))];
 	var sp = r0 * s0;
@@ -947,12 +951,12 @@ fn PathParams_SynCa(pt: PathParams, ctx: Context, si: u32,ri: u32,di: u32, syCaP
 	var syn20 = pt.Learn.DWt.SynCa20 == 1;
 	for (var i = i32(1);
 	 i < nbins; i++) {
-		var bi = NeuronTraceForCycle(CaSynTrace, stcyc+i*NeuronTraceCycles);
+		var bi = NeuronTraceIndex(CaSynTrace, stcyc+i*NeuronTraceCycles);
 		var rt = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(NeuronTraces + NeuronVars(bi)))];
 		var st = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(NeuronTraces + NeuronVars(bi)))];
 		var sp = f32(0);
 		if (syn20) {
-			var bm = NeuronTraceForCycle(CaSynTrace, stcyc+(i-1)*NeuronTraceCycles);
+			var bm = NeuronTraceIndex(CaSynTrace, stcyc+(i-1)*NeuronTraceCycles);
 			var rt1 = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(NeuronTraces + NeuronVars(bm)))];
 			var st1 = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(NeuronTraces + NeuronVars(bm)))];
 			sp = 0.25 * (rt + rt1) * (st + st1);
@@ -970,7 +974,7 @@ fn PathParams_SynCaTotal(pt: PathParams, ctx: Context, si: u32,ri: u32,di: u32, 
 	var stcyc = edcyc - ncyc;
 	var sum = f32(0);
 	for (var i=0; i<nbins; i++) {
-		var bi = NeuronTraceForCycle(CaSynTrace, stcyc+i*NeuronTraceCycles);
+		var bi = NeuronTraceIndex(CaSynTrace, stcyc+i*NeuronTraceCycles);
 		var rc = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(NeuronTraces + NeuronVars(bi)))];
 		var sc = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(NeuronTraces + NeuronVars(bi)))];
 		sum += rc * sc;
@@ -1006,7 +1010,7 @@ fn PathParams_DWtSynCortex(pt: PathParams, ctx: Context, rlay: LayerParams, syni
 	SynapseTracesSet(tr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 	var dwt = f32(0);
 	if (syCa > pt.Learn.DWt.LearnThr) { // todo: elminate?
-		var bi = NeuronTraceForCycle(RecvLearnTrace, learnNow);
+		var bi = NeuronTraceIndex(RecvLearnTrace, learnNow);
 		var rLrn = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // TimeDiff * RLRate * ETrLearn
 		u32(ri), u32(di), u32(NeuronTraces + NeuronVars(bi)))];
 		dwt = tr * rLrn;
@@ -1018,7 +1022,7 @@ fn PathParams_DWtSynCortexEnabled(pt: PathParams, ctx: Context, rlay: LayerParam
 	var enabled = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnEnabled))]);
 	var winSt = ctx.CyclesTotal - 2*ctx.ThetaCycles;
 	var winEd = ctx.CyclesTotal - ctx.ThetaCycles;
-	if (enabled > learnNow || learnNow < winSt || learnNow > winEd) { // not in this time window
+	if (learnNow == 0 || enabled > learnNow || learnNow < winSt || learnNow > winEd) { // not in this time window
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));return;
 	}
@@ -1028,7 +1032,8 @@ fn PathParams_DWtSynCortexEnabled(pt: PathParams, ctx: Context, rlay: LayerParam
 	SynapseTracesSet(tr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 	var dwt = f32(0);
 	if (syCa > pt.Learn.DWt.LearnThr) { // todo: elminate?
-		var bi = learnNow - enabled; // guaranteed to be in bounds here
+		var bin = learnNow - enabled; // guaranteed to be in bounds here
+		var bi = NeuronTraceBinIndex(RecvLearnTrace, bin);
 		var rLrn = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // TimeDiff * RLRate * ETrLearn
 		u32(ri), u32(di), u32(NeuronTraces + NeuronVars(bi)))];
 		dwt = tr * rLrn;
@@ -1269,7 +1274,7 @@ fn PathParams_DWtCNIO(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32
 	var nbins = rlay.Nuclear.SendTimeBins;
 	var sact = f32(0);
 	for (var i=0; i<nbins; i++) {
-		var bi = NeuronTraceForCycle(CaSynTrace, stcyc+i*NeuronTraceCycles);
+		var bi = NeuronTraceIndex(CaSynTrace, stcyc+i*NeuronTraceCycles);
 		sact += Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(NeuronTraces + NeuronVars(bi)))];
 	}
 	var dwt = sact;

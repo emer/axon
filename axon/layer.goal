@@ -527,7 +527,7 @@ func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
 			return math32.NaN()
 		}
 		vi := (varIndex - int(NeuronTraces)) / NNeuronTraces
-		bin := NeuronTraceForCycle(NeuronTracesVars(vi), int32(bi * NeuronTraceCycles))
+		bin := NeuronTraceIndex(NeuronTracesVars(vi), int32(bi * NeuronTraceCycles))
 		return Neurons[ni, di, int(NeuronTraces) + int(bin)]
 	}
 	return math32.NaN()

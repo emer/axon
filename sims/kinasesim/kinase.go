@@ -176,7 +176,7 @@ func (ss *Sim) ConfigKinase() {
 	nbins := ss.Config.Run.NCaBins
 	ss.CaPWts = make([]float32, nbins)
 	ss.CaDWts = make([]float32, nbins)
-	kinase.CaBinWts(ss.Config.Run.PlusCycles, ss.CaPWts, ss.CaDWts)
+	kinase.SynCaWts(ss.Config.Run.PlusCycles, ss.CaPWts, ss.CaDWts)
 	ss.Kinase.Config(nbins)
 }
 

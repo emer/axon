@@ -668,13 +668,17 @@ fn Context_ItemIndex(ctx: Context, idx: u32) -> u32 {
 fn Context_DataIndex(ctx: Context, idx: u32) -> u32 {
 	return idx % ctx.NData;
 }
-fn NeuronTraceForCycle(trVar: NeuronTracesVars, cycle: i32) -> i32 {
+fn NeuronTraceIndex(trVar: NeuronTracesVars, cycle: i32) -> i32 {
 	var binsPer = NetworkIxs[0].NNeuronTraceBins;
 	var cbin = (cycle / NeuronTraceCycles) % binsPer;
 return i32(trVar)*binsPer + cbin;
 }
+fn NeuronTraceBinIndex(trVar: NeuronTracesVars, bin: i32) -> i32 {
+	var binsPer = NetworkIxs[0].NNeuronTraceBins;
+return i32(trVar)*binsPer + bin;
+}
 fn NeuronTraceIncrement(incr: f32, trVar: NeuronTracesVars, cycle: i32, ni: u32,di: u32) {
-	var bin = NeuronTraceForCycle(trVar, cycle);
+	var bin = NeuronTraceIndex(trVar, cycle);
 	var incn = incr / f32(NeuronTraceCycles);
 	if ((cycle % NeuronTraceCycles) == 0) {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(NeuronTraces + NeuronVars(bin)))] = incn;
@@ -682,9 +686,9 @@ fn NeuronTraceIncrement(incr: f32, trVar: NeuronTracesVars, cycle: i32, ni: u32,
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(NeuronTraces + NeuronVars(bin)))] += incn;
 	}
 }
-fn NeuronTraceSet(incr: f32, trVar: NeuronTracesVars, cycle: i32, ni: u32,di: u32) {
-	var bin = NeuronTraceForCycle(trVar, cycle);
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(NeuronTraces + NeuronVars(bin)))] = incr;
+fn NeuronTraceSet(val: f32, trVar: NeuronTracesVars, cycle: i32, ni: u32,di: u32) {
+	var bin = NeuronTraceIndex(trVar, cycle);
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(NeuronTraces + NeuronVars(bin)))] = val;
 }
 
 //////// import: "deep-layer.go"
@@ -1075,9 +1079,13 @@ fn LearnTimingParams_LearnRecvTrace(lt: LearnTimingParams, ctx: Context, ni: u32
 		}return;
 	}
 	var enabled = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnEnabled))]);
+	if (enabled == 0) {
+		return;
+	}
 	var bin = ctx.CyclesTotal - enabled;
 	if (bin >= 0 && bin < 60) { // 60 is min for 3 * 20 bins
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(i32(NeuronTraces + NeuronVars(bin))))] = lrn;
+		var bi = NeuronTraceBinIndex(RecvLearnTrace, bin);
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(i32(NeuronTraces + NeuronVars(bi))))] = lrn;
 	}
 }
 struct TrgAvgActParams {
@@ -1493,7 +1501,7 @@ fn LayerParams_IOLearn(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,d
 	nbins = max(1, nbins-1);
 	var stcyc = ctx.CyclesTotal - ly.IO.TimeOff;
 	for (var i=0; i<nbins; i++) {
-		var bi = NeuronTraceForCycle(CaSynTrace, stcyc+i*NeuronTraceCycles);
+		var bi = NeuronTraceIndex(CaSynTrace, stcyc+i*NeuronTraceCycles);
 		oldInhib += Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(NeuronTraces + NeuronVars(bi)))];
 	}
 	oldInhib /= f32(nbins);

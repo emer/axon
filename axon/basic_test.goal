@@ -1647,6 +1647,44 @@ func TestSendGatherIndexes(t *testing.T) {
 	}
 }
 
+func TestNeuronTraces(t *testing.T) {
+	nt := newTestNet(1)
+	ctx := nt.Context()
+	nbins := ctx.ThetaCycles / NeuronTraceCycles
+	mx := ctx.NNeuronTraces()
+	assert.Equal(t, mx, NetworkIxs[0].NNeuronTraces)
+	for _, ly := range nt.Layers {
+		for lni := range ly.NNeurons {
+			ni := ly.NeurStIndex + lni
+			for di := range ctx.NData {
+				for theta := range NeuronTraceThetas {
+					for bi := range nbins {
+						bin := theta*NeuronTraceCycles + int(bi)
+						assert.Less(t, int32(bin), mx)
+						vl := ni*10000 + di*1000 + uint32(bin)
+						Neurons.Set(float32(vl), int(ni), int(di), int(NeuronTraces+NeuronVars(bin)))
+					}
+				}
+			}
+		}
+	}
+	for _, ly := range nt.Layers {
+		for lni := range ly.NNeurons {
+			ni := ly.NeurStIndex + lni
+			for di := range ctx.NData {
+				for theta := range NeuronTraceThetas {
+					for bi := range nbins {
+						bin := theta*NeuronTraceCycles + int(bi)
+						vl := ni*10000 + di*1000 + uint32(bin)
+						nv := Neurons.Value(int(ni), int(di), int(NeuronTraces+NeuronVars(bin)))
+						assert.Equal(t, vl, uint32(nv))
+					}
+				}
+			}
+		}
+	}
+}
+
 func TestRubiconGiveUp(t *testing.T) {
 	t.Skip("")
 	gp := &GiveUpParams{}

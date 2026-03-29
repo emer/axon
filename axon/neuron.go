@@ -527,7 +527,7 @@ const (
 	// in time bins of [NeuronTraceCycles] across two theta cycles,
 	// for computing synaptic calcium efficiently. Each bin = Sum(CaSyn / NeuronTraceCycles).
 	// Total number of bins = 2 * [Context.ThetaCycles] / NeuronTraceCycles.
-	// Use [NeuronTraceForCycle] to access.
+	// Use [NeuronTraceIndex] to access.
 	// Synaptic calcium is integrated from sender * receiver NeuronTraces values,
 	// with weights for CaP vs CaD that reflect their faster vs. slower time constants,
 	// respectively. CaD is used for the credit assignment factor, while CaP - CaD is

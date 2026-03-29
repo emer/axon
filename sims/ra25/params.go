@@ -28,7 +28,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.Timing.NUps = 18
 				ly.Learn.Timing.MaxUpGap = 2
 				ly.Learn.Timing.EnableCycles = 140
-				ly.Learn.Timing.Cycles = 20
+				ly.Learn.Timing.Cycles = -30 // -30 or +30
 				ly.Learn.Timing.DecayTau = 10
 				ly.Learn.Timing.TimeDiffTau = 4
 

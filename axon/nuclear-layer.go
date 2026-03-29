@@ -223,7 +223,7 @@ func (ly *LayerParams) IOLearn(ctx *Context, lpi, pi, ni, di uint32) {
 	nbins = max(1, nbins-1)
 	stcyc := ctx.CyclesTotal - ly.IO.TimeOff
 	for i := range nbins {
-		bi := NeuronTraceForCycle(CaSynTrace, stcyc+i*NeuronTraceCycles)
+		bi := NeuronTraceIndex(CaSynTrace, stcyc+i*NeuronTraceCycles)
 		oldInhib += Neurons.Value(int(ni), int(di), int(NeuronTraces+NeuronVars(bi)))
 	}
 	oldInhib /= float32(nbins)

@@ -10,7 +10,7 @@ import (
 func init() {
 	Symbols["github.com/emer/axon/v2/kinase/kinase"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"CaBinWts": reflect.ValueOf(kinase.CaBinWts),
+		"SynCaWts": reflect.ValueOf(kinase.SynCaWts),
 
 		// type definitions
 		"CaDtParams":    reflect.ValueOf((*kinase.CaDtParams)(nil)),

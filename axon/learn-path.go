@@ -72,7 +72,7 @@ func (pt *PathParams) SynCa(ctx *Context, si, ri, di uint32, syCaP, syCaD *float
 	nbins := (edcyc - stcyc) / NeuronTraceCycles
 	cadSt := GvSynCaWts + GlobalScalarVars(nbins)
 
-	b0 := NeuronTraceForCycle(CaSynTrace, stcyc)
+	b0 := NeuronTraceIndex(CaSynTrace, stcyc)
 
 	// T0
 	r0 := Neurons.Value(int(ri), int(di), int(NeuronTraces+NeuronVars(b0)))
@@ -84,12 +84,12 @@ func (pt *PathParams) SynCa(ctx *Context, si, ri, di uint32, syCaP, syCaD *float
 	syn20 := pt.Learn.DWt.SynCa20.IsTrue()
 
 	for i := int32(1); i < nbins; i++ {
-		bi := NeuronTraceForCycle(CaSynTrace, stcyc+i*NeuronTraceCycles)
+		bi := NeuronTraceIndex(CaSynTrace, stcyc+i*NeuronTraceCycles)
 		rt := Neurons.Value(int(ri), int(di), int(NeuronTraces+NeuronVars(bi)))
 		st := Neurons.Value(int(si), int(di), int(NeuronTraces+NeuronVars(bi)))
 		sp := float32(0)
 		if syn20 {
-			bm := NeuronTraceForCycle(CaSynTrace, stcyc+(i-1)*NeuronTraceCycles)
+			bm := NeuronTraceIndex(CaSynTrace, stcyc+(i-1)*NeuronTraceCycles)
 			rt1 := Neurons.Value(int(ri), int(di), int(NeuronTraces+NeuronVars(bm)))
 			st1 := Neurons.Value(int(si), int(di), int(NeuronTraces+NeuronVars(bm)))
 			sp = 0.25 * (rt + rt1) * (st + st1)
@@ -112,7 +112,7 @@ func (pt *PathParams) SynCaTotal(ctx *Context, si, ri, di uint32, edcyc, ncyc in
 
 	sum := float32(0)
 	for i := range nbins {
-		bi := NeuronTraceForCycle(CaSynTrace, stcyc+i*NeuronTraceCycles)
+		bi := NeuronTraceIndex(CaSynTrace, stcyc+i*NeuronTraceCycles)
 		rc := Neurons.Value(int(ri), int(di), int(NeuronTraces+NeuronVars(bi)))
 		sc := Neurons.Value(int(si), int(di), int(NeuronTraces+NeuronVars(bi)))
 		sum += rc * sc
@@ -165,15 +165,12 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, rlay *LayerParams, syni, si, ri
 
 	dwt := float32(0)
 	if syCa > pt.Learn.DWt.LearnThr { // todo: elminate?
-		bi := NeuronTraceForCycle(RecvLearnTrace, learnNow)
+		bi := NeuronTraceIndex(RecvLearnTrace, learnNow)
 		rLrn := Neurons.Value(int(ri), int(di), int(NeuronTraces+NeuronVars(bi))) // TimeDiff * RLRate * ETrLearn
 		//	if ri == 28 && si == 0 {
 		//		st := (ctx.CyclesTotal / ctx.ThetaCycles) * ctx.ThetaCycles
 		//		fmt.Println("userecv:", learnNow-st, ctx.CyclesTotal-st, rLrn)
 		//	}
-		//
-		// rLrn := Neurons[ri, di, CaDiff] * Neurons[ri, di, RLRate] * Neurons[ri, di, ETrLearn]
-		// rLrn *= Neurons[ri, di, RLRate] // * Neurons[ri, di, ETrLearn]
 		dwt = tr * rLrn
 	}
 	pt.DWtSynSoftBound(ctx, syni, di, dwt)
@@ -185,7 +182,7 @@ func (pt *PathParams) DWtSynCortexEnabled(ctx *Context, rlay *LayerParams, syni,
 	enabled := int32(Neurons.Value(int(ri), int(di), int(LearnEnabled)))
 	winSt := ctx.CyclesTotal - 2*ctx.ThetaCycles
 	winEd := ctx.CyclesTotal - ctx.ThetaCycles
-	if enabled > learnNow || learnNow < winSt || learnNow > winEd { // not in this time window
+	if learnNow == 0 || enabled > learnNow || learnNow < winSt || learnNow > winEd { // not in this time window
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DTr))
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DiDWt))
 		return
@@ -200,10 +197,13 @@ func (pt *PathParams) DWtSynCortexEnabled(ctx *Context, rlay *LayerParams, syni,
 
 	dwt := float32(0)
 	if syCa > pt.Learn.DWt.LearnThr { // todo: elminate?
-		bi := learnNow - enabled                                                  // guaranteed to be in bounds here
+		bin := learnNow - enabled // guaranteed to be in bounds here
+		bi := NeuronTraceBinIndex(RecvLearnTrace, bin)
 		rLrn := Neurons.Value(int(ri), int(di), int(NeuronTraces+NeuronVars(bi))) // TimeDiff * RLRate * ETrLearn
-		// rLrn := Neurons[ri, di, CaDiff] * Neurons[ri, di, RLRate] * Neurons[ri, di, ETrLearn]
-		// rLrn *= Neurons[ri, di, RLRate] // * Neurons[ri, di, ETrLearn]
+		//	if ri == 28 {
+		//		st := (ctx.CyclesTotal / ctx.ThetaCycles) * ctx.ThetaCycles
+		//		fmt.Println("userecv:", bin, ctx.CyclesTotal-st, enabled-st, learnNow-st, rLrn)
+		//	}
 		dwt = tr * rLrn
 	}
 	pt.DWtSynSoftBound(ctx, syni, di, dwt)
@@ -540,7 +540,7 @@ func (pt *PathParams) DWtCNIO(ctx *Context, rlay *LayerParams, syni, si, ri, lpi
 	nbins := rlay.Nuclear.SendTimeBins
 	sact := float32(0)
 	for i := range nbins {
-		bi := NeuronTraceForCycle(CaSynTrace, stcyc+i*NeuronTraceCycles)
+		bi := NeuronTraceIndex(CaSynTrace, stcyc+i*NeuronTraceCycles)
 		sact += Neurons.Value(int(si), int(di), int(NeuronTraces+NeuronVars(bi)))
 	}
 	// todo: rlrate? Neurons[ri, di, RLRate]

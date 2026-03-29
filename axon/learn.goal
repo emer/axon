@@ -141,22 +141,15 @@ func (lc *LearnCaParams) ETrace(ctx *Context, ni, di uint32, cad float32) {
 	Neurons[ni, di, ETrLearn] = etLrn
 }
 
-// todo: detect minus peak, go forward at least MinCycles, see if it
-// goes over threshold according to CaD. If not, reset.
-// If yes, then this recv neuron is marked as prepared to learn.
-// LearnEnabled = cycle at which that happens.
-// THEN, use the Recv bins *per cycle* from then forward, to store
-// recv values.
-// finally, on the *next* minus phase, if LearnEnabled, then
-// trigger LearnNow at minus - Cycles.
-// Compare with case where LearnNow is set and on that +1 you grab
-// the recv values.
-
 // LearnTimingParams parameterizes the timing of Ca-driven Kinase
 // algorithm learning, based on detecting the first major peak of
 // differential fast - slow activity associated with the start of
-// the minus phases: [TimePeak]. Learning occurs a fixed number of
-// Cycles (ms) offset from the peak.
+// the minus phases: [MinusPeak]. Learning is enabled if CaD is above 
+// threshold a given number of Cycles (ms) after that peak.
+// Learning can actually occur a given number of cycles after that,
+// or at a negative offset from the _subsequent_ minus peak, which 
+// should follow the subsequent plus phase, and thus work better in
+// more variable timing contexts.
 type LearnTimingParams struct {
 
 	// SynCaCycles is the number of cycles over which to integrate the synaptic
@@ -308,9 +301,6 @@ func (lt *LearnTimingParams) LearnTimingPeak(ctx *Context, timeDiff float32, ni,
 	return false
 }
 
-// todo: need separate dwt methods for different cases,
-// need to grab values.
-
 // LearnTiming determines whether it is time to learn, for given neuron.
 // returns true if just triggered learning.
 func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
@@ -417,18 +407,22 @@ func (lt *LearnTimingParams) LearnRecvTrace(ctx *Context, ni, di uint32) {
 	learnNow := int32(Neurons[ni, di, LearnNow])
 	if lt.Cycles >= 0 { // learn immediately after enabled
 		if learnNow > 0 && ctx.CyclesTotal == learnNow+1 {
-			// if ni == 28 {
-			// 	st := (ctx.CyclesTotal / ctx.ThetaCycles) * ctx.ThetaCycles
-			// 	fmt.Println("learnrecv:", learnNow-st, ctx.CyclesTotal-st, lrn)
-			// }
 			NeuronTraceSet(lrn, RecvLearnTrace, learnNow, ni, di)
 		}
 		return
 	}
 	enabled := int32(Neurons[ni, di, LearnEnabled])
+	if enabled == 0 {
+		return
+	}
 	bin := ctx.CyclesTotal - enabled 
 	if bin >= 0 && bin < 60 { // 60 is min for 3 * 20 bins
-		Neurons[ni, di, int(NeuronTraces+NeuronVars(bin))] = lrn
+		// if ni == 28 {
+		// 	st := (ctx.CyclesTotal / ctx.ThetaCycles) * ctx.ThetaCycles
+		// 	fmt.Println("learnrecv:", bin, ctx.CyclesTotal-st, enabled-st, lrn)
+		// }
+		bi := NeuronTraceBinIndex(RecvLearnTrace, bin)
+		Neurons[ni, di, int(NeuronTraces+NeuronVars(bi))] = lrn
 	}
 }
 

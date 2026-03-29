@@ -716,10 +716,12 @@ func StatLevelAll(statsDir *tensorfs.Node, srcMode, srcLevel enums.Enum, styleFu
 // parameters, including the MinusCycle (and StdDev) and LearnNow values
 // in the given layers.
 func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel, runLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
-	statNames := []string{"MinusCycMean", "MinusCycStDev", "EnabledCyc", "LearnNow"}
+	statNames := []string{"MinusCycMean", "MinusCycStDev", "MinusCycErrs", "MinusCycMiss", "EnabledCyc", "LearnNow"}
 	statDocs := map[string]string{
 		"MinusCycMean":   "Mean MinusCycle, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
 		"MinusCycStdDev": "Standard deviation of MinusCycle.",
+		"MinusCycErrs":   "MinusCycle values out of standard minus phase range.",
+		"MinusCycMiss":   "MinusCycle misses -- failed to detect within current range.",
 		"EnabledCyc":     "Mean LearnEnabled cycle, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
 		"LearnNow":       "Mean LearnNow cycle, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
 	}
@@ -755,32 +757,47 @@ func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLev
 				}
 				switch levi {
 				case 0:
+					if si == 2 || si == 3 {
+						continue
+					}
 					// note: current lnm + _var is standard reusable unit vals buffer
 					anow := curModeDir.Float64(lnm+"_LearnNow", ly.GetSampleShape().Sizes...)
 					for di := range ndata {
 						switch si {
-						case 2:
-							ly.UnitValuesSampleTensor(anow, "LearnEnabled", di)
-						case 3:
-							ly.UnitValuesSampleTensor(anow, "LearnNow", di)
-						default:
+						case 0, 1:
 							ly.UnitValuesSampleTensor(anow, "MinusCycle", di)
+						case 4:
+							ly.UnitValuesSampleTensor(anow, "LearnEnabled", di)
+						case 5:
+							ly.UnitValuesSampleTensor(anow, "LearnNow", di)
 						}
 						n := anow.Len()
 						anow.SetShapeSizes(n) // set to 1D -- faster
+						msErr := 0
+						msMiss := 0
 						for i := range n {
-							v := int32(anow.Float1D(i)) - stCyc
-							if v == -stCyc || v < -50 {
-								anow.SetFloat1D(nan, i)
+							ov := int32(anow.Float1D(i))
+							v := ov
+							v -= stCyc
+							fv := float64(v)
+							if ov == 0 || v < -50 {
+								fv = nan
 							} else if isiCyc > 0 {
 								if v <= isiCyc {
-									anow.SetFloat1D(float64(v+pmCyc), i)
+									fv = float64(v + pmCyc)
 								} else {
-									anow.SetFloat1D(float64(v-isiCyc), i)
+									fv = float64(v - isiCyc)
 								}
-							} else {
-								anow.SetFloat1D(float64(v), i)
 							}
+							if si == 0 {
+								if math.IsNaN(fv) || fv < 0 {
+									fv = nan
+									msMiss++
+								} else if fv > 100 {
+									msErr++
+								}
+							}
+							anow.SetFloat1D(fv, i)
 						}
 						var stat float64
 						switch si {
@@ -794,6 +811,14 @@ func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLev
 						}
 						curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
 						tsr.AppendRowFloat(stat)
+						if si == 0 {
+							snm := lnm + "_MinusCycErrs"
+							tsr := levelDir.Float64(snm)
+							tsr.AppendRowFloat(float64(msErr))
+							snm = lnm + "_MinusCycMiss"
+							tsr = levelDir.Float64(snm)
+							tsr.AppendRowFloat(float64(msMiss))
+						}
 					}
 				case int(runLevel.Int64() - trialLevel.Int64()):
 					subDir := modeDir.Dir(levels[levi-1].String())

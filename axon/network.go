@@ -460,7 +460,7 @@ func (nt *Network) AllPathScales() string {
 			continue
 		}
 		str += "\nLayer: " + ly.Name + "\n"
-		for i := 0; i < ly.NumRecvPaths(); i++ {
+		for i := range ly.NumRecvPaths() {
 			pt := ly.RecvPaths[i]
 			if pt.Off {
 				continue
@@ -569,7 +569,7 @@ func (nt *Network) ShowAllGlobals() { //types:add
 func (nt *Network) AllGlobalValues(ctrKey string, vals map[string]float32) {
 	nix := nt.NetIxs()
 	md := nix.MaxData
-	for di := uint32(0); di < md; di++ {
+	for di := range md {
 		for vv := GvRew; vv < GvSynCaWts; vv++ {
 			key := fmt.Sprintf("%s  Di: %d\t%s", ctrKey, di, vv.String())
 			vals[key] = GlobalScalars.Value(int(vv), int(di))
@@ -808,8 +808,8 @@ func (nt *Network) Build() error { //types:add
 			ly.Params.Indexes.ShpUnY = int32(shp.DimSize(2))
 			ly.Params.Indexes.ShpUnX = int32(shp.DimSize(3))
 		}
-		for pi := 0; pi < np; pi++ {
-			for di := 0; di < maxData; di++ {
+		for pi := range np {
+			for range maxData {
 				nt.PoolIxs.Set(uint32(li), int(poolIndex+pi), int(PoolLayerIdx))
 			}
 		}
@@ -878,7 +878,7 @@ func (nt *Network) Build() error { //types:add
 			pt.SynStIndex = uint32(syIndex)
 			pt.Params.Index = uint32(ptidx)
 			pt.NSyns = uint32(nsyn)
-			for sni := uint32(0); sni < ly.NNeurons; sni++ {
+			for sni := range ly.NNeurons {
 				si := ly.NeurStIndex + sni
 				scon := pt.SendCon[sni]
 				nt.PathSendCon.Set(scon.Start, int(sendConIndex), int(StartOff))
@@ -910,7 +910,7 @@ func (nt *Network) Build() error { //types:add
 			pt.Params.Indexes.RecvConSt = uint32(recvConIndex)
 			pt.Params.Indexes.RecvSynSt = uint32(syIndex)
 			synSt := pt.Params.Indexes.SynapseSt
-			for rni := uint32(0); rni < ly.NNeurons; rni++ {
+			for rni := range ly.NNeurons {
 				if len(pt.RecvCon) <= int(rni) {
 					continue
 				}
@@ -1159,7 +1159,7 @@ func (nt *Network) NeuronsSlice(vals *[]float32, nrnVar string, di int) {
 	for _, ly := range nt.Layers {
 		varIndex, _ := ly.UnitVarIndex(nrnVar)
 		nn := int(ly.NNeurons)
-		for lni := 0; lni < nn; lni++ {
+		for lni := range nn {
 			(*vals)[i] = ly.UnitValue1D(varIndex, lni, di)
 			i++
 		}
@@ -1286,8 +1286,8 @@ func (nt *Network) DiffFrom(ctx *Context, on *Network, maxDiff int) string {
 	nix := nt.NetIxs()
 	diffs := ""
 	ndif := 0
-	for di := uint32(0); di < ctx.NData; di++ {
-		for ni := uint32(0); ni < nix.NNeurons; ni++ {
+	for di := range ctx.NData {
+		for ni := range nix.NNeurons {
 			for nvar := Spike; nvar < NeuronVarsN; nvar++ {
 				nv := nt.Neurons.Value(int(ni), int(di), int(nvar))
 				ov := on.Neurons.Value(int(ni), int(di), int(nvar))
@@ -1301,7 +1301,7 @@ func (nt *Network) DiffFrom(ctx *Context, on *Network, maxDiff int) string {
 			}
 		}
 	}
-	for ni := uint32(0); ni < nix.NNeurons; ni++ {
+	for ni := range nix.NNeurons {
 		for nvar := ActAvg; nvar < NeuronAvgVarsN; nvar++ {
 			nv := nt.NeuronAvgs.Value(int(ni), int(nvar))
 			ov := on.NeuronAvgs.Value(int(ni), int(nvar))
@@ -1314,7 +1314,7 @@ func (nt *Network) DiffFrom(ctx *Context, on *Network, maxDiff int) string {
 			}
 		}
 	}
-	for si := uint32(0); si < nix.NSyns; si++ {
+	for si := range nix.NSyns {
 		for svar := Wt; svar < SynapseVarsN; svar++ {
 			sv := nt.Synapses.Value(int(si), int(svar))
 			ov := on.Synapses.Value(int(si), int(svar))
@@ -1327,8 +1327,8 @@ func (nt *Network) DiffFrom(ctx *Context, on *Network, maxDiff int) string {
 			}
 		}
 	}
-	for di := uint32(0); di < ctx.NData; di++ {
-		for si := uint32(0); si < nix.NSyns; si++ {
+	for di := range ctx.NData {
+		for si := range nix.NSyns {
 			for svar := Tr; svar < SynapseTraceVarsN; svar++ {
 				sv := nt.SynapseTraces.Value(int(si), int(di), int(svar))
 				ov := on.SynapseTraces.Value(int(si), int(di), int(svar))
