@@ -716,14 +716,16 @@ func StatLevelAll(statsDir *tensorfs.Node, srcMode, srcLevel enums.Enum, styleFu
 // parameters, including the MinusCycle (and StdDev) and LearnNow values
 // in the given layers.
 func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel, runLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
-	statNames := []string{"MinusCycMean", "MinusCycStDev", "MinusCycErrs", "MinusCycMiss", "EnabledCyc", "LearnNow"}
+	statNames := []string{"MinusPeakMean", "MinusPeakStDev", "MinusCycMean", "MinusCycStDev", "MinusCycErrs", "MinusCycMiss", "EnabledCyc", "LearnNow"}
 	statDocs := map[string]string{
-		"MinusCycMean":   "Mean MinusCycle, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
-		"MinusCycStdDev": "Standard deviation of MinusCycle.",
-		"MinusCycErrs":   "MinusCycle values out of standard minus phase range.",
-		"MinusCycMiss":   "MinusCycle misses -- failed to detect within current range.",
-		"EnabledCyc":     "Mean LearnEnabled cycle, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
-		"LearnNow":       "Mean LearnNow cycle, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
+		"MinusPeakMean":   "Mean MinusPeak, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
+		"MinusPeakStdDev": "Standard deviation of MinusPeak.",
+		"MinusCycMean":    "Mean MinusCycle, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
+		"MinusCycStdDev":  "Standard deviation of MinusCycle.",
+		"MinusCycErrs":    "MinusCycle values out of standard minus phase range.",
+		"MinusCycMiss":    "MinusCycle misses -- failed to detect within current range.",
+		"EnabledCyc":      "Mean LearnEnabled cycle, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
+		"LearnNow":        "Mean LearnNow cycle, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
 	}
 	levels := make([]enums.Enum, 10) // should be enough
 	levels[0] = trialLevel
@@ -757,7 +759,7 @@ func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLev
 				}
 				switch levi {
 				case 0:
-					if si == 2 || si == 3 {
+					if si == 4 || si == 5 {
 						continue
 					}
 					// note: current lnm + _var is standard reusable unit vals buffer
@@ -765,17 +767,19 @@ func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLev
 					for di := range ndata {
 						switch si {
 						case 0, 1:
+							ly.UnitValuesSampleTensor(anow, "MinusPeak", di)
+						case 2, 3:
 							ly.UnitValuesSampleTensor(anow, "MinusCycle", di)
-						case 4:
+						case 6:
 							ly.UnitValuesSampleTensor(anow, "LearnEnabled", di)
-						case 5:
+						case 7:
 							ly.UnitValuesSampleTensor(anow, "LearnNow", di)
 						}
 						n := anow.Len()
 						anow.SetShapeSizes(n) // set to 1D -- faster
 						msErr := 0
 						msMiss := 0
-						for i := range n {
+						for i := 2; i < n; i++ {
 							ov := int32(anow.Float1D(i))
 							v := ov
 							v -= stCyc
@@ -789,7 +793,7 @@ func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLev
 									fv = float64(v - isiCyc)
 								}
 							}
-							if si == 0 {
+							if si == 2 {
 								if math.IsNaN(fv) || fv < 0 {
 									fv = nan
 									msMiss++
@@ -801,17 +805,17 @@ func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLev
 						}
 						var stat float64
 						switch si {
-						case 1:
+						case 1, 3:
 							stat = stats.Std(anow).Float1D(0)
 						default:
 							stat = stats.Mean(anow).Float1D(0)
 						}
-						if si != 1 && stat == 0 {
+						if si != 1 && si != 3 && stat == 0 {
 							stat = nan
 						}
 						curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
 						tsr.AppendRowFloat(stat)
-						if si == 0 {
+						if si == 2 {
 							snm := lnm + "_MinusCycErrs"
 							tsr := levelDir.Float64(snm)
 							tsr.AppendRowFloat(float64(msErr))

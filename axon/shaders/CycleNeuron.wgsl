@@ -1653,26 +1653,26 @@ fn LearnTimingParams_LearnTiming(lt: LearnTimingParams, ctx: Context, ni: u32,di
 	var timeSlow = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeSlow))];
 	timeSlow += lt.TimeSlowDt * (timeDiff - timeSlow);
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeSlow))] = timeSlow;
-	var timePeak = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePos))];
+	var timePos = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePos))];
 	var td = timeDiff - timeSlow;
 	if (td <= 0) {
-		timePeak = f32(0);
+		timePos = f32(0);
 	} else {
-		timePeak += f32(1);
+		timePos += f32(1);
 	}
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePos))] = timePeak;
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePos))] = timePos;
 	var enabledThr = lt.EnableCycles + 1;
 	var learnImmed = lt.Cycles >= 0; // LearnNow happens immediately after enabled
 	var minusCyc = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(MinusCycle))]);
 	var gotMinus = minusCyc > 0 && ctx.CyclesTotal-minusCyc <= enabledThr;
 	if (!gotMinus) {
-		if (timePeak < lt.MinusThr) {
+		if (timePos < lt.MinusThr) {
 			return false;
 		}
 		minusCyc = ctx.CyclesTotal;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(MinusCycle))] = f32(minusCyc);
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
-		u32(ni), u32(di), u32(MinusPeak))] = timePeak;
+		u32(ni), u32(di), u32(MinusPeak))] = timePos;
 	}
 	var enabled = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnEnabled))]);
 	var isEnabled = enabled > 0 && ctx.CyclesTotal-enabled <= enabledThr;
@@ -1684,7 +1684,10 @@ fn LearnTimingParams_LearnTiming(lt: LearnTimingParams, ctx: Context, ni: u32,di
 	}
 	if (!isEnabled) {
 		if (ctx.CyclesTotal-minusCyc < lt.EnableCycles) {
-			return false;
+			if (timePos > Neurons[Index3D(TensorStrides[70], TensorStrides[71], // keep track for stats
+			TensorStrides[72], u32(ni), u32(di), u32(MinusPeak))]) {
+				Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(MinusPeak))] = timePos;
+			}return false;
 		}
 		if (lt.Refractory == 1 && learnNow > 0) { // if any learning has happened before
 			if (caD <= lt.LearnThr) { // neuron went off, no longer refractory

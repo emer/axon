@@ -284,14 +284,14 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
 	timeSlow += lt.TimeSlowDt * (timeDiff - timeSlow)
 	Neurons[ni, di, TimeSlow] = timeSlow
 
-	timePeak := Neurons[ni, di, TimePos]
+	timePos := Neurons[ni, di, TimePos]
 	td := timeDiff - timeSlow
 	if td <= 0 {
-		timePeak = 0
+		timePos = 0
 	} else {
-		timePeak += 1
+		timePos += 1
 	}
-	Neurons[ni, di, TimePos] = timePeak
+	Neurons[ni, di, TimePos] = timePos
 	
 	enabledThr := lt.EnableCycles+1
 	learnImmed := lt.Cycles >= 0  // LearnNow happens immediately after enabled
@@ -300,12 +300,12 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
 	minusCyc := int32(Neurons[ni, di, MinusCycle])
 	gotMinus := minusCyc > 0 && ctx.CyclesTotal-minusCyc <= enabledThr
 	if !gotMinus {
-		if timePeak < lt.MinusThr {
+		if timePos < lt.MinusThr {
 			return false
 		}
 		minusCyc = ctx.CyclesTotal
 		Neurons[ni, di, MinusCycle] = float32(minusCyc)
-		Neurons[ni, di, MinusPeak] = timePeak
+		Neurons[ni, di, MinusPeak] = timePos
 	}
 	
 	// we have gotten the minus peak within enabled window
@@ -323,6 +323,9 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
 
 	if !isEnabled {
 		if ctx.CyclesTotal-minusCyc < lt.EnableCycles {
+			if timePos > Neurons[ni, di, MinusPeak] { // keep track for stats
+				Neurons[ni, di, MinusPeak] = timePos
+			}
 			return false
 		}
 		// just now enabled
@@ -378,7 +381,7 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
 
 // LearnRecvTrace records the RecvLearnTrace value for timing-based learning.
 func (lt *LearnTimingParams) LearnRecvTrace(ctx *Context, ni, di uint32) {
-	lrn := Neurons[ni, di, CaDiff] * Neurons[ni, di, RLRate] //* Neurons[ni, di, ETrLearn]
+	lrn := Neurons[ni, di, CaDiff] * Neurons[ni, di, RLRate] * Neurons[ni, di, ETrLearn]
 	if lt.On.IsFalse() {
 		if ctx.Cycle == ctx.ThetaCycles-1 {
 			NeuronTraceSet(lrn, RecvLearnTrace, ctx.CyclesTotal, ni, di)

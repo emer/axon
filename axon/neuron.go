@@ -208,19 +208,22 @@ const (
 	// TimePos when TimeDiff > TimeSlow.
 	TimeSlow
 
-	// TimePos accumulates by 1 when TimeDiff > TimeSlow, i.e., when there is a
+	// TimePos increments by 1 when [TimeDiff] > [TimeSlow], i.e., when there is a
 	// positive deflection in the TimeDiff signal relative to the longer
-	// time-average. When this gets over threshold, the minus phase peak is
-	// detected.
+	// time-average, and resets to 0 otherwise. Thus, it reflects the number of
+	// continuous positive-slope trials in a row.
+	// When this gets over threshold, the minus phase peak is detected.
 	TimePos
 
-	// MinusPeak is the value of the last detected minus-phase peak of [TimeDiff].
+	// MinusPeak is the value of the last detected minus-phase peak of [TimePos],
+	// (this is not just the threshold value that drives peak detection -- it actually
+	// tracks the ultimate maximum value, so the threshold can be adjusted accordingly).
 	// This typically occurs at the onset of the minus phase, and drives
 	// the timing of learning a given number of cycles after that.
 	MinusPeak
 
 	// MinusCycle is the absolute cycle (ms, CyclesTotal) when the minus-phase
-	// peak was detected.
+	// peak was detected, as when [TimePos] got over the minus threshold.
 	MinusCycle
 
 	// LearnEnabled is the absolute cycle (ms, CyclesTotal) when the receiving
@@ -656,9 +659,9 @@ var NeuronVarProps = map[string]string{
 
 	"TimeDiff": `cat:"Learn"`,
 	"TimeSlow": `cat:"Learn"`,
-	"TimePos":  `cat:"Learn"`,
+	"TimePos":  `cat:"Learn" auto-scale:"+"`,
 
-	"MinusPeak":    `cat:"Learn"`,
+	"MinusPeak":    `cat:"Learn" auto-scale:"+"`,
 	"MinusCycle":   `cat:"Learn" auto-scale:"+"`,
 	"LearnEnabled": `cat:"Learn" auto-scale:"+"`,
 	"LearnNow":     `cat:"Learn" auto-scale:"+"`,

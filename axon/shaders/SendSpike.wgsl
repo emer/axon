@@ -1064,8 +1064,7 @@ struct LearnTimingParams {
 	pad: f32,
 }
 fn LearnTimingParams_LearnRecvTrace(lt: LearnTimingParams, ctx: Context, ni: u32,di: u32) {
-	var lrn = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaDiff))] * Neurons[Index3D(TensorStrides[70], TensorStrides[71], //* Neurons[ni, di, ETrLearn]
-	TensorStrides[72], u32(ni), u32(di), u32(RLRate))];
+	var lrn = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaDiff))] * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(RLRate))] * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(ETrLearn))];
 	if (lt.On == 0) {
 		if (ctx.Cycle == ctx.ThetaCycles-1) {
 			NeuronTraceSet(lrn, RecvLearnTrace, ctx.CyclesTotal, ni, di);

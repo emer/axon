@@ -286,14 +286,14 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
 	timeSlow += lt.TimeSlowDt * (timeDiff - timeSlow)
 	Neurons.Set(timeSlow, int(ni), int(di), int(TimeSlow))
 
-	timePeak := Neurons.Value(int(ni), int(di), int(TimePos))
+	timePos := Neurons.Value(int(ni), int(di), int(TimePos))
 	td := timeDiff - timeSlow
 	if td <= 0 {
-		timePeak = 0
+		timePos = 0
 	} else {
-		timePeak += 1
+		timePos += 1
 	}
-	Neurons.Set(timePeak, int(ni), int(di), int(TimePos))
+	Neurons.Set(timePos, int(ni), int(di), int(TimePos))
 
 	enabledThr := lt.EnableCycles + 1
 	learnImmed := lt.Cycles >= 0 // LearnNow happens immediately after enabled
@@ -302,12 +302,12 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
 	minusCyc := int32(Neurons.Value(int(ni), int(di), int(MinusCycle)))
 	gotMinus := minusCyc > 0 && ctx.CyclesTotal-minusCyc <= enabledThr
 	if !gotMinus {
-		if timePeak < lt.MinusThr {
+		if timePos < lt.MinusThr {
 			return false
 		}
 		minusCyc = ctx.CyclesTotal
 		Neurons.Set(float32(minusCyc), int(ni), int(di), int(MinusCycle))
-		Neurons.Set(timePeak, int(ni), int(di), int(MinusPeak))
+		Neurons.Set(timePos, int(ni), int(di), int(MinusPeak))
 	}
 
 	// we have gotten the minus peak within enabled window
@@ -325,6 +325,9 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
 
 	if !isEnabled {
 		if ctx.CyclesTotal-minusCyc < lt.EnableCycles {
+			if timePos > Neurons.Value(int(ni), int(di), int(MinusPeak)) { // keep track for stats
+				Neurons.Set(timePos, int(ni), int(di), int(MinusPeak))
+			}
 			return false
 		}
 		// just now enabled
@@ -380,7 +383,7 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
 
 // LearnRecvTrace records the RecvLearnTrace value for timing-based learning.
 func (lt *LearnTimingParams) LearnRecvTrace(ctx *Context, ni, di uint32) {
-	lrn := Neurons.Value(int(ni), int(di), int(CaDiff)) * Neurons.Value(int(ni), int(di), int(RLRate)) //* Neurons[ni, di, ETrLearn]
+	lrn := Neurons.Value(int(ni), int(di), int(CaDiff)) * Neurons.Value(int(ni), int(di), int(RLRate)) * Neurons.Value(int(ni), int(di), int(ETrLearn))
 	if lt.On.IsFalse() {
 		if ctx.Cycle == ctx.ThetaCycles-1 {
 			NeuronTraceSet(lrn, RecvLearnTrace, ctx.CyclesTotal, ni, di)
