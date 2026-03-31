@@ -828,9 +828,9 @@ struct LearnTimingParams {
 	Cycles: i32,
 	TimeDiffTau: f32,
 	TimeSlowTau: f32,
+	PosThr: f32,
 	TimeDiffDt: f32,
 	TimeSlowDt: f32,
-	pad: f32,
 }
 struct TrgAvgActParams {
 	GiBaseInit: f32,

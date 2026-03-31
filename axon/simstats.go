@@ -762,9 +762,15 @@ func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLev
 					if si == 4 || si == 5 {
 						continue
 					}
+					// todo: Use CaD to filter who should be included by threshold!!
+
 					// note: current lnm + _var is standard reusable unit vals buffer
 					anow := curModeDir.Float64(lnm+"_LearnNow", ly.GetSampleShape().Sizes...)
+					enow := curModeDir.Float64(lnm+"_LearnEnabled", ly.GetSampleShape().Sizes...)
 					for di := range ndata {
+						ly.UnitValuesSampleTensor(enow, "LearnEnabled", di)
+						n := enow.Len()
+						enow.SetShapeSizes(n)
 						switch si {
 						case 0, 1:
 							ly.UnitValuesSampleTensor(anow, "MinusPeak", di)
@@ -775,31 +781,33 @@ func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLev
 						case 7:
 							ly.UnitValuesSampleTensor(anow, "LearnNow", di)
 						}
-						n := anow.Len()
 						anow.SetShapeSizes(n) // set to 1D -- faster
 						msErr := 0
 						msMiss := 0
-						for i := 2; i < n; i++ {
-							ov := int32(anow.Float1D(i))
-							v := ov
-							v -= stCyc
-							fv := float64(v)
-							if ov == 0 || v < -50 {
-								fv = nan
-							} else if isiCyc > 0 {
-								if v <= isiCyc {
-									fv = float64(v + pmCyc)
-								} else {
-									fv = float64(v - isiCyc)
-								}
-							}
-							if si == 2 {
-								if math.IsNaN(fv) || fv < 0 {
+						for i := range n {
+							ov := anow.Float1D(i)
+							fv := ov
+							ei := int32(enow.Float1D(i)) - stCyc
+							iv := int32(ov) - stCyc
+							if si == 2 || si == 3 {
+								if iv < 0 {
 									fv = nan
 									msMiss++
-								} else if fv > 100 {
+								} else if fv > 120 {
 									msErr++
 								}
+							}
+							if math.IsNaN(fv) || enow.Float1D(i) == 0 || ei < 0 {
+								fv = nan // only record enabled neurons that got above threshold!
+							} else if si >= 2 {
+								if isiCyc > 0 {
+									if iv <= isiCyc {
+										iv += pmCyc
+									} else {
+										iv -= isiCyc
+									}
+								}
+								fv = float64(iv)
 							}
 							anow.SetFloat1D(fv, i)
 						}

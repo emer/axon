@@ -175,7 +175,8 @@ type LearnTimingParams struct {
 	// MinusThr is the threshold on [TimePos] to count as start of minus phase,
 	// which is the number of positive deflections of [TimeDiff] relative to the
 	// slower time average [TimeSlow], indicating a consistent change in state.
-	MinusThr float32 `default:"40"`
+	// Set to 0 to use the old peak-finding algorithm.
+	MinusThr float32 `default:"30"`
 
 	// EnableCycles is the number of cycles (ms) relative to the minus phase
 	// peak, [MinusCycles], when [LearnEnabled] is set, if the CaD is above
@@ -198,23 +199,26 @@ type LearnTimingParams struct {
 	// [TimeDiff]
 	TimeSlowTau float32 `default:"40"`
 
+	// PosThr is the threshold for how much larger TimeDiff must be relative to TimeSlow
+	// to count as a positive increment.
+	PosThr float32 `default:"0.002"`
+
 	// Dt is 1/Tau
 	TimeDiffDt float32 `display:"-"`
 
 	// Dt is 1/Tau
 	TimeSlowDt float32 `display:"-"`
-
-	pad float32
 }
 
 func (lt *LearnTimingParams) Defaults() {
 	lt.SynCaCycles = 160
 	lt.LearnThr = 0.1
-	lt.MinusThr = 40
+	lt.MinusThr = 30
 	lt.EnableCycles = 130
 	lt.Cycles = 20
 	lt.TimeDiffTau = 10
 	lt.TimeSlowTau = 40
+	lt.PosThr = 0.002
 	lt.Update()
 }
 
@@ -262,33 +266,40 @@ func (lt *LearnTimingParams) LearnTrialEnd(ctx *Context, ni, di uint32) bool {
 	return false
 }
 
-// todo: TimeDiff goes up immed, then integrate that over longer time frame
-// and then integrate TimeDiff - TimeInteg, only when positive -- when negative
-// it goes back to 0. when that sum exceeds threshold, that is the peak.
-
-// LearnTiming determines whether it is time to learn, for given neuron.
-// returns true if just triggered learning.
-func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
-	if lt.On.IsFalse() {
-		return lt.LearnTrialEnd(ctx, ni, di)
+// LearnTimingPeak is old simpler Peak-based case
+func (lt *LearnTimingParams) LearnTimingPeak(ctx *Context, timeDiff float32, ni, di uint32) bool {
+	enabledThr := lt.EnableCycles - 2
+	minusCyc := int32(Neurons.Value(int(ni), int(di), int(MinusCycle)))
+	gotMinus := minusCyc > 0 && ctx.CyclesTotal-minusCyc <= lt.EnableCycles
+	if gotMinus {
+		return true
 	}
-
-	timeDiff := Neurons.Value(int(ni), int(di), int(TimeDiff))
-	gaDiff := Neurons.Value(int(ni), int(di), int(GaP)) - Neurons.Value(int(ni), int(di), int(GaD))
-	if gaDiff > timeDiff {
-		timeDiff = gaDiff // instant up
-	} else {
-		timeDiff += lt.TimeDiffDt * (math32.Abs(gaDiff) - timeDiff)
+	timePeak := Neurons.Value(int(ni), int(di), int(TimeSlow))
+	peakCyc := int32(Neurons.Value(int(ni), int(di), int(TimePos)))
+	if timeDiff > timePeak {
+		timePeak = timeDiff
+		peakCyc = ctx.CyclesTotal
+		Neurons.Set(timePeak, int(ni), int(di), int(TimeSlow))
+		Neurons.Set(float32(peakCyc), int(ni), int(di), int(TimePos))
 	}
-	Neurons.Set(timeDiff, int(ni), int(di), int(TimeDiff))
+	if ctx.CyclesTotal-peakCyc < enabledThr {
+		return false
+	}
+	Neurons.Set(0.0, int(ni), int(di), int(TimeSlow))
+	Neurons.Set(float32(peakCyc), int(ni), int(di), int(MinusCycle))
+	Neurons.Set(timePeak, int(ni), int(di), int(MinusPeak))
+	return true
+}
 
+// LearnTimingSlowFast is new version
+func (lt *LearnTimingParams) LearnTimingSlowFast(ctx *Context, timeDiff float32, ni, di uint32) bool {
 	timeSlow := Neurons.Value(int(ni), int(di), int(TimeSlow))
 	timeSlow += lt.TimeSlowDt * (timeDiff - timeSlow)
 	Neurons.Set(timeSlow, int(ni), int(di), int(TimeSlow))
 
 	timePos := Neurons.Value(int(ni), int(di), int(TimePos))
 	td := timeDiff - timeSlow
-	if td <= 0 {
+	if td <= lt.PosThr {
 		timePos = 0
 	} else {
 		timePos += 1
@@ -296,8 +307,6 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
 	Neurons.Set(timePos, int(ni), int(di), int(TimePos))
 
 	enabledThr := lt.EnableCycles + 1
-	learnImmed := lt.Cycles >= 0 // LearnNow happens immediately after enabled
-	// otherwise, wait for another minus peak and learn *prior* to that
 
 	minusCyc := int32(Neurons.Value(int(ni), int(di), int(MinusCycle)))
 	gotMinus := minusCyc > 0 && ctx.CyclesTotal-minusCyc <= enabledThr
@@ -309,8 +318,43 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
 		Neurons.Set(float32(minusCyc), int(ni), int(di), int(MinusCycle))
 		Neurons.Set(timePos, int(ni), int(di), int(MinusPeak))
 	}
+	return true
+}
+
+// LearnTiming determines whether it is time to learn, for given neuron.
+// returns true if just triggered learning.
+func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
+	if lt.On.IsFalse() {
+		return lt.LearnTrialEnd(ctx, ni, di)
+	}
+
+	timeDiff := Neurons.Value(int(ni), int(di), int(TimeDiff))
+	gaDiff := math32.Abs(Neurons.Value(int(ni), int(di), int(GaP)) - Neurons.Value(int(ni), int(di), int(GaD)))
+	if gaDiff > timeDiff {
+		timeDiff = gaDiff // instant up
+	} else {
+		timeDiff += lt.TimeDiffDt * (gaDiff - timeDiff)
+	}
+	Neurons.Set(timeDiff, int(ni), int(di), int(TimeDiff))
+
+	gotMinus := false
+	if lt.MinusThr == 0 {
+		gotMinus = lt.LearnTimingPeak(ctx, timeDiff, ni, di)
+	} else {
+		gotMinus = lt.LearnTimingSlowFast(ctx, timeDiff, ni, di)
+	}
+
+	if !gotMinus {
+		return false
+	}
+
+	minusCyc := int32(Neurons.Value(int(ni), int(di), int(MinusCycle)))
 
 	// we have gotten the minus peak within enabled window
+
+	enabledThr := lt.EnableCycles + 1
+	learnImmed := lt.Cycles >= 0 // LearnNow happens immediately after enabled
+	// otherwise, wait for another minus peak and learn *prior* to that
 
 	enabled := int32(Neurons.Value(int(ni), int(di), int(LearnEnabled)))
 	isEnabled := enabled > 0 && ctx.CyclesTotal-enabled <= enabledThr
@@ -325,8 +369,11 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
 
 	if !isEnabled {
 		if ctx.CyclesTotal-minusCyc < lt.EnableCycles {
-			if timePos > Neurons.Value(int(ni), int(di), int(MinusPeak)) { // keep track for stats
-				Neurons.Set(timePos, int(ni), int(di), int(MinusPeak))
+			if lt.MinusThr > 0 {
+				timePos := Neurons.Value(int(ni), int(di), int(TimePos))
+				if timePos > Neurons.Value(int(ni), int(di), int(MinusPeak)) { // keep track for stats
+					Neurons.Set(timePos, int(ni), int(di), int(MinusPeak))
+				}
 			}
 			return false
 		}
