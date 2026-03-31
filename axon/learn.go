@@ -172,21 +172,15 @@ type LearnTimingParams struct {
 	// threshold. Applies only to timing based learning.
 	Refractory slbool.Bool
 
-	// NUps is the number of successive (per MaxUpGap) increments in peak value
-	// required to detect a minus peak. This presumes a reasonably slow integration
-	// process so the curve is spread out a bit, but it does a good job of filtering
-	// more transient blips.
-	NUps int32 `default:"18"`
-
-	// MaxUpGap is the maximum gap in cycles between successive increments
-	// in peak value (per NUps). If longer than this, then the up counter
-	// is reset, and the peak values start to decay.
-	MaxUpGap int32 `default:"2"`
+	// MinusThr is the threshold on [TimePos] to count as start of minus phase,
+	// which is the number of positive deflections of [TimeDiff] relative to the
+	// slower time average [TimeSlow], indicating a consistent change in state.
+	MinusThr float32 `default:"40"`
 
 	// EnableCycles is the number of cycles (ms) relative to the minus phase
 	// peak, [MinusCycles], when [LearnEnabled] is set, if the CaD is above
 	// threshold. Otherwise, everything is reset at this point.
-	EnableCycles int32 `default:"140"`
+	EnableCycles int32 `default:"130"`
 
 	// Cycles is the time offset in cycles (ms) for when learning occurs.
 	// If >= 0, then it is relative to the [LearnEnabled] time (typically
@@ -198,34 +192,35 @@ type LearnTimingParams struct {
 
 	// Time constant for integrating [TimeDiff] as the absolute value of
 	// CaDiff integrated over time to smooth out significant local bumps.
-	TimeDiffTau float32 `default:"4"`
+	TimeDiffTau float32 `default:"10"`
+
+	// Time constant for integrating [TimeSlow] as running average of
+	// [TimeDiff]
+	TimeSlowTau float32 `default:"40"`
 
 	// Dt is 1/Tau
 	TimeDiffDt float32 `display:"-"`
 
-	// Decay time constant for [TimePeak] if there hasn't been a new peak within
-	// MaxUpGap cycles. This keeps the peak detector from getting stuck.
-	DecayTau float32 `default:"10"`
-
 	// Dt is 1/Tau
-	DecayDt float32 `display:"-"`
+	TimeSlowDt float32 `display:"-"`
+
+	pad float32
 }
 
 func (lt *LearnTimingParams) Defaults() {
 	lt.SynCaCycles = 160
 	lt.LearnThr = 0.1
-	lt.NUps = 18
-	lt.MaxUpGap = 2
-	lt.EnableCycles = 140
+	lt.MinusThr = 40
+	lt.EnableCycles = 130
 	lt.Cycles = 20
-	lt.TimeDiffTau = 4
-	lt.DecayTau = 10
+	lt.TimeDiffTau = 10
+	lt.TimeSlowTau = 40
 	lt.Update()
 }
 
 func (lt *LearnTimingParams) Update() {
 	lt.TimeDiffDt = 1.0 / lt.TimeDiffTau
-	lt.DecayDt = 1.0 / lt.DecayTau
+	lt.TimeSlowDt = 1.0 / lt.TimeSlowTau
 }
 
 func (lt *LearnTimingParams) ShouldDisplay(field string) bool {
@@ -237,11 +232,10 @@ func (lt *LearnTimingParams) ShouldDisplay(field string) bool {
 	}
 }
 
-// TimingReset resets [TimePeak], [TimeCycle], [PeakUps] to 0.
+// TimingReset resets [TimeSlow], [TimePos] to 0.
 func (lt *LearnTimingParams) TimingReset(ctx *Context, ni, di uint32) {
-	Neurons.Set(0.0, int(ni), int(di), int(TimePeak))
-	Neurons.Set(0.0, int(ni), int(di), int(TimeCycle))
-	Neurons.Set(0.0, int(ni), int(di), int(PeakUps))
+	Neurons.Set(0.0, int(ni), int(di), int(TimeSlow))
+	Neurons.Set(0.0, int(ni), int(di), int(TimePos))
 }
 
 // LearnNowOff sets [LearnNow] to 0.
@@ -268,40 +262,9 @@ func (lt *LearnTimingParams) LearnTrialEnd(ctx *Context, ni, di uint32) bool {
 	return false
 }
 
-// LearnTimingPeak does peak detection for timing, based on NUps
-// increments within MaxUpGap cycles. Returns true if got over threshold
-// in which case MinusPeak is set.
-func (lt *LearnTimingParams) LearnTimingPeak(ctx *Context, timeDiff float32, ni, di uint32) bool {
-	pups := int32(Neurons.Value(int(ni), int(di), int(PeakUps)))
-
-	peak := Neurons.Value(int(ni), int(di), int(TimePeak))
-	peakCyc := int32(Neurons.Value(int(ni), int(di), int(TimeCycle)))
-
-	newPeak := timeDiff > peak
-	if ctx.CyclesTotal-peakCyc >= lt.MaxUpGap {
-		peak -= lt.DecayDt * peak
-		Neurons.Set(peak, int(ni), int(di), int(TimePeak))
-		Neurons.Set(0.0, int(ni), int(di), int(PeakUps))
-	}
-	if !newPeak {
-		return false
-	}
-
-	peak = timeDiff
-	peakCyc = ctx.CyclesTotal
-	Neurons.Set(peak, int(ni), int(di), int(TimePeak))
-	Neurons.Set(float32(peakCyc), int(ni), int(di), int(TimeCycle))
-
-	pups++
-	if pups >= lt.NUps {
-		Neurons.Set(peak, int(ni), int(di), int(MinusPeak))
-		Neurons.Set(float32(peakCyc), int(ni), int(di), int(MinusCycle))
-		lt.TimingReset(ctx, ni, di)
-		return true
-	}
-	Neurons.Set(float32(pups), int(ni), int(di), int(PeakUps))
-	return false
-}
+// todo: TimeDiff goes up immed, then integrate that over longer time frame
+// and then integrate TimeDiff - TimeInteg, only when positive -- when negative
+// it goes back to 0. when that sum exceeds threshold, that is the peak.
 
 // LearnTiming determines whether it is time to learn, for given neuron.
 // returns true if just triggered learning.
@@ -312,21 +275,39 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
 
 	timeDiff := Neurons.Value(int(ni), int(di), int(TimeDiff))
 	gaDiff := Neurons.Value(int(ni), int(di), int(GaP)) - Neurons.Value(int(ni), int(di), int(GaD))
-	timeDiff += lt.TimeDiffDt * (math32.Abs(gaDiff) - timeDiff)
+	if gaDiff > timeDiff {
+		timeDiff = gaDiff // instant up
+	} else {
+		timeDiff += lt.TimeDiffDt * (math32.Abs(gaDiff) - timeDiff)
+	}
 	Neurons.Set(timeDiff, int(ni), int(di), int(TimeDiff))
+
+	timeSlow := Neurons.Value(int(ni), int(di), int(TimeSlow))
+	timeSlow += lt.TimeSlowDt * (timeDiff - timeSlow)
+	Neurons.Set(timeSlow, int(ni), int(di), int(TimeSlow))
+
+	timePeak := Neurons.Value(int(ni), int(di), int(TimePos))
+	td := timeDiff - timeSlow
+	if td <= 0 {
+		timePeak = 0
+	} else {
+		timePeak += 1
+	}
+	Neurons.Set(timePeak, int(ni), int(di), int(TimePos))
 
 	enabledThr := lt.EnableCycles + 1
 	learnImmed := lt.Cycles >= 0 // LearnNow happens immediately after enabled
 	// otherwise, wait for another minus peak and learn *prior* to that
 
 	minusCyc := int32(Neurons.Value(int(ni), int(di), int(MinusCycle)))
-	gotPeak := minusCyc > 0 && ctx.CyclesTotal-minusCyc <= enabledThr
-	if !gotPeak {
-		gotPeak = lt.LearnTimingPeak(ctx, timeDiff, ni, di)
-		if !gotPeak {
+	gotMinus := minusCyc > 0 && ctx.CyclesTotal-minusCyc <= enabledThr
+	if !gotMinus {
+		if timePeak < lt.MinusThr {
 			return false
 		}
-		minusCyc = int32(Neurons.Value(int(ni), int(di), int(MinusCycle)))
+		minusCyc = ctx.CyclesTotal
+		Neurons.Set(float32(minusCyc), int(ni), int(di), int(MinusCycle))
+		Neurons.Set(timePeak, int(ni), int(di), int(MinusPeak))
 	}
 
 	// we have gotten the minus peak within enabled window
@@ -631,7 +612,7 @@ type LearnNeuronParams struct {
 	// LearnTimingParams parameterizes the timing of Ca-driven Kinase
 	// algorithm learning, based on detecting the first major peak of
 	// differential fast - slow activity associated with the start of
-	// the minus phases: [TimePeak]. Learning occurs a fixed number of
+	// the minus phases: [TimePos]. Learning occurs a fixed number of
 	// Cycles (ms) offset from the peak.
 	Timing LearnTimingParams `display:"inline"`
 
@@ -711,9 +692,8 @@ func (ln *LearnNeuronParams) InitNeuronCa(ctx *Context, ni, di uint32) {
 	Neurons.Set(0, int(ni), int(di), int(GaD))
 
 	Neurons.Set(0.0, int(ni), int(di), int(TimeDiff))
-	Neurons.Set(0.0, int(ni), int(di), int(TimePeak))
-	Neurons.Set(0.0, int(ni), int(di), int(TimeCycle))
-	Neurons.Set(0, int(ni), int(di), int(PeakUps))
+	Neurons.Set(0, int(ni), int(di), int(TimeSlow))
+	Neurons.Set(0.0, int(ni), int(di), int(TimePos))
 	Neurons.Set(0, int(ni), int(di), int(MinusPeak))
 	Neurons.Set(0, int(ni), int(di), int(MinusCycle))
 	Neurons.Set(0, int(ni), int(di), int(LearnEnabled))

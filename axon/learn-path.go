@@ -532,7 +532,7 @@ func (pt *PathParams) DWtCNIO(ctx *Context, rlay *LayerParams, syni, si, ri, lpi
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DiDWt))
 		return
 	}
-	isErrSpike := Neurons.Value(int(ri), int(di), int(TimePeak)) == 1
+	isErrSpike := Neurons.Value(int(ri), int(di), int(TimePos)) == 1
 	if !isErrSpike {
 		learnNow = int32(Neurons.Value(int(ri), int(di), int(TimeDiff))) // learn at peak
 	}
@@ -545,7 +545,7 @@ func (pt *PathParams) DWtCNIO(ctx *Context, rlay *LayerParams, syni, si, ri, lpi
 	}
 	// todo: rlrate? Neurons[ri, di, RLRate]
 	dwt := sact
-	if Neurons.Value(int(ri), int(di), int(TimePeak)) == 0 { // means that we got to end of cycle with no err: decay
+	if Neurons.Value(int(ri), int(di), int(TimePos)) == 0 { // means that we got to end of cycle with no err: decay
 		ract := Neurons.Value(int(ri), int(di), int(GaP)) // peak act
 		dwt = -sact * ract * rlay.Nuclear.Decay
 	}

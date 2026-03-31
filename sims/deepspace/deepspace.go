@@ -707,7 +707,7 @@ func (ss *Sim) ConfigStatNuclearCycle() {
 			var stat float32
 			switch name {
 			case "IOenv":
-				stat = layers[0].AvgMaxVarByPool("TimeCycle", pool, di).Avg
+				stat = layers[0].AvgMaxVarByPool("MinusCycle", pool, di).Avg
 				if stat > 0 {
 					stat = 1
 				}
@@ -732,7 +732,7 @@ func (ss *Sim) ConfigStatNuclearCycle() {
 			case "CNeUpGi":
 				stat = layers[3].AvgMaxVarByPool("Gi", pool, di).Avg
 			case "CNeUpLearn":
-				stat = layers[3].AvgMaxVarByPool("TimePeak", pool, di).Avg
+				stat = layers[3].AvgMaxVarByPool("LearnEnabled", pool, di).Avg
 			case "CNeUpAbsDev":
 				stat = layers[3].AvgMaxVarByPool("GaP", pool, di).Avg
 			case "CNeDn":
@@ -784,7 +784,7 @@ func (ss *Sim) ConfigStatAdaptFilt() {
 					case "CNeUpMax":
 						stat = axon.PoolAvgMax(axon.AMCaPMax, axon.AMCycle, axon.Max, cnepi, uint32(di))
 					case "IOErrs":
-						stat = ioly.AvgMaxVarByPool("TimePeak", 0, di).Avg
+						stat = ioly.AvgMaxVarByPool("LearnEnabled", 0, di).Avg
 					}
 					curModeDir.Float64(name, ndata).SetFloat1D(float64(stat), di)
 					tsr.AppendRowFloat(float64(stat))

@@ -200,23 +200,19 @@ const (
 
 	// TimeDiff is the running time-average of |P - D| (absolute value),
 	// used for determining the timing of learning in terms of onsets of peaks.
-	// See [TimePeak]. GaP - GaD is used, as it is
-	// smoother and more reliable than LearnCaP - D.
+	// See [TimePos]. GaP - GaD is used, as it is smoother and more reliable
+	// than LearnCaP - D.
 	TimeDiff
 
-	// TimePeak is the value of the current peak (local maximum) of [TimeDiff].
-	// This typically occurs at the onset of the minus phase, and drives
-	// the timing of learning a given number of cycles relative to that.
-	// This value will be cleared once the minus phase peak has been detected,
-	// but MinusPeak will record the final value.
-	TimePeak
+	// TimeSlow is the slow time integral of TimeDiff, used for computing
+	// TimePos when TimeDiff > TimeSlow.
+	TimeSlow
 
-	// TimeCycle is the absolute cycle where [TimePeak] occurred.
-	TimeCycle
-
-	// PeakUps is the number of successive increments in TimePeak (with minimal gaps).
-	// When this exceeds a threshold, then the minus phase peak is detected.
-	PeakUps
+	// TimePos accumulates by 1 when TimeDiff > TimeSlow, i.e., when there is a
+	// positive deflection in the TimeDiff signal relative to the longer
+	// time-average. When this gets over threshold, the minus phase peak is
+	// detected.
+	TimePos
 
 	// MinusPeak is the value of the last detected minus-phase peak of [TimeDiff].
 	// This typically occurs at the onset of the minus phase, and drives
@@ -659,10 +655,8 @@ var NeuronVarProps = map[string]string{
 	"GaD": `cat:"Learn"`,
 
 	"TimeDiff": `cat:"Learn"`,
-
-	"TimePeak":  `cat:"Learn"`,
-	"TimeCycle": `cat:"Learn" auto-scale:"+"`,
-	"PeakUps":   `cat:"Learn" auto-scale:"+"`,
+	"TimeSlow": `cat:"Learn"`,
+	"TimePos":  `cat:"Learn"`,
 
 	"MinusPeak":    `cat:"Learn"`,
 	"MinusCycle":   `cat:"Learn" auto-scale:"+"`,

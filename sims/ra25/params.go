@@ -25,12 +25,11 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.Timing.On.SetBool(true)
 				ly.Learn.Timing.Refractory.SetBool(false)
 				ly.Learn.Timing.SynCaCycles = 160
-				ly.Learn.Timing.NUps = 18
-				ly.Learn.Timing.MaxUpGap = 2
-				ly.Learn.Timing.EnableCycles = 140
-				ly.Learn.Timing.Cycles = -30 // -30 or +30
-				ly.Learn.Timing.DecayTau = 10
-				ly.Learn.Timing.TimeDiffTau = 4
+				ly.Learn.Timing.MinusThr = 20
+				ly.Learn.Timing.EnableCycles = 130
+				ly.Learn.Timing.Cycles = 30 // -30 or +30
+				ly.Learn.Timing.TimeDiffTau = 10
+				ly.Learn.Timing.TimeSlowTau = 40
 
 				// ly.Learn.CaLearn.ETraceTau = 4
 				// ly.Learn.CaLearn.ETraceScale = 0.1 // 4,0.1 best in sequential

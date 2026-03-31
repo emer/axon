@@ -86,21 +86,21 @@ func (ly *LayerParams) NuclearLearnReset(ctx *Context, ni, di uint32) {
 
 	if ly.Type == CNeUpLayer || ly.Type == CNeDnLayer {
 		Neurons.Set(0.0, int(ni), int(di), int(LearnNow))
-		Neurons.Set(0.0, int(ni), int(di), int(TimePeak))
+		Neurons.Set(0.0, int(ni), int(di), int(LearnEnabled))
 		Neurons.Set(0.0, int(ni), int(di), int(GaM))
 		Neurons.Set(0.0, int(ni), int(di), int(GaP))
 		Neurons.Set(0.0, int(ni), int(di), int(GaD))
 		return
 	}
 
-	effAct := int32(Neurons.Value(int(ni), int(di), int(TimeCycle)))
+	effAct := int32(Neurons.Value(int(ni), int(di), int(MinusCycle)))
 	if effAct == 0 {
 		return
 	}
 	envCyc := ctx.CyclesTotal - effAct // cycle within envelope
 	if envCyc >= ly.Nuclear.ActionEnv {
-		Neurons.Set(0.0, int(ni), int(di), int(TimeCycle))
-		Neurons.Set(0.0, int(ni), int(di), int(TimePeak))
+		Neurons.Set(0.0, int(ni), int(di), int(MinusCycle))
+		Neurons.Set(0.0, int(ni), int(di), int(LearnEnabled))
 		Neurons.Set(0.0, int(ni), int(di), int(LearnNow))
 	}
 }
@@ -111,7 +111,7 @@ func (ly *LayerParams) NuclearLearnReset(ctx *Context, ni, di uint32) {
 func (ly *LayerParams) NuclearDWtNeuron(ctx *Context, ni uint32) {
 	dbase := float32(0)
 	for di := uint32(0); di < ly.MaxData; di++ {
-		if Neurons.Value(int(ni), int(di), int(TimePeak)) == 1.0 { // non-baseline
+		if Neurons.Value(int(ni), int(di), int(LearnEnabled)) == 1.0 { // non-baseline
 			continue
 		}
 		aerr := ly.Nuclear.ActTarget - Neurons.Value(int(ni), int(di), int(CaD))
@@ -184,8 +184,8 @@ func (ly *LayerParams) IOCopy(ctx *Context, lpi, pi, ni, di uint32) {
 	ioi := uint32(ly.Nuclear.IOLayIndex)
 	ioly := GetLayers(ioi)
 	Neurons.Set(Neurons.Value(int(ioly.Indexes.NeurSt+lni), int(di), int(LearnNow)), int(ni), int(di), int(LearnNow))
-	Neurons.Set(Neurons.Value(int(ioly.Indexes.NeurSt+lni), int(di), int(TimePeak)), int(ni), int(di), int(TimePeak))
-	Neurons.Set(Neurons.Value(int(ioly.Indexes.NeurSt+lni), int(di), int(TimeCycle)), int(ni), int(di), int(TimeCycle))
+	Neurons.Set(Neurons.Value(int(ioly.Indexes.NeurSt+lni), int(di), int(LearnEnabled)), int(ni), int(di), int(LearnEnabled))
+	Neurons.Set(Neurons.Value(int(ioly.Indexes.NeurSt+lni), int(di), int(MinusCycle)), int(ni), int(di), int(MinusCycle))
 }
 
 // TODO: IO neurons integrate across many distinct comparisons!
@@ -197,7 +197,7 @@ func (ly *LayerParams) IOCopy(ctx *Context, lpi, pi, ni, di uint32) {
 // Called in LayerParams::PostSpikeSpecial.
 func (ly *LayerParams) IOLearn(ctx *Context, lpi, pi, ni, di uint32) {
 	cycTot := float32(ctx.CyclesTotal)
-	effAct := int32(Neurons.Value(int(ni), int(di), int(TimeCycle)))
+	effAct := int32(Neurons.Value(int(ni), int(di), int(MinusCycle)))
 	envCyc := ctx.CyclesTotal - effAct // cycle within envelope
 
 	gaP := Neurons.Value(int(ni), int(di), int(GaP)) // IOe excitatory input
@@ -236,8 +236,8 @@ func (ly *LayerParams) IOLearn(ctx *Context, lpi, pi, ni, di uint32) {
 	if effAct == 0 {
 		Neurons.Set(0.0, int(ni), int(di), int(Spike))
 		if Neurons.Value(int(ni), int(di), int(GModSyn)) > ly.IO.EfferentThr { // efferent always activates.
-			Neurons.Set(cycTot, int(ni), int(di), int(TimeCycle)) // efferent activation cycle
-			Neurons.Set(0.0, int(ni), int(di), int(TimePeak))
+			Neurons.Set(cycTot, int(ni), int(di), int(MinusCycle)) // efferent activation cycle
+			Neurons.Set(0.0, int(ni), int(di), int(LearnEnabled))
 			Neurons.Set(0.0, int(ni), int(di), int(LearnNow))
 		}
 		return
@@ -253,9 +253,9 @@ func (ly *LayerParams) IOLearn(ctx *Context, lpi, pi, ni, di uint32) {
 	errVal := gaP - oldInhib
 	Neurons.Set(errVal, int(ni), int(di), int(TimeDiff))
 	if gaP > ly.Learn.Timing.LearnThr && errVal > ly.IO.ErrThr {
-		Neurons.Set(1.0, int(ni), int(di), int(Spike))       // error spike
-		Neurons.Set(cycTot, int(ni), int(di), int(LearnNow)) // record point of error
-		Neurons.Set(1.0, int(ni), int(di), int(TimePeak))    // records that we got err spike
+		Neurons.Set(1.0, int(ni), int(di), int(Spike))        // error spike
+		Neurons.Set(cycTot, int(ni), int(di), int(LearnNow))  // record point of error
+		Neurons.Set(1.0, int(ni), int(di), int(LearnEnabled)) // records that we got err spike
 	}
 }
 
@@ -267,7 +267,7 @@ func (ly *LayerParams) CNeLearn(ctx *Context, lpi, pi, ni, di uint32) {
 	// lni := ni - ly.Indexes.NeurSt
 	// ioi := uint32(ly.Nuclear.IOLayIndex)
 	// ioly := GetLayers(ioi)
-	// Neurons[ni, di, TimeCycle] = Neurons[ioly.Indexes.NeurSt+lni, di, TimeCycle]
+	// Neurons[ni, di, MinusCycle] = Neurons[ioly.Indexes.NeurSt+lni, di, MinusCycle]
 
 	cycTot := float32(ctx.CyclesTotal)
 
@@ -276,11 +276,11 @@ func (ly *LayerParams) CNeLearn(ctx *Context, lpi, pi, ni, di uint32) {
 	adev := math32.Abs(dev)
 	if adev > Neurons.Value(int(ni), int(di), int(GaP)) {
 		Neurons.Set(adev, int(ni), int(di), int(GaP))
-		Neurons.Set(dev, int(ni), int(di), int(GaM))         // actual direction for learning
-		Neurons.Set(cycTot, int(ni), int(di), int(LearnNow)) // learn at max
-		Neurons.Set(1.0, int(ni), int(di), int(TimePeak))    // for visualization
+		Neurons.Set(dev, int(ni), int(di), int(GaM))          // actual direction for learning
+		Neurons.Set(cycTot, int(ni), int(di), int(LearnNow))  // learn at max
+		Neurons.Set(1.0, int(ni), int(di), int(LearnEnabled)) // for visualization
 	} else {
-		Neurons.Set(0.0, int(ni), int(di), int(TimePeak))
+		Neurons.Set(0.0, int(ni), int(di), int(LearnEnabled))
 	}
 }
 

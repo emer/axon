@@ -1319,7 +1319,7 @@ func TestDebugLearn(t *testing.T) {
 func TestNDataLearn(t *testing.T) {
 	nd1Values := NetDebugLearn(t, false, false, 1, 1, true, false, false)
 	nd4Values := NetDebugLearn(t, false, false, 4, 4, true, false, false)
-	ReportValDiffs(t, Tol7, nd1Values, nd4Values, "nData = 1", "nData = 4", "DWt", "ActAvg", "DTrgAvg", "TimeCycle", "LearnCycle", "LearnNow")
+	ReportValDiffs(t, Tol7, nd1Values, nd4Values, "nData = 1", "nData = 4", "DWt", "ActAvg", "DTrgAvg", "LearnCycle", "LearnNow")
 }
 
 func TestNDataMaxDataLearn(t *testing.T) {
