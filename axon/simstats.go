@@ -716,16 +716,14 @@ func StatLevelAll(statsDir *tensorfs.Node, srcMode, srcLevel enums.Enum, styleFu
 // parameters, including the MinusCycle (and StdDev) and LearnNow values
 // in the given layers.
 func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel, runLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
-	statNames := []string{"MinusPeakMean", "MinusPeakStDev", "MinusCycMean", "MinusCycStDev", "MinusCycErrs", "MinusCycMiss", "EnabledCyc", "LearnNow"}
+	statNames := []string{"MinusCycMean", "MinusCycStDev", "MinusCycErrs", "MinusCycMiss", "EnabledCyc", "LearnNow"}
 	statDocs := map[string]string{
-		"MinusPeakMean":   "Mean MinusPeak, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
-		"MinusPeakStdDev": "Standard deviation of MinusPeak.",
-		"MinusCycMean":    "Mean MinusCycle, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
-		"MinusCycStdDev":  "Standard deviation of MinusCycle.",
-		"MinusCycErrs":    "MinusCycle values out of standard minus phase range.",
-		"MinusCycMiss":    "MinusCycle misses -- failed to detect within current range.",
-		"EnabledCyc":      "Mean LearnEnabled cycle, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
-		"LearnNow":        "Mean LearnNow cycle, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
+		"MinusCycMean":   "Mean MinusCycle, only for CaD above threshold, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
+		"MinusCycStdDev": "Standard deviation of MinusCycle.",
+		"MinusCycErrs":   "MinusCycle values out of standard minus phase range.",
+		"MinusCycMiss":   "MinusCycle misses -- failed to detect within current range.",
+		"EnabledCyc":     "Mean LearnEnabled cycle, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
+		"LearnNow":       "Mean LearnNow cycle, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
 	}
 	levels := make([]enums.Enum, 10) // should be enough
 	levels[0] = trialLevel
@@ -759,26 +757,22 @@ func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLev
 				}
 				switch levi {
 				case 0:
-					if si == 4 || si == 5 {
+					if si == 2 || si == 3 {
 						continue
 					}
-					// todo: Use CaD to filter who should be included by threshold!!
-
 					// note: current lnm + _var is standard reusable unit vals buffer
 					anow := curModeDir.Float64(lnm+"_LearnNow", ly.GetSampleShape().Sizes...)
-					enow := curModeDir.Float64(lnm+"_LearnEnabled", ly.GetSampleShape().Sizes...)
+					cads := curModeDir.Float64(lnm+"_CaD", ly.GetSampleShape().Sizes...)
 					for di := range ndata {
-						ly.UnitValuesSampleTensor(enow, "LearnEnabled", di)
-						n := enow.Len()
-						enow.SetShapeSizes(n)
+						ly.UnitValuesSampleTensor(cads, "CaD", di)
+						n := cads.Len()
+						cads.SetShapeSizes(n)
 						switch si {
 						case 0, 1:
-							ly.UnitValuesSampleTensor(anow, "MinusPeak", di)
-						case 2, 3:
 							ly.UnitValuesSampleTensor(anow, "MinusCycle", di)
-						case 6:
+						case 4:
 							ly.UnitValuesSampleTensor(anow, "LearnEnabled", di)
-						case 7:
+						case 5:
 							ly.UnitValuesSampleTensor(anow, "LearnNow", di)
 						}
 						anow.SetShapeSizes(n) // set to 1D -- faster
@@ -787,19 +781,23 @@ func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLev
 						for i := range n {
 							ov := anow.Float1D(i)
 							fv := ov
-							ei := int32(enow.Float1D(i)) - stCyc
+							cad := float32(cads.Float1D(i))
+							if cad < ly.Params.Learn.Timing.LearnThr {
+								anow.SetFloat1D(nan, i)
+								continue
+							}
 							iv := int32(ov) - stCyc
-							if si == 2 || si == 3 {
+							if si == 0 || si == 1 {
 								if iv < 0 {
 									fv = nan
 									msMiss++
-								} else if fv > 120 {
+								} else if iv > 120 { // arbitrary err threshold for minus phase
 									msErr++
 								}
 							}
-							if math.IsNaN(fv) || enow.Float1D(i) == 0 || ei < 0 {
+							if ov == 0 || iv < -50 {
 								fv = nan // only record enabled neurons that got above threshold!
-							} else if si >= 2 {
+							} else {
 								if isiCyc > 0 {
 									if iv <= isiCyc {
 										iv += pmCyc
@@ -813,17 +811,17 @@ func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLev
 						}
 						var stat float64
 						switch si {
-						case 1, 3:
+						case 1:
 							stat = stats.Std(anow).Float1D(0)
 						default:
 							stat = stats.Mean(anow).Float1D(0)
-						}
-						if si != 1 && si != 3 && stat == 0 {
-							stat = nan
+							if stat == 0 {
+								stat = nan
+							}
 						}
 						curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
 						tsr.AppendRowFloat(stat)
-						if si == 2 {
+						if si == 0 {
 							snm := lnm + "_MinusCycErrs"
 							tsr := levelDir.Float64(snm)
 							tsr.AppendRowFloat(float64(msErr))

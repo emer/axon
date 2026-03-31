@@ -200,34 +200,30 @@ const (
 
 	// TimeDiff is the running time-average of |P - D| (absolute value),
 	// used for determining the timing of learning in terms of onsets of peaks.
-	// See [TimePos]. GaP - GaD is used, as it is smoother and more reliable
+	// See [TPeakCycle]. GaP - GaD is used, as it is smoother and more reliable
 	// than LearnCaP - D.
 	TimeDiff
 
-	// TimeSlow is the slow time integral of TimeDiff, used for computing
-	// TimePos when TimeDiff > TimeSlow.
-	TimeSlow
+	// TimePeak is the current peak value of TimeDiff, used for computing
+	// [TPeakCycle] when [TimeDiff] > [TimePeak], which in turn determines [MinusPeak]
+	// after the enabling time window has passed.
+	TimePeak
 
-	// TimePos increments by 1 when [TimeDiff] > [TimeSlow], i.e., when there is a
-	// positive deflection in the TimeDiff signal relative to the longer
-	// time-average, and resets to 0 otherwise. Thus, it reflects the number of
-	// continuous positive-slope trials in a row.
-	// When this gets over threshold, the minus phase peak is detected.
-	TimePos
+	// TPeakCycle is the absolute cycle (ms, CyclesTotal) when the last [TimePeak] value
+	// was updated.
+	TPeakCycle
 
-	// MinusPeak is the value of the last detected minus-phase peak of [TimePos],
-	// (this is not just the threshold value that drives peak detection -- it actually
-	// tracks the ultimate maximum value, so the threshold can be adjusted accordingly).
+	// MinusPeak is the value of the last detected minus-phase peak, from [TimePeak],
 	// This typically occurs at the onset of the minus phase, and drives
 	// the timing of learning a given number of cycles after that.
 	MinusPeak
 
 	// MinusCycle is the absolute cycle (ms, CyclesTotal) when the minus-phase
-	// peak was detected, as when [TimePos] got over the minus threshold.
+	// peak was detected, from [TPeakCycle].
 	MinusCycle
 
 	// LearnEnabled is the absolute cycle (ms, CyclesTotal) when the receiving
-	// neuron is above threshold for learning.
+	// neuron is above threshold for learning, and a minus-phase peak has been detected.
 	// For neocortex, this is after a minimum number of cycles after the
 	// minus phase peak [MinusCycle], or at the end of theta cycle
 	// if not using continuous time peak-based learning timing.
@@ -657,9 +653,9 @@ var NeuronVarProps = map[string]string{
 	"GaP": `cat:"Learn"`,
 	"GaD": `cat:"Learn"`,
 
-	"TimeDiff": `cat:"Learn"`,
-	"TimeSlow": `cat:"Learn"`,
-	"TimePos":  `cat:"Learn" auto-scale:"+"`,
+	"TimeDiff":   `cat:"Learn"`,
+	"TimePeak":   `cat:"Learn"`,
+	"TPeakCycle": `cat:"Learn" auto-scale:"+"`,
 
 	"MinusPeak":    `cat:"Learn" auto-scale:"+"`,
 	"MinusCycle":   `cat:"Learn" auto-scale:"+"`,

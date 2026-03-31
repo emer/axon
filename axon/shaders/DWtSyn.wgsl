@@ -1265,7 +1265,7 @@ fn PathParams_DWtCNIO(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));return;
 	}
-	var isErrSpike = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(TimePos))] == 1;
+	var isErrSpike = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(TPeakCycle))] == 1;
 	if (!isErrSpike) {
 		learnNow = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], // learn at peak
 		TensorStrides[72], u32(ri), u32(di), u32(TimeDiff))]);
@@ -1279,7 +1279,7 @@ fn PathParams_DWtCNIO(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32
 	}
 	var dwt = sact;
 	if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // means that we got to end of cycle with no err: decay
-	u32(ri), u32(di), u32(TimePos))] == 0) {
+	u32(ri), u32(di), u32(TPeakCycle))] == 0) {
 		var ract = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // peak act
 		TensorStrides[72], u32(ri), u32(di), u32(GaP))];
 		dwt = -sact * ract * rlay.Nuclear.Decay;
@@ -1308,14 +1308,14 @@ struct LearnTimingParams {
 	LearnThr: f32,
 	On: i32,
 	Refractory: i32,
-	MinusThr: f32,
+	PctBetter: f32,
 	EnableCycles: i32,
 	Cycles: i32,
 	TimeDiffTau: f32,
-	TimeSlowTau: f32,
-	PosThr: f32,
 	TimeDiffDt: f32,
-	TimeSlowDt: f32,
+	pad: f32,
+	pad1: f32,
+	pad2: f32,
 }
 struct TrgAvgActParams {
 	GiBaseInit: f32,
@@ -1513,8 +1513,8 @@ const  GaM: NeuronVars = 24;
 const  GaP: NeuronVars = 25;
 const  GaD: NeuronVars = 26;
 const  TimeDiff: NeuronVars = 27;
-const  TimeSlow: NeuronVars = 28;
-const  TimePos: NeuronVars = 29;
+const  TimePeak: NeuronVars = 28;
+const  TPeakCycle: NeuronVars = 29;
 const  MinusPeak: NeuronVars = 30;
 const  MinusCycle: NeuronVars = 31;
 const  LearnEnabled: NeuronVars = 32;
