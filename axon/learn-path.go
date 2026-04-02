@@ -197,7 +197,7 @@ func (pt *PathParams) DWtSynCortexEnabled(ctx *Context, rlay *LayerParams, syni,
 
 	dwt := float32(0)
 	if syCa > pt.Learn.DWt.LearnThr { // todo: elminate?
-		bin := learnNow - enabled // guaranteed to be in bounds here
+		bin := learnNow - int32(Neurons.Value(int(ri), int(di), int(LearnEnabledPrev))) // guaranteed to be in bounds here
 		bi := NeuronTraceBinIndex(RecvLearnTrace, bin)
 		rLrn := Neurons.Value(int(ri), int(di), int(NeuronTraces+NeuronVars(bi))) // TimeDiff * RLRate * ETrLearn
 		//	if ri == 28 {

@@ -172,43 +172,33 @@ type LearnTimingParams struct {
 	// threshold. Applies only to timing based learning.
 	Refractory slbool.Bool
 
-	// PctBetter is the proportion better that the new [TimeDiff]
-	// value needs to be to replace the prior [TimePeak] value. This produces
-	// earlier and more reliable MinusCycles values by not having minor later
-	// peaks unseat a strong initial peak. For example, a value of 0.1 means
-	// that the new value must be 10% better to become the new peak.
-	PctBetter float32 `default:"0.1"`
-
 	// EnableCycles is the number of cycles (ms) relative to the minus phase
 	// peak, [MinusCycles], when [LearnEnabled] is set, if the CaD is above
 	// threshold. Otherwise, everything is reset at this point.
-	EnableCycles int32 `default:"130"`
+	EnableCycles int32 `default:"170"`
 
 	// Cycles is the time offset in cycles (ms) for when learning occurs.
 	// If >= 0, then it is relative to the [LearnEnabled] time (typically
 	// just set this to 0 and do everything with LearnEnabled).
 	// Otherwise it is relative to the minus peak, [MinusCycles], after
-	// LearnEnabled has been set, so that it goes back to the plus phase
+	// LearnEnabledPrev, so that it goes back to the plus phase
 	// just before the start of the current minus phase.
-	Cycles int32 `default:"20"`
+	Cycles int32 `default:"0"`
 
 	// Time constant for integrating [TimeDiff] as the absolute value of
 	// CaDiff integrated over time to smooth out significant local bumps.
-	TimeDiffTau float32 `default:"10"`
+	TimeDiffTau float32 `default:"2"`
 
 	// Dt is 1/Tau
 	TimeDiffDt float32 `display:"-"`
-
-	pad, pad1, pad2 float32
 }
 
 func (lt *LearnTimingParams) Defaults() {
 	lt.SynCaCycles = 160
 	lt.LearnThr = 0.1
-	lt.PctBetter = 0.1
-	lt.EnableCycles = 130
-	lt.Cycles = 20
-	lt.TimeDiffTau = 10
+	lt.EnableCycles = 170
+	lt.Cycles = 0
+	lt.TimeDiffTau = 4
 	lt.Update()
 }
 
@@ -256,10 +246,10 @@ func (lt *LearnTimingParams) LearnTrialEnd(ctx *Context, ni, di uint32) bool {
 }
 
 // LearnTiming determines whether it is time to learn, for given neuron.
-// returns true if just triggered learning.
-func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
+func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 	if lt.On.IsFalse() {
-		return lt.LearnTrialEnd(ctx, ni, di)
+		lt.LearnTrialEnd(ctx, ni, di)
+		return
 	}
 
 	timeDiff := Neurons.Value(int(ni), int(di), int(TimeDiff))
@@ -274,14 +264,14 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
 	if !gotMinus {
 		timePeak := Neurons.Value(int(ni), int(di), int(TimePeak))
 		peakCyc := int32(Neurons.Value(int(ni), int(di), int(TPeakCycle)))
-		if timeDiff > (1.0+lt.PctBetter)*timePeak {
+		if timeDiff > timePeak {
 			timePeak = timeDiff
 			peakCyc = ctx.CyclesTotal
 			Neurons.Set(timePeak, int(ni), int(di), int(TimePeak))
 			Neurons.Set(float32(peakCyc), int(ni), int(di), int(TPeakCycle))
 		}
 		if ctx.CyclesTotal-peakCyc < minusThr {
-			return false
+			return
 		}
 		minusCyc = peakCyc
 		Neurons.Set(0.0, int(ni), int(di), int(TimePeak))
@@ -291,7 +281,7 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
 
 	// we have gotten the minus peak within enabled window
 
-	enabledThr := lt.EnableCycles + 1
+	enabledThr := lt.EnableCycles
 	learnImmed := lt.Cycles >= 0 // LearnNow happens immediately after enabled
 	// otherwise, wait for another minus peak and learn *prior* to that
 
@@ -301,64 +291,51 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) bool {
 	isLearning := learnNow > 0 && ctx.CyclesTotal-learnNow <= enabledThr
 	caD := Neurons.Value(int(ni), int(di), int(CaD))
 
-	if !learnImmed && !isLearning { // need a longer enabled window, into next trial
-		// note: this automatically = 1 trial refractory
-		isEnabled = enabled > 0 && ctx.CyclesTotal-enabled <= 2*enabledThr
-	}
-
 	if !isEnabled {
+		if !learnImmed && !isLearning { //
+			prevEnabled := int32(Neurons.Value(int(ni), int(di), int(LearnEnabled)))
+			pe := ctx.CyclesTotal - prevEnabled
+			//	if prevEnabled > 0 {
+			//		fmt.Println(ni, ctx.CyclesTotal, minusCyc, prevEnabled, pe)
+			//	}
+			isPrevEnabled := prevEnabled > 0 && minusCyc > prevEnabled && pe <= ctx.ThetaCycles
+			if isPrevEnabled {
+				lnow := minusCyc + lt.Cycles
+				if lnow == ctx.CyclesTotal-ctx.Cycle { // don't hit right at start
+					lnow--
+				}
+				if lnow < prevEnabled {
+					lnow = prevEnabled // can't go back before that!
+				}
+				if lnow-prevEnabled >= 60 { // min limit on bins
+					lnow = prevEnabled + 59
+				}
+				Neurons.Set(float32(lnow), int(ni), int(di), int(LearnNow)) // will be in the past
+				Neurons.Set(float32(enabled), int(ni), int(di), int(LearnEnabledPrev))
+			}
+		}
 		if ctx.CyclesTotal-minusCyc < lt.EnableCycles {
-			return false
+			return
 		}
 		// just now enabled
 		if lt.Refractory.IsTrue() && learnNow > 0 { // if any learning has happened before
 			if caD <= lt.LearnThr { // neuron went off, no longer refractory
-				lt.LearnNowOff(ctx, ni, di)
+				Neurons.Set(0.0, int(ni), int(di), int(LearnEnabled))
 			} else {
-				return false // still refractory
+				return // still refractory
 			}
 		}
 		if caD <= lt.LearnThr { // didn't get above threshold
-			lt.LearnNowOff(ctx, ni, di)
-			return false
+			Neurons.Set(0.0, int(ni), int(di), int(LearnEnabled))
+			return
 		}
 		Neurons.Set(float32(ctx.CyclesTotal), int(ni), int(di), int(LearnEnabled))
 		if learnImmed { // set LearnNow immediately when enabled, in the future
 			lnow := ctx.CyclesTotal + lt.Cycles
 			Neurons.Set(float32(lnow), int(ni), int(di), int(LearnNow))
-			return true
+			return
 		}
-		Neurons.Set(0.0, int(ni), int(di), int(LearnNow)) // reset
-		return false
 	}
-
-	if isLearning || learnImmed { // already done
-		return false
-	}
-
-	if ctx.CyclesTotal-enabled < enabledThr { // make sure we're into the next minus phase
-		return false
-	}
-
-	// now enabled and got the second peak, time to learn
-	lnow := minusCyc + lt.Cycles
-	if lnow == ctx.CyclesTotal-ctx.Cycle { // don't hit right at start
-		lnow--
-	}
-	if lnow < enabled {
-		lnow = enabled // can't go back before that!
-	}
-	if lnow-enabled >= 60 { // min limit on bins
-		lnow = enabled + 59
-	}
-	Neurons.Set(float32(lnow), int(ni), int(di), int(LearnNow)) // will be in the past
-	return true
-
-	//	if ni == 28 {
-	//		fmt.Println("minus:", peak, "cyc:", peakCyc)
-	//		st := (ctx.CyclesTotal / ctx.ThetaCycles) * ctx.ThetaCycles
-	//		fmt.Println("cyc:", ctx.CyclesTotal-st, "pk:", peakCyc-st, "lrnow:", lnow-st, "peak:", peak)
-	//	}
 }
 
 // LearnRecvTrace records the RecvLearnTrace value for timing-based learning.
@@ -680,6 +657,7 @@ func (ln *LearnNeuronParams) InitNeuronCa(ctx *Context, ni, di uint32) {
 	Neurons.Set(0, int(ni), int(di), int(MinusPeak))
 	Neurons.Set(0, int(ni), int(di), int(MinusCycle))
 	Neurons.Set(0, int(ni), int(di), int(LearnEnabled))
+	Neurons.Set(0, int(ni), int(di), int(LearnEnabledPrev))
 	Neurons.Set(0, int(ni), int(di), int(LearnNow))
 }
 

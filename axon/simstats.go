@@ -718,12 +718,12 @@ func StatLevelAll(statsDir *tensorfs.Node, srcMode, srcLevel enums.Enum, styleFu
 func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel, runLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
 	statNames := []string{"MinusCycMean", "MinusCycStDev", "MinusCycErrs", "MinusCycMiss", "EnabledCyc", "LearnNow"}
 	statDocs := map[string]string{
-		"MinusCycMean":   "Mean MinusCycle, only for CaD above threshold, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
+		"MinusCycMean":   "Mean MinusCycle, only for CaD above threshold, relative to the theta cycle (trial)",
 		"MinusCycStdDev": "Standard deviation of MinusCycle.",
 		"MinusCycErrs":   "MinusCycle values out of standard minus phase range.",
 		"MinusCycMiss":   "MinusCycle misses -- failed to detect within current range.",
-		"EnabledCyc":     "Mean LearnEnabled cycle, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
-		"LearnNow":       "Mean LearnNow cycle, relative to the theta cycle (trial). Any ISICycles are shifted to the end, as if the structure was Minus, Plus, ISI.",
+		"EnabledCyc":     "Mean LearnEnabled cycle, relative to the theta cycle (trial)",
+		"LearnNow":       "Mean LearnNow cycle, relative to the theta cycle (trial)",
 	}
 	levels := make([]enums.Enum, 10) // should be enough
 	levels[0] = trialLevel
@@ -740,7 +740,8 @@ func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLev
 		ctx := net.Context()
 		stCyc := ctx.CyclesTotal - ctx.ThetaCycles
 		isiCyc := ctx.ISICycles
-		pmCyc := ctx.ThetaCycles - isiCyc
+		plusCyc := ctx.PlusCycles
+		errThr := isiCyc + ctx.MinusCycles/2
 		nan := math.NaN()
 		for _, lnm := range layerNames {
 			for si, statName := range statNames {
@@ -791,20 +792,13 @@ func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLev
 								if iv < 0 {
 									fv = nan
 									msMiss++
-								} else if iv > 120 { // arbitrary err threshold for minus phase
+								} else if iv > errThr {
 									msErr++
 								}
 							}
-							if ov == 0 || iv < -50 {
+							if ov == 0 || iv < -plusCyc {
 								fv = nan // only record enabled neurons that got above threshold!
 							} else {
-								if isiCyc > 0 {
-									if iv <= isiCyc {
-										iv += pmCyc
-									} else {
-										iv -= isiCyc
-									}
-								}
 								fv = float64(iv)
 							}
 							anow.SetFloat1D(fv, i)

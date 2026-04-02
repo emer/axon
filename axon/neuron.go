@@ -230,11 +230,17 @@ const (
 	// See [LearnTimingParams].
 	LearnEnabled
 
+	// LearnEnabledPrev is the absolute cycle (ms, CyclesTotal) for
+	// the previous [LearnEnabled] value, if set. This is used for
+	// learning that is triggered by a minus phase subsequent to
+	// being enabled.
+	LearnEnabledPrev
+
 	// LearnNow is the absolute cycle (ms, CyclesTotal) when the receiving
 	// neuron actually learns. See [LearnEnabled] for enabling conditions,
 	// and [LearnTimingParams] for parameters. For neocortex, this can be
 	// based on going back from the subsequent minus phase peak, after
-	// being enabled.
+	// being enabled (see [LearnEnabledPrev]).
 	LearnNow
 
 	// RLRate is recv-unit based learning rate multiplier, reflecting the sigmoid
@@ -657,10 +663,11 @@ var NeuronVarProps = map[string]string{
 	"TimePeak":   `cat:"Learn"`,
 	"TPeakCycle": `cat:"Learn" auto-scale:"+"`,
 
-	"MinusPeak":    `cat:"Learn" auto-scale:"+"`,
-	"MinusCycle":   `cat:"Learn" auto-scale:"+"`,
-	"LearnEnabled": `cat:"Learn" auto-scale:"+"`,
-	"LearnNow":     `cat:"Learn" auto-scale:"+"`,
+	"MinusPeak":        `cat:"Learn" auto-scale:"+"`,
+	"MinusCycle":       `cat:"Learn" auto-scale:"+"`,
+	"LearnEnabled":     `cat:"Learn" auto-scale:"+"`,
+	"LearnEnabledPrev": `cat:"Learn" auto-scale:"+"`,
+	"LearnNow":         `cat:"Learn" auto-scale:"+"`,
 
 	"RLRate":   `cat:"Learn" auto-scale:"+"`,
 	"ETrace":   `cat:"Learn"`,
