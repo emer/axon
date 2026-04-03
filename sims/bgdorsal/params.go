@@ -25,7 +25,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.Timing.LearnThr = 0.1 // 0.1 > 0.15 > 0.05 -- key even without timing!!!
 
 				ly.Learn.Timing.SynCaCycles = 200 // 200 > 180 > 220 > 250, 160 for 250/50 cyc
-				ly.Learn.Timing.Cycles = 210      // 210 >= 200 >= 190 > 220
+				ly.Learn.Timing.LearnCycles = 210 // 210 >= 200 >= 190 > 220
 				// ly.Learn.Timing.TimeDiffTau = 4
 			}},
 		{Sel: ".PFCLayer", Doc: "pfc",

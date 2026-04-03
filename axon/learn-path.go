@@ -52,7 +52,7 @@ func (pt *PathParams) DWtSyn(ctx *Context, rlay *LayerParams, syni, si, ri, di u
 		} else if isTarget {
 			pt.DWtSynTarget(ctx, syni, si, ri, lpi, pi, di)
 		} else if rlay.Learn.Timing.On.IsTrue() {
-			if rlay.Learn.Timing.Cycles < 0 {
+			if rlay.Learn.Timing.LearnCycles < 0 {
 				pt.DWtSynCortexEnabled(ctx, rlay, syni, si, ri, lpi, pi, di)
 			} else {
 				pt.DWtSynCortex(ctx, rlay, syni, si, ri, lpi, pi, di)
@@ -179,7 +179,7 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, rlay *LayerParams, syni, si, ri
 // DWtSynCortexEnabled is timing enabled version of DWtSynCortex
 func (pt *PathParams) DWtSynCortexEnabled(ctx *Context, rlay *LayerParams, syni, si, ri, lpi, pi, di uint32) {
 	learnNow := int32(Neurons.Value(int(ri), int(di), int(LearnNow)))
-	enabled := int32(Neurons.Value(int(ri), int(di), int(LearnEnabledPrev)))
+	enabled := int32(Neurons.Value(int(ri), int(di), int(EnabledPrev)))
 	winSt := ctx.CyclesTotal - 2*ctx.ThetaCycles
 	winEd := ctx.CyclesTotal - ctx.ThetaCycles
 	if learnNow == 0 || enabled > learnNow || learnNow < winSt || learnNow > winEd { // not in this time window

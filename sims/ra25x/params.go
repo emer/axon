@@ -65,7 +65,6 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.Timing.On.SetBool(false)
 				ly.Learn.Timing.Refractory.SetBool(false)
 				ly.Learn.Timing.SynCaCycles = 160
-				ly.Learn.Timing.Cycles = 170
 				ly.Learn.Timing.TimeDiffTau = 4
 			}},
 		{Sel: "#Input", Doc: "critical now to specify the activity level",

@@ -722,7 +722,7 @@ func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLev
 		"MinusCycStdDev": "Standard deviation of MinusCycle.",
 		"MinusCycErrs":   "MinusCycle values out of standard minus phase range.",
 		"MinusCycMiss":   "MinusCycle misses -- failed to detect within current range.",
-		"EnabledCyc":     "Mean LearnEnabled cycle, relative to the theta cycle (trial)",
+		"EnabledCyc":     "Mean Enabled cycle, relative to the theta cycle (trial)",
 		"LearnNow":       "Mean LearnNow cycle, relative to the theta cycle (trial)",
 	}
 	levels := make([]enums.Enum, 10) // should be enough
@@ -771,7 +771,7 @@ func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLev
 						case 0, 1:
 							ly.UnitValuesSampleTensor(anow, "MinusCycle", di)
 						case 4:
-							ly.UnitValuesSampleTensor(anow, "LearnEnabled", di)
+							ly.UnitValuesSampleTensor(anow, "Enabled", di)
 						case 5:
 							ly.UnitValuesSampleTensor(anow, "LearnNow", di)
 						}

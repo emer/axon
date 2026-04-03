@@ -219,28 +219,34 @@ const (
 	MinusPeak
 
 	// MinusCycle is the absolute cycle (ms, CyclesTotal) when the minus-phase
-	// peak was detected, from [TPeakCycle].
+	// peak occurred, copied from [TPeakCycle] for that peak.
 	MinusCycle
 
-	// LearnEnabled is the absolute cycle (ms, CyclesTotal) when the receiving
-	// neuron is above threshold for learning, and a minus-phase peak has been detected.
-	// For neocortex, this is after a minimum number of cycles after the
-	// minus phase peak [MinusCycle], or at the end of theta cycle
-	// if not using continuous time peak-based learning timing.
-	// See [LearnTimingParams].
-	LearnEnabled
+	// MinusWindow is the absolute cycle (ms, CyclesTotal) when the minus-phase
+	// peak detection window was reached, and the minus phase was detected.
+	// After this, there are additional cycles where the neuron could get over
+	// the CaD threshold for learning, or not. LearnNow is relative to this point.
+	MinusWindow
 
-	// LearnEnabledPrev is the absolute cycle (ms, CyclesTotal) for
-	// the previous [LearnEnabled] value, if set. This is used for
+	// Enabled is the absolute cycle (ms, CyclesTotal) when the receiving
+	// neuron is above threshold for learning, and a minus-phase peak has been
+	// detected. For neocortex, this is after [MinusWindow], and the neuron
+	// CaD level has gone above the learning threshold, within a minimum number
+	// of cycles. If not using flexible learning timing, this is set to the end
+	// of the theta cycle. See [LearnTimingParams] for details.
+	Enabled
+
+	// EnabledPrev is the absolute cycle (ms, CyclesTotal) for
+	// the previous [Enabled] value, if set. This is used for
 	// learning that is triggered by a minus phase subsequent to
 	// being enabled.
-	LearnEnabledPrev
+	EnabledPrev
 
 	// LearnNow is the absolute cycle (ms, CyclesTotal) when the receiving
-	// neuron actually learns. See [LearnEnabled] for enabling conditions,
+	// neuron actually learns. See [Enabled] for enabling conditions,
 	// and [LearnTimingParams] for parameters. For neocortex, this can be
 	// based on going back from the subsequent minus phase peak, after
-	// being enabled (see [LearnEnabledPrev]).
+	// being enabled (see [EnabledPrev]).
 	LearnNow
 
 	// RLRate is recv-unit based learning rate multiplier, reflecting the sigmoid
@@ -663,11 +669,12 @@ var NeuronVarProps = map[string]string{
 	"TimePeak":   `cat:"Learn"`,
 	"TPeakCycle": `cat:"Learn" auto-scale:"+"`,
 
-	"MinusPeak":        `cat:"Learn" auto-scale:"+"`,
-	"MinusCycle":       `cat:"Learn" auto-scale:"+"`,
-	"LearnEnabled":     `cat:"Learn" auto-scale:"+"`,
-	"LearnEnabledPrev": `cat:"Learn" auto-scale:"+"`,
-	"LearnNow":         `cat:"Learn" auto-scale:"+"`,
+	"MinusPeak":   `cat:"Learn" auto-scale:"+"`,
+	"MinusCycle":  `cat:"Learn" auto-scale:"+"`,
+	"MinusWindow": `cat:"Learn" auto-scale:"+"`,
+	"Enabled":     `cat:"Learn" auto-scale:"+"`,
+	"EnabledPrev": `cat:"Learn" auto-scale:"+"`,
+	"LearnNow":    `cat:"Learn" auto-scale:"+"`,
 
 	"RLRate":   `cat:"Learn" auto-scale:"+"`,
 	"ETrace":   `cat:"Learn"`,
