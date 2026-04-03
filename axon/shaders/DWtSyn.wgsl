@@ -1019,7 +1019,7 @@ fn PathParams_DWtSynCortex(pt: PathParams, ctx: Context, rlay: LayerParams, syni
 }
 fn PathParams_DWtSynCortexEnabled(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
 	var learnNow = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnNow))]);
-	var enabled = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnEnabled))]);
+	var enabled = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnEnabledPrev))]);
 	var winSt = ctx.CyclesTotal - 2*ctx.ThetaCycles;
 	var winEd = ctx.CyclesTotal - ctx.ThetaCycles;
 	if (learnNow == 0 || enabled > learnNow || learnNow < winSt || learnNow > winEd) { // not in this time window
@@ -1032,8 +1032,7 @@ fn PathParams_DWtSynCortexEnabled(pt: PathParams, ctx: Context, rlay: LayerParam
 	SynapseTracesSet(tr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 	var dwt = f32(0);
 	if (syCa > pt.Learn.DWt.LearnThr) { // todo: elminate?
-		var bin = learnNow - i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // guaranteed to be in bounds here
-		u32(ri), u32(di), u32(LearnEnabledPrev))]);
+		var bin = learnNow - enabled; // guaranteed to be in bounds here
 		var bi = NeuronTraceBinIndex(RecvLearnTrace, bin);
 		var rLrn = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // TimeDiff * RLRate * ETrLearn
 		u32(ri), u32(di), u32(NeuronTraces + NeuronVars(bi)))];

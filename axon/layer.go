@@ -522,7 +522,18 @@ func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
 	} else if varIndex >= neurVars {
 		return NeuronAvgs.Value(int(ni), int(NeuronVars(varIndex-neurVars)))
 	} else if varIndex < int(NeuronTraces) {
-		return Neurons.Value(int(ni), int(di), int(varIndex))
+		vi := NeuronVars(varIndex)
+		if vi == TPeakCycle || (vi >= MinusCycle && vi <= LearnNow) {
+			vl := Neurons.Value(int(ni), int(di), int(varIndex))
+			if vl <= 0 {
+				return math32.NaN()
+			}
+			ctx := ly.Network.Context()
+			st := ((ctx.CyclesTotal - 1) / ctx.ThetaCycles) * ctx.ThetaCycles // start of current theta
+			return vl - float32(st)
+		} else {
+			return Neurons.Value(int(ni), int(di), int(varIndex))
+		}
 	} else {
 		bi := (varIndex - int(NeuronTraces)) % NNeuronTraces
 		if bi >= int(NetworkIxs[0].NNeuronTraceBins) {

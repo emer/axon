@@ -177,7 +177,7 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, rlay *LayerParams, syni, si, ri
 // DWtSynCortexEnabled is timing enabled version of DWtSynCortex
 func (pt *PathParams) DWtSynCortexEnabled(ctx *Context, rlay *LayerParams, syni, si, ri, lpi, pi, di uint32) {
 	learnNow := int32(Neurons[ri, di, LearnNow])
-	enabled := int32(Neurons[ri, di, LearnEnabled])
+	enabled := int32(Neurons[ri, di, LearnEnabledPrev])
 	winSt := ctx.CyclesTotal - 2 * ctx.ThetaCycles
 	winEd := ctx.CyclesTotal - ctx.ThetaCycles
 	if learnNow == 0 || enabled > learnNow || learnNow < winSt || learnNow > winEd { // not in this time window
@@ -195,7 +195,7 @@ func (pt *PathParams) DWtSynCortexEnabled(ctx *Context, rlay *LayerParams, syni,
 	
 	dwt := float32(0)
 	if syCa > pt.Learn.DWt.LearnThr { // todo: elminate?
-		bin := learnNow - int32(Neurons[ri, di, LearnEnabledPrev])  // guaranteed to be in bounds here
+		bin := learnNow - enabled  // guaranteed to be in bounds here
 		bi := NeuronTraceBinIndex(RecvLearnTrace, bin)
 		rLrn := Neurons[ri, di, NeuronTraces + NeuronVars(bi)] // TimeDiff * RLRate * ETrLearn
 		// if ri == 28 {

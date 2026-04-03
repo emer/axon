@@ -738,10 +738,9 @@ func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLev
 		levelDir := modeDir.Dir(level.String())
 		ndata := int(net.Context().NData)
 		ctx := net.Context()
-		stCyc := ctx.CyclesTotal - ctx.ThetaCycles
 		isiCyc := ctx.ISICycles
-		plusCyc := ctx.PlusCycles
-		errThr := isiCyc + ctx.MinusCycles/2
+		plusCyc := float64(ctx.PlusCycles)
+		errThr := float64(isiCyc + ctx.MinusCycles/2)
 		nan := math.NaN()
 		for _, lnm := range layerNames {
 			for si, statName := range statNames {
@@ -780,26 +779,24 @@ func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLev
 						msErr := 0
 						msMiss := 0
 						for i := range n {
+							// note: cycle values are already normalized to start at current thetacycle
+							// and are set to NaN if 0
 							ov := anow.Float1D(i)
-							fv := ov
 							cad := float32(cads.Float1D(i))
-							if cad < ly.Params.Learn.Timing.LearnThr {
+							if math.IsNaN(ov) || cad < ly.Params.Learn.Timing.LearnThr {
 								anow.SetFloat1D(nan, i)
 								continue
 							}
-							iv := int32(ov) - stCyc
+							fv := ov
 							if si == 0 || si == 1 {
-								if iv < 0 {
+								if ov < 0 {
 									fv = nan
 									msMiss++
-								} else if iv > errThr {
+								} else if ov > errThr {
 									msErr++
 								}
-							}
-							if ov == 0 || iv < -plusCyc {
+							} else if ov < -plusCyc {
 								fv = nan // only record enabled neurons that got above threshold!
-							} else {
-								fv = float64(iv)
 							}
 							anow.SetFloat1D(fv, i)
 						}

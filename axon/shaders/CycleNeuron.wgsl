@@ -1642,7 +1642,6 @@ fn LearnTimingParams_LearnTiming(lt: LearnTimingParams, ctx: Context, ni: u32,di
 	var gaDiff = abs(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))] - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaD))]);
 	timeDiff += lt.TimeDiffDt * (gaDiff - timeDiff);
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeDiff))] = timeDiff;
-	var minusThr = lt.EnableCycles - 1;
 	var minusCyc = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(MinusCycle))]);
 	var gotMinus = minusCyc > 0 && ctx.CyclesTotal-minusCyc <= lt.EnableCycles;
 	if (!gotMinus) {
@@ -1654,61 +1653,58 @@ fn LearnTimingParams_LearnTiming(lt: LearnTimingParams, ctx: Context, ni: u32,di
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = timePeak;
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TPeakCycle))] = f32(peakCyc);
 		}
-		if (ctx.CyclesTotal-peakCyc < minusThr) {
+		if (ctx.CyclesTotal-peakCyc < lt.EnableCycles) {
 			return;
 		}
 		minusCyc = peakCyc;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = 0.0;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(MinusCycle))] = f32(minusCyc);
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
-		u32(ni), u32(di), u32(MinusPeak))] = timePeak;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(MinusPeak))] = timePeak;
+	} else {
+		return; // if we already have minus from the start, then we're done until next time
 	}
-	var enabledThr = lt.EnableCycles;
 	var learnImmed = lt.Cycles >= 0; // LearnNow happens immediately after enabled
-	var enabled = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnEnabled))]);
-	var isEnabled = enabled > 0 && ctx.CyclesTotal-enabled <= enabledThr;
-	var learnNow = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))]);
-	var isLearning = learnNow > 0 && ctx.CyclesTotal-learnNow <= enabledThr;
 	var caD = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CaD))];
-	if (!isEnabled) {
-		if (!learnImmed && !isLearning) { //
-			var prevEnabled = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnEnabled))]);
-			var pe = ctx.CyclesTotal - prevEnabled;
-			var isPrevEnabled = prevEnabled > 0 && minusCyc > prevEnabled && pe <= ctx.ThetaCycles;
-			if (isPrevEnabled) {
-				var lnow = minusCyc + lt.Cycles;
-				if (lnow == ctx.CyclesTotal-ctx.Cycle) { // don't hit right at start
-					lnow--;
-				}
-				if (lnow < prevEnabled) {
-					lnow = prevEnabled; // can't go back before that!
-				}
-				if (lnow-prevEnabled >= 60) { // min limit on bins
-					lnow = prevEnabled + 59;
-				}
-				Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // will be in the past
-				u32(ni), u32(di), u32(LearnNow))] = f32(lnow);
-				Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnEnabledPrev))] = f32(enabled);
+	var learnNow = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))]);
+	if (lt.Refractory == 1 && learnNow > 0) { // if any learning has happened before
+		if (caD <= lt.LearnThr) { // neuron went off, no longer refractory
+			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = 0.0;
+		} else {
+			return; // still refractory
+		}
+	}
+	if (!learnImmed) {
+		var prevEnabled = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // this is *previous* enabled -- not yet updated
+		u32(ni), u32(di), u32(LearnEnabled))]);
+		var pe = ctx.CyclesTotal - prevEnabled;
+		var isPrevEnabled = prevEnabled > 0 && minusCyc > prevEnabled && pe <= ctx.ThetaCycles+ctx.PlusCycles;
+		if (isPrevEnabled) {
+			var lnow = minusCyc + lt.Cycles;
+			if (lnow == ctx.CyclesTotal-ctx.Cycle) { // don't hit right at start
+				lnow--;
 			}
-		}
-		if (ctx.CyclesTotal-minusCyc < lt.EnableCycles) {
-			return;
-		}
-		if (lt.Refractory == 1 && learnNow > 0) { // if any learning has happened before
-			if (caD <= lt.LearnThr) { // neuron went off, no longer refractory
-				Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnEnabled))] = 0.0;
-			} else {
-				return; // still refractory
+			if (lnow < prevEnabled) {
+				lnow = prevEnabled; // can't go back before that!
 			}
+			if (lnow-prevEnabled >= 60) { // min limit on bins
+				lnow = prevEnabled + 59;
+			}
+			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = f32(lnow);                // will be in the past
+			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnEnabledPrev))] = f32(prevEnabled); // only save for learning ones
+		} else {
+			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // only save for learning ones
+			u32(ni), u32(di), u32(LearnEnabledPrev))] = 0.0;
+			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = 0.0;
 		}
-		if (caD <= lt.LearnThr) { // didn't get above threshold
-			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnEnabled))] = 0.0;return;
-		}
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnEnabled))] = f32(ctx.CyclesTotal);
-		if (learnImmed) { // set LearnNow immediately when enabled, in the future
-			var lnow = ctx.CyclesTotal + lt.Cycles;
-			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = f32(lnow);return;
-		}
+	}
+	if (caD <= lt.LearnThr) { // didn't get above threshold *this time*
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnEnabled))] = 0.0;return;
+	}
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnEnabled))] = f32(ctx.CyclesTotal);
+	if (learnImmed) { // set LearnNow immediately when enabled, in the future
+		var lnow = ctx.CyclesTotal + lt.Cycles;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
+		u32(ni), u32(di), u32(LearnNow))] = f32(lnow);
 	}
 }
 struct TrgAvgActParams {

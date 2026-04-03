@@ -36,7 +36,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.Timing.Refractory.SetBool(false) // ?
 				ly.Learn.Timing.LearnThr = 0.1            // 0.1 best for trial-based
 				ly.Learn.Timing.SynCaCycles = 160         // 160 best for trial-based
-				ly.Learn.Timing.EnableCycles = 170
+				ly.Learn.Timing.EnableCycles = 160
 				ly.Learn.Timing.Cycles = -60    // -60 or 0
 				ly.Learn.Timing.TimeDiffTau = 4 // 4 still best
 			}},
@@ -71,8 +71,6 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
 				ly.Inhib.Layer.Gi = 1.1 // 1.1 > 1.05 1.6.15 adapt
 				ly.Inhib.Layer.FB = 4   // 4
-
-				ly.Learn.Timing.EnableCycles = 160
 			}},
 		{Sel: "#Output", Doc: "high inhib for one-hot output",
 			Set: func(ly *axon.LayerParams) {
