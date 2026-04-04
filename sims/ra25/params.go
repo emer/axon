@@ -25,9 +25,10 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.Timing.On.SetBool(true)
 				ly.Learn.Timing.Refractory.SetBool(false)
 				ly.Learn.Timing.SynCaCycles = 160
+				ly.Learn.Timing.Old.SetBool(true)
 				ly.Learn.Timing.MinusWindow = 130
-				ly.Learn.Timing.EnableWindow = 40
-				ly.Learn.Timing.LearnCycles = -40 // 0 or -40
+				ly.Learn.Timing.LearnCycles = 0
+				ly.Learn.Timing.EnableWindow = 150
 				ly.Learn.Timing.TimeDiffTau = 4
 
 				// ly.Learn.CaLearn.ETraceTau = 4

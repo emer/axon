@@ -198,7 +198,10 @@ type LearnTimingParams struct {
 	// Dt is 1/Tau
 	TimeDiffDt float32 `display:"-"`
 
-	pad, pad1, pad2 float32
+	// Old uses the old version of the logic: ignores MinusWindow, just uses EnableWindow
+	Old slbool.Bool
+
+	pad, pad1 float32
 }
 
 func (lt *LearnTimingParams) Defaults() {
@@ -258,6 +261,11 @@ func (lt *LearnTimingParams) LearnTrialEnd(ctx *Context, ni, di uint32) bool {
 func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 	if lt.On.IsFalse() {
 		lt.LearnTrialEnd(ctx, ni, di)
+		return
+	}
+
+	if lt.Old.IsTrue() {
+		lt.LearnTimingOld(ctx, ni, di)
 		return
 	}
 
@@ -352,6 +360,84 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 	Neurons.Set(float32(ctx.CyclesTotal), int(ni), int(di), int(Enabled))
 	if learnImmed { // set LearnNow immediately when enabled, in the future
 		lnow := minusWinCyc + lt.LearnCycles
+		Neurons.Set(float32(lnow), int(ni), int(di), int(LearnNow))
+	}
+}
+
+func (lt *LearnTimingParams) LearnTimingOld(ctx *Context, ni, di uint32) {
+	timeDiff := Neurons.Value(int(ni), int(di), int(TimeDiff))
+	gaDiff := math32.Abs(Neurons.Value(int(ni), int(di), int(GaP)) - Neurons.Value(int(ni), int(di), int(GaD)))
+	timeDiff += lt.TimeDiffDt * (gaDiff - timeDiff)
+	Neurons.Set(timeDiff, int(ni), int(di), int(TimeDiff))
+
+	timePeak := Neurons.Value(int(ni), int(di), int(TimePeak))
+	peakCyc := int32(Neurons.Value(int(ni), int(di), int(TPeakCycle)))
+	if timeDiff > timePeak {
+		timePeak = timeDiff
+		peakCyc = ctx.CyclesTotal
+		Neurons.Set(timePeak, int(ni), int(di), int(TimePeak))
+		Neurons.Set(float32(peakCyc), int(ni), int(di), int(TPeakCycle))
+	}
+
+	tcyc := ctx.CyclesTotal - peakCyc
+	if tcyc < lt.EnableWindow {
+		return
+	}
+	lt.TimingReset(ctx, ni, di) // should prevent ever going through here again
+
+	minusCyc := peakCyc
+	Neurons.Set(float32(minusCyc), int(ni), int(di), int(MinusCycle))
+	Neurons.Set(float32(ctx.CyclesTotal), int(ni), int(di), int(MinusWindow))
+	Neurons.Set(timePeak, int(ni), int(di), int(MinusPeak))
+
+	learnImmed := lt.LearnCycles >= 0 // LearnNow happens immediately after enabled
+	// otherwise, wait for another minus peak and learn *prior* to that
+	caD := Neurons.Value(int(ni), int(di), int(CaD))
+	learnNow := int32(Neurons.Value(int(ni), int(di), int(LearnNow)))
+
+	if lt.Refractory.IsTrue() && learnNow > 0 { // if any learning has happened before
+		if caD <= lt.LearnThr { // neuron went off, no longer refractory
+			Neurons.Set(0.0, int(ni), int(di), int(LearnNow))
+		} else {
+			return // still refractory
+		}
+	}
+
+	if !learnImmed { // learn on previous enabled state
+		prevEnabled := int32(Neurons.Value(int(ni), int(di), int(Enabled))) // this is *previous* enabled -- not yet updated
+		pe := ctx.CyclesTotal - prevEnabled
+		isPrevEnabled := prevEnabled > 0 && minusCyc > prevEnabled && pe <= ctx.ThetaCycles+ctx.PlusCycles
+		if isPrevEnabled {
+			lnow := minusCyc + lt.LearnCycles
+			if lnow == ctx.CyclesTotal-ctx.Cycle { // don't hit right at start
+				lnow--
+			}
+			if lnow < prevEnabled {
+				lnow = prevEnabled // can't go back before that!
+			}
+			if lnow-prevEnabled >= 60 { // min limit on bins
+				lnow = prevEnabled + 59
+			}
+			Neurons.Set(float32(lnow), int(ni), int(di), int(LearnNow))           // will be in the past
+			Neurons.Set(float32(prevEnabled), int(ni), int(di), int(EnabledPrev)) // only save for learning ones
+			// st := (ctx.CyclesTotal / ctx.ThetaCycles) * ctx.ThetaCycles
+			// fmt.Println(ni, "st:", st, "cyc:", ctx.CyclesTotal-st, "min:", minusCyc-st, "lnow:", lnow-st, "prevEnab:", prevEnabled-st, "pe:", pe)
+		} else {
+			Neurons.Set(0.0, int(ni), int(di), int(EnabledPrev)) // only save for learning ones
+			Neurons.Set(0.0, int(ni), int(di), int(LearnNow))
+		}
+	}
+
+	if caD < lt.LearnThr { // didn't get above threshold
+		Neurons.Set(0.0, int(ni), int(di), int(Enabled))
+		if learnImmed { // can't do this for !learnImmed, b/c could have just learned above, in past..
+			Neurons.Set(0.0, int(ni), int(di), int(LearnNow))
+		}
+		return
+	}
+	Neurons.Set(float32(ctx.CyclesTotal), int(ni), int(di), int(Enabled))
+	if learnImmed { // set LearnNow immediately when enabled, in the future
+		lnow := ctx.CyclesTotal + lt.LearnCycles
 		Neurons.Set(float32(lnow), int(ni), int(di), int(LearnNow))
 	}
 }

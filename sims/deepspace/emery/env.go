@@ -91,13 +91,11 @@ type EmeryEnv struct {
 	// States is the current rendered state tensors.
 	States map[string]*tensor.Float32
 
-	// Rand is the random number generator for the env.
-	// All random calls must use this.
-	// Set seed here for weight initialization values.
-	Rand randx.SysRand `display:"-"`
-
 	// Cycle tracks cycles, for interval-based updates etc.
 	Cycle env.Counter
+
+	// Rand is the random number generator for the env.
+	Rand randx.SysRand `display:"-"`
 
 	// random seed
 	RandSeed int64 `edit:"-"`

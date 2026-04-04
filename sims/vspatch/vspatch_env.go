@@ -78,8 +78,8 @@ type VSPatchEnv struct {
 	// random number generator for the env -- all random calls must use this
 	Rand randx.SysRand `display:"-"`
 
-	// random seed
-	RandSeed int64 `edit:"-"`
+	// random seed multiplier for run counter: auto-init to 173 if 0 at start.
+	RunRandSeed int64 `edit:"-"`
 
 	// named states: ACCPos, ACCNeg
 	States map[string]*tensor.Float32
@@ -133,10 +133,9 @@ func (ev *VSPatchEnv) SetCondValuesPermute(ord []int) {
 
 // Config configures the world
 func (ev *VSPatchEnv) Config(mode etime.Modes, di int, rndseed int64) {
+	ev.RunRandSeed = rndseed
 	ev.Mode = mode
 	ev.Di = di
-	ev.RandSeed = rndseed
-	ev.Rand.NewRand(ev.RandSeed)
 	ev.States = make(map[string]*tensor.Float32)
 	ev.States["State"] = tensor.NewFloat32(ev.NUnitsY, ev.NUnitsX)
 	ev.CondValues = make([]float32, ev.NConds)
@@ -181,6 +180,8 @@ func (ev *VSPatchEnv) ConfigPats() {
 }
 
 func (ev *VSPatchEnv) Init(run int) {
+	// ev.Rand.Init(ev.RunRandSeed * (int64(run) + 1))
+	patterns.RandSource = &ev.Rand
 	ev.Trial.Init()
 	ev.Theta.Init()
 }
