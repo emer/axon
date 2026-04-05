@@ -284,8 +284,7 @@ func (ss *Sim) Init() {
 
 // InitRandSeed initializes the random seed based on current training run number
 func (ss *Sim) InitRandSeed(run int) {
-	ss.RandSeeds.Set(run)
-	ss.RandSeeds.Set(run, &ss.Net.Rand)
+	ss.RandSeeds.Set(run, ss.Net.Rand)
 }
 
 // NetViewUpdater returns the NetViewUpdate for given mode.
@@ -377,8 +376,8 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 // ApplyRubicon applies Rubicon reward inputs.
 func (ss *Sim) ApplyRubicon(ev *cond.CondEnv, mode Modes, seq *cond.Sequence) {
 	rp := &ss.Net.Rubicon
-	di := uint32(0)               // not doing NData here -- otherwise loop over
-	rp.NewState(di, &ss.Net.Rand) // first before anything else is updated
+	di := uint32(0)              // not doing NData here -- otherwise loop over
+	rp.NewState(di, ss.Net.Rand) // first before anything else is updated
 	rp.SetGoalMaintFromLayer(di, ss.Net, "ILposPT", 0.3)
 	rp.DecodePVEsts(di, ss.Net)
 	dist := math32.Abs(float32(3 - ev.Tick.Cur))
@@ -394,7 +393,7 @@ func (ss *Sim) ApplyRubicon(ev *cond.CondEnv, mode Modes, seq *cond.Sequence) {
 	drvs := make([]float32, cond.NUSs)
 	drvs[seq.US] = 1
 	rp.SetDrives(di, 1, drvs...)
-	rp.Step(di, &ss.Net.Rand)
+	rp.Step(di, ss.Net.Rand)
 }
 
 // InitEnvRun intializes a new environment run, as when the RunName is changed

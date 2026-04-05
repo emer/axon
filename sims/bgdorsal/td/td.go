@@ -8,8 +8,6 @@
 package main
 
 import (
-	"math/rand"
-
 	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/lab/tensor"
@@ -96,6 +94,14 @@ type TD struct {
 
 	// Q are the state-action values: [States][Actions]
 	Q tensor.Float32
+
+	// Rand is the random number generator for the env.
+	// Created in Init if not already there.
+	Rand randx.Rand `display:"-"`
+
+	// RunRandSeed is the random seed multiplier for run counter.
+	// It is set to 173 if 0 at start for consistent results by default.
+	RunRandSeed int64 `edit:"-"`
 }
 
 func (td *TD) Defaults() {
@@ -115,7 +121,12 @@ func (td *TD) Config(states, actions int) {
 	td.NActions = actions
 }
 
-func (td *TD) Init() {
+func (td *TD) Init(run int) {
+	if td.RunRandSeed == 0 {
+		td.RunRandSeed = 173
+	}
+	randx.InitSysRand(&td.Rand, td.RunRandSeed*(int64(run)+1))
+
 	td.Q.SetShapeSizes(td.NStates, td.NActions)
 	tensor.SetAllFloat64(&td.Q, 0)
 	td.EpochUpdate(0)
@@ -144,7 +155,7 @@ func (td *TD) MaxQ(state int) (float32, int) {
 
 func (td *TD) EpsilonGreedyAction(state int) int {
 	if randx.BoolP(float64(td.Epsilon.Current)) {
-		return rand.Intn(td.NActions)
+		return td.Rand.Intn(td.NActions)
 	}
 	_, mi := td.MaxQ(state)
 	return mi

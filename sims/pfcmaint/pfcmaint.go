@@ -247,8 +247,7 @@ func (ss *Sim) Init() {
 
 // InitRandSeed initializes the random seed based on current training run number
 func (ss *Sim) InitRandSeed(run int) {
-	ss.RandSeeds.Set(run)
-	ss.RandSeeds.Set(run, &ss.Net.Rand)
+	ss.RandSeeds.Set(run, ss.Net.Rand)
 }
 
 // NetViewUpdater returns the NetViewUpdate for given mode.
@@ -337,8 +336,8 @@ func (ss *Sim) ApplyInputs(mode Modes, trial, theta int) {
 // ApplyRubicon applies Rubicon reward inputs
 func (ss *Sim) ApplyRubicon(ev *PFCMaintEnv, mode Modes, trial int, di uint32) {
 	rp := &ss.Net.Rubicon
-	rp.NewState(di, &ss.Net.Rand) // first before anything else is updated
-	if ev.Trial.Cur == 0 {        // reset maint on rew -- trial counter wraps around to 0
+	rp.NewState(di, ss.Net.Rand) // first before anything else is updated
+	if ev.Trial.Cur == 0 {       // reset maint on rew -- trial counter wraps around to 0
 		axon.GlobalSetRew(di, 1, true)
 	}
 }

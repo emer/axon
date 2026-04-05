@@ -98,6 +98,10 @@ type Sim struct {
 	// GUI manages all the GUI elements
 	GUI egui.GUI `display:"-"`
 
+	// Rand is the random number generator for the env.
+	// Created in Init if not already there.
+	Rand randx.Rand `display:"-"`
+
 	// RandSeeds is a list of random seeds to use for each run.
 	RandSeeds randx.Seeds `display:"-"`
 }
@@ -117,6 +121,7 @@ func (ss *Sim) ConfigSim() {
 	tensorfs.CurRoot = ss.Root
 	ss.RandSeeds.Init(100) // max 100 runs
 	ss.InitRandSeed(0)
+	randx.InitSysRand(&ss.Rand, ss.RandSeeds[0])
 	ss.CaSpike.Defaults()
 	ss.ConfigKinase()
 	ss.ConfigStats()
@@ -139,7 +144,7 @@ func (ss *Sim) Init() {
 
 // InitRandSeed initializes the random seed based on current training run number
 func (ss *Sim) InitRandSeed(run int) {
-	ss.RandSeeds.Set(run)
+	ss.RandSeeds.Set(run, ss.Rand)
 }
 
 // Stop tells the sim to stop running

@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math/rand"
 	"strconv"
 	"strings"
 
@@ -807,7 +806,7 @@ func (ly *Layer) LesionNeurons(prop float32) int { //types:add
 	if nn == 0 {
 		return 0
 	}
-	p := rand.Perm(int(nn))
+	p := ly.Network.Rand.Perm(int(nn))
 	nl := int(prop * float32(nn))
 	for lni := uint32(0); lni < nn; lni++ {
 		nip := uint32(p[lni])

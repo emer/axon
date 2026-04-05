@@ -167,7 +167,7 @@ func (ss *Sim) ConfigEnv() {
 
 	// this logic can be used to create train-test splits of a set of patterns:
 	// n := inputs.NumRows()
-	// order := rand.Perm(n)
+	// order := ss.Net.Rand.Perm(n)
 	// ntrn := int(0.85 * float64(n))
 	// trnEnv := table.NewView(inputs)
 	// tstEnv := table.NewView(inputs)
@@ -252,8 +252,7 @@ func (ss *Sim) Init() {
 
 // InitRandSeed initializes the random seed based on current training run number
 func (ss *Sim) InitRandSeed(run int) {
-	ss.RandSeeds.Set(run)
-	ss.RandSeeds.Set(run, &ss.Net.Rand)
+	ss.RandSeeds.Set(run, ss.Net.Rand)
 }
 
 // NetViewUpdater returns the NetViewUpdate for given mode.

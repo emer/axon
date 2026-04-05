@@ -115,11 +115,13 @@ type Env struct {
 	// maximum length of any arm
 	MaxLength int `edit:"-"`
 
-	// random number generator for the env -- all random calls must use this
-	Rand randx.SysRand `display:"-"`
+	// Rand is the random number generator for the env.
+	// Created in Init if not already there.
+	Rand randx.Rand `display:"-"`
 
-	// random seed
-	RandSeed int64 `edit:"-"`
+	// RunRandSeed is the random seed multiplier for run counter.
+	// It is set to 173 if 0 at start for consistent results by default.
+	RunRandSeed int64 `edit:"-"`
 }
 
 func (ev *Env) Label() string { return ev.Name }
@@ -140,12 +142,6 @@ func (ev *Env) Defaults() {
 // takes the data parallel index di
 func (ev *Env) ConfigEnv(di int) {
 	ev.Di = di
-	if ev.Rand.Rand == nil {
-		ev.Rand.NewRand(ev.RandSeed)
-	} else {
-		ev.Rand.Seed(ev.RandSeed)
-	}
-
 	switch ev.Config.Paradigm {
 	case GroupGoodBad:
 		ev.ConfigGroupGoodBad()
@@ -161,6 +157,10 @@ func (ev *Env) Validate() error {
 // Init does updating preparing to run -- params could have changed since initial config
 // so updates everything except broad overall config stuff.
 func (ev *Env) Init(run int) {
+	if ev.RunRandSeed == 0 {
+		ev.RunRandSeed = 173
+	}
+	randx.InitSysRand(&ev.Rand, ev.RunRandSeed*(int64(run)+1))
 	cfg := &ev.Config
 
 	ev.UpdateMaxLength()
@@ -182,7 +182,7 @@ func (ev *Env) State(el string) tensor.Values {
 // NewStart starts a new approach run
 func (ev *Env) NewStart() {
 	for _, arm := range ev.Config.Arms { // do at start so it is consistent
-		arm.USAvail = randx.BoolP32(arm.USProb, &ev.Rand)
+		arm.USAvail = randx.BoolP32(arm.USProb, ev.Rand)
 	}
 	if ev.Config.Params.RandomStart {
 		ev.Arm = ev.Rand.Intn(len(ev.Config.Arms))
@@ -439,7 +439,7 @@ func (ev *Env) InstinctAct(justGated, hasGated bool) Actions {
 	if ev.LastAct == Left || ev.LastAct == Right {
 		return ev.LastAct
 	}
-	if ev.Config.Params.AlwaysLeft || randx.BoolP(.5, &ev.Rand) {
+	if ev.Config.Params.AlwaysLeft || randx.BoolP(.5, ev.Rand) {
 		return Left
 	}
 	return Right
@@ -459,8 +459,8 @@ func (ev *Env) CurCS() int {
 }
 
 // MinMaxRand returns a random number in the range between Min and Max
-func MinMaxRand(mm minmax.F32, rand randx.SysRand) float32 {
-	return mm.Min + rand.Float32()*mm.Range()
+func MinMaxRand(mm minmax.F32, rnd randx.Rand) float32 {
+	return mm.Min + rnd.Float32()*mm.Range()
 }
 
 // InactiveVal returns a new random inactive value from Config.Params.Inactive

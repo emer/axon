@@ -8,12 +8,12 @@ import (
 	"fmt"
 	"image"
 	"log/slog"
-	"math/rand"
 	"slices"
 	"strings"
 
 	"cogentcore.org/core/base/iox/imagex"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/plot/plots"
 	"cogentcore.org/lab/stats/glm"
@@ -75,6 +75,14 @@ type Linear struct {
 
 	// Data to fit the regression
 	Data table.Table
+
+	// Rand is the random number generator for the env.
+	// Created in Init if not already there.
+	Rand randx.Rand `display:"-"`
+
+	// RunRandSeed is the random seed multiplier for run counter.
+	// It is set to 173 if 0 at start for consistent results by default.
+	RunRandSeed int64 `edit:"-"`
 }
 
 func (ls *Linear) Defaults() {
@@ -100,7 +108,11 @@ func (ls *Linear) Update() {
 	ls.Recv.CaBins = make([]float32, ls.NumBins)
 }
 
-func (ls *Linear) Init() {
+func (ls *Linear) Init(run int) {
+	if ls.RunRandSeed == 0 {
+		ls.RunRandSeed = 173
+	}
+	randx.InitSysRand(&ls.Rand, ls.RunRandSeed*(int64(run)+1))
 	ls.Data.Init()
 	ls.Send.Init()
 	ls.Recv.Init()
@@ -177,7 +189,7 @@ func (ls *Linear) Cycle(nr *Neuron, expInt float32, cyc int) {
 	nr.Spike = 0
 	bin := cyc / ls.CyclesPerBin
 	if expInt > 0 {
-		nr.SpikeP *= rand.Float32()
+		nr.SpikeP *= ls.Rand.Float32()
 		if nr.SpikeP <= expInt {
 			nr.Spike = 1
 			nr.SpikeP = 1

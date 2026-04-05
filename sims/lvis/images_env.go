@@ -129,12 +129,6 @@ type ImagesEnv struct {
 	// output patterns: either localist or random
 	Pats table.Table `display:"no-inline"`
 
-	// random number generator for the env -- all random calls must use this
-	Rand randx.SysRand `display:"-"`
-
-	// random seed
-	RandSeed int64 `edit"-"`
-
 	// output pattern for current item
 	Output tensor.Float32
 
@@ -152,6 +146,14 @@ type ImagesEnv struct {
 
 	// Row of item list  -- this is actual counter driving everything
 	Row env.Counter `display:"inline"`
+
+	// Rand is the random number generator for the env.
+	// Created in Init if not already there.
+	Rand randx.Rand `display:"-"`
+
+	// RunRandSeed is the random seed multiplier for run counter.
+	// It is set to 173 if 0 at start for consistent results by default.
+	RunRandSeed int64 `edit:"-"`
 }
 
 func (ev *ImagesEnv) Label() string { return ev.Name }
@@ -207,12 +209,11 @@ func (ev *ImagesEnv) Config(ndata int, netGPU *gpu.GPU) {
 }
 
 func (ev *ImagesEnv) Init(run int) {
-	ev.RandSeed = int64(73 + run)
-	if ev.Rand.Rand == nil {
-		ev.Rand.NewRand(ev.RandSeed)
-	} else {
-		ev.Rand.Seed(ev.RandSeed)
+	if ev.RunRandSeed == 0 {
+		ev.RunRandSeed = 173
 	}
+	randx.InitSysRand(&ev.Rand, ev.RunRandSeed*(int64(run)+1))
+	ev.Images.Rand = ev.Rand
 	ev.Row.Cur = -1 // init state -- key so that first Step() = 0
 	nitm := len(ev.ImageList())
 	if ev.EdRow > 0 {
@@ -342,7 +343,7 @@ func (ev *ImagesEnv) ConfigPatsRandom() {
 
 // NewShuffle generates a new random order of items to present
 func (ev *ImagesEnv) NewShuffle() {
-	randx.PermuteInts(ev.Shuffle, &ev.Rand)
+	randx.PermuteInts(ev.Shuffle, ev.Rand)
 }
 
 // CurImage returns current image based on row and
@@ -379,9 +380,9 @@ func (ev *ImagesEnv) OpenImage(st *TrialState) (image.Image, error) {
 // RandTransforms generates random transforms
 func (ev *ImagesEnv) RandTransforms(st *TrialState) {
 	if ev.TransSigma > 0 {
-		st.Trans.X = float32(randx.GaussianGen(0, float64(ev.TransSigma), &ev.Rand))
+		st.Trans.X = float32(randx.GaussianGen(0, float64(ev.TransSigma), ev.Rand))
 		st.Trans.X = math32.Clamp(st.Trans.X, -ev.TransMax.X, ev.TransMax.X)
-		st.Trans.Y = float32(randx.GaussianGen(0, float64(ev.TransSigma), &ev.Rand))
+		st.Trans.Y = float32(randx.GaussianGen(0, float64(ev.TransSigma), ev.Rand))
 		st.Trans.Y = math32.Clamp(st.Trans.Y, -ev.TransMax.Y, ev.TransMax.Y)
 	} else {
 		st.Trans.X = (ev.Rand.Float32()*2 - 1) * ev.TransMax.X

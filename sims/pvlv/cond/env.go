@@ -9,6 +9,7 @@ package cond
 import (
 	"fmt"
 
+	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/lab/tensor"
 	"github.com/emer/emergent/v2/env"
 )
@@ -79,6 +80,14 @@ type CondEnv struct {
 
 	// current rendered state tensors -- extensible map
 	CurStates map[string]*tensor.Float32
+
+	// Rand is the random number generator for the env.
+	// Created in Init if not already there.
+	Rand randx.Rand `display:"-"`
+
+	// RunRandSeed is the random seed multiplier for run counter.
+	// It is set to 173 if 0 at start for consistent results by default.
+	RunRandSeed int64 `edit:"-"`
 }
 
 func (ev *CondEnv) Config(rmax int, rnm string) {
@@ -106,6 +115,10 @@ func (ev *CondEnv) String() string { return ev.SequenceName }
 
 // Init sets current run index and max
 func (ev *CondEnv) Init(ridx int) {
+	if ev.RunRandSeed == 0 {
+		ev.RunRandSeed = 173
+	}
+	randx.InitSysRand(&ev.Rand, ev.RunRandSeed*(int64(ridx)+1))
 	run := AllRuns[ev.RunName]
 	ev.CurRun = *run
 	ev.RunDesc = run.Desc
@@ -130,7 +143,7 @@ func (ev *CondEnv) InitCond() {
 	ev.Block.Max = cond.NBlocks
 	ev.Sequence.Init()
 	ev.Sequence.Max = cond.NSequences
-	ev.Sequences = SequenceReps(cnm)
+	ev.Sequences = SequenceReps(cnm, ev.Rand)
 	ev.Tick.Init()
 	trl := ev.Sequences[0]
 	ev.Tick.Max = trl.NTicks

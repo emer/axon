@@ -712,6 +712,7 @@ func (nt *Network) LateralConnectLayerPath(lay *Layer, pat paths.Pattern, pt *Pa
 // and NeuronTraceCycles which drive allocation of number of [NeuronTraces] neuron
 // variables and corresponding [GvSynCaWts] global scalar variables.
 func (nt *Network) Build() error { //types:add
+	
 	nix := nt.NetIxs()
 	ctx := nt.Context()
 	maxBins := ctx.NNeuronTraces()

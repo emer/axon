@@ -568,8 +568,7 @@ func (ss *Sim) Init() {
 
 // InitRandSeed initializes the random seed based on current training run number
 func (ss *Sim) InitRandSeed(run int) {
-	ss.RandSeeds.Set(run)
-	ss.RandSeeds.Set(run, &ss.Net.Rand)
+	ss.RandSeeds.Set(run, ss.Net.Rand)
 }
 
 // NetViewUpdater returns the NetViewUpdate for given mode.

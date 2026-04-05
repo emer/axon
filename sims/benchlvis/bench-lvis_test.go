@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"log/slog"
-	"math/rand"
 	"os"
 	"runtime"
 	"testing"
@@ -40,11 +39,8 @@ func BenchmarkBenchNetFull(b *testing.B) {
 		*threads, *ndata, *numEpochs, *numPats, inputShape[0], inputShape[1], *hiddenNeurs, outputShape[0], outputShape[1])
 	// }
 
-	rand.Seed(42)
-
-	ctx := axon.NewContext()
 	net := axon.NewNetwork("LVisBench")
-	ConfigNet(ctx, net, *inputNeurs, *inputPools, *pathways, *hiddenNeurs, *outputDim, *threads, *ndata, *verbose)
+	ConfigNet(net, *inputNeurs, *inputPools, *pathways, *hiddenNeurs, *outputDim, *threads, *ndata, *verbose)
 	slog.Info(net.SizeReport(false))
 
 	pats := table.New()
@@ -62,7 +58,7 @@ func BenchmarkBenchNetFull(b *testing.B) {
 	epcLog := table.New()
 	ConfigEpcLog(epcLog)
 
-	TrainNet(ctx, net, pats, epcLog, *pathways, *numEpochs, *verbose, *useGPU)
+	TrainNet(net, pats, epcLog, *pathways, *numEpochs, *verbose, *useGPU)
 }
 
 // TestGPUSynCa is a key test for large memory allocations
@@ -71,18 +67,16 @@ func TestGPUSynCa(t *testing.T) {
 	if os.Getenv("TEST_GPU") != "true" {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
-	rand.Seed(42)
 
-	ctx := axon.NewContext()
 	net := axon.NewNetwork("")
-	ConfigNet(ctx, net, *inputNeurs, *inputPools, *pathways, *hiddenNeurs, *outputDim, *threads, *ndata, *verbose)
+	ConfigNet(net, *inputNeurs, *inputPools, *pathways, *hiddenNeurs, *outputDim, *threads, *ndata, *verbose)
 	slog.Info(net.SizeReport(false))
 
 	axon.GPUInit()
 	axon.UseGPU = true
 
 	// on mac, only works up to ndata = 6 -- 7 fails
-	fmt.Printf("ndata: %d\n", ctx.NData)
+	fmt.Printf("ndata: %d\n", net.Context().NData)
 
 	// passed := net.GPU.TestSynCa()
 	// if !passed {

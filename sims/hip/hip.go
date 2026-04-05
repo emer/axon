@@ -155,15 +155,6 @@ func (ss *Sim) ConfigEnv() {
 	trnAB := tensorfs.DirTable(ss.Root.Dir("ABAC/Inputs/TrainAB"), nil)
 	tstAll := tensorfs.DirTable(ss.Root.Dir("ABAC/Inputs/TestAll"), nil)
 
-	// this logic can be used to create train-test splits of a set of patterns:
-	// n := inputs.NumRows()
-	// order := rand.Perm(n)
-	// ntrn := int(0.85 * float64(n))
-	// trnEnv := table.NewView(inputs)
-	// tstEnv := table.NewView(inputs)
-	// trnEnv.Indexes = order[:ntrn]
-	// tstEnv.Indexes = order[ntrn:]
-
 	// note: names must be standard here!
 	trn.Name = Train.String()
 	trn.Config(table.NewView(trnAB))
@@ -227,8 +218,7 @@ func (ss *Sim) Init() {
 
 // InitRandSeed initializes the random seed based on current training run number
 func (ss *Sim) InitRandSeed(run int) {
-	ss.RandSeeds.Set(run)
-	ss.RandSeeds.Set(run, &ss.Net.Rand)
+	ss.RandSeeds.Set(run, ss.Net.Rand)
 }
 
 // NetViewUpdater returns the NetViewUpdate for given mode.

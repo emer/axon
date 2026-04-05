@@ -5,8 +5,6 @@
 package cond
 
 import (
-	"math/rand"
-
 	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/base/randx"
 )
@@ -122,7 +120,7 @@ func (cd *Block) Append(seq *Sequence) {
 // based on USProb probability.
 // If Condition.Permute is true, order of all sequences are permuted.
 // Gets the block name from the condition name.
-func SequenceReps(condNm string) []*Sequence {
+func SequenceReps(condNm string, rnd randx.Rand) []*Sequence {
 	var seqs []*Sequence
 	cond := AllConditions[condNm]
 	cond.Name = condNm
@@ -149,7 +147,7 @@ func SequenceReps(condNm string) []*Sequence {
 				for i := 0; i < pn; i++ {
 					usIsOn[i] = true
 				}
-				rand.Shuffle(len(usIsOn), func(i, j int) {
+				rnd.Shuffle(len(usIsOn), func(i, j int) {
 					usIsOn[i], usIsOn[j] = usIsOn[j], usIsOn[i]
 				})
 			}
@@ -158,7 +156,7 @@ func SequenceReps(condNm string) []*Sequence {
 			trlNm := seq.Name + "_" + seq.Valence.String()
 			usOn := false
 			if !useIsOnList {
-				usOn = randx.BoolP32(seq.USProb)
+				usOn = randx.BoolP32(seq.USProb, rnd)
 			} else {
 				usOn = usIsOn[ri]
 			}
@@ -170,7 +168,7 @@ func SequenceReps(condNm string) []*Sequence {
 		}
 	}
 	if cond.Permute {
-		rand.Shuffle(len(seqs), func(i, j int) {
+		rnd.Shuffle(len(seqs), func(i, j int) {
 			seqs[i], seqs[j] = seqs[j], seqs[i]
 		})
 	}

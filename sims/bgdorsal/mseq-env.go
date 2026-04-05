@@ -89,14 +89,16 @@ type MotorSeqEnv struct {
 	// total number of units: NActions * NUnitsPer
 	NUnits int `display:"-"`
 
-	// random number generator for the env -- all random calls must use this
-	Rand randx.SysRand `display:"-"`
-
-	// random seed
-	RandSeed int64 `edit:"-"`
-
 	// named states: State, Target, PrevAction, Action
 	States map[string]*tensor.Float32
+
+	// Rand is the random number generator for the env.
+	// Created in Init if not already there.
+	Rand randx.Rand `display:"-"`
+
+	// RunRandSeed is the random seed multiplier for run counter.
+	// It is set to 173 if 0 at start for consistent results by default.
+	RunRandSeed int64 `edit:"-"`
 }
 
 func (ev *MotorSeqEnv) Label() string { return ev.Name }
@@ -116,8 +118,7 @@ func (ev *MotorSeqEnv) Defaults() {
 // Config configures the world
 func (ev *MotorSeqEnv) Config(mode Modes, rndseed int64) {
 	ev.Mode = mode
-	ev.RandSeed = rndseed
-	ev.Rand.NewRand(ev.RandSeed)
+	ev.RunRandSeed = rndseed
 	ev.States = make(map[string]*tensor.Float32)
 	ev.States["State"] = tensor.NewFloat32(ev.NUnitsPer, ev.SeqLen)
 	ev.States["Target"] = tensor.NewFloat32(ev.NUnitsPer, ev.NActions)
@@ -142,7 +143,10 @@ func (ev *MotorSeqEnv) String() string {
 }
 
 func (ev *MotorSeqEnv) Init(run int) {
-	ev.Rand.NewRand(ev.RandSeed + int64(run)*113)
+	if ev.RunRandSeed == 0 {
+		ev.RunRandSeed = 173
+	}
+	randx.InitSysRand(&ev.Rand, ev.RunRandSeed*(int64(run)+1))
 	ev.Trial.Max = ev.SeqLen + 1 // rew
 	ev.Trial.Init()
 	ev.Trial.Cur = 0
@@ -237,7 +241,7 @@ func (ev *MotorSeqEnv) ComputeReward() {
 	// fmt.Println("rew, ncor:", ev.NCorrect, ev.SeqLen)
 	if ev.PartialCredit {
 		prew := float32(ev.NCorrect) / float32(ev.SeqLen)
-		doRew := randx.BoolP32(prew, &ev.Rand)
+		doRew := randx.BoolP32(prew, ev.Rand)
 		if doRew {
 			if ev.PartialGraded {
 				ev.Rew = prew

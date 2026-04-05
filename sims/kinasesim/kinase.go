@@ -6,7 +6,6 @@ package kinasesim
 
 import (
 	"fmt"
-	"math/rand"
 
 	"cogentcore.org/core/math32"
 	"github.com/emer/axon/v2/kinase"
@@ -62,7 +61,7 @@ func (kn *KinaseNeuron) StartTrial() {
 func (ss *Sim) Cycle(kn *KinaseNeuron, expInt float32, cyc int) {
 	kn.Spike = 0
 	if expInt > 0 {
-		kn.SpikeP *= rand.Float32()
+		kn.SpikeP *= ss.Rand.Float32()
 		if kn.SpikeP <= expInt {
 			kn.Spike = 1
 			kn.SpikeP = 1

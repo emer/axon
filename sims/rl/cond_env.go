@@ -6,7 +6,6 @@ package rl
 
 import (
 	"fmt"
-	"math/rand"
 
 	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/lab/tensor"
@@ -49,13 +48,13 @@ func (oo *OnOff) Set(act bool, on, off int) {
 }
 
 // TrialUpdate updates Cur state at start of trial
-func (oo *OnOff) TrialUpdate() {
+func (oo *OnOff) TrialUpdate(rnd randx.Rand) {
 	if !oo.Act {
 		return
 	}
-	oo.CurAct = randx.BoolP32(oo.P)
-	oo.CurOn = oo.On - oo.OnVar + 2*rand.Intn(oo.OnVar+1)
-	oo.CurOff = oo.Off - oo.OffVar + 2*rand.Intn(oo.OffVar+1)
+	oo.CurAct = randx.BoolP32(oo.P, rnd)
+	oo.CurOn = oo.On - oo.OnVar + 2*rnd.Intn(oo.OnVar+1)
+	oo.CurOff = oo.Off - oo.OffVar + 2*rnd.Intn(oo.OffVar+1)
 }
 
 // IsOn returns true if should be on according current time
@@ -105,6 +104,14 @@ type CondEnv struct {
 
 	// event is one time step within Trial -- e.g., CS turning on, etc
 	Event env.Counter `display:"inline"`
+
+	// Rand is the random number generator for the env.
+	// Created in Init if not already there.
+	Rand randx.Rand `display:"-"`
+
+	// RunRandSeed is the random seed multiplier for run counter.
+	// It is set to 173 if 0 at start for consistent results by default.
+	RunRandSeed int64 `edit:"-"`
 }
 
 func (ev *CondEnv) Label() string { return ev.Name }
@@ -140,6 +147,11 @@ func (ev *CondEnv) String() string {
 }
 
 func (ev *CondEnv) Init(run int) {
+	if ev.RunRandSeed == 0 {
+		ev.RunRandSeed = 173
+	}
+	randx.InitSysRand(&ev.Rand, ev.RunRandSeed*(int64(run)+1))
+
 	ev.Input.SetShapeSizes(3, ev.TotTime)
 	ev.Reward.SetShapeSizes(1)
 	ev.Trial.Init()
@@ -151,10 +163,10 @@ func (ev *CondEnv) Init(run int) {
 
 // TrialUpdate updates all random vars at start of trial
 func (ev *CondEnv) TrialUpdate() {
-	ev.CSA.TrialUpdate()
-	ev.CSB.TrialUpdate()
-	ev.CSC.TrialUpdate()
-	ev.US.TrialUpdate()
+	ev.CSA.TrialUpdate(ev.Rand)
+	ev.CSB.TrialUpdate(ev.Rand)
+	ev.CSC.TrialUpdate(ev.Rand)
+	ev.US.TrialUpdate(ev.Rand)
 }
 
 // SetInput sets the input state

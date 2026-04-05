@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
-	"math/rand"
 	"runtime"
 	"testing"
 
@@ -42,11 +41,8 @@ func BenchmarkBenchNetFull(b *testing.B) {
 		fmt.Printf("Running bench with: %d Threads, %d epochs, %d pats, %d units\n", *threads, *numEpochs, *numPats, *numUnits)
 	}
 
-	rand.Seed(42)
-
-	ctx := axon.NewContext()
 	net := axon.NewNetwork("BenchNet")
-	ConfigNet(net, ctx, *threads, *numUnits, *verbose)
+	ConfigNet(net, *threads, *numUnits, *verbose)
 	if *verbose {
 		slog.Info(net.SizeReport(false))
 	}
@@ -57,7 +53,7 @@ func BenchmarkBenchNetFull(b *testing.B) {
 	epcLog := table.New()
 	ConfigEpcLog(epcLog)
 
-	TrainNet(net, ctx, pats, epcLog, *numEpochs, *verbose, *gpu)
+	TrainNet(net, pats, epcLog, *numEpochs, *verbose, *gpu)
 
 	if *writeStats {
 		filename := fmt.Sprintf("bench_%d_units.csv", *numUnits)

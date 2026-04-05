@@ -6,7 +6,6 @@ package bgventral
 
 import (
 	"fmt"
-	"math/rand"
 
 	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/lab/tensor"
@@ -78,12 +77,6 @@ type GoNoEnv struct {
 	// pop code the values in ACCPos and Neg
 	PopCode popcode.OneD
 
-	// random number generator for the env -- all random calls must use this
-	Rand randx.SysRand `display:"-"`
-
-	// random seed
-	RandSeed int64 `edit:"-"`
-
 	// named states: ACCPos, ACCNeg
 	States map[string]*tensor.Float32
 
@@ -104,6 +97,14 @@ type GoNoEnv struct {
 
 	// reward prediction error: Rew - RewPred
 	RPE float32 `edit:"-"`
+
+	// Rand is the random number generator for the env.
+	// Created in Init if not already there.
+	Rand randx.Rand `display:"-"`
+
+	// RunRandSeed is the random seed multiplier for run counter.
+	// It is set to 173 if 0 at start for consistent results by default.
+	RunRandSeed int64 `edit:"-"`
 }
 
 func (ev *GoNoEnv) Label() string { return ev.Name }
@@ -128,8 +129,7 @@ func (ev *GoNoEnv) Defaults() {
 // Config configures the world
 func (ev *GoNoEnv) Config(mode Modes, rndseed int64) {
 	ev.Mode = mode
-	ev.RandSeed = rndseed
-	ev.Rand.NewRand(ev.RandSeed)
+	ev.RunRandSeed = rndseed
 	ev.States = make(map[string]*tensor.Float32)
 	ev.States["ACCPos"] = tensor.NewFloat32(ev.NUnitsY, ev.NUnitsX)
 	ev.States["ACCNeg"] = tensor.NewFloat32(ev.NUnitsY, ev.NUnitsX)
@@ -138,6 +138,10 @@ func (ev *GoNoEnv) Config(mode Modes, rndseed int64) {
 }
 
 func (ev *GoNoEnv) Init(run int) {
+	if ev.RunRandSeed == 0 {
+		ev.RunRandSeed = 173
+	}
+	randx.InitSysRand(&ev.Rand, ev.RunRandSeed*(int64(run)+1))
 	ev.Trial.Init()
 }
 
@@ -179,8 +183,8 @@ func (ev *GoNoEnv) Step() bool {
 			ev.ACCNeg = float32(neg) * ev.TestInc
 			// fmt.Printf("idx: %d  di: %d  repn: %d  pos: %d  neg: %d\n", idx, di, repn, pos, neg)
 		} else {
-			ev.ACCPos = rand.Float32()
-			ev.ACCNeg = rand.Float32()
+			ev.ACCPos = ev.Rand.Float32()
+			ev.ACCNeg = ev.Rand.Float32()
 		}
 	}
 	ev.RenderState()

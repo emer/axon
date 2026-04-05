@@ -51,12 +51,13 @@ type FSAEnv struct {
 	// within current sequence. It resets to 0 at start of each sequence.
 	Trial env.Counter `display:"inline"`
 
-	// random number generator for the env. all random calls must use this.
-	// set seed here for weight initialization values.
-	Rand randx.SysRand `display:"-"`
+	// Rand is the random number generator for the env.
+	// Created in Init if not already there.
+	Rand randx.Rand `display:"-"`
 
-	// random seed.
-	RandSeed int64 `edit:"-"`
+	// RunRandSeed is the random seed multiplier for run counter.
+	// It is set to 173 if 0 at start for consistent results by default.
+	RunRandSeed int64 `edit:"-"`
 }
 
 // InitTMat initializes matrix and labels to given size
@@ -123,7 +124,10 @@ func (ev *FSAEnv) String() string {
 }
 
 func (ev *FSAEnv) Init(run int) {
-	ev.Rand.NewRand(ev.RandSeed)
+	if ev.RunRandSeed == 0 {
+		ev.RunRandSeed = 173
+	}
+	randx.InitSysRand(&ev.Rand, ev.RunRandSeed*(int64(run)+1))
 	ev.Seq.Init()
 	ev.Tick.Init()
 	ev.Trial.Init()
@@ -141,7 +145,7 @@ func (ev *FSAEnv) NextState() {
 	ri := ev.AState.Cur * nst
 	ps := ev.TMat.Values[ri : ri+nst]
 	ls := ev.Labels.Values[ri : ri+nst]
-	nxt := randx.PChoose64(ps, &ev.Rand) // next state chosen at random
+	nxt := randx.PChoose64(ps, ev.Rand) // next state chosen at random
 	ev.NextStates.Set1D(nxt, 0)
 	ev.NextLabels.Set1D(ls[nxt], 0)
 	idx := 1

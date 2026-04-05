@@ -164,9 +164,9 @@ func (ss *Sim) ConfigEnv() {
 		// note: names must be standard here!
 		trn.Name = env.ModeDi(Train, di)
 		trn.Defaults()
-		trn.RandSeed = 73
+		trn.RunRandSeed = 73
 		if !ss.Config.Env.SameSeed {
-			trn.RandSeed += int64(di) * 73
+			trn.RunRandSeed += int64(di) * 73
 		}
 		trn.Config.NDrives = ss.Config.Env.NDrives
 		if ss.Config.Env.Config != "" {
@@ -391,8 +391,7 @@ func (ss *Sim) Init() {
 
 // InitRandSeed initializes the random seed based on current training run number
 func (ss *Sim) InitRandSeed(run int) {
-	ss.RandSeeds.Set(run)
-	ss.RandSeeds.Set(run, &ss.Net.Rand)
+	ss.RandSeeds.Set(run, ss.Net.Rand)
 }
 
 // NetViewUpdater returns the NetViewUpdate for given mode.
@@ -587,7 +586,7 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 // ApplyRubicon applies Rubicon reward inputs.
 func (ss *Sim) ApplyRubicon(ev *armaze.Env, mode Modes, di uint32) {
 	rp := &ss.Net.Rubicon
-	rp.NewState(di, &ss.Net.Rand) // first before anything else is updated
+	rp.NewState(di, ss.Net.Rand) // first before anything else is updated
 	rp.SetGoalMaintFromLayer(di, ss.Net, "PLutilPT", 0.2)
 	rp.DecodePVEsts(di, ss.Net)
 	rp.SetGoalDistEst(di, float32(ev.Dist))
@@ -596,7 +595,7 @@ func (ss *Sim) ApplyRubicon(ev *armaze.Env, mode Modes, di uint32) {
 		rp.SetUS(di, axon.Positive, ev.USConsumed, ev.USValue)
 	}
 	rp.SetDrives(di, 0.5, ev.Drives...)
-	rp.Step(di, &ss.Net.Rand)
+	rp.Step(di, ss.Net.Rand)
 }
 
 // NewRun intializes a new Run level of the model.

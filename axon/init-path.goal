@@ -135,7 +135,7 @@ func (pt *Path) InitWeights(ctx *Context, nt *Network) {
 		syIndexes := pt.RecvSynIxs(lni)
 		for _, syi := range syIndexes {
 			syni := pt.SynStIndex + syi
-			pt.InitWeightsSyn(ctx, syni, &nt.Rand, smn, spct)
+			pt.InitWeightsSyn(ctx, syni, nt.Rand, smn, spct)
 			for di := uint32(0); di < ctx.NData; di++ {
 				pt.InitWeightsSynTrace(ctx, syni, di)
 			}

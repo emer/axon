@@ -156,7 +156,7 @@ func (ss *Sim) ConfigEnv() {
 		// note: names must be standard here!
 		trn.Name = env.ModeDi(Train, di)
 		trn.Seq.Max = 25 // 25 sequences per epoch training
-		trn.RandSeed = 73 + int64(di)*73
+		trn.RunRandSeed = 73 + int64(di)*73
 		trn.TMatReber()
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
@@ -165,7 +165,7 @@ func (ss *Sim) ConfigEnv() {
 
 		tst.Name = env.ModeDi(Test, di)
 		tst.Seq.Max = 10
-		tst.RandSeed = 181 + int64(di)*181
+		tst.RunRandSeed = 181 + int64(di)*181
 		tst.TMatReber() // todo: random
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(tst, ss.Config.Env.Env)
@@ -253,8 +253,7 @@ func (ss *Sim) Init() {
 
 // InitRandSeed initializes the random seed based on current training run number
 func (ss *Sim) InitRandSeed(run int) {
-	ss.RandSeeds.Set(run)
-	ss.RandSeeds.Set(run, &ss.Net.Rand)
+	ss.RandSeeds.Set(run, ss.Net.Rand)
 }
 
 // NetViewUpdater returns the NetViewUpdate for given mode.

@@ -86,7 +86,7 @@ func (ly *Layer) InitActAvgLayer(ctx *Context) {
 		porder[i] = i
 	}
 	if ly.Params.Learn.TrgAvgAct.Permute.IsTrue() {
-		randx.PermuteInts(porder, &ly.Network.Rand)
+		randx.PermuteInts(porder, ly.Network.Rand)
 	}
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
@@ -100,8 +100,8 @@ func (ly *Layer) InitActAvgLayer(ctx *Context) {
 		NeuronAvgs.Set(ly.Params.Inhib.ActAvg.Nominal*trg, int(ni), int(ActAvg))
 		NeuronAvgs.Set(0, int(ni), int(AvgDif))
 		NeuronAvgs.Set(0, int(ni), int(DTrgAvg))
-		NeuronAvgs.Set(ly.Params.Acts.Init.GetGeBase(&ly.Network.Rand), int(ni), int(GeBase))
-		NeuronAvgs.Set(ly.Params.Acts.Init.GetGiBase(&ly.Network.Rand), int(ni), int(GiBase))
+		NeuronAvgs.Set(ly.Params.Acts.Init.GetGeBase(ly.Network.Rand), int(ni), int(GeBase))
+		NeuronAvgs.Set(ly.Params.Acts.Init.GetGiBase(ly.Network.Rand), int(ni), int(GiBase))
 		if gibinit > 0 {
 			gib := gibinit * (tmax - trg)
 			NeuronAvgs.Set(gib, int(ni), int(GiBase))
@@ -131,7 +131,7 @@ func (ly *Layer) InitActAvgPools(ctx *Context) {
 	}
 	for spi := uint32(1); spi < np; spi++ {
 		if ly.Params.Learn.TrgAvgAct.Permute.IsTrue() {
-			randx.PermuteInts(porder, &ly.Network.Rand)
+			randx.PermuteInts(porder, ly.Network.Rand)
 		}
 		pi := ly.Params.PoolIndex(spi) // only using for idxs
 		nsi := PoolIxs.Value(int(pi), int(PoolNeurSt))
@@ -148,8 +148,8 @@ func (ly *Layer) InitActAvgPools(ctx *Context) {
 			NeuronAvgs.Set(ly.Params.Inhib.ActAvg.Nominal*trg, int(ni), int(ActAvg))
 			NeuronAvgs.Set(0, int(ni), int(AvgDif))
 			NeuronAvgs.Set(0, int(ni), int(DTrgAvg))
-			NeuronAvgs.Set(ly.Params.Acts.Init.GetGeBase(&ly.Network.Rand), int(ni), int(GeBase))
-			NeuronAvgs.Set(ly.Params.Acts.Init.GetGiBase(&ly.Network.Rand), int(ni), int(GiBase))
+			NeuronAvgs.Set(ly.Params.Acts.Init.GetGeBase(ly.Network.Rand), int(ni), int(GeBase))
+			NeuronAvgs.Set(ly.Params.Acts.Init.GetGiBase(ly.Network.Rand), int(ni), int(GiBase))
 			if gibinit > 0 {
 				gib := gibinit * (tmax - trg)
 				NeuronAvgs.Set(gib, int(ni), int(GiBase))

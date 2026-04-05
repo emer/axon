@@ -22,7 +22,7 @@ func TestLinear(t *testing.T) {
 	ls.PlusCycles = 50
 	ls.CyclesPerBin = 10 // now always 10
 	ls.Update()
-	ls.Init()
+	ls.Init(0)
 	ls.Run()
 	ls.Regress()
 }

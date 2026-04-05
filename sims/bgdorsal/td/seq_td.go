@@ -71,7 +71,7 @@ func RunSim(sim *Sim) error {
 
 	epcs := tensor.NewFloat64(sim.Runs)
 	for run := range sim.Runs {
-		td.Init()
+		td.Init(run)
 		env.Init(run)
 		finalRew := float32(0)
 		finalEpoch := 0

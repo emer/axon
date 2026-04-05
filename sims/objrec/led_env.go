@@ -80,11 +80,13 @@ type LEDEnv struct {
 	// CurLED one-hot output tensor, dims: [NData][4][5][NOutPer][1]
 	Output tensor.Float32
 
-	// random number generator for the env -- all random calls must use this
-	Rand randx.SysRand `display:"-"`
+	// Rand is the random number generator for the env.
+	// Created in Init if not already there.
+	Rand randx.Rand `display:"-"`
 
-	// random seed: set this to control sequence
-	RandSeed int64 `edit:"-"`
+	// RunRandSeed is the random seed multiplier for run counter.
+	// It is set to 173 if 0 at start for consistent results by default.
+	RunRandSeed int64 `edit:"-"`
 }
 
 func (ev *LEDEnv) Trial(di int) *TrialState {
@@ -129,13 +131,12 @@ func (ev *LEDEnv) Config(ndata int, netGPU *gpu.GPU) {
 }
 
 func (ev *LEDEnv) Init(run int) {
-	ev.Draw.Init()
-	ev.RandSeed = int64(73 + run)
-	if ev.Rand.Rand == nil {
-		ev.Rand.NewRand(ev.RandSeed)
-	} else {
-		ev.Rand.Seed(ev.RandSeed)
+	if ev.RunRandSeed == 0 {
+		ev.RunRandSeed = 173
 	}
+	randx.InitSysRand(&ev.Rand, ev.RunRandSeed*(int64(run)+1))
+	ev.Draw.Init()
+	ev.Rand.Init(ev.RunRandSeed * (int64(run) + 1))
 }
 
 func (ev *LEDEnv) Step() bool {
@@ -230,7 +231,7 @@ func (ev *LEDEnv) DrawRandLED(di int, st *TrialState) {
 	st.LED = led
 	st.DrawImage = paint.RenderToImage(ev.Draw.Paint)
 	ev.SetOutput(di, led)
-	ev.XFormRand.Gen(&st.XForm, &ev.Rand)
+	ev.XFormRand.Gen(&st.XForm, ev.Rand)
 	st.XFormImage = st.XForm.Image(st.DrawImage)
 }
 

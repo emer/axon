@@ -11,7 +11,6 @@ package benchlvis
 
 import (
 	"fmt"
-	"math/rand"
 
 	"cogentcore.org/core/base/timer"
 	"cogentcore.org/lab/base/randx"
@@ -59,7 +58,7 @@ var PathParams = axon.PathSheets{
 	},
 }
 
-func ConfigNet(ctx *axon.Context, net *axon.Network, inputNeurs, inputPools, pathways, hiddenNeurs, outputDim, threads, maxData int, verbose bool) {
+func ConfigNet(net *axon.Network, inputNeurs, inputPools, pathways, hiddenNeurs, outputDim, threads, maxData int, verbose bool) {
 	net.SetMaxData(maxData)
 
 	/*
@@ -164,12 +163,13 @@ func ConfigEpcLog(dt *table.Table) {
 	dt.AddFloat32Column("OutActAvg")
 }
 
-func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, pathways, epcs int, verbose, useGPU bool) {
+func TrainNet(net *axon.Network, pats, epcLog *table.Table, pathways, epcs int, verbose, useGPU bool) {
 	if useGPU {
 		// gpu.SetDebug(true)
 		axon.GPUInit()
 		axon.UseGPU = true
 	}
+	ctx := net.Context()
 
 	net.InitWeights()
 
@@ -178,7 +178,7 @@ func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, p
 	// }
 
 	np := pats.NumRows()
-	porder := rand.Perm(np) // randomly permuted order of ints
+	porder := net.Rand.Perm(np) // randomly permuted order of ints
 
 	epcLog.SetNumRows(epcs)
 

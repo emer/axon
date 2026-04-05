@@ -282,8 +282,7 @@ func (ss *Sim) Init() {
 
 // InitRandSeed initializes the random seed based on current training run number
 func (ss *Sim) InitRandSeed(run int) {
-	ss.RandSeeds.Set(run)
-	ss.RandSeeds.Set(run, &ss.Net.Rand)
+	ss.RandSeeds.Set(run, ss.Net.Rand)
 }
 
 // NetViewUpdater returns the NetViewUpdate for given mode.
@@ -390,7 +389,7 @@ func (ss *Sim) ApplyInputs(mode Modes, trial, theta int) {
 // ApplyRubicon applies Rubicon reward inputs
 func (ss *Sim) ApplyRubicon(ev *GoNoEnv, mode Modes, trial int, di uint32) {
 	rp := &ss.Net.Rubicon
-	rp.NewState(di, &ss.Net.Rand) // first before anything else is updated
+	rp.NewState(di, ss.Net.Rand) // first before anything else is updated
 	rp.EffortUrgencyUpdate(di, 1)
 	if mode == Test {
 		rp.Urgency.Reset(di)

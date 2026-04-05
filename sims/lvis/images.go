@@ -6,13 +6,13 @@ package lvis
 
 import (
 	"fmt"
-	"math/rand"
 	"path/filepath"
 	"sort"
 	"strings"
 
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/fsx"
+	"cogentcore.org/lab/base/randx"
 )
 
 // Images implements management of lists of image files,
@@ -64,6 +64,9 @@ type Images struct {
 	// FlatTest is the flat list of all testing images, as cat/filename.ext.
 	// Flats() makes from above data.
 	FlatTest []string
+
+	// Rand is the random number generator, copied from the env.
+	Rand randx.Rand `display:"-"`
 }
 
 // SetPath sets path, with given extensions, and separator
@@ -188,7 +191,7 @@ func (im *Images) SplitItems() {
 			itms[i] = it
 			i++
 		}
-		pi := rand.Perm(nitm)
+		pi := im.Rand.Perm(nitm)
 		ntst := im.NTestPerCat
 		if ntst >= nitm {
 			ntst = nitm / 2
@@ -223,7 +226,7 @@ func (im *Images) SplitNoItems() {
 			ntst = nitm / 2
 		}
 		ntrn := nitm - ntst
-		slist := rand.Perm(nitm)
+		slist := im.Rand.Perm(nitm)
 		for i := 0; i < ntrn; i++ {
 			im.ImagesTrain[ci] = append(im.ImagesTrain[ci], fls[slist[i]])
 		}

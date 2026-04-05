@@ -75,12 +75,6 @@ type VSPatchEnv struct {
 	// pattern similarity matrix
 	// PatSimMat simat.SimMat
 
-	// random number generator for the env -- all random calls must use this
-	Rand randx.SysRand `display:"-"`
-
-	// random seed multiplier for run counter: auto-init to 173 if 0 at start.
-	RunRandSeed int64 `edit:"-"`
-
 	// named states: ACCPos, ACCNeg
 	States map[string]*tensor.Float32
 
@@ -98,6 +92,14 @@ type VSPatchEnv struct {
 
 	// DA = non-reward prediction error: Rew - RewPred_NR
 	DA_NR float32 `edit:"-"`
+
+	// Rand is the random number generator for the env.
+	// Created in Init if not already there.
+	Rand randx.Rand `display:"-"`
+
+	// RunRandSeed is the random seed multiplier for run counter:
+	// It is set to 173 if 0 at start for consistent results by default.
+	RunRandSeed int64 `edit:"-"`
 }
 
 func (ev *VSPatchEnv) Label() string { return ev.Name }
@@ -180,8 +182,11 @@ func (ev *VSPatchEnv) ConfigPats() {
 }
 
 func (ev *VSPatchEnv) Init(run int) {
-	// ev.Rand.Init(ev.RunRandSeed * (int64(run) + 1))
-	patterns.RandSource = &ev.Rand
+	if ev.RunRandSeed == 0 {
+		ev.RunRandSeed = 173
+	}
+	randx.InitSysRand(&ev.Rand, ev.RunRandSeed*(int64(run)+1))
+	patterns.RandSource = ev.Rand
 	ev.Trial.Init()
 	ev.Theta.Init()
 }
@@ -207,7 +212,7 @@ func (ev *VSPatchEnv) Step() bool {
 	ev.CondRew = rv
 	if ev.Theta.Cur == ev.Thetas-1 {
 		if ev.Probs {
-			if randx.BoolP32(rv, &ev.Rand) {
+			if randx.BoolP32(rv, ev.Rand) {
 				ev.Rew = 1
 			} else {
 				ev.Rew = 0.001

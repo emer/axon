@@ -159,7 +159,7 @@ func (ss *DrEffPlot) TimeRun() { //types:add
 	ctx := &ss.Context
 	pp.TimeEffortReset(ctx, 0)
 	pp.Urgency.Reset(ctx, 0)
-	ut := ss.USTime.Min + rand.Intn(ss.USTime.Range())
+	ut := ss.USTime.Min + ss.Net.Rand.Intn(ss.USTime.Range())
 	dt.SetNumRows(ss.TimeSteps)
 	axon.SetGlbUSposV(ctx, 0, axon.GvUSpos, 1, 0)
 	pp.Drive.ToBaseline(ctx, 0)
@@ -168,13 +168,13 @@ func (ss *DrEffPlot) TimeRun() { //types:add
 	for ti := 0; ti < ss.TimeSteps; ti++ {
 		ev := 1 - axon.RubiconNormFun(0.02)
 		urg := pp.Urgency.Urge(ctx, 0)
-		ei := ss.Effort.Min + rand.Float32()*ss.Effort.Range()
+		ei := ss.Effort.Min + ss.Net.Rand.Float32()*ss.Effort.Range()
 		dr := axon.GlbUSposV(ctx, 0, axon.GvDrives, 0)
 		usv := float32(0)
 		if ti == lastUS+ut {
 			ei = 0 // don't update on us trial
 			lastUS = ti
-			ut = ss.USTime.Min + rand.Intn(ss.USTime.Range())
+			ut = ss.USTime.Min + ss.Net.Rand.Intn(ss.USTime.Range())
 			usv = 1
 		}
 		dt.SetFloat("T", ti, float64(ti))

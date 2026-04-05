@@ -11,7 +11,6 @@ package vspatch
 
 import (
 	"fmt"
-	"math/rand/v2"
 	"os"
 	"reflect"
 
@@ -252,8 +251,7 @@ func (ss *Sim) Init() {
 
 // InitRandSeed initializes the random seed based on current training run number
 func (ss *Sim) InitRandSeed(run int) {
-	ss.RandSeeds.Set(run)
-	ss.RandSeeds.Set(run, &ss.Net.Rand)
+	ss.RandSeeds.Set(run, ss.Net.Rand)
 }
 
 // NetViewUpdater returns the NetViewUpdate for given mode.
@@ -304,7 +302,7 @@ func (ss *Sim) ConfigLoops() {
 	trainEpoch.OnEnd.Add("NewConds", func() {
 		trnEpc := trainEpoch.Counter.Cur
 		if trnEpc > 1 && trnEpc%ss.Config.Run.CondEpochs == 0 {
-			ord := rand.Perm(ev.NConds)
+			ord := ss.Net.Rand.Perm(ev.NConds)
 			for di := 0; di < ss.Config.Run.NData; di++ {
 				ev := ss.Envs.ByModeDi(etime.Train, di).(*VSPatchEnv)
 				ev.SetCondValuesPermute(ord)
@@ -357,7 +355,7 @@ func (ss *Sim) ApplyInputs(mode Modes, trial, theta int) {
 // ApplyRubicon applies Rubicon reward inputs
 func (ss *Sim) ApplyRubicon(ev *VSPatchEnv, mode Modes, theta int, di uint32) {
 	pv := &ss.Net.Rubicon
-	pv.NewState(di, &ss.Net.Rand) // first before anything else is updated
+	pv.NewState(di, ss.Net.Rand) // first before anything else is updated
 	pv.EffortUrgencyUpdate(di, 1)
 	// if mode == Test {
 	pv.Urgency.Reset(di)
@@ -380,7 +378,7 @@ func (ss *Sim) ApplyRew(di uint32, rew float32) {
 		pv.SetUS(di, axon.Negative, 0, -rew)
 	}
 	pv.SetDrives(di, 1, 1)
-	pv.Step(di, &ss.Net.Rand)
+	pv.Step(di, ss.Net.Rand)
 	// normally set by VTA layer, including CS:
 	lhbDA := axon.GlobalScalars.Value(int(axon.GvLHbPVDA), int(di))
 	axon.GlobalScalars.Set(lhbDA, int(axon.GvDA), int(di))
