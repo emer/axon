@@ -46,12 +46,14 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.CaLearn.ETraceTau = 4               // 4 == 5
 				ly.Learn.CaLearn.ETraceScale = 0             // 0 > 0.1 > 0.05, 0.2 etc
 
-				ly.Learn.Timing.On.SetBool(false)
-				// ly.Learn.Timing.Refractory.SetBool(true)
 				ly.Learn.Timing.LearnThr = 0.1
-				ly.Learn.Timing.SynCaCycles = 160 // 160 def good
-				// ly.Learn.Timing.Cycles = 170
-				// ly.Learn.Timing.TimeDiffTau = 4
+				ly.Learn.Timing.On.SetBool(true)
+				ly.Learn.Timing.SynCaCycles = 160         // 160 def good
+				ly.Learn.Timing.Refractory.SetBool(false) // ref is fine
+				ly.Learn.Timing.MinusWindow = 120         // 120
+				ly.Learn.Timing.LearnCycles = -50         // 20 or -50,60 (not very sensitive)
+				ly.Learn.Timing.EnableWindow = 40         // 40 best
+				ly.Learn.Timing.TimeDiffTau = 4           // 4 still best
 
 				// ly.Learn.CaSpike.SpikeCaSyn = 8 // vs 12 in lvis -- 12 does NOT work here
 			}},
@@ -82,6 +84,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.NMDA.Tau = 200                  // 200 > 100
 				ly.Learn.TrgAvgAct.SynScaleRate = 0.005 // 0.005 > 0.0002 (much worse)
 				ly.Learn.TrgAvgAct.SubMean = 1          // 1 > 0
+				ly.Learn.Timing.On.SetBool(false)       // false = key
 			}},
 		{Sel: ".PulvinarLayer", Doc: "pulvinar",
 			Set: func(ly *axon.LayerParams) {
@@ -91,9 +94,10 @@ var LayerParams = axon.LayerSheets{
 				ly.Pulvinar.FullDriveAct = 0.6 // 0.6 def
 				ly.Acts.Spikes.Tr = 3          // 1 is best for ra25..
 				ly.Acts.Decay.Act = 0.0
-				ly.Acts.Decay.Glong = 0.0        // clear long
-				ly.Acts.Decay.AHP = 0.0          // clear ahp
-				ly.Learn.RLRate.SigmoidMin = 1.0 // 1 > 0.05 with CaD as var
+				ly.Acts.Decay.Glong = 0.0         // clear long
+				ly.Acts.Decay.AHP = 0.0           // clear ahp
+				ly.Learn.RLRate.SigmoidMin = 1.0  // 1 > 0.05 with CaD as var
+				ly.Learn.Timing.On.SetBool(false) // false = good
 			}},
 	},
 }

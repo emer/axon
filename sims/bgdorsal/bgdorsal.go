@@ -941,6 +941,12 @@ func (ss *Sim) ConfigStats() {
 		runAllFunc(mode, level, phase == Start)
 	})
 
+	superLays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.PTMaintLayer, axon.PTPredLayer)
+	learnTimingFunc := axon.StatLearnTiming(ss.Stats, ss.Current, net, Trial, Run, superLays...)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		learnTimingFunc(mode, level, phase == Start)
+	})
+
 	patchStats := []string{"PPD1Cor", "PPD1Err", "PPD2Cor", "PPD2Err", "PPDAD1Cor", "PPDAD1Err", "PPDAD2Cor", "PPDAD2Err", "PPDAD1Cur", "PPDAD2Cur"}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		if level < Trial {

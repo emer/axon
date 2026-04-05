@@ -345,6 +345,7 @@ struct Context { //types:add -setters
 	ISICycles: i32,
 	MinusCycles: i32,
 	PlusCycles: i32,
+	ThetaStart: i32,
 	CyclesTotal: i32,
 	Time: f32,
 	TrialsTotal: i32,
@@ -353,7 +354,6 @@ struct Context { //types:add -setters
 	SlowCounter: i32,
 	AdaptGiInterval: i32,
 	AdaptGiCounter: i32,
-	pad: i32,
 	RandCounter: RandCounter,
 }
 
@@ -762,9 +762,9 @@ struct LearnTimingParams {
 	LearnCycles: i32,
 	TimeDiffTau: f32,
 	TimeDiffDt: f32,
-	Old: i32,
 	pad: f32,
 	pad1: f32,
+	pad2: f32,
 }
 struct TrgAvgActParams {
 	GiBaseInit: f32,

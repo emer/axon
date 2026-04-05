@@ -36,11 +36,10 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.Timing.Refractory.SetBool(false) // ?
 				ly.Learn.Timing.LearnThr = 0.1            // 0.1 best for trial-based
 				ly.Learn.Timing.SynCaCycles = 160         // 160 best for trial-based
-				ly.Learn.Timing.Old.SetBool(true)
-				ly.Learn.Timing.MinusWindow = 120
-				ly.Learn.Timing.LearnCycles = 0    // -60 or 0
-				ly.Learn.Timing.EnableWindow = 170 // 40 best
-				ly.Learn.Timing.TimeDiffTau = 4    // 4 still best
+				ly.Learn.Timing.MinusWindow = 120         // 120
+				ly.Learn.Timing.LearnCycles = -60         // 50 or -60?
+				ly.Learn.Timing.EnableWindow = 40         // 40 best
+				ly.Learn.Timing.TimeDiffTau = 4           // 4 still best
 			}},
 		{Sel: "#V1", Doc: "pool inhib (not used), initial activity",
 			Set: func(ly *axon.LayerParams) {

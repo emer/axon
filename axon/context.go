@@ -85,6 +85,9 @@ type Context struct { //types:add -setters
 	// but may be set longer if ThetaCycles is above default of 200.
 	PlusCycles int32 `default:"50"`
 
+	// ThetaStart is the cycle at which the current theta cycle started.
+	ThetaStart int32
+
 	// CyclesTotal is the accumulated cycle count, which increments continuously
 	// from whenever it was last reset. Typically this is the number of milliseconds
 	// in simulation time.
@@ -121,8 +124,6 @@ type Context struct { //types:add -setters
 	// AdaptGiCounter increments for each training trial, to trigger AdaptGi at AdaptGiInterval.
 	// This is incremented by NData to maintain consistency across different values of this parameter.
 	AdaptGiCounter int32 `edit:"-"`
-
-	pad int32
 
 	// RandCounter is the random counter, incremented by maximum number of
 	// possible random numbers generated per cycle, regardless of how
@@ -186,6 +187,21 @@ func (ctx *Context) SlowInc() (slow bool, adaptgi bool) {
 		ctx.AdaptGiCounter = 0
 	}
 	return
+}
+
+// ThetaCycleStart resets counters at start of new theta cycle of processing.
+// Pass the evaluation mode associated with this theta cycle and testing bool.
+// Resets the Minus and Plus phase states, and sets Cycle = 0.
+func (ctx *Context) ThetaCycleStart(mode enums.Enum, testing bool) {
+	ctx.MinusPhase.SetBool(false)
+	ctx.PlusPhase.SetBool(false)
+	ctx.Cycle = 0
+	ctx.ThetaStart = ctx.CyclesTotal
+	ctx.Mode = int32(mode.Int64())
+	ctx.Testing.SetBool(testing)
+	if !testing {
+		ctx.TrialsTotal++
+	}
 }
 
 // MinusPhaseStart resets PhaseCycle = 0 and sets the minus phase to true,
@@ -272,26 +288,13 @@ func NeuronTraceSetBin(val float32, trVar NeuronTracesVars, cycle int32, ni, di 
 
 //gosl:end
 
-// ThetaCycleStart resets counters at start of new theta cycle of processing.
-// Pass the evaluation mode associated with this theta cycle and testing bool.
-// Resets the Minus and Plus phase states, and sets Cycle = 0.
-func (ctx *Context) ThetaCycleStart(mode enums.Enum, testing bool) {
-	ctx.MinusPhase.SetBool(false)
-	ctx.PlusPhase.SetBool(false)
-	ctx.Cycle = 0
-	ctx.Mode = int32(mode.Int64())
-	ctx.Testing.SetBool(testing)
-	if !testing {
-		ctx.TrialsTotal++
-	}
-}
-
 // Reset resets the counters all back to zero
 func (ctx *Context) Reset() {
 	ctx.MinusPhase.SetBool(false)
 	ctx.PlusPhase.SetBool(false)
 	ctx.PhaseCycle = 0
 	ctx.Cycle = 0
+	ctx.ThetaStart = 0
 	ctx.CyclesTotal = 0
 	ctx.Time = 0
 	ctx.TrialsTotal = 0

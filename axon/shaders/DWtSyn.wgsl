@@ -518,6 +518,7 @@ struct Context { //types:add -setters
 	ISICycles: i32,
 	MinusCycles: i32,
 	PlusCycles: i32,
+	ThetaStart: i32,
 	CyclesTotal: i32,
 	Time: f32,
 	TrialsTotal: i32,
@@ -526,7 +527,6 @@ struct Context { //types:add -setters
 	SlowCounter: i32,
 	AdaptGiInterval: i32,
 	AdaptGiCounter: i32,
-	pad: i32,
 	RandCounter: RandCounter,
 }
 fn Context_ItemIndex(ctx: Context, idx: u32) -> u32 {
@@ -1032,7 +1032,8 @@ fn PathParams_DWtSynCortexEnabled(pt: PathParams, ctx: Context, rlay: LayerParam
 	SynapseTracesSet(tr, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(Tr)));
 	var dwt = f32(0);
 	if (syCa > pt.Learn.DWt.LearnThr) { // todo: elminate?
-		var bin = learnNow - enabled; // guaranteed to be in bounds here
+		var ppOff = ctx.ThetaStart - ctx.ThetaCycles + ctx.ISICycles + ctx.MinusCycles + 10; // have to constrain due to RecvTrace recording
+		var bin = learnNow - ppOff;                                                          // guaranteed to be in bounds here
 		var bi = NeuronTraceBinIndex(RecvLearnTrace, bin);
 		var rLrn = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // TimeDiff * RLRate * ETrLearn
 		u32(ri), u32(di), u32(NeuronTraces + NeuronVars(bi)))];
@@ -1313,9 +1314,9 @@ struct LearnTimingParams {
 	LearnCycles: i32,
 	TimeDiffTau: f32,
 	TimeDiffDt: f32,
-	Old: i32,
 	pad: f32,
 	pad1: f32,
+	pad2: f32,
 }
 struct TrgAvgActParams {
 	GiBaseInit: f32,

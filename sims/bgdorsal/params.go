@@ -20,13 +20,17 @@ var LayerParams = axon.LayerSheets{
 
 				ly.Acts.Decay.GBuffs.SetBool(true) // this is important for non-PFC layers
 
-				ly.Learn.Timing.On.SetBool(false)
-				// ly.Learn.Timing.Refractory.SetBool(true)
 				ly.Learn.Timing.LearnThr = 0.1 // 0.1 > 0.15 > 0.05 -- key even without timing!!!
-
+				ly.Learn.Timing.On.SetBool(true)
+				// ly.Learn.Timing.Refractory.SetBool(true)
 				ly.Learn.Timing.SynCaCycles = 200 // 200 > 180 > 220 > 250, 160 for 250/50 cyc
-				ly.Learn.Timing.LearnCycles = 210 // 210 >= 200 >= 190 > 220
-				// ly.Learn.Timing.TimeDiffTau = 4
+				// ly.Learn.Timing.LearnCycles = 210 // 210 >= 200 >= 190 > 220
+				ly.Learn.Timing.Refractory.SetBool(false)
+				ly.Learn.Timing.Old.SetBool(false)
+				ly.Learn.Timing.MinusWindow = 120 // 120
+				ly.Learn.Timing.LearnCycles = 50  // 50
+				ly.Learn.Timing.EnableWindow = 40 // 40 best
+				ly.Learn.Timing.TimeDiffTau = 4   // 4 still best
 			}},
 		{Sel: ".PFCLayer", Doc: "pfc",
 			Set: func(ly *axon.LayerParams) {
@@ -77,7 +81,8 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.Layer.Gi = 0.7 // 0.7 > 0.8 > 0.9 with SSGi=2
 				// ly.CT.GeGain = 0.05     // 0.05 >= 0.07 > 0.03
-				ly.CT.DecayTau = 100 // 100 >= 120, 80
+				ly.CT.DecayTau = 100              // 100 >= 120, 80
+				ly.Learn.Timing.On.SetBool(false) // key
 			}},
 		{Sel: ".CTLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
@@ -85,6 +90,7 @@ var LayerParams = axon.LayerSheets{
 				ly.CT.GeGain = 5        // 5 > 3, 8
 				ly.CT.DecayTau = 100    // 100 > 120 >> 80
 				// ly.Acts.Dend.SSGi = 2   // 2 new default
+				ly.Learn.Timing.On.SetBool(false) // key
 			}},
 		{Sel: "#MotorBS", Doc: "",
 			Set: func(ly *axon.LayerParams) {

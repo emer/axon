@@ -528,8 +528,7 @@ func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
 				return math32.NaN()
 			}
 			ctx := ly.Network.Context()
-			st := ((ctx.CyclesTotal - 1) / ctx.ThetaCycles) * ctx.ThetaCycles // start of current theta
-			return vl - float32(st)
+			return vl - float32(ctx.ThetaStart)
 		} else {
 			return Neurons.Value(int(ni), int(di), int(varIndex))
 		}

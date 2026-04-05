@@ -167,10 +167,6 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, rlay *LayerParams, syni, si, ri
 	if syCa > pt.Learn.DWt.LearnThr { // todo: elminate?
 		bi := NeuronTraceIndex(RecvLearnTrace, learnNow)
 		rLrn := Neurons.Value(int(ri), int(di), int(NeuronTraces+NeuronVars(bi))) // TimeDiff * RLRate * ETrLearn
-		//	if ri == 28 && si == 0 {
-		//		st := (ctx.CyclesTotal / ctx.ThetaCycles) * ctx.ThetaCycles
-		//		fmt.Println("userecv:", learnNow-st, ctx.CyclesTotal-st, rLrn)
-		//	}
 		dwt = tr * rLrn
 	}
 	pt.DWtSynSoftBound(ctx, syni, di, dwt)
@@ -197,13 +193,10 @@ func (pt *PathParams) DWtSynCortexEnabled(ctx *Context, rlay *LayerParams, syni,
 
 	dwt := float32(0)
 	if syCa > pt.Learn.DWt.LearnThr { // todo: elminate?
-		bin := learnNow - enabled // guaranteed to be in bounds here
+		ppOff := ctx.ThetaStart - ctx.ThetaCycles + ctx.ISICycles + ctx.MinusCycles + 10 // have to constrain due to RecvTrace recording
+		bin := learnNow - ppOff                                                          // guaranteed to be in bounds here
 		bi := NeuronTraceBinIndex(RecvLearnTrace, bin)
 		rLrn := Neurons.Value(int(ri), int(di), int(NeuronTraces+NeuronVars(bi))) // TimeDiff * RLRate * ETrLearn
-		//	if ri == 28 {
-		//		st := (ctx.CyclesTotal / ctx.ThetaCycles) * ctx.ThetaCycles
-		//		fmt.Println("userecv:", bin, ctx.CyclesTotal-st, enabled-st, learnNow-st, rLrn)
-		//	}
 		dwt = tr * rLrn
 	}
 	pt.DWtSynSoftBound(ctx, syni, di, dwt)

@@ -154,6 +154,10 @@ func (ly *LayerParams) CTDefaults() {
 	// ly.Acts.GABAB.Gbar = 0.008
 }
 
+func (ly *LayerParams) CTUpdate() {
+	ly.Learn.Timing.On.SetBool(false) // CT doesn't have a normal minus-phase dynamic
+}
+
 func (cp *CTParams) DecayForNCycles(ncycles int) {
 	cp.DecayTau = 50 * (float32(ncycles) / float32(200))
 	cp.Update()
@@ -254,6 +258,10 @@ func (ly *LayerParams) PTPredDefaults() {
 	// ly.Acts.GabaB.Gk = 0.006
 	// ly.Acts.NMDA.Ge = 0.004
 	// ly.Acts.NMDA.Tau = 100
+}
+
+func (ly *LayerParams) PTPredUpdate() {
+	ly.Learn.Timing.On.SetBool(false) // PTPred, like CT doesn't have a normal minus-phase dynamic
 }
 
 // called in Defaults for Pulvinar layer type

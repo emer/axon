@@ -217,6 +217,8 @@ func (ly *LayerParams) Update() {
 	ly.RWDa.Update()
 	ly.TDInteg.Update()
 	ly.TDDa.Update()
+
+	ly.UpdateLayerType()
 }
 
 func (ly *LayerParams) Defaults() {
@@ -279,6 +281,17 @@ func (ly *LayerParams) ShouldDisplay(field string) bool {
 		return ly.Type == TDDaLayer
 	default:
 		return true
+	}
+}
+
+// UpdateLayerType applies parameter Update() settings to override
+// any settings that are not appropriate for a given type of layer.
+func (ly *LayerParams) UpdateLayerType() {
+	switch ly.Type {
+	case CTLayer:
+		ly.CTUpdate()
+	case PTPredLayer:
+		ly.PTPredUpdate()
 	}
 }
 
