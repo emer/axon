@@ -12,7 +12,7 @@ This is the Go implementation of the Axon algorithm for spiking, biologically ba
 
 Axon is the spiking version of [Leabra](https://github.com/emer/leabra), with several advances. As a backcronym, _Axon_ could stand for _Adaptive eXcitation Of Noise_, reflecting the ability to learn using the power of error-backpropagation in the context of noisy spiking activation. The spiking function of the axon is what was previously missing from Leabra.
 
-Axon is used to develop large-scale systems-neuroscience models of the brain, and full documentation is available at [Computational Cognitive Neuroscience](compcogneuro.org), including running examples of simulations in this package, and the _Rubicon_ model of goal-driven, motivated cognition.
+Axon is used to develop large-scale systems-neuroscience models of the brain, and full documentation is available at [Computational Cognitive Neuroscience](https://compcogneuro.org), including running examples of simulations in this package, and the _Rubicon_ model of goal-driven, motivated cognition.
 
 Axon and emergent use the [Cogent Core](https://cogentcore.org/core) GUI framework. See [install](https://www.cogentcore.org/core/setup/install) instructions there.  Once those prerequisites are in place, then the simplest way to run a simulation is:
 

@@ -89,8 +89,7 @@ func (ev *PFCMaintEnv) Config(mode etime.Modes, di, ndata int, rndseed int64) {
 	ev.Mode = mode
 	ev.Di = di
 	ev.NData = ndata
-	ev.RandSeed = rndseed
-	ev.Rand.NewRand(ev.RandSeed)
+	ev.RunRandSeed = rndseed
 	ev.States = make(map[string]*tensor.Float32)
 	ev.States["Item"] = tensor.NewFloat32(ev.NUnitsY, ev.NUnitsX)
 	ev.States["Time"] = tensor.NewFloat32(ev.NUnitsY, ev.NTrials)
