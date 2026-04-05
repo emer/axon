@@ -87,12 +87,12 @@ type Obj3DSacEnv struct {
 	CurStates map[string]*tensor.Float32
 
 	// Rand is the random number generator for the env.
-	// All random calls must use this.
-	// Set seed here for weight initialization values.
-	Rand randx.SysRand `display:"-"`
+	// Created in Init if not already there.
+	Rand randx.Rand `display:"-"`
 
-	// random seed
-	RandSeed int64 `edit:"-"`
+	// RunRandSeed is the random seed multiplier for run counter.
+	// It is set to 173 if 0 at start for consistent results by default.
+	RunRandSeed int64 `edit:"-"`
 }
 
 func (ev *Obj3DSacEnv) Label() string { return ev.Name }
@@ -142,12 +142,10 @@ func (ev *Obj3DSacEnv) Config(ndata int, netGPU *gpu.GPU) {
 }
 
 func (ev *Obj3DSacEnv) Init(run int) {
-	ev.RandSeed = int64(73 + run)
-	if ev.Rand.Rand == nil {
-		ev.Rand.NewRand(ev.RandSeed)
-	} else {
-		ev.Rand.Seed(ev.RandSeed)
+	if ev.RunRandSeed == 0 {
+		ev.RunRandSeed = 173
 	}
+	randx.InitSysRand(&ev.Rand, ev.RunRandSeed*(int64(run)+1))
 	ev.TrialCtr.Init()
 	ev.TrialCtr.Max = 0
 	ev.TrialCtr.Same()

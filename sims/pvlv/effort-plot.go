@@ -62,12 +62,14 @@ type DrEffPlot struct {
 	// the plot
 	TimePlot *plotcore.Editor `display:"-"`
 
-	// random number generator
-	Rand randx.SysRand `display:"-"`
+	// Rand is the random number generator for the env.
+	// Created in Init if not already there.
+	Rand randx.Rand `display:"-"`
 }
 
 // Config configures all the elements using the standard functions
 func (ss *DrEffPlot) Config() {
+	randx.InitSysRand(&ss.Rand, 4289)
 	ss.Context.Defaults()
 	pp := &ss.Rubicon
 	pp.SetNUSs(&ss.Context, 1, 1)
@@ -159,7 +161,7 @@ func (ss *DrEffPlot) TimeRun() { //types:add
 	ctx := &ss.Context
 	pp.TimeEffortReset(ctx, 0)
 	pp.Urgency.Reset(ctx, 0)
-	ut := ss.USTime.Min + ss.Net.Rand.Intn(ss.USTime.Range())
+	ut := ss.USTime.Min + ss.Rand.Intn(ss.USTime.Range())
 	dt.SetNumRows(ss.TimeSteps)
 	axon.SetGlbUSposV(ctx, 0, axon.GvUSpos, 1, 0)
 	pp.Drive.ToBaseline(ctx, 0)
@@ -168,13 +170,13 @@ func (ss *DrEffPlot) TimeRun() { //types:add
 	for ti := 0; ti < ss.TimeSteps; ti++ {
 		ev := 1 - axon.RubiconNormFun(0.02)
 		urg := pp.Urgency.Urge(ctx, 0)
-		ei := ss.Effort.Min + ss.Net.Rand.Float32()*ss.Effort.Range()
+		ei := ss.Effort.Min + ss.Rand.Float32()*ss.Effort.Range()
 		dr := axon.GlbUSposV(ctx, 0, axon.GvDrives, 0)
 		usv := float32(0)
 		if ti == lastUS+ut {
 			ei = 0 // don't update on us trial
 			lastUS = ti
-			ut = ss.USTime.Min + ss.Net.Rand.Intn(ss.USTime.Range())
+			ut = ss.USTime.Min + ss.Rand.Intn(ss.USTime.Range())
 			usv = 1
 		}
 		dt.SetFloat("T", ti, float64(ti))

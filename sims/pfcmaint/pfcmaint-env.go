@@ -58,14 +58,16 @@ type PFCMaintEnv struct {
 	// item patterns
 	Pats table.Table
 
-	// random number generator for the env -- all random calls must use this
-	Rand randx.SysRand `display:"-"`
-
-	// random seed
-	RandSeed int64 `edit:"-"`
-
 	// named states: ACCPos, ACCNeg
 	States map[string]*tensor.Float32
+
+	// Rand is the random number generator for the env.
+	// Created in Init if not already there.
+	Rand randx.Rand `display:"-"`
+
+	// RunRandSeed is the random seed multiplier for run counter.
+	// It is set to 173 if 0 at start for consistent results by default.
+	RunRandSeed int64 `edit:"-"`
 }
 
 func (ev *PFCMaintEnv) Label() string { return ev.Name }
@@ -122,6 +124,10 @@ func (ev *PFCMaintEnv) ConfigPats() {
 }
 
 func (ev *PFCMaintEnv) Init(run int) {
+	if ev.RunRandSeed == 0 {
+		ev.RunRandSeed = 173
+	}
+	randx.InitSysRand(&ev.Rand, ev.RunRandSeed*(int64(run)+1))
 	ev.Sequence.Init()
 	ev.Trial.Init()
 }

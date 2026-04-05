@@ -95,10 +95,12 @@ type EmeryEnv struct {
 	Cycle env.Counter
 
 	// Rand is the random number generator for the env.
-	Rand randx.SysRand `display:"-"`
+	// Created in Init if not already there.
+	Rand randx.Rand `display:"-"`
 
-	// random seed
-	RandSeed int64 `edit:"-"`
+	// RunRandSeed is the random seed multiplier for run counter.
+	// It is set to 173 if 0 at start for consistent results by default.
+	RunRandSeed int64 `edit:"-"`
 }
 
 func (ev *EmeryEnv) Label() string { return ev.Name }
@@ -165,12 +167,10 @@ func (ev *EmeryEnv) Config(ndata, ncycles int, dataNode *tensorfs.Node, netGPU *
 }
 
 func (ev *EmeryEnv) Init(run int) {
-	ev.RandSeed = int64(73 + run)
-	if ev.Rand.Rand == nil {
-		ev.Rand.NewRand(ev.RandSeed)
-	} else {
-		ev.Rand.Seed(ev.RandSeed)
+	if ev.RunRandSeed == 0 {
+		ev.RunRandSeed = 173
 	}
+	randx.InitSysRand(&ev.Rand, ev.RunRandSeed*(int64(run)+1))
 	ev.CurrentTime = 0
 	ev.WriteIndex = 0
 	ev.Motion.Init()

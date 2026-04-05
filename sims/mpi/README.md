@@ -70,7 +70,7 @@ In `ConfigEnv`, non-overlapping subsets of input patterns are allocated to diffe
 In other sims with more complex or interactive environments, it is best to give each environment its own random seed using the `randx.SysRand` which implements the `randx.Rand` interface, and can be passed to any of the `randx` methods (which wrap and extend the go standard `rand` package functions).  See the `boa` model for example.
 
 ```go
-	Rand        randx.SysRand `display:"-" desc:"random number generator for the env -- all random calls must use this"`
+	Rand        randx.Rand `display:"-" desc:"random number generator for the env -- all random calls must use this"`
 	RandSeed     int64         `edit:"-" desc:"random seed"`
 ```
 
