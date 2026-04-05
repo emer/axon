@@ -9,7 +9,6 @@ package axon
 import (
 	"bytes"
 	"fmt"
-	"math/rand"
 	"os"
 	"runtime"
 	"sort"
@@ -1150,7 +1149,6 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 // fine-grained diff test, e.g., see the GPU version.
 func NetDebugLearn(t *testing.T, printValues bool, gpu bool, maxData, nData int, initWts, submean, slowAdapt bool) map[string]float32 {
 	var testNet *Network
-	rand.Seed(1337)
 
 	if submean {
 		testNet = newTestNetFull(maxData) // otherwise no effect
