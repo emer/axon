@@ -283,10 +283,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(m1, vl, full, axon.ForwardPath).AddClass("VLM1")
 
 	net.ConnectLayers(gpi, motor, actPath, axon.InhibPath).AddClass("FmGPI")
-	net.ConnectLayers(m1PT, motor, full, axon.ForwardPath).AddClass("M1ToMotorBS ToMotor")
-	// net.ConnectLayers(m1PTp, motor, full, axon.ForwardPath).AddClass("M1ToMotorBS")
-	net.ConnectLayers(m1, motor, full, axon.ForwardPath).AddClass("M1ToMotorBS ToMotor")
-
+	if ss.Config.Params.CortexPaths {
+		net.ConnectLayers(m1PT, motor, full, axon.ForwardPath).AddClass("M1ToMotorBS ToMotor")
+		// net.ConnectLayers(m1PTp, motor, full, axon.ForwardPath).AddClass("M1ToMotorBS")
+		net.ConnectLayers(m1, motor, full, axon.ForwardPath).AddClass("M1ToMotorBS ToMotor")
+	} else {
+		net.ConnectLayers(state, motor, full, axon.ForwardPath).AddClass("M1ToMotorBS ToMotor")
+		net.ConnectLayers(s1, motor, full, axon.ForwardPath).AddClass("M1ToMotorBS ToMotor")
+	}
 	net.ConnectLayers(motor, pf, motorPFPath, axon.ForwardPath)
 
 	net.ConnectLayers(state, stn, full, axon.ForwardPath).AddClass("ToDSTN FmState")
@@ -302,20 +306,23 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	toMatrix := full
 	// toMatrix := mtxRandPath // works, but not as reliably
 	net.ConnectToDSMatrix(state, matrixGo, matrixNo, toMatrix, "StateToMatrix", "FmState")
-	net.ConnectToDSMatrix(s1, matrixGo, matrixNo, toMatrix, "S1ToMatrix")
-	net.ConnectToDSMatrix(m1, matrixGo, matrixNo, toMatrix, "M1ToMatrix")
+	if ss.Config.Params.CortexPaths {
+		net.ConnectToDSMatrix(s1, matrixGo, matrixNo, toMatrix, "S1ToMatrix")
+		net.ConnectToDSMatrix(m1, matrixGo, matrixNo, toMatrix, "M1ToMatrix")
+	}
 
 	// better without:
 	// net.ConnectToDSMatrix(m1PT, matrixGo, matrixNo, toMatrix, "M1PTToMatrix")
 	// net.ConnectToDSMatrix(m1PTp, matrixGo, matrixNo, toMatrix, "M1PTpToMatrix")
 
 	net.ConnectToDSPatch(state, patchD1, patchD2, toMatrix, "StateToPatch", "FmState")
-	net.ConnectToDSPatch(s1, patchD1, patchD2, toMatrix, "S1ToPatch")
-	net.ConnectToDSPatch(m1, patchD1, patchD2, toMatrix, "M1ToPatch")
-
-	// better with:
-	net.ConnectToDSPatch(m1PT, patchD1, patchD2, toMatrix, "M1PTToPatch")
-	net.ConnectToDSPatch(m1PTp, patchD1, patchD2, toMatrix, "M1PTpToPatch")
+	if ss.Config.Params.CortexPaths {
+		net.ConnectToDSPatch(s1, patchD1, patchD2, toMatrix, "S1ToPatch")
+		net.ConnectToDSPatch(m1, patchD1, patchD2, toMatrix, "M1ToPatch")
+		// better with:
+		net.ConnectToDSPatch(m1PT, patchD1, patchD2, toMatrix, "M1PTToPatch")
+		net.ConnectToDSPatch(m1PTp, patchD1, patchD2, toMatrix, "M1PTpToPatch")
+	}
 
 	// note: just using direct pathways here -- theoretically through CL
 	// TODO: not working! -- need to make these modulatory in the right way.

@@ -45,6 +45,9 @@ type ParamConfig struct {
 	// NCortexUnits is the number of units per X,Y dim, for cortex.
 	NCortexUnits int `default:"6"`
 
+	// CortexPaths determines if paths from cortex are constructed
+	CortexPaths bool `default:"true"`
+
 	// Script is an interpreted script that is run to set parameters in Layer and Path
 	// sheets, by default using the "Script" set name.
 	Script string `new-window:"+" width:"100"`

@@ -716,12 +716,13 @@ func StatLevelAll(statsDir *tensorfs.Node, srcMode, srcLevel enums.Enum, styleFu
 // parameters, including the MinusCycle (and StdDev) and LearnNow values
 // in the given layers.
 func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel, runLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
-	statNames := []string{"MinusCycMean", "MinusCycStDev", "MinusCycErrs", "MinusCycMiss", "EnabledCyc", "LearnNow"}
+	statNames := []string{"MinusCycMean", "MinusCycStDev", "MinusCycErrs", "MinusCycMiss", "MinusWindow", "EnabledCyc", "LearnNow"}
 	statDocs := map[string]string{
 		"MinusCycMean":   "Mean MinusCycle, only for CaD above threshold, relative to the theta cycle (trial)",
 		"MinusCycStdDev": "Standard deviation of MinusCycle.",
 		"MinusCycErrs":   "MinusCycle values out of standard minus phase range.",
 		"MinusCycMiss":   "MinusCycle misses -- failed to detect within current range.",
+		"MinusWindow":    "Mean Minus Window cycle, relative to the theta cycle (trial)",
 		"EnabledCyc":     "Mean Enabled cycle, relative to the theta cycle (trial)",
 		"LearnNow":       "Mean LearnNow cycle, relative to the theta cycle (trial)",
 	}
@@ -771,8 +772,10 @@ func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLev
 						case 0, 1:
 							ly.UnitValuesSampleTensor(anow, "MinusCycle", di)
 						case 4:
-							ly.UnitValuesSampleTensor(anow, "Enabled", di)
+							ly.UnitValuesSampleTensor(anow, "MinusWindow", di)
 						case 5:
+							ly.UnitValuesSampleTensor(anow, "Enabled", di)
+						case 6:
 							ly.UnitValuesSampleTensor(anow, "LearnNow", di)
 						}
 						anow.SetShapeSizes(n) // set to 1D -- faster

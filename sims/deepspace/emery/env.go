@@ -124,6 +124,10 @@ func (ev *EmeryEnv) Defaults() {
 
 // Config configures the environment
 func (ev *EmeryEnv) Config(ndata, ncycles int, dataNode *tensorfs.Node, netGPU *gpu.GPU) {
+	if ev.RunRandSeed == 0 {
+		ev.RunRandSeed = 173
+	}
+	randx.InitSysRand(&ev.Rand, ev.RunRandSeed)
 	ev.NData = ndata
 	ev.Cycle.Max = ncycles
 	ev.Params.TimeBins = ncycles / ev.Params.TimeBinCycles
@@ -167,9 +171,6 @@ func (ev *EmeryEnv) Config(ndata, ncycles int, dataNode *tensorfs.Node, netGPU *
 }
 
 func (ev *EmeryEnv) Init(run int) {
-	if ev.RunRandSeed == 0 {
-		ev.RunRandSeed = 173
-	}
 	randx.InitSysRand(&ev.Rand, ev.RunRandSeed*(int64(run)+1))
 	ev.CurrentTime = 0
 	ev.WriteIndex = 0

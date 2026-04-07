@@ -186,6 +186,10 @@ type LearnTimingParams struct {
 	// is typically best.
 	EnableWindow int32 `default:"40"`
 
+	// EnableAtEnd indicates that the enabled determination happens only at
+	// the end of the EnableWindow, otherwise it can happen at any point.
+	EnableAtEnd slbool.Bool
+
 	// LearnCycles is the time offset in cycles (ms) for when learning occurs.
 	// If >= 0, then it is relative to the [MinusWindow] time.
 	// Otherwise it is relative to the [MinusCycles] peak time, if there was a
@@ -200,7 +204,7 @@ type LearnTimingParams struct {
 	// Dt is 1/Tau
 	TimeDiffDt float32 `display:"-"`
 
-	pad, pad1, pad2 float32
+	pad, pad1 float32
 }
 
 func (lt *LearnTimingParams) Defaults() {
@@ -266,6 +270,7 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 	timeDiff := Neurons.Value(int(ni), int(di), int(TimeDiff))
 	gaDiff := math32.Abs(Neurons.Value(int(ni), int(di), int(GaP)) - Neurons.Value(int(ni), int(di), int(GaD)))
 	timeDiff += lt.TimeDiffDt * (gaDiff - timeDiff)
+	goingUp := gaDiff > timeDiff
 	Neurons.Set(timeDiff, int(ni), int(di), int(TimeDiff))
 
 	minusThr := lt.MinusWindow + lt.EnableWindow
@@ -277,7 +282,7 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 	if !gotMinus {
 		timePeak := Neurons.Value(int(ni), int(di), int(TimePeak))
 		peakCyc := int32(Neurons.Value(int(ni), int(di), int(TPeakCycle)))
-		if timeDiff > timePeak {
+		if goingUp && timeDiff > timePeak {
 			timePeak = timeDiff
 			peakCyc = ctx.CyclesTotal
 			Neurons.Set(timePeak, int(ni), int(di), int(TimePeak))
@@ -331,17 +336,30 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 		return
 	}
 
-	if ctx.CyclesTotal-minusWinCyc >= lt.EnableWindow { // not going to happen
-		if ctx.CyclesTotal-minusWinCyc == lt.EnableWindow {
+	if lt.EnableAtEnd.IsTrue() {
+		if ctx.CyclesTotal-minusWinCyc < lt.EnableWindow {
+			return
+		}
+		if caD < lt.LearnThr { // didn't get above threshold
 			Neurons.Set(0.0, int(ni), int(di), int(Enabled))
 			if learnImmed || refactory { // can't do this for !learnImmed, b/c could have just learned above, in past..
 				Neurons.Set(0.0, int(ni), int(di), int(LearnNow)) // clears refactory
 			}
+			return
 		}
-		return
-	}
-	if caD < lt.LearnThr { // didn't get above threshold *this time*
-		return
+	} else {
+		if ctx.CyclesTotal-minusWinCyc >= lt.EnableWindow { // not going to happen
+			if ctx.CyclesTotal-minusWinCyc == lt.EnableWindow {
+				Neurons.Set(0.0, int(ni), int(di), int(Enabled))
+				if learnImmed || refactory { // can't do this for !learnImmed, b/c could have just learned above, in past..
+					Neurons.Set(0.0, int(ni), int(di), int(LearnNow)) // clears refactory
+				}
+			}
+			return
+		}
+		if caD < lt.LearnThr { // didn't get above threshold *this time*
+			return
+		}
 	}
 	if refactory {
 		return

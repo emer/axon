@@ -29,7 +29,7 @@ var LayerParams = axon.LayerSheets{
 
 				ly.Acts.Decay.GBuffs.SetBool(true) // true is significantly better
 				ly.Acts.Decay.Act = 0              // does not replace GBuffs init
-				ly.Acts.Decay.Glong = 0.8          // 0.6 > 0 -- todo try time with 0?
+				ly.Acts.Decay.Glong = 0.6          // 0.6 > 0 -- todo try time with 0?
 				ly.Acts.Dend.SSGi = 2              // 2 new default
 				ly.Acts.Dend.GExp = 0.2            // 0.2 > 0.1 > 0
 				ly.Acts.Dend.GR = 3                // 2 good for 0.2
@@ -81,12 +81,15 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.RLRate.SpikeThr = 0.1 // 0.1 def
 				ly.Learn.RLRate.Min = 0.001
 
-				ly.Learn.Timing.On.SetBool(false) // time fails after a bit.
-				// ly.Learn.Timing.Refractory.SetBool(true)
 				// ly.Learn.Timing.LearnThr = 0.1
 				// ly.Learn.Timing.SynCaCycles = 160
-				// ly.Learn.Timing.Cycles = 170
-				// ly.Learn.Timing.TimeDiffTau = 4
+
+				ly.Learn.Timing.On.SetBool(true)
+				// ly.Learn.Timing.Refractory.SetBool(true)
+				ly.Learn.Timing.MinusWindow = 120 // 120
+				ly.Learn.Timing.LearnCycles = 30  // 30?
+				ly.Learn.Timing.EnableWindow = 40 // 40 best
+				ly.Learn.Timing.TimeDiffTau = 4   // 4 still best
 			}},
 		{Sel: ".InputLayer", Doc: "all V1 input layers",
 			Set: func(ly *axon.LayerParams) {
@@ -122,6 +125,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Pool.FB = 4
 				ly.Inhib.Layer.Gi = 1.0 // 1.1?
 				ly.Inhib.Pool.Gi = 1.05 // was 1.0 but gi mult goes up
+
+				ly.Learn.Timing.LearnCycles = 60
 			}},
 		{Sel: ".TEO", Doc: "initial activity",
 			Set: func(ly *axon.LayerParams) {
@@ -142,6 +147,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Pool.On.SetBool(true)         // needs pool-level
 				ly.Inhib.Pool.FB = 4
 				ly.Inhib.Pool.Gi = 1.12 // 1.12 > others for non-adapt
+
+				ly.Learn.Timing.LearnCycles = 60
 			}},
 		{Sel: "#Output", Doc: "general output, Localist default -- see RndOutPats, LocalOutPats",
 			Set: func(ly *axon.LayerParams) {

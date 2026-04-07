@@ -669,7 +669,7 @@ var NeuronVarProps = map[string]string{
 	"TimePeak":   `cat:"Learn"`,
 	"TPeakCycle": `cat:"Learn" auto-scale:"+"`,
 
-	"MinusPeak":   `cat:"Learn" auto-scale:"+"`,
+	"MinusPeak":   `cat:"Learn"`,
 	"MinusCycle":  `cat:"Learn" auto-scale:"+"`,
 	"MinusWindow": `cat:"Learn" auto-scale:"+"`,
 	"Enabled":     `cat:"Learn" auto-scale:"+"`,

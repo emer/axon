@@ -79,12 +79,15 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.RLRate.SpikeThr = 0.1 // 0.1 def
 				ly.Learn.RLRate.Min = 0.001
 
+				ly.Learn.Timing.LearnThr = 0.1
+				ly.Learn.Timing.SynCaCycles = 160
+
 				ly.Learn.Timing.On.SetBool(true)         // time > trial!
 				ly.Learn.Timing.Refractory.SetBool(true) // ref > not
-				// ly.Learn.Timing.LearnThr = 0.1
-				// ly.Learn.Timing.SynCaCycles = 160
-				// ly.Learn.Timing.Cycles = 170
-				// ly.Learn.Timing.TimeDiffTau = 4
+				ly.Learn.Timing.MinusWindow = 120        // 120
+				ly.Learn.Timing.LearnCycles = 40         // 50 or -60?
+				ly.Learn.Timing.EnableWindow = 40        // 40 best
+				ly.Learn.Timing.TimeDiffTau = 4          // 4 still best
 			}},
 		{Sel: ".InputLayer", Doc: "all V1 input layers",
 			Set: func(ly *axon.LayerParams) {

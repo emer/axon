@@ -22,13 +22,14 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.CaSpike.SpikeCaSyn = 8
 
 				ly.Learn.Timing.LearnThr = 0.1
-				ly.Learn.Timing.On.SetBool(true)
-				ly.Learn.Timing.Refractory.SetBool(false)
 				ly.Learn.Timing.SynCaCycles = 160
-				ly.Learn.Timing.Old.SetBool(true)
-				ly.Learn.Timing.MinusWindow = 130
-				ly.Learn.Timing.LearnCycles = 0
-				ly.Learn.Timing.EnableWindow = 150
+
+				ly.Learn.Timing.On.SetBool(true) // this is very bad for ra
+				ly.Learn.Timing.Refractory.SetBool(false)
+				ly.Learn.Timing.MinusWindow = 120
+				ly.Learn.Timing.LearnCycles = 30
+				ly.Learn.Timing.EnableWindow = 40
+				ly.Learn.Timing.EnableAtEnd.SetBool(true)
 				ly.Learn.Timing.TimeDiffTau = 4
 
 				// ly.Learn.CaLearn.ETraceTau = 4

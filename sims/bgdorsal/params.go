@@ -20,15 +20,13 @@ var LayerParams = axon.LayerSheets{
 
 				ly.Acts.Decay.GBuffs.SetBool(true) // this is important for non-PFC layers
 
-				ly.Learn.Timing.LearnThr = 0.1 // 0.1 > 0.15 > 0.05 -- key even without timing!!!
-				ly.Learn.Timing.On.SetBool(true)
-				// ly.Learn.Timing.Refractory.SetBool(true)
+				ly.Learn.Timing.LearnThr = 0.1    // 0.1 > 0.15 > 0.05 -- key even without timing!!!
 				ly.Learn.Timing.SynCaCycles = 200 // 200 > 180 > 220 > 250, 160 for 250/50 cyc
-				// ly.Learn.Timing.LearnCycles = 210 // 210 >= 200 >= 190 > 220
-				ly.Learn.Timing.Refractory.SetBool(false)
-				ly.Learn.Timing.Old.SetBool(false)
+
+				ly.Learn.Timing.On.SetBool(true)
+				ly.Learn.Timing.Refractory.SetBool(true)
 				ly.Learn.Timing.MinusWindow = 120 // 120
-				ly.Learn.Timing.LearnCycles = 50  // 50
+				ly.Learn.Timing.LearnCycles = 50  // 50 or -60 best but sig worse
 				ly.Learn.Timing.EnableWindow = 40 // 40 best
 				ly.Learn.Timing.TimeDiffTau = 4   // 4 still best
 			}},
