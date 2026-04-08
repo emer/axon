@@ -201,10 +201,14 @@ type LearnTimingParams struct {
 	// CaDiff integrated over time to smooth out significant local bumps.
 	TimeDiffTau float32 `default:"4"`
 
+	// Time constant for decay of TimePeak to track overall minus phase peak.
+	PeakDecayTau float32 `default:"1000"`
+
 	// Dt is 1/Tau
 	TimeDiffDt float32 `display:"-"`
 
-	pad, pad1 float32
+	// Dt is 1/Tau
+	PeakDecayDt float32 `display:"-"`
 }
 
 func (lt *LearnTimingParams) Defaults() {
@@ -214,11 +218,13 @@ func (lt *LearnTimingParams) Defaults() {
 	lt.EnableWindow = 40
 	lt.LearnCycles = 30
 	lt.TimeDiffTau = 4
+	lt.PeakDecayTau = 1000
 	lt.Update()
 }
 
 func (lt *LearnTimingParams) Update() {
 	lt.TimeDiffDt = 1.0 / lt.TimeDiffTau
+	lt.PeakDecayDt = 1.0 / lt.PeakDecayTau
 }
 
 func (lt *LearnTimingParams) ShouldDisplay(field string) bool {
@@ -228,12 +234,6 @@ func (lt *LearnTimingParams) ShouldDisplay(field string) bool {
 	default:
 		return lt.On.IsTrue()
 	}
-}
-
-// TimingReset resets [TimePeak], [TPeakCycle] to 0.
-func (lt *LearnTimingParams) TimingReset(ctx *Context, ni, di uint32) {
-	Neurons.Set(0.0, int(ni), int(di), int(TimePeak))
-	Neurons.Set(0.0, int(ni), int(di), int(TPeakCycle))
 }
 
 // LearnNowOff sets [LearnNow] to 0.
@@ -270,29 +270,29 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 	timeDiff := Neurons.Value(int(ni), int(di), int(TimeDiff))
 	gaDiff := math32.Abs(Neurons.Value(int(ni), int(di), int(GaP)) - Neurons.Value(int(ni), int(di), int(GaD)))
 	timeDiff += lt.TimeDiffDt * (gaDiff - timeDiff)
-	goingUp := gaDiff > timeDiff
 	Neurons.Set(timeDiff, int(ni), int(di), int(TimeDiff))
 
-	minusThr := lt.MinusWindow + lt.EnableWindow
+	timePeak := Neurons.Value(int(ni), int(di), int(TimePeak))
+	peakCyc := int32(Neurons.Value(int(ni), int(di), int(TPeakCycle)))
+	if timeDiff > timePeak {
+		timePeak = timeDiff
+		peakCyc = ctx.CyclesTotal
+		Neurons.Set(float32(peakCyc), int(ni), int(di), int(TPeakCycle))
+	} else {
+		timePeak -= lt.PeakDecayDt * timePeak
+	}
+	Neurons.Set(timePeak, int(ni), int(di), int(TimePeak))
 
+	minusThr := lt.MinusWindow + lt.EnableWindow
 	minusCyc := int32(Neurons.Value(int(ni), int(di), int(MinusCycle)))
 	gotMinus := minusCyc > 0 && ctx.CyclesTotal-minusCyc <= minusThr
 	justGotMinus := false
 
 	if !gotMinus {
-		timePeak := Neurons.Value(int(ni), int(di), int(TimePeak))
-		peakCyc := int32(Neurons.Value(int(ni), int(di), int(TPeakCycle)))
-		if goingUp && timeDiff > timePeak {
-			timePeak = timeDiff
-			peakCyc = ctx.CyclesTotal
-			Neurons.Set(timePeak, int(ni), int(di), int(TimePeak))
-			Neurons.Set(float32(peakCyc), int(ni), int(di), int(TPeakCycle))
-		}
 		if ctx.CyclesTotal-peakCyc < lt.MinusWindow {
 			return
 		}
 		minusCyc = peakCyc
-		Neurons.Set(0.0, int(ni), int(di), int(TimePeak))
 		Neurons.Set(float32(minusCyc), int(ni), int(di), int(MinusCycle))
 		Neurons.Set(float32(ctx.CyclesTotal), int(ni), int(di), int(MinusWindow))
 		Neurons.Set(timePeak, int(ni), int(di), int(MinusPeak))

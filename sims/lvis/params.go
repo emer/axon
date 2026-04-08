@@ -89,7 +89,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.Timing.MinusWindow = 120 // 120
 				ly.Learn.Timing.LearnCycles = 30  // 30?
 				ly.Learn.Timing.EnableWindow = 40 // 40 best
-				ly.Learn.Timing.TimeDiffTau = 4   // 4 still best
+				ly.Learn.Timing.EnableAtEnd.SetBool(false)
+				ly.Learn.Timing.TimeDiffTau = 4 // 4 still best
 			}},
 		{Sel: ".InputLayer", Doc: "all V1 input layers",
 			Set: func(ly *axon.LayerParams) {
@@ -126,7 +127,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Layer.Gi = 1.0 // 1.1?
 				ly.Inhib.Pool.Gi = 1.05 // was 1.0 but gi mult goes up
 
-				ly.Learn.Timing.LearnCycles = 60
+				// ly.Learn.Timing.LearnCycles = 60
 			}},
 		{Sel: ".TEO", Doc: "initial activity",
 			Set: func(ly *axon.LayerParams) {
@@ -148,7 +149,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Pool.FB = 4
 				ly.Inhib.Pool.Gi = 1.12 // 1.12 > others for non-adapt
 
-				ly.Learn.Timing.LearnCycles = 60
+				// ly.Learn.Timing.LearnCycles = 60
 			}},
 		{Sel: "#Output", Doc: "general output, Localist default -- see RndOutPats, LocalOutPats",
 			Set: func(ly *axon.LayerParams) {

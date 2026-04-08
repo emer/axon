@@ -1621,9 +1621,9 @@ struct LearnTimingParams {
 	EnableAtEnd: i32,
 	LearnCycles: i32,
 	TimeDiffTau: f32,
+	PeakDecayTau: f32,
 	TimeDiffDt: f32,
-	pad: f32,
-	pad1: f32,
+	PeakDecayDt: f32,
 }
 fn LearnTimingParams_LearnNowOff(lt: LearnTimingParams, ctx: Context, ni: u32,di: u32) {
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Enabled))] = 0.0;
@@ -1645,26 +1645,26 @@ fn LearnTimingParams_LearnTiming(lt: LearnTimingParams, ctx: Context, ni: u32,di
 	var timeDiff = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeDiff))];
 	var gaDiff = abs(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))] - Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaD))]);
 	timeDiff += lt.TimeDiffDt * (gaDiff - timeDiff);
-	var goingUp = gaDiff > timeDiff;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimeDiff))] = timeDiff;
+	var timePeak = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))];
+	var peakCyc = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TPeakCycle))]);
+	if (timeDiff > timePeak) {
+		timePeak = timeDiff;
+		peakCyc = ctx.CyclesTotal;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TPeakCycle))] = f32(peakCyc);
+	} else {
+		timePeak -= lt.PeakDecayDt * timePeak;
+	}
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = timePeak;
 	var minusThr = lt.MinusWindow + lt.EnableWindow;
 	var minusCyc = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(MinusCycle))]);
 	var gotMinus = minusCyc > 0 && ctx.CyclesTotal-minusCyc <= minusThr;
 	var justGotMinus = false;
 	if (!gotMinus) {
-		var timePeak = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))];
-		var peakCyc = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TPeakCycle))]);
-		if (goingUp && timeDiff > timePeak) {
-			timePeak = timeDiff;
-			peakCyc = ctx.CyclesTotal;
-			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = timePeak;
-			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TPeakCycle))] = f32(peakCyc);
-		}
 		if (ctx.CyclesTotal-peakCyc < lt.MinusWindow) {
 			return;
 		}
 		minusCyc = peakCyc;
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = 0.0;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(MinusCycle))] = f32(minusCyc);
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(MinusWindow))] = f32(ctx.CyclesTotal);
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(MinusPeak))] = timePeak;
