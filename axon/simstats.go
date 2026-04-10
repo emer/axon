@@ -716,12 +716,11 @@ func StatLevelAll(statsDir *tensorfs.Node, srcMode, srcLevel enums.Enum, styleFu
 // parameters, including the MinusCycle (and StdDev) and LearnNow values
 // in the given layers.
 func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel, runLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
-	statNames := []string{"MinusCycMean", "MinusCycStDev", "MinusCycErrs", "MinusCycMiss", "MinusWindow", "EnabledCyc", "LearnNow"}
+	statNames := []string{"MinusCycMean", "MinusCycStDev", "MinusCycErrs", "MinusWindow", "EnabledCyc", "LearnNow"}
 	statDocs := map[string]string{
 		"MinusCycMean":   "Mean MinusCycle, only for CaD above threshold, relative to the theta cycle (trial)",
 		"MinusCycStdDev": "Standard deviation of MinusCycle.",
 		"MinusCycErrs":   "MinusCycle values out of standard minus phase range.",
-		"MinusCycMiss":   "MinusCycle misses -- failed to detect within current range.",
 		"MinusWindow":    "Mean Minus Window cycle, relative to the theta cycle (trial)",
 		"EnabledCyc":     "Mean Enabled cycle, relative to the theta cycle (trial)",
 		"LearnNow":       "Mean LearnNow cycle, relative to the theta cycle (trial)",
@@ -758,7 +757,7 @@ func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLev
 				}
 				switch levi {
 				case 0:
-					if si == 2 || si == 3 {
+					if si == 2 {
 						continue
 					}
 					// note: current lnm + _var is standard reusable unit vals buffer
@@ -771,16 +770,15 @@ func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLev
 						switch si {
 						case 0, 1:
 							ly.UnitValuesSampleTensor(anow, "MinusCycle", di)
-						case 4:
+						case 3:
 							ly.UnitValuesSampleTensor(anow, "MinusWindow", di)
-						case 5:
+						case 4:
 							ly.UnitValuesSampleTensor(anow, "Enabled", di)
-						case 6:
+						case 5:
 							ly.UnitValuesSampleTensor(anow, "LearnNow", di)
 						}
 						anow.SetShapeSizes(n) // set to 1D -- faster
 						msErr := 0
-						msMiss := 0
 						for i := range n {
 							// note: cycle values are already normalized to start at current thetacycle
 							// and are set to NaN if 0
@@ -791,10 +789,10 @@ func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLev
 								continue
 							}
 							fv := ov
-							if si == 0 || si == 1 {
+							if si == 0 {
 								if ov < 0 {
 									fv = nan
-									msMiss++
+									msErr++
 								} else if ov > errThr {
 									msErr++
 								}
@@ -819,9 +817,6 @@ func StatLearnTiming(statsDir, currentDir *tensorfs.Node, net *Network, trialLev
 							snm := lnm + "_MinusCycErrs"
 							tsr := levelDir.Float64(snm)
 							tsr.AppendRowFloat(float64(msErr))
-							snm = lnm + "_MinusCycMiss"
-							tsr = levelDir.Float64(snm)
-							tsr.AppendRowFloat(float64(msMiss))
 						}
 					}
 				case int(runLevel.Int64() - trialLevel.Int64()):

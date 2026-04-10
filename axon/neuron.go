@@ -213,6 +213,9 @@ const (
 	// was updated.
 	TPeakCycle
 
+	// PeakUps is the number of consecutive increases in peak value.
+	PeakUps
+
 	// MinusPeak is the value of the last detected minus-phase peak, from [TimePeak],
 	// This typically occurs at the onset of the minus phase, and drives
 	// the timing of learning a given number of cycles after that.
@@ -669,6 +672,7 @@ var NeuronVarProps = map[string]string{
 	"TimePeak":   `cat:"Learn"`,
 	"TPeakCycle": `cat:"Learn" auto-scale:"+"`,
 
+	"PeakUps":     `cat:"Learn"`,
 	"MinusPeak":   `cat:"Learn"`,
 	"MinusCycle":  `cat:"Learn" auto-scale:"+"`,
 	"MinusWindow": `cat:"Learn" auto-scale:"+"`,

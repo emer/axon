@@ -14,7 +14,7 @@ var LayerParams = axon.LayerSheets{
 		{Sel: "Layer", Doc: "clamp gain makes big diff on overall excitation, gating propensity",
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Clamp.Ge = 1.0         // 1.5 is def, was 0.6 (too low)
-				ly.Acts.Noise.On.SetBool(true) // true >= false (minor)
+				ly.Acts.Noise.On.SetBool(true) // true >= false (mino)
 				ly.Acts.Noise.Ge = 0.0001      // 0.0001 > others; could just be noise ;)
 				ly.Acts.Noise.Gi = 0.0001      // 0.0001 perhaps better than others
 
@@ -29,7 +29,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.Timing.LearnCycles = 50          // 50 or -60 best but sig worse
 				ly.Learn.Timing.EnableWindow = 40         // 40 best
 				ly.Learn.Timing.EnableAtEnd.SetBool(true)
-				ly.Learn.Timing.TimeDiffTau = 4 // 4 still best
+				ly.Learn.Timing.PeakDecayTau = 0 // 500
+				ly.Learn.Timing.TimeDiffTau = 4  // 4 still best
 			}},
 		{Sel: ".PFCLayer", Doc: "pfc",
 			Set: func(ly *axon.LayerParams) {
