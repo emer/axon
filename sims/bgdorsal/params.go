@@ -25,12 +25,13 @@ var LayerParams = axon.LayerSheets{
 
 				ly.Learn.Timing.On.SetBool(true)
 				ly.Learn.Timing.Refractory.SetBool(false) // ref is better!
-				ly.Learn.Timing.MinusWindow = 120         // 120
-				ly.Learn.Timing.LearnCycles = 50          // 50 or -60 best but sig worse
-				ly.Learn.Timing.EnableWindow = 40         // 40 best
+				ly.Learn.Timing.NUps = 20
+				ly.Learn.Timing.MaxUpGap = 4
+				ly.Learn.Timing.MinusWindow = 120 // 120
+				ly.Learn.Timing.LearnCycles = 50  // 50 or -60 best but sig worse
+				ly.Learn.Timing.EnableWindow = 40 // 40 best
 				ly.Learn.Timing.EnableAtEnd.SetBool(true)
-				ly.Learn.Timing.PeakDecayTau = 0 // 500
-				ly.Learn.Timing.TimeDiffTau = 4  // 4 still best
+				ly.Learn.Timing.TimeDiffTau = 4 // 4 still best
 			}},
 		{Sel: ".PFCLayer", Doc: "pfc",
 			Set: func(ly *axon.LayerParams) {
