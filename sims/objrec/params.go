@@ -37,8 +37,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.Timing.LearnThr = 0.1            // 0.1 best for trial-based
 				ly.Learn.Timing.SynCaCycles = 160         // 160 best for trial-based
 				ly.Learn.Timing.MinusWindow = 120         // 120
-				ly.Learn.Timing.NUps = 20
-				ly.Learn.Timing.MaxUpGap = 4
+				ly.Learn.Timing.NUps = 18
+				ly.Learn.Timing.MaxUpGap = 2
 				ly.Learn.Timing.LearnCycles = 50  // 50 or -60?
 				ly.Learn.Timing.EnableWindow = 40 // 40 best
 				ly.Learn.Timing.EnableAtEnd.SetBool(true)

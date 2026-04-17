@@ -86,10 +86,10 @@ var LayerParams = axon.LayerSheets{
 
 				ly.Learn.Timing.On.SetBool(true)
 				// ly.Learn.Timing.Refractory.SetBool(true)
-				ly.Learn.Timing.NUps = 20
+				ly.Learn.Timing.NUps = 18
 				ly.Learn.Timing.MaxUpGap = 4
 				ly.Learn.Timing.MinusWindow = 120 // 120
-				ly.Learn.Timing.LearnCycles = 30  // 30 is too short, doesn't learn
+				ly.Learn.Timing.LearnCycles = 60  // 60
 				ly.Learn.Timing.EnableWindow = 40 // 40 best
 				ly.Learn.Timing.EnableAtEnd.SetBool(true)
 				ly.Learn.Timing.TimeDiffTau = 4 // 4 still best
@@ -140,6 +140,11 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Pool.On.SetBool(true)         // needs pool-level
 				ly.Inhib.Pool.FB = 4
 				ly.Inhib.Pool.Gi = 1.12 // 1.12 > others for non-adapt
+
+				ly.Learn.Timing.On.SetBool(false) // false -- doesn't work here
+				// ly.Learn.Timing.NUps = 0
+				// ly.Learn.Timing.MaxUpGap = 2
+				// ly.Learn.Timing.MinusWindow = 120 // 120 > 110 >> 130
 			}},
 		{Sel: "#TE", Doc: "initial activity",
 			Set: func(ly *axon.LayerParams) {
@@ -151,7 +156,10 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Pool.FB = 4
 				ly.Inhib.Pool.Gi = 1.12 // 1.12 > others for non-adapt
 
-				// ly.Learn.Timing.LearnCycles = 60
+				ly.Learn.Timing.On.SetBool(false)
+				// ly.Learn.Timing.NUps = 0
+				// ly.Learn.Timing.MaxUpGap = 2
+				// ly.Learn.Timing.MinusWindow = 120
 			}},
 		{Sel: "#Output", Doc: "general output, Localist default -- see RndOutPats, LocalOutPats",
 			Set: func(ly *axon.LayerParams) {
@@ -253,7 +261,7 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Init.Mean = 0.4 // .4 here is key!
 				pt.SWts.Limit.Min = 0.1 // .1-.7
 				pt.SWts.Limit.Max = 0.7 //
-				pt.PathScale.Abs = 1.4  // 1.4 for trial, 1.8 for time
+				pt.PathScale.Abs = 1.8  // 1.4 for trial, 1.8 for time
 			}},
 		{Sel: ".V1V2fmSm", Doc: "weaker",
 			Set: func(pt *axon.PathParams) {

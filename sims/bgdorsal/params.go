@@ -14,7 +14,7 @@ var LayerParams = axon.LayerSheets{
 		{Sel: "Layer", Doc: "clamp gain makes big diff on overall excitation, gating propensity",
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Clamp.Ge = 1.0         // 1.5 is def, was 0.6 (too low)
-				ly.Acts.Noise.On.SetBool(true) // true >= false (mino)
+				ly.Acts.Noise.On.SetBool(true) // true >= false (minor)
 				ly.Acts.Noise.Ge = 0.0001      // 0.0001 > others; could just be noise ;)
 				ly.Acts.Noise.Gi = 0.0001      // 0.0001 perhaps better than others
 
@@ -23,15 +23,15 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.Timing.LearnThr = 0.1    // 0.1 > 0.15 > 0.05 -- key even without timing!!!
 				ly.Learn.Timing.SynCaCycles = 200 // 200 > 180 > 220 > 250, 160 for 250/50 cyc
 
-				ly.Learn.Timing.On.SetBool(true)
-				ly.Learn.Timing.Refractory.SetBool(false) // ref is better!
-				ly.Learn.Timing.NUps = 20
+				ly.Learn.Timing.On.SetBool(false)
+				ly.Learn.Timing.Refractory.SetBool(false) // true == false
+				ly.Learn.Timing.NUps = 0                  // 0 >> 18
 				ly.Learn.Timing.MaxUpGap = 4
-				ly.Learn.Timing.MinusWindow = 120 // 120
-				ly.Learn.Timing.LearnCycles = 50  // 50 or -60 best but sig worse
-				ly.Learn.Timing.EnableWindow = 40 // 40 best
-				ly.Learn.Timing.EnableAtEnd.SetBool(true)
-				ly.Learn.Timing.TimeDiffTau = 4 // 4 still best
+				ly.Learn.Timing.MinusWindow = 120          // 120
+				ly.Learn.Timing.LearnCycles = 50           // 50 or -60 best but sig worse
+				ly.Learn.Timing.EnableWindow = 40          // 40 best
+				ly.Learn.Timing.EnableAtEnd.SetBool(false) // false > true
+				ly.Learn.Timing.TimeDiffTau = 4            // 4 still best
 			}},
 		{Sel: ".PFCLayer", Doc: "pfc",
 			Set: func(ly *axon.LayerParams) {

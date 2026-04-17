@@ -1111,7 +1111,7 @@ fn LayerParams_NuclearLearnReset(ly: LayerParams, ctx: Context, ni: u32,di: u32)
 	}
 	if (ly.Type == CNeUpLayer || ly.Type == CNeDnLayer) {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = 0.0;
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Enabled))] = 0.0;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = 0.0;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaM))] = 0.0;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))] = 0.0;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaD))] = 0.0;return;
@@ -1123,7 +1123,7 @@ fn LayerParams_NuclearLearnReset(ly: LayerParams, ctx: Context, ni: u32,di: u32)
 	var envCyc = ctx.CyclesTotal - effAct; // cycle within envelope
 	if (envCyc >= ly.Nuclear.ActionEnv) {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(MinusCycle))] = 0.0;
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Enabled))] = 0.0;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = 0.0;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
 		u32(ni), u32(di), u32(LearnNow))] = 0.0;
 	}

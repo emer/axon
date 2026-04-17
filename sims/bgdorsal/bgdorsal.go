@@ -579,7 +579,7 @@ func (ss *Sim) SoftMaxChoose2D(vt *tensor.Float64, mode Modes) int {
 	for i, p := range probs {
 		probs[i] = p / tot
 	}
-	chs := randx.PChoose32(probs)
+	chs := randx.PChoose32(probs, ss.Net.Rand)
 	return chs
 }
 
@@ -606,7 +606,7 @@ func (ss *Sim) SoftMaxChoose4D(vt *tensor.Float64, mode Modes) int {
 		probs[i] = p / tot
 		// fmt.Println(i, p, probs[i])
 	}
-	chs := randx.PChoose32(probs)
+	chs := randx.PChoose32(probs, ss.Net.Rand)
 	return chs
 }
 

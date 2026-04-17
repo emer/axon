@@ -84,10 +84,13 @@ var LayerParams = axon.LayerSheets{
 
 				ly.Learn.Timing.On.SetBool(true)         // time > trial!
 				ly.Learn.Timing.Refractory.SetBool(true) // ref > not
-				ly.Learn.Timing.MinusWindow = 120        // 120
-				ly.Learn.Timing.LearnCycles = 40         // 50 or -60?
-				ly.Learn.Timing.EnableWindow = 40        // 40 best
-				ly.Learn.Timing.TimeDiffTau = 4          // 4 still best
+				ly.Learn.Timing.NUps = 0                 // 0 > 18
+				ly.Learn.Timing.MaxUpGap = 4
+				ly.Learn.Timing.MinusWindow = 120 // 120
+				ly.Learn.Timing.LearnCycles = 40  // 40,50 or -60?
+				ly.Learn.Timing.EnableWindow = 40 // 40 best
+				ly.Learn.Timing.EnableAtEnd.SetBool(false)
+				ly.Learn.Timing.TimeDiffTau = 4 // 4 still best
 			}},
 		{Sel: ".InputLayer", Doc: "all V1 input layers",
 			Set: func(ly *axon.LayerParams) {

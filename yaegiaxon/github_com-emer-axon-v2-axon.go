@@ -399,6 +399,7 @@ func init() {
 		"PathTypesValues":              reflect.ValueOf(axon.PathTypesValues),
 		"Paths":                        reflect.ValueOf(&axon.Paths).Elem(),
 		"PathsVar":                     reflect.ValueOf(axon.PathsVar),
+		"PeakUps":                      reflect.ValueOf(axon.PeakUps),
 		"Phase":                        reflect.ValueOf(axon.Phase),
 		"PlusPhaseEndNeuron":           reflect.ValueOf(axon.PlusPhaseEndNeuron),
 		"PlusPhaseEndPool":             reflect.ValueOf(axon.PlusPhaseEndPool),
