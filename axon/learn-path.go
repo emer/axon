@@ -520,14 +520,14 @@ func (pt *PathParams) DWtSynDSPatch(ctx *Context, syni, si, ri, lpi, pi, di uint
 // for cerebellar neurons that learn from IO LearnNow signals.
 func (pt *PathParams) DWtCNIO(ctx *Context, rlay *LayerParams, syni, si, ri, lpi, pi, di uint32) {
 	learnNow := int32(Neurons.Value(int(ri), int(di), int(LearnNow)))
-	if learnNow-(ctx.CyclesTotal-ctx.ThetaCycles) < 0 { // not in this time window
+	if learnNow-ctx.ThetaStart < 0 { // not in this time window
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DTr))
 		SynapseTraces.Set(0.0, int(syni), int(di), int(DiDWt))
 		return
 	}
-	isErrSpike := Neurons.Value(int(ri), int(di), int(TPeakCycle)) == 1
+	isErrSpike := Neurons.Value(int(ri), int(di), int(TimePeak)) == 1
 	if !isErrSpike {
-		learnNow = int32(Neurons.Value(int(ri), int(di), int(TimeDiff))) // learn at peak
+		learnNow = int32(Neurons.Value(int(ri), int(di), int(MinusCycle))) // learn at peak
 	}
 	stcyc := learnNow - rlay.Nuclear.SendTimeOff
 	nbins := rlay.Nuclear.SendTimeBins
@@ -538,7 +538,7 @@ func (pt *PathParams) DWtCNIO(ctx *Context, rlay *LayerParams, syni, si, ri, lpi
 	}
 	// todo: rlrate? Neurons[ri, di, RLRate]
 	dwt := sact
-	if Neurons.Value(int(ri), int(di), int(TPeakCycle)) == 0 { // means that we got to end of cycle with no err: decay
+	if !isErrSpike {
 		ract := Neurons.Value(int(ri), int(di), int(GaP)) // peak act
 		dwt = -sact * ract * rlay.Nuclear.Decay
 	}

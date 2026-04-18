@@ -87,7 +87,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Learn.Timing.On.SetBool(true)
 				// ly.Learn.Timing.Refractory.SetBool(true)
 				ly.Learn.Timing.NUps = 18
-				ly.Learn.Timing.MaxUpGap = 4
+				ly.Learn.Timing.MaxUpGap = 2
 				ly.Learn.Timing.MinusWindow = 120 // 120
 				ly.Learn.Timing.LearnCycles = 60  // 60
 				ly.Learn.Timing.EnableWindow = 40 // 40 best
@@ -116,7 +116,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Pool.FB = 4
 				ly.Inhib.Layer.Gi = 1.0 // 1.1?
 				ly.Inhib.Pool.Gi = 1.05 // was 0.95 but gi mult goes up..
-				// ly.Learn.CaLearn.PosBias = 1.1 // time: 1.1 > others
+				// ly.Learn.CaLearn.PosBias = 1.1 // time: not needed w/ v1v2=1.8
 			}},
 		{Sel: ".V4", Doc: "pool inhib, sparse activity",
 			Set: func(ly *axon.LayerParams) {

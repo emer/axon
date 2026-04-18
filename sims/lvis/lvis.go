@@ -938,7 +938,7 @@ func (ss *Sim) ConfigStats() {
 		perTrlFunc(mode, level, phase == Start)
 	})
 
-	superLays := net.LayersByType(axon.SuperLayer, axon.CTLayer)
+	superLays := net.LayersByType(axon.SuperLayer)
 	learnTimingFunc := axon.StatLearnTiming(ss.Stats, ss.Current, net, Trial, Run, superLays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		learnTimingFunc(mode, level, phase == Start)

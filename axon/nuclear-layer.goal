@@ -293,7 +293,7 @@ func (ly *LayerParams) CNiLearn(ctx *Context, lpi, pi, ni, di uint32) {
 	act := Neurons[ni, di, CaP]
 	if act > Neurons[ni, di, GaP] {
 		Neurons[ni, di, GaP] = act
-		Neurons[ni, di, TimeDiff] = cycTot // learn at max
+		Neurons[ni, di, MinusCycle] = cycTot // learn at max
 		Neurons[ni, di, GaD] = 1.0 // for visualization
 	} else {
 		Neurons[ni, di, GaD] = 0.0

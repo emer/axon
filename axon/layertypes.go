@@ -141,7 +141,8 @@ const (
 	// and specific sensory channels that are being predicted, and a modulatory
 	// input from the efferent copy of motor action to initiate it.
 	// GaP = integrated GeSyn, GaM = integrated GiSyn, GaD = offset GiSyn,
-	// TimeDiff = GaP - GaD, TPeakCycle = 1 if error spike.
+	// TimeDiff = GaP - GaD, TimePeak = 1 if error spike, else baseline.
+	// MinusCycle = afferent envelope start cycle;
 	IOLayer
 
 	// CNiIOLayer represents the cerebellar nuclei inhibitory prediction

@@ -1565,7 +1565,7 @@ fn LayerParams_CNiLearn(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,
 	if (act > Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))]) {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))] = act;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // learn at max
-		u32(ni), u32(di), u32(TimeDiff))] = cycTot;
+		u32(ni), u32(di), u32(MinusCycle))] = cycTot;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // for visualization
 		u32(ni), u32(di), u32(GaD))] = 1.0;
 	} else {

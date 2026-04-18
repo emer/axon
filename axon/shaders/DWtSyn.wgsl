@@ -1262,14 +1262,14 @@ fn PathParams_DWtSynDSPatch(pt: PathParams, ctx: Context, syni: u32,si: u32,ri: 
 }
 fn PathParams_DWtCNIO(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
 	var learnNow = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(LearnNow))]);
-	if (learnNow-(ctx.CyclesTotal-ctx.ThetaCycles) < 0) { // not in this time window
+	if (learnNow-ctx.ThetaStart < 0) { // not in this time window
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DTr)));
 		SynapseTracesSet(0.0, Index3D(TensorStrides[180], TensorStrides[181], TensorStrides[182], u32(syni), u32(di), u32(DiDWt)));return;
 	}
-	var isErrSpike = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(TPeakCycle))] == 1;
+	var isErrSpike = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(TimePeak))] == 1;
 	if (!isErrSpike) {
 		learnNow = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], // learn at peak
-		TensorStrides[72], u32(ri), u32(di), u32(TimeDiff))]);
+		TensorStrides[72], u32(ri), u32(di), u32(MinusCycle))]);
 	}
 	var stcyc = learnNow - rlay.Nuclear.SendTimeOff;
 	var nbins = rlay.Nuclear.SendTimeBins;
@@ -1279,8 +1279,7 @@ fn PathParams_DWtCNIO(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32
 		sact += Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(si), u32(di), u32(NeuronTraces + NeuronVars(bi)))];
 	}
 	var dwt = sact;
-	if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // means that we got to end of cycle with no err: decay
-	u32(ri), u32(di), u32(TPeakCycle))] == 0) {
+	if (!isErrSpike) {
 		var ract = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // peak act
 		TensorStrides[72], u32(ri), u32(di), u32(GaP))];
 		dwt = -sact * ract * rlay.Nuclear.Decay;

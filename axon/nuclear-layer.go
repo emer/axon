@@ -294,8 +294,8 @@ func (ly *LayerParams) CNiLearn(ctx *Context, lpi, pi, ni, di uint32) {
 	act := Neurons.Value(int(ni), int(di), int(CaP))
 	if act > Neurons.Value(int(ni), int(di), int(GaP)) {
 		Neurons.Set(act, int(ni), int(di), int(GaP))
-		Neurons.Set(cycTot, int(ni), int(di), int(TimeDiff)) // learn at max
-		Neurons.Set(1.0, int(ni), int(di), int(GaD))         // for visualization
+		Neurons.Set(cycTot, int(ni), int(di), int(MinusCycle)) // learn at max
+		Neurons.Set(1.0, int(ni), int(di), int(GaD))           // for visualization
 	} else {
 		Neurons.Set(0.0, int(ni), int(di), int(GaD))
 	}
