@@ -3,8 +3,8 @@ module github.com/emer/axon/v2
 go 1.25.6
 
 require (
-	cogentcore.org/core v0.3.23-0.20260417145953-4e0b144b49c0
-	cogentcore.org/lab v0.1.8-0.20260417151008-aa12dc9373d1
+	cogentcore.org/core v0.3.23
+	cogentcore.org/lab v0.1.8
 	github.com/cogentcore/yaegi v0.0.0-20260116172027-700fbf8949f3
 	github.com/emer/emergent/v2 v2.0.0-dev0.1.9
 	github.com/emer/v1vision v0.1.2
@@ -33,7 +33,7 @@ require (
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-fonts/latin-modern v0.3.3 // indirect
 	github.com/go-gl/glfw/v3.4/glfw v0.1.0-pre.1 // indirect
-	github.com/go-text/typesetting v0.3.1-0.20250707124828-58cd3ef91251 // indirect
+	github.com/go-text/typesetting v0.3.5-0.20260418130854-c41d02a44bec // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gomarkdown/markdown v0.0.0-20250810172220-2e2c11897d1a // indirect
 	github.com/gorilla/css v1.0.1 // indirect
