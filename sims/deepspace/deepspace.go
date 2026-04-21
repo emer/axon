@@ -204,6 +204,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	rotAct, rotActMF, rotActThal := addInput("Rotate", "Full body horizontal rotation action, population coded left to right with gaussian tuning curves for a range of degrees for each unit (X axis) and redundant units for population code in the Y axis.")
 
+	eyePos := net.AddLayer4D("EyePos", axon.SuperLayer, 1, 2, ev.Params.UnitsPer, 1)
+	eyePos.AddClass("motorOut")
+	eyePos.Doc = "eye position control layer: relative balance in L - R activity determines set point for eye position"
+
 	// rotActPrev, rotActPrevPop := addInput("ActRotatePrev", "Previous trial's version of ActRotate. This should be implicitly maintained but currently is not.")
 	// _ = rotActPrevPop
 
@@ -220,10 +224,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		return
 	}
 
-	vsRotVel, vsRotVelThal, vsRotVelThalP := addInputPulv("VSRotHVel", "Vestibular horizontal rotation velocity, computed from the physics model over time. Population coded left to right with gaussian tuning curves for a range of degrees for each unit (X axis) and redundant units for population code in the Y axis.")
+	vsRotVel, vsRotVelThal, vsRotVelThalP := addInputPulv("VShv", "Vestibular horizontal rotation velocity, computed from the physics model over time. Population coded left to right with gaussian tuning curves for a range of degrees for each unit (X axis) and redundant units for population code in the Y axis.")
 	_ = vsRotVelThalP
 
-	vmRotVel, vmRotVelThal, vmRotVelThalP := addInputPulv("VMRotHVel", "Full-field visual motion computed from the eye using retinal motion filter (see Env tab for visual environment). Population coded left to right with gaussian tuning curves for a range of velocities for each unit (X axis) and redundant units for population code in the Y axis.")
+	vmRotVel, vmRotVelThal, vmRotVelThalP := addInputPulv("VMhv", "Full-field visual motion computed from the eye using retinal motion filter (see Env tab for visual environment). Population coded left to right with gaussian tuning curves for a range of velocities for each unit (X axis) and redundant units for population code in the Y axis.")
 
 	s1, s1ct := net.AddSuperCT2D("S1", "", 10, 10, space, one2one) // one2one learn > full
 	s1.Doc = "Neocortical integrated vestibular and full-field visual motion processing. Does predictive learning on both input signals, more like S2 (secondary), but just using one for simplicity."
@@ -257,7 +261,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ioDn, cniIODn, cneDn := net.AddNuclearCNDn(vsRotVel, rotAct, cycles-20, space)
 	_, _ = ioDn, cneDn
 
-	// upgoing forward model
+	// upgoing adaptive filter model
 	pt := net.ConnectLayers(vsRotVel, cneUp, p1to1, axon.ForwardPath).AddClass("SenseToCNeUp")
 	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
 
@@ -277,10 +281,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectLayers(rotActMF, cneDn, full, axon.CNIOPath).AddClass("MF", "MFToCNeDn")
 
+	pt = net.ConnectLayers(cneDn, eyePos, p1to1, axon.ForwardPath).AddClass("Reflex")
+	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
+
 	// position
 
+	eyePos.PlaceRightOf(rotAct, float32(ev.Params.PopCodeUnits))
 	// rotActPrev.PlaceBehind(rotActThal, space)
-	vsRotVel.PlaceRightOf(rotAct, float32(ev.Params.PopCodeUnits))
+	vsRotVel.PlaceRightOf(eyePos, float32(ev.Params.PopCodeUnits))
 	vmRotVel.PlaceRightOf(vsRotVel, float32(ev.Params.PopCodeUnits))
 	// if ev.LeftEye {
 	// 	eyeLIn.PlaceRightOf(vmRotVel, space)
@@ -341,6 +349,7 @@ func (ss *Sim) ConfigLoops() {
 
 	trials := int(math32.IntMultipleGE(float32(ss.Config.Run.Trials), float32(ss.Config.Run.NData)))
 	cycles := ss.Config.Run.Cycles()
+	net := ss.Net
 
 	ls.AddStack(Train, Trial).
 		AddLevel(Expt, 1).
@@ -349,16 +358,29 @@ func (ss *Sim) ConfigLoops() {
 		AddLevelIncr(Trial, trials, ss.Config.Run.NData).
 		AddLevel(Cycle, cycles)
 
-	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, Cycle, Trial, Train,
-		func(mode enums.Enum) { ss.Net.ClearInputs() },
+	axon.LooperStandard(ls, net, ss.NetViewUpdater, Cycle, Trial, Train,
+		func(mode enums.Enum) { net.ClearInputs() },
 		func(mode enums.Enum) { ss.TakeNextActions(mode.(Modes)) },
 	)
 	ls.Stacks[Train].OnInit.Add("Init", ss.Init)
 	ls.Loop(Train, Run).OnStart.Add("NewRun", ss.NewRun)
 
 	for mode, st := range ls.Stacks {
-		st.Loops[Cycle].OnStart.Add("ApplyInputs", func() { ss.ApplyInputs(mode.(Modes)) })
-		plusPhase := st.Loops[Cycle].EventByName("MinusPhase:End")
+		cl := st.Loops[Cycle]
+		cl.OnStart.Replace("Cycle", func() bool {
+			getNeurons := axon.LooperCycleGetNeurons(ls, net, ss.NetViewUpdater, Cycle, Train)
+			cyc := cl.Counter.Cur
+			if cyc%ss.Config.Env.MotorReadCycles == 0 {
+				getNeurons = true
+			}
+			net.Cycle(getNeurons)
+			if axon.UseGPU && !getNeurons {
+				net.Context().CycleInc() // keep synced
+			}
+			return false
+		})
+		cl.OnStart.Add("ApplyInputs", func() { ss.ApplyInputs(mode.(Modes)) })
+		plusPhase := cl.EventByName("MinusPhase:End")
 		plusPhase.OnEvent.InsertBefore("PlusPhase:Start", "NextAction", func() bool {
 			// note: critical to have this happen *after* MinusPhase:End and *before* PlusPhase:Start
 			// because minus phase end has gated info, and plus phase start applies action input
@@ -372,7 +394,7 @@ func (ss *Sim) ConfigLoops() {
 
 	ls.Loop(Train, Run).OnEnd.Add("SaveWeights", func() {
 		ctrString := fmt.Sprintf("%03d_%05d", ls.Loop(Train, Run).Counter.Cur, ls.Loop(Train, Epoch).Counter.Cur)
-		axon.SaveWeightsIfConfigSet(ss.Net, ss.Config.Log.SaveWeights, ctrString, ss.RunName())
+		axon.SaveWeightsIfConfigSet(net, ss.Config.Log.SaveWeights, ctrString, ss.RunName())
 	})
 
 	if ss.Config.GUI {
@@ -390,11 +412,11 @@ func (ss *Sim) ConfigLoops() {
 	ss.Loops = ls
 }
 
-// ApplyInputs applies input patterns from given environment for given mode.
-// Any other start-of-trial logic can also be put here.
+// ApplyInputs applies input patterns for given mode.
+// This is called every Cycle, not trial.
 func (ss *Sim) ApplyInputs(mode Modes) {
 	net := ss.Net
-	ctx := ss.Net.Context()
+	ctx := net.Context()
 	ndata := int(ctx.NData)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	curModeDir := ss.Current.Dir(mode.String())
@@ -420,6 +442,35 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 	if cyc == 0 {
 		for di := uint32(0); di < ctx.NData; di++ {
 			curModeDir.StringValue("TrialName", ndata).SetString1D(ev.String(), int(di))
+		}
+	}
+	ss.ReadMotor(mode)
+}
+
+// ReadMotor reads motor control layer activity,
+// drives corresponding motor actions.
+func (ss *Sim) ReadMotor(mode Modes) {
+	net := ss.Net
+	ctx := net.Context()
+	ndata := int(ctx.NData)
+	lays := []string{"EyePos"}
+	curModeDir := ss.Current.Dir(mode.String())
+	ev := ss.Envs.ByMode(mode).(*emery.EmeryEnv)
+	cyc := ss.Loops.Loop(mode, Cycle).Counter.Cur
+	read := cyc%ss.Config.Env.MotorReadCycles == 0
+	if !read {
+		return
+	}
+	mxcyc := int(ctx.ThetaCycles) / ss.Config.Env.MotorReadCycles
+	cycidx := cyc / ss.Config.Env.MotorReadCycles
+	for _, lnm := range lays {
+		ly := ss.Net.LayerByName(lnm)
+		for di := range ndata {
+			l := ly.AvgMaxVarByPool("CaP", 1, di).Avg
+			r := ly.AvgMaxVarByPool("CaP", 2, di).Avg
+			lr := l - r
+			curModeDir.Float64(lnm, ndata, mxcyc).Set(float64(lr), di, cycidx)
+			ev.TakeAction(di, emery.EyeRotateH, lr)
 		}
 	}
 }
@@ -636,7 +687,7 @@ func (ss *Sim) ConfigStatVis() {
 					case "VisVestibCor":
 						stat = ev.VisVestibCorrelCycle(di)
 					case "EmeryAng":
-						stat = float64(ev.SenseValue(di, emery.VSRotHDir, false)) // current
+						stat = float64(ev.SenseValue(di, emery.VShd, false)) // current
 					}
 					curModeDir.Float64(name, ndata).SetFloat1D(float64(stat), di)
 					tsr.AppendRowFloat(float64(stat))
@@ -654,7 +705,7 @@ func (ss *Sim) ConfigStatVis() {
 
 func (ss *Sim) ConfigStatNuclearCycle() {
 	net := ss.Net
-	prefix := "VSRotHVel"
+	prefix := "VShv"
 	pool := 1 // 0 = layer pool, get first pool
 	layerNames := []string{"IOUp", "CNiIOUp", "CNiUp", "CNeUp", "CNeDn"}
 	layers := make([]*axon.Layer, len(layerNames))
@@ -745,7 +796,7 @@ func (ss *Sim) ConfigStatNuclearCycle() {
 
 func (ss *Sim) ConfigStatAdaptFilt() {
 	net := ss.Net
-	prefix := "VSRotHVel"
+	prefix := "VShv"
 	cnely := net.LayerByName(prefix + "CNeUp")
 	cnepi := cnely.Params.PoolIndex(0)
 	ioly := net.LayerByName(prefix + "IOUp")
@@ -840,7 +891,7 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	nv.Options.Paths = false
 	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles()
 	nv.Options.Raster.Max = ss.Config.Run.Cycles()
-	nv.Options.LayerNameSize = 0.03
+	nv.Options.LayerNameSize = 0.02
 	nv.SetNet(ss.Net)
 	ss.TrainUpdate.Config(nv, axon.Theta, ss.StatCounters) // Theta
 	ss.GUI.OnStop = func(mode, level enums.Enum) {

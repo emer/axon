@@ -78,6 +78,10 @@ func (ge *GUI) ConfigGUI(ev *EmeryEnv, b core.Widget) {
 	ge.SceneEditor.UpdateWidget()
 	sc := ge.SceneEditor.SceneXYZ()
 
+	sc.Camera.Pose.Pos = math32.Vec3(-1.4, 3.6, -2.5)
+	sc.Camera.LookAt(math32.Vec3(0.15, 0.39, -0.7), math32.Vec3(0.54, 0.58, 0.61))
+	sc.SaveCamera("3")
+
 	sc.Camera.Pose.Pos = math32.Vec3(0, 29, -4)
 	sc.Camera.LookAt(math32.Vec3(0, 4, -5), math32.Vec3(0, 1, 0))
 	sc.SaveCamera("2")

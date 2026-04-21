@@ -17,7 +17,7 @@ import (
 //   - The clearInputs function is called at the start of the minus phase to begin
 //     the ISI period, and applyInputs is called after that to apply new inputs.
 //   - embedded beta phases within theta, that record Beta1 and Beta2 states.
-//   - net.Cycle() at every cycle step.
+//   - net.Cycle() at every ycle step.
 //   - net.DWt() and net.WtFromDWt() learning calls in training mode, with netview update
 //     between these two calls if it is visible and viewing synapse variables.
 //   - netview update calls at appropriate levels (no-op if no GUI).
@@ -55,22 +55,29 @@ func LooperStandard(ls *looper.Stacks, net *Network, viewFunc func(mode enums.En
 	}
 }
 
+// LooperCycleGetNeurons returns true if should get neurons back from GPU
+// for current cycle, based on network params.
+func LooperCycleGetNeurons(ls *looper.Stacks, net *Network, viewFunc func(mode enums.Enum) *NetViewUpdate, cycle, mode enums.Enum) bool {
+	if ls.ModeStack().StepLevel.Int64() == cycle.Int64() {
+		return true
+	}
+	if view := viewFunc(mode); view != nil && view.View != nil {
+		if view.IsCycleUpdating() {
+			return true
+		} else {
+			if view.Time < Theta {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // LooperCycleStartFunc returns a standard looper OnStart function at Cycle level,
 // which runs every cycle and updates the view.
 func LooperCycleStartFunc(ls *looper.Stacks, net *Network, viewFunc func(mode enums.Enum) *NetViewUpdate, cycle, mode enums.Enum) func() {
 	return func() {
-		getNeurons := false
-		if ls.ModeStack().StepLevel.Int64() == cycle.Int64() {
-			getNeurons = true
-		} else if view := viewFunc(mode); view != nil && view.View != nil {
-			if view.IsCycleUpdating() {
-				getNeurons = true
-			} else {
-				if view.Time < Theta {
-					getNeurons = true
-				}
-			}
-		}
+		getNeurons := LooperCycleGetNeurons(ls, net, viewFunc, cycle, mode)
 		net.Cycle(getNeurons)
 		if UseGPU && !getNeurons {
 			net.Context().CycleInc() // keep synced

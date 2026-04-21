@@ -15,31 +15,31 @@ import (
 type Senses int32 //enums:enum
 
 const (
-	// VSRotHVel is vestibular rotational head velocity (horiz plane).
-	VSRotHVel Senses = iota
+	// VShv is vestibular rotational head velocity (horiz plane).
+	VShv Senses = iota
 
-	// VMRotHVel is full-field visual-motion rotation (horiz plane).
-	VMRotHVel
+	// VMhv is full-field visual-motion rotation (horiz plane).
+	VMhv
 
-	// note: values below VSRotHDir are not rendered, only for reference
+	// note: values below VShd are not rendered, only for reference
 
-	// VSRotHDir is the ground-truth actual head direction (horiz plane).
-	VSRotHDir
+	// VShd is the ground-truth actual head direction (horiz plane).
+	VShd
 
-	// VSRotHAccel is vestibular rotational head acceleration (horiz plane).
-	VSRotHAccel
+	// VSha is vestibular rotational head acceleration (horiz plane).
+	VSha
 
-	// VSLinearVel is vestibular linear velocity. This is not actually something
+	// VShlv is vestibular linear velocity. This is not actually something
 	// that can be sensed directly by the vestibular system: only linear accel.
-	VSLinearVel
+	VShlv
 
-	// VSLinearAccel is vestibular linear acceleration.
-	VSLinearAccel
+	// VShla is vestibular linear acceleration.
+	VShla
 )
 
 // IsVestibular returns true if given sense is vestibular, else visual
 func (s Senses) IsVestibular() bool {
-	if s == VMRotHVel {
+	if s == VMhv {
 		return false
 	}
 	return true
@@ -96,7 +96,7 @@ func (ev *EmeryEnv) VisMotion() {
 		es := ev.EmeryState(di)
 		es.EyeRImage = imgs[di]
 		eyelv := full.Value(di, 0, 1) - full.Value(di, 0, 0)
-		ev.SetSenseValue(di, VMRotHVel, eyelv)
+		ev.SetSenseValue(di, VMhv, eyelv)
 	}
 }
 
@@ -136,7 +136,7 @@ func (ev *EmeryEnv) AverageSenses() {
 // RenderSenses renders sensory states for current sensory values.
 func (ev *EmeryEnv) RenderSenses() {
 	ev.AverageSenses()
-	for s := range VSRotHDir { // only render below VSRotHDir ground truth
+	for s := range VShd { // only render below VShd ground truth
 		for di := range ev.NData {
 			es := ev.EmeryState(di)
 			val := es.SenseNormed[s]
@@ -145,27 +145,27 @@ func (ev *EmeryEnv) RenderSenses() {
 	}
 }
 
-// VisVestibCorrelCycle returns the correlation between the visual (VMRotHVel)
-// and vestibular (VSRotHVel) signals at the cycle level,
-// for tuning the visual motion params (VSRotHVel is ground truth).
+// VisVestibCorrelCycle returns the correlation between the visual (VMhv)
+// and vestibular (VShv) signals at the cycle level,
+// for tuning the visual motion params (VShv is ground truth).
 func (ev *EmeryEnv) VisVestibCorrelCycle(di int) float64 {
 	dd := ev.SenseData.Dir("Cycle").Dir(ev.diName(di))
-	vm := dd.Float32(VMRotHVel.String(), ev.Params.BufferSize)
+	vm := dd.Float32(VMhv.String(), ev.Params.BufferSize)
 	madj := tensor.NewFloat32FromValues(vm.Values[ev.Params.VisMotionInterval:]...)
-	vs := dd.Float32(VSRotHVel.String(), ev.Params.BufferSize)
+	vs := dd.Float32(VShv.String(), ev.Params.BufferSize)
 	sadj := tensor.NewFloat32FromValues(vs.Values[:ev.Params.BufferSize-ev.Params.VisMotionInterval]...)
 	cor := metric.Correlation(madj, sadj).Float1D(0)
 	return cor
 }
 
-// VisVestibCorrelAvg returns the correlation between the visual (VMRotHVel)
-// and vestibular (VSRotHVel) signals at the averaged and normalized level.
-// for tuning the visual motion params (VSRotHVel is ground truth).
+// VisVestibCorrelAvg returns the correlation between the visual (VMhv)
+// and vestibular (VShv) signals at the averaged and normalized level.
+// for tuning the visual motion params (VShv is ground truth).
 func (ev *EmeryEnv) VisVestibCorrelAvg(di int) float64 {
 	avgBufSz := ev.Params.BufferSize / 10
 	dd := ev.SenseData.Dir("Avg").Dir(ev.diName(di))
-	vm := dd.Float32(VMRotHVel.String(), avgBufSz)
-	vs := dd.Float32(VSRotHVel.String(), avgBufSz)
+	vm := dd.Float32(VMhv.String(), avgBufSz)
+	vs := dd.Float32(VShv.String(), avgBufSz)
 	cor := metric.Correlation(vm, vs).Float1D(0)
 	return cor
 }

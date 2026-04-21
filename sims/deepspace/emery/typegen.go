@@ -23,7 +23,7 @@ var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/
 
 var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.EmeryBodies", IDName: "emery-bodies", Doc: "EmeryBodies are indexes for the physics body elements of Emery."})
 
-var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Emery", IDName: "emery", Doc: "Emery encapsulates all the emery agent config and physics.", Fields: []types.Field{{Name: "Length", Doc: "full length of emery"}, {Name: "Obj", Doc: "emery object"}, {Name: "XZ", Doc: "PlaneXZ joint for controlling 2D position."}, {Name: "Neck", Doc: "joint for the neck."}, {Name: "EyeR", Doc: "Right eye of emery"}}})
+var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Emery", IDName: "emery", Doc: "Emery encapsulates all the emery agent config and physics.", Fields: []types.Field{{Name: "Length", Doc: "full length of emery"}, {Name: "Obj", Doc: "emery object"}, {Name: "XZ", Doc: "PlaneXZ joint for controlling 2D position."}, {Name: "Neck", Doc: "joint for the neck."}, {Name: "EyeR", Doc: "Right eye of emery"}, {Name: "EyeRSocket", Doc: "joint for the right eye (revolute, not ball)."}}})
 
 // SetLength sets the [Emery.Length]:
 // full length of emery
@@ -44,6 +44,10 @@ func (t *Emery) SetNeck(v *builder.Joint) *Emery { t.Neck = v; return t }
 // SetEyeR sets the [Emery.EyeR]:
 // Right eye of emery
 func (t *Emery) SetEyeR(v *builder.Body) *Emery { t.EyeR = v; return t }
+
+// SetEyeRSocket sets the [Emery.EyeRSocket]:
+// joint for the right eye (revolute, not ball).
+func (t *Emery) SetEyeRSocket(v *builder.Joint) *Emery { t.EyeRSocket = v; return t }
 
 var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.EmeryState", IDName: "emery-state", Doc: "EmeryState has all the state info for each Emery instance.", Fields: []types.Field{{Name: "SenseValues", Doc: "SenseValues has the current sensory values from physics model,\nstored here by the Sensor function for subsequent recording."}, {Name: "SenseAverages", Doc: "SenseAverages has the average delayed sensory values over\nSensoryWindow, which goes into SenseNormed for rendering."}, {Name: "SenseNormed", Doc: "SenseNormed has the normalized versions of SenseAverages,\nwhich is what is actually rendered."}, {Name: "EyeRImage", Doc: "current captured images"}, {Name: "EyeLImage", Doc: "current captured images"}, {Name: "NextActions", Doc: "NextActions are the next action values set by sim, and rendered\ndepending on RenderNextAction value."}, {Name: "CurActions", Doc: "CurActions are the current action values, updated by TakeNextAction,\nand rendered depending on RenderNextAction value."}}})
 

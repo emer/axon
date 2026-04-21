@@ -6,20 +6,20 @@ import (
 	"cogentcore.org/core/enums"
 )
 
-var _ActionsValues = []Actions{0, 1}
+var _ActionsValues = []Actions{0, 1, 2}
 
 // ActionsN is the highest valid value for type Actions, plus one.
 //
 //gosl:start
-const ActionsN Actions = 2
+const ActionsN Actions = 3
 
 //gosl:end
 
-var _ActionsValueMap = map[string]Actions{`Rotate`: 0, `Forward`: 1}
+var _ActionsValueMap = map[string]Actions{`Rotate`: 0, `Forward`: 1, `EyeRotateH`: 2}
 
-var _ActionsDescMap = map[Actions]string{0: `Rotate is overall body rotation. Positive or negative for left vs. right.`, 1: `Forward moving forward or backward.`}
+var _ActionsDescMap = map[Actions]string{0: `Rotate is overall body rotation. Positive or negative for left vs. right.`, 1: `Forward moving forward or backward.`, 2: `EyeRotateH horizontal eye rotation: sets the target angle, not the delta`}
 
-var _ActionsMap = map[Actions]string{0: `Rotate`, 1: `Forward`}
+var _ActionsMap = map[Actions]string{0: `Rotate`, 1: `Forward`, 2: `EyeRotateH`}
 
 // String returns the string representation of this Actions value.
 func (i Actions) String() string { return enums.String(i, _ActionsMap) }
@@ -107,11 +107,11 @@ const SensesN Senses = 6
 
 //gosl:end
 
-var _SensesValueMap = map[string]Senses{`VSRotHVel`: 0, `VMRotHVel`: 1, `VSRotHDir`: 2, `VSRotHAccel`: 3, `VSLinearVel`: 4, `VSLinearAccel`: 5}
+var _SensesValueMap = map[string]Senses{`VShv`: 0, `VMhv`: 1, `VShd`: 2, `VSha`: 3, `VShlv`: 4, `VShla`: 5}
 
-var _SensesDescMap = map[Senses]string{0: `VSRotHVel is vestibular rotational head velocity (horiz plane).`, 1: `VMRotHVel is full-field visual-motion rotation (horiz plane).`, 2: `VSRotHDir is the ground-truth actual head direction (horiz plane).`, 3: `VSRotHAccel is vestibular rotational head acceleration (horiz plane).`, 4: `VSLinearVel is vestibular linear velocity. This is not actually something that can be sensed directly by the vestibular system: only linear accel.`, 5: `VSLinearAccel is vestibular linear acceleration.`}
+var _SensesDescMap = map[Senses]string{0: `VShv is vestibular rotational head velocity (horiz plane).`, 1: `VMhv is full-field visual-motion rotation (horiz plane).`, 2: `VShd is the ground-truth actual head direction (horiz plane).`, 3: `VSha is vestibular rotational head acceleration (horiz plane).`, 4: `VShlv is vestibular linear velocity. This is not actually something that can be sensed directly by the vestibular system: only linear accel.`, 5: `VShla is vestibular linear acceleration.`}
 
-var _SensesMap = map[Senses]string{0: `VSRotHVel`, 1: `VMRotHVel`, 2: `VSRotHDir`, 3: `VSRotHAccel`, 4: `VSLinearVel`, 5: `VSLinearAccel`}
+var _SensesMap = map[Senses]string{0: `VShv`, 1: `VMhv`, 2: `VShd`, 3: `VSha`, 4: `VShlv`, 5: `VShla`}
 
 // String returns the string representation of this Senses value.
 func (i Senses) String() string { return enums.String(i, _SensesMap) }

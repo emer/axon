@@ -4,7 +4,7 @@ go 1.25.6
 
 require (
 	cogentcore.org/core v0.3.23
-	cogentcore.org/lab v0.1.8
+	cogentcore.org/lab v0.1.9-0.20260421142939-f7a25fead01b
 	github.com/cogentcore/yaegi v0.0.0-20260116172027-700fbf8949f3
 	github.com/emer/emergent/v2 v2.0.0-dev0.1.9
 	github.com/emer/v1vision v0.1.2

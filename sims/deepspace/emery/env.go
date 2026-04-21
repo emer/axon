@@ -144,7 +144,7 @@ func (ev *EmeryEnv) Config(ndata, ncycles int, dataNode *tensorfs.Node, netGPU *
 	// No extension = rate code, Pop = population code version for cortex
 	// rate code has up and down versions, with redundancy
 
-	for s := range VSRotHDir { // only render below VSRotHDir ground truth
+	for s := range VShd { // only render below VShd ground truth
 		ev.States[s.String()] = tensor.NewFloat32(ndata, ev.Params.UnitsPer, 2)
 		ev.States[s.String()+"MF"] = tensor.NewFloat32(ndata, ev.Params.TimeBins, 1, 1, ev.Params.PopCodeUnits)
 		ev.States[s.String()+"Thal"] = tensor.NewFloat32(ndata, ev.Params.TimeBins, 1, 1, ev.Params.PopCodeUnits)

@@ -17,6 +17,9 @@ const (
 
 	// Forward moving forward or backward.
 	Forward
+
+	// EyeRotateH horizontal eye rotation: adds to target angle.
+	EyeRotateH
 )
 
 // ActionMaxValues are expected max sensory value, for normalizing.

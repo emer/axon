@@ -39,6 +39,9 @@ type Emery struct {
 
 	// Right eye of emery
 	EyeR *builder.Body `display:"-"`
+
+	// joint for the right eye (revolute, not ball).
+	EyeRSocket *builder.Joint
 }
 
 func (em *Emery) Defaults() {
@@ -84,31 +87,35 @@ func (em *Emery) Make(wl *builder.World, sc *phyxyz.Scene, ev *EmeryEnv) {
 		params := physics.GetParams(0)
 
 		av := physics.AngularVelocityAt(hd.DynamicIndex, math32.Vec3(headsz, 0, 0), math32.Vec3(0, 1, 0))
-		ev.SetSenseValue(world, VSRotHVel, -av.Z)
+		ev.SetSenseValue(world, VShv, -av.Z)
 
 		bd := obj.Body(int(EmeryBody))
 		av = physics.DynamicQuat(bd.DynamicIndex, params.Next).ToEuler()
-		ev.SetSenseValue(world, VSRotHDir, math32.RadToDeg(av.Y))
+		ev.SetSenseValue(world, VShd, math32.RadToDeg(av.Y))
 
 		av = physics.AngularAccelAt(hd.DynamicIndex, math32.Vec3(headsz, 0, 0), math32.Vec3(0, 1, 0))
-		ev.SetSenseValue(world, VSRotHAccel, av.Z)
+		ev.SetSenseValue(world, VSha, av.Z)
 
 		av = physics.DynamicVel(hd.DynamicIndex, params.Next)
-		ev.SetSenseValue(world, VSLinearVel, av.Length())
+		ev.SetSenseValue(world, VShlv, av.Length())
 
 		av = physics.DynamicAcc(hd.DynamicIndex, params.Next)
-		ev.SetSenseValue(world, VSLinearAccel, av.Length())
+		ev.SetSenseValue(world, VShla, av.Length())
 	})
 
-	eyeoff := math32.Vec3(-headsz*.6, headsz*.1, -(headsz + eyesz*.3))
-	bd := obj.NewDynamicSkin(sc, name+"_eye-l", physics.Box, "green", mass*.01, math32.Vec3(eyesz, eyesz*.5, eyesz*.2), headPos.Add(eyeoff), rot)
-	ej := obj.NewJointFixed(head, bd, eyeoff, math32.Vec3(0, 0, -eyesz*.3))
+	eyeDepth := eyesz * .8
+	eyeOff := math32.Vec3(-headsz*.6, headsz*.1, -(headsz + eyeDepth))
+	bd := obj.NewDynamicSkin(sc, name+"_eye-l", physics.Box, "green", mass*.01, math32.Vec3(eyesz, eyesz*.5, eyesz*.2), headPos.Add(eyeOff), rot)
+	ej := obj.NewJointFixed(head, bd, eyeOff, math32.Vec3(0, 0, 0))
 	ej.ParentFixed = true
 
-	eyeoff.X = headsz * .6
-	em.EyeR = obj.NewDynamicSkin(sc, name+"_eye-r", physics.Box, "green", mass*.01, math32.Vec3(eyesz, eyesz*.5, eyesz*.2), headPos.Add(eyeoff), rot)
-	ej = obj.NewJointFixed(head, em.EyeR, eyeoff, math32.Vec3(0, 0, -eyesz*.3))
-	ej.ParentFixed = true
+	eyeOff.X = headsz * .6
+	em.EyeR = obj.NewDynamicSkin(sc, name+"_eye-r", physics.Box, "green", mass*.01, math32.Vec3(eyesz, eyesz*.5, eyesz*.2), headPos.Add(eyeOff), rot)
+	erj := obj.NewJointRevolute(head, em.EyeR, eyeOff, math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
+	erj.ParentFixed = true
+	erj.NoLinearRotation = true
+	erj.DoFs[0].Limit.Set(-2, 2)
+	em.EyeRSocket = erj
 
 	// emr.Updater(func() {
 	// 	ev := vw.Env
@@ -160,6 +167,9 @@ func (ev *EmeryEnv) TakeAction(di int, act Actions, val float32) {
 	case Forward:
 		ang := math32.Pi*.5 - jd.DoF(2).Current.Pos
 		jd.AddPlaneXZPos(ang, val, ev.Params.ActionStiff)
+	case EyeRotateH:
+		je := ev.Physics.Builder.ReplicaJoint(ev.Emery.EyeRSocket, di)
+		je.AddTargetAngle(0, val, ev.Params.ActionStiff)
 	}
 }
 
