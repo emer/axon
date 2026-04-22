@@ -370,7 +370,7 @@ func (ss *Sim) ConfigLoops() {
 		cl.OnStart.Replace("Cycle", func() bool {
 			getNeurons := axon.LooperCycleGetNeurons(ls, net, ss.NetViewUpdater, Cycle, Train)
 			cyc := cl.Counter.Cur
-			if cyc%ss.Config.Env.MotorReadCycles == 0 {
+			if cyc%ss.Config.Env.ReadNetInterval == 0 {
 				getNeurons = true
 			}
 			net.Cycle(getNeurons)
@@ -418,10 +418,13 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 	net := ss.Net
 	ctx := net.Context()
 	ndata := int(ctx.NData)
+
+	ss.ReadNetState(mode)
+
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	curModeDir := ss.Current.Dir(mode.String())
 	ev := ss.Envs.ByMode(mode).(*emery.EmeryEnv)
-	cyc := ss.Loops.Loop(mode, Cycle).Counter.Cur
+	cyc := int(ctx.Cycle)
 	render := cyc%ev.Params.TimeBinCycles == 0
 	ev.RenderStates = render
 	ev.Step()
@@ -444,32 +447,42 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 			curModeDir.StringValue("TrialName", ndata).SetString1D(ev.String(), int(di))
 		}
 	}
-	ss.ReadMotor(mode)
 }
 
-// ReadMotor reads motor control layer activity,
-// drives corresponding motor actions.
-func (ss *Sim) ReadMotor(mode Modes) {
+// ReadNetState reads state back from the model, including motor control layer
+// activity, which drives corresponding motor actions.
+func (ss *Sim) ReadNetState(mode Modes) {
 	net := ss.Net
 	ctx := net.Context()
 	ndata := int(ctx.NData)
 	lays := []string{"EyePos"}
 	curModeDir := ss.Current.Dir(mode.String())
 	ev := ss.Envs.ByMode(mode).(*emery.EmeryEnv)
-	cyc := ss.Loops.Loop(mode, Cycle).Counter.Cur
-	read := cyc%ss.Config.Env.MotorReadCycles == 0
+	cyc := int(ctx.Cycle) - 1
+
+	if !axon.UseGPU {
+		ss.ReadNuclearState(net, mode, cyc, int(ctx.ThetaCycles))
+	}
+
+	read := cyc%ss.Config.Env.ReadNetInterval == 0
 	if !read {
 		return
 	}
-	mxcyc := int(ctx.ThetaCycles) / ss.Config.Env.MotorReadCycles
-	cycidx := cyc / ss.Config.Env.MotorReadCycles
+
+	cycMax := int(ctx.ThetaCycles) / ss.Config.Env.ReadNetInterval
+	cycIndex := cyc / ss.Config.Env.ReadNetInterval
+
+	if axon.UseGPU {
+		ss.ReadNuclearState(net, mode, cycIndex, cycMax)
+	}
+
 	for _, lnm := range lays {
 		ly := ss.Net.LayerByName(lnm)
 		for di := range ndata {
 			l := ly.AvgMaxVarByPool("CaP", 1, di).Avg
 			r := ly.AvgMaxVarByPool("CaP", 2, di).Avg
 			lr := l - r
-			curModeDir.Float64(lnm, ndata, mxcyc).Set(float64(lr), di, cycidx)
+			curModeDir.Float64(lnm, ndata, cycMax).Set(float64(lr), di, cycIndex)
 			ev.TakeAction(di, emery.EyeRotateH, lr)
 		}
 	}
@@ -703,17 +716,97 @@ func (ss *Sim) ConfigStatVis() {
 	})
 }
 
-func (ss *Sim) ConfigStatNuclearCycle() {
-	net := ss.Net
-	prefix := "VShv"
-	pool := 1 // 0 = layer pool, get first pool
+// ReadNuclearState reads key Nuclear cerebellum state variables from
+// the network, at the cycle level (ReadNetInterval).
+// cycIndex is the current cycle index in range of cycMax to record into.
+func (ss *Sim) ReadNuclearState(net *axon.Network, mode Modes, cycIndex, cycMax int) {
+	ctx := net.Context()
+	ndata := int(ctx.NData)
+	prefixes := []string{"VShv"}
 	layerNames := []string{"IOUp", "CNiIOUp", "CNiUp", "CNeUp", "CNeDn"}
 	layers := make([]*axon.Layer, len(layerNames))
 	pools := make([]uint32, len(layerNames))
-	for li, lnm := range layerNames {
-		layers[li] = net.LayerByName(prefix + lnm)
-		pools[li] = layers[li].Params.PoolIndex(1) // 4D
+	statNames := []string{"IOenv", "IOe", "IOi", "IOioff", "IOerr", "IOspike", "CNiIO", "CNiUp", "CNeUp", "CNeUpGe", "CNeUpGi", "CNeUpLearn", "CNeUpAbsDev", "CNeDn"}
+	for _, pf := range prefixes {
+		for li, lnm := range layerNames {
+			layers[li] = net.LayerByName(pf + lnm)
+			pools[li] = layers[li].Params.PoolIndex(1) // 4D
+		}
+		for _, name := range statNames {
+			pname := pf + name
+			curModeDir := ss.Current.Dir(mode.String())
+			for di := range ndata {
+				diu := uint32(di)
+				for pool := range 2 {
+					poolu := uint32(pool)
+					var stat float32
+					switch name {
+					case "IOenv":
+						stat = layers[0].AvgMaxVarByPool("MinusCycle", 1+pool, di).Avg
+						if math32.IsNaN(stat) || stat < 0 {
+							stat = 0
+						} else {
+							stat = 1
+						}
+					case "IOe":
+						stat = layers[0].AvgMaxVarByPool("GaP", 1+pool, di).Avg
+					case "IOi":
+						stat = layers[0].AvgMaxVarByPool("GaM", 1+pool, di).Avg
+					case "IOioff":
+						stat = layers[0].AvgMaxVarByPool("GaD", 1+pool, di).Avg
+					case "IOerr":
+						stat = layers[0].AvgMaxVarByPool("TimeDiff", 1+pool, di).Avg
+					case "IOspike":
+						if cycMax == int(ctx.ThetaCycles) {
+							stat = layers[0].AvgMaxVarByPool("Spike", 1+pool, di).Avg
+						} else {
+							stat = layers[0].AvgMaxVarByPool("LearnNow", 1+pool, di).Avg
+							if math32.IsNaN(stat) {
+								stat = 0
+							} else {
+								lcyc := int(stat)
+								mn := cycIndex * ss.Config.Env.ReadNetInterval
+								mx := mn + ss.Config.Env.ReadNetInterval
+								if lcyc >= mn && lcyc < mx {
+									stat = 1
+								} else {
+									stat = 0
+								}
+							}
+						}
+					case "CNiIO":
+						stat = axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pools[1]+poolu, diu)
+					case "CNiUp":
+						stat = axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pools[2]+poolu, diu)
+					case "CNeUp":
+						stat = axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pools[3]+poolu, diu)
+					case "CNeUpGe":
+						stat = layers[3].AvgMaxVarByPool("Ge", 1+pool, di).Avg
+					case "CNeUpGi":
+						stat = layers[3].AvgMaxVarByPool("Gi", 1+pool, di).Avg
+					case "CNeUpLearn":
+						stat = layers[3].AvgMaxVarByPool("TimePeak", 1+pool, di).Avg
+					case "CNeUpAbsDev":
+						stat = layers[3].AvgMaxVarByPool("GaP", 1+pool, di).Avg
+					case "CNeDn":
+						stat = axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pools[4]+poolu, diu)
+					}
+					curModeDir.Float64(pname, ndata, 2, cycMax).SetFloat(float64(stat), di, pool, cycIndex)
+				}
+			}
+		}
 	}
+}
+
+func (ss *Sim) ConfigStatNuclearCycle() {
+	net := ss.Net
+	ctx := net.Context()
+	prefixes := []string{"VShv"}
+	cycMax := int(ctx.ThetaCycles) / ss.Config.Env.ReadNetInterval
+	if !axon.UseGPU {
+		cycMax = int(ctx.ThetaCycles)
+	}
+	pool := 0
 	statNames := []string{"IOenv", "IOe", "IOi", "IOioff", "IOerr", "IOspike", "CNiIO", "CNiUp", "CNeUp", "CNeUpGe", "CNeUpGi", "CNeUpLearn", "CNeUpAbsDev", "CNeDn"}
 	statDescs := map[string]string{
 		"IOenv":       "IO envelope initiated by action input to IO neurons",
@@ -736,60 +829,34 @@ func (ss *Sim) ConfigStatNuclearCycle() {
 			return
 		}
 		di := 0
-		diu := uint32(di)
-		for _, name := range statNames {
-			modeDir := ss.Stats.Dir(mode.String())
-			curModeDir := ss.Current.Dir(mode.String())
-			levelDir := modeDir.Dir(level.String())
-			tsr := levelDir.Float64(name)
-			ndata := 1
-			if phase == Start {
-				tsr.SetNumRows(0)
-				plot.SetFirstStyler(tsr, func(s *plot.Style) {
-					s.Range.SetMin(0).SetMax(1)
-					if name != "CNeUpGe" && name != "CNeUpGi" {
-						s.On = true
-					}
-				})
-				metadata.SetDoc(tsr, statDescs[name])
-				continue
-			}
-			var stat float32
-			switch name {
-			case "IOenv":
-				stat = layers[0].AvgMaxVarByPool("MinusCycle", pool, di).Avg
-				if stat > 0 {
-					stat = 1
+		for _, pf := range prefixes {
+			for _, name := range statNames {
+				pname := pf + name
+				modeDir := ss.Stats.Dir(mode.String())
+				curModeDir := ss.Current.Dir(mode.String())
+				levelDir := modeDir.Dir(level.String())
+				tsr := levelDir.Float64(pname)
+				ndata := 1
+				if phase == Start {
+					tsr.SetNumRows(0)
+					plot.SetFirstStyler(tsr, func(s *plot.Style) {
+						s.Range.SetMin(0).SetMax(1)
+						if name != "CNeUpGe" && name != "CNeUpGi" {
+							s.On = true
+						}
+					})
+					metadata.SetDoc(tsr, statDescs[name])
+					continue
 				}
-			case "IOe":
-				stat = layers[0].AvgMaxVarByPool("GaP", pool, di).Avg
-			case "IOi":
-				stat = layers[0].AvgMaxVarByPool("GaM", pool, di).Avg
-			case "IOioff":
-				stat = layers[0].AvgMaxVarByPool("GaD", pool, di).Avg
-			case "IOerr":
-				stat = layers[0].AvgMaxVarByPool("TimeDiff", pool, di).Avg
-			case "IOspike":
-				stat = layers[0].AvgMaxVarByPool("Spike", pool, di).Avg
-			case "CNiIO":
-				stat = axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pools[1], diu)
-			case "CNiUp":
-				stat = axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pools[2], diu)
-			case "CNeUp":
-				stat = axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pools[3], diu)
-			case "CNeUpGe":
-				stat = layers[3].AvgMaxVarByPool("Ge", pool, di).Avg
-			case "CNeUpGi":
-				stat = layers[3].AvgMaxVarByPool("Gi", pool, di).Avg
-			case "CNeUpLearn":
-				stat = layers[3].AvgMaxVarByPool("TimePeak", pool, di).Avg
-			case "CNeUpAbsDev":
-				stat = layers[3].AvgMaxVarByPool("GaP", pool, di).Avg
-			case "CNeDn":
-				stat = axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pools[4], diu)
+				cyc := int(ctx.Cycle) - 1
+				cycIndex := cyc / ss.Config.Env.ReadNetInterval
+				if !axon.UseGPU {
+					cycIndex = cyc
+				}
+
+				stat := curModeDir.Float64(pname, ndata, 2, cycMax).Float(di, pool, cycIndex)
+				tsr.AppendRowFloat(float64(stat))
 			}
-			curModeDir.Float64(name, ndata).SetFloat1D(float64(stat), di)
-			tsr.AppendRowFloat(float64(stat))
 		}
 	})
 }

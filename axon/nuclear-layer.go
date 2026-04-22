@@ -208,25 +208,24 @@ func (ly *LayerParams) IOLearn(ctx *Context, lpi, pi, ni, di uint32) {
 	gaM += ly.IO.GDt * (Neurons.Value(int(ni), int(di), int(GiSyn)) - gaM)
 	Neurons.Set(gaM, int(ni), int(di), int(GaM))
 
-	inhibAct := gaM
-	// NeuronTraceCycles to ensure that full bin is filled
-	if effAct > 0 && envCyc <= ly.IO.EfferentOff+NeuronTraceCycles {
-		inhibAct = 1.0
-	}
-	NeuronTraceIncrement(inhibAct, CaSynTrace, ctx.CyclesTotal, ni, di) // always store
-
 	Neurons.Set(0.0, int(ni), int(di), int(TimeDiff)) // set below for display
 	Neurons.Set(0.0, int(ni), int(di), int(Spike))    // default is no spike
 
-	oldInhib := float32(0)
-	nbins := ly.IO.TimeOff / NeuronTraceCycles
-	nbins = max(1, nbins-1)
-	stcyc := ctx.CyclesTotal - ly.IO.TimeOff
-	for i := range nbins {
-		bi := NeuronTraceIndex(CaSynTrace, stcyc+i*NeuronTraceCycles)
-		oldInhib += Neurons.Value(int(ni), int(di), int(NeuronTraces+NeuronVars(bi)))
+	inhibAct := gaM
+	// NeuronTraceCycles to ensure that full bin is filled
+	if effAct > 0 && envCyc <= ly.IO.EfferentOff+NeuronTraceCycles {
+		// inhibAct = 1.0
 	}
-	oldInhib /= float32(nbins)
+	binsPer := NetworkIxs[0].NNeuronTraceBins
+
+	rBin := (ctx.CyclesTotal - ly.IO.TimeOff) % binsPer // ly.IO.TimeOff < NeuronTraceCycles
+	rBi := NeuronTraceBinIndex(CaSynTrace, rBin)
+	oldInhib := Neurons.Value(int(ni), int(di), int(int(NeuronTraces+NeuronVars(rBi))))
+
+	wBin := ctx.CyclesTotal % binsPer
+	wBi := NeuronTraceBinIndex(CaSynTrace, wBin)
+	Neurons.Set(inhibAct, int(ni), int(di), int(int(NeuronTraces+NeuronVars(wBi)))) // write to new
+
 	Neurons.Set(oldInhib, int(ni), int(di), int(GaD))
 
 	if Neurons.Value(int(ni), int(di), int(LearnNow)) > 0 { // already learned, done until cleared in NuclearLearnReset

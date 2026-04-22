@@ -1486,26 +1486,21 @@ fn LayerParams_IOLearn(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,d
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))] = gaP;
 	var gaM = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaM))];
 	gaM += ly.IO.GDt * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GiSyn))] - gaM);
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
-	u32(ni), u32(di), u32(GaM))] = gaM;
-	var inhibAct = gaM;
-	if (effAct > 0 && envCyc <= ly.IO.EfferentOff+NeuronTraceCycles) {
-		inhibAct = f32(1.0);
-	}
-	NeuronTraceIncrement(inhibAct, CaSynTrace, ctx.CyclesTotal, ni, di); // always store
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaM))] = gaM;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], // set below for display
 	TensorStrides[72], u32(ni), u32(di), u32(TimeDiff))] = 0.0;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], // default is no spike
 	TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 0.0;
-	var oldInhib = f32(0);
-	var nbins = ly.IO.TimeOff / NeuronTraceCycles;
-	nbins = max(1, nbins-1);
-	var stcyc = ctx.CyclesTotal - ly.IO.TimeOff;
-	for (var i=0; i<nbins; i++) {
-		var bi = NeuronTraceIndex(CaSynTrace, stcyc+i*NeuronTraceCycles);
-		oldInhib += Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(NeuronTraces + NeuronVars(bi)))];
+	var inhibAct = gaM;
+	if (effAct > 0 && envCyc <= ly.IO.EfferentOff+NeuronTraceCycles) {
 	}
-	oldInhib /= f32(nbins);
+	var binsPer = NetworkIxs[0].NNeuronTraceBins;
+	var rBin = (ctx.CyclesTotal - ly.IO.TimeOff) % binsPer; // ly.IO.TimeOff < NeuronTraceCycles
+	var rBi = NeuronTraceBinIndex(CaSynTrace, rBin);
+	var oldInhib = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(i32(NeuronTraces + NeuronVars(rBi))))];
+	var wBin = ctx.CyclesTotal % binsPer;
+	var wBi = NeuronTraceBinIndex(CaSynTrace, wBin);
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(i32(NeuronTraces + NeuronVars(wBi))))] = inhibAct; // write to new
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaD))] = oldInhib;
 	if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // already learned, done until cleared in NuclearLearnReset
 	u32(ni), u32(di), u32(LearnNow))] > 0) {

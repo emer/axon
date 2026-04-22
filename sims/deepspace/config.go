@@ -21,9 +21,9 @@ type EnvConfig struct { //types:add
 	// UnitsPer is the number of units per localist output unit. 4 best.
 	UnitsPer int `default:"4"`
 
-	// MotorReadCycles is the interval in cycles for reading out motor control
-	// signals from the network
-	MotorReadCycles int `default:"10"`
+	// ReadNetInterval is the interval in cycles for reading network
+	// state including motor control signals from the network.
+	ReadNetInterval int `default:"10"`
 }
 
 // ParamConfig has config parameters related to sim params.
