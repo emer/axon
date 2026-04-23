@@ -4,6 +4,8 @@
 
 package emery
 
+import "cogentcore.org/lab/base/randx"
+
 // Actions are motor actions as abstracted coordinated plans
 // that unfold over time, at a level above individual muscles.
 // They are recorded in data continuously, with 0 meaning no
@@ -50,6 +52,16 @@ func (ev *EmeryEnv) TakeNextActions() {
 		}
 	}
 	ev.RenderCurActions()
+
+	for di := range ev.NData {
+		vorInhib := randx.BoolP32(ev.Params.VORInhibP, ev.Rand)
+		val := float32(0)
+		if vorInhib {
+			val = 1
+		}
+		ev.WriteData(ev.ActionData, di, "VORInhib", val)
+		ev.RenderControl(di, "VORInhib", val)
+	}
 }
 
 // TakeActions applies current actions to physics.
@@ -81,6 +93,7 @@ func (ev *EmeryEnv) RenderNextActions() {
 // RenderCurActions renders the current action values, from TakeNextActions.
 func (ev *EmeryEnv) RenderCurActions() {
 	ev.renderActions(true)
+
 }
 
 // renderActions renders sensory states for current sensory values.

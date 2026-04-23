@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strings"
 
 	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/base/reflectx"
@@ -205,8 +206,15 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	rotAct, rotActMF, rotActThal := addInput("Rotate", "Full body horizontal rotation action, population coded left to right with gaussian tuning curves for a range of degrees for each unit (X axis) and redundant units for population code in the Y axis.")
 
 	eyePos := net.AddLayer4D("EyePos", axon.SuperLayer, 1, 2, ev.Params.UnitsPer, 1)
-	eyePos.AddClass("motorOut")
-	eyePos.Doc = "eye position control layer: relative balance in L - R activity determines set point for eye position"
+	eyePos.AddClass("MotorOut")
+	eyePos.Doc = "VOR eye position control layer: relative balance in L - R activity drives changes in eye position set point, driven by anticipated vestibular signals from efferent copy of motor actions"
+
+	vorInhib := net.AddLayer2D("VORInhib", axon.InputLayer, ev.Params.UnitsPer, 1)
+	vorInhib.AddClass("RateIn")
+	vorInhib.Doc = "VOR (vestibulo-ocular reflex) inhibition control input -- if active then cerebellar anticipation of vestibular signals does NOT drive compensatory eye movements"
+
+	pt := net.ConnectLayers(vorInhib, eyePos, full, axon.InhibPath).AddClass("MotorInhib")
+	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
 
 	// rotActPrev, rotActPrevPop := addInput("ActRotatePrev", "Previous trial's version of ActRotate. This should be implicitly maintained but currently is not.")
 	// _ = rotActPrevPop
@@ -262,7 +270,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_, _ = ioDn, cneDn
 
 	// upgoing adaptive filter model
-	pt := net.ConnectLayers(vsRotVel, cneUp, p1to1, axon.ForwardPath).AddClass("SenseToCNeUp")
+	pt = net.ConnectLayers(vsRotVel, cneUp, p1to1, axon.ForwardPath).AddClass("SenseToCNeUp")
 	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
 
 	// net.ConnectLayers(rotActPrev, cniIOUp, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiIOUp")
@@ -287,6 +295,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// position
 
 	eyePos.PlaceRightOf(rotAct, float32(ev.Params.PopCodeUnits))
+	vorInhib.PlaceRightOf(eyePos, space)
 	// rotActPrev.PlaceBehind(rotActThal, space)
 	vsRotVel.PlaceRightOf(eyePos, float32(ev.Params.PopCodeUnits))
 	vmRotVel.PlaceRightOf(vsRotVel, float32(ev.Params.PopCodeUnits))
@@ -841,7 +850,7 @@ func (ss *Sim) ConfigStatNuclearCycle() {
 					tsr.SetNumRows(0)
 					plot.SetFirstStyler(tsr, func(s *plot.Style) {
 						s.Range.SetMin(0).SetMax(1)
-						if name != "CNeUpGe" && name != "CNeUpGi" {
+						if strings.HasPrefix(name, "IO") {
 							s.On = true
 						}
 					})

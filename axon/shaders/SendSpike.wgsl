@@ -1491,16 +1491,31 @@ fn LayerParams_IOLearn(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,d
 	TensorStrides[72], u32(ni), u32(di), u32(TimeDiff))] = 0.0;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], // default is no spike
 	TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 0.0;
-	var inhibAct = gaM;
 	if (effAct > 0 && envCyc <= ly.IO.EfferentOff+NeuronTraceCycles) {
+		NeuronTraceSet(gaM, CaSynTrace, ctx.CyclesTotal, ni, di);
+	} else {
+		NeuronTraceIncrement(gaM, CaSynTrace, ctx.CyclesTotal, ni, di);
 	}
-	var binsPer = NetworkIxs[0].NNeuronTraceBins;
-	var rBin = (ctx.CyclesTotal - ly.IO.TimeOff) % binsPer; // ly.IO.TimeOff < NeuronTraceCycles
-	var rBi = NeuronTraceBinIndex(CaSynTrace, rBin);
-	var oldInhib = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(i32(NeuronTraces + NeuronVars(rBi))))];
-	var wBin = ctx.CyclesTotal % binsPer;
-	var wBi = NeuronTraceBinIndex(CaSynTrace, wBin);
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(i32(NeuronTraces + NeuronVars(wBi))))] = inhibAct; // write to new
+	var oldInhib = f32(0);
+	var oldInhibP = f32(0);
+	var nbins = ly.IO.TimeOff / NeuronTraceCycles;
+	nbins = max(2, nbins+1);
+	var stcyc = ctx.CyclesTotal - ly.IO.TimeOff;
+	for (var i=0; i<nbins; i++) {
+		var bi = NeuronTraceIndex(CaSynTrace, stcyc+i*NeuronTraceCycles);
+		var tr = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(NeuronTraces + NeuronVars(bi)))];
+		if (i < nbins-1) {
+			oldInhib += tr;
+		}
+		if (i > 0) {
+			oldInhibP += tr;
+		}
+	}
+	oldInhibP /= f32(nbins - 1);
+	oldInhib /= f32(nbins - 1);
+	var cySt = stcyc - ((stcyc / NeuronTraceCycles) * NeuronTraceCycles);
+	var mix = f32(cySt) / f32(NeuronTraceCycles);
+	oldInhib = (1-mix)*oldInhib + mix*oldInhibP;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaD))] = oldInhib;
 	if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // already learned, done until cleared in NuclearLearnReset
 	u32(ni), u32(di), u32(LearnNow))] > 0) {

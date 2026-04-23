@@ -155,6 +155,9 @@ func (ev *EmeryEnv) Config(ndata, ncycles int, dataNode *tensorfs.Node, netGPU *
 		ev.States[a.String()+"MF"] = tensor.NewFloat32(ndata, ev.Params.TimeBins, 1, 1, ev.Params.PopCodeUnits)
 		ev.States[a.String()+"Thal"] = tensor.NewFloat32(ndata, ev.Params.TimeBins, 1, 1, ev.Params.PopCodeUnits)
 	}
+
+	ev.States["VORInhib"] = tensor.NewFloat32(ndata, ev.Params.UnitsPer, 1)
+
 	gp := netGPU
 	var dev *gpu.Device
 	var err error
@@ -341,6 +344,13 @@ func (ev *EmeryEnv) RenderPop(di, bin int, clear bool, snm string, val float32) 
 	}
 	sv := vs.SubSpace(di, bin, 0).(*tensor.Float32)
 	ev.Params.PopCode.Encode(&sv.Values, val, ev.Params.PopCodeUnits, popcode.Set)
+}
+
+// RenderControl renders monolithic control input.
+func (ev *EmeryEnv) RenderControl(di int, snm string, val float32) {
+	vs := ev.States[snm]
+	sv := vs.SubSpace(di).(*tensor.Float32)
+	tensor.SetAllFloat64(sv, float64(val))
 }
 
 // Compile-time check that implements Env interface

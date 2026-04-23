@@ -70,7 +70,7 @@ var LayerParams = axon.LayerSheets{
 		{Sel: ".IOLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.IO.ErrThr = 0.1
-				ly.IO.TimeOff = 30
+				ly.IO.TimeOff = 60
 				ly.IO.EfferentOff = 30
 				ly.IO.GTau = 20
 			}},
@@ -141,6 +141,10 @@ var PathParams = axon.PathSheets{
 		{Sel: ".FromPulv", Doc: "defaults to .Back but generally weaker is better",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 0.1 // 0.1 == 0.15 > 0.05
+			}},
+		{Sel: ".MotorInhib", Doc: "inhibition",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 4
 			}},
 		{Sel: ".FromAct", Doc: "strong from act",
 			Set: func(pt *axon.PathParams) {

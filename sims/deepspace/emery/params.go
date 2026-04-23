@@ -19,6 +19,9 @@ func (sd *SensoryDelays) Defaults() {
 
 // Params are misc parameters the environment.
 type Params struct {
+	// Probability of VOR inhibition.
+	VORInhibP float32
+
 	// MaxRotate is maximum rotation angle magnitude per action, in degrees.
 	MaxRotate float32
 
@@ -65,6 +68,7 @@ type Params struct {
 func (pr *Params) Defaults() {
 	pr.Delays.Defaults()
 	pr.LeftEye = false
+	pr.VORInhibP = 1
 	pr.MaxRotate = 5
 	pr.VisMotionInterval = 5
 	pr.TimeBinCycles = 10

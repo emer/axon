@@ -211,20 +211,44 @@ func (ly *LayerParams) IOLearn(ctx *Context, lpi, pi, ni, di uint32) {
 	Neurons.Set(0.0, int(ni), int(di), int(TimeDiff)) // set below for display
 	Neurons.Set(0.0, int(ni), int(di), int(Spike))    // default is no spike
 
-	inhibAct := gaM
 	// NeuronTraceCycles to ensure that full bin is filled
 	if effAct > 0 && envCyc <= ly.IO.EfferentOff+NeuronTraceCycles {
-		// inhibAct = 1.0
+		NeuronTraceSet(gaM, CaSynTrace, ctx.CyclesTotal, ni, di)
+	} else {
+		NeuronTraceIncrement(gaM, CaSynTrace, ctx.CyclesTotal, ni, di)
 	}
-	binsPer := NetworkIxs[0].NNeuronTraceBins
 
-	rBin := (ctx.CyclesTotal - ly.IO.TimeOff) % binsPer // ly.IO.TimeOff < NeuronTraceCycles
-	rBi := NeuronTraceBinIndex(CaSynTrace, rBin)
-	oldInhib := Neurons.Value(int(ni), int(di), int(int(NeuronTraces+NeuronVars(rBi))))
+	// this does a precise waveform: has lots of issues..
+	// 	binsPer := NetworkIxs[0].NNeuronTraceBins
+	// rBin := (ctx.CyclesTotal - ly.IO.TimeOff) % binsPer // ly.IO.TimeOff < NeuronTraceCycles
+	// rBi := NeuronTraceBinIndex(CaSynTrace, rBin)
+	// oldInhib := Neurons[ni, di, int(NeuronTraces+NeuronVars(rBi))]
+	//
+	// wBin := ctx.CyclesTotal % binsPer
+	// wBi := NeuronTraceBinIndex(CaSynTrace, wBin)
+	// Neurons[ni, di, int(NeuronTraces+NeuronVars(wBi))] = inhibAct // write to new
 
-	wBin := ctx.CyclesTotal % binsPer
-	wBi := NeuronTraceBinIndex(CaSynTrace, wBin)
-	Neurons.Set(inhibAct, int(ni), int(di), int(int(NeuronTraces+NeuronVars(wBi)))) // write to new
+	// this does a bin-level time integrated waveform, much more robust.
+	oldInhib := float32(0)
+	oldInhibP := float32(0)
+	nbins := ly.IO.TimeOff / NeuronTraceCycles
+	nbins = max(2, nbins+1)
+	stcyc := ctx.CyclesTotal - ly.IO.TimeOff
+	for i := range nbins {
+		bi := NeuronTraceIndex(CaSynTrace, stcyc+i*NeuronTraceCycles)
+		tr := Neurons.Value(int(ni), int(di), int(NeuronTraces+NeuronVars(bi)))
+		if i < nbins-1 {
+			oldInhib += tr
+		}
+		if i > 0 {
+			oldInhibP += tr
+		}
+	}
+	oldInhibP /= float32(nbins - 1)
+	oldInhib /= float32(nbins - 1)
+	cySt := stcyc - ((stcyc / NeuronTraceCycles) * NeuronTraceCycles)
+	mix := float32(cySt) / float32(NeuronTraceCycles)
+	oldInhib = (1-mix)*oldInhib + mix*oldInhibP
 
 	Neurons.Set(oldInhib, int(ni), int(di), int(GaD))
 
