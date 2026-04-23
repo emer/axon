@@ -70,7 +70,7 @@ var LayerParams = axon.LayerSheets{
 		{Sel: ".IOLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.IO.ErrThr = 0.1
-				ly.IO.TimeOff = 60
+				ly.IO.TimeOff = 40
 				ly.IO.EfferentOff = 30
 				ly.IO.GTau = 20
 			}},

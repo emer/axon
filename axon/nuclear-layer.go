@@ -212,11 +212,11 @@ func (ly *LayerParams) IOLearn(ctx *Context, lpi, pi, ni, di uint32) {
 	Neurons.Set(0.0, int(ni), int(di), int(Spike))    // default is no spike
 
 	// NeuronTraceCycles to ensure that full bin is filled
+	inhibAct := gaM
 	if effAct > 0 && envCyc <= ly.IO.EfferentOff+NeuronTraceCycles {
-		NeuronTraceSet(gaM, CaSynTrace, ctx.CyclesTotal, ni, di)
-	} else {
-		NeuronTraceIncrement(gaM, CaSynTrace, ctx.CyclesTotal, ni, di)
+		inhibAct = 1.0
 	}
+	NeuronTraceIncrement(inhibAct, CaSynTrace, ctx.CyclesTotal, ni, di)
 
 	// this does a precise waveform: has lots of issues..
 	// 	binsPer := NetworkIxs[0].NNeuronTraceBins
