@@ -49,7 +49,7 @@ func (t *Emery) SetEyeR(v *builder.Body) *Emery { t.EyeR = v; return t }
 // joint for the right eye (revolute, not ball).
 func (t *Emery) SetEyeRSocket(v *builder.Joint) *Emery { t.EyeRSocket = v; return t }
 
-var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.EmeryState", IDName: "emery-state", Doc: "EmeryState has all the state info for each Emery instance.", Fields: []types.Field{{Name: "SenseValues", Doc: "SenseValues has the current sensory values from physics model,\nstored here by the Sensor function for subsequent recording."}, {Name: "SenseAverages", Doc: "SenseAverages has the average delayed sensory values over\nSensoryWindow, which goes into SenseNormed for rendering."}, {Name: "SenseNormed", Doc: "SenseNormed has the normalized versions of SenseAverages,\nwhich is what is actually rendered."}, {Name: "EyeRImage", Doc: "current captured images"}, {Name: "EyeLImage", Doc: "current captured images"}, {Name: "NextActions", Doc: "NextActions are the next action values set by sim, and rendered\ndepending on RenderNextAction value."}, {Name: "CurActions", Doc: "CurActions are the current action values, updated by TakeNextAction,\nand rendered depending on RenderNextAction value."}}})
+var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.EmeryState", IDName: "emery-state", Doc: "EmeryState has all the state info for each Emery instance.", Fields: []types.Field{{Name: "SenseValues", Doc: "SenseValues has the current sensory values from physics model,\nstored here by the Sensor function for subsequent recording."}, {Name: "SenseAverages", Doc: "SenseAverages has the average delayed sensory values over\nSensoryWindow, which goes into SenseNormed for rendering."}, {Name: "SenseNormed", Doc: "SenseNormed has the normalized versions of SenseAverages,\nwhich is what is actually rendered."}, {Name: "SenseMax", Doc: "SenseMax has the max (on current action epoch) of SenseNormed."}, {Name: "EyeRImage", Doc: "current captured images"}, {Name: "EyeLImage", Doc: "current captured images"}, {Name: "NextActions", Doc: "NextActions are the next action values set by sim, and rendered\ndepending on RenderNextAction value."}, {Name: "CurActions", Doc: "CurActions are the current action values, updated by TakeNextAction,\nand rendered depending on RenderNextAction value."}}})
 
 // SetSenseValues sets the [EmeryState.SenseValues]:
 // SenseValues has the current sensory values from physics model,
@@ -65,6 +65,10 @@ func (t *EmeryState) SetSenseAverages(v [SensesN]float32) *EmeryState { t.SenseA
 // SenseNormed has the normalized versions of SenseAverages,
 // which is what is actually rendered.
 func (t *EmeryState) SetSenseNormed(v [SensesN]float32) *EmeryState { t.SenseNormed = v; return t }
+
+// SetSenseMax sets the [EmeryState.SenseMax]:
+// SenseMax has the max (on current action epoch) of SenseNormed.
+func (t *EmeryState) SetSenseMax(v [SensesN]float32) *EmeryState { t.SenseMax = v; return t }
 
 // SetEyeRImage sets the [EmeryState.EyeRImage]:
 // current captured images
@@ -217,7 +221,16 @@ func (t *SensoryDelays) SetVestibular(v int) *SensoryDelays { t.Vestibular = v; 
 // SetVisual sets the [SensoryDelays.Visual]
 func (t *SensoryDelays) SetVisual(v int) *SensoryDelays { t.Visual = v; return t }
 
-var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Params", IDName: "params", Doc: "Params are misc parameters the environment.", Fields: []types.Field{{Name: "MaxRotate", Doc: "MaxRotate is maximum rotation angle magnitude per action, in degrees."}, {Name: "VisMotionInterval", Doc: "VisMotionInterval is interval between vis motion computation in cycles.\nThis is a very expensive computation in general so spacing it out.\ntodo: revisit once mac metal timer bug is fixed in wgpu."}, {Name: "TimeBinCycles", Doc: "TimeBinCycles is the number of cycles per time bin, which also determines\nhow frequently the inputs are applied to the network, which affects performance\nand learning there."}, {Name: "TimeBins", Doc: "TimeBins is the total number of time bins per trial, for MF and Thal reps:"}, {Name: "UnitsPer", Doc: "UnitsPer is the number of units per localist value."}, {Name: "PopCodeUnits", Doc: "PopCodeUnits is the number of units to use for population code."}, {Name: "AvgWindow", Doc: "AvgWindow is the time window in Cycles (ms) over which the sensory\nstate is averaged, for the purposes of rendering state."}, {Name: "ActionStiff", Doc: "ActionStiff is the stiffness for performing actions."}, {Name: "PopCode", Doc: "population code, for linear values, -1..1, in normalized units"}, {Name: "LeftEye", Doc: "LeftEye determines whether to process left eye image or not."}, {Name: "BufferSize", Doc: "BufferSize is the number of time steps (ms) to retain in the tensorfs\nsensory and motor state buffers."}, {Name: "Delays", Doc: "Delays are sensory delays"}}})
+var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/deepspace/emery.Params", IDName: "params", Doc: "Params are misc parameters the environment.", Fields: []types.Field{{Name: "VORInhibP", Doc: "Probability of VOR inhibition."}, {Name: "ActDelay", Doc: "ActDelay is the delay in cycles (ms) from when an action is initated\ntil when it is actually applied to the physics to perform the action."}, {Name: "MaxRotate", Doc: "MaxRotate is maximum rotation angle magnitude per action, in degrees."}, {Name: "VisMotionInterval", Doc: "VisMotionInterval is interval between vis motion computation in cycles.\nThis is a very expensive computation in general so spacing it out.\ntodo: revisit once mac metal timer bug is fixed in wgpu."}, {Name: "TimeBinCycles", Doc: "TimeBinCycles is the number of cycles per time bin, which also determines\nhow frequently the inputs are applied to the network, which affects performance\nand learning there."}, {Name: "TimeBins", Doc: "TimeBins is the total number of time bins per trial, for MF and Thal reps:"}, {Name: "UnitsPer", Doc: "UnitsPer is the number of units per localist value."}, {Name: "PopCodeUnits", Doc: "PopCodeUnits is the number of units to use for population code."}, {Name: "AvgWindow", Doc: "AvgWindow is the time window in Cycles (ms) over which the sensory\nstate is averaged, for the purposes of rendering state."}, {Name: "ActionStiff", Doc: "ActionStiff is the stiffness for performing actions."}, {Name: "PopCode", Doc: "population code, for linear values, -1..1, in normalized units"}, {Name: "LeftEye", Doc: "LeftEye determines whether to process left eye image or not."}, {Name: "BufferSize", Doc: "BufferSize is the number of time steps (ms) to retain in the tensorfs\nsensory and motor state buffers."}, {Name: "Delays", Doc: "Delays are sensory delays"}}})
+
+// SetVORInhibP sets the [Params.VORInhibP]:
+// Probability of VOR inhibition.
+func (t *Params) SetVORInhibP(v float32) *Params { t.VORInhibP = v; return t }
+
+// SetActDelay sets the [Params.ActDelay]:
+// ActDelay is the delay in cycles (ms) from when an action is initated
+// til when it is actually applied to the physics to perform the action.
+func (t *Params) SetActDelay(v int) *Params { t.ActDelay = v; return t }
 
 // SetMaxRotate sets the [Params.MaxRotate]:
 // MaxRotate is maximum rotation angle magnitude per action, in degrees.

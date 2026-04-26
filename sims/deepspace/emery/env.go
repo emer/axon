@@ -150,7 +150,7 @@ func (ev *EmeryEnv) Config(ndata, ncycles int, dataNode *tensorfs.Node, netGPU *
 		ev.States[s.String()+"Thal"] = tensor.NewFloat32(ndata, ev.Params.TimeBins, 1, 1, ev.Params.PopCodeUnits)
 	}
 
-	for a := range Forward { // only rotate now
+	for a := range ActionsN {
 		ev.States[a.String()] = tensor.NewFloat32(ndata, ev.Params.UnitsPer, 2)
 		ev.States[a.String()+"MF"] = tensor.NewFloat32(ndata, ev.Params.TimeBins, 1, 1, ev.Params.PopCodeUnits)
 		ev.States[a.String()+"Thal"] = tensor.NewFloat32(ndata, ev.Params.TimeBins, 1, 1, ev.Params.PopCodeUnits)
@@ -288,7 +288,7 @@ func (ev *EmeryEnv) String() string {
 // Actions set after the prior step are taken first.
 func (ev *EmeryEnv) Step() bool {
 	ev.Cycle.Incr()
-	ev.TakeActions()
+	ev.DoActions()
 	ev.StepPhysics()
 	ev.RecordSenses()
 	if ev.RenderStates {

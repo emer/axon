@@ -4,7 +4,10 @@
 
 package emery
 
-import "cogentcore.org/lab/base/randx"
+import (
+	"cogentcore.org/core/base/num"
+	"cogentcore.org/lab/base/randx"
+)
 
 // Actions are motor actions as abstracted coordinated plans
 // that unfold over time, at a level above individual muscles.
@@ -20,12 +23,15 @@ const (
 	// Forward moving forward or backward.
 	Forward
 
-	// EyeRotateH horizontal eye rotation: adds to target angle.
-	EyeRotateH
+	// EyeH horizontal eye rotation: adds to target angle.
+	EyeH
+
+	// VORInhib is the meta control action to inhibit the VOR reflex
+	VORInhib
 )
 
 // ActionMaxValues are expected max sensory value, for normalizing.
-var ActionMaxValues = [ActionsN]float32{3, 3}
+var ActionMaxValues = [ActionsN]float32{3, 3, 1, 1}
 
 // NextAction specifies the next value for given action, for given data parallel agent.
 // This simulates the sequence of planning a new action followed by that action
@@ -35,46 +41,56 @@ var ActionMaxValues = [ActionsN]float32{3, 3}
 // to the sim.
 func (ev *EmeryEnv) NextAction(di int, act Actions, val float32) {
 	es := ev.EmeryState(di)
+	switch act {
+	case VORInhib:
+		vorInhib := randx.BoolP32(ev.Params.VORInhibP, ev.Rand)
+		val = num.FromBool[float32](vorInhib)
+	}
 	es.NextActions[act] = val
 }
 
-// TakeNextActions actually starts performing in the physics model the
-// actions specified by prior NextAction calls, copying NextActions
-// to CurActions and activating them in the model.
-// This calls RenderCurAction so the current action is shown to the sim.
+// TakeNextActions starts the action performance process by copying
+// prepared NextActions to CurActions, and writing the ActionData that
+// will be consumed with the Params.ActDelay to implement motor delays.
 func (ev *EmeryEnv) TakeNextActions() {
 	for di := range ev.NData {
 		es := ev.EmeryState(di)
+		es.InitMax()
 		for act := range ActionsN {
 			val := es.NextActions[act]
 			es.CurActions[act] = val
-			ev.WriteData(ev.ActionData, di, act.String(), val)
+			ev.WriteData(ev.ActionData, di, act.String(), val) // goes in current = 0
 		}
 	}
-	ev.RenderCurActions()
-
-	for di := range ev.NData {
-		vorInhib := randx.BoolP32(ev.Params.VORInhibP, ev.Rand)
-		val := float32(0)
-		if vorInhib {
-			val = 1
-		}
-		ev.WriteData(ev.ActionData, di, "VORInhib", val)
-		ev.RenderControl(di, "VORInhib", val)
-	}
+	ev.RenderCurActions() // efferent copy of action. also called in Step()
 }
 
-// TakeActions applies current actions to physics.
-func (ev *EmeryEnv) TakeActions() {
+// TakeAction specifies the value for a current action,
+// for given data parallel agent, for actions that are updated online,
+// as from network state.
+func (ev *EmeryEnv) TakeAction(di int, act Actions, val float32) {
+	es := ev.EmeryState(di)
+	switch act {
+	case VORInhib:
+		vorInhib := randx.BoolP32(ev.Params.VORInhibP, ev.Rand)
+		val = num.FromBool[float32](vorInhib)
+	}
+	es.CurActions[act] = val
+	ev.WriteData(ev.ActionData, di, act.String(), val) // goes in current = 0
+}
+
+// DoActions actually performs current actions in physics.
+func (ev *EmeryEnv) DoActions() {
 	for di := range ev.NData {
 		for act := range ActionsN {
-			val := ev.ReadData(ev.ActionData, di, act.String(), 10) // 0 = last written
-			ev.TakeAction(di, act, val)
+			val := ev.ReadData(ev.ActionData, di, act.String(), ev.Params.ActDelay) // 0 = last written
+			ev.DoAction(di, act, val)                                               // in emery.go
 		}
 	}
 }
 
-// ZeroActions zero action values after WriteIndex has been incremented.
+// ZeroActions writes zero action values after WriteIndex has been incremented.
+// Thus, each action requires new WriteData to implement.
 func (ev *EmeryEnv) ZeroActions() {
 	for di := range ev.NData {
 		for act := range ActionsN {
@@ -85,28 +101,41 @@ func (ev *EmeryEnv) ZeroActions() {
 
 //////// Rendering
 
-// RenderNextActions renders the action values specified in NextAction calls.
-func (ev *EmeryEnv) RenderNextActions() {
-	ev.renderActions(false)
-}
-
-// RenderCurActions renders the current action values, from TakeNextActions.
+// RenderCurActions renders efferent copy states for current actions.
+// Called in Step()
 func (ev *EmeryEnv) RenderCurActions() {
-	ev.renderActions(true)
-
+	for act := range ActionsN {
+		for di := range ev.NData {
+			ev.renderAction(di, act, false)
+		}
+	}
 }
 
-// renderActions renders sensory states for current sensory values.
-func (ev *EmeryEnv) renderActions(cur bool) {
-	for act := range Forward { // only render below Forward for now
+// RenderNextActions renders efferent copy states for next actions.
+// note: not currently used.
+func (ev *EmeryEnv) RenderNextActions() {
+	for act := range ActionsN {
 		for di := range ev.NData {
-			es := ev.EmeryState(di)
-			val := es.NextActions[act]
-			if cur {
-				val = es.CurActions[act]
-			}
-			val /= ActionMaxValues[act]
-			ev.RenderValue(di, act.String(), val)
+			ev.renderAction(di, act, true)
 		}
+	}
+}
+
+// renderAction renders given action state, from CurActions values
+// or NextActions if next = true (state name adds "Next" suffix).
+func (ev *EmeryEnv) renderAction(di int, act Actions, next bool) {
+	es := ev.EmeryState(di)
+	val := es.CurActions[act]
+	name := act.String()
+	if next {
+		val = es.NextActions[act]
+		name += "Next"
+	}
+	switch act {
+	case VORInhib:
+		ev.RenderControl(di, name, val)
+	default:
+		val /= ActionMaxValues[act]
+		ev.RenderValue(di, name, val)
 	}
 }

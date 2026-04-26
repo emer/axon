@@ -84,7 +84,7 @@ var LayerParams = axon.LayerSheets{
 
 				ly.Learn.Timing.On.SetBool(true)         // time > trial!
 				ly.Learn.Timing.Refractory.SetBool(true) // ref > not
-				ly.Learn.Timing.NUps = 0                 // 0 > 18
+				ly.Learn.Timing.NUps = 0                 // 0 > 18 for all except v2
 				ly.Learn.Timing.MaxUpGap = 2
 				ly.Learn.Timing.MinusWindow = 120          // 120
 				ly.Learn.Timing.LearnCycles = 40           // 40,50 or -60?
@@ -200,8 +200,8 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Layer.Gi = 1.0 // 1
 				ly.Inhib.Pool.Gi = 1.05 // 1.05 > others
 
-				ly.Learn.Timing.NUps = 18        // beneficial here only
-				ly.Learn.Timing.LearnCycles = 50 // 40,50 or -60?
+				ly.Learn.Timing.NUps = 18        // beneficial here only -- small benefit in errors
+				ly.Learn.Timing.LearnCycles = 50 // 50 > 40
 			}},
 		{Sel: "#V2CT", Doc: "more inhibition",
 			Set: func(ly *axon.LayerParams) {

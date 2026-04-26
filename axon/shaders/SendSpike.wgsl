@@ -1491,11 +1491,11 @@ fn LayerParams_IOLearn(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,d
 	TensorStrides[72], u32(ni), u32(di), u32(TimeDiff))] = 0.0;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], // default is no spike
 	TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 0.0;
-	var inhibAct = gaM;
 	if (effAct > 0 && envCyc <= ly.IO.EfferentOff+NeuronTraceCycles) {
-		inhibAct = f32(1.0);
+		NeuronTraceSet(gaM, CaSynTrace, ctx.CyclesTotal, ni, di);
+	} else {
+		NeuronTraceIncrement(gaM, CaSynTrace, ctx.CyclesTotal, ni, di);
 	}
-	NeuronTraceIncrement(inhibAct, CaSynTrace, ctx.CyclesTotal, ni, di);
 	var oldInhib = f32(0);
 	var oldInhibP = f32(0);
 	var nbins = ly.IO.TimeOff / NeuronTraceCycles;

@@ -139,6 +139,9 @@ type EmeryState struct {
 	// which is what is actually rendered.
 	SenseNormed [SensesN]float32
 
+	// SenseMax has the max (on current action epoch) of SenseNormed.
+	SenseMax [SensesN]float32
+
 	// current captured images
 	EyeRImage, EyeLImage image.Image
 
@@ -151,14 +154,20 @@ type EmeryState struct {
 	CurActions [ActionsN]float32
 }
 
+func (es *EmeryState) InitMax() {
+	for s := range SensesN {
+		es.SenseMax[s] = 0
+	}
+}
+
 // SetSenseValue sets the current sense value from the physics sensor.
 func (ev *EmeryEnv) SetSenseValue(di int, sense Senses, val float32) {
 	es := ev.EmeryState(di)
 	es.SenseValues[sense] = val
 }
 
-// TakeAction performs given action in Emery.
-func (ev *EmeryEnv) TakeAction(di int, act Actions, val float32) {
+// DoAction actually performs given action in Emery, immediately.
+func (ev *EmeryEnv) DoAction(di int, act Actions, val float32) {
 	// fmt.Println("Action:", di, act, val)
 	jd := ev.Physics.Builder.ReplicaJoint(ev.Emery.XZ, di)
 	switch act {
@@ -167,9 +176,14 @@ func (ev *EmeryEnv) TakeAction(di int, act Actions, val float32) {
 	case Forward:
 		ang := math32.Pi*.5 - jd.DoF(2).Current.Pos
 		jd.AddPlaneXZPos(ang, val, ev.Params.ActionStiff)
-	case EyeRotateH:
+	case EyeH:
 		je := ev.Physics.Builder.ReplicaJoint(ev.Emery.EyeRSocket, di)
-		je.AddTargetAngle(0, val, ev.Params.ActionStiff)
+		cvi := ev.EmeryState(di).CurActions[VORInhib]
+		if cvi > 0 { // when inhib, reset to 0
+			je.SetTargetAngle(0, 0, ev.Params.ActionStiff)
+		} else {
+			je.AddTargetAngle(0, val, ev.Params.ActionStiff)
+		}
 	}
 }
 

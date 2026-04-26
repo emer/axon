@@ -70,8 +70,8 @@ var LayerParams = axon.LayerSheets{
 		{Sel: ".IOLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.IO.ErrThr = 0.1
-				ly.IO.TimeOff = 40
-				ly.IO.EfferentOff = 30
+				ly.IO.TimeOff = 70     // 70 > 60,80
+				ly.IO.EfferentOff = 40 // 40 > 30, 50
 				ly.IO.GTau = 20
 			}},
 		{Sel: ".CNiIOLayer", Doc: "",

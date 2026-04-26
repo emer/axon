@@ -124,6 +124,7 @@ func (ev *EmeryEnv) AverageSenses() {
 				nrm = math32.Sign(nrm)
 			}
 			es.SenseNormed[s] = nrm
+			es.SenseMax[s] = max(es.SenseMax[s], math32.Abs(nrm))
 			avgDir.Dir(diName).Float32(s.String(), avgBufSz).SetFloat1D(float64(nrm), ev.AvgWriteIndex)
 		}
 	}
