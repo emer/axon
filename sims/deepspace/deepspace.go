@@ -8,8 +8,6 @@ package deepspace
 
 //go:generate core generate -add-types -add-funcs -gosl
 
-// TODO: add learned specific sense -> CNeDn just like in Upbound -- useful for getting faster anticipatory activity after all. indeed, why not have it just learn like that guy? maybe from MF?
-
 import (
 	"fmt"
 	"os"
@@ -56,12 +54,11 @@ const (
 	Expt
 )
 
-// StatsPhase is the phase of stats processing for given mode, level.
-// Accumulated values are reset at Start, added each Step.
-type StatsPhase int32 //enums:enum
 const (
-	Start StatsPhase = iota
-	Step
+	// Start initializes stats, in start arg of StatFuncs call.
+	Start = true
+	// Step is an iteration of stats, in start arg of StatFuncs call.
+	Step = false
 )
 
 // see params.go for params, config.go for Config
@@ -102,9 +99,9 @@ type Sim struct {
 	Current *tensorfs.Node `display:"-"`
 
 	// StatFuncs are statistics functions called at given mode and level,
-	// to perform all stats computations. phase = Start does init at start of given level,
+	// to perform all stats computations. start does init at start of given level,
 	// and all intialization / configuration (called during Init too).
-	StatFuncs []func(mode Modes, level Levels, phase StatsPhase) `display:"-"`
+	StatFuncs []func(mode enums.Enum, level enums.Enum, start bool) `display:"-"`
 
 	// GUI manages all the GUI elements
 	GUI egui.GUI `display:"-"`
@@ -264,33 +261,36 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	// cerebellum:
 	// cycles-20 is sufficient to allow time for motor to engage
-	ioUp, cniIOUp, cniUp, cneUp := net.AddNuclearCNUp(vsRotVel, rotAct, cycles-20, space)
-	_, _ = ioUp, cneUp
+	vsIOUp, vsCNiIOUp, vsCNiUp, vsCNeUp := net.AddNuclearCNUp(vsRotVel, rotAct, cycles-20, space)
+	_, _ = vsIOUp, vsCNeUp
 
-	ioDn, cniIODn, cneDn := net.AddNuclearCNDn(vsRotVel, rotAct, cycles-20, space)
-	_, _ = ioDn, cneDn
+	vsIODn, vsCNiIODn, vsCNeDn := net.AddNuclearCNDn(vsRotVel, rotAct, cycles-20, space)
+	_, _ = vsIODn, vsCNeDn
+
+	vmIODn, vmCNiIODn, vmCNeDn := net.AddNuclearCNDn(vmRotVel, rotAct, cycles-20, space)
+	_, _ = vmIODn, vmCNeDn
 
 	// upgoing adaptive filter model
-	pt = net.ConnectLayers(vsRotVel, cneUp, p1to1, axon.ForwardPath).AddClass("SenseToCNeUp")
+	pt = net.ConnectLayers(vsRotVel, vsCNeUp, p1to1, axon.ForwardPath).AddClass("SenseToCNeUp")
 	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
 
-	// net.ConnectLayers(rotActPrev, cniIOUp, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiIOUp")
-	// net.ConnectLayers(s1ct, cniIOUp, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiIOUp")
-	net.ConnectLayers(rotActMF, cniIOUp, full, axon.CNIOPath).AddClass("MF", "MFToCNiIOUp")
+	// net.ConnectLayers(rotActPrev, vsCNiIOUp, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiIOUp")
+	// net.ConnectLayers(s1ct, vsCNiIOUp, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiIOUp")
+	net.ConnectLayers(rotActMF, vsCNiIOUp, full, axon.CNIOPath).AddClass("MF", "MFToCNiIOUp")
 
-	// net.ConnectLayers(rotActPrev, cniUp, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiUp")
-	// net.ConnectLayers(s1ct, cniUp, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiUp")
-	net.ConnectLayers(rotActMF, cniUp, full, axon.CNIOPath).AddClass("MF", "MFToCNiUp")
+	// net.ConnectLayers(rotActPrev, vsCNiUp, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiUp")
+	// net.ConnectLayers(s1ct, vsCNiUp, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiUp")
+	net.ConnectLayers(rotActMF, vsCNiUp, full, axon.CNIOPath).AddClass("MF", "MFToCNiUp")
 
 	// downgoing forward model
 
-	// net.ConnectLayers(rotActPrev, cniIODn, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiIODn")
-	// net.ConnectLayers(s1ct, cniIODn, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiIODn")
-	net.ConnectLayers(rotActMF, cniIODn, full, axon.CNIOPath).AddClass("MF", "MFToCNiIODn")
+	// net.ConnectLayers(rotActPrev, vsCNiIODn, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiIODn")
+	// net.ConnectLayers(s1ct, vsCNiIODn, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiIODn")
+	net.ConnectLayers(rotActMF, vsCNiIODn, full, axon.CNIOPath).AddClass("MF", "MFToCNiIODn")
 
-	net.ConnectLayers(rotActMF, cneDn, full, axon.CNIOPath).AddClass("MF", "MFToCNeDn")
+	net.ConnectLayers(rotActMF, vsCNeDn, full, axon.CNIOPath).AddClass("MF", "MFToCNeDn")
 
-	pt = net.ConnectLayers(cneDn, eyeH, p1to1, axon.ForwardPath).AddClass("Reflex")
+	pt = net.ConnectLayers(vsCNeDn, eyeH, p1to1, axon.ForwardPath).AddClass("Reflex")
 	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
 
 	// position
@@ -305,8 +305,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// }
 	s1.PlaceAbove(rotAct)
 
-	cniIOUp.PlaceRightOf(s1, space*3)
-	cniIODn.PlaceRightOf(cniIOUp, space*3)
+	vsCNiIOUp.PlaceRightOf(s1, space*3)
+	vsCNiIODn.PlaceRightOf(vsCNiIOUp, space*3)
+	vmCNiIODn.PlaceRightOf(vsCNiIODn, space*3)
 
 	// visHid.PlaceRightOf(s1, space)
 	// if ss.Config.Params.Hid2 {
@@ -469,9 +470,10 @@ func (ss *Sim) ReadNetState(mode Modes) {
 	curModeDir := ss.Current.Dir(mode.String())
 	ev := ss.Envs.ByMode(mode).(*emery.EmeryEnv)
 	cyc := int(ctx.Cycle) - 1
+	interval := ss.Config.Env.ReadNetInterval
 
-	if !axon.UseGPU {
-		ss.ReadNuclearState(net, mode, cyc, int(ctx.ThetaCycles))
+	if !axon.UseGPU { // use per-cycle in non-GPU mode -- free
+		axon.NuclearReadIO("VShv", "Up", ss.Current, net, mode, interval, cyc, int(ctx.ThetaCycles))
 	}
 
 	read := cyc%ss.Config.Env.ReadNetInterval == 0
@@ -483,7 +485,7 @@ func (ss *Sim) ReadNetState(mode Modes) {
 	cycIndex := cyc / ss.Config.Env.ReadNetInterval
 
 	if axon.UseGPU {
-		ss.ReadNuclearState(net, mode, cycIndex, cycMax)
+		axon.NuclearReadIO("VShv", "Up", ss.Current, net, mode, interval, cycIndex, cycMax)
 	}
 
 	for _, lnm := range lays {
@@ -535,9 +537,16 @@ func (ss *Sim) NewRun() {
 
 //////// Stats
 
-// AddStat adds a stat compute function.
-func (ss *Sim) AddStat(f func(mode Modes, level Levels, phase StatsPhase)) {
+// AddStatStd adds a standard stat compute function (defined in axon)
+func (ss *Sim) AddStatStd(f func(mode enums.Enum, level enums.Enum, start bool)) {
 	ss.StatFuncs = append(ss.StatFuncs, f)
+}
+
+// AddStat adds a custom stat compute function.
+func (ss *Sim) AddStat(f func(mode Modes, level Levels, start bool)) {
+	ss.AddStatStd(func(mode enums.Enum, level enums.Enum, start bool) {
+		f(mode.(Modes), level.(Levels), start)
+	})
 }
 
 // StatsStart is called by Looper at the start of given level, for each iteration.
@@ -565,12 +574,12 @@ func (ss *Sim) StatsStep(lmd, ltm enums.Enum) {
 }
 
 // RunStats runs the StatFuncs for given mode, level and phase.
-func (ss *Sim) RunStats(mode Modes, level Levels, phase StatsPhase) {
+func (ss *Sim) RunStats(mode Modes, level Levels, start bool) {
 	for _, sf := range ss.StatFuncs {
-		sf(mode, level, phase)
+		sf(mode, level, start)
 	}
 	if level > Cycle {
-		if phase == Step && ss.GUI.Tabs != nil {
+		if !start && ss.GUI.Tabs != nil {
 			nm := mode.String() + " " + level.String() + " Plot"
 			ss.GUI.Tabs.AsLab().GoUpdatePlot(nm)
 			if level == Trial {
@@ -627,54 +636,31 @@ func (ss *Sim) ConfigStats() {
 	ss.SetRunName()
 
 	// last arg(s) are levels to exclude
-	counterFunc := axon.StatLoopCounters(ss.Stats, ss.Current, ss.Loops, net, Trial)
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		counterFunc(mode, level, phase == Start)
-	})
-	runNameFunc := axon.StatRunName(ss.Stats, ss.Current, ss.Loops, net, Trial, Cycle)
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		runNameFunc(mode, level, phase == Start)
-	})
-	trialNameFunc := axon.StatTrialName(ss.Stats, ss.Current, ss.Loops, net, Trial)
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		trialNameFunc(mode, level, phase == Start)
-	})
-	perTrlFunc := axon.StatPerTrialMSec(ss.Stats, Train, Trial)
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		perTrlFunc(mode, level, phase == Start)
-	})
+	ss.AddStatStd(axon.StatLoopCounters(ss.Stats, ss.Current, ss.Loops, net, Trial))
+	ss.AddStatStd(axon.StatRunName(ss.Stats, ss.Current, ss.Loops, net, Trial, Cycle))
+	ss.AddStatStd(axon.StatTrialName(ss.Stats, ss.Current, ss.Loops, net, Trial))
+	ss.AddStatStd(axon.StatPerTrialMSec(ss.Stats, Train, Trial))
 
 	plays := net.LayersByType(axon.PulvinarLayer)
-	corSimFunc := axon.StatCorSim(ss.Stats, ss.Current, net, Trial, Run, plays...)
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		corSimFunc(mode, level, phase == Start)
-	})
-
-	prevCorFunc := axon.StatPrevCorSim(ss.Stats, ss.Current, net, Trial, Run, plays...)
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		prevCorFunc(mode, level, phase == Start)
-	})
+	ss.AddStatStd(axon.StatCorSim(ss.Stats, ss.Current, net, Trial, Run, plays...))
+	ss.AddStatStd(axon.StatPrevCorSim(ss.Stats, ss.Current, net, Trial, Run, plays...))
 
 	ss.ConfigStatAdaptFilt()
 	ss.ConfigStatVis()
-	ss.ConfigStatNuclearCycle()
+
+	pool := 0
+	ss.AddStatStd(axon.StatNuclearCycleIO("VShv", "Up", ss.Config.Env.ReadNetInterval, pool, ss.Stats, ss.Current, net, Cycle))
 
 	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer, axon.InputLayer, axon.PulvinarLayer)
-	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...)
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		actGeFunc(mode, level, phase == Start)
-	})
+	ss.AddStatStd(axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...))
 
 	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, Run, lays...)
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+	ss.AddStat(func(mode Modes, level Levels, start bool) {
 		trnEpc := ss.Loops.Loop(Train, Epoch).Counter.Cur
-		pcaFunc(mode, level, phase == Start, trnEpc)
+		pcaFunc(mode, level, start, trnEpc)
 	})
 
-	// stateFunc := axon.StatLayerState(ss.Stats, net, Test, Trial, true, "ActM", "Depth", "DepthP", "HeadDir", "HeadDirP")
-	// ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-	// 	stateFunc(mode, level, phase == Start)
-	// })
+	// ss.AddStatStd(axon.StatLayerState(ss.Stats, net, Test, Trial, true, "ActM", "Depth", "DepthP", "HeadDir", "HeadDirP"))
 }
 
 func (ss *Sim) ConfigStatVis() {
@@ -683,7 +669,7 @@ func (ss *Sim) ConfigStatVis() {
 		"VisVestibCor": "Correlation between the visual motion and vestibular rotation velocity signals, indicating quality of visual motion filters",
 		"EmeryAng":     "Emery's current body angle",
 	}
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+	ss.AddStat(func(mode Modes, level Levels, start bool) {
 		if level < Trial {
 			return
 		}
@@ -694,7 +680,7 @@ func (ss *Sim) ConfigStatVis() {
 			subDir := modeDir.Dir((level - 1).String()) // note: will fail for Cycle
 			tsr := levelDir.Float64(name)
 			ndata := int(ss.Net.Context().NData)
-			if phase == Start {
+			if start {
 				tsr.SetNumRows(0)
 				// plot.SetFirstStyler(tsr, func(s *plot.Style) {
 				// 	s.On = true
@@ -737,7 +723,7 @@ func (ss *Sim) ReadNuclearState(net *axon.Network, mode Modes, cycIndex, cycMax 
 	layerNames := []string{"IOUp", "CNiIOUp", "CNiUp", "CNeUp", "CNeDn"}
 	layers := make([]*axon.Layer, len(layerNames))
 	pools := make([]uint32, len(layerNames))
-	statNames := []string{"IOenv", "IOe", "IOi", "IOioff", "IOerr", "IOspike", "CNiIO", "CNiUp", "CNeUp", "CNeUpGe", "CNeUpGi", "CNeUpLearn", "CNeUpAbsDev", "CNeDn"}
+	statNames := []string{"IOenv", "IOe", "IOi", "IOioff", "IOerr", "IOspike", "CNiIO", "CNiUp", "CNeUp", "CNeUpLearn", "CNeUpAbsDev", "CNeDn"}
 	for _, pf := range prefixes {
 		for li, lnm := range layerNames {
 			layers[li] = net.LayerByName(pf + lnm)
@@ -791,10 +777,6 @@ func (ss *Sim) ReadNuclearState(net *axon.Network, mode Modes, cycIndex, cycMax 
 						stat = axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pools[2]+poolu, diu)
 					case "CNeUp":
 						stat = axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pools[3]+poolu, diu)
-					case "CNeUpGe":
-						stat = layers[3].AvgMaxVarByPool("Ge", 1+pool, di).Avg
-					case "CNeUpGi":
-						stat = layers[3].AvgMaxVarByPool("Gi", 1+pool, di).Avg
 					case "CNeUpLearn":
 						stat = layers[3].AvgMaxVarByPool("TimePeak", 1+pool, di).Avg
 					case "CNeUpAbsDev":
@@ -818,7 +800,7 @@ func (ss *Sim) ConfigStatNuclearCycle() {
 		cycMax = int(ctx.ThetaCycles)
 	}
 	pool := 0
-	statNames := []string{"IOenv", "IOe", "IOi", "IOioff", "IOerr", "IOspike", "CNiIO", "CNiUp", "CNeUp", "CNeUpGe", "CNeUpGi", "CNeUpLearn", "CNeUpAbsDev", "CNeDn"}
+	statNames := []string{"IOenv", "IOe", "IOi", "IOioff", "IOerr", "IOspike", "CNiIO", "CNiUp", "CNeUp", "CNeUpLearn", "CNeUpAbsDev", "CNeDn"}
 	statDescs := map[string]string{
 		"IOenv":       "IO envelope initiated by action input to IO neurons",
 		"IOe":         "Integrated excitatory input to IO",
@@ -829,13 +811,11 @@ func (ss *Sim) ConfigStatNuclearCycle() {
 		"CNiIO":       "integrated activity (CaP) of CNiIO predictive inhibitory input to IO, generates IOi at a temporal offset 'in the future'",
 		"CNiUp":       "inhibitory interneuron that projects to CNeUp, learns to inhibit CNeUp just prior to its activation",
 		"CNeUp":       "excitatory output, driven directly by excitatory sensory input, which should be cancelled by CNiUp inputs",
-		"CNeUpGe":     "excitatory conductance into CNeUp, from sensory input",
-		"CNeUpGi":     "inhibitory conductance into CNeUp, from CNiUp",
 		"CNeUpLearn":  "CNeUp learning point",
 		"CNeUpAbsDev": "CNeUp max absolute deviation from target",
 		"CNeDn":       "excitatory output of forward model predictive side",
 	}
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+	ss.AddStat(func(mode Modes, level Levels, start bool) {
 		if level != Cycle {
 			return
 		}
@@ -848,7 +828,7 @@ func (ss *Sim) ConfigStatNuclearCycle() {
 				levelDir := modeDir.Dir(level.String())
 				tsr := levelDir.Float64(pname)
 				ndata := 1
-				if phase == Start {
+				if start {
 					tsr.SetNumRows(0)
 					plot.SetFirstStyler(tsr, func(s *plot.Style) {
 						s.Range.SetMin(0).SetMax(1)
@@ -886,7 +866,7 @@ func (ss *Sim) ConfigStatAdaptFilt() {
 		"VORInhib": "whether VOR was inhibited (1) or not (0)",
 		"VORSlip":  "Max visual slip on VOR engaged trials.",
 	}
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+	ss.AddStat(func(mode Modes, level Levels, start bool) {
 		if level < Trial {
 			return
 		}
@@ -898,7 +878,7 @@ func (ss *Sim) ConfigStatAdaptFilt() {
 			tsr := levelDir.Float64(name)
 			ndata := int(ss.Net.Context().NData)
 			ev := ss.Envs.ByMode(mode).(*emery.EmeryEnv)
-			if phase == Start {
+			if start {
 				tsr.SetNumRows(0)
 				plot.SetFirstStyler(tsr, func(s *plot.Style) {
 					s.Range.SetMin(0).SetMax(1)

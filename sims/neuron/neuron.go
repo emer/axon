@@ -40,12 +40,11 @@ const (
 	Trial
 )
 
-// StatsPhase is the phase of stats processing for given mode, level.
-// Accumulated values are reset at Start, added each Step.
-type StatsPhase int32 //enums:enum
 const (
-	Start StatsPhase = iota
-	Step
+	// Start initializes stats, in start arg of StatFuncs call.
+	Start = true
+	// Step is an iteration of stats, in start arg of StatFuncs call.
+	Step = false
 )
 
 // see config.go for Config
@@ -140,7 +139,7 @@ type Sim struct {
 	// StatFuncs are statistics functions called at given mode and level,
 	// to perform all stats computations. phase = Start does init at start of given level,
 	// and all intialization / configuration (called during Init too).
-	StatFuncs []func(mode Modes, level Levels, phase StatsPhase) `display:"-"`
+	StatFuncs []func(mode enums.Enum, level enums.Enum, start bool) `display:"-"`
 
 	// GUI manages all the GUI elements
 	GUI egui.GUI `display:"-"`
@@ -318,9 +317,16 @@ func (ss *Sim) Stop() {
 
 //////// Stats
 
-// AddStat adds a stat compute function.
-func (ss *Sim) AddStat(f func(mode Modes, level Levels, phase StatsPhase)) {
+// AddStatStd adds a standard stat compute function (defined in axon)
+func (ss *Sim) AddStatStd(f func(mode enums.Enum, level enums.Enum, start bool)) {
 	ss.StatFuncs = append(ss.StatFuncs, f)
+}
+
+// AddStat adds a custom stat compute function.
+func (ss *Sim) AddStat(f func(mode Modes, level Levels, start bool)) {
+	ss.AddStatStd(func(mode enums.Enum, level enums.Enum, start bool) {
+		f(mode.(Modes), level.(Levels), start)
+	})
 }
 
 // StatsStart is called by Looper at the start of given level, for each iteration.
@@ -348,11 +354,11 @@ func (ss *Sim) StatsStep(lmd, ltm enums.Enum) {
 }
 
 // RunStats runs the StatFuncs for given mode, level and phase.
-func (ss *Sim) RunStats(mode Modes, level Levels, phase StatsPhase) {
+func (ss *Sim) RunStats(mode Modes, level Levels, start bool) {
 	for _, sf := range ss.StatFuncs {
-		sf(mode, level, phase)
+		sf(mode, level, start)
 	}
-	if phase == Step && ss.GUI.Tabs != nil {
+	if !start && ss.GUI.Tabs != nil {
 		nm := mode.String() + " " + level.String() + " Plot"
 		ss.GUI.Tabs.AsLab().GoUpdatePlot(nm)
 	}
@@ -394,13 +400,13 @@ func (ss *Sim) ConfigStats() {
 
 	ss.SetRunName()
 
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+	ss.AddStat(func(mode Modes, level Levels, start bool) {
 		name := "Cycle"
 		modeDir := ss.Stats.Dir(mode.String())
 		curModeDir := ss.Current.Dir(mode.String())
 		levelDir := modeDir.Dir(level.String())
 		tsr := levelDir.Int(name)
-		if phase == Start {
+		if start {
 			tsr.SetNumRows(0)
 			plot.SetFirstStyler(tsr, func(s *plot.Style) {
 				s.Range.SetMin(0).SetMax(float64(ss.Config.Run.Cycles))
@@ -413,13 +419,13 @@ func (ss *Sim) ConfigStats() {
 	})
 
 	vars := []string{"GeSyn", "Ge", "Gi", "Inet", "Vm", "Act", "Spike", "Gk", "ISI", "ISIAvg", "VmDend", "Gnmda", "GgabaB", "Gvgcc", "Gak", "GknaMed", "GknaSlow", "GnmdaSyn", "GababM", "VgccM", "VgccH", "MahpN", "GiSyn", "GnmdaLrn", "VgccCa", "LearnCa"}
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+	ss.AddStat(func(mode Modes, level Levels, start bool) {
 		for _, name := range vars {
 			modeDir := ss.Stats.Dir(mode.String())
 			curModeDir := ss.Current.Dir(mode.String())
 			levelDir := modeDir.Dir(level.String())
 			tsr := levelDir.Float64(name)
-			if phase == Start {
+			if start {
 				tsr.SetNumRows(0)
 				plot.SetFirstStyler(tsr, func(s *plot.Style) {
 					s.Range.SetMin(0).SetMax(1)

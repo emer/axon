@@ -115,9 +115,9 @@ var (
 
 // StatRSA returns a Stats function that records RSA:
 // representational similarity analysis stats.
-func (ss *Sim) StatRSA(layers ...string) func(mode Modes, level Levels, phase StatsPhase) {
+func (ss *Sim) StatRSA(layers ...string) func(mode Modes, level Levels, start bool) {
 	net := ss.Net
-	return func(mode Modes, level Levels, phase StatsPhase) {
+	return func(mode Modes, level Levels, start bool) {
 		if level < Trial {
 			return
 		}
@@ -142,7 +142,7 @@ func (ss *Sim) StatRSA(layers ...string) func(mode Modes, level Levels, phase St
 			for si, stnm := range rsaStatNames {
 				name := lnm + "_" + stnm
 				tsr := levelDir.Float64(name)
-				if phase == Start {
+				if start {
 					tsr.SetNumRows(0)
 					plot.SetFirstStyler(tsr, func(s *plot.Style) {
 						s.Range.SetMin(0).SetMax(1)

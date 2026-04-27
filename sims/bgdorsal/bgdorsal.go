@@ -58,12 +58,11 @@ const (
 	Expt
 )
 
-// StatsPhase is the phase of stats processing for given mode, level.
-// Accumulated values are reset at Start, added each Step.
-type StatsPhase int32 //enums:enum
 const (
-	Start StatsPhase = iota
-	Step
+	// Start initializes stats, in start arg of StatFuncs call.
+	Start = true
+	// Step is an iteration of stats, in start arg of StatFuncs call.
+	Step = false
 )
 
 // see params.go for params
@@ -109,7 +108,7 @@ type Sim struct {
 	// StatFuncs are statistics functions called at given mode and level,
 	// to perform all stats computations. phase = Start does init at start of given level,
 	// and all intialization / configuration (called during Init too).
-	StatFuncs []func(mode Modes, level Levels, phase StatsPhase) `display:"-"`
+	StatFuncs []func(mode enums.Enum, level enums.Enum, start bool) `display:"-"`
 
 	// GUI manages all the GUI elements
 	GUI egui.GUI `display:"-"`
@@ -677,9 +676,16 @@ func (ss *Sim) NewRun() {
 
 //////// Stats
 
-// AddStat adds a stat compute function.
-func (ss *Sim) AddStat(f func(mode Modes, level Levels, phase StatsPhase)) {
+// AddStatStd adds a standard stat compute function (defined in axon)
+func (ss *Sim) AddStatStd(f func(mode enums.Enum, level enums.Enum, start bool)) {
 	ss.StatFuncs = append(ss.StatFuncs, f)
+}
+
+// AddStat adds a custom stat compute function.
+func (ss *Sim) AddStat(f func(mode Modes, level Levels, start bool)) {
+	ss.AddStatStd(func(mode enums.Enum, level enums.Enum, start bool) {
+		f(mode.(Modes), level.(Levels), start)
+	})
 }
 
 // StatsStart is called by Looper at the start of given level, for each iteration.
@@ -707,11 +713,11 @@ func (ss *Sim) StatsStep(lmd, ltm enums.Enum) {
 }
 
 // RunStats runs the StatFuncs for given mode, level and phase.
-func (ss *Sim) RunStats(mode Modes, level Levels, phase StatsPhase) {
+func (ss *Sim) RunStats(mode Modes, level Levels, start bool) {
 	for _, sf := range ss.StatFuncs {
-		sf(mode, level, phase)
+		sf(mode, level, start)
 	}
-	if phase == Step && ss.GUI.Tabs != nil {
+	if !start && ss.GUI.Tabs != nil {
 		nm := mode.String() + " " + level.String() + " Plot"
 		ss.GUI.Tabs.AsLab().GoUpdatePlot(nm)
 	}
@@ -767,26 +773,14 @@ func (ss *Sim) ConfigStats() {
 	ss.SetRunName()
 
 	// last arg(s) are levels to exclude
-	counterFunc := axon.StatLoopCounters(ss.Stats, ss.Current, ss.Loops, net, Trial, Cycle)
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		counterFunc(mode, level, phase == Start)
-	})
-	runNameFunc := axon.StatRunName(ss.Stats, ss.Current, ss.Loops, net, Trial, Cycle)
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		runNameFunc(mode, level, phase == Start)
-	})
-	trialNameFunc := axon.StatTrialName(ss.Stats, ss.Current, ss.Loops, net, Trial)
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		trialNameFunc(mode, level, phase == Start)
-	})
-	perTrlFunc := axon.StatPerTrialMSec(ss.Stats, Train, Sequence)
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		perTrlFunc(mode, level, phase == Start)
-	})
+	ss.AddStatStd(axon.StatLoopCounters(ss.Stats, ss.Current, ss.Loops, net, Trial, Cycle))
+	ss.AddStatStd(axon.StatRunName(ss.Stats, ss.Current, ss.Loops, net, Trial, Cycle))
+	ss.AddStatStd(axon.StatTrialName(ss.Stats, ss.Current, ss.Loops, net, Trial))
+	ss.AddStatStd(axon.StatPerTrialMSec(ss.Stats, Train, Sequence))
 
 	vmly := ss.Net.LayerByName("M1VM")
 	trialStats := []string{"Di", "Action", "Target", "Correct", "RT"}
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+	ss.AddStat(func(mode Modes, level Levels, start bool) {
 		if level != Trial {
 			return
 		}
@@ -797,7 +791,7 @@ func (ss *Sim) ConfigStats() {
 			ndata := int(ss.Net.Context().NData)
 			for di := range ndata {
 				tsr := levelDir.Float64(name)
-				if phase == Start {
+				if start {
 					tsr.SetNumRows(0)
 					plot.SetFirstStyler(tsr, func(s *plot.Style) {
 						s.Range.SetMin(0).SetMax(1)
@@ -831,7 +825,7 @@ func (ss *Sim) ConfigStats() {
 	})
 
 	seqStats := []string{"NCorrect", "Rew", "RewPred", "RPE", "RT"}
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+	ss.AddStat(func(mode Modes, level Levels, start bool) {
 		if level <= Trial {
 			return
 		}
@@ -843,7 +837,7 @@ func (ss *Sim) ConfigStats() {
 			tsr := levelDir.Float64(name)
 			ndata := int(ss.Net.Context().NData)
 			var stat float64
-			if phase == Start {
+			if start {
 				tsr.SetNumRows(0)
 				plot.SetFirstStyler(tsr, func(s *plot.Style) {
 					s.Range.SetMin(0).SetMax(1)
@@ -882,7 +876,7 @@ func (ss *Sim) ConfigStats() {
 			}
 		}
 	})
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+	ss.AddStat(func(mode Modes, level Levels, start bool) {
 		if level <= Epoch {
 			return
 		}
@@ -891,7 +885,7 @@ func (ss *Sim) ConfigStats() {
 		levelDir := modeDir.Dir(level.String())
 		subDir := modeDir.Dir((level - 1).String()) // note: will fail for Cycle
 		tsr := levelDir.Float64(name)
-		if phase == Start {
+		if start {
 			tsr.SetNumRows(0)
 			plot.SetFirstStyler(tsr, func(s *plot.Style) {
 				s.Range.SetMin(0)
@@ -909,7 +903,7 @@ func (ss *Sim) ConfigStats() {
 			tsr.AppendRowFloat(stat)
 		}
 	})
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+	ss.AddStat(func(mode Modes, level Levels, start bool) {
 		if level < Expt {
 			return
 		}
@@ -918,7 +912,7 @@ func (ss *Sim) ConfigStats() {
 		levelDir := modeDir.Dir(level.String())
 		subDir := modeDir.Dir((level - 1).String())
 		tsr := levelDir.Float64(name)
-		if phase == Start {
+		if start {
 			tsr.SetNumRows(0)
 			plot.SetFirstStyler(tsr, func(s *plot.Style) {
 				s.Range.SetMin(0)
@@ -936,26 +930,20 @@ func (ss *Sim) ConfigStats() {
 		}
 		tsr.AppendRowFloat(float64(nfail))
 	})
-	runAllFunc := axon.StatLevelAll(ss.Stats, Train, Run, func(s *plot.Style, cl tensor.Values) {
+	ss.AddStatStd(axon.StatLevelAll(ss.Stats, Train, Run, func(s *plot.Style, cl tensor.Values) {
 		name := metadata.Name(cl)
 		switch name {
 		case "EpochsToCrit", "NCorrect":
 			s.On = true
 			s.Range.SetMin(0)
 		}
-	})
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		runAllFunc(mode, level, phase == Start)
-	})
+	}))
 
 	superLays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.PTMaintLayer, axon.PTPredLayer)
-	learnTimingFunc := axon.StatLearnTiming(ss.Stats, ss.Current, net, Trial, Run, superLays...)
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		learnTimingFunc(mode, level, phase == Start)
-	})
+	ss.AddStatStd(axon.StatLearnTiming(ss.Stats, ss.Current, net, Trial, Run, superLays...))
 
 	patchStats := []string{"PPD1Cor", "PPD1Err", "PPD2Cor", "PPD2Err", "PPDAD1Cor", "PPDAD1Err", "PPDAD2Cor", "PPDAD2Err", "PPDAD1Cur", "PPDAD2Cur"}
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+	ss.AddStat(func(mode Modes, level Levels, start bool) {
 		if level < Trial {
 			return
 		}
@@ -971,7 +959,7 @@ func (ss *Sim) ConfigStats() {
 			tsr := levelDir.Float64(name)
 			ndata := int(ss.Net.Context().NData)
 			var stat float64
-			if phase == Start {
+			if start {
 				tsr.SetNumRows(0)
 				plot.SetFirstStyler(tsr, func(s *plot.Style) {
 					s.Range.SetMin(0).SetMax(1)
@@ -1049,15 +1037,12 @@ func (ss *Sim) ConfigStats() {
 	})
 
 	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.PTMaintLayer, axon.PTPredLayer, axon.TargetLayer)
-	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...)
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		actGeFunc(mode, level, phase == Start)
-	})
+	ss.AddStatStd(axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...))
 
 	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, Run, lays...)
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+	ss.AddStat(func(mode Modes, level Levels, start bool) {
 		trnEpc := ss.Loops.Loop(Train, Epoch).Counter.Cur
-		pcaFunc(mode, level, phase == Start, trnEpc)
+		pcaFunc(mode, level, start, trnEpc)
 	})
 }
 
