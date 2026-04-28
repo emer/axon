@@ -24,6 +24,14 @@ import (
 	"github.com/emer/emergent/v2/looper"
 )
 
+const (
+	// Start initializes stats, in start arg of StatFuncs call.
+	Start = true
+
+	// Step is an iteration update of stats, in start arg of StatFuncs call.
+	Step = false
+)
+
 // StatsNode returns tensorfs Dir Node for given mode, level.
 func StatsNode(statsDir *tensorfs.Node, mode, level enums.Enum) *tensorfs.Node {
 	modeDir := statsDir.Dir(mode.String())

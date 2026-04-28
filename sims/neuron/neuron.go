@@ -40,13 +40,6 @@ const (
 	Trial
 )
 
-const (
-	// Start initializes stats, in start arg of StatFuncs call.
-	Start = true
-	// Step is an iteration of stats, in start arg of StatFuncs call.
-	Step = false
-)
-
 // see config.go for Config
 
 // LayerParams sets the minimal non-default params.
@@ -240,7 +233,7 @@ func (ss *Sim) NewRun() {
 	ctx.Reset()
 	ss.InputISI = 0
 	ss.Net.InitWeights()
-	ss.RunStats(Test, Cycle, Start)
+	ss.RunStats(Test, Cycle, axon.Start)
 }
 
 // InitRandSeed initializes the random seed based on current training run number
@@ -265,7 +258,7 @@ func (ss *Sim) RunCycles() {
 		}
 		ss.NeuronUpdate(ss.Net, inputOn)
 		ctx.Cycle = int32(cyc)
-		ss.RunStats(Test, Cycle, Step)
+		ss.RunStats(Test, Cycle, axon.Step)
 		ss.NetUpdate.UpdateCycle(cyc, Test, Cycle)
 		if ss.GUI.StopNow() {
 			break
@@ -338,7 +331,7 @@ func (ss *Sim) StatsStart(lmd, ltm enums.Enum) {
 	if level <= Trial {
 		return
 	}
-	ss.RunStats(mode, level-1, Start)
+	ss.RunStats(mode, level-1, axon.Start)
 }
 
 // StatsStep is called by Looper at each step of iteration,
@@ -349,7 +342,7 @@ func (ss *Sim) StatsStep(lmd, ltm enums.Enum) {
 	if level == Cycle {
 		return
 	}
-	ss.RunStats(mode, level, Step)
+	ss.RunStats(mode, level, axon.Step)
 	tensorfs.DirTable(axon.StatsNode(ss.Stats, mode, level), nil).WriteToLog()
 }
 
@@ -380,8 +373,8 @@ func (ss *Sim) RunName() string {
 
 // StatsInit initializes all the stats by calling Start across all modes and levels.
 func (ss *Sim) StatsInit() {
-	ss.RunStats(Test, Cycle, Start)
-	ss.RunStats(Test, Trial, Start)
+	ss.RunStats(Test, Cycle, axon.Start)
+	ss.RunStats(Test, Trial, axon.Start)
 	if ss.GUI.Tabs != nil {
 		tbs := ss.GUI.Tabs.AsLab()
 		_, idx := tbs.CurrentTab()

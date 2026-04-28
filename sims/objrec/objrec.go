@@ -55,13 +55,6 @@ const (
 	Expt
 )
 
-const (
-	// Start initializes stats, in start arg of StatFuncs call.
-	Start = true
-	// Step is an iteration of stats, in start arg of StatFuncs call.
-	Step = false
-)
-
 // see params.go for params
 
 // Sim encapsulates the entire simulation model, and we define all the
@@ -427,7 +420,7 @@ func (ss *Sim) StatsStart(lmd, ltm enums.Enum) {
 	if level <= Trial {
 		return
 	}
-	ss.RunStats(mode, level-1, Start)
+	ss.RunStats(mode, level-1, axon.Start)
 }
 
 // StatsStep is called by Looper at each step of iteration,
@@ -438,7 +431,7 @@ func (ss *Sim) StatsStep(lmd, ltm enums.Enum) {
 	if level == Cycle {
 		return
 	}
-	ss.RunStats(mode, level, Step)
+	ss.RunStats(mode, level, axon.Step)
 	tensorfs.DirTable(axon.StatsNode(ss.Stats, mode, level), nil).WriteToLog()
 }
 
@@ -476,7 +469,7 @@ func (ss *Sim) StatsInit() {
 			if level == Cycle {
 				continue
 			}
-			ss.RunStats(mode, level, Start)
+			ss.RunStats(mode, level, axon.Start)
 		}
 	}
 	if ss.GUI.Tabs != nil {
