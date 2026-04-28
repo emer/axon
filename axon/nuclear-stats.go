@@ -11,6 +11,7 @@ import (
 	"cogentcore.org/core/enums"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/plot"
+	"cogentcore.org/lab/stats/stats"
 	"cogentcore.org/lab/tensorfs"
 )
 
@@ -314,6 +315,131 @@ func StatNuclearCycleDn(prefix string, readInterval, pool int, statsDir, current
 
 			stat := curModeDir.Float64(pname, ndata, 2, cycMax).Float(di, pool, cycIndex)
 			tsr.AppendRowFloat(float64(stat))
+		}
+	}
+}
+
+// StatNuclearTrialUp records key Nuclear cerebellum state variables from
+// the network, at the trial level and up,
+// for Up upgoing (adaptive filtering) layers.
+// for given layer pool (0 = first sub-pool, 1 = second..),
+// prefix is from the specific sensory layer driving given IO, that precedes
+// the IO layer name.
+func StatNuclearTrialUp(prefix string, pool int, statsDir, currentDir *tensorfs.Node, net *Network, trialLevel, runLevel enums.Enum) func(mode, level enums.Enum, start bool) {
+	cnely := net.LayerByName(prefix + "CNeUp")
+	cnepi := cnely.Params.PoolIndex(0)
+	ioLy := net.LayerByName(prefix + "IOUp")
+	statNames := []string{"CNeUpMax", "IOErrs"}
+	statDescs := map[string]string{
+		"CNeUpMax": "Maximum activity across the trial for CNeUp Adaptive Filtering layer. Should be around .5 (ActTarget) in general",
+		"IOErrs":   "Average number of IO error spikes across trials (encoded in TimePeak neuron variable) -- for upgoing",
+	}
+	levels := make([]enums.Enum, 10) // should be enough
+	return func(mode enums.Enum, level enums.Enum, start bool) {
+		levi := int(level.Int64() - trialLevel.Int64())
+		if levi < 0 {
+			return
+		}
+		levels[levi] = level
+		for _, name := range statNames {
+			pname := prefix + name
+			modeDir := statsDir.Dir(mode.String())
+			curModeDir := currentDir.Dir(mode.String())
+			levelDir := modeDir.Dir(level.String())
+			tsr := levelDir.Float64(pname)
+			ndata := int(net.Context().NData)
+			if start {
+				tsr.SetNumRows(0)
+				plot.SetFirstStyler(tsr, func(s *plot.Style) {
+					s.Range.SetMin(0).SetMax(1)
+					s.On = true
+				})
+				metadata.SetDoc(tsr, statDescs[name])
+				continue
+			}
+			switch levi {
+			case 0:
+				for di := range ndata {
+					var stat float32
+					switch name {
+					case "CNeUpMax":
+						stat = PoolAvgMax(AMCaPMax, AMCycle, Max, cnepi, uint32(di))
+					case "IOErrs":
+						stat = ioLy.AvgMaxVarByPool("TimePeak", 0, di).Avg
+					}
+					curModeDir.Float64(pname, ndata).SetFloat1D(float64(stat), di)
+					tsr.AppendRowFloat(float64(stat))
+				}
+			case int(runLevel.Int64() - trialLevel.Int64()):
+				subDir := modeDir.Dir(levels[levi-1].String())
+				stat := stats.StatFinal.Call(subDir.Value(pname)).Float1D(0)
+				tsr.AppendRowFloat(stat)
+			default:
+				subDir := modeDir.Dir(levels[levi-1].String())
+				stat := stats.StatMean.Call(subDir.Value(pname)).Float1D(0)
+				tsr.AppendRowFloat(stat)
+			}
+		}
+	}
+}
+
+// StatNuclearTrialDn records key Nuclear cerebellum state variables from
+// the network, at the trial level and up,
+// for Dn downgoing (forward model) layers.
+// for given layer pool (0 = first sub-pool, 1 = second..),
+// prefix is from the specific sensory layer driving given IO, that precedes
+// the IO layer name.
+func StatNuclearTrialDn(prefix string, pool int, statsDir, currentDir *tensorfs.Node, net *Network, trialLevel, runLevel enums.Enum) func(mode, level enums.Enum, start bool) {
+	// cnely := net.LayerByName(prefix + "CNeUp")
+	// cnepi := cnely.Params.PoolIndex(0)
+	ioLy := net.LayerByName(prefix + "IODn")
+	statNames := []string{"IOErrs"}
+	statDescs := map[string]string{
+		"IOErrs": "Average number of IO error spikes across trials (encoded in TimePeak neuron variable) -- for downgoing",
+	}
+	levels := make([]enums.Enum, 10) // should be enough
+	return func(mode enums.Enum, level enums.Enum, start bool) {
+		levi := int(level.Int64() - trialLevel.Int64())
+		if levi < 0 {
+			return
+		}
+		levels[levi] = level
+		for _, name := range statNames {
+			pname := prefix + name
+			modeDir := statsDir.Dir(mode.String())
+			curModeDir := currentDir.Dir(mode.String())
+			levelDir := modeDir.Dir(level.String())
+			tsr := levelDir.Float64(pname)
+			ndata := int(net.Context().NData)
+			if start {
+				tsr.SetNumRows(0)
+				plot.SetFirstStyler(tsr, func(s *plot.Style) {
+					s.Range.SetMin(0).SetMax(1)
+					s.On = true
+				})
+				metadata.SetDoc(tsr, statDescs[name])
+				continue
+			}
+			switch levi {
+			case 0:
+				for di := range ndata {
+					var stat float32
+					switch name {
+					case "IOErrs":
+						stat = ioLy.AvgMaxVarByPool("TimePeak", 0, di).Avg
+					}
+					curModeDir.Float64(pname, ndata).SetFloat1D(float64(stat), di)
+					tsr.AppendRowFloat(float64(stat))
+				}
+			case int(runLevel.Int64() - trialLevel.Int64()):
+				subDir := modeDir.Dir(levels[levi-1].String())
+				stat := stats.StatFinal.Call(subDir.Value(pname)).Float1D(0)
+				tsr.AppendRowFloat(stat)
+			default:
+				subDir := modeDir.Dir(levels[levi-1].String())
+				stat := stats.StatMean.Call(subDir.Value(pname)).Float1D(0)
+				tsr.AppendRowFloat(stat)
+			}
 		}
 	}
 }

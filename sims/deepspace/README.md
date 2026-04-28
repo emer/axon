@@ -3,6 +3,7 @@
 
 ## TODO
 
+* std Trial-level nuclear io stats: 
 * MF for sensory channels, connect cross-sensory
 * connect VORInhib into CN layers!
 

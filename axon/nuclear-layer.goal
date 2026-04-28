@@ -135,17 +135,17 @@ type IOParams struct {
 	// TimeOff is the time offset for earlier predictive inhibitory inputs to
 	// compare against current excitatory inputs to trigger an error,
 	// in ms (cycles). Must be an even multiple of [NeuronTraceCycles].
-	TimeOff int32 `default:"50" min:"0"`
+	TimeOff int32 `min:"0"`
 
 	// InhibGain multiplies the delayed, integrated inhibition input
 	// that is stored in GaD and integrated through the NeuronTrace values.
 	// The integration causes this value to be lower than the driving
 	// inhibitory input from the CNiIO neurons.
-	InhibGain float32 `default:"1.1" min:"0"`
+	InhibGain float32 `default:"1.5" min:"0"`
 	
 	// ErrThr is the threshold on the GeSyn - GiSyn_(t-TimeOff) difference
 	// to trigger an error.
-	ErrThr float32 `default:"0.1" min:"0.0"`
+	ErrThr float32 `default:"0.01" min:"0.0"`
 	
 	// EfferentThr is the threshold for modulatory [GModSyn] from efferent copy
 	// inputs to trigger an activated IO window where error comparison occurs.
@@ -175,9 +175,9 @@ func (tp *IOParams) Update() {
 }
 
 func (tp *IOParams) Defaults() {
-	tp.TimeOff = 50
-	tp.InhibGain = 1.1
-	tp.ErrThr = 0.1
+	tp.TimeOff = 70
+	tp.InhibGain = 1.5
+	tp.ErrThr = 0.01
 	tp.EfferentThr = 0.2
 	tp.EfferentOff = 20
 	tp.GTau = 20

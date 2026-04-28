@@ -69,10 +69,15 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".IOLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.IO.ErrThr = 0.1
+				ly.IO.ErrThr = 0.01    // with 1.5 gain, not too important
+				ly.IO.InhibGain = 1.5  // 1.5 > lower
 				ly.IO.TimeOff = 70     // 70 > 60,80
 				ly.IO.EfferentOff = 40 // 40 > 30, 50
 				ly.IO.GTau = 20
+			}},
+		{Sel: "#VMhvIODn", Doc: "visual motion is a bit later?",
+			Set: func(ly *axon.LayerParams) {
+				ly.IO.TimeOff = 90
 			}},
 		{Sel: ".CNiIOLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
