@@ -1460,13 +1460,13 @@ struct NuclearParams {
 }
 struct IOParams {
 	TimeOff: i32,
+	InhibGain: f32,
 	ErrThr: f32,
 	EfferentThr: f32,
 	EfferentOff: i32,
 	GTau: f32,
 	GDt: f32,
 	pad: f32,
-	pad1: f32,
 }
 fn LayerParams_IOCopy(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,di: u32) {
 	var lni = ni - ly.Indexes.NeurSt;
@@ -1515,7 +1515,7 @@ fn LayerParams_IOLearn(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,d
 	oldInhib /= f32(nbins - 1);
 	var cySt = stcyc - ((stcyc / NeuronTraceCycles) * NeuronTraceCycles);
 	var mix = f32(cySt) / f32(NeuronTraceCycles);
-	oldInhib = (1-mix)*oldInhib + mix*oldInhibP;
+	oldInhib = ly.IO.InhibGain * ((1-mix)*oldInhib + mix*oldInhibP);
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaD))] = oldInhib;
 	if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // already learned, done until cleared in NuclearLearnReset
 	u32(ni), u32(di), u32(LearnNow))] > 0) {

@@ -137,6 +137,12 @@ type IOParams struct {
 	// in ms (cycles). Must be an even multiple of [NeuronTraceCycles].
 	TimeOff int32 `default:"50" min:"0"`
 
+	// InhibGain multiplies the delayed, integrated inhibition input
+	// that is stored in GaD and integrated through the NeuronTrace values.
+	// The integration causes this value to be lower than the driving
+	// inhibitory input from the CNiIO neurons.
+	InhibGain float32 `default:"1.1" min:"0"`
+	
 	// ErrThr is the threshold on the GeSyn - GiSyn_(t-TimeOff) difference
 	// to trigger an error.
 	ErrThr float32 `default:"0.1" min:"0.0"`
@@ -161,7 +167,7 @@ type IOParams struct {
 	// Dt = 1 / Tau
 	GDt float32 `display:"-"`
 	
-	pad, pad1 float32
+	pad float32
 }
 
 func (tp *IOParams) Update() {
@@ -170,6 +176,7 @@ func (tp *IOParams) Update() {
 
 func (tp *IOParams) Defaults() {
 	tp.TimeOff = 50
+	tp.InhibGain = 1.1
 	tp.ErrThr = 0.1
 	tp.EfferentThr = 0.2
 	tp.EfferentOff = 20
@@ -247,7 +254,7 @@ func (ly *LayerParams) IOLearn(ctx *Context, lpi, pi, ni, di uint32) {
 	oldInhib /= float32(nbins-1)
 	cySt := stcyc - ((stcyc / NeuronTraceCycles) * NeuronTraceCycles)
 	mix := float32(cySt) / float32(NeuronTraceCycles)
-	oldInhib = (1-mix) * oldInhib + mix * oldInhibP
+	oldInhib = ly.IO.InhibGain * ((1-mix) * oldInhib + mix * oldInhibP)
 	
 	Neurons[ni, di, GaD] = oldInhib
 	

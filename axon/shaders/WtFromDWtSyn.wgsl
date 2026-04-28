@@ -1081,13 +1081,13 @@ struct NuclearParams {
 }
 struct IOParams {
 	TimeOff: i32,
+	InhibGain: f32,
 	ErrThr: f32,
 	EfferentThr: f32,
 	EfferentOff: i32,
 	GTau: f32,
 	GDt: f32,
 	pad: f32,
-	pad1: f32,
 }
 
 //////// import: "pathparams.go"

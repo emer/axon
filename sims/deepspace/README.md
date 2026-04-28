@@ -3,6 +3,9 @@
 
 ## TODO
 
+* MF for sensory channels, connect cross-sensory
+* connect VORInhib into CN layers!
+
 * Current params looking good! test and fix IOspike logic under GPU, also CNeUpLearn.
 
 * simple version of train-time VOR stat.

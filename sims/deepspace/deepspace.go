@@ -251,36 +251,40 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		// net.ConnectLayers(eyeLInThal, visHid, full, axon.ForwardPath).AddClass("FFToHid")
 	}
 
-	// cerebellum:
+	//////// cerebellum:
 	// cycles-20 is sufficient to allow time for motor to engage
-	vsIOUp, vsCNiIOUp, vsCNiUp, vsCNeUp := net.AddNuclearCNUp(vsRotVel, rotAct, cycles-20, space)
+	actionEnv := cycles - 20
+	vsIOUp, vsCNiIOUp, vsCNiUp, vsCNeUp := net.AddNuclearCNUp(vsRotVel, rotAct, actionEnv, space)
 	_, _ = vsIOUp, vsCNeUp
 
-	vsIODn, vsCNiIODn, vsCNeDn := net.AddNuclearCNDn(vsRotVel, rotAct, cycles-20, space)
+	vsIODn, vsCNiIODn, vsCNeDn := net.AddNuclearCNDn(vsRotVel, rotAct, actionEnv, space)
 	_, _ = vsIODn, vsCNeDn
 
-	vmIODn, vmCNiIODn, vmCNeDn := net.AddNuclearCNDn(vmRotVel, rotAct, cycles-20, space)
+	vmIODn, vmCNiIODn, vmCNeDn := net.AddNuclearCNDn(vmRotVel, rotAct, actionEnv, space)
 	_, _ = vmIODn, vmCNeDn
 
 	// upgoing adaptive filter model
 	pt = net.ConnectLayers(vsRotVel, vsCNeUp, p1to1, axon.ForwardPath).AddClass("SenseToCNeUp")
 	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
 
-	// net.ConnectLayers(rotActPrev, vsCNiIOUp, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiIOUp")
-	// net.ConnectLayers(s1ct, vsCNiIOUp, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiIOUp")
-	net.ConnectLayers(rotActMF, vsCNiIOUp, full, axon.CNIOPath).AddClass("MF", "MFToCNiIOUp")
-
-	// net.ConnectLayers(rotActPrev, vsCNiUp, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiUp")
-	// net.ConnectLayers(s1ct, vsCNiUp, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiUp")
+	// motor efferent
+	net.ConnectLayers(rotActMF, vsCNiIOUp, full, axon.CNIOPath).AddClass("MF", "MFToCNiIO")
 	net.ConnectLayers(rotActMF, vsCNiUp, full, axon.CNIOPath).AddClass("MF", "MFToCNiUp")
 
-	// downgoing forward model
-
-	// net.ConnectLayers(rotActPrev, vsCNiIODn, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiIODn")
-	// net.ConnectLayers(s1ct, vsCNiIODn, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiIODn")
-	net.ConnectLayers(rotActMF, vsCNiIODn, full, axon.CNIOPath).AddClass("MF", "MFToCNiIODn")
-
+	net.ConnectLayers(rotActMF, vsCNiIODn, full, axon.CNIOPath).AddClass("MF", "MFToCNiIO")
 	net.ConnectLayers(rotActMF, vsCNeDn, full, axon.CNIOPath).AddClass("MF", "MFToCNeDn")
+
+	net.ConnectLayers(rotActMF, vmCNiIODn, full, axon.CNIOPath).AddClass("MF", "MFToCNiIO")
+
+	// other modality input -- TODO: need an MF for sensory channels!!
+	// net.ConnectLayers(rotActMF, vsCNiIOUp, full, axon.CNIOPath).AddClass("MF", "MFToCNiIO")
+
+	// TODO: connect VORInhib into CN layers!
+
+	// s1
+	// net.ConnectLayers(s1ct, vsCNiIOUp, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiIOUp")
+	// net.ConnectLayers(s1ct, vsCNiUp, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiUp")
+	// net.ConnectLayers(s1ct, vsCNiIODn, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiIODn")
 
 	pt = net.ConnectLayers(vsCNeDn, eyeH, p1to1, axon.ForwardPath).AddClass("Reflex")
 	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
