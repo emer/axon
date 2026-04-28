@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"os"
 	"reflect"
-	"strings"
 
 	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/base/reflectx"
@@ -464,21 +463,26 @@ func (ss *Sim) ReadNetState(mode Modes) {
 	ev := ss.Envs.ByMode(mode).(*emery.EmeryEnv)
 	cyc := int(ctx.Cycle) - 1
 	interval := ss.Config.Env.ReadNetInterval
+	read := cyc%interval == 0
+	cycMax := int(ctx.ThetaCycles) / interval
+	cycIndex := cyc / interval
 
+	readIdx := cycIndex
+	readMax := cycMax
 	if !axon.UseGPU { // use per-cycle in non-GPU mode -- free
-		axon.NuclearReadIO("VShv", "Up", ss.Current, net, mode, interval, cyc, int(ctx.ThetaCycles))
+		readIdx = cyc
+		readMax = int(ctx.ThetaCycles)
 	}
 
-	read := cyc%ss.Config.Env.ReadNetInterval == 0
+	if !axon.UseGPU || read {
+		axon.NuclearReadIO("VShv", "Up", ss.Current, net, mode, interval, readIdx, readMax)
+		axon.NuclearReadIO("VMhv", "Dn", ss.Current, net, mode, interval, readIdx, readMax)
+		axon.NuclearReadUp("VShv", ss.Current, net, mode, interval, readIdx, readMax)
+		axon.NuclearReadDn("VShv", ss.Current, net, mode, interval, readIdx, readMax)
+		axon.NuclearReadDn("VMhv", ss.Current, net, mode, interval, readIdx, readMax)
+	}
 	if !read {
 		return
-	}
-
-	cycMax := int(ctx.ThetaCycles) / ss.Config.Env.ReadNetInterval
-	cycIndex := cyc / ss.Config.Env.ReadNetInterval
-
-	if axon.UseGPU {
-		axon.NuclearReadIO("VShv", "Up", ss.Current, net, mode, interval, cycIndex, cycMax)
 	}
 
 	for _, lnm := range lays {
@@ -642,7 +646,12 @@ func (ss *Sim) ConfigStats() {
 	ss.ConfigStatVis()
 
 	pool := 0
-	ss.AddStatStd(axon.StatNuclearCycleIO("VShv", "Up", ss.Config.Env.ReadNetInterval, pool, ss.Stats, ss.Current, net, Cycle))
+	interval := ss.Config.Env.ReadNetInterval
+	ss.AddStatStd(axon.StatNuclearCycleIO("VShv", "Up", interval, pool, ss.Stats, ss.Current, net, Cycle))
+	ss.AddStatStd(axon.StatNuclearCycleIO("Vmhv", "Dn", interval, pool, ss.Stats, ss.Current, net, Cycle))
+	ss.AddStatStd(axon.StatNuclearCycleUp("VShv", interval, pool, ss.Stats, ss.Current, net, Cycle))
+	ss.AddStatStd(axon.StatNuclearCycleDn("VShv", interval, pool, ss.Stats, ss.Current, net, Cycle))
+	ss.AddStatStd(axon.StatNuclearCycleDn("VMhv", interval, pool, ss.Stats, ss.Current, net, Cycle))
 
 	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer, axon.InputLayer, axon.PulvinarLayer)
 	ss.AddStatStd(axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...))
@@ -701,145 +710,6 @@ func (ss *Sim) ConfigStatVis() {
 			default:
 				stat := stats.StatMean.Call(subDir.Value(name)).Float1D(0)
 				tsr.AppendRowFloat(stat)
-			}
-		}
-	})
-}
-
-// ReadNuclearState reads key Nuclear cerebellum state variables from
-// the network, at the cycle level (ReadNetInterval).
-// cycIndex is the current cycle index in range of cycMax to record into.
-func (ss *Sim) ReadNuclearState(net *axon.Network, mode Modes, cycIndex, cycMax int) {
-	ctx := net.Context()
-	ndata := int(ctx.NData)
-	prefixes := []string{"VShv"}
-	layerNames := []string{"IOUp", "CNiIOUp", "CNiUp", "CNeUp", "CNeDn"}
-	layers := make([]*axon.Layer, len(layerNames))
-	pools := make([]uint32, len(layerNames))
-	statNames := []string{"IOenv", "IOe", "IOi", "IOioff", "IOerr", "IOspike", "CNiIO", "CNiUp", "CNeUp", "CNeUpLearn", "CNeUpAbsDev", "CNeDn"}
-	for _, pf := range prefixes {
-		for li, lnm := range layerNames {
-			layers[li] = net.LayerByName(pf + lnm)
-			pools[li] = layers[li].Params.PoolIndex(1) // 4D
-		}
-		for _, name := range statNames {
-			pname := pf + name
-			curModeDir := ss.Current.Dir(mode.String())
-			for di := range ndata {
-				diu := uint32(di)
-				for pool := range 2 {
-					poolu := uint32(pool)
-					var stat float32
-					switch name {
-					case "IOenv":
-						stat = layers[0].AvgMaxVarByPool("MinusCycle", 1+pool, di).Avg
-						if math32.IsNaN(stat) || stat < 0 {
-							stat = 0
-						} else {
-							stat = 1
-						}
-					case "IOe":
-						stat = layers[0].AvgMaxVarByPool("GaP", 1+pool, di).Avg
-					case "IOi":
-						stat = layers[0].AvgMaxVarByPool("GaM", 1+pool, di).Avg
-					case "IOioff":
-						stat = layers[0].AvgMaxVarByPool("GaD", 1+pool, di).Avg
-					case "IOerr":
-						stat = layers[0].AvgMaxVarByPool("TimeDiff", 1+pool, di).Avg
-					case "IOspike":
-						if cycMax == int(ctx.ThetaCycles) {
-							stat = layers[0].AvgMaxVarByPool("Spike", 1+pool, di).Avg
-						} else {
-							stat = layers[0].AvgMaxVarByPool("LearnNow", 1+pool, di).Avg
-							if math32.IsNaN(stat) {
-								stat = 0
-							} else {
-								lcyc := int(stat)
-								mn := cycIndex * ss.Config.Env.ReadNetInterval
-								mx := mn + ss.Config.Env.ReadNetInterval
-								if lcyc >= mn && lcyc < mx {
-									stat = 1
-								} else {
-									stat = 0
-								}
-							}
-						}
-					case "CNiIO":
-						stat = axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pools[1]+poolu, diu)
-					case "CNiUp":
-						stat = axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pools[2]+poolu, diu)
-					case "CNeUp":
-						stat = axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pools[3]+poolu, diu)
-					case "CNeUpLearn":
-						stat = layers[3].AvgMaxVarByPool("TimePeak", 1+pool, di).Avg
-					case "CNeUpAbsDev":
-						stat = layers[3].AvgMaxVarByPool("GaP", 1+pool, di).Avg
-					case "CNeDn":
-						stat = axon.PoolAvgMax(axon.AMCaP, axon.AMCycle, axon.Avg, pools[4]+poolu, diu)
-					}
-					curModeDir.Float64(pname, ndata, 2, cycMax).SetFloat(float64(stat), di, pool, cycIndex)
-				}
-			}
-		}
-	}
-}
-
-func (ss *Sim) ConfigStatNuclearCycle() {
-	net := ss.Net
-	ctx := net.Context()
-	prefixes := []string{"VShv"}
-	cycMax := int(ctx.ThetaCycles) / ss.Config.Env.ReadNetInterval
-	if !axon.UseGPU {
-		cycMax = int(ctx.ThetaCycles)
-	}
-	pool := 0
-	statNames := []string{"IOenv", "IOe", "IOi", "IOioff", "IOerr", "IOspike", "CNiIO", "CNiUp", "CNeUp", "CNeUpLearn", "CNeUpAbsDev", "CNeDn"}
-	statDescs := map[string]string{
-		"IOenv":       "IO envelope initiated by action input to IO neurons",
-		"IOe":         "Integrated excitatory input to IO",
-		"IOi":         "Integrated inhibitory input to IO at the current time",
-		"IOioff":      "Integrated inhibitory input to IO offset from TimeOff, which is compared against IOe",
-		"IOerr":       "IOe - IOi (positive only): the error signal that drives IO spiking, if above threshold",
-		"IOspike":     "IO spike, either from IOerr or at end of the IOenv for the baseline spiking",
-		"CNiIO":       "integrated activity (CaP) of CNiIO predictive inhibitory input to IO, generates IOi at a temporal offset 'in the future'",
-		"CNiUp":       "inhibitory interneuron that projects to CNeUp, learns to inhibit CNeUp just prior to its activation",
-		"CNeUp":       "excitatory output, driven directly by excitatory sensory input, which should be cancelled by CNiUp inputs",
-		"CNeUpLearn":  "CNeUp learning point",
-		"CNeUpAbsDev": "CNeUp max absolute deviation from target",
-		"CNeDn":       "excitatory output of forward model predictive side",
-	}
-	ss.AddStat(func(mode Modes, level Levels, start bool) {
-		if level != Cycle {
-			return
-		}
-		di := 0
-		for _, pf := range prefixes {
-			for _, name := range statNames {
-				pname := pf + name
-				modeDir := ss.Stats.Dir(mode.String())
-				curModeDir := ss.Current.Dir(mode.String())
-				levelDir := modeDir.Dir(level.String())
-				tsr := levelDir.Float64(pname)
-				ndata := 1
-				if start {
-					tsr.SetNumRows(0)
-					plot.SetFirstStyler(tsr, func(s *plot.Style) {
-						s.Range.SetMin(0).SetMax(1)
-						if strings.HasPrefix(name, "IO") {
-							s.On = true
-						}
-					})
-					metadata.SetDoc(tsr, statDescs[name])
-					continue
-				}
-				cyc := int(ctx.Cycle) - 1
-				cycIndex := cyc / ss.Config.Env.ReadNetInterval
-				if !axon.UseGPU {
-					cycIndex = cyc
-				}
-
-				stat := curModeDir.Float64(pname, ndata, 2, cycMax).Float(di, pool, cycIndex)
-				tsr.AppendRowFloat(float64(stat))
 			}
 		}
 	})
