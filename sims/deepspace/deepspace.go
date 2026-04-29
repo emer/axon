@@ -134,11 +134,13 @@ func (ss *Sim) ConfigSim() {
 func (ss *Sim) ConfigEnv() {
 	// Can be called multiple times -- don't re-create
 	ndata := ss.Config.Run.NData
-	var trn *emery.EmeryEnv
+	var trn, tst *emery.EmeryEnv
 	if len(ss.Envs) == 0 {
 		trn = &emery.EmeryEnv{}
+		tst = &emery.EmeryEnv{}
 	} else {
 		trn = ss.Envs.ByMode(Train).(*emery.EmeryEnv)
+		tst = ss.Envs.ByMode(Test).(*emery.EmeryEnv)
 	}
 
 	// note: names must be standard here!
@@ -151,8 +153,18 @@ func (ss *Sim) ConfigEnv() {
 	trn.Config(ndata, ss.Config.Run.Cycles(), ss.Root.Dir("Env"), axon.ComputeGPU)
 	trn.Init(0)
 
+	tst.Defaults()
+	tst.Name = Test.String()
+	tst.Params.UnitsPer = ss.Config.Env.UnitsPer
+	if ss.Config.Env.Env != nil {
+		reflectx.SetFieldsFromMap(&tst.Params, ss.Config.Env.Env)
+	}
+	tst.Config(ndata, ss.Config.Run.Cycles(), ss.Root.Dir("Env"), axon.ComputeGPU)
+	tst.Init(0)
+
 	// note: names must be in place when adding
 	ss.Envs.Add(trn)
+	ss.Envs.Add(tst)
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
@@ -162,8 +174,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		SetPlusCycles(int32(ss.Config.Run.PlusCycles)).Update()
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 	cycles := ss.Config.Run.Cycles()
-
 	ev := ss.Envs.ByMode(Train).(*emery.EmeryEnv)
+	unitsPer := ev.Params.UnitsPer
 
 	full := paths.NewFull()
 	full.SelfCon = true // unclear if this makes a diff for self cons at all
@@ -171,12 +183,21 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_ = one2one
 	p1to1 := paths.NewPoolOneToOne()
 	_ = p1to1
+	firstPool := paths.NewPoolRect()
+	firstPool.Size.Set(1, unitsPer)
+	firstPool.Scale.Set(0, 0)
+	firstPool.Wrap = false
+	secondPool := paths.NewPoolRect()
+	secondPool.Size.Set(1, unitsPer)
+	secondPool.Scale.Set(0, 0)
+	secondPool.Start.Set(1, 0)
+	secondPool.Wrap = false
 
 	space := float32(2)
 	// eyeSz := image.Point{2, 1}
 
 	addInput := func(nm string, doc string) (in, mf, thal *axon.Layer) {
-		in = net.AddLayer4D(nm, axon.InputLayer, 1, 2, ev.Params.UnitsPer, 1)
+		in = net.AddLayer4D(nm, axon.InputLayer, 1, 2, unitsPer, 1)
 		in.AddClass("RateIn")
 		in.Doc = "Rate code version. " + doc
 
@@ -199,18 +220,18 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	eyeH.Class = ""
 	eyeH.AddClass("MotorOut")
 
-	vorInhib := net.AddLayer2D("VORInhib", axon.InputLayer, ev.Params.UnitsPer, 1)
-	vorInhib.AddClass("RateIn")
-	vorInhib.Doc = "VOR (vestibulo-ocular reflex) inhibition control input -- if active then cerebellar anticipation of vestibular signals does NOT drive compensatory eye movements"
+	vorCtrl := net.AddLayer4D("VORCtrl", axon.InputLayer, 1, 2, unitsPer, 1)
+	vorCtrl.AddClass("RateIn")
+	vorCtrl.Doc = "VOR (vestibulo-ocular reflex) control input -- if left units active then cerebellar anticipation of vestibular signals drives compensatory eye movements, if right units active, it does not (inhibited)"
 
-	pt := net.ConnectLayers(vorInhib, eyeH, full, axon.InhibPath).AddClass("MotorInhib")
+	pt := net.ConnectLayers(vorCtrl, eyeH, secondPool, axon.InhibPath).AddClass("MotorInhib")
 	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
 
 	// rotActPrev, rotActPrevPop := addInput("ActRotatePrev", "Previous trial's version of ActRotate. This should be implicitly maintained but currently is not.")
 	// _ = rotActPrevPop
 
 	addInputPulv := func(nm string, doc string) (in, thal, thalP, mf *axon.Layer) {
-		in = net.AddLayer4D(nm, axon.InputLayer, 1, 2, ev.Params.UnitsPer, 1)
+		in = net.AddLayer4D(nm, axon.InputLayer, 1, 2, unitsPer, 1)
 		in.AddClass("RateIn")
 		in.Doc = "Rate code version. " + doc
 
@@ -228,9 +249,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	}
 
 	vsHV, vsHVThal, vsHVThalP, vsMF := addInputPulv("VShv", "Vestibular horizontal rotation velocity, computed from the physics model over time. Population coded left to right with gaussian tuning curves for a range of degrees for each unit (X axis) and redundant units for population code in the Y axis.")
-	_ = vsHVThalP
+	_, _ = vsHVThalP, vsMF
 
 	vmHV, vmHVThal, vmHVThalP, vmMF := addInputPulv("VMhv", "Full-field visual motion computed from the eye using retinal motion filter (see Env tab for visual environment). Population coded left to right with gaussian tuning curves for a range of velocities for each unit (X axis) and redundant units for population code in the Y axis.")
+	_ = vmMF
 
 	s1, s1ct := net.AddSuperCT2D("S1", "", 10, 10, space, one2one) // one2one learn > full
 	s1.Doc = "Neocortical integrated vestibular and full-field visual motion processing. Does predictive learning on both input signals, more like S2 (secondary), but just using one for simplicity."
@@ -282,16 +304,20 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(rotActMF, vmCNiIODn, full, axon.CNIOPath).AddClass("MF", "MFToCNiIO")
 
 	// cross-modality input: vm -> vs and vs -> vm
+	// vm->vs beneficial even if vm happens later.. not clear why
 	net.ConnectLayers(vmMF, vsCNiIOUp, full, axon.CNIOPath).AddClass("MF", "MFToCNiIO")
 	net.ConnectLayers(vmMF, vsCNiUp, full, axon.CNIOPath).AddClass("MF", "MFToCNiUp")
-
 	net.ConnectLayers(vmMF, vsCNiIODn, full, axon.CNIOPath).AddClass("MF", "MFToCNiIO")
 	net.ConnectLayers(vmMF, vsCNeDn, full, axon.CNIOPath).AddClass("MF", "MFToCNiUp")
 
 	net.ConnectLayers(vsMF, vmCNiIODn, full, axon.CNIOPath).AddClass("MF", "MFToCNiIO")
 	net.ConnectLayers(vsMF, vmCNeDn, full, axon.CNIOPath).AddClass("MF", "MFToCNiUp")
 
-	// TODO: connect VORInhib into CN layers!
+	// vor not-inhib needs to then inhibit vm prediction pathway
+	pt = net.ConnectLayers(vorCtrl, vmCNiIODn, firstPool, axon.InhibPath).AddClass("VORCtrlToCN")
+	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
+	pt = net.ConnectLayers(vorCtrl, vmCNeDn, firstPool, axon.InhibPath).AddClass("VORCtrlToCN")
+	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
 
 	// s1
 	// net.ConnectLayers(s1ct, vsCNiIOUp, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiIOUp")
@@ -304,7 +330,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// position
 
 	eyeH.PlaceRightOf(rotAct, float32(ev.Params.PopCodeUnits))
-	vorInhib.PlaceRightOf(eyeH, space)
+	vorCtrl.PlaceRightOf(eyeH, space)
 	// rotActPrev.PlaceBehind(rotActThal, space)
 	vsHV.PlaceRightOf(eyeH, float32(ev.Params.PopCodeUnits))
 	vmHV.PlaceRightOf(vsHV, float32(ev.Params.PopCodeUnits))
@@ -377,6 +403,14 @@ func (ss *Sim) ConfigLoops() {
 		AddLevelIncr(Trial, trials, ss.Config.Run.NData).
 		AddLevel(Cycle, cycles)
 
+	nTests := len(emery.Tests)
+	testTrials := int(math32.IntMultipleGE(float32(nTests), float32(ss.Config.Run.NData)))
+
+	ls.AddStack(Test, Trial).
+		AddLevel(Epoch, 1).
+		AddLevelIncr(Trial, testTrials, ss.Config.Run.NData).
+		AddLevel(Cycle, cycles)
+
 	axon.LooperStandard(ls, net, ss.NetViewUpdater, Cycle, Trial, Train,
 		func(mode enums.Enum) { net.ClearInputs() },
 		func(mode enums.Enum) { ss.TakeNextActions(mode.(Modes)) },
@@ -407,6 +441,13 @@ func (ss *Sim) ConfigLoops() {
 			return false
 		})
 	}
+
+	trainEpoch := ls.Loop(Train, Epoch)
+	trainEpoch.OnStart.Add("TestAtInterval", func() {
+		if (ss.Config.Run.TestInterval > 0) && ((trainEpoch.Counter.Cur+1)%ss.Config.Run.TestInterval == 0) {
+			ss.TestAll()
+		}
+	})
 
 	ls.AddOnStartToAll("StatsStart", ss.StatsStart)
 	ls.AddOnEndToAll("StatsStep", ss.StatsStep)
@@ -520,10 +561,14 @@ func (ss *Sim) NextAction(mode Modes) {
 	ctx := net.Context()
 	ndata := int(ctx.NData)
 	ev := ss.Envs.ByMode(mode).(*emery.EmeryEnv)
+	if mode == Test {
+		ev.NextTest()
+		return
+	}
 	for di := 0; di < ndata; di++ {
 		ang := 2.0 * (ev.Rand.Float32() - 0.5) * ev.Params.MaxRotate
 		ev.NextAction(di, emery.Rotate, ang)
-		ev.NextAction(di, emery.VORInhib, 0.5) // uses its own probability
+		ev.NextAction(di, emery.VORCtrl, 0.5) // uses its own probability
 	}
 }
 
@@ -532,6 +577,10 @@ func (ss *Sim) NextAction(mode Modes) {
 func (ss *Sim) TakeNextActions(mode Modes) {
 	ev := ss.Envs.ByMode(mode).(*emery.EmeryEnv)
 	ev.TakeNextActions()
+	ndata := int(ss.Net.Context().NData)
+	curModeDir := ss.Current.Dir(mode.String())
+	di := 0 // todo: get current view
+	curModeDir.StringValue("TrialName", ndata).SetString1D(ev.String(), di)
 }
 
 // NewRun intializes a new Run level of the model.
@@ -546,6 +595,13 @@ func (ss *Sim) NewRun() {
 		ss.Net.OpenWeightsJSON(core.Filename(ss.Config.Run.StartWeights))
 		mpi.Printf("Starting with initial weights from: %s\n", ss.Config.Run.StartWeights)
 	}
+}
+
+// TestAll runs through the full set of testing items
+func (ss *Sim) TestAll() {
+	ss.Envs.ByMode(Test).Init(0)
+	ss.Loops.ResetAndRun(Test)
+	ss.Loops.Mode = Train // important because this is called from Train Run: go back.
 }
 
 //////// Stats
@@ -672,7 +728,7 @@ func (ss *Sim) ConfigStats() {
 	ss.AddStatStd(axon.StatCorSim(ss.Stats, ss.Current, net, Trial, Run, plays...))
 	ss.AddStatStd(axon.StatPrevCorSim(ss.Stats, ss.Current, net, Trial, Run, plays...))
 
-	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer, axon.InputLayer, axon.PulvinarLayer)
+	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer, axon.InputLayer, axon.PulvinarLayer, axon.CNiIOLayer, axon.CNiUpLayer, axon.CNeDnLayer)
 	ss.AddStatStd(axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...))
 
 	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, Run, lays...)
@@ -735,10 +791,10 @@ func (ss *Sim) ConfigStatVis() {
 }
 
 func (ss *Sim) ConfigStatVOR() {
-	statNames := []string{"VORInhib", "VORSlip"}
+	statNames := []string{"VORCtrl", "VORSlip"}
 	statDescs := map[string]string{
-		"VORInhib": "whether VOR was inhibited (1) or not (0)",
-		"VORSlip":  "Max visual slip on VOR engaged trials.",
+		"VORCtrl": "whether VOR was inhibited (1) or not (0)",
+		"VORSlip": "Max visual slip on VOR engaged trials.",
 	}
 	ss.AddStat(func(mode Modes, level Levels, start bool) {
 		if level < Trial {
@@ -766,12 +822,12 @@ func (ss *Sim) ConfigStatVOR() {
 				for di := range ndata {
 					var stat float32
 					switch name {
-					case "VORInhib":
+					case "VORCtrl":
 						es := ev.EmeryState(di)
-						stat = es.CurActions[emery.VORInhib]
+						stat = es.CurActions[emery.VORCtrl]
 					case "VORSlip":
 						es := ev.EmeryState(di)
-						vi := es.CurActions[emery.VORInhib]
+						vi := es.CurActions[emery.VORCtrl]
 						if vi > 0 {
 							stat = math32.NaN()
 						} else {

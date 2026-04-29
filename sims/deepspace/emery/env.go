@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"image"
 
+	"cogentcore.org/core/base/num"
 	"cogentcore.org/core/colors"
 	"cogentcore.org/core/gpu"
 	"cogentcore.org/core/xyz"
@@ -85,6 +86,9 @@ type EmeryEnv struct {
 	// SenseNorms are the normalization factors for each sense (1/typical max).
 	SenseNorms [SensesN]float32
 
+	// SenseGain is a global sensory gain factor.
+	SenseGain float32 `default:"1"`
+
 	// Emerys has the state values for each NData emery.
 	Emerys []EmeryState
 
@@ -93,6 +97,9 @@ type EmeryEnv struct {
 
 	// Cycle tracks cycles, for interval-based updates etc.
 	Cycle env.Counter
+
+	// TestTrial tracks testing trial counter.
+	TestTrial env.Counter
 
 	// Rand is the random number generator for the env.
 	// Created in Init if not already there.
@@ -117,6 +124,7 @@ func (ev *EmeryEnv) Defaults() {
 	ev.Motion.Defaults()
 	ev.Motion.SetSize(8, 2)
 	ev.MotionImage.Size = ev.Camera.Size
+	ev.SenseGain = 1
 	for s := range SensesN {
 		ev.SenseNorms[s] = 1.0 / SenseMaxValues[s]
 	}
@@ -130,6 +138,7 @@ func (ev *EmeryEnv) Config(ndata, ncycles int, dataNode *tensorfs.Node, netGPU *
 	randx.InitSysRand(&ev.Rand, ev.RunRandSeed)
 	ev.NData = ndata
 	ev.Cycle.Max = ncycles
+	ev.TestTrial.Max = len(Tests)
 	ev.Params.TimeBins = ncycles / ev.Params.TimeBinCycles
 	v1vision.ComputeGPU = netGPU
 	ev.Motion.Config(ndata, ev.MotionImage.Size)
@@ -156,8 +165,6 @@ func (ev *EmeryEnv) Config(ndata, ncycles int, dataNode *tensorfs.Node, netGPU *
 		ev.States[a.String()+"Thal"] = tensor.NewFloat32(ndata, ev.Params.TimeBins, 1, 1, ev.Params.PopCodeUnits)
 	}
 
-	ev.States["VORInhib"] = tensor.NewFloat32(ndata, ev.Params.UnitsPer, 1)
-
 	gp := netGPU
 	var dev *gpu.Device
 	var err error
@@ -180,6 +187,7 @@ func (ev *EmeryEnv) Init(run int) {
 	ev.Motion.Init()
 	ev.Cycle.Init()
 	ev.Cycle.Cur = -1
+	ev.TestTrial.Cur = -1
 	if ev.Physics.Model != nil {
 		ev.Physics.InitState()
 		for di := range ev.NData {
@@ -280,8 +288,13 @@ func (ev *EmeryEnv) State(element string) tensor.Values {
 
 // String returns the current state as a string
 func (ev *EmeryEnv) String() string {
-	// return fmt.Sprintf("Pos_%g_%g_Ang_%g_Act_%s", ps.Pos.X, ps.Pos.Y, ang, ev.LastAct.String())
-	return "todo"
+	if ev.Name == "Test" {
+		tst := Tests[ev.TestTrial.Cur]
+		return tst.Name
+	}
+	// todo: current di value
+	di := 0
+	return fmt.Sprintf("Rot_%g_VOR_%v", ev.EmeryState(di).CurActions[Rotate], num.ToBool(ev.EmeryState(di).CurActions[VORCtrl]))
 }
 
 // Step is called to advance the environment state at every cycle.
@@ -346,11 +359,18 @@ func (ev *EmeryEnv) RenderPop(di, bin int, clear bool, snm string, val float32) 
 	ev.Params.PopCode.Encode(&sv.Values, val, ev.Params.PopCodeUnits, popcode.Set)
 }
 
-// RenderControl renders monolithic control input.
+// RenderControl renders control input: first unit is 0 value, second is 1
 func (ev *EmeryEnv) RenderControl(di int, snm string, val float32) {
 	vs := ev.States[snm]
-	sv := vs.SubSpace(di).(*tensor.Float32)
-	tensor.SetAllFloat64(sv, float64(val))
+	zi := float32(1)
+	if val > 0 {
+		zi = 0
+	}
+	for i := range ev.Params.UnitsPer {
+		vs.Set(zi, di, i, 0)
+		vs.Set(1-zi, di, i, 1)
+	}
+
 }
 
 // Compile-time check that implements Env interface

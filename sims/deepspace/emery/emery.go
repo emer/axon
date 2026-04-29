@@ -178,7 +178,7 @@ func (ev *EmeryEnv) DoAction(di int, act Actions, val float32) {
 		jd.AddPlaneXZPos(ang, val, ev.Params.ActionStiff)
 	case EyeH:
 		je := ev.Physics.Builder.ReplicaJoint(ev.Emery.EyeRSocket, di)
-		cvi := ev.EmeryState(di).CurActions[VORInhib]
+		cvi := ev.EmeryState(di).CurActions[VORCtrl]
 		if cvi > 0 { // when inhib, reset to 0
 			je.SetTargetAngle(0, 0, ev.Params.ActionStiff)
 		} else {

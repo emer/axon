@@ -103,7 +103,7 @@ type RunConfig struct { //types:add
 
 	// TestInterval is how often (in epochs) to run through all the test patterns,
 	// in terms of training epochs. Can use 0 or -1 for no testing.
-	TestInterval int `default:"0"`
+	TestInterval int `default:"1"`
 
 	// PCAInterval is how often (in epochs) to compute PCA on hidden
 	// representations to measure variance.

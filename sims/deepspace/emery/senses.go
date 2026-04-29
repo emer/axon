@@ -140,7 +140,7 @@ func (ev *EmeryEnv) RenderSenses() {
 	for s := range VShd { // only render below VShd ground truth
 		for di := range ev.NData {
 			es := ev.EmeryState(di)
-			val := es.SenseNormed[s]
+			val := ev.SenseGain * es.SenseNormed[s]
 			ev.RenderValue(di, s.String(), val)
 		}
 	}

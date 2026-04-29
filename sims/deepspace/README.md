@@ -3,10 +3,6 @@
 
 ## TODO
 
-* std Trial-level nuclear io stats: 
-* MF for sensory channels, connect cross-sensory
-* connect VORInhib into CN layers!
-
 * Current params looking good! test and fix IOspike logic under GPU, also CNeUpLearn.
 
 * simple version of train-time VOR stat.
@@ -15,7 +11,6 @@
 	- sensory without motor: this is the key error signal
 	- omit visual -- this is what will happen with VOR -- need separate input that indicates expected absence of visual input.
 
-	
 	
 ### VOR
 

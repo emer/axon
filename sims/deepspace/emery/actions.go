@@ -26,8 +26,8 @@ const (
 	// EyeH horizontal eye rotation: adds to target angle.
 	EyeH
 
-	// VORInhib is the meta control action to inhibit the VOR reflex
-	VORInhib
+	// VORCtrl is the meta control action to inhibit the VOR reflex or not.
+	VORCtrl
 )
 
 // ActionMaxValues are expected max sensory value, for normalizing.
@@ -42,7 +42,7 @@ var ActionMaxValues = [ActionsN]float32{3, 3, 1, 1}
 func (ev *EmeryEnv) NextAction(di int, act Actions, val float32) {
 	es := ev.EmeryState(di)
 	switch act {
-	case VORInhib:
+	case VORCtrl:
 		vorInhib := randx.BoolP32(ev.Params.VORInhibP, ev.Rand)
 		val = num.FromBool[float32](vorInhib)
 	}
@@ -53,6 +53,12 @@ func (ev *EmeryEnv) NextAction(di int, act Actions, val float32) {
 // prepared NextActions to CurActions, and writing the ActionData that
 // will be consumed with the Params.ActDelay to implement motor delays.
 func (ev *EmeryEnv) TakeNextActions() {
+	ev.SenseGain = 1
+	isTest := ev.Name == "Test"
+	if isTest && ev.TestTrial.Cur < 0 {
+		ev.NextTest()
+		ev.TestSetSenseGain()
+	}
 	for di := range ev.NData {
 		es := ev.EmeryState(di)
 		es.InitMax()
@@ -71,7 +77,7 @@ func (ev *EmeryEnv) TakeNextActions() {
 func (ev *EmeryEnv) TakeAction(di int, act Actions, val float32) {
 	es := ev.EmeryState(di)
 	switch act {
-	case VORInhib:
+	case VORCtrl:
 		vorInhib := randx.BoolP32(ev.Params.VORInhibP, ev.Rand)
 		val = num.FromBool[float32](vorInhib)
 	}
@@ -132,7 +138,7 @@ func (ev *EmeryEnv) renderAction(di int, act Actions, next bool) {
 		name += "Next"
 	}
 	switch act {
-	case VORInhib:
+	case VORCtrl:
 		ev.RenderControl(di, name, val)
 	default:
 		val /= ActionMaxValues[act]

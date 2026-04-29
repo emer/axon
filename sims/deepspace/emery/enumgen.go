@@ -15,11 +15,11 @@ const ActionsN Actions = 4
 
 //gosl:end
 
-var _ActionsValueMap = map[string]Actions{`Rotate`: 0, `Forward`: 1, `EyeH`: 2, `VORInhib`: 3}
+var _ActionsValueMap = map[string]Actions{`Rotate`: 0, `Forward`: 1, `EyeH`: 2, `VORCtrl`: 3}
 
-var _ActionsDescMap = map[Actions]string{0: `Rotate is overall body rotation. Positive or negative for left vs. right.`, 1: `Forward moving forward or backward.`, 2: `EyeH horizontal eye rotation: adds to target angle.`, 3: `VORInhib is the meta control action to inhibit the VOR reflex`}
+var _ActionsDescMap = map[Actions]string{0: `Rotate is overall body rotation. Positive or negative for left vs. right.`, 1: `Forward moving forward or backward.`, 2: `EyeH horizontal eye rotation: adds to target angle.`, 3: `VORCtrl is the meta control action to inhibit the VOR reflex or not.`}
 
-var _ActionsMap = map[Actions]string{0: `Rotate`, 1: `Forward`, 2: `EyeH`, 3: `VORInhib`}
+var _ActionsMap = map[Actions]string{0: `Rotate`, 1: `Forward`, 2: `EyeH`, 3: `VORCtrl`}
 
 // String returns the string representation of this Actions value.
 func (i Actions) String() string { return enums.String(i, _ActionsMap) }

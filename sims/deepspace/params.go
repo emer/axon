@@ -32,7 +32,7 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".MFIn", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.05 // 0.2 > 0.13, 0.2 accurate
+				ly.Inhib.ActAvg.Nominal = 0.02 // 0.02 > 0.05
 				ly.Inhib.Layer.Gi = 0.8        //
 			}},
 		{Sel: ".RateIn", Doc: "",
@@ -70,14 +70,14 @@ var LayerParams = axon.LayerSheets{
 		{Sel: ".IOLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.IO.ErrThr = 0.01    // with 1.5 gain, not too important
-				ly.IO.InhibGain = 1.5  // 1.5 > lower
+				ly.IO.InhibGain = 1.8  // 1.5 > lower
 				ly.IO.TimeOff = 70     // 70 > 60,80
 				ly.IO.EfferentOff = 40 // 40 > 30, 50
 				ly.IO.GTau = 20
 			}},
 		{Sel: "#VMhvIODn", Doc: "visual motion is a bit later?",
 			Set: func(ly *axon.LayerParams) {
-				ly.IO.TimeOff = 90
+				ly.IO.TimeOff = 100 // 100 > 90, 110
 			}},
 		{Sel: ".CNiIOLayer", Doc: "",
 			Set: func(ly *axon.LayerParams) {
@@ -147,10 +147,6 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 0.1 // 0.1 == 0.15 > 0.05
 			}},
-		{Sel: ".MotorInhib", Doc: "inhibition",
-			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 4
-			}},
 		{Sel: ".FromAct", Doc: "strong from act",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 2
@@ -184,6 +180,14 @@ var PathParams = axon.PathSheets{
 				pt.Learn.LRate.Base = 0.002 // 0.002 > higher for IO .001
 			}},
 		{Sel: ".MFToCNeDn", Doc: "initial weights",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 4
+			}},
+		{Sel: ".MotorInhib", Doc: "inhibition",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 4
+			}},
+		{Sel: ".VORCtrlToCN", Doc: "inhibition to CN",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 4
 			}},
