@@ -150,7 +150,7 @@ const (
 	// and inhibit it in the corresponding CNeUpLayer
 	CNiIOLayer
 
-	// CNiUpLayer represents the cerebellar nuclei inhibitory upgoing
+	// CNiUpLayer represents the cerebellar nuclei inhibitory upbound
 	// output neurons, which learn from IOLayer error signals to predict
 	// specific sensory inputs based on motor commands, thereby cancelling
 	// the effects of self-generated motor commands.

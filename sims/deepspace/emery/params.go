@@ -22,12 +22,25 @@ type Params struct {
 	// Probability of VOR inhibition.
 	VORInhibP float32
 
+	// VORGain is the built-in gain factor for eye movement compensation for
+	// vestibular ocular reflex (VOR) prediction signals
+	VORGain float32 `default:"1.5"`
+
+	// VORDecay is the decay divisor factor for VOR motor commands.
+	// Divides the integral of eye muscle commands.
+	VORDecay float32 `default:"2"`
+
+	// VORActDelay is the delay in cycles (ms) from when an action is initated
+	// til when it is actually applied to the physics to perform the action,
+	// for VOR eye movements.
+	VORActDelay int `default:"1"`
+
 	// ActDelay is the delay in cycles (ms) from when an action is initated
 	// til when it is actually applied to the physics to perform the action.
 	ActDelay int `default:"10"`
 
 	// MaxRotate is maximum rotation angle magnitude per action, in degrees.
-	MaxRotate float32
+	MaxRotate float32 `default:"5"`
 
 	// VisMotionInterval is interval between vis motion computation in cycles.
 	// This is a very expensive computation in general so spacing it out.
@@ -73,6 +86,9 @@ func (pr *Params) Defaults() {
 	pr.Delays.Defaults()
 	pr.LeftEye = false
 	pr.VORInhibP = 1
+	pr.VORGain = 1.8  // 1.8 > 2
+	pr.VORDecay = 1.8 // 1.8 > 2
+	pr.VORActDelay = 1
 	pr.ActDelay = 10
 	pr.MaxRotate = 5
 	pr.VisMotionInterval = 5

@@ -192,6 +192,7 @@ func (ev *EmeryEnv) Init(run int) {
 		ev.Physics.InitState()
 		for di := range ev.NData {
 			ev.SetEmeryInitConfig(di)
+			ev.EmeryState(di).Init()
 		}
 		physics.ToGPU(physics.DynamicsVar)
 	}

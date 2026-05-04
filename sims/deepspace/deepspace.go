@@ -279,6 +279,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	}
 
 	//////// cerebellum:
+
 	// cycles-20 is sufficient to allow time for motor to engage
 	actionEnv := cycles - 20
 	vsIOUp, vsCNiIOUp, vsCNiUp, vsCNeUp := net.AddNuclearCNUp(vsHV, rotAct, actionEnv, space)
@@ -290,7 +291,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	vmIODn, vmCNiIODn, vmCNeDn := net.AddNuclearCNDn(vmHV, rotAct, actionEnv, space)
 	_, _ = vmIODn, vmCNeDn
 
-	// upgoing adaptive filter model
+	// upbound adaptive filter model
 	pt = net.ConnectLayers(vsHV, vsCNeUp, p1to1, axon.ForwardPath).AddClass("SenseToCNeUp")
 	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
 
@@ -302,13 +303,15 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(rotActMF, vsCNeDn, full, axon.CNIOPath).AddClass("MF", "MFToCNeDn")
 
 	net.ConnectLayers(rotActMF, vmCNiIODn, full, axon.CNIOPath).AddClass("MF", "MFToCNiIO")
+	net.ConnectLayers(rotActMF, vmCNeDn, full, axon.CNIOPath).AddClass("MF", "MFToCNeDn")
 
 	// cross-modality input: vm -> vs and vs -> vm
 	// vm->vs beneficial even if vm happens later.. not clear why
 	net.ConnectLayers(vmMF, vsCNiIOUp, full, axon.CNIOPath).AddClass("MF", "MFToCNiIO")
 	net.ConnectLayers(vmMF, vsCNiUp, full, axon.CNIOPath).AddClass("MF", "MFToCNiUp")
-	net.ConnectLayers(vmMF, vsCNiIODn, full, axon.CNIOPath).AddClass("MF", "MFToCNiIO")
-	net.ConnectLayers(vmMF, vsCNeDn, full, axon.CNIOPath).AddClass("MF", "MFToCNiUp")
+	// but this interferes with VOR function -- bad!!
+	// net.ConnectLayers(vmMF, vsCNiIODn, full, axon.CNIOPath).AddClass("MF", "MFToCNiIO")
+	// net.ConnectLayers(vmMF, vsCNeDn, full, axon.CNIOPath).AddClass("MF", "MFToCNiUp")
 
 	net.ConnectLayers(vsMF, vmCNiIODn, full, axon.CNIOPath).AddClass("MF", "MFToCNiIO")
 	net.ConnectLayers(vsMF, vmCNeDn, full, axon.CNIOPath).AddClass("MF", "MFToCNiUp")
@@ -318,13 +321,17 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
 	pt = net.ConnectLayers(vorCtrl, vmCNeDn, firstPool, axon.InhibPath).AddClass("VORCtrlToCN")
 	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
+	pt = net.ConnectLayers(vorCtrl, vmIODn, firstPool, axon.InhibPath).AddClass("VORCtrlToCN")
+	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
 
 	// s1
 	// net.ConnectLayers(s1ct, vsCNiIOUp, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiIOUp")
 	// net.ConnectLayers(s1ct, vsCNiUp, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiUp")
 	// net.ConnectLayers(s1ct, vsCNiIODn, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiIODn")
 
-	pt = net.ConnectLayers(vmCNeDn, eyeH, p1to1, axon.ForwardPath).AddClass("Reflex")
+	// note: it is critical that this is from vs, because vm will be zeroed!
+	// and indeed, the VORCtrl inhibits this when VOR is active.
+	pt = net.ConnectLayers(vsCNeDn, eyeH, p1to1, axon.ForwardPath).AddClass("Reflex")
 	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
 
 	// position
@@ -416,6 +423,7 @@ func (ss *Sim) ConfigLoops() {
 		func(mode enums.Enum) { ss.TakeNextActions(mode.(Modes)) },
 	)
 	ls.Stacks[Train].OnInit.Add("Init", ss.Init)
+	ls.Stacks[Test].OnInit.Add("Init", ss.TestInit)
 	ls.Loop(Train, Run).OnStart.Add("NewRun", ss.NewRun)
 
 	for mode, st := range ls.Stacks {
@@ -461,8 +469,12 @@ func (ss *Sim) ConfigLoops() {
 		axon.LooperUpdateNetView(ls, Cycle, Trial, ss.NetViewUpdater)
 
 		ls.Stacks[Train].OnInit.Add("GUI-Init", ss.GUI.UpdateWindow)
+		ls.Stacks[Test].OnInit.Add("GUI-Init", ss.GUI.UpdateWindow)
 		ls.Loop(Train, Trial).OnEnd.Add("UpdateEnvGUI", func() {
 			ss.UpdateEnvGUI(Train)
+		})
+		ls.Loop(Test, Cycle).OnEnd.Add("UpdateEnvGUI", func() {
+			ss.UpdateEnvGUI(Test)
 		})
 	}
 
@@ -597,6 +609,13 @@ func (ss *Sim) NewRun() {
 	}
 }
 
+// TestInit initializes the test process
+func (ss *Sim) TestInit() {
+	run := ss.Loops.Loop(Train, Run).Counter.Cur
+	ss.Envs.ByMode(Test).Init(run)
+	ss.Net.InitActs()
+}
+
 // TestAll runs through the full set of testing items
 func (ss *Sim) TestAll() {
 	ss.Envs.ByMode(Test).Init(0)
@@ -691,6 +710,8 @@ func (ss *Sim) StatsInit() {
 		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Trial))
 		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Cycle))
 		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Run))
+		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Test, Cycle))
+		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Test, Trial))
 		tbs.SelectTabIndex(idx)
 	}
 }
@@ -791,10 +812,11 @@ func (ss *Sim) ConfigStatVis() {
 }
 
 func (ss *Sim) ConfigStatVOR() {
-	statNames := []string{"VORCtrl", "VORSlip"}
+	statNames := []string{"VORCtrl", "VORSlip", "VORiSlip"}
 	statDescs := map[string]string{
-		"VORCtrl": "whether VOR was inhibited (1) or not (0)",
-		"VORSlip": "Max visual slip on VOR engaged trials.",
+		"VORCtrl":  "whether VOR was inhibited (1) or not (0)",
+		"VORSlip":  "Max visual slip on VOR engaged trials.",
+		"VORiSlip": "Max visual slip on VOR inhibited trials -- for reference.",
 	}
 	ss.AddStat(func(mode Modes, level Levels, start bool) {
 		if level < Trial {
@@ -812,7 +834,10 @@ func (ss *Sim) ConfigStatVOR() {
 				tsr.SetNumRows(0)
 				plot.SetFirstStyler(tsr, func(s *plot.Style) {
 					s.Range.SetMin(0).SetMax(1)
-					s.On = true
+					if name != "VORCtrl" {
+						s.On = true
+						s.RightY = true
+					}
 				})
 				metadata.SetDoc(tsr, statDescs[name])
 				continue
@@ -820,18 +845,24 @@ func (ss *Sim) ConfigStatVOR() {
 			switch level {
 			case Trial:
 				for di := range ndata {
+					es := ev.EmeryState(di)
 					var stat float32
 					switch name {
 					case "VORCtrl":
-						es := ev.EmeryState(di)
 						stat = es.CurActions[emery.VORCtrl]
 					case "VORSlip":
-						es := ev.EmeryState(di)
 						vi := es.CurActions[emery.VORCtrl]
 						if vi > 0 {
 							stat = math32.NaN()
 						} else {
-							stat = ev.EmeryState(di).SenseMax[emery.VMhv]
+							stat = math32.Abs(es.SenseNormed[emery.VMhp] - es.SenseStart[emery.VMhp])
+						}
+					case "VORiSlip":
+						vi := es.CurActions[emery.VORCtrl]
+						if vi > 0 {
+							stat = math32.Abs(es.SenseNormed[emery.VMhp] - es.SenseStart[emery.VMhp])
+						} else {
+							stat = math32.NaN()
 						}
 					}
 					curModeDir.Float64(name, ndata).SetFloat1D(float64(stat), di)

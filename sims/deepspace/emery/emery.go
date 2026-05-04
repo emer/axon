@@ -142,6 +142,9 @@ type EmeryState struct {
 	// SenseMax has the max (on current action epoch) of SenseNormed.
 	SenseMax [SensesN]float32
 
+	// SenseStart are starting sensory values, at start of action envelope.
+	SenseStart [SensesN]float32
+
 	// current captured images
 	EyeRImage, EyeLImage image.Image
 
@@ -152,11 +155,37 @@ type EmeryState struct {
 	// CurActions are the current action values, updated by TakeNextAction,
 	// and rendered depending on RenderNextAction value.
 	CurActions [ActionsN]float32
+
+	// ActionIntegs are the current action integral values, integrating
+	// motor signals to drive decay.
+	ActionIntegs [ActionsN]float32
+}
+
+func (es *EmeryState) Init() {
+	for s := range SensesN {
+		es.SenseValues[s] = 0
+		es.SenseAverages[s] = 0
+		es.SenseNormed[s] = 0
+		es.SenseMax[s] = 0
+		es.SenseStart[s] = 0
+	}
+	for a := range ActionsN {
+		es.NextActions[a] = 0
+		es.CurActions[a] = 0
+		es.ActionIntegs[a] = 0
+	}
 }
 
 func (es *EmeryState) InitMax() {
 	for s := range SensesN {
 		es.SenseMax[s] = 0
+	}
+}
+
+// SenseStarts records current SenseNormed as SenseStart
+func (es *EmeryState) SenseStarts() {
+	for s := range SensesN {
+		es.SenseStart[s] = es.SenseNormed[s]
 	}
 }
 

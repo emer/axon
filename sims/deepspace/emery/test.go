@@ -31,9 +31,11 @@ type Test struct {
 // Tests are a list of test conditions to run in the testing
 // version of the environment.
 var Tests = []Test{
-	{"RotR_VOR0", Rotate, 3, VORCtrl, 0, 1, false},
-	{"RotR_VOR1", Rotate, 3, VORCtrl, 1, 1, false},
-	{"RotR_VOR0_Err10", Rotate, 0.3, VORCtrl, 0, 10, true},
+	{"RotL_VOR_On", Rotate, -3, VORCtrl, 0, 1, false}, // first one is just to prime
+	{"RotL_VOR_On", Rotate, -3, VORCtrl, 0, 1, false},
+	{"RotL_VOR_Inh", Rotate, -3, VORCtrl, 1, 1, false},
+	{"RotL_VOR_Inh", Rotate, -3, VORCtrl, 1, 1, false},
+	{"RotL_VOR0_Err10", Rotate, -0.3, VORCtrl, 0, 10, true},
 }
 
 // NextTest configures the next test condition, to be called

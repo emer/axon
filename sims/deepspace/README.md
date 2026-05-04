@@ -5,6 +5,8 @@
 
 * Current params looking good! test and fix IOspike logic under GPU, also CNeUpLearn.
 
+* separate VM for VOR vs. not, with differential VOR inhib control -- the case with VOR active should have 0 net error -- to extent it does have non-zero deviation, then it could modulate the error signal / learning rate on VOR?  This is in addition to the basic VS driver, which doesn't ever change. So in fact this is an essential additional factor!!
+
 * simple version of train-time VOR stat.
 
 * test env that presents:

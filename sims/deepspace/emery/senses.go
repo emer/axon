@@ -35,18 +35,21 @@ const (
 
 	// VShla is vestibular linear acceleration.
 	VShla
+
+	// VMhp is full-field visual position, integrated from VMhv
+	VMhp
 )
 
 // IsVestibular returns true if given sense is vestibular, else visual
 func (s Senses) IsVestibular() bool {
-	if s == VMhv {
+	if s == VMhv || s == VMhp {
 		return false
 	}
 	return true
 }
 
 // SenseMaxValues are expected max sensory value, for normalizing.
-var SenseMaxValues = [SensesN]float32{.2, .2, 180, 10, 1, 10}
+var SenseMaxValues = [SensesN]float32{.2, .2, 180, 10, 1, 10, 1}
 
 // ConfigSensoryDelays sets the sensory delays for each sense.
 func (ev *EmeryEnv) ConfigSensoryDelays() {
@@ -75,15 +78,21 @@ func (ev *EmeryEnv) RecordSenses() {
 		for sense := range SensesN {
 			snm := sense.String()
 			val := es.SenseValues[sense]
-			if sense.IsVestibular() {
+			switch {
+			case sense.IsVestibular():
 				for t := range ev.Params.VisMotionInterval {
 					val += ev.ReadData(dir, di, snm, t)
 				}
 				val /= float32(1 + float32(ev.Params.VisMotionInterval))
+			case sense == VMhp:
+				vv := es.SenseValues[VMhv]
+				val += vv
+				es.SenseValues[sense] = val
 			}
 			ev.WriteData(dir, di, snm, val)
 		}
 	}
+	ev.AverageSenses()
 }
 
 // VisMotion updates the visual motion value based on last action.
@@ -120,8 +129,12 @@ func (ev *EmeryEnv) AverageSenses() {
 			avg /= float64(ev.Params.AvgWindow)
 			es.SenseAverages[s] = float32(avg)
 			nrm := float32(avg) * ev.SenseNorms[s]
-			if math32.Abs(nrm) > 1 {
-				nrm = math32.Sign(nrm)
+			if s < VMhp {
+				if math32.Abs(nrm) > 1 { // cap at 1
+					nrm = math32.Sign(nrm)
+				}
+				// } else {
+				// 	fmt.Println(ev.Cycle.Cur, nrm, es.SenseNormed[VMhv])
 			}
 			es.SenseNormed[s] = nrm
 			es.SenseMax[s] = max(es.SenseMax[s], math32.Abs(nrm))
@@ -136,7 +149,6 @@ func (ev *EmeryEnv) AverageSenses() {
 
 // RenderSenses renders sensory states for current sensory values.
 func (ev *EmeryEnv) RenderSenses() {
-	ev.AverageSenses()
 	for s := range VShd { // only render below VShd ground truth
 		for di := range ev.NData {
 			es := ev.EmeryState(di)

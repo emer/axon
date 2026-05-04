@@ -42,6 +42,11 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.Layer.On.SetBool(false)
 				ly.Inhib.ActAvg.Nominal = 0.2
 			}},
+		{Sel: ".MotorOut", Doc: "",
+			Set: func(ly *axon.LayerParams) {
+				ly.Acts.Decay.LearnCa = 1
+				ly.Acts.Decay.Glong = 1
+			}},
 		{Sel: ".CTLayer", Doc: "CT NMDA gbar factor is key",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.12 // CT in general more active
@@ -185,11 +190,11 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".MotorInhib", Doc: "inhibition",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 4
+				pt.PathScale.Abs = 10
 			}},
 		{Sel: ".VORCtrlToCN", Doc: "inhibition to CN",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 4
+				pt.PathScale.Abs = 10
 			}},
 
 		/* not used

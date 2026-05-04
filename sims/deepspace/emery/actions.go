@@ -6,6 +6,7 @@ package emery
 
 import (
 	"cogentcore.org/core/base/num"
+	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/base/randx"
 )
 
@@ -27,6 +28,9 @@ const (
 	EyeH
 
 	// VORCtrl is the meta control action to inhibit the VOR reflex or not.
+	// 0 = not inhibt (eyes move), 1 = inhibit VOR (eyes remain fixed)
+	// if the value is not 0 or 1, then it is generated probabilistically
+	// according to Params.VORInhibP.
 	VORCtrl
 )
 
@@ -43,8 +47,10 @@ func (ev *EmeryEnv) NextAction(di int, act Actions, val float32) {
 	es := ev.EmeryState(di)
 	switch act {
 	case VORCtrl:
-		vorInhib := randx.BoolP32(ev.Params.VORInhibP, ev.Rand)
-		val = num.FromBool[float32](vorInhib)
+		if val != 0 && val != 1 {
+			vorInhib := randx.BoolP32(ev.Params.VORInhibP, ev.Rand)
+			val = num.FromBool[float32](vorInhib)
+		}
 	}
 	es.NextActions[act] = val
 }
@@ -65,21 +71,26 @@ func (ev *EmeryEnv) TakeNextActions() {
 		for act := range ActionsN {
 			val := es.NextActions[act]
 			es.CurActions[act] = val
+			es.ActionIntegs[act] = 0                           // todo: do this more organically at interval
 			ev.WriteData(ev.ActionData, di, act.String(), val) // goes in current = 0
 		}
+		es.SenseStarts() // todo: more organic
 	}
 	ev.RenderCurActions() // efferent copy of action. also called in Step()
 }
 
 // TakeAction specifies the value for a current action,
 // for given data parallel agent, for actions that are updated online,
-// as from network state.
+// as from network state. Gain factors can be applied here.
 func (ev *EmeryEnv) TakeAction(di int, act Actions, val float32) {
 	es := ev.EmeryState(di)
 	switch act {
-	case VORCtrl:
-		vorInhib := randx.BoolP32(ev.Params.VORInhibP, ev.Rand)
-		val = num.FromBool[float32](vorInhib)
+	case EyeH:
+		sum := es.ActionIntegs[act]
+		es.ActionIntegs[act] += math32.Abs(val)
+		dk := math32.FastExp(-sum / ev.Params.VORDecay)
+		// fmt.Println("eyeh:", val, sum, dk)
+		val *= ev.Params.VORGain * dk
 	}
 	es.CurActions[act] = val
 	ev.WriteData(ev.ActionData, di, act.String(), val) // goes in current = 0
@@ -88,9 +99,14 @@ func (ev *EmeryEnv) TakeAction(di int, act Actions, val float32) {
 // DoActions actually performs current actions in physics.
 func (ev *EmeryEnv) DoActions() {
 	for di := range ev.NData {
+		delay := ev.Params.ActDelay
 		for act := range ActionsN {
-			val := ev.ReadData(ev.ActionData, di, act.String(), ev.Params.ActDelay) // 0 = last written
-			ev.DoAction(di, act, val)                                               // in emery.go
+			switch act {
+			case EyeH:
+				delay = ev.Params.ActDelay
+			}
+			val := ev.ReadData(ev.ActionData, di, act.String(), delay) // 0 = last written
+			ev.DoAction(di, act, val)                                  // in emery.go
 		}
 	}
 }

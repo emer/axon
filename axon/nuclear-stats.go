@@ -186,7 +186,7 @@ func NuclearReadUp(prefix string, currentDir *tensorfs.Node, net *Network, mode 
 
 // StatNuclearCycleUp records key Nuclear cerebellum state variables from
 // the network, at the cycle level (every readInterval cycles),
-// for Up upgoing (adaptive filtering) layers.
+// for Up upbound (adaptive filtering) layers.
 // for given layer pool (0 = first sub-pool, 1 = second..),
 // Must call NuclearReadUp prior to record data.
 // prefix is from the specific sensory layer driving given IO, that precedes
@@ -272,7 +272,7 @@ func NuclearReadDn(prefix string, currentDir *tensorfs.Node, net *Network, mode 
 
 // StatNuclearCycleDn records key Nuclear cerebellum state variables from
 // the network, at the cycle level (every readInterval cycles),
-// for Dn downgoing (forward model) layers.
+// for Dn downbound (forward model) layers.
 // for given layer pool (0 = first sub-pool, 1 = second..),
 // Must call NuclearReadDn prior to record data.
 // prefix is from the specific sensory layer driving given IO, that precedes
@@ -321,7 +321,7 @@ func StatNuclearCycleDn(prefix string, readInterval, pool int, statsDir, current
 
 // StatNuclearTrialUp records key Nuclear cerebellum state variables from
 // the network, at the trial level and up,
-// for Up upgoing (adaptive filtering) layers.
+// for Up upbound (adaptive filtering) layers.
 // for given layer pool (0 = first sub-pool, 1 = second..),
 // prefix is from the specific sensory layer driving given IO, that precedes
 // the IO layer name.
@@ -332,7 +332,7 @@ func StatNuclearTrialUp(prefix string, pool int, statsDir, currentDir *tensorfs.
 	statNames := []string{"CNeUpMax", "IOErrs"}
 	statDescs := map[string]string{
 		"CNeUpMax": "Maximum activity across the trial for CNeUp Adaptive Filtering layer. Should be around .5 (ActTarget) in general",
-		"IOErrs":   "Average number of IO error spikes across trials (encoded in TimePeak neuron variable) -- for upgoing",
+		"IOErrs":   "Average number of IO error spikes across trials (encoded in TimePeak neuron variable) -- for upbound",
 	}
 	levels := make([]enums.Enum, 10) // should be enough
 	return func(mode enums.Enum, level enums.Enum, start bool) {
@@ -385,7 +385,7 @@ func StatNuclearTrialUp(prefix string, pool int, statsDir, currentDir *tensorfs.
 
 // StatNuclearTrialDn records key Nuclear cerebellum state variables from
 // the network, at the trial level and up,
-// for Dn downgoing (forward model) layers.
+// for Dn downbound (forward model) layers.
 // for given layer pool (0 = first sub-pool, 1 = second..),
 // prefix is from the specific sensory layer driving given IO, that precedes
 // the IO layer name.
@@ -395,7 +395,7 @@ func StatNuclearTrialDn(prefix string, pool int, statsDir, currentDir *tensorfs.
 	ioLy := net.LayerByName(prefix + "IODn")
 	statNames := []string{"IOErrs"}
 	statDescs := map[string]string{
-		"IOErrs": "Average number of IO error spikes across trials (encoded in TimePeak neuron variable) -- for downgoing",
+		"IOErrs": "Average number of IO error spikes across trials (encoded in TimePeak neuron variable) -- for downbound",
 	}
 	levels := make([]enums.Enum, 10) // should be enough
 	return func(mode enums.Enum, level enums.Enum, start bool) {
