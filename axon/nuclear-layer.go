@@ -44,7 +44,7 @@ type NuclearParams struct {
 	GeBaseLRate float32 `default:"0.01"`
 
 	// CNeDnGiThr is the threshold on integrated GiSyn for triggering learning
-	// in CNeCn excitatory downgoing forward-model neurons, which are disinhibited
+	// in CNeCn excitatory downbound forward-model neurons, which are disinhibited
 	// by CNiIO -> CNiDn. Lower values are more stringent (more disinhibition).
 	CNeDnGiThr float32 `default:"0.2"`
 

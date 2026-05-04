@@ -8,11 +8,15 @@ import "github.com/emer/emergent/v2/paths"
 
 // AddNuclearCNUp adds Nuclear model cerebellar upbound nucleus
 // for adaptive filtering of given sensory input layer,
-// from which they copy their shape. actEff layer is the efferent
-// copy of the action layer, which sends a full modulatory projection.
+// from which they copy their shape. if name is empty, then copied
+// from the sense layer name, otherwise prefix for CN layers.
+// actEff layer is the efferent copy of the action layer,
+// which sends a full modulatory projection.
 // actEnv is the default ActionEnv environment timing value in cycles.
-func (net *Network) AddNuclearCNUp(sense, actEff *Layer, actEnv int, space float32) (ioUp, cniIOUp, cniUp, cneUp *Layer) {
-	name := sense.Name
+func (net *Network) AddNuclearCNUp(sense, actEff *Layer, name, doc string, actEnv int, space float32) (ioUp, cniIOUp, cniUp, cneUp *Layer) {
+	if name == "" {
+		name = sense.Name
+	}
 	shp := sense.Shape
 	if shp.NumDims() == 2 {
 		ioUp = net.AddLayer2D(name+"IOUp", IOLayer, shp.DimSize(0), shp.DimSize(1))
@@ -25,6 +29,11 @@ func (net *Network) AddNuclearCNUp(sense, actEff *Layer, actEnv int, space float
 		cniUp = net.AddLayer4D(name+"CNiUp", CNiUpLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
 		cneUp = net.AddLayer4D(name+"CNeUp", CNeUpLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
 	}
+	ioUp.DocPrepend(doc)
+	cniIOUp.DocPrepend(doc)
+	cniUp.DocPrepend(doc)
+	cneUp.DocPrepend(doc)
+
 	cniIOUp.SetBuildConfig("IOLayName", ioUp.Name)
 	cniUp.SetBuildConfig("IOLayName", ioUp.Name)
 	cneUp.SetBuildConfig("IOLayName", ioUp.Name)
@@ -72,11 +81,15 @@ func (net *Network) AddNuclearCNUp(sense, actEff *Layer, actEnv int, space float
 
 // AddNuclearCNDn adds Nuclear model cerebellar downbound nucleus
 // for forward model learning from given sensory input layer,
-// from which they copy their shape. actEff layer is the efferent
-// copy of the action layer, which sends a full modulatory projection.
+// from which they copy their shape. if name is empty, then copied
+// from the sense layer name, otherwise prefix for CN layers.
+// actEff layer is the efferent copy of the action layer, which sends
+// a full modulatory projection.
 // actEnv is the default ActionEnv environment timing value in cycles.
-func (net *Network) AddNuclearCNDn(sense, actEff *Layer, actEnv int, space float32) (ioDn, cniIODn, cneDn *Layer) {
-	name := sense.Name
+func (net *Network) AddNuclearCNDn(sense, actEff *Layer, name, doc string, actEnv int, space float32) (ioDn, cniIODn, cneDn *Layer) {
+	if name == "" {
+		name = sense.Name
+	}
 	shp := sense.Shape
 	if shp.NumDims() == 2 {
 		ioDn = net.AddLayer2D(name+"IODn", IOLayer, shp.DimSize(0), shp.DimSize(1))
@@ -87,6 +100,10 @@ func (net *Network) AddNuclearCNDn(sense, actEff *Layer, actEnv int, space float
 		cniIODn = net.AddLayer4D(name+"CNiIODn", CNiIOLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
 		cneDn = net.AddLayer4D(name+"CNeDn", CNeDnLayer, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
 	}
+	ioDn.DocPrepend(doc)
+	cniIODn.DocPrepend(doc)
+	cneDn.DocPrepend(doc)
+
 	cniIODn.SetBuildConfig("IOLayName", ioDn.Name)
 	cneDn.SetBuildConfig("IOLayName", ioDn.Name)
 	cniIODn.AddClass("CNLayer", "CNiLayer")

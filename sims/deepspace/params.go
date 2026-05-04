@@ -80,7 +80,7 @@ var LayerParams = axon.LayerSheets{
 				ly.IO.EfferentOff = 40 // 40 > 30, 50
 				ly.IO.GTau = 20
 			}},
-		{Sel: "#VMhvIODn", Doc: "visual motion is a bit later?",
+		{Sel: "#VMhvrIODn", Doc: "visual motion is a bit later?",
 			Set: func(ly *axon.LayerParams) {
 				ly.IO.TimeOff = 100 // 100 > 90, 110
 			}},
