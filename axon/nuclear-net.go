@@ -13,7 +13,7 @@ import "github.com/emer/emergent/v2/paths"
 // actEff layer is the efferent copy of the action layer,
 // which sends a full modulatory projection.
 // actEnv is the default ActionEnv environment timing value in cycles.
-func (net *Network) AddNuclearCNUp(sense, actEff *Layer, name, doc string, actEnv int, space float32) (ioUp, cniIOUp, cniUp, cneUp *Layer) {
+func (net *Network) AddNuclearCNUp(sense, actEff *Layer, name, class, doc string, actEnv int, space float32) (ioUp, cniIOUp, cniUp, cneUp *Layer) {
 	if name == "" {
 		name = sense.Name
 	}
@@ -33,6 +33,12 @@ func (net *Network) AddNuclearCNUp(sense, actEff *Layer, name, doc string, actEn
 	cniIOUp.DocPrepend(doc)
 	cniUp.DocPrepend(doc)
 	cneUp.DocPrepend(doc)
+	if class != "" {
+		ioUp.AddClass(class + "IOUp")
+		cniIOUp.AddClass(class + "CNiIOUp")
+		cniUp.AddClass(class + "CNiUp")
+		cneUp.AddClass(class + "CNeUp")
+	}
 
 	cniIOUp.SetBuildConfig("IOLayName", ioUp.Name)
 	cniUp.SetBuildConfig("IOLayName", ioUp.Name)
@@ -86,7 +92,7 @@ func (net *Network) AddNuclearCNUp(sense, actEff *Layer, name, doc string, actEn
 // actEff layer is the efferent copy of the action layer, which sends
 // a full modulatory projection.
 // actEnv is the default ActionEnv environment timing value in cycles.
-func (net *Network) AddNuclearCNDn(sense, actEff *Layer, name, doc string, actEnv int, space float32) (ioDn, cniIODn, cneDn *Layer) {
+func (net *Network) AddNuclearCNDn(sense, actEff *Layer, name, class, doc string, actEnv int, space float32) (ioDn, cniIODn, cneDn *Layer) {
 	if name == "" {
 		name = sense.Name
 	}
@@ -103,6 +109,11 @@ func (net *Network) AddNuclearCNDn(sense, actEff *Layer, name, doc string, actEn
 	ioDn.DocPrepend(doc)
 	cniIODn.DocPrepend(doc)
 	cneDn.DocPrepend(doc)
+	if class != "" {
+		ioDn.AddClass(class + "IODn")
+		cniIODn.AddClass(class + "CNiIODn")
+		cneDn.AddClass(class + "CNeDn")
+	}
 
 	cniIODn.SetBuildConfig("IOLayName", ioDn.Name)
 	cneDn.SetBuildConfig("IOLayName", ioDn.Name)

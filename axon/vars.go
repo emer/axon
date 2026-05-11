@@ -166,7 +166,7 @@ var (
 	// to handle larger networks.
 	// [NSyns][Data][Vars]; NSyns = [Layer][SendPaths][SendNeurons][Syns]
 	//gosl:dims 3
-	//gosl:nbuffs 7
+	//gosl:nbuffs 6
 	SynapseTraces *tensor.Float32
 )
 

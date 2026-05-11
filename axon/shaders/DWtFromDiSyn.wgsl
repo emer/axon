@@ -29,8 +29,6 @@ var<storage, read_write> SynapseTraces3: array<f32>;
 var<storage, read_write> SynapseTraces4: array<f32>;
 @group(3) @binding(8)
 var<storage, read_write> SynapseTraces5: array<f32>;
-@group(3) @binding(9)
-var<storage, read_write> SynapseTraces6: array<f32>;
 
 alias GPUVars = i32;
 
@@ -62,11 +60,8 @@ fn SynapseTracesGet(ix: u32) -> f32 {
 	case u32(4): {
 		return SynapseTraces4[ix - 2147483616];
 	}
-	case u32(5): {
-		return SynapseTraces5[ix - 2684354520];
-	}
 	default: {
-		return SynapseTraces6[ix - 3221225424];
+		return SynapseTraces5[ix - 2684354520];
 	}
 	}
 }
@@ -89,11 +84,8 @@ fn SynapseTracesSet(vl: f32, ix: u32) {
 	case u32(4): {
 		SynapseTraces4[ix - 2147483616] = vl;
 	}
-	case u32(5): {
-		SynapseTraces5[ix - 2684354520] = vl;
-	}
 	default: {
-		SynapseTraces6[ix - 3221225424] = vl;
+		SynapseTraces5[ix - 2684354520] = vl;
 	}
 	}
 }
@@ -116,11 +108,8 @@ fn SynapseTracesSetAdd(vl: f32, ix: u32) {
 	case u32(4): {
 		SynapseTraces4[ix - 2147483616] += vl;
 	}
-	case u32(5): {
-		SynapseTraces5[ix - 2684354520] += vl;
-	}
 	default: {
-		SynapseTraces6[ix - 3221225424] += vl;
+		SynapseTraces5[ix - 2684354520] += vl;
 	}
 	}
 }
@@ -143,11 +132,8 @@ fn SynapseTracesSetSub(vl: f32, ix: u32) {
 	case u32(4): {
 		SynapseTraces4[ix - 2147483616] -= vl;
 	}
-	case u32(5): {
-		SynapseTraces5[ix - 2684354520] -= vl;
-	}
 	default: {
-		SynapseTraces6[ix - 3221225424] -= vl;
+		SynapseTraces5[ix - 2684354520] -= vl;
 	}
 	}
 }
@@ -170,11 +156,8 @@ fn SynapseTracesSetMul(vl: f32, ix: u32) {
 	case u32(4): {
 		SynapseTraces4[ix - 2147483616] *= vl;
 	}
-	case u32(5): {
-		SynapseTraces5[ix - 2684354520] *= vl;
-	}
 	default: {
-		SynapseTraces6[ix - 3221225424] *= vl;
+		SynapseTraces5[ix - 2684354520] *= vl;
 	}
 	}
 }
@@ -197,11 +180,8 @@ fn SynapseTracesSetDiv(vl: f32, ix: u32) {
 	case u32(4): {
 		SynapseTraces4[ix - 2147483616] /= vl;
 	}
-	case u32(5): {
-		SynapseTraces5[ix - 2684354520] /= vl;
-	}
 	default: {
-		SynapseTraces6[ix - 3221225424] /= vl;
+		SynapseTraces5[ix - 2684354520] /= vl;
 	}
 	}
 }
@@ -548,7 +528,7 @@ const ViewTimesN: ViewTimes = 7;
 const DAModTypesN: DAModTypes = 4;
 const ValenceTypesN: ValenceTypes = 3;
 const NeuronFlagsN: NeuronFlags = 9;
-const NeuronVarsN: NeuronVars = 98;
+const NeuronVarsN: NeuronVars = 100;
 const NeuronTracesVarsN: NeuronTracesVars = 2;
 const NeuronAvgVarsN: NeuronAvgVars = 7;
 const NeuronIndexVarsN: NeuronIndexVars = 3;
@@ -1091,64 +1071,66 @@ const  LearnNow: NeuronVars = 36;
 const  RLRate: NeuronVars = 37;
 const  ETrace: NeuronVars = 38;
 const  ETrLearn: NeuronVars = 39;
-const  GnmdaSyn: NeuronVars = 40;
-const  Gnmda: NeuronVars = 41;
-const  GnmdaLrn: NeuronVars = 42;
-const  GnmdaMaint: NeuronVars = 43;
-const  NmdaCa: NeuronVars = 44;
-const  Gvgcc: NeuronVars = 45;
-const  VgccM: NeuronVars = 46;
-const  VgccH: NeuronVars = 47;
-const  VgccCa: NeuronVars = 48;
-const  VgccCaInt: NeuronVars = 49;
-const  Burst: NeuronVars = 50;
-const  BurstPrv: NeuronVars = 51;
-const  CtxtGe: NeuronVars = 52;
-const  CtxtGeRaw: NeuronVars = 53;
-const  CtxtGeOrig: NeuronVars = 54;
-const  GgabaB: NeuronVars = 55;
-const  GababM: NeuronVars = 56;
-const  GababX: NeuronVars = 57;
-const  Gak: NeuronVars = 58;
-const  SSGiDend: NeuronVars = 59;
-const  GknaMed: NeuronVars = 60;
-const  GknaSlow: NeuronVars = 61;
-const  Gkir: NeuronVars = 62;
-const  KirM: NeuronVars = 63;
-const  Gsk: NeuronVars = 64;
-const  SKCaIn: NeuronVars = 65;
-const  SKCaR: NeuronVars = 66;
-const  SKCaM: NeuronVars = 67;
-const  Gmahp: NeuronVars = 68;
-const  MahpN: NeuronVars = 69;
-const  Gsahp: NeuronVars = 70;
-const  SahpCa: NeuronVars = 71;
-const  SahpN: NeuronVars = 72;
-const  ActM: NeuronVars = 73;
-const  ActP: NeuronVars = 74;
-const  Beta1: NeuronVars = 75;
-const  Beta2: NeuronVars = 76;
-const  CaPMax: NeuronVars = 77;
-const  CaPMaxCa: NeuronVars = 78;
-const  GeNoise: NeuronVars = 79;
-const  GeNoiseP: NeuronVars = 80;
-const  GiNoise: NeuronVars = 81;
-const  GiNoiseP: NeuronVars = 82;
-const  GeExt: NeuronVars = 83;
-const  GeRaw: NeuronVars = 84;
-const  GeSyn: NeuronVars = 85;
-const  GiRaw: NeuronVars = 86;
-const  GiSyn: NeuronVars = 87;
-const  GeInt: NeuronVars = 88;
-const  GeIntNorm: NeuronVars = 89;
-const  GiInt: NeuronVars = 90;
-const  GModRaw: NeuronVars = 91;
-const  GModSyn: NeuronVars = 92;
-const  SMaintP: NeuronVars = 93;
-const  GMaintRaw: NeuronVars = 94;
-const  GMaintSyn: NeuronVars = 95;
-const  NeurFlags: NeuronVars = 96;
-const  NeuronTraces: NeuronVars = 97;
+const  PoolDAD1: NeuronVars = 40;
+const  PoolDAD2: NeuronVars = 41;
+const  GnmdaSyn: NeuronVars = 42;
+const  Gnmda: NeuronVars = 43;
+const  GnmdaLrn: NeuronVars = 44;
+const  GnmdaMaint: NeuronVars = 45;
+const  NmdaCa: NeuronVars = 46;
+const  Gvgcc: NeuronVars = 47;
+const  VgccM: NeuronVars = 48;
+const  VgccH: NeuronVars = 49;
+const  VgccCa: NeuronVars = 50;
+const  VgccCaInt: NeuronVars = 51;
+const  Burst: NeuronVars = 52;
+const  BurstPrv: NeuronVars = 53;
+const  CtxtGe: NeuronVars = 54;
+const  CtxtGeRaw: NeuronVars = 55;
+const  CtxtGeOrig: NeuronVars = 56;
+const  GgabaB: NeuronVars = 57;
+const  GababM: NeuronVars = 58;
+const  GababX: NeuronVars = 59;
+const  Gak: NeuronVars = 60;
+const  SSGiDend: NeuronVars = 61;
+const  GknaMed: NeuronVars = 62;
+const  GknaSlow: NeuronVars = 63;
+const  Gkir: NeuronVars = 64;
+const  KirM: NeuronVars = 65;
+const  Gsk: NeuronVars = 66;
+const  SKCaIn: NeuronVars = 67;
+const  SKCaR: NeuronVars = 68;
+const  SKCaM: NeuronVars = 69;
+const  Gmahp: NeuronVars = 70;
+const  MahpN: NeuronVars = 71;
+const  Gsahp: NeuronVars = 72;
+const  SahpCa: NeuronVars = 73;
+const  SahpN: NeuronVars = 74;
+const  ActM: NeuronVars = 75;
+const  ActP: NeuronVars = 76;
+const  Beta1: NeuronVars = 77;
+const  Beta2: NeuronVars = 78;
+const  CaPMax: NeuronVars = 79;
+const  CaPMaxCa: NeuronVars = 80;
+const  GeNoise: NeuronVars = 81;
+const  GeNoiseP: NeuronVars = 82;
+const  GiNoise: NeuronVars = 83;
+const  GiNoiseP: NeuronVars = 84;
+const  GeExt: NeuronVars = 85;
+const  GeRaw: NeuronVars = 86;
+const  GeSyn: NeuronVars = 87;
+const  GiRaw: NeuronVars = 88;
+const  GiSyn: NeuronVars = 89;
+const  GeInt: NeuronVars = 90;
+const  GeIntNorm: NeuronVars = 91;
+const  GiInt: NeuronVars = 92;
+const  GModRaw: NeuronVars = 93;
+const  GModSyn: NeuronVars = 94;
+const  SMaintP: NeuronVars = 95;
+const  GMaintRaw: NeuronVars = 96;
+const  GMaintSyn: NeuronVars = 97;
+const  NeurFlags: NeuronVars = 98;
+const  NeuronTraces: NeuronVars = 99;
 alias NeuronTracesVars = i32; //enums:enum
 const  CaSynTrace: NeuronTracesVars = 0;
 const  RecvLearnTrace: NeuronTracesVars = 1;

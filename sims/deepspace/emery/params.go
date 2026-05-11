@@ -28,7 +28,7 @@ type Params struct {
 
 	// VORDecay is the decay divisor factor for VOR motor commands.
 	// Divides the integral of eye muscle commands.
-	VORDecay float32 `default:"2"`
+	VORDecay float32 `default:"1.5"`
 
 	// VORActDelay is the delay in cycles (ms) from when an action is initated
 	// til when it is actually applied to the physics to perform the action,
@@ -86,9 +86,9 @@ func (pr *Params) Defaults() {
 	pr.Delays.Defaults()
 	pr.LeftEye = false
 	pr.VORInhibP = 1
-	pr.VORGain = 1.8  // 1.8 > 2
-	pr.VORDecay = 1.8 // 1.8 > 2
-	pr.VORActDelay = 1
+	pr.VORGain = 1.5  // 1.5 > 1.2, 1.8
+	pr.VORDecay = 1.5 // 1.5 > 1.2, 1.8
+	pr.VORActDelay = 10
 	pr.ActDelay = 10
 	pr.MaxRotate = 5
 	pr.VisMotionInterval = 5

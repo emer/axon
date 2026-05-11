@@ -7,7 +7,11 @@
 
 * separate VM for VOR vs. not, with differential VOR inhib control -- the case with VOR active should have 0 net error -- to extent it does have non-zero deviation, then it could modulate the error signal / learning rate on VOR?  This is in addition to the basic VS driver, which doesn't ever change. So in fact this is an essential additional factor!!
 
-* simple version of train-time VOR stat.
+* VM is just Up, not Dn -- don't use output, just error, forward model has to be based on VS only. In general need to develop a better understanding of what Up does! Dn is simpler to understand.
+
+* do we need VShvUp at all? I guess in comparison to dn
+
+* inhib has to work in a different way from CNiIO -- getting massive carryover
 
 * test env that presents:
 	- sensory without motor: this is the key error signal

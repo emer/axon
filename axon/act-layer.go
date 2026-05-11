@@ -412,11 +412,15 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni, di uint32, saveVal float3
 			Neurons.Set(0.0, int(ni), int(di), int(Ge))
 		}
 	case DSMatrixLayer:
+		pi := ly.PoolIndex(NeuronIxs.Value(int(ni), int(NrnSubPool)))
+		dad1 := Pools.Value(int(pi), int(di), int(fsfffb.DAD1))
+		dad2 := Pools.Value(int(pi), int(di), int(fsfffb.DAD2))
+		Neurons.Set(dad1, int(ni), int(di), int(PoolDAD1))
+		Neurons.Set(dad2, int(ni), int(di), int(PoolDAD2))
 		if GlobalScalars.Value(int(GvHasRew), int(di)) > 0 {
 			ly.GNeuroMod(ctx, ni, di)
 		} else {
-			pi := ly.PoolIndex(NeuronIxs.Value(int(ni), int(NrnSubPool)))
-			nda := ly.DSMatrix.PatchBurstGain*Pools.Value(int(pi), int(di), int(fsfffb.DAD1)) - Pools.Value(int(pi), int(di), int(fsfffb.DAD2))
+			nda := ly.DSMatrix.PatchBurstGain*dad1 - dad2
 			ggain := 1.0 + ly.Learn.NeuroMod.DASign()*ly.DSMatrix.PatchDAModGain*nda
 			Neurons.SetMul(ggain, int(ni), int(di), int(Ge))
 			Neurons.SetMul(ggain, int(ni), int(di), int(Gi))
@@ -771,7 +775,6 @@ func (ly *LayerParams) PostSpike(ctx *Context, lpi, pi, ni, di uint32) {
 // need to do something special after Spiking is finally computed and Sent.
 // Typically used for updating global values in the Context state,
 // such as updating a neuromodulatory signal such as dopamine.
-// Any updates here must also be done in gpu_wgsl/gpu_cyclepost.wgsl
 func (ly *LayerParams) CyclePost(ctx *Context, di uint32) {
 	lpi := ly.PoolIndex(0)
 	ly.CyclePostLayer(ctx, lpi, di)

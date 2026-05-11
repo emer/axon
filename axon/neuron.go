@@ -264,6 +264,16 @@ const (
 	// 1 + ETraceScale * [ETrace]
 	ETrLearn
 
+	// PoolDAD1 is the value of this neuron's sub-pool DAD1 dopamine
+	// D1 receptor activation, for Basal Ganglia (PCore) Patch neurons
+	// in dorsal striatum.
+	PoolDAD1
+
+	// PoolDAD2 is the value of this neuron's sub-pool DAD2 dopamine
+	// D2 receptor activation, for Basal Ganglia (PCore) Patch neurons
+	// in dorsal striatum.
+	PoolDAD2
+
 	//////// NMDA channels
 
 	// GnmdaSyn is the integrated NMDA synaptic current on the receiving neuron.
@@ -684,6 +694,9 @@ var NeuronVarProps = map[string]string{
 	"ETrace":   `cat:"Learn"`,
 	"ETrLearn": `cat:"Learn" auto-scale:"+"`,
 
+	"PoolDAD1": `cat:"Learn"`,
+	"PoolDAD2": `cat:"Learn"`,
+
 	//////// NMDA channels
 
 	"GnmdaSyn":   `cat:"Excite" auto-scale:"+"`,
@@ -788,14 +801,12 @@ var NeuronVarProps = map[string]string{
 
 	//////// Layer-level variables
 
-	"DA":       `cat:"Learn" doc:"dopamine neuromodulation (layer-level variable)"`,
-	"ACh":      `cat:"Learn" doc:"cholinergic neuromodulation (layer-level variable)"`,
-	"NE":       `cat:"Learn" doc:"norepinepherine (noradrenaline) neuromodulation  (layer-level variable)"`,
-	"Ser":      `cat:"Learn" doc:"serotonin neuromodulation (layer-level variable)"`,
-	"Gated":    `cat:"Learn" doc:"signals whether the layer gated (pool-level variable)"`,
-	"ModAct":   `cat:"Learn" doc:"pool-level modulatory activity signal (for BG Matrix and Patch layers)"`,
-	"PoolDAD1": `cat:"Learn" doc:"pool-level dopamine D1 signal (for BG Matrix layers only)"`,
-	"PoolDAD2": `cat:"Learn" doc:"pool-level dopamine D2 signal (for BG Matrix layers only)"`,
+	"DA":     `cat:"Learn" doc:"dopamine neuromodulation (layer-level variable)"`,
+	"ACh":    `cat:"Learn" doc:"cholinergic neuromodulation (layer-level variable)"`,
+	"NE":     `cat:"Learn" doc:"norepinepherine (noradrenaline) neuromodulation  (layer-level variable)"`,
+	"Ser":    `cat:"Learn" doc:"serotonin neuromodulation (layer-level variable)"`,
+	"Gated":  `cat:"Learn" doc:"signals whether the layer gated (pool-level variable)"`,
+	"ModAct": `cat:"Learn" doc:"pool-level modulatory activity signal (for BG Matrix and Patch layers)"`,
 }
 
 var (
@@ -805,7 +816,7 @@ var (
 
 // NeuronLayerVars are pool or layer-level variables displayed as neuron layers.
 var (
-	NeuronLayerVars  = []string{"DA", "ACh", "NE", "Ser", "Gated", "ModAct", "PoolDAD1", "PoolDAD2"}
+	NeuronLayerVars  = []string{"DA", "ACh", "NE", "Ser", "Gated", "ModAct"}
 	NNeuronLayerVars = len(NeuronLayerVars)
 	NNeuronTraces    = 20 // max of NeuronTraces per variable to display
 )

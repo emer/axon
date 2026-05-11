@@ -149,7 +149,6 @@ func GPUInit() {
 			vr = sgp.Add("SynapseTraces3", gpu.Float32, 1, gpu.ComputeShader)
 			vr = sgp.Add("SynapseTraces4", gpu.Float32, 1, gpu.ComputeShader)
 			vr = sgp.Add("SynapseTraces5", gpu.Float32, 1, gpu.ComputeShader)
-			vr = sgp.Add("SynapseTraces6", gpu.Float32, 1, gpu.ComputeShader)
 			sgp.SetNValues(1)
 		}
 		var pl *gpu.ComputePipeline
@@ -225,7 +224,6 @@ func GPUInit() {
 		pl.AddVarUsed(3, "SynapseTraces3")
 		pl.AddVarUsed(3, "SynapseTraces4")
 		pl.AddVarUsed(3, "SynapseTraces5")
-		pl.AddVarUsed(3, "SynapseTraces6")
 		pl.AddVarUsed(3, "Synapses")
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/DWtSubMeanNeuron.wgsl", sy)
 		pl.AddVarUsed(0, "TensorStrides")
@@ -249,7 +247,6 @@ func GPUInit() {
 		pl.AddVarUsed(1, "NeuronIxs")
 		pl.AddVarUsed(2, "Neurons")
 		pl.AddVarUsed(0, "Paths")
-		pl.AddVarUsed(2, "Pools")
 		pl.AddVarUsed(1, "SynapseIxs")
 		pl.AddVarUsed(3, "SynapseTraces0")
 		pl.AddVarUsed(3, "SynapseTraces1")
@@ -257,7 +254,6 @@ func GPUInit() {
 		pl.AddVarUsed(3, "SynapseTraces3")
 		pl.AddVarUsed(3, "SynapseTraces4")
 		pl.AddVarUsed(3, "SynapseTraces5")
-		pl.AddVarUsed(3, "SynapseTraces6")
 		pl.AddVarUsed(3, "Synapses")
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/GPUTestWrite.wgsl", sy)
 		pl.AddVarUsed(0, "TensorStrides")

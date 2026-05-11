@@ -731,6 +731,9 @@ func (ln *LearnNeuronParams) InitNeuronCa(ctx *Context, ni, di uint32) {
 	Neurons[ni, di, Enabled] = 0
 	Neurons[ni, di, EnabledPrev] = 0
 	Neurons[ni, di, LearnNow] = 0
+	
+	Neurons[ni, di, PoolDAD1] = 0
+	Neurons[ni, di, PoolDAD2] = 0
 }
 
 // LearnNMDAFromRaw updates the separate NMDA conductance and calcium values
