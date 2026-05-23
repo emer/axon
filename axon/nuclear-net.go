@@ -11,7 +11,7 @@ import "github.com/emer/emergent/v2/paths"
 // from which they copy their shape. if name is empty, then copied
 // from the sense layer name, otherwise prefix for CN layers.
 // actEff layer is the efferent copy of the action layer,
-// which sends a full modulatory projection.
+// which sends a full maint projection.
 // actEnv is the default ActionEnv environment timing value in cycles.
 func (net *Network) AddNuclearCNUp(sense, actEff *Layer, name, class, doc string, actEnv int, space float32) (ioUp, cniIOUp, cniUp, cneUp *Layer) {
 	if name == "" {
@@ -61,7 +61,7 @@ func (net *Network) AddNuclearCNUp(sense, actEff *Layer, name, class, doc string
 	pt := net.ConnectLayers(actEff, ioUp, full, ForwardPath).AddClass("EffToIO")
 	pt.AddDefaultParams(func(pt *PathParams) {
 		pt.SetFixedWts()
-		pt.Com.GType = ModulatoryG
+		pt.Com.GType = MaintG
 	})
 	pt = net.ConnectLayers(sense, ioUp, one2one, ForwardPath).AddClass("SenseToIO")
 	pt.AddDefaultParams(func(pt *PathParams) {
@@ -90,7 +90,7 @@ func (net *Network) AddNuclearCNUp(sense, actEff *Layer, name, class, doc string
 // from which they copy their shape. if name is empty, then copied
 // from the sense layer name, otherwise prefix for CN layers.
 // actEff layer is the efferent copy of the action layer, which sends
-// a full modulatory projection.
+// a full maint projection.
 // actEnv is the default ActionEnv environment timing value in cycles.
 func (net *Network) AddNuclearCNDn(sense, actEff *Layer, name, class, doc string, actEnv int, space float32) (ioDn, cniIODn, cneDn *Layer) {
 	if name == "" {
@@ -133,7 +133,7 @@ func (net *Network) AddNuclearCNDn(sense, actEff *Layer, name, class, doc string
 	pt := net.ConnectLayers(actEff, ioDn, full, ForwardPath).AddClass("EffToIO")
 	pt.AddDefaultParams(func(pt *PathParams) {
 		pt.SetFixedWts()
-		pt.Com.GType = ModulatoryG
+		pt.Com.GType = MaintG
 	})
 	pt = net.ConnectLayers(sense, ioDn, one2one, ForwardPath).AddClass("SenseToIO")
 	pt.AddDefaultParams(func(pt *PathParams) {

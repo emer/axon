@@ -148,7 +148,7 @@ type IOParams struct {
 	// to trigger an error.
 	ErrThr float32 `default:"0.01" min:"0.0"`
 
-	// EfferentThr is the threshold for modulatory [GModSyn] from efferent copy
+	// EfferentThr is the threshold for modulatory [GMaintRaw] from efferent copy
 	// inputs to trigger an activated IO window where error comparison occurs.
 	// Efferent inputs can continue post-threshold, but this is the point at which
 	// the envelope opens.
@@ -207,11 +207,14 @@ func (ly *LayerParams) IOLearn(ctx *Context, lpi, pi, ni, di uint32) {
 	effAct := int32(Neurons.Value(int(ni), int(di), int(MinusCycle)))
 	envCyc := ctx.CyclesTotal - effAct // cycle within envelope
 
-	gaP := Neurons.Value(int(ni), int(di), int(GaP)) // IOe excitatory input
+	gMod := Neurons.Value(int(ni), int(di), int(GModSyn)) // modulatory = shunting from control layers
+	modFact := float32(1.0) - min(gMod, 1.0)
+
+	gaP := modFact * Neurons.Value(int(ni), int(di), int(GaP)) // IOe excitatory input
 	gaP += ly.IO.GDt * (Neurons.Value(int(ni), int(di), int(GeSyn)) - gaP)
 	Neurons.Set(gaP, int(ni), int(di), int(GaP))
 
-	gaM := Neurons.Value(int(ni), int(di), int(GaM))
+	gaM := modFact * Neurons.Value(int(ni), int(di), int(GaM))
 	gaM += ly.IO.GDt * (Neurons.Value(int(ni), int(di), int(GiSyn)) - gaM)
 	Neurons.Set(gaM, int(ni), int(di), int(GaM))
 
@@ -265,7 +268,7 @@ func (ly *LayerParams) IOLearn(ctx *Context, lpi, pi, ni, di uint32) {
 	}
 	if effAct == 0 {
 		Neurons.Set(0.0, int(ni), int(di), int(Spike))
-		if Neurons.Value(int(ni), int(di), int(GModSyn)) > ly.IO.EfferentThr { // efferent always activates.
+		if Neurons.Value(int(ni), int(di), int(GMaintRaw)) > ly.IO.EfferentThr { // efferent always activates.
 			Neurons.Set(cycTot, int(ni), int(di), int(MinusCycle)) // efferent activation cycle
 			Neurons.Set(0.0, int(ni), int(di), int(TimePeak))
 			Neurons.Set(0.0, int(ni), int(di), int(LearnNow))
@@ -348,6 +351,7 @@ func (ly *LayerParams) LinearDefaults() {
 	ly.Acts.KNa.On.SetBool(false)
 	// no sustained:
 	ly.Acts.NMDA.Ge = 0
+	ly.Acts.MaintNMDA.Ge = 0
 	ly.Acts.GabaB.Gk = 0
 }
 

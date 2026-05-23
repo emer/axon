@@ -1482,11 +1482,14 @@ fn LayerParams_IOLearn(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,d
 	var cycTot = f32(ctx.CyclesTotal);
 	var effAct = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(MinusCycle))]);
 	var envCyc = ctx.CyclesTotal - effAct; // cycle within envelope
-	var gaP = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // IOe excitatory input
+	var gMod = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // modulatory = shunting from control layers
+	TensorStrides[72], u32(ni), u32(di), u32(GModSyn))];
+	var modFact = f32(1.0) - min(gMod, 1.0);
+	var gaP = modFact * Neurons[Index3D(TensorStrides[70], TensorStrides[71], // IOe excitatory input
 	TensorStrides[72], u32(ni), u32(di), u32(GaP))];
 	gaP += ly.IO.GDt * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeSyn))] - gaP);
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))] = gaP;
-	var gaM = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaM))];
+	var gaM = modFact * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaM))];
 	gaM += ly.IO.GDt * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GiSyn))] - gaM);
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaM))] = gaM;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], // set below for display
@@ -1525,8 +1528,7 @@ fn LayerParams_IOLearn(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,d
 	}
 	if (effAct == 0) {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 0.0;
-		if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // efferent always activates.
-		u32(ni), u32(di), u32(GModSyn))] > ly.IO.EfferentThr) {
+		if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GMaintRaw))] > ly.IO.EfferentThr) { // efferent always activates.
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // efferent activation cycle
 			u32(ni), u32(di), u32(MinusCycle))] = cycTot;
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = 0.0;

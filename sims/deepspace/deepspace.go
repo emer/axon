@@ -224,8 +224,21 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	vorCtrl.AddClass("RateIn")
 	vorCtrl.Doc = "VOR (vestibulo-ocular reflex) control input -- if left units active then cerebellar anticipation of vestibular signals drives compensatory eye movements, if right units active, it does not (inhibited)"
 
-	pt := net.ConnectLayers(vorCtrl, eyeH, secondPool, axon.InhibPath).AddClass("MotorInhib")
-	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
+	fixedCon := func(send, recv *axon.Layer, path paths.Pattern, typ axon.PathTypes, cls string) *axon.Path {
+		pt := net.ConnectLayers(send, recv, path, typ).AddClass(cls)
+		pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
+		return pt
+	}
+	fixedConMod := func(send, recv *axon.Layer, path paths.Pattern, typ axon.PathTypes, cls string) *axon.Path {
+		pt := net.ConnectLayers(send, recv, path, typ).AddClass(cls)
+		pt.AddDefaultParams(func(pt *axon.PathParams) {
+			pt.SetFixedWts()
+			pt.Com.GType = axon.ModulatoryG
+		})
+		return pt
+	}
+
+	fixedCon(vorCtrl, eyeH, secondPool, axon.InhibPath, "MotorInhib")
 
 	// rotActPrev, rotActPrevPop := addInput("ActRotatePrev", "Previous trial's version of ActRotate. This should be implicitly maintained but currently is not.")
 	// _ = rotActPrevPop
@@ -295,8 +308,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_, _ = vmiIOUp, vmiCNeUp
 
 	// upbound adaptive filter model
-	pt = net.ConnectLayers(vsHV, vsCNeUp, p1to1, axon.ForwardPath).AddClass("SenseToCNeUp")
-	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
+	fixedCon(vsHV, vsCNeUp, p1to1, axon.ForwardPath, "SenseToCNeUp")
 
 	// motor efferent
 	net.ConnectLayers(rotActMF, vsCNiIOUp, full, axon.CNIOPath).AddClass("MF", "MFToCNiIO")
@@ -305,8 +317,12 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(rotActMF, vsCNiIODn, full, axon.CNIOPath).AddClass("MF", "MFToCNiIO")
 	net.ConnectLayers(rotActMF, vsCNeDn, full, axon.CNIOPath).AddClass("MF", "MFToCNeDn")
 
+	fixedCon(vmHV, vmrCNeUp, p1to1, axon.ForwardPath, "SenseToCNeUp")
+
 	net.ConnectLayers(rotActMF, vmrCNiIOUp, full, axon.CNIOPath).AddClass("MF", "MFToCNiIO")
 	net.ConnectLayers(rotActMF, vmrCNiUp, full, axon.CNIOPath).AddClass("MF", "MFToCNiUp")
+
+	fixedCon(vmHV, vmiCNeUp, p1to1, axon.ForwardPath, "SenseToCNeUp")
 
 	net.ConnectLayers(rotActMF, vmiCNiIOUp, full, axon.CNIOPath).AddClass("MF", "MFToCNiIO")
 	net.ConnectLayers(rotActMF, vmiCNiUp, full, axon.CNIOPath).AddClass("MF", "MFToCNiUp")
@@ -326,20 +342,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(vsMF, vmiCNiUp, full, axon.CNIOPath).AddClass("MF", "MFToCNiUp")
 
 	// vor reflex (not-inhib) is firstPool, inhibits vmi
-	pt = net.ConnectLayers(vorCtrl, vmiCNiIOUp, firstPool, axon.InhibPath).AddClass("VORCtrlToCN")
-	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
-	pt = net.ConnectLayers(vorCtrl, vmiCNeUp, firstPool, axon.InhibPath).AddClass("VORCtrlToCN")
-	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
-	pt = net.ConnectLayers(vorCtrl, vmiIOUp, firstPool, axon.InhibPath).AddClass("VORCtrlToCN")
-	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
+	fixedCon(vorCtrl, vmiCNiIOUp, firstPool, axon.InhibPath, "VORCtrlToCN")
+	fixedCon(vorCtrl, vmiCNeUp, firstPool, axon.InhibPath, "VORCtrlToCN")
+	fixedConMod(vorCtrl, vmiIOUp, firstPool, axon.ForwardPath, "VORCtrlToCNIO")
 
 	// vor inhib is secondPool, inhibits vmr
-	pt = net.ConnectLayers(vorCtrl, vmrCNiIOUp, secondPool, axon.InhibPath).AddClass("VORCtrlToCN")
-	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
-	pt = net.ConnectLayers(vorCtrl, vmrCNeUp, secondPool, axon.InhibPath).AddClass("VORCtrlToCN")
-	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
-	pt = net.ConnectLayers(vorCtrl, vmrIOUp, secondPool, axon.InhibPath).AddClass("VORCtrlToCN")
-	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
+	fixedCon(vorCtrl, vmrCNiIOUp, secondPool, axon.InhibPath, "VORCtrlToCN")
+	fixedCon(vorCtrl, vmrCNeUp, secondPool, axon.InhibPath, "VORCtrlToCN")
+	fixedConMod(vorCtrl, vmrIOUp, secondPool, axon.ForwardPath, "VORCtrlToCNIO")
 
 	// s1
 	// net.ConnectLayers(s1ct, vsCNiIOUp, p1to1, axon.CNIOPath).AddClass("MF", "MFToCNiIOUp")
@@ -348,8 +358,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	// note: it is critical that this is from vs, because vm will be zeroed!
 	// and indeed, the VORCtrl inhibits this when VOR is active.
-	pt = net.ConnectLayers(vsCNeDn, eyeH, p1to1, axon.ForwardPath).AddClass("Reflex")
-	pt.AddDefaultParams(func(pt *axon.PathParams) { pt.SetFixedWts() })
+	fixedCon(vsCNeDn, eyeH, p1to1, axon.ForwardPath, "Reflex")
 
 	// position
 

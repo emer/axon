@@ -138,7 +138,7 @@ const (
 	// IOLayer represents a cerebellum inferior olive (IO) layer,
 	// which drive learning in associated cerebellar nuclei and Purkinje cells.
 	// Receives paired input from the CNiIOLayer inhibitory prediction neurons
-	// and specific sensory channels that are being predicted, and a modulatory
+	// and specific sensory channels that are being predicted, and a maint
 	// input from the efferent copy of motor action to initiate it.
 	// GaP = integrated GeSyn, GaM = integrated GiSyn, GaD = offset GiSyn,
 	// TimeDiff = GaP - GaD, TimePeak = 1 if error spike, else baseline.
