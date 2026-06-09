@@ -363,6 +363,9 @@ func (ly *LayerParams) NuclearDefaults() {
 	ly.Acts.Decay.Glong = 0.0 // clear long
 	ly.Acts.Decay.AHP = 0.0   // clear long
 
+	ly.Acts.Dend.ModBase = 1
+	ly.Acts.Dend.ModGain = 0
+	
 	ly.LinearDefaults()
 	
 	// ly.Learn.RLRate.SigmoidMin = 1.0 // 1.0 generally better but worth trying 0.05 too

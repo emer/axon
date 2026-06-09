@@ -84,7 +84,7 @@ var LayerParams = axon.LayerSheets{
 				// ly.Learn.Timing.LearnThr = 0.1
 				// ly.Learn.Timing.SynCaCycles = 160
 
-				ly.Learn.Timing.On.SetBool(true)
+				ly.Learn.Timing.On.SetBool(false)
 				// ly.Learn.Timing.Refractory.SetBool(true)
 				ly.Learn.Timing.NUps = 18
 				ly.Learn.Timing.MaxUpGap = 2
@@ -261,7 +261,7 @@ var PathParams = axon.PathSheets{
 				pt.SWts.Init.Mean = 0.4 // .4 here is key!
 				pt.SWts.Limit.Min = 0.1 // .1-.7
 				pt.SWts.Limit.Max = 0.7 //
-				pt.PathScale.Abs = 1.8  // 1.4 for trial, 1.8 for time
+				pt.PathScale.Abs = 1.4  // 1.4 for trial, 1.8 for time
 			}},
 		{Sel: ".V1V2fmSm", Doc: "weaker",
 			Set: func(pt *axon.PathParams) {
