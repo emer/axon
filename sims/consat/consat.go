@@ -1,13 +1,10 @@
-// Copyright (c) 2024, The Emergent Authors. All rights reserved.
+// Copyright (c) 2026, The Emergent Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// inhib: This simulation explores how inhibitory interneurons can dynamically
-// control overall activity levels within the network, by providing both
-// feedforward and feedback inhibition to excitatory pyramidal neurons,
-// with different time scales provided by PV neurons (fast spiking)
-// and SST neurons (slow spiking).
-package inhib
+// consat: This simulation tests axon on constraint satisfaction
+// using the travelling salesman problem.
+package consat
 
 //go:generate core generate -add-types -add-funcs -gosl
 
@@ -15,9 +12,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
-	"strings"
 
-	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/enums"
 	"cogentcore.org/core/gpu"
@@ -26,13 +21,12 @@ import (
 	"cogentcore.org/core/tree"
 	"cogentcore.org/lab/base/mpi"
 	"cogentcore.org/lab/base/randx"
-	"cogentcore.org/lab/patterns"
 	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/stats/stats"
-	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/axon/v2/fsfffb"
+	"github.com/emer/axon/v2/sims/consat/consatenv"
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/looper"
@@ -62,48 +56,6 @@ const (
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-
-	// FSFFFB turns on the FS-FFFB summary inhibition function instead of using
-	// the inhibitory interneurons directly.
-	FSFFFB bool
-
-	// Gi is overall inhibition gain, which is the main parameter to adjust
-	// to change overall activation levels, scaling both the FS and SS factors.
-	Gi float32 `min:"0" default:"1,1.1,0.75,0.9"`
-
-	// FB is a scaling factor for contribution of FB spikes to FSi value,
-	// where FF spikes always contribute with a factor of 1.
-	// For small networks, 0.5 or 1 works best; larger networks and
-	// more demanding inhibition requires higher levels.
-	FB float32 `min:"0" default:"0.5,1,4"`
-
-	// FSTau is fast spiking (PV+) intgration time constant in cycles (msec).
-	// Tau is roughly 2/3 of the way to asymptotic value.
-	FSTau float32 `min:"0" default:"6"`
-
-	// SS is the multiplier on SS slow-spiking (SST+) in contributing to the
-	// overall Gi inhibition. FS contributes at a factor of 1.
-	SS float32 `min:"0" default:"30"`
-
-	// SSfTau is the slow-spiking (SST+) facilitation decay time constant
-	// in cycles (msec). Facilication factor SSf determines impact of FB spikes
-	// as a function of spike input.
-	// Tau is roughly 2/3 of the way to asymptotic value.
-	SSfTau float32 `min:"0" default:"20"`
-
-	// SSiTau is the slow-spiking (SST+) integration time constant in cycles (msec)
-	// cascaded on top of FSTau.
-	// Tau is roughly 2/3 of the way to asymptotic value.
-	SSiTau float32 `min:"0" default:"50"`
-
-	// InhibExcite is the scaling factor for inhibition to excitation pathways,
-	// which determines the strength of inhibition when not using FSFFFB function.
-	InhibExcite float32
-
-	// InhibInhib is the scaling factor for inhibition to inhibition pathways,
-	// which determines the strength of inhibition when not using FSFFFB function.
-	InhibInhib float32
-
 	// simulation configuration parameters -- set by .toml config file and / or args
 	Config *Config `new-window:"+"`
 
@@ -148,27 +100,18 @@ func Embed(b tree.Node)               { egui.Embed[Sim, Config](b) }
 func (ss *Sim) SetConfig(cfg *Config) { ss.Config = cfg }
 func (ss *Sim) Body() *core.Body      { return ss.GUI.Body }
 
-func (ss *Sim) ShouldDisplay(field string) bool {
-	switch field {
-	case "Gi", "FB", "FSTau", "SS", "SSfTau", "SSiTau":
-		return ss.FSFFFB
-	case "InhibExcite", "InhibInhib":
-		return !ss.FSFFFB
-	default:
-		return true
-	}
-}
+// func (ss *Sim) ShouldDisplay(field string) bool {
+// 	switch field {
+// 	case "Gi", "FB", "FSTau", "SS", "SSfTau", "SSiTau":
+// 		return ss.FSFFFB
+// 	case "InhibExcite", "InhibInhib":
+// 		return !ss.FSFFFB
+// 	default:
+// 		return true
+// 	}
+// }
 
 func (ss *Sim) Defaults() {
-	ss.FSFFFB = true
-	ss.Gi = 1
-	ss.FB = 1
-	ss.FSTau = 6
-	ss.SS = 30
-	ss.SSfTau = 20
-	ss.SSiTau = 50
-	ss.InhibExcite = 0.8
-	ss.InhibInhib = 0.8
 }
 
 func (ss *Sim) ConfigSim() {
@@ -184,7 +127,6 @@ func (ss *Sim) ConfigSim() {
 		axon.GPUInit()
 		axon.UseGPU = true
 	}
-	ss.ConfigInputs()
 	ss.ConfigEnv()
 	ss.ConfigNet(ss.Net)
 	ss.ConfigLoops()
@@ -201,21 +143,21 @@ func (ss *Sim) ConfigSim() {
 
 func (ss *Sim) ConfigEnv() {
 	// Can be called multiple times -- don't re-create
-	var tst *env.FixedTable
+	var tst *consatenv.ConSatEnv
 	if len(ss.Envs) == 0 {
-		tst = &env.FixedTable{}
+		tst = &consatenv.ConSatEnv{}
 	} else {
-		tst = ss.Envs.ByMode(Test).(*env.FixedTable)
+		tst = ss.Envs.ByMode(Test).(*consatenv.ConSatEnv)
 	}
 
-	inputs := tensorfs.DirTable(ss.Root.Dir("Inputs/Test"), nil)
+	// inputs := tensorfs.DirTable(ss.Root.Dir("Inputs/Test"), nil)
 
 	tst.Name = Test.String()
-	tst.Config(table.NewView(inputs))
-	tst.Sequential = true
-	tst.Validate()
+	tst.Defaults()
+	tst.Config(173)
 
 	tst.Init(0)
+	tst.Step() // have to run once!
 
 	// note: names must be in place when adding
 	ss.Envs.Add(tst)
@@ -227,65 +169,20 @@ func (ss *Sim) ReConfigNet() {
 	// ss.GUI.NetView.Config()
 }
 
-func LayNm(n int) string {
-	return fmt.Sprintf("Layer%d", n)
-}
-
-func InhNm(n int) string {
-	return fmt.Sprintf("Inhib%d", n)
-}
-
-func LayByNm(net *axon.Network, n int) *axon.Layer {
-	return net.LayerByName(LayNm(n))
-}
-
-func InhByNm(net *axon.Network, n int) *axon.Layer {
-	return net.LayerByName(InhNm(n))
-}
-
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(1)
 	net.Context().ThetaCycles = int32(ss.Config.Run.Cycles)
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
-	sz := ss.Config.Params.HiddenSize
-
-	inlay := net.AddLayer2D(LayNm(0), axon.InputLayer, sz.Y, sz.X)
+	ev := ss.Envs.ByMode(Test).(*consatenv.ConSatEnv)
+	n := ev.NStates
+	pn := ev.NUnitsPer
+	inlay := net.AddLayer4D("Input", axon.InputLayer, n, n, pn, pn)
 	_ = inlay
 
-	for hi := 1; hi <= ss.Config.Params.NLayers; hi++ {
-		net.AddLayer2D(LayNm(hi), axon.SuperLayer, sz.Y, sz.X)
-		net.AddLayer2D(InhNm(hi), axon.SuperLayer, sz.Y, 2).AddClass("InhibLay")
-	}
-
 	full := paths.NewFull()
-	rndcut := paths.NewUniformRand()
-	rndcut.PCon = 0.1
-
-	for hi := 1; hi <= ss.Config.Params.NLayers; hi++ {
-		ll := LayByNm(net, hi-1)
-		tl := LayByNm(net, hi)
-		il := InhByNm(net, hi)
-		net.ConnectLayers(ll, tl, full, axon.ForwardPath).AddClass("Excite")
-		net.ConnectLayers(ll, il, full, axon.ForwardPath).AddClass("ToInhib")
-		net.ConnectLayers(tl, il, full, axon.BackPath).AddClass("ToInhib")
-		net.ConnectLayers(il, tl, full, axon.InhibPath)
-		net.ConnectLayers(il, il, full, axon.InhibPath)
-
-		// if hi > 1 {
-		// 	net.ConnectLayers(inlay, tl, rndcut, axon.ForwardPath).AddClass("RandSc")
-		// }
-
-		tl.PlaceAbove(ll)
-		il.PlaceRightOf(tl, 1)
-
-		if hi < ss.Config.Params.NLayers {
-			nl := LayByNm(net, hi+1)
-			net.ConnectLayers(nl, il, full, axon.ForwardPath).AddClass("ToInhib")
-			net.ConnectLayers(tl, nl, full, axon.ForwardPath).AddClass("Excite")
-			net.ConnectLayers(nl, tl, full, axon.BackPath).AddClass("Excite")
-		}
-	}
+	full.SelfCon = true
+	net.ConnectLayers(inlay, inlay, full, axon.LateralPath)
 
 	net.Build()
 	net.Defaults()
@@ -294,37 +191,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 }
 
 func (ss *Sim) ApplyParams() {
-	if ss.FSFFFB {
-		ss.Params.ExtraSheets = "FSFFFB Trained"
-	} else {
-		ss.Params.ExtraSheets = "Trained"
-	}
 	ss.Params.Script = ss.Config.Params.Script
 	ss.Params.ApplyAll(ss.Net)
-
-	for _, ly := range ss.Net.Layers {
-		ip := &ly.Params.Inhib.Layer
-		ip.Gi = ss.Gi
-		ip.FB = ss.FB
-		ip.FSTau = ss.FSTau
-		ip.SS = ss.SS
-		ip.SSfTau = ss.SSfTau
-		ip.SSiTau = ss.SSiTau
-		for _, pt := range ly.RecvPaths {
-			if pt.Type != axon.InhibPath {
-				continue
-			}
-			if ss.FSFFFB {
-				pt.Params.PathScale.Abs = ss.InhibInhib
-			} else {
-				if strings.HasPrefix(ly.Name, "Inhib") {
-					pt.Params.PathScale.Abs = ss.InhibInhib
-				} else {
-					pt.Params.PathScale.Abs = ss.InhibExcite
-				}
-			}
-		}
-	}
 }
 
 ////////  Init, utils
@@ -412,21 +280,6 @@ func (ss *Sim) NewRun() {
 	ss.Net.InitWeights()
 }
 
-////////  Inputs
-
-func (ss *Sim) ConfigInputs() {
-	dt := table.New()
-	metadata.SetName(dt, "Test")
-	metadata.SetDoc(dt, "Testing inputs")
-	dt.AddStringColumn("Name")
-	dt.AddFloat32Column("Input", 10, 10)
-	dt.SetNumRows(25)
-
-	patterns.PermutedBinaryMinDiff(dt.Columns.Values[1], int(ss.Config.Params.InputPct), 1, 0, int(ss.Config.Params.InputPct)/2)
-
-	tensorfs.DirFromTable(ss.Root.Dir("Inputs/Test"), dt)
-}
-
 //////// Stats
 
 // AddStatStd adds a standard stat compute function (defined in axon)
@@ -496,11 +349,14 @@ func (ss *Sim) StatsInit() {
 			ss.RunStats(mode, level, axon.Start)
 		}
 	}
+	ev := ss.Envs.ByMode(Test).(*consatenv.ConSatEnv)
 	if ss.GUI.Tabs != nil {
 		tbs := ss.GUI.Tabs.AsLab()
 		_, idx := tbs.CurrentTab()
 		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Test, Cycle))
 		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Test, Trial))
+		plt := tbs.Plot("Optimal", ev.Plot)
+		plt.Update()
 		tbs.SelectTabIndex(idx)
 	}
 }
@@ -520,7 +376,7 @@ func (ss *Sim) ConfigStats() {
 	ss.AddStatStd(axon.StatTrialName(ss.Stats, ss.Current, ss.Loops, net, Trial))
 	ss.AddStatStd(axon.StatPerTrialMSec(ss.Stats, Test, Trial))
 
-	layers := []string{"Layer1", "Layer2"}
+	layers := []string{"Input"}
 	statNames := []string{"Spike", "Vm", "VmDend", "Ge", "Act", "Gi", "FFs", "FBs", "FSi", "SSi", "SSf", "FSGi", "SSGi"}
 	ss.AddStat(func(mode Modes, level Levels, start bool) {
 		for _, lnm := range layers {
@@ -617,6 +473,14 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 
 	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1.5, 2.5)
 	nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
+
+	ev := ss.Envs.ByMode(Test).(*consatenv.ConSatEnv)
+	tbs := ss.GUI.Tabs.AsLab()
+	_, idx := tbs.CurrentTab()
+	plt := plot.New()
+	tbs.Plot("Optimal", plt)
+	ev.Plot = plt
+	tbs.SelectTabIndex(idx)
 
 	ss.StatsInit()
 	ss.GUI.FinalizeGUI(false)
