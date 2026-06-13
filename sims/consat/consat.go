@@ -23,6 +23,7 @@ import (
 	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/stats/stats"
+	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/axon/v2/fsfffb"
@@ -179,10 +180,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	pn := ev.NUnitsPer
 	inlay := net.AddLayer4D("Input", axon.InputLayer, n, n, pn, pn)
 	_ = inlay
+	hlay := net.AddLayer4D("Cities", axon.SuperLayer, n, n, pn, pn)
 
 	full := paths.NewFull()
 	full.SelfCon = true
-	net.ConnectLayers(inlay, inlay, full, axon.LateralPath)
+	one2one := paths.NewOneToOne()
+	net.ConnectLayers(inlay, hlay, one2one, axon.ForwardPath)
+	net.ConnectLayers(hlay, hlay, full, axon.LateralPath)
+	net.ConnectLayers(hlay, hlay, full, axon.InhibPath)
 
 	net.Build()
 	net.Defaults()
@@ -254,21 +259,63 @@ func (ss *Sim) ConfigLoops() {
 // ApplyInputs applies input patterns from given environment for given mode.
 // Any other start-of-trial logic can also be put here.
 func (ss *Sim) ApplyInputs(mode Modes) {
-	net := ss.Net
+	// net := ss.Net
 	curModeDir := ss.Current.Dir(mode.String())
 	ev := ss.Envs.ByMode(mode)
-	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
-	net.InitExt()
+	// lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
+	// net.InitExt()
 	ev.Step()
 	curModeDir.StringValue("TrialName", 1).SetString1D(ev.String(), 0)
-	for _, lnm := range lays {
-		ly := ss.Net.LayerByName(lnm)
-		st := ev.State("Input")
-		if st != nil {
-			ly.ApplyExt(uint32(0), st)
+	// for _, lnm := range lays {
+	// 	ly := ss.Net.LayerByName(lnm)
+	// 	st := ev.State("Input")
+	// 	if st != nil {
+	// 		ly.ApplyExt(uint32(0), st)
+	// 	}
+	// }
+	// net.ApplyExts()
+	ss.SetWeights()
+}
+
+func (ss *Sim) SetWeights() {
+	net := ss.Net
+	ctx := net.Context()
+	ev := ss.Envs.ByMode(Test).(*consatenv.ConSatEnv)
+	ly := net.LayerByName("Cities")
+	n := ev.NStates
+	np := ev.NUnitsPer
+	gpn := np * np
+	selfWt := ss.Config.Params.SelfWt
+	inhibWt := ss.Config.Params.InhibWt
+	pt := ly.RecvPaths[1] // excitatory
+	pt.SetWeightsFunc(ctx, func(si, ri int, send, recv *tensor.Shape) float32 {
+		sCity := (si / gpn) / n
+		sPos := (si / gpn) % n
+		rCity := (ri / gpn) / n
+		rPos := (ri / gpn) % n
+		dwt := ev.DistWeight(rCity, sCity)
+		if rPos == sPos {
+			if sCity == rCity {
+				return selfWt
+			}
+			return dwt
 		}
-	}
-	net.ApplyExts()
+		return 0.0
+	})
+	pt = ly.RecvPaths[2] // inhibitory
+	pt.SetWeightsFunc(ctx, func(si, ri int, send, recv *tensor.Shape) float32 {
+		sCity := (si / gpn) / n
+		sPos := (si / gpn) % n
+		rCity := (ri / gpn) / n
+		rPos := (ri / gpn) % n
+		if rPos == sPos && sCity == rCity {
+			return 0
+		}
+		if rPos == sPos || sCity == rCity {
+			return inhibWt
+		}
+		return 0.0
+	})
 }
 
 // NewRun intializes a new Run level of the model.
@@ -321,8 +368,17 @@ func (ss *Sim) RunStats(mode Modes, level Levels, start bool) {
 		sf(mode, level, start)
 	}
 	if !start && ss.GUI.Tabs != nil {
+		tbs := ss.GUI.Tabs.AsLab()
+		_, idx := tbs.CurrentTab()
 		nm := mode.String() + " " + level.String() + " Plot"
-		ss.GUI.Tabs.AsLab().GoUpdatePlot(nm)
+		tbs.GoUpdatePlot(nm)
+		if level == Trial {
+			ev := ss.Envs.ByMode(Test).(*consatenv.ConSatEnv)
+			ev.UpdatePlot()
+			plt := tbs.Plot("Optimal", ev.Plot)
+			plt.Update()
+		}
+		tbs.SelectTabIndex(idx)
 	}
 }
 
@@ -376,7 +432,7 @@ func (ss *Sim) ConfigStats() {
 	ss.AddStatStd(axon.StatTrialName(ss.Stats, ss.Current, ss.Loops, net, Trial))
 	ss.AddStatStd(axon.StatPerTrialMSec(ss.Stats, Test, Trial))
 
-	layers := []string{"Input"}
+	layers := []string{"Cities"}
 	statNames := []string{"Spike", "Vm", "VmDend", "Ge", "Act", "Gi", "FFs", "FBs", "FSi", "SSi", "SSf", "FSGi", "SSGi"}
 	ss.AddStat(func(mode Modes, level Levels, start bool) {
 		for _, lnm := range layers {
@@ -480,6 +536,7 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	plt := plot.New()
 	tbs.Plot("Optimal", plt)
 	ev.Plot = plt
+	ev.MakePlot()
 	tbs.SelectTabIndex(idx)
 
 	ss.StatsInit()

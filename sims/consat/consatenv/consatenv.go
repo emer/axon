@@ -5,8 +5,7 @@
 package consatenv
 
 import (
-	"fmt"
-
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/lab/plot"
@@ -17,9 +16,11 @@ import (
 // ConSatEnv implements constraint satisfaction testing environments
 // e.g., the Travelling Salesman Problem (TSP).
 type ConSatEnv struct {
-
 	// name of environment -- Train or Test -- always Test!
 	Name string
+
+	// distance exponential multiplier.
+	DistExp float32
 
 	// number of states (e.g., number of cities)
 	NStates int
@@ -49,6 +50,7 @@ type ConSatEnv struct {
 func (ev *ConSatEnv) Label() string { return ev.Name }
 
 func (ev *ConSatEnv) Defaults() {
+	ev.DistExp = 1
 	ev.NStates = 4
 	ev.NUnitsPer = 2
 	ev.NUnits = ev.NStates * ev.NUnitsPer * ev.NUnitsPer
@@ -60,6 +62,7 @@ func (ev *ConSatEnv) Config(rndseed int64) {
 	ev.States = make(map[string]*tensor.Float32)
 	ev.States["Positions"] = tensor.NewFloat32(ev.NStates, 2) // X,Y coordinates
 	ev.States["Distances"] = tensor.NewFloat32(ev.NStates, ev.NStates)
+	ev.States["NormWeights"] = tensor.NewFloat32(ev.NStates, ev.NStates)
 	ev.States["Optimal"] = tensor.NewFloat32(ev.NStates) // optimal order, city index
 	ev.States["Result"] = tensor.NewFloat32(ev.NStates)  // model result order, city index
 	ev.States["Input"] = tensor.NewFloat32(ev.NStates, ev.NStates, ev.NUnitsPer, ev.NUnitsPer)
@@ -83,9 +86,18 @@ func (ev *ConSatEnv) String() string {
 	// return fmt.Sprintf("%4f_%4f", ev.ACCPos, ev.ACCNeg)
 }
 
+// DistWeight returns the weight for the distance between the two
+// given cities, using exp(-DistExp * dist)
+func (ev *ConSatEnv) DistWeight(a, b int) float32 {
+	ds := ev.States["NormWeights"]
+	d := ds.Value(a, b)
+	return d
+}
+
 func (ev *ConSatEnv) MakeCities() {
 	ps := ev.States["Positions"]
 	ds := ev.States["Distances"]
+	nd := ev.States["NormWeights"]
 	for a := range ev.NStates {
 		ps.Set(ev.Rand.Float32(), a, int(math32.X))
 		ps.Set(ev.Rand.Float32(), a, int(math32.Y))
@@ -94,11 +106,28 @@ func (ev *ConSatEnv) MakeCities() {
 	for a := range ev.NStates {
 		var ap math32.Vector2
 		ap.Set(ps.Value(a, int(math32.X)), ps.Value(a, int(math32.Y)))
+		minfd := float32(1.0)
+		maxfd := float32(0.0)
 		for b := range ev.NStates {
 			var bp math32.Vector2
 			bp.Set(ps.Value(b, int(math32.X)), ps.Value(b, int(math32.Y)))
 			d := ap.DistanceTo(bp)
 			ds.Set(d, a, b)
+			fd := math32.FastExp(-ev.DistExp * d)
+			nd.Set(fd, a, b)
+			if a != b {
+				minfd = min(minfd, fd)
+				maxfd = max(maxfd, fd)
+			}
+		}
+		for b := range ev.NStates {
+			fd := nd.Value(a, b)
+			if a == b {
+				continue
+			}
+			nv := (fd - minfd) / (maxfd - minfd)
+			nd.Set(nv, a, b)
+			// fmt.Println(a, b, fd, minfd, maxfd, nv)
 		}
 	}
 }
@@ -151,7 +180,7 @@ func (ev *ConSatEnv) BruteForce() {
 			mini = o
 		}
 	}
-	fmt.Println("min dist:", mind, "index:", mini)
+	// fmt.Println("min dist:", mind, "index:", mini)
 	opt := ev.States["Optimal"]
 	pos := ev.States["Positions"]
 	optx := ev.States["OptimalX"]
@@ -162,7 +191,7 @@ func (ev *ConSatEnv) BruteForce() {
 		optx.Set(pos.Value(op, int(math32.X)), p)
 		opty.Set(pos.Value(op, int(math32.Y)), p)
 	}
-	fmt.Println("optimal:", opt)
+	// fmt.Println("optimal:", opt, optx, opty)
 }
 
 func (ev *ConSatEnv) MakePlot() {
@@ -171,10 +200,24 @@ func (ev *ConSatEnv) MakePlot() {
 	}
 	optx := ev.States["OptimalX"]
 	opty := ev.States["OptimalY"]
-	plot.Styler(optx, func(s *plot.Style) {
+	plot.Styler(opty, func(s *plot.Style) {
+		s.Plot.Title = "Optimal Route"
 		s.Plot.SetPointsOn(plot.On)
+		s.Point.SetOn(plot.On)
+		s.Range.SetMin(0).SetMax(1)
+		s.Plot.XAxis.Range.SetMin(0).SetMax(1)
+		s.Line.NegativeX = true
 	})
 	plots.NewLine(ev.Plot, plot.Data{plot.X: optx, plot.Y: opty})
+}
+
+func (ev *ConSatEnv) UpdatePlot() {
+	if ev.Plot == nil {
+		return
+	}
+	optx := ev.States["OptimalX"]
+	opty := ev.States["OptimalY"]
+	errors.Log(ev.Plot.Plotters[0].SetData(plot.Data{plot.X: optx, plot.Y: opty}))
 }
 
 // Step does one step -- must set Trial.Cur first if doing testing

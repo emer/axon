@@ -15,6 +15,12 @@ type ParamConfig struct {
 	// sheets, by default using the "Script" set name.
 	Script string `new-window:"+" width:"100"`
 
+	// SelfWt is the excitatory weight between units in same pool.
+	SelfWt float32 `default:"0.0"`
+
+	// InhibWt is the inhibitory weight across rows or columns
+	InhibWt float32 `default:"1.0"`
+
 	// Sheet is the extra params sheet name(s) to use (space separated
 	// if multiple). Must be valid name as listed in compiled-in params
 	// or loaded params.
@@ -53,7 +59,7 @@ type RunConfig struct {
 	Trials int `default:"10"`
 
 	// Cycles is the total number of cycles per trial: at least 200.
-	Cycles int `default:"200"`
+	Cycles int `default:"400"`
 }
 
 // LogConfig has config parameters related to logging data.
