@@ -52,7 +52,7 @@ func (ev *ConSatEnv) Label() string { return ev.Name }
 func (ev *ConSatEnv) Defaults() {
 	ev.DistExp = 1
 	ev.NStates = 4
-	ev.NUnitsPer = 2
+	ev.NUnitsPer = 10
 	ev.NUnits = ev.NStates * ev.NUnitsPer * ev.NUnitsPer
 }
 

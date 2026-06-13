@@ -184,8 +184,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	full := paths.NewFull()
 	full.SelfCon = true
-	one2one := paths.NewOneToOne()
-	net.ConnectLayers(inlay, hlay, one2one, axon.ForwardPath)
+	p121 := paths.NewPoolOneToOne()
+	// one2one := paths.NewOneToOne()
+	net.ConnectLayers(inlay, hlay, p121, axon.ForwardPath)
 	net.ConnectLayers(hlay, hlay, full, axon.LateralPath)
 	net.ConnectLayers(hlay, hlay, full, axon.InhibPath)
 
@@ -286,7 +287,11 @@ func (ss *Sim) SetWeights() {
 	np := ev.NUnitsPer
 	gpn := np * np
 	selfWt := ss.Config.Params.SelfWt
-	inhibWt := ss.Config.Params.InhibWt
+	wtVar := ss.Config.Params.LatWtVar
+	unif := func() float32 {
+		return ss.Net.Rand.Float32()*2.0*wtVar - wtVar
+	}
+
 	pt := ly.RecvPaths[1] // excitatory
 	pt.SetWeightsFunc(ctx, func(si, ri int, send, recv *tensor.Shape) float32 {
 		sCity := (si / gpn) / n
@@ -296,9 +301,10 @@ func (ss *Sim) SetWeights() {
 		dwt := ev.DistWeight(rCity, sCity)
 		if rPos == sPos {
 			if sCity == rCity {
-				return selfWt
+				return math32.Clamp(selfWt+unif(), 0.01, 0.99)
 			}
-			return dwt
+			wt := math32.Clamp(dwt+unif(), 0.01, 0.99)
+			return wt
 		}
 		return 0.0
 	})
@@ -312,7 +318,7 @@ func (ss *Sim) SetWeights() {
 			return 0
 		}
 		if rPos == sPos || sCity == rCity {
-			return inhibWt
+			return 1.0
 		}
 		return 0.0
 	})

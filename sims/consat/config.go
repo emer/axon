@@ -16,10 +16,10 @@ type ParamConfig struct {
 	Script string `new-window:"+" width:"100"`
 
 	// SelfWt is the excitatory weight between units in same pool.
-	SelfWt float32 `default:"0.0"`
+	SelfWt float32 `default:"0.8"`
 
-	// InhibWt is the inhibitory weight across rows or columns
-	InhibWt float32 `default:"1.0"`
+	// LatWtVar is the variance on lateral weights
+	LatWtVar float32 `default:"0.25"`
 
 	// Sheet is the extra params sheet name(s) to use (space separated
 	// if multiple). Must be valid name as listed in compiled-in params
