@@ -9,17 +9,21 @@ import (
 	"github.com/emer/emergent/v2/egui"
 )
 
+// EnvConfig has config params for environment
+// note: only adding fields for key Env params that matter for both Network and Env
+// other params are set via the Env map data mechanism.
+type EnvConfig struct {
+
+	// Env parameters: can set any field/subfield on Env struct,
+	// using standard TOML formatting.
+	Env map[string]any
+}
+
 // ParamConfig has config parameters related to sim params.
 type ParamConfig struct {
 	// Script is an interpreted script that is run to set parameters in Layer and Path
 	// sheets, by default using the "Script" set name.
 	Script string `new-window:"+" width:"100"`
-
-	// SelfWt is the excitatory weight between units in same pool.
-	SelfWt float32 `default:"0.8"`
-
-	// LatWtVar is the variance on lateral weights
-	LatWtVar float32 `default:"0.25"`
 
 	// Sheet is the extra params sheet name(s) to use (space separated
 	// if multiple). Must be valid name as listed in compiled-in params
@@ -55,23 +59,72 @@ type RunConfig struct {
 	// GPUDevice selects the gpu device to use.
 	GPUDevice int
 
-	// Trials is the total number of trials of different random patterns to generate.
-	Trials int `default:"10"`
+	// NData is the number of data-parallel items to process in parallel per trial.
+	// Is significantly faster for both CPU and GPU.  Results in an effective
+	// mini-batch of learning.
+	NData int `default:"16" min:"1"`
 
-	// Cycles is the total number of cycles per trial: at least 200.
-	Cycles int `default:"400"`
+	// NThreads is the number of parallel threads for CPU computation;
+	// 0 = use default.
+	NThreads int `default:"0"`
+
+	// Run is the _starting_ run number, which determines the random seed.
+	// Runs counts up from there. Can do all runs in parallel by launching
+	// separate jobs with each starting Run, Runs = 1.
+	Run int `default:"0" flag:"run"`
+
+	// Runs is the total number of runs to do when running Train, starting from Run.
+	Runs int `default:"5" min:"1"`
+
+	// Epochs is the total number of epochs per run.
+	Epochs int `default:"100"`
+
+	// Trials is the total number of trials per epoch.
+	// Should be an even multiple of NData.
+	Trials int `default:"128"`
+
+	// ISICycles is the number of no-input inter-stimulus interval
+	// cycles at the start of the trial.
+	ISICycles int `default:"0"`
+
+	// MinusCycles is the number of cycles in the minus phase per trial.
+	MinusCycles int `default:"150"`
+
+	// PlusCycles is the number of cycles in the plus phase per trial.
+	PlusCycles int `default:"50"`
+
+	// PCAInterval is how often (in epochs) to compute PCA on hidden
+	// representations to measure variance.
+	PCAInterval int `default:"10"`
+
+	// StartWeights is the name of weights file to load at start of first run.
+	StartWeights string
+}
+
+// Cycles returns the total number of cycles per trial: ISI + Minus + Plus.
+func (rc *RunConfig) Cycles() int {
+	return rc.ISICycles + rc.MinusCycles + rc.PlusCycles
 }
 
 // LogConfig has config parameters related to logging data.
 type LogConfig struct {
 
-	// Save has the list of levels to save log files for.
-	Save []string `default:"['Trial', 'Cycle']" nest:"+"`
+	// SaveWeights will save final weights after each run.
+	SaveWeights bool
+
+	// Train has the list of Train mode levels to save log files for.
+	Train []string `default:"['Expt', 'Run', 'Epoch']" nest:"+"`
+
+	// Test has the list of Test mode levels to save log files for.
+	Test []string `nest:"+"`
 }
 
 // Config has the overall Sim configuration options.
 type Config struct {
 	egui.BaseConfig
+
+	// Env has environment related configuration options.
+	Env EnvConfig `display:"add-fields"`
 
 	// Params has parameter related configuration options.
 	Params ParamConfig `display:"add-fields"`
@@ -87,5 +140,5 @@ func (cfg *Config) Defaults() {
 	cfg.Name = "ConSat"
 	cfg.Title = "Axon constraint statisfaction"
 	cfg.URL = "https://github.com/emer/axon/blob/main/sims/consat/README.md"
-	cfg.Doc = "This tests constraint satisfaction using the travelling salesman problem."
+	cfg.Doc = "This tests constraint satisfaction using the traveling salesman problem."
 }

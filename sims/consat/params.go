@@ -12,35 +12,18 @@ var LayerParams = axon.LayerSheets{
 	"Base": {
 		{Sel: "Layer", Doc: "generic params for all layers",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.Layer.On.SetBool(true)
-				ly.Inhib.Layer.Gi = 1.0
-				ly.Inhib.ActAvg.Nominal = 0.1
-				ly.Acts.Noise.On.SetBool(true)
-				ly.Acts.Noise.GeHz = 100
-				ly.Acts.Noise.Ge = 0.01 // 0.001 min
-				ly.Acts.Noise.GiHz = 200
-				ly.Acts.Noise.Gi = 0.01 // 0.001 min
-				ly.Acts.Decay.Act = 1
-				ly.Acts.Decay.Glong = 1
-				ly.Acts.Decay.LearnCa = 1
-				ly.Acts.Decay.GBuffs.SetBool(true)
+				// ly.Inhib.Layer.On.SetBool(true)
+				// ly.Inhib.Layer.Gi = 1.0
+				// ly.Inhib.ActAvg.Nominal = 0.1
+				// ly.Acts.Noise.On.SetBool(false)
+				// ly.Acts.Noise.GeHz = 100
+				// ly.Acts.Noise.Ge = 0.01 // 0.001 min
+				// ly.Acts.Noise.GiHz = 200
+				// ly.Acts.Noise.Gi = 0.01 // 0.001 min
 			}},
 		{Sel: "#Input", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.Layer.Gi = 1.0
-				ly.Acts.Init.GeBase = 0.3
-				ly.Acts.Init.GeVar = 0.05
-				ly.Acts.Noise.Ge = 0.02 // 0.001 min
-				ly.Acts.Noise.Gi = 0.02 // 0.001 min
-			}},
-		{Sel: "#Cities", Doc: "",
-			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.Layer.On.SetBool(true)
-				ly.Inhib.Layer.Gi = 0.9 // 0.9 min
-				ly.Inhib.Pool.On.SetBool(true)
-				ly.Inhib.Pool.Gi = 0.5
-				ly.Inhib.ActAvg.Nominal = 0.1
-				ly.Acts.Init.GeBase = 0
 			}},
 	},
 }
@@ -51,18 +34,14 @@ var PathParams = axon.PathSheets{
 	"Base": {
 		{Sel: "Path", Doc: "no learning",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.Learn.SetBool(false)
-				pt.SWts.Init.Mean = 0.8
-				pt.SWts.Init.Var = 0.25
-				pt.Com.Delay = 2
+				pt.Learn.LRate.Base = 0.01
+				pt.SWts.Adapt.LRate = 0.1
+				pt.SWts.Init.SPct = 0.5
+				pt.Learn.DWt.SubMean = 0
 			}},
-		{Sel: ".InhibPath", Doc: "inhib gain",
+		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 0.5
-			}},
-		{Sel: ".LateralPath", Doc: "lateral gain",
-			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 4
+				pt.PathScale.Rel = 0.3 // 0.3 > 0.2 > 0.1 > 0.5
 			}},
 	},
 }

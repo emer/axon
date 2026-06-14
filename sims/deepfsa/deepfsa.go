@@ -135,7 +135,7 @@ func (ss *Sim) ConfigEnv() {
 	// Can be called multiple times -- don't re-create
 	newEnv := (len(ss.Envs) == 0)
 
-	for di := 0; di < ss.Config.Run.NData; di++ {
+	for di := range ss.Config.Run.NData {
 		var trn, tst *FSAEnv
 		if newEnv {
 			trn = &FSAEnv{}

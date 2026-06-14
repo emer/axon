@@ -14,23 +14,28 @@ import (
 )
 
 // ConSatEnv implements constraint satisfaction testing environments
-// e.g., the Travelling Salesman Problem (TSP).
+// e.g., the Traveling Salesman Problem (TSP).
+// Generates an input display of cities, target is shortest order,
+// as a simultaneous map of grids, ordered relative to top-most city.
 type ConSatEnv struct {
 	// name of environment -- Train or Test -- always Test!
 	Name string
 
-	// distance exponential multiplier.
-	DistExp float32
-
 	// number of states (e.g., number of cities)
-	NStates int
+	NCities int
+
+	// grid spacing in 1x1 unit square for plotting inputs, and min dist
+	GridSpacing float32
+
+	// number of grid squares: 1 / .1 = 10
+	NGrids int
 
 	// number of units per localist representation, as one axis in pool in 4D space,
 	// such that total is NUnitsPer^2
-	NUnitsPer int `display:"-"`
+	NUnitsPer int
 
-	// total number of units
-	NUnits int `display:"-"`
+	// TopCity is the index of top-most city -- starting point for tours
+	TopCity int
 
 	// named states
 	States map[string]*tensor.Float32
@@ -50,24 +55,31 @@ type ConSatEnv struct {
 func (ev *ConSatEnv) Label() string { return ev.Name }
 
 func (ev *ConSatEnv) Defaults() {
-	ev.DistExp = 1
-	ev.NStates = 4
-	ev.NUnitsPer = 10
-	ev.NUnits = ev.NStates * ev.NUnitsPer * ev.NUnitsPer
+	ev.GridSpacing = 0.1
+	ev.NCities = 4
+	ev.NUnitsPer = 2
+	ev.Update()
+}
+
+func (ev *ConSatEnv) Update() {
+	ev.NGrids = int(1.0/ev.GridSpacing) + 1
 }
 
 // Config configures the world
 func (ev *ConSatEnv) Config(rndseed int64) {
+	n := ev.NCities
+	ng := ev.NGrids
+	nu := ev.NUnitsPer
 	ev.RunRandSeed = rndseed
 	ev.States = make(map[string]*tensor.Float32)
-	ev.States["Positions"] = tensor.NewFloat32(ev.NStates, 2) // X,Y coordinates
-	ev.States["Distances"] = tensor.NewFloat32(ev.NStates, ev.NStates)
-	ev.States["NormWeights"] = tensor.NewFloat32(ev.NStates, ev.NStates)
-	ev.States["Optimal"] = tensor.NewFloat32(ev.NStates) // optimal order, city index
-	ev.States["Result"] = tensor.NewFloat32(ev.NStates)  // model result order, city index
-	ev.States["Input"] = tensor.NewFloat32(ev.NStates, ev.NStates, ev.NUnitsPer, ev.NUnitsPer)
-	ev.States["OptimalX"] = tensor.NewFloat32(ev.NStates) // optimal order, city index
-	ev.States["OptimalY"] = tensor.NewFloat32(ev.NStates) // optimal order, city index
+	ev.States["Positions"] = tensor.NewFloat32(n, 2) // X,Y coordinates
+	ev.States["Distances"] = tensor.NewFloat32(n, n)
+	ev.States["Result"] = tensor.NewFloat32(n) // model result order, city index
+	ev.States["Input"] = tensor.NewFloat32(ng, ng, nu, nu)
+	ev.States["Output"] = tensor.NewFloat32(ng, n*ng, nu, nu)
+	ev.States["Optimal"] = tensor.NewFloat32(n)  // optimal order, city index
+	ev.States["OptimalX"] = tensor.NewFloat32(n) // optimal order, city index
+	ev.States["OptimalY"] = tensor.NewFloat32(n) // optimal order, city index
 }
 
 func (ev *ConSatEnv) Init(run int) {
@@ -97,44 +109,49 @@ func (ev *ConSatEnv) DistWeight(a, b int) float32 {
 func (ev *ConSatEnv) MakeCities() {
 	ps := ev.States["Positions"]
 	ds := ev.States["Distances"]
-	nd := ev.States["NormWeights"]
-	for a := range ev.NStates {
-		ps.Set(ev.Rand.Float32(), a, int(math32.X))
-		ps.Set(ev.Rand.Float32(), a, int(math32.Y))
-
+	n := ev.NCities
+	topIdx := 0
+	topY := float32(0)
+	for a := range n {
+		var ap math32.Vector2
+		for {
+			ap.Set(ev.Rand.Float32(), ev.Rand.Float32())
+			redo := false
+			for b := 0; b < a; b++ {
+				bp := math32.Vec2(ps.Value(b, int(math32.X)), ps.Value(b, int(math32.Y)))
+				d := ap.DistanceTo(bp)
+				if d < ev.GridSpacing {
+					redo = true
+					break
+				}
+			}
+			if !redo {
+				break
+			}
+		}
+		ps.Set(ap.X, a, int(math32.X))
+		ps.Set(ap.Y, a, int(math32.Y))
+		if ap.Y > topY {
+			topY = ap.Y
+			topIdx = a
+		}
 	}
-	for a := range ev.NStates {
+	ev.TopCity = topIdx
+	for a := range n {
 		var ap math32.Vector2
 		ap.Set(ps.Value(a, int(math32.X)), ps.Value(a, int(math32.Y)))
-		minfd := float32(1.0)
-		maxfd := float32(0.0)
-		for b := range ev.NStates {
+		for b := range n {
 			var bp math32.Vector2
 			bp.Set(ps.Value(b, int(math32.X)), ps.Value(b, int(math32.Y)))
 			d := ap.DistanceTo(bp)
 			ds.Set(d, a, b)
-			fd := math32.FastExp(-ev.DistExp * d)
-			nd.Set(fd, a, b)
-			if a != b {
-				minfd = min(minfd, fd)
-				maxfd = max(maxfd, fd)
-			}
-		}
-		for b := range ev.NStates {
-			fd := nd.Value(a, b)
-			if a == b {
-				continue
-			}
-			nv := (fd - minfd) / (maxfd - minfd)
-			nd.Set(nv, a, b)
-			// fmt.Println(a, b, fd, minfd, maxfd, nv)
 		}
 	}
 }
 
 func (ev *ConSatEnv) BruteForce() {
 	ds := ev.States["Distances"]
-	n := ev.NStates
+	n := ev.NCities
 	no := 1
 	in := make([]int32, n)
 	for i := range n {
@@ -185,8 +202,18 @@ func (ev *ConSatEnv) BruteForce() {
 	pos := ev.States["Positions"]
 	optx := ev.States["OptimalX"]
 	opty := ev.States["OptimalY"]
+	start := 0
 	for p := range n {
 		op := int(orders.Value(mini, p))
+		if op == ev.TopCity {
+			start = p
+			break
+		}
+	}
+	// todo: find direction to go based on largest X coord
+	for p := range n {
+		pi := (start + p) % n
+		op := int(orders.Value(mini, pi))
 		opt.Set(float32(op), p)
 		optx.Set(pos.Value(op, int(math32.X)), p)
 		opty.Set(pos.Value(op, int(math32.Y)), p)
@@ -220,9 +247,37 @@ func (ev *ConSatEnv) UpdatePlot() {
 	errors.Log(ev.Plot.Plotters[0].SetData(plot.Data{plot.X: optx, plot.Y: opty}))
 }
 
+func (ev *ConSatEnv) RenderGrid() {
+	optx := ev.States["OptimalX"]
+	opty := ev.States["OptimalY"]
+	in := ev.States["Input"]
+	out := ev.States["Output"]
+	n := ev.NCities
+	ng := ev.NGrids
+	nu := ev.NUnitsPer
+	gs := ev.GridSpacing
+
+	in.SetZeros()
+	out.SetZeros()
+
+	for p := range n {
+		x := optx.Value(p)
+		y := opty.Value(p)
+		xi := int(math32.Round(x / gs))
+		yi := int(math32.Round(y / gs))
+		for uy := range nu {
+			for ux := range nu {
+				in.Set(1, yi, xi, uy, ux)
+				out.Set(1, yi, p*ng+xi, uy, ux)
+			}
+		}
+	}
+}
+
 // Step does one step -- must set Trial.Cur first if doing testing
 func (ev *ConSatEnv) Step() bool {
 	ev.MakeCities()
 	ev.BruteForce()
+	ev.RenderGrid()
 	return true
 }
