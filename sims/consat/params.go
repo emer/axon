@@ -20,6 +20,10 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Noise.Ge = 0.01 // 0.001 min
 				ly.Acts.Noise.GiHz = 200
 				ly.Acts.Noise.Gi = 0.01 // 0.001 min
+				ly.Acts.Decay.Act = 1
+				ly.Acts.Decay.Glong = 1
+				ly.Acts.Decay.LearnCa = 1
+				ly.Acts.Decay.GBuffs.SetBool(true)
 			}},
 		{Sel: "#Input", Doc: "",
 			Set: func(ly *axon.LayerParams) {

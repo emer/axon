@@ -18,8 +18,7 @@ type LayerTypes int32 //enums:enum
 const (
 	// Super is a superficial cortical layer (lamina 2-3-4)
 	// which does not receive direct input or targets.
-	// In more generic models, it should be used as a Hidden layer,
-	// and maps onto the Hidden type in LayerTypes.
+	// In more generic models, it should be used as a Hidden layer.
 	SuperLayer LayerTypes = iota
 
 	// Input is a layer that receives direct external input
