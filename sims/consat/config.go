@@ -13,7 +13,6 @@ import (
 // note: only adding fields for key Env params that matter for both Network and Env
 // other params are set via the Env map data mechanism.
 type EnvConfig struct {
-
 	// Env parameters: can set any field/subfield on Env struct,
 	// using standard TOML formatting.
 	Env map[string]any
@@ -77,11 +76,11 @@ type RunConfig struct {
 	Runs int `default:"5" min:"1"`
 
 	// Epochs is the total number of epochs per run.
-	Epochs int `default:"100"`
+	Epochs int `default:"200"`
 
 	// Trials is the total number of trials per epoch.
 	// Should be an even multiple of NData.
-	Trials int `default:"128"`
+	Trials int `default:"512"`
 
 	// ISICycles is the number of no-input inter-stimulus interval
 	// cycles at the start of the trial.

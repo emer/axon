@@ -188,7 +188,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	inp := net.AddLayer4D("Input", axon.InputLayer, ng, ng, nu, nu)
 	hid1 := net.AddLayer2D("Hidden1", axon.SuperLayer, 20, 20)
 	hid2 := net.AddLayer2D("Hidden2", axon.SuperLayer, 20, 20)
-	out := net.AddLayer4D("Output", axon.TargetLayer, ng, n*ng, nu, nu)
+	out := net.AddLayer4D("Output", axon.TargetLayer, 1, n, ng, ng)
 
 	full := paths.NewFull()
 
@@ -416,11 +416,20 @@ func (ss *Sim) RunStats(mode Modes, level Levels, start bool) {
 		sf(mode, level, start)
 	}
 	if !start && ss.GUI.Tabs != nil {
+		tbs := ss.GUI.Tabs.AsLab()
+		_, idx := tbs.CurrentTab()
 		nm := mode.String() + " " + level.String() + " Plot"
-		ss.GUI.Tabs.AsLab().GoUpdatePlot(nm)
-		if level == Run {
-			ss.GUI.Tabs.AsLab().GoUpdatePlot("Train RunAll Plot")
+		tbs.GoUpdatePlot(nm)
+		switch level {
+		case Trial:
+			ev := ss.Envs.ByModeDi(Train, 0).(*consatenv.ConSatEnv)
+			ev.UpdatePlot()
+			fr := tbs.TabByName("Optimal")
+			fr.Update()
+		case Run:
+			tbs.GoUpdatePlot("Train RunAll Plot")
 		}
+		tbs.SelectTabIndex(idx)
 	}
 }
 
@@ -478,7 +487,7 @@ func (ss *Sim) ConfigStats() {
 
 	// up to a point, it is good to use loops over stats in one function,
 	// to reduce repetition of boilerplate.
-	statNames := []string{"CorSim", "UnitErr", "Err", "NZero", "FirstZero", "LastZero"}
+	statNames := []string{"CorSim", "UnitErr", "Err"}
 	statDocs := map[string]string{
 		"CorSim":  "The correlation-based similarity of the neural activity patterns between the minus and plus phase (1 = patterns are effectively identical). For target layers, this is good continuous, normalized measure of learning performance, which can be more sensitive than thresholded SSE measures.",
 		"UnitErr": "Normalized proportion of neurons with activities on the wrong side of 0.5 relative to the target values. This is a good normalized error measure.",
@@ -486,9 +495,6 @@ func (ss *Sim) ConfigStats() {
 	}
 	ss.AddStat(func(mode Modes, level Levels, start bool) {
 		for _, name := range statNames {
-			if name == "NZero" && (mode != Train || level == Trial) {
-				return
-			}
 			modeDir := ss.Stats.Dir(mode.String())
 			curModeDir := ss.Current.Dir(mode.String())
 			levelDir := modeDir.Dir(level.String())
@@ -528,7 +534,7 @@ func (ss *Sim) ConfigStats() {
 			case Run:
 				stat = stats.StatFinal.Call(subDir.Value(name)).Float1D(0)
 				tsr.AppendRowFloat(stat)
-			default: // Expt
+			default:
 				stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
 				tsr.AppendRowFloat(stat)
 			}
@@ -537,17 +543,19 @@ func (ss *Sim) ConfigStats() {
 
 	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
 	ss.AddStatStd(axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...))
+	ss.AddStatStd(axon.StatLayerGiMult(ss.Stats, net, Train, Epoch, Run, lays...))
 
 	superLays := net.LayersByType(axon.SuperLayer, axon.CTLayer)
 	ss.AddStatStd(axon.StatLearnTiming(ss.Stats, ss.Current, net, Trial, Run, superLays...))
 
-	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, Run, lays...)
+	noTarglays := net.LayersByType(axon.SuperLayer, axon.CTLayer)
+	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, Run, noTarglays...)
 	ss.AddStat(func(mode Modes, level Levels, start bool) {
 		trnEpc := ss.Loops.Loop(Train, Epoch).Counter.Cur
 		pcaFunc(mode, level, start, trnEpc)
 	})
 
-	ss.AddStatStd(axon.StatLayerState(ss.Stats, net, Test, Trial, true, "ActM", "Input", "Output"))
+	// ss.AddStatStd(axon.StatLayerState(ss.Stats, net, Test, Trial, true, "ActM", "Input", "Output"))
 
 	ss.AddStatStd(axon.StatLevelAll(ss.Stats, Train, Run, func(s *plot.Style, cl tensor.Values) {
 		name := metadata.Name(cl)
@@ -602,6 +610,15 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 
 	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1, 2.75)
 	nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
+
+	ev := ss.Envs.ByModeDi(Train, 0).(*consatenv.ConSatEnv)
+	tbs := ss.GUI.Tabs.AsLab()
+	_, idx := tbs.CurrentTab()
+	plt := plot.New()
+	tbs.Plot("Optimal", plt)
+	ev.Plot = plt
+	ev.MakePlot()
+	tbs.SelectTabIndex(idx)
 
 	ss.StatsInit()
 	ss.GUI.FinalizeGUI(false)

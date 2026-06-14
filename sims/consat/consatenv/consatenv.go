@@ -11,6 +11,7 @@ import (
 	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/plot/plots"
 	"cogentcore.org/lab/tensor"
+	"github.com/emer/emergent/v2/env"
 )
 
 // ConSatEnv implements constraint satisfaction testing environments
@@ -34,8 +35,13 @@ type ConSatEnv struct {
 	// such that total is NUnitsPer^2
 	NUnitsPer int
 
+	// how frequently to generate a new problem
+	NewInterval int `default:"4" min:"1"`
+
+	Trial env.Counter
+
 	// TopCity is the index of top-most city -- starting point for tours
-	TopCity int
+	TopCity int `edit:"-"`
 
 	// named states
 	States map[string]*tensor.Float32
@@ -58,6 +64,7 @@ func (ev *ConSatEnv) Defaults() {
 	ev.GridSpacing = 0.1
 	ev.NCities = 4
 	ev.NUnitsPer = 2
+	ev.NewInterval = 4
 	ev.Update()
 }
 
@@ -70,16 +77,17 @@ func (ev *ConSatEnv) Config(rndseed int64) {
 	n := ev.NCities
 	ng := ev.NGrids
 	nu := ev.NUnitsPer
+	ev.Trial.Max = ev.NewInterval
 	ev.RunRandSeed = rndseed
 	ev.States = make(map[string]*tensor.Float32)
 	ev.States["Positions"] = tensor.NewFloat32(n, 2) // X,Y coordinates
 	ev.States["Distances"] = tensor.NewFloat32(n, n)
 	ev.States["Result"] = tensor.NewFloat32(n) // model result order, city index
 	ev.States["Input"] = tensor.NewFloat32(ng, ng, nu, nu)
-	ev.States["Output"] = tensor.NewFloat32(ng, n*ng, nu, nu)
-	ev.States["Optimal"] = tensor.NewFloat32(n)  // optimal order, city index
-	ev.States["OptimalX"] = tensor.NewFloat32(n) // optimal order, city index
-	ev.States["OptimalY"] = tensor.NewFloat32(n) // optimal order, city index
+	ev.States["Output"] = tensor.NewFloat32(1, n, ng, ng)
+	ev.States["Optimal"] = tensor.NewFloat32(n)      // optimal order, city index
+	ev.States["OptimalX"] = tensor.NewFloat32(n + 1) // optimal order, x coord
+	ev.States["OptimalY"] = tensor.NewFloat32(n + 1) // optimal order, y coord
 }
 
 func (ev *ConSatEnv) Init(run int) {
@@ -110,6 +118,7 @@ func (ev *ConSatEnv) MakeCities() {
 	ps := ev.States["Positions"]
 	ds := ev.States["Distances"]
 	n := ev.NCities
+	tol := 2.0 * ev.GridSpacing
 	topIdx := 0
 	topY := float32(0)
 	for a := range n {
@@ -120,7 +129,7 @@ func (ev *ConSatEnv) MakeCities() {
 			for b := 0; b < a; b++ {
 				bp := math32.Vec2(ps.Value(b, int(math32.X)), ps.Value(b, int(math32.Y)))
 				d := ap.DistanceTo(bp)
-				if d < ev.GridSpacing {
+				if d < tol {
 					redo = true
 					break
 				}
@@ -186,9 +195,9 @@ func (ev *ConSatEnv) BruteForce() {
 	mini := -1
 	for o := range no {
 		td := float32(0)
-		for p := 1; p < n; p++ {
+		for p := 1; p < n+1; p++ {
 			pi := orders.Value(o, p-1)
-			ci := orders.Value(o, p)
+			ci := orders.Value(o, p%n)
 			d := ds.Value(int(pi), int(ci))
 			td += d
 		}
@@ -210,11 +219,19 @@ func (ev *ConSatEnv) BruteForce() {
 			break
 		}
 	}
-	// todo: find direction to go based on largest X coord
-	for p := range n {
-		pi := (start + p) % n
+	// find direction to go based on largest Y coord
+	dir := 1
+	p1y := pos.Value((start+1)%n, int(math32.Y))
+	m1y := pos.Value((start+n-1)%n, int(math32.Y))
+	if p1y < m1y {
+		dir = -1
+	}
+	for p := range n + 1 {
+		pi := (start + n + dir*p) % n
 		op := int(orders.Value(mini, pi))
-		opt.Set(float32(op), p)
+		if p < n {
+			opt.Set(float32(op), p)
+		}
 		optx.Set(pos.Value(op, int(math32.X)), p)
 		opty.Set(pos.Value(op, int(math32.Y)), p)
 	}
@@ -253,7 +270,7 @@ func (ev *ConSatEnv) RenderGrid() {
 	in := ev.States["Input"]
 	out := ev.States["Output"]
 	n := ev.NCities
-	ng := ev.NGrids
+	// ng := ev.NGrids
 	nu := ev.NUnitsPer
 	gs := ev.GridSpacing
 
@@ -265,10 +282,10 @@ func (ev *ConSatEnv) RenderGrid() {
 		y := opty.Value(p)
 		xi := int(math32.Round(x / gs))
 		yi := int(math32.Round(y / gs))
+		out.Set(1, 0, p, yi, xi)
 		for uy := range nu {
 			for ux := range nu {
 				in.Set(1, yi, xi, uy, ux)
-				out.Set(1, yi, p*ng+xi, uy, ux)
 			}
 		}
 	}
@@ -276,6 +293,9 @@ func (ev *ConSatEnv) RenderGrid() {
 
 // Step does one step -- must set Trial.Cur first if doing testing
 func (ev *ConSatEnv) Step() bool {
+	if !ev.Trial.Incr() {
+		return true
+	}
 	ev.MakeCities()
 	ev.BruteForce()
 	ev.RenderGrid()
