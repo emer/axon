@@ -25,8 +25,8 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: "#Input", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Acts.Clamp.Ge = 1.5 // 1.5 for fsffffb
-				ly.Inhib.ActAvg.Nominal = 0.025
+				ly.Acts.Clamp.Ge = 1.5         // 1.5 for fsffffb
+				ly.Inhib.ActAvg.Nominal = 0.01 // 0.025
 				ly.Inhib.Layer.Gi = 1.0
 			}},
 		{Sel: "#Hidden1", Doc: "",
@@ -49,11 +49,13 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
 				ly.Inhib.ActAvg.Nominal = 0.02
-				ly.Inhib.Layer.On.SetBool(false)
-				ly.Inhib.Pool.On.SetBool(true)
-				ly.Inhib.Pool.FB = 4
-				ly.Inhib.Pool.Gi = 1.05
-				ly.Acts.Clamp.Ge = 1.0
+				// ly.Inhib.Layer.On.SetBool(false)
+				// ly.Inhib.Pool.On.SetBool(true)
+				// ly.Inhib.Pool.FB = 4
+				// ly.Inhib.Pool.Gi = 1.05
+				ly.Inhib.Layer.FB = 4
+				ly.Inhib.Layer.Gi = 1.05
+				ly.Acts.Clamp.Ge = 1.2
 			}},
 	},
 }
@@ -72,11 +74,11 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.2 // todo
+				pt.PathScale.Rel = 0.3 // todo
 			}},
 		{Sel: ".Shortcut", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.05 // 0.1
+				pt.PathScale.Rel = 0.0 // 0.1
 				pt.SetFixedWts()
 			}},
 	},

@@ -110,7 +110,7 @@ func (ev *ConSatEnv) Config(rndseed int64) {
 	ev.States["Input"] = tensor.NewFloat32(ng, ng, nu, nu)
 	ev.States["Pos"] = tensor.NewFloat32(1, n, nu, nu)
 	if ev.Sequential {
-		ev.States["Output"] = tensor.NewFloat32(1, 1, ng, ng)
+		ev.States["Output"] = tensor.NewFloat32(ng, ng, nu, nu)
 		if ev.NPrompts > 0 {
 			ev.Trial.Max = ev.NPrompts
 		} else {
@@ -322,6 +322,7 @@ func (ev *ConSatEnv) RenderGrid() {
 	pos := ev.States["Pos"]
 	out := ev.States["Output"]
 	n := ev.NCities
+	n = 1
 	// ng := ev.NGrids
 	nu := ev.NUnitsPer
 	gs := ev.GridSpacing
@@ -334,16 +335,15 @@ func (ev *ConSatEnv) RenderGrid() {
 		y := opty.Value(p)
 		xi := int(math32.Round(x / gs))
 		yi := int(math32.Round(y / gs))
-		if ev.Sequential {
-			if p == ev.Trial.Cur {
-				out.Set(1, 0, 0, yi, xi)
-			}
-		} else {
+		if !ev.Sequential {
 			out.Set(1, 0, p, yi, xi)
 		}
 		for uy := range nu {
 			for ux := range nu {
 				in.Set(1, yi, xi, uy, ux)
+				if ev.Sequential && p == ev.Trial.Cur {
+					out.Set(1, yi, xi, uy, ux)
+				}
 			}
 		}
 	}

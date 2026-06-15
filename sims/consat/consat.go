@@ -196,7 +196,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	var out *axon.Layer
 	if seq {
-		out = net.AddLayer4D("Output", axon.TargetLayer, 1, 1, ng, ng)
+		out = net.AddLayer4D("Output", axon.TargetLayer, ng, ng, nu, nu)
 	} else {
 		out = net.AddLayer4D("Output", axon.TargetLayer, 1, n, ng, ng)
 	}
@@ -209,19 +209,23 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	topo := paths.NewPoolTile()
 	topo.Size.Set(6, 6)
 	topo.Skip.Set(3, 3)
+	_ = topo
 
-	shortCut := paths.NewRect()
-	shortCut.Size.Set(nu, nu)
-	shortCut.Scale.Set(float32(nu), float32(nu))
-	shortCut.Wrap = true
-
-	net.ConnectLayers(inp, hid1, topo, axon.ForwardPath)
+	net.ConnectLayers(inp, hid1, full, axon.ForwardPath)
 	net.BidirConnectLayers(hid1, hid2, full)
 	net.BidirConnectLayers(hid2, out, full)
-	net.ConnectLayers(inp, out, shortCut, axon.ForwardPath).AddClass("Shortcut")
 
 	if seq {
+		p1to1 := paths.NewPoolOneToOne()
+		net.ConnectLayers(inp, out, p1to1, axon.ForwardPath).AddClass("Shortcut")
 		// net.ConnectLayers(pos, hid2, full, axon.ForwardPath)
+	} else {
+		shortCut := paths.NewRect()
+		shortCut.Size.Set(nu, nu)
+		shortCut.Scale.Set(float32(nu), float32(nu))
+		shortCut.Wrap = true
+
+		net.ConnectLayers(inp, out, shortCut, axon.ForwardPath).AddClass("Shortcut")
 	}
 
 	net.Build()
