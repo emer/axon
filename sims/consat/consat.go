@@ -32,6 +32,7 @@ import (
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/axon/v2/sims/consat/consatenv"
 	"github.com/emer/emergent/v2/egui"
+	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/paths"
@@ -189,7 +190,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	pos := net.AddLayer4D("Pos", axon.InputLayer, 1, n, nu, nu)
 	inp := net.AddLayer4D("Input", axon.InputLayer, ng, ng, nu, nu)
-	hid1 := net.AddLayer2D("Hidden1", axon.SuperLayer, nhidUnits, nhidUnits)
+	hid1 := net.AddLayer4D("Hidden1", axon.SuperLayer, 3, 3, 8, 8)
+	hid1.SetSampleShape(emer.CenterPoolIndexes(hid1, 2), emer.CenterPoolShape(hid1, 2))
 	hid2 := net.AddLayer2D("Hidden2", axon.SuperLayer, nhidUnits, nhidUnits)
 
 	var out *axon.Layer
@@ -203,18 +205,23 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	hid1.PlaceAbove(pos)
 
 	full := paths.NewFull()
+
+	topo := paths.NewPoolTile()
+	topo.Size.Set(6, 6)
+	topo.Skip.Set(3, 3)
+
 	shortCut := paths.NewRect()
 	shortCut.Size.Set(nu, nu)
 	shortCut.Scale.Set(float32(nu), float32(nu))
 	shortCut.Wrap = true
 
-	net.ConnectLayers(inp, hid1, full, axon.ForwardPath)
+	net.ConnectLayers(inp, hid1, topo, axon.ForwardPath)
 	net.BidirConnectLayers(hid1, hid2, full)
 	net.BidirConnectLayers(hid2, out, full)
 	net.ConnectLayers(inp, out, shortCut, axon.ForwardPath).AddClass("Shortcut")
 
 	if seq {
-		net.ConnectLayers(pos, hid2, full, axon.ForwardPath)
+		// net.ConnectLayers(pos, hid2, full, axon.ForwardPath)
 	}
 
 	net.Build()

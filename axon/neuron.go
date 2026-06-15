@@ -633,7 +633,6 @@ var VarCategories = []emer.VarCategory{
 	{"Learn", "calcium-based learning variables and other related learning factors"},
 	{"Excite", "excitatory channels including NMDA, Vgcc and other excitatory inputs"},
 	{"Inhib", "inhibitory channels including GABA inhibition, after hyperpolarization (AHP) and other K channels"},
-	{"Stats", "statistics and aggregate values"},
 	{"Gmisc", "more detailed conductance (G) variables for integration and other computational values"},
 	{"Avg", "longer-term average variables and homeostatic regulation"},
 	{"Trace", "Trace values recorded in bins over time, for asynchronous learning"},
@@ -754,12 +753,12 @@ var NeuronVarProps = map[string]string{
 
 	//////// Stats, aggregate values
 
-	"ActM":     `cat:"Stats"`,
-	"ActP":     `cat:"Stats"`,
-	"Beta1":    `cat:"Stats"`,
-	"Beta2":    `cat:"Stats"`,
-	"CaPMax":   `cat:"Stats"`,
-	"CaPMaxCa": `cat:"Stats"`,
+	"ActM":     `cat:"Act"`,
+	"ActP":     `cat:"Act"`,
+	"Beta1":    `cat:"Act"`,
+	"Beta2":    `cat:"Act"`,
+	"CaPMax":   `cat:"Act"`,
+	"CaPMaxCa": `cat:"Act"`,
 
 	//////// Noise
 

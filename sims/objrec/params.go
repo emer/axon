@@ -61,13 +61,13 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.ActAvg.Nominal = 0.03 // 0.03 > .04 > 0.025
 				ly.Inhib.ActAvg.Offset = 0     // 0.01 not good
 				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
+				ly.Inhib.Pool.On.SetBool(true) // needs pool-level
 				ly.Inhib.Layer.FB = 1          // 1.1 FB1 >> 4!
 				ly.Inhib.Pool.FB = 4           // 4
 				ly.Inhib.Layer.SS = 30         // 30 best
 				ly.Inhib.Pool.SS = 30          // 0 works here..
 				ly.Inhib.Layer.Gi = 1.0        // 1.1 > 1.0 -- def 1.1, 1.0 > 1.0, 1.1!
 				ly.Inhib.Pool.Gi = 0.9         // 0.9
-				ly.Inhib.Pool.On.SetBool(true) // needs pool-level
 			}},
 		{Sel: "#IT", Doc: "initial activity",
 			Set: func(ly *axon.LayerParams) {
