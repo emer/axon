@@ -153,17 +153,17 @@ func (ss *Sim) ConfigEnv() {
 		// note: names must be standard here!
 		trn.Name = env.ModeDi(Train, di)
 		trn.Defaults()
-		trn.Config(73 + int64(di)*73)
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
 		}
+		trn.Config(73 + int64(di)*73)
 
 		tst.Name = env.ModeDi(Test, di)
 		tst.Defaults()
-		tst.Config(181 + int64(di)*181)
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(tst, ss.Config.Env.Env)
 		}
+		tst.Config(181 + int64(di)*181)
 
 		trn.Init(0)
 		tst.Init(0)
@@ -184,17 +184,38 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	n := ev.NCities
 	ng := ev.NGrids
 	nu := ev.NUnitsPer
+	seq := ev.Sequential
+	nhidUnits := 20
 
+	pos := net.AddLayer4D("Pos", axon.InputLayer, 1, n, nu, nu)
 	inp := net.AddLayer4D("Input", axon.InputLayer, ng, ng, nu, nu)
-	hid1 := net.AddLayer2D("Hidden1", axon.SuperLayer, 20, 20)
-	hid2 := net.AddLayer2D("Hidden2", axon.SuperLayer, 20, 20)
-	out := net.AddLayer4D("Output", axon.TargetLayer, 1, n, ng, ng)
+	hid1 := net.AddLayer2D("Hidden1", axon.SuperLayer, nhidUnits, nhidUnits)
+	hid2 := net.AddLayer2D("Hidden2", axon.SuperLayer, nhidUnits, nhidUnits)
+
+	var out *axon.Layer
+	if seq {
+		out = net.AddLayer4D("Output", axon.TargetLayer, 1, 1, ng, ng)
+	} else {
+		out = net.AddLayer4D("Output", axon.TargetLayer, 1, n, ng, ng)
+	}
+
+	inp.PlaceBehind(pos, 2)
+	hid1.PlaceAbove(pos)
 
 	full := paths.NewFull()
+	shortCut := paths.NewRect()
+	shortCut.Size.Set(nu, nu)
+	shortCut.Scale.Set(float32(nu), float32(nu))
+	shortCut.Wrap = true
 
 	net.ConnectLayers(inp, hid1, full, axon.ForwardPath)
 	net.BidirConnectLayers(hid1, hid2, full)
 	net.BidirConnectLayers(hid2, out, full)
+	net.ConnectLayers(inp, out, shortCut, axon.ForwardPath).AddClass("Shortcut")
+
+	if seq {
+		net.ConnectLayers(pos, hid2, full, axon.ForwardPath)
+	}
 
 	net.Build()
 	net.Defaults()

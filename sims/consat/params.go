@@ -70,7 +70,12 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.2 // 0.3 > 0.2 > 0.1 > 0.5
+				pt.PathScale.Rel = 0.2 // todo
+			}},
+		{Sel: ".Shortcut", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Rel = 0.1
+				pt.SetFixedWts()
 			}},
 	},
 }

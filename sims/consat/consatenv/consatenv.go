@@ -2,9 +2,15 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// consatenv implements constraint satisfaction testing environments
+// e.g., the Traveling Salesman Problem (TSP).
 package consatenv
 
+//go:generate core generate -add-types -add-funcs -gosl
+
 import (
+	"sync"
+
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/base/randx"
@@ -14,10 +20,25 @@ import (
 	"github.com/emer/emergent/v2/env"
 )
 
+var (
+	// orders is a list of all the permuted orders of cities,
+	// for brute-force searching. Shared among all instances.
+	orders *tensor.Int32
+
+	// ordersN is the n! for the orders list -- number of permutations.
+	ordersN int
+
+	// ordersNCities is the NCities for the orders list
+	ordersNCities int
+
+	ordersLock sync.Mutex
+)
+
 // ConSatEnv implements constraint satisfaction testing environments
 // e.g., the Traveling Salesman Problem (TSP).
 // Generates an input display of cities, target is shortest order,
-// as a simultaneous map of grids, ordered relative to top-most city.
+// as a simultaneous map of grids, ordered relative to start city,
+// which is in the lower-left corner (shortest pos length).
 type ConSatEnv struct {
 	// name of environment -- Train or Test -- always Test!
 	Name string
@@ -28,20 +49,25 @@ type ConSatEnv struct {
 	// grid spacing in 1x1 unit square for plotting inputs, and min dist
 	GridSpacing float32
 
-	// number of grid squares: 1 / .1 = 10
+	// number of grid squares: 1 / .1 + 1 = 11
 	NGrids int
 
 	// number of units per localist representation, as one axis in pool in 4D space,
 	// such that total is NUnitsPer^2
 	NUnitsPer int
 
-	// how frequently to generate a new problem
-	NewInterval int `default:"4" min:"1"`
+	// Present order prompts one at a time
+	Sequential bool
 
+	// NPrompts is the number of Sequential prompts to provide (<= NCities)
+	// only used if > 0 -- otherwise NCities
+	NPrompts int
+
+	// Trial is used for tracking Sequential
 	Trial env.Counter
 
-	// TopCity is the index of top-most city -- starting point for tours
-	TopCity int `edit:"-"`
+	// StartCity is the index of starting city, with shortest position Length
+	StartCity int `edit:"-"`
 
 	// named states
 	States map[string]*tensor.Float32
@@ -64,7 +90,6 @@ func (ev *ConSatEnv) Defaults() {
 	ev.GridSpacing = 0.1
 	ev.NCities = 4
 	ev.NUnitsPer = 2
-	ev.NewInterval = 4
 	ev.Update()
 }
 
@@ -77,17 +102,28 @@ func (ev *ConSatEnv) Config(rndseed int64) {
 	n := ev.NCities
 	ng := ev.NGrids
 	nu := ev.NUnitsPer
-	ev.Trial.Max = ev.NewInterval
 	ev.RunRandSeed = rndseed
 	ev.States = make(map[string]*tensor.Float32)
 	ev.States["Positions"] = tensor.NewFloat32(n, 2) // X,Y coordinates
 	ev.States["Distances"] = tensor.NewFloat32(n, n)
 	ev.States["Result"] = tensor.NewFloat32(n) // model result order, city index
 	ev.States["Input"] = tensor.NewFloat32(ng, ng, nu, nu)
-	ev.States["Output"] = tensor.NewFloat32(1, n, ng, ng)
+	ev.States["Pos"] = tensor.NewFloat32(1, n, nu, nu)
+	if ev.Sequential {
+		ev.States["Output"] = tensor.NewFloat32(1, 1, ng, ng)
+		if ev.NPrompts > 0 {
+			ev.Trial.Max = ev.NPrompts
+		} else {
+			ev.Trial.Max = ev.NCities
+		}
+	} else {
+		ev.States["Output"] = tensor.NewFloat32(1, n, ng, ng)
+		ev.Trial.Max = 1
+	}
 	ev.States["Optimal"] = tensor.NewFloat32(n)      // optimal order, city index
 	ev.States["OptimalX"] = tensor.NewFloat32(n + 1) // optimal order, x coord
 	ev.States["OptimalY"] = tensor.NewFloat32(n + 1) // optimal order, y coord
+	ev.MakeOrders()                                  // ensure
 }
 
 func (ev *ConSatEnv) Init(run int) {
@@ -95,6 +131,7 @@ func (ev *ConSatEnv) Init(run int) {
 		ev.RunRandSeed = 173
 	}
 	randx.InitSysRand(&ev.Rand, ev.RunRandSeed*(int64(run)+1))
+	ev.Trial.Init()
 }
 
 func (ev *ConSatEnv) State(el string) tensor.Values {
@@ -119,8 +156,8 @@ func (ev *ConSatEnv) MakeCities() {
 	ds := ev.States["Distances"]
 	n := ev.NCities
 	tol := 2.0 * ev.GridSpacing
-	topIdx := 0
-	topY := float32(0)
+	minIdx := 0
+	minLen := float32(10)
 	for a := range n {
 		var ap math32.Vector2
 		for {
@@ -140,12 +177,13 @@ func (ev *ConSatEnv) MakeCities() {
 		}
 		ps.Set(ap.X, a, int(math32.X))
 		ps.Set(ap.Y, a, int(math32.Y))
-		if ap.Y > topY {
-			topY = ap.Y
-			topIdx = a
+		d := ap.Length()
+		if d < minLen {
+			minLen = d
+			minIdx = a
 		}
 	}
-	ev.TopCity = topIdx
+	ev.StartCity = minIdx
 	for a := range n {
 		var ap math32.Vector2
 		ap.Set(ps.Value(a, int(math32.X)), ps.Value(a, int(math32.Y)))
@@ -158,9 +196,15 @@ func (ev *ConSatEnv) MakeCities() {
 	}
 }
 
-func (ev *ConSatEnv) BruteForce() {
-	ds := ev.States["Distances"]
+func (ev *ConSatEnv) MakeOrders() {
+	ordersLock.Lock()
+	defer ordersLock.Unlock()
+
 	n := ev.NCities
+	if orders != nil && ordersNCities == n {
+		return
+	}
+	ordersNCities = n
 	no := 1
 	in := make([]int32, n)
 	for i := range n {
@@ -169,7 +213,8 @@ func (ev *ConSatEnv) BruteForce() {
 	}
 	// fmt.Println("n:", n, "no:", no)
 
-	orders := tensor.NewInt32(no, n)
+	orders = tensor.NewInt32(no, n)
+	ordersN = no
 
 	idx := 0
 	var permute func(xs []int32, low int)
@@ -190,6 +235,12 @@ func (ev *ConSatEnv) BruteForce() {
 	}
 	permute(in, 0)
 	// fmt.Println(orders)
+}
+
+func (ev *ConSatEnv) BruteForce() {
+	ds := ev.States["Distances"]
+	n := ev.NCities
+	no := ordersN
 
 	mind := float32(1000000)
 	mini := -1
@@ -214,7 +265,7 @@ func (ev *ConSatEnv) BruteForce() {
 	start := 0
 	for p := range n {
 		op := int(orders.Value(mini, p))
-		if op == ev.TopCity {
+		if op == ev.StartCity {
 			start = p
 			break
 		}
@@ -268,6 +319,7 @@ func (ev *ConSatEnv) RenderGrid() {
 	optx := ev.States["OptimalX"]
 	opty := ev.States["OptimalY"]
 	in := ev.States["Input"]
+	pos := ev.States["Pos"]
 	out := ev.States["Output"]
 	n := ev.NCities
 	// ng := ev.NGrids
@@ -282,22 +334,40 @@ func (ev *ConSatEnv) RenderGrid() {
 		y := opty.Value(p)
 		xi := int(math32.Round(x / gs))
 		yi := int(math32.Round(y / gs))
-		out.Set(1, 0, p, yi, xi)
+		if ev.Sequential {
+			if p == ev.Trial.Cur {
+				out.Set(1, 0, 0, yi, xi)
+			}
+		} else {
+			out.Set(1, 0, p, yi, xi)
+		}
 		for uy := range nu {
 			for ux := range nu {
 				in.Set(1, yi, xi, uy, ux)
 			}
 		}
 	}
+	if ev.Sequential {
+		for uy := range nu {
+			for ux := range nu {
+				pos.Set(1, 0, ev.Trial.Cur, uy, ux)
+			}
+		}
+	}
 }
 
-// Step does one step -- must set Trial.Cur first if doing testing
+// Step does one step.
 func (ev *ConSatEnv) Step() bool {
-	if !ev.Trial.Incr() {
-		return true
+	mkNew := true
+	if ev.Sequential {
+		if !ev.Trial.Incr() {
+			mkNew = false
+		}
 	}
-	ev.MakeCities()
-	ev.BruteForce()
+	if mkNew {
+		ev.MakeCities()
+		ev.BruteForce()
+	}
 	ev.RenderGrid()
 	return true
 }

@@ -6,4 +6,9 @@ An actual Axon model requires distributed representations and collaborative inte
 
 One alternative is training a network with an input of city-dots and output of some kind of ordering representation, but then it turns the problem into one of pattern recognition instead of CS. However, given all the interdependencies among the elements, and the high dimensional combinatorial space, perhaps this is still a good test. It seems like the right way to go next. Can pre-generate larger space if necessary.
 
+## TODO
+
+* index cue input -- only output that one
+* first is lower left corner, next closest from there
+* DOH: store the permute order once and for all!!!  use a global var that is shared across envs!
 
