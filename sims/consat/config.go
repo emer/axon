@@ -139,5 +139,5 @@ func (cfg *Config) Defaults() {
 	cfg.Name = "ConSat"
 	cfg.Title = "Axon constraint statisfaction"
 	cfg.URL = "https://github.com/emer/axon/blob/main/sims/consat/README.md"
-	cfg.Doc = "This tests constraint satisfaction using the traveling salesman problem."
+	cfg.Doc = "This tests constraint satisfaction using the traveling salesperson problem."
 }

@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 // consat: This simulation tests axon on constraint satisfaction
-// using the traveling salesman problem.
+// using the traveling salesperson problem.
 package consat
 
 //go:generate core generate -add-types -add-funcs -gosl
