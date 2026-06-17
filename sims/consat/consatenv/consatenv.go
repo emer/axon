@@ -9,6 +9,7 @@ package consatenv
 
 import (
 	"fmt"
+	"slices"
 	"sync"
 
 	"cogentcore.org/core/base/num"
@@ -20,7 +21,7 @@ import (
 var (
 	// bools3 is a list of all the permuted negation possibilities
 	// for brute-force searching. [8][3] with 0,1 in each
-	bools3 *tensor.Int32
+	bools3 *tensor.Int
 
 	// allprobs is the full list of all problems
 	// represented as [N][NClauses] negation index orderings
@@ -33,17 +34,29 @@ var (
 	sats *tensor.Int32
 
 	// selected is a selected list of indexes into allprobs
-	// for the subset of problems to train on. first selectedN
-	// are unsatisfied ones, remaining is random sample of others.
-	selected *tensor.Int
+	// for the subset of problems to train on. first selUnsatN
+	// are all unsatisfied ones, remaining is random sample of others,
+	// of same count.
+	selected []int
 
-	selectedN int
+	// selUnsatN is number of unsatisfiable problems, first half
+	// of selected list.
+	selUnsatN int
+
+	// selPermList is a permuted list of size selUnsatN, to be used
+	// for selecting subsets of items for actual usage.
+	selPermList []int
 
 	globalLock sync.Mutex
 )
 
+func bools3AtInts(idx int) (int, int, int) {
+	return bools3.Value(idx, 0), bools3.Value(idx, 1), bools3.Value(idx, 2)
+}
+
 func bools3At(idx int) (bool, bool, bool) {
-	return num.ToBool(bools3.Value(idx, 0)), num.ToBool(bools3.Value(idx, 1)), num.ToBool(bools3.Value(idx, 2))
+	i, j, k := bools3AtInts(idx)
+	return num.ToBool(i), num.ToBool(j), num.ToBool(k)
 }
 
 func printProb(i, n int) string {
@@ -67,18 +80,32 @@ type ConSatEnv struct {
 	// name of environment -- Train or Test -- always Test!
 	Name string
 
-	// number of clauses
-	NClauses int
+	// number of clauses: 8 is minimum before non-satisfiablilty emerges.
+	NClauses int `default:"8"`
+
+	// NItems is number of items to select from full selected list.
+	// half will be satisfiable, half not. Must be < selUnsatN / NData.
+	NItems int
 
 	// number of units per localist representation, as one axis in pool in 4D space,
 	// such that total is NUnitsPer^2
 	NUnitsPer int
 
-	// Trial is used for tracking Sequential
+	// data-parallel index
+	Di int
+
+	// Trial counts up NIitems for indexing
 	Trial env.Counter
 
 	// named states
 	States map[string]*tensor.Float32
+
+	// Items is the index list into allprobs, for items specific to this env.
+	// uses global selPermList to coordinate non-overlapping items across envs.
+	Items []int
+
+	// Copy of Items that is permuted after every pass through list.
+	Order []int
 
 	// Rand is the random number generator for the env.
 	// Created in Init if not already there.
@@ -94,20 +121,18 @@ func (ev *ConSatEnv) Label() string { return ev.Name }
 func (ev *ConSatEnv) Defaults() {
 	ev.NClauses = 8
 	ev.NUnitsPer = 2
+	ev.NItems = 100
 }
 
 // Config configures the world
-func (ev *ConSatEnv) Config(rndseed int64) {
+func (ev *ConSatEnv) Config(di int, rndseed int64) {
 	n := ev.NClauses
 	nu := ev.NUnitsPer
+	ev.Di = di
 	ev.RunRandSeed = rndseed
 	ev.States = make(map[string]*tensor.Float32)
-	ev.States["Input"] = tensor.NewFloat32(2, n, nu, nu)
-	ev.States["Output"] = tensor.NewFloat32(1, 2, nu, nu)
-	ev.States["Positions"] = tensor.NewFloat32(n, 2) // X,Y coordinates
-	ev.States["Distances"] = tensor.NewFloat32(n, n)
-	ev.States["Result"] = tensor.NewFloat32(n) // model result order, city index
-	ev.States["Pos"] = tensor.NewFloat32(1, n, nu, nu)
+	ev.States["Input"] = tensor.NewFloat32(3*2, n, nu, nu) // 3 elements per clause, 2=negate or not
+	ev.States["Output"] = tensor.NewFloat32(2, 1, nu, nu)
 }
 
 func (ev *ConSatEnv) Init(run int) {
@@ -115,8 +140,20 @@ func (ev *ConSatEnv) Init(run int) {
 		ev.RunRandSeed = 173
 	}
 	randx.InitSysRand(&ev.Rand, ev.RunRandSeed*(int64(run)+1))
-	ev.Trial.Init()
 	ev.MakeProblems() // ensure
+	ev.Trial.Max = ev.NItems
+	ev.Trial.Init()
+	hi := ev.NItems / 2
+	st := hi * ev.Di
+	ev.Items = make([]int, ev.NItems)
+	for i := range hi {
+		ev.Items[i] = selected[selPermList[st+i]]
+	}
+	for i := range hi {
+		ev.Items[hi+i] = selected[selUnsatN+selPermList[st+i]]
+	}
+	ev.Order = slices.Clone(ev.Items)
+	randx.PermuteInts(ev.Order, ev.Rand)
 }
 
 func (ev *ConSatEnv) State(el string) tensor.Values {
@@ -124,53 +161,7 @@ func (ev *ConSatEnv) State(el string) tensor.Values {
 }
 
 func (ev *ConSatEnv) String() string {
-	return ""
-	// return fmt.Sprintf("%4f_%4f", ev.ACCPos, ev.ACCNeg)
-}
-
-func (ev *ConSatEnv) Make() {
-	// ps := ev.States["Positions"]
-	// ds := ev.States["Distances"]
-	// n := ev.NCities
-	// tol := 2.0 * ev.GridSpacing
-	// minIdx := 0
-	// minLen := float32(10)
-	// for a := range n {
-	// 	var ap math32.Vector2
-	// 	for {
-	// 		ap.Set(ev.Rand.Float32(), ev.Rand.Float32())
-	// 		redo := false
-	// 		for b := 0; b < a; b++ {
-	// 			bp := math32.Vec2(ps.Value(b, int(math32.X)), ps.Value(b, int(math32.Y)))
-	// 			d := ap.DistanceTo(bp)
-	// 			if d < tol {
-	// 				redo = true
-	// 				break
-	// 			}
-	// 		}
-	// 		if !redo {
-	// 			break
-	// 		}
-	// 	}
-	// 	ps.Set(ap.X, a, int(math32.X))
-	// 	ps.Set(ap.Y, a, int(math32.Y))
-	// 	d := ap.Length()
-	// 	if d < minLen {
-	// 		minLen = d
-	// 		minIdx = a
-	// 	}
-	// }
-	// ev.StartCity = minIdx
-	// for a := range n {
-	// 	var ap math32.Vector2
-	// 	ap.Set(ps.Value(a, int(math32.X)), ps.Value(a, int(math32.Y)))
-	// 	for b := range n {
-	// 		var bp math32.Vector2
-	// 		bp.Set(ps.Value(b, int(math32.X)), ps.Value(b, int(math32.Y)))
-	// 		d := ap.DistanceTo(bp)
-	// 		ds.Set(d, a, b)
-	// 	}
-	// }
+	return fmt.Sprintf("%d", ev.Trial.Cur)
 }
 
 func (ev *ConSatEnv) MakeProblems() {
@@ -182,7 +173,7 @@ func (ev *ConSatEnv) MakeProblems() {
 	}
 	nv := 3 // 3sat
 
-	bools3 = tensor.NewInt32(8, nv)
+	bools3 = tensor.NewInt(8, nv)
 
 	idx := 0
 	for i := range 2 {
@@ -220,7 +211,7 @@ func (ev *ConSatEnv) MakeProblems() {
 
 	// now brute-force search solutions
 	sats = tensor.NewInt32(pn)
-	selected = tensor.NewInt(0)
+	selected = make([]int, 0, 2*40320)
 	tsat := 0
 	for i := range pn {
 		sat := false
@@ -257,22 +248,29 @@ func (ev *ConSatEnv) MakeProblems() {
 			tsat++
 		}
 		if !sat {
-			selected.AppendRowInt(i)
+			selected = append(selected, i)
 			// fmt.Println(i, printProb(i, n))
 		}
 	}
-	fmt.Println("n:", n, "pn:", pn, "tsat:", tsat, "nsat:", pn-tsat, "pct:", float32(tsat)/float32(pn))
+	// fmt.Println("n:", n, "pn:", pn, "tsat:", tsat, "nsat:", pn-tsat, "pct:", float32(tsat)/float32(pn))
 
-	selectedN = selected.Len()
+	selUnsatN = len(selected)
 	// select others at random
-	plist := ev.Rand.Perm(selectedN)
+	plist := ev.Rand.Perm(pn)
+	count := 0
 	for _, pi := range plist {
 		i := plist[pi]
 		if sats.Value(i) == 0 {
 			continue
 		}
-		selected.AppendRowInt(i)
+		selected = append(selected, i)
+		count++
+		if count >= selUnsatN {
+			break
+		}
 	}
+
+	selPermList = ev.Rand.Perm(selUnsatN) // use for selecting items
 }
 
 // results for different numbers of clauses -- only get non-sat at 8 and above:
@@ -287,51 +285,36 @@ func (ev *ConSatEnv) MakeProblems() {
 // n: 10 pn: 1073741824 tsat: 1043501824 nsat: 30_240_000 pct: 0.9718368
 // ok  	github.com/emer/axon/v2/sims/consat/consatenv	434.655s
 
-func (ev *ConSatEnv) RenderGrid() {
-	// optx := ev.States["OptimalX"]
-	// opty := ev.States["OptimalY"]
-	// in := ev.States["Input"]
-	// pos := ev.States["Pos"]
-	// out := ev.States["Output"]
-	// n := ev.NCities
-	// n = 1
-	// // ng := ev.NGrids
-	// nu := ev.NUnitsPer
-	// gs := ev.GridSpacing
-	//
-	// in.SetZeros()
-	// out.SetZeros()
-	//
-	// for p := range n {
-	// 	x := optx.Value(p)
-	// 	y := opty.Value(p)
-	// 	xi := int(math32.Round(x / gs))
-	// 	yi := int(math32.Round(y / gs))
-	// 	if !ev.Sequential {
-	// 		out.Set(1, 0, p, yi, xi)
-	// 	}
-	// 	for uy := range nu {
-	// 		for ux := range nu {
-	// 			in.Set(1, yi, xi, uy, ux)
-	// 			if ev.Sequential && p == ev.Trial.Cur {
-	// 				out.Set(1, yi, xi, uy, ux)
-	// 			}
-	// 		}
-	// 	}
-	// }
-	// if ev.Sequential {
-	// 	for uy := range nu {
-	// 		for ux := range nu {
-	// 			pos.Set(1, 0, ev.Trial.Cur, uy, ux)
-	// 		}
-	// 	}
-	// }
+func (ev *ConSatEnv) Render(item int) {
+	in := ev.States["Input"]
+	out := ev.States["Output"]
+	n := ev.NClauses
+	nu := ev.NUnitsPer
+	in.SetZeros()
+	out.SetZeros()
+
+	for k := range n {
+		n0, n1, n2 := bools3AtInts(int(allprobs.Value(item, k)))
+		for uy := range nu {
+			for ux := range nu {
+				in.Set(1, n0, k, uy, ux)
+				in.Set(1, 2+n1, k, uy, ux)
+				in.Set(1, 4+n2, k, uy, ux)
+			}
+		}
+	}
+	for uy := range nu {
+		for ux := range nu {
+			out.Set(1, int(sats.Value(item)), 0, uy, ux)
+		}
+	}
 }
 
 // Step does one step.
 func (ev *ConSatEnv) Step() bool {
-	// ev.MakeCities()
-	// ev.BruteForce()
-	// ev.RenderGrid()
+	if ev.Trial.Incr() {
+		randx.PermuteInts(ev.Order, ev.Rand)
+	}
+	ev.Render(ev.Order[ev.Trial.Cur])
 	return true
 }

@@ -25,18 +25,18 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: "#Input", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Acts.Clamp.Ge = 1.5         // 1.5 for fsffffb
-				ly.Inhib.ActAvg.Nominal = 0.01 // 0.025
-				ly.Inhib.Layer.Gi = 1.0
+				ly.Acts.Clamp.Ge = 1.5        // 1.5 for fsffffb
+				ly.Inhib.ActAvg.Nominal = 0.2 // 0.025
+				ly.Inhib.Layer.Gi = 0.8
 			}},
 		{Sel: "#Hidden1", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.Nominal = 0.03
 				ly.Inhib.ActAvg.Offset = 0.02
 				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
-				ly.Inhib.Pool.On.SetBool(true)
+				// ly.Inhib.Pool.On.SetBool(true)
+				// ly.Inhib.Pool.Gi = 0.9
 				ly.Inhib.Layer.Gi = 1.0
-				ly.Inhib.Pool.Gi = 0.9
 			}},
 		{Sel: "#Hidden2", Doc: "",
 			Set: func(ly *axon.LayerParams) {
@@ -48,14 +48,14 @@ var LayerParams = axon.LayerSheets{
 		{Sel: "#Output", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
-				ly.Inhib.ActAvg.Nominal = 0.02
+				ly.Inhib.ActAvg.Nominal = 0.2
 				// ly.Inhib.Layer.On.SetBool(false)
 				// ly.Inhib.Pool.On.SetBool(true)
 				// ly.Inhib.Pool.FB = 4
 				// ly.Inhib.Pool.Gi = 1.05
-				ly.Inhib.Layer.FB = 4
-				ly.Inhib.Layer.Gi = 1.05
-				ly.Acts.Clamp.Ge = 1.2
+				// ly.Inhib.Layer.FB = 4
+				ly.Inhib.Layer.Gi = 0.95
+				ly.Acts.Clamp.Ge = 0.8
 			}},
 	},
 }
@@ -66,7 +66,7 @@ var PathParams = axon.PathSheets{
 	"Base": {
 		{Sel: "Path", Doc: "std",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.LRate.Base = 0.1
+				pt.Learn.LRate.Base = 0.05
 				pt.SWts.Adapt.LRate = 0.1
 				pt.SWts.Init.SPct = 1
 				pt.SWts.Adapt.LRate = 0.0001 // 0.005 == .1 == .01
@@ -74,12 +74,7 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.3 // todo
-			}},
-		{Sel: ".Shortcut", Doc: "",
-			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.0 // 0.1
-				pt.SetFixedWts()
+				pt.PathScale.Rel = 0.2 // todo
 			}},
 	},
 }

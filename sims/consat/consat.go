@@ -32,7 +32,6 @@ import (
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/axon/v2/sims/consat/consatenv"
 	"github.com/emer/emergent/v2/egui"
-	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/paths"
@@ -157,14 +156,14 @@ func (ss *Sim) ConfigEnv() {
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
 		}
-		trn.Config(73 + int64(di)*73)
+		trn.Config(di, 73+int64(di)*73)
 
 		tst.Name = env.ModeDi(Test, di)
 		tst.Defaults()
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(tst, ss.Config.Env.Env)
 		}
-		tst.Config(181 + int64(di)*181)
+		tst.Config(di, 181+int64(di)*181)
 
 		trn.Init(0)
 		tst.Init(0)
@@ -182,51 +181,31 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
 	ev := ss.Envs.ByModeDi(Train, 0).(*consatenv.ConSatEnv)
-	n := ev.NCities
-	ng := ev.NGrids
+	n := ev.NClauses
 	nu := ev.NUnitsPer
-	seq := ev.Sequential
 	nhidUnits := 20
 
-	pos := net.AddLayer4D("Pos", axon.InputLayer, 1, n, nu, nu)
-	inp := net.AddLayer4D("Input", axon.InputLayer, ng, ng, nu, nu)
-	hid1 := net.AddLayer4D("Hidden1", axon.SuperLayer, 3, 3, 8, 8)
-	hid1.SetSampleShape(emer.CenterPoolIndexes(hid1, 2), emer.CenterPoolShape(hid1, 2))
+	inp := net.AddLayer4D("Input", axon.InputLayer, 6, n, nu, nu)
+	hid1 := net.AddLayer2D("Hidden1", axon.SuperLayer, nhidUnits, nhidUnits)
+	// hid1 := net.AddLayer4D("Hidden1", axon.SuperLayer, 3, 3, 8, 8)
+	// hid1.SetSampleShape(emer.CenterPoolIndexes(hid1, 2), emer.CenterPoolShape(hid1, 2))
 	hid2 := net.AddLayer2D("Hidden2", axon.SuperLayer, nhidUnits, nhidUnits)
 
-	var out *axon.Layer
-	if seq {
-		out = net.AddLayer4D("Output", axon.TargetLayer, ng, ng, nu, nu)
-	} else {
-		out = net.AddLayer4D("Output", axon.TargetLayer, 1, n, ng, ng)
-	}
+	out := net.AddLayer4D("Output", axon.TargetLayer, 2, 1, nu, nu)
 
-	inp.PlaceBehind(pos, 2)
-	hid1.PlaceAbove(pos)
+	// inp.PlaceBehind(pos, 2)
+	// hid1.PlaceAbove(pos)
 
 	full := paths.NewFull()
 
-	topo := paths.NewPoolTile()
-	topo.Size.Set(6, 6)
-	topo.Skip.Set(3, 3)
-	_ = topo
+	// topo := paths.NewPoolTile()
+	// topo.Size.Set(6, 6)
+	// topo.Skip.Set(3, 3)
+	// _ = topo
 
 	net.ConnectLayers(inp, hid1, full, axon.ForwardPath)
 	net.BidirConnectLayers(hid1, hid2, full)
 	net.BidirConnectLayers(hid2, out, full)
-
-	if seq {
-		p1to1 := paths.NewPoolOneToOne()
-		net.ConnectLayers(inp, out, p1to1, axon.ForwardPath).AddClass("Shortcut")
-		// net.ConnectLayers(pos, hid2, full, axon.ForwardPath)
-	} else {
-		shortCut := paths.NewRect()
-		shortCut.Size.Set(nu, nu)
-		shortCut.Scale.Set(float32(nu), float32(nu))
-		shortCut.Wrap = true
-
-		net.ConnectLayers(inp, out, shortCut, axon.ForwardPath).AddClass("Shortcut")
-	}
 
 	net.Build()
 	net.Defaults()
@@ -453,11 +432,11 @@ func (ss *Sim) RunStats(mode Modes, level Levels, start bool) {
 		nm := mode.String() + " " + level.String() + " Plot"
 		tbs.GoUpdatePlot(nm)
 		switch level {
-		case Trial:
-			ev := ss.Envs.ByModeDi(Train, 0).(*consatenv.ConSatEnv)
-			ev.UpdatePlot()
-			fr := tbs.TabByName("Optimal")
-			fr.Update()
+		// case Trial:
+		// 	ev := ss.Envs.ByModeDi(Train, 0).(*consatenv.ConSatEnv)
+		// 	ev.UpdatePlot()
+		// 	fr := tbs.TabByName("Optimal")
+		// 	fr.Update()
 		case Run:
 			tbs.GoUpdatePlot("Train RunAll Plot")
 		}
@@ -643,14 +622,14 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1, 2.75)
 	nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
 
-	ev := ss.Envs.ByModeDi(Train, 0).(*consatenv.ConSatEnv)
-	tbs := ss.GUI.Tabs.AsLab()
-	_, idx := tbs.CurrentTab()
-	plt := plot.New()
-	tbs.Plot("Optimal", plt)
-	ev.Plot = plt
-	ev.MakePlot()
-	tbs.SelectTabIndex(idx)
+	// ev := ss.Envs.ByModeDi(Train, 0).(*consatenv.ConSatEnv)
+	// tbs := ss.GUI.Tabs.AsLab()
+	// _, idx := tbs.CurrentTab()
+	// plt := plot.New()
+	// tbs.Plot("Optimal", plt)
+	// ev.Plot = plt
+	// ev.MakePlot()
+	// tbs.SelectTabIndex(idx)
 
 	ss.StatsInit()
 	ss.GUI.FinalizeGUI(false)
