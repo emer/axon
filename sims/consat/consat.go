@@ -186,29 +186,32 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	n := ev.NClauses
 	nu := ev.NUnitsPer
 	nary := ev.NAry
-	nhidUnits := 30
+	nhidUnits := 20
+	nhid1Units := 10
 
-	inp := net.AddLayer4D("Input", axon.InputLayer, 3, n, nu*nary, nu)
-	hid1 := net.AddLayer2D("Hidden1", axon.SuperLayer, nhidUnits, nhidUnits)
-	// hid1 := net.AddLayer4D("Hidden1", axon.SuperLayer, 3, 3, 8, 8)
+	inp := net.AddLayer4D("Input", axon.InputLayer, 3, n, nu, nu*nary)
+	// hid1 := net.AddLayer2D("Hidden1", axon.SuperLayer, nhidUnits, nhidUnits)
+	hid1 := net.AddLayer4D("Hidden1", axon.SuperLayer, 1, n, nhid1Units, nhid1Units)
 	// hid1.SetSampleShape(emer.CenterPoolIndexes(hid1, 2), emer.CenterPoolShape(hid1, 2))
-	// hid2 := net.AddLayer2D("Hidden2", axon.SuperLayer, nhidUnits, nhidUnits)
+	hid2 := net.AddLayer2D("Hidden2", axon.SuperLayer, nhidUnits, nhidUnits)
 
-	out := net.AddLayer4D("Output", axon.TargetLayer, 1, 1, nu*nary, nu)
+	out := net.AddLayer4D("Output", axon.TargetLayer, 1, 1, nu, nu*nary)
 
 	// inp.PlaceBehind(pos, 2)
 	// hid1.PlaceAbove(pos)
 
 	full := paths.NewFull()
 
-	// topo := paths.NewPoolTile()
-	// topo.Size.Set(6, 6)
-	// topo.Skip.Set(3, 3)
-	// _ = topo
+	topo := paths.NewPoolTile()
+	topo.Size.Set(1, 3)
+	topo.Skip.Set(1, 0)
+	topo.Start.Set(0, 0)
+	_ = topo
 
-	net.ConnectLayers(inp, hid1, full, axon.ForwardPath)
-	// net.BidirConnectLayers(hid1, hid2, full)
-	net.BidirConnectLayers(hid1, out, full)
+	net.ConnectLayers(inp, hid1, topo, axon.ForwardPath)
+	net.BidirConnectLayers(hid1, hid2, full)
+	net.BidirConnectLayers(hid2, out, full)
+	net.BidirConnectLayers(hid1, out, full) // shortcut
 
 	net.Build()
 	net.Defaults()
@@ -520,7 +523,9 @@ func (ss *Sim) ConfigStats() {
 				tsr.SetNumRows(0)
 				plot.SetFirstStyler(tsr, func(s *plot.Style) {
 					s.Range.SetMin(0).SetMax(1)
-					s.On = true
+					if name != "UnitErr" {
+						s.On = true
+					}
 				})
 				metadata.SetDoc(tsr, statDocs[name])
 				continue
@@ -528,6 +533,7 @@ func (ss *Sim) ConfigStats() {
 			switch level {
 			case Trial:
 				out := ss.Net.LayerByName("Output")
+				ltsr := curModeDir.Float64(out.Name+"_ActM", out.Shape.Sizes...)
 				for di := range ndata {
 					var stat float64
 					switch name {
@@ -536,11 +542,9 @@ func (ss *Sim) ConfigStats() {
 					case "UnitErr":
 						stat = out.PctUnitErr(ss.Net.Context())[di]
 					case "Err":
-						uniterr := curModeDir.Float64("UnitErr", ndata).Float1D(di)
-						stat = 1.0
-						if uniterr == 0 {
-							stat = 0
-						}
+						ev := ss.Envs.ByModeDi(mode, di).(*consatenv.ConSatEnv)
+						out.UnitValuesSampleTensor(ltsr, "ActM", di)
+						stat = ev.OutErr(ltsr)
 					}
 					curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
 					tsr.AppendRowFloat(stat)

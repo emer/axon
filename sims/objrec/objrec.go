@@ -549,7 +549,7 @@ func (ss *Sim) ConfigStats() {
 			case Trial:
 				out := ss.Net.LayerByName("Output")
 				ltsr := curModeDir.Float64(out.Name+"_ActM", out.Shape.Sizes...)
-				ev := ss.Envs.ByMode(Modes(ss.Net.Context().Mode)).(*LEDEnv)
+				ev := ss.Envs.ByMode(mode).(*LEDEnv)
 				for di := range ndata {
 					var stat float64
 					switch name {

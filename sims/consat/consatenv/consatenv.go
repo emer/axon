@@ -159,8 +159,8 @@ func (ev *ConSatEnv) Config(ndata, di int, rndseed int64) {
 	ev.Di = di
 	ev.RunRandSeed = rndseed
 	ev.States = make(map[string]*tensor.Float32)
-	ev.States["Input"] = tensor.NewFloat32(3, n, nu*nary, nu) // 3 elements per clause
-	ev.States["Output"] = tensor.NewFloat32(1, 1, nu*nary, nu)
+	ev.States["Input"] = tensor.NewFloat32(3, n, nu, nu*nary) // 3 elements per clause
+	ev.States["Output"] = tensor.NewFloat32(1, 1, nu, nu*nary)
 }
 
 func (ev *ConSatEnv) Init(run int) {
@@ -244,14 +244,14 @@ func (ev *ConSatEnv) MakeProblems() {
 	// basic CNF computation on states
 	outputs = tensor.NewInt32(pn)
 	for i := range pn {
-		mx := 0
+		and := nary
 		for k := range n {
 			si := int(allcnfs.Value(i, k))
 			t0, t1, t2 := states3At(si)
-			mn := min(t0, t1, t2)
-			mx = max(mx, mn)
+			or := max(t0, t1, t2)
+			and = min(and, or)
 		}
-		outputs.Set(int32(mx), i)
+		outputs.Set(int32(and), i)
 	}
 	fmt.Println("n:", n, "ns:", ns, "pn:", pn)
 
@@ -347,18 +347,43 @@ func (ev *ConSatEnv) Render(item int) {
 		n0, n1, n2 := states3At(int(allcnfs.Value(item, k)))
 		for uy := range nu {
 			for ux := range nu {
-				in.Set(1, 0, k, n0*nu+uy, ux)
-				in.Set(1, 1, k, n1*nu+uy, ux)
-				in.Set(1, 2, k, n2*nu+uy, ux)
+				in.Set(1, 0, k, uy, n0*nu+ux)
+				in.Set(1, 1, k, uy, n1*nu+ux)
+				in.Set(1, 2, k, uy, n2*nu+ux)
 			}
 		}
 	}
 	for uy := range nu {
 		for ux := range nu {
 			ov := int(outputs.Value(item))
-			out.Set(1, 0, 0, ov*nu+uy, ux)
+			out.Set(1, 0, 0, uy, ov*nu+ux)
 		}
 	}
+}
+
+func (ev *ConSatEnv) OutErr(tsr *tensor.Float64) float64 {
+	item := ev.Order[ev.Trial.Cur]
+	nary := ev.NAry
+	nu := ev.NUnitsPer
+	ov := int(outputs.Value(item))
+	maxi := 0
+	maxv := 0.0
+	for o := range nary {
+		sum := float64(0)
+		for uy := range nu {
+			for ux := range nu {
+				sum += tsr.Value(0, 0, uy, o*nu+ux)
+			}
+		}
+		if sum > maxv {
+			maxv = sum
+			maxi = o
+		}
+	}
+	if maxi == ov {
+		return 0.0
+	}
+	return 1.0
 }
 
 // Step does one step.
