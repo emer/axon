@@ -16,19 +16,11 @@ Key points:
 
 * key challenge: need some automatic, algorithmic way of generating a sufficient number of these problems! what is the actual algorithmic recipe for how this works? some way of translating TSP into this? some kind of maze with different gates? but then it becomes a spatial problem again! need to have everything be simple and explicit.
 
-What about the CNF problem?? Binary, seems good!
+What about the 3SAT CNF satisfiability problem?? Binary, seems good! Except: binary is terrible for the sparse activation constraint. And indeed, this seems fatal in the implemented network. Note: implemented 3SAT using 3 variables that were repeated across clauses, so minimal number of vars, and thus the full CNF condition could be expressed only in terms of the negation operators, which avoids binding issues etc: the variables are constant and implicit. Interestingly, it requires 8 clauses before unsatisfiable cases emerge, and initially they are a tiny fraction. The summary on SO (https://cstheory.stackexchange.com/questions/2168/how-many-instances-of-3-sat-are-satisfiable) suggests that the ratio of clauses / variables defines a critical point (at a value of 4.2) where the space transitions from predominantly satisfiable to predominantly unsatisfiable. This accords well: 8/3 = 2.6667 is first emergence of any unsat, and by 10/3 (3.333) it is growing as a proportion steadily. The 4.2 ratio suggests that between 12 and 13 (12.6) is the transition point, but the combinatorial explosion at that point is already pushing the limits.
 
-3SAT is case with 3 elements OR'd together, combined by ANDs. 
-
-Learn this by mapping from input patterns to binary outputs: satisfiable or not
-
-depends on the configuration.  worth a try!
-
-problem: one key factor is the identity of the variable across clauses. This requires encoding this identity in some way -- but then there is a "matching" problem of identifying where the variables are re-used across problems. that is going to require additional encodings. It might just learn these, but we'll have to see. Need to start of course with a small number of variables. maybe just fix it at 3, so it is always re-used across problems? and keep the ordered list of vars the same? then it is basically just the permutation of the negation signs is the only actual variable. don't need to represent the variables explicitly -- because they are constant, it is implicit. can look at what that surface looks like for different numbers of clauses.
-
-basically, it is like the parity problem. but with more interesting surface?
+Next step is NAry CNF: OR = MAX, AND = MIN. Really the key thing about all these problems is that it needs to depend on the configuration of things, and the MIN and MAX clearly have that character. So, start with just computing MIN and MAX operators and see how that goes.
 
 ## TODO
 
-
+hid1 has pools and connectivity for each clause..
 

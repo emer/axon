@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// consatenv implements constraint satisfaction environments.
+// consatenv implements constraint satisfaction testing environments.
 package consatenv
 
 //go:generate core generate -add-types -add-funcs -gosl
@@ -19,38 +19,21 @@ import (
 )
 
 var (
-	// states3 is a list of all the permuted NAry states
-	// [8][3] with 0,1 in each
-	states3 *tensor.Int
-
-	// total number of states (NAry^3)
-	statesN int
-
-	// allcnfs is the full list of all problems
-	// represented as [N][NClauses] negation index orderings
-	allcnfs *tensor.Int32
-
-	// allcnfsN is the total number of allcnfs
-	allcnfsN int
-
-	// outputs is output of basic min-max logic operation
-	outputs *tensor.Int32
-
 	// bools3 is a list of all the permuted negation possibilities
 	// for brute-force searching. [8][3] with 0,1 in each
 	bools3 *tensor.Int
 
-	// allnegs is the full list of all problems
+	// allprobs is the full list of all problems
 	// represented as [N][NClauses] negation index orderings
-	allnegs *tensor.Int32
+	allprobs *tensor.Int32
 
-	// allnegsN is the total number of allnegs
-	allnegsN int
+	// allprobsN is the total number of allprobs
+	allprobsN int
 
-	// sats is the corresponding list of satisfiability results for allnegs
+	// sats is the corresponding list of satisfiability results for allprobs
 	sats *tensor.Int32
 
-	// selected is a selected list of indexes into allcnfs
+	// selected is a selected list of indexes into allprobs
 	// for the subset of problems to train on. first selUnsatN
 	// are all unsatisfied ones, remaining is random sample of others,
 	// of same count.
@@ -67,10 +50,6 @@ var (
 	globalLock sync.Mutex
 )
 
-func states3At(idx int) (int, int, int) {
-	return states3.Value(idx, 0), states3.Value(idx, 1), states3.Value(idx, 2)
-}
-
 func bools3AtInts(idx int) (int, int, int) {
 	return bools3.Value(idx, 0), bools3.Value(idx, 1), bools3.Value(idx, 2)
 }
@@ -83,10 +62,10 @@ func bools3At(idx int) (bool, bool, bool) {
 func printProb(i, n int) string {
 	ss := ""
 	for k := range n {
-		negIdx := int(allcnfs.Value(i, k))
+		negIdx := int(allprobs.Value(i, k))
 		ss += "["
 		for j := range 3 {
-			ss += fmt.Sprintf("%d ", states3.Value(negIdx, j))
+			ss += fmt.Sprintf("%d ", bools3.Value(negIdx, j))
 		}
 		ss += "] "
 	}
@@ -94,38 +73,34 @@ func printProb(i, n int) string {
 	return ss
 }
 
-// ConSatEnv implements constraint satisfaction environments.
+// ConSatEnv implements constraint satisfaction testing environments.
+// Specifically: 3SAT with fixed set of three variables, so that the
+// only  constraint is in the combination of negations.
 type ConSatEnv struct {
-	// name of environment -- Train or Test.
+	// name of environment -- Train or Test -- always Test!
 	Name string
 
-	// number of mutually-exclusive states per element (boolean = 2)
-	NAry int `default:"5"`
-
-	// number of clauses
-	NClauses int `default:"2"`
+	// number of clauses: 8 is minimum before non-satisfiablilty emerges.
+	NClauses int `default:"8"`
 
 	// NItems is number of items to select from full selected list.
-	// Must be < selUnsatN / NData.
+	// half will be satisfiable, half not. Must be < selUnsatN / NData.
 	NItems int
 
 	// number of units per localist representation, as one axis in pool in 4D space,
 	// such that total is NUnitsPer^2
 	NUnitsPer int
 
-	// data-parallel n
-	NData int
-
 	// data-parallel index
 	Di int
 
-	// Trial counts up NItems for indexing
+	// Trial counts up NIitems for indexing
 	Trial env.Counter
 
 	// named states
 	States map[string]*tensor.Float32
 
-	// Items is the index list into allcnfs, for items specific to this env.
+	// Items is the index list into allprobs, for items specific to this env.
 	// uses global selPermList to coordinate non-overlapping items across envs.
 	Items []int
 
@@ -144,23 +119,20 @@ type ConSatEnv struct {
 func (ev *ConSatEnv) Label() string { return ev.Name }
 
 func (ev *ConSatEnv) Defaults() {
-	ev.NAry = 5
-	ev.NClauses = 2
+	ev.NClauses = 8
 	ev.NUnitsPer = 2
-	ev.NItems = 1500
+	ev.NItems = 100
 }
 
 // Config configures the world
-func (ev *ConSatEnv) Config(ndata, di int, rndseed int64) {
+func (ev *ConSatEnv) Config(di int, rndseed int64) {
 	n := ev.NClauses
 	nu := ev.NUnitsPer
-	nary := ev.NAry
-	ev.NData = ndata
 	ev.Di = di
 	ev.RunRandSeed = rndseed
 	ev.States = make(map[string]*tensor.Float32)
-	ev.States["Input"] = tensor.NewFloat32(3, n, nu*nary, nu) // 3 elements per clause
-	ev.States["Output"] = tensor.NewFloat32(1, 1, nu*nary, nu)
+	ev.States["Input"] = tensor.NewFloat32(3*2, n, nu, nu) // 3 elements per clause, 2=negate or not
+	ev.States["Output"] = tensor.NewFloat32(2, 1, nu, nu)
 }
 
 func (ev *ConSatEnv) Init(run int) {
@@ -169,20 +141,17 @@ func (ev *ConSatEnv) Init(run int) {
 	}
 	randx.InitSysRand(&ev.Rand, ev.RunRandSeed*(int64(run)+1))
 	ev.MakeProblems() // ensure
-	np := len(selected)
-	neven := np / ev.NData
-	ev.NItems = min(ev.NItems, neven)
 	ev.Trial.Max = ev.NItems
 	ev.Trial.Init()
-	hi := ev.NItems // / 2
+	hi := ev.NItems / 2
 	st := hi * ev.Di
 	ev.Items = make([]int, ev.NItems)
 	for i := range hi {
 		ev.Items[i] = selected[selPermList[st+i]]
 	}
-	// for i := range hi {
-	// 	ev.Items[hi+i] = selected[selUnsatN+selPermList[st+i]]
-	// }
+	for i := range hi {
+		ev.Items[hi+i] = selected[selUnsatN+selPermList[st+i]]
+	}
 	ev.Order = slices.Clone(ev.Items)
 	randx.PermuteInts(ev.Order, ev.Rand)
 }
@@ -195,33 +164,24 @@ func (ev *ConSatEnv) String() string {
 	return fmt.Sprintf("%d", ev.Trial.Cur)
 }
 
-func pow(v, n int) int {
-	r := 1
-	for range n {
-		r *= v
-	}
-	return r
-}
-
 func (ev *ConSatEnv) MakeProblems() {
 	globalLock.Lock()
 	defer globalLock.Unlock()
 
-	if states3 != nil {
+	if bools3 != nil {
 		return
 	}
 	nv := 3 // 3sat
-	nary := ev.NAry
-	ns := pow(nary, nv)
 
-	states3 = tensor.NewInt(ns, nv)
+	bools3 = tensor.NewInt(8, nv)
+
 	idx := 0
-	for i := range nary {
-		for j := range nary {
-			for k := range nary {
-				states3.SetInt(i, idx, 0)
-				states3.SetInt(j, idx, 1)
-				states3.SetInt(k, idx, 2)
+	for i := range 2 {
+		for j := range 2 {
+			for k := range 2 {
+				bools3.SetInt(i, idx, 0)
+				bools3.SetInt(j, idx, 1)
+				bools3.SetInt(k, idx, 2)
 				idx++
 			}
 		}
@@ -229,96 +189,86 @@ func (ev *ConSatEnv) MakeProblems() {
 
 	n := ev.NClauses
 
-	pn := pow(ns, n)
-	allcnfsN = pn
-	allcnfs = tensor.NewInt32(pn, n)
+	pow := func(v, n int) int {
+		r := 1
+		for range n {
+			r *= v
+		}
+		return r
+	}
+
+	pn := pow(8, n)
+	allprobsN = pn
+	allprobs = tensor.NewInt32(pn, n)
 	for i := range pn {
 		pp := i
 		for k := range n {
-			j := pp % ns
-			pp /= ns
-			allcnfs.Set(int32(j), i, k)
+			j := pp % 8
+			pp /= 8
+			allprobs.Set(int32(j), i, k)
 		}
 	}
-
-	// basic CNF computation on states
-	outputs = tensor.NewInt32(pn)
-	for i := range pn {
-		mx := 0
-		for k := range n {
-			si := int(allcnfs.Value(i, k))
-			t0, t1, t2 := states3At(si)
-			mn := min(t0, t1, t2)
-			mx = max(mx, mn)
-		}
-		outputs.Set(int32(mx), i)
-	}
-	fmt.Println("n:", n, "ns:", ns, "pn:", pn)
 
 	// now brute-force search solutions
-	if false { // todo: get bools3 again, use as negation: nary-val etc
-		sats = tensor.NewInt32(pn)
-		selected = make([]int, 0, 2*40320)
-		tsat := 0
-		for i := range pn {
-			sat := false
-			for tIdx := range ns { // truth values across 3 variables
-				csat := true
-				for k := range n {
-					t0, t1, t2 := bools3At(tIdx)
-					negIdx := int(allnegs.Value(i, k))
-					n0, n1, n2 := bools3At(negIdx)
-					if n0 {
-						t0 = !t0
-					}
-					if n1 {
-						t1 = !t1
-					}
-					if n2 {
-						t2 = !t2
-					}
-					if !(t0 || t1 || t2) {
-						csat = false
-						break
-					}
-					// fmt.Println(i, k, "true:", t0, t1, t2)
+	sats = tensor.NewInt32(pn)
+	selected = make([]int, 0, 2*40320)
+	tsat := 0
+	for i := range pn {
+		sat := false
+		for tIdx := range 8 { // truth values across 3 variables
+			csat := true
+			for k := range n {
+				t0, t1, t2 := bools3At(tIdx)
+				negIdx := int(allprobs.Value(i, k))
+				n0, n1, n2 := bools3At(negIdx)
+				if n0 {
+					t0 = !t0
 				}
-				if csat {
-					// fmt.Println(i, "sat:", tIdx)
-					sat = true
+				if n1 {
+					t1 = !t1
+				}
+				if n2 {
+					t2 = !t2
+				}
+				if !(t0 || t1 || t2) {
+					csat = false
 					break
 				}
+				// fmt.Println(i, k, "true:", t0, t1, t2)
 			}
-			sati := num.FromBool[int32](sat)
-			sats.Set(sati, i)
-			if sat {
-				tsat++
-			}
-			if !sat {
-				selected = append(selected, i)
-				// fmt.Println(i, printProb(i, n))
+			if csat {
+				// fmt.Println(i, "sat:", tIdx)
+				sat = true
+				break
 			}
 		}
-		// fmt.Println("n:", n, "pn:", pn, "tsat:", tsat, "nsat:", pn-tsat, "pct:", float32(tsat)/float32(pn))
+		sati := num.FromBool[int32](sat)
+		sats.Set(sati, i)
+		if sat {
+			tsat++
+		}
+		if !sat {
+			selected = append(selected, i)
+			// fmt.Println(i, printProb(i, n))
+		}
 	}
+	// fmt.Println("n:", n, "pn:", pn, "tsat:", tsat, "nsat:", pn-tsat, "pct:", float32(tsat)/float32(pn))
 
-	selected = ev.Rand.Perm(pn)
 	selUnsatN = len(selected)
-
-	// // select others at random
-	// plist := ev.Rand.Perm(pn)
-	// count := 0
-	// for _, pi := range plist {
-	// 	i := plist[pi]
-	// 	if sats.Value(i) == 0 {
-	// 		continue
-	// 	}
-	// 	selected = append(selected, i)
-	// 	count++
-	// 	if count >= selUnsatN {
-	// 		break
-	// 	}
-	// }
+	// select others at random
+	plist := ev.Rand.Perm(pn)
+	count := 0
+	for _, pi := range plist {
+		i := plist[pi]
+		if sats.Value(i) == 0 {
+			continue
+		}
+		selected = append(selected, i)
+		count++
+		if count >= selUnsatN {
+			break
+		}
+	}
 
 	selPermList = ev.Rand.Perm(selUnsatN) // use for selecting items
 }
@@ -344,19 +294,18 @@ func (ev *ConSatEnv) Render(item int) {
 	out.SetZeros()
 
 	for k := range n {
-		n0, n1, n2 := states3At(int(allcnfs.Value(item, k)))
+		n0, n1, n2 := bools3AtInts(int(allprobs.Value(item, k)))
 		for uy := range nu {
 			for ux := range nu {
-				in.Set(1, 0, k, n0*nu+uy, ux)
-				in.Set(1, 1, k, n1*nu+uy, ux)
-				in.Set(1, 2, k, n2*nu+uy, ux)
+				in.Set(1, n0, k, uy, ux)
+				in.Set(1, 2+n1, k, uy, ux)
+				in.Set(1, 4+n2, k, uy, ux)
 			}
 		}
 	}
 	for uy := range nu {
 		for ux := range nu {
-			ov := int(outputs.Value(item))
-			out.Set(1, 0, 0, ov*nu+uy, ux)
+			out.Set(1, int(sats.Value(item)), 0, uy, ux)
 		}
 	}
 }

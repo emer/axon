@@ -140,7 +140,9 @@ func (ss *Sim) ConfigEnv() {
 	// Can be called multiple times -- don't re-create
 	newEnv := (len(ss.Envs) == 0)
 
-	for di := range ss.Config.Run.NData {
+	ndata := ss.Config.Run.NData
+
+	for di := range ndata {
 		var trn, tst *consatenv.ConSatEnv
 		if newEnv {
 			trn = &consatenv.ConSatEnv{}
@@ -156,14 +158,14 @@ func (ss *Sim) ConfigEnv() {
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
 		}
-		trn.Config(di, 73+int64(di)*73)
+		trn.Config(ndata, di, 73+int64(di)*73)
 
 		tst.Name = env.ModeDi(Test, di)
 		tst.Defaults()
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(tst, ss.Config.Env.Env)
 		}
-		tst.Config(di, 181+int64(di)*181)
+		tst.Config(ndata, di, 181+int64(di)*181)
 
 		trn.Init(0)
 		tst.Init(0)
@@ -183,15 +185,16 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ev := ss.Envs.ByModeDi(Train, 0).(*consatenv.ConSatEnv)
 	n := ev.NClauses
 	nu := ev.NUnitsPer
-	nhidUnits := 20
+	nary := ev.NAry
+	nhidUnits := 30
 
-	inp := net.AddLayer4D("Input", axon.InputLayer, 6, n, nu, nu)
+	inp := net.AddLayer4D("Input", axon.InputLayer, 3, n, nu*nary, nu)
 	hid1 := net.AddLayer2D("Hidden1", axon.SuperLayer, nhidUnits, nhidUnits)
 	// hid1 := net.AddLayer4D("Hidden1", axon.SuperLayer, 3, 3, 8, 8)
 	// hid1.SetSampleShape(emer.CenterPoolIndexes(hid1, 2), emer.CenterPoolShape(hid1, 2))
-	hid2 := net.AddLayer2D("Hidden2", axon.SuperLayer, nhidUnits, nhidUnits)
+	// hid2 := net.AddLayer2D("Hidden2", axon.SuperLayer, nhidUnits, nhidUnits)
 
-	out := net.AddLayer4D("Output", axon.TargetLayer, 2, 1, nu, nu)
+	out := net.AddLayer4D("Output", axon.TargetLayer, 1, 1, nu*nary, nu)
 
 	// inp.PlaceBehind(pos, 2)
 	// hid1.PlaceAbove(pos)
@@ -204,8 +207,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// _ = topo
 
 	net.ConnectLayers(inp, hid1, full, axon.ForwardPath)
-	net.BidirConnectLayers(hid1, hid2, full)
-	net.BidirConnectLayers(hid2, out, full)
+	// net.BidirConnectLayers(hid1, hid2, full)
+	net.BidirConnectLayers(hid1, out, full)
 
 	net.Build()
 	net.Defaults()
@@ -552,7 +555,7 @@ func (ss *Sim) ConfigStats() {
 		}
 	})
 
-	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
+	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.InputLayer, axon.TargetLayer)
 	ss.AddStatStd(axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...))
 	ss.AddStatStd(axon.StatLayerGiMult(ss.Stats, net, Train, Epoch, Run, lays...))
 

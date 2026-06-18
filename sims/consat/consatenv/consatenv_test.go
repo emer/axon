@@ -9,8 +9,8 @@ import "testing"
 func TestBruteForce(t *testing.T) {
 	ev := &ConSatEnv{}
 	ev.Defaults()
-	ev.NClauses = 8
-	ev.Config(137)
+	ev.NClauses = 2
+	ev.Config(1, 0, 137)
 	ev.Init(0)
 	// ev.Step()
 }

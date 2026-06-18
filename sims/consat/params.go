@@ -27,7 +27,7 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Clamp.Ge = 1.5        // 1.5 for fsffffb
 				ly.Inhib.ActAvg.Nominal = 0.2 // 0.025
-				ly.Inhib.Layer.Gi = 0.8
+				ly.Inhib.Layer.Gi = 1
 			}},
 		{Sel: "#Hidden1", Doc: "",
 			Set: func(ly *axon.LayerParams) {
@@ -66,7 +66,7 @@ var PathParams = axon.PathSheets{
 	"Base": {
 		{Sel: "Path", Doc: "std",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.LRate.Base = 0.05
+				pt.Learn.LRate.Base = 0.1 // 0.1 > 0.05
 				pt.SWts.Adapt.LRate = 0.1
 				pt.SWts.Init.SPct = 1
 				pt.SWts.Adapt.LRate = 0.0001 // 0.005 == .1 == .01
