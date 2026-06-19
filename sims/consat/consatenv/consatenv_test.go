@@ -9,7 +9,10 @@ import "testing"
 func TestBruteForce(t *testing.T) {
 	ev := &ConSatEnv{}
 	ev.Defaults()
-	ev.NClauses = 2
+	ev.NAry = 4
+	ev.NClauses = 8
+	ev.DoSat = true
+	ev.SatThr = ev.NAry - 1
 	ev.Config(1, 0, 137)
 	ev.Init(0)
 	// ev.Step()

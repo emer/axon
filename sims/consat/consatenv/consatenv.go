@@ -26,14 +26,14 @@ var (
 	// total number of states (NAry^3)
 	statesN int
 
-	// allcnfs is the full list of all problems
-	// represented as [N][NClauses] negation index orderings
+	// allcnfs is the full list of all CNF inputs
+	// represented as [N][NClauses] holding states3 index for pattern within the clause
 	allcnfs *tensor.Int32
 
 	// allcnfsN is the total number of allcnfs
 	allcnfsN int
 
-	// outputs is output of basic min-max logic operation
+	// outputs is output of basic max-min CNF logic operation on allcnfs
 	outputs *tensor.Int32
 
 	// bools3 is a list of all the permuted negation possibilities
@@ -50,19 +50,11 @@ var (
 	// sats is the corresponding list of satisfiability results for allnegs
 	sats *tensor.Int32
 
-	// selected is a selected list of indexes into allcnfs
+	// items is a selected list of indexes into allcnfs
 	// for the subset of problems to train on. first selUnsatN
 	// are all unsatisfied ones, remaining is random sample of others,
 	// of same count.
-	selected []int
-
-	// selUnsatN is number of unsatisfiable problems, first half
-	// of selected list.
-	selUnsatN int
-
-	// selPermList is a permuted list of size selUnsatN, to be used
-	// for selecting subsets of items for actual usage.
-	selPermList []int
+	items []int
 
 	globalLock sync.Mutex
 )
@@ -80,7 +72,7 @@ func bools3At(idx int) (bool, bool, bool) {
 	return num.ToBool(i), num.ToBool(j), num.ToBool(k)
 }
 
-func printProb(i, n int) string {
+func printCNF(i, n int) string {
 	ss := ""
 	for k := range n {
 		negIdx := int(allcnfs.Value(i, k))
@@ -99,19 +91,27 @@ type ConSatEnv struct {
 	// name of environment -- Train or Test.
 	Name string
 
+	// if DoSat then the problem is 3Sat on NAry, otherwise it is literal CNF evaluation
+	DoSat bool
+
 	// number of mutually-exclusive states per element (boolean = 2)
 	NAry int `default:"5"`
 
 	// number of clauses
 	NClauses int `default:"2"`
 
-	// NItems is number of items to select from full selected list.
-	// Must be < selUnsatN / NData.
+	// NItems is number of items to select from full items list.
+	// Is enforced to be < selUnsatN / NData.
 	NItems int
 
 	// number of units per localist representation, as one axis in pool in 4D space,
 	// such that total is NUnitsPer^2
 	NUnitsPer int
+
+	// SatThr is the threshold for considering something to be satisfied.
+	// strictest setting is NAry-1 (full truth). Doesn't make a difference
+	// it turns out, at least for n = 8 with nary = 5 or 4.
+	SatThr int
 
 	// data-parallel n
 	NData int
@@ -148,6 +148,7 @@ func (ev *ConSatEnv) Defaults() {
 	ev.NClauses = 2
 	ev.NUnitsPer = 2
 	ev.NItems = 1500
+	ev.SatThr = 3
 }
 
 // Config configures the world
@@ -169,20 +170,15 @@ func (ev *ConSatEnv) Init(run int) {
 	}
 	randx.InitSysRand(&ev.Rand, ev.RunRandSeed*(int64(run)+1))
 	ev.MakeProblems() // ensure
-	np := len(selected)
+	np := len(items)
 	neven := np / ev.NData
 	ev.NItems = min(ev.NItems, neven)
-	ev.Trial.Max = ev.NItems
+	ni := ev.NItems
+	ev.Trial.Max = ni
 	ev.Trial.Init()
-	hi := ev.NItems // / 2
-	st := hi * ev.Di
-	ev.Items = make([]int, ev.NItems)
-	for i := range hi {
-		ev.Items[i] = selected[selPermList[st+i]]
-	}
-	// for i := range hi {
-	// 	ev.Items[hi+i] = selected[selUnsatN+selPermList[st+i]]
-	// }
+	st := ni * ev.Di
+	ev.Items = make([]int, ni)
+	copy(ev.Items, items[st:st+ni])
 	ev.Order = slices.Clone(ev.Items)
 	randx.PermuteInts(ev.Order, ev.Rand)
 }
@@ -226,10 +222,33 @@ func (ev *ConSatEnv) MakeProblems() {
 			}
 		}
 	}
+	bools3 = tensor.NewInt(8, nv)
+	idx = 0
+	for i := range 2 {
+		for j := range 2 {
+			for k := range 2 {
+				bools3.SetInt(i, idx, 0)
+				bools3.SetInt(j, idx, 1)
+				bools3.SetInt(k, idx, 2)
+				idx++
+			}
+		}
+	}
+	if ev.DoSat {
+		ev.MakeSats()
+	} else {
+		ev.MakeCNFs()
+	}
+}
 
+// MakeCNFs makes literal CNF problems to solve
+func (ev *ConSatEnv) MakeCNFs() {
 	n := ev.NClauses
-
+	nv := 3 // 3sat
+	nary := ev.NAry
+	ns := pow(nary, nv)
 	pn := pow(ns, n)
+
 	allcnfsN = pn
 	allcnfs = tensor.NewInt32(pn, n)
 	for i := range pn {
@@ -255,72 +274,73 @@ func (ev *ConSatEnv) MakeProblems() {
 	}
 	fmt.Println("n:", n, "ns:", ns, "pn:", pn)
 
-	// now brute-force search solutions
-	if false { // todo: get bools3 again, use as negation: nary-val etc
-		sats = tensor.NewInt32(pn)
-		selected = make([]int, 0, 2*40320)
-		tsat := 0
-		for i := range pn {
-			sat := false
-			for tIdx := range ns { // truth values across 3 variables
-				csat := true
-				for k := range n {
-					t0, t1, t2 := bools3At(tIdx)
-					negIdx := int(allnegs.Value(i, k))
-					n0, n1, n2 := bools3At(negIdx)
-					if n0 {
-						t0 = !t0
-					}
-					if n1 {
-						t1 = !t1
-					}
-					if n2 {
-						t2 = !t2
-					}
-					if !(t0 || t1 || t2) {
-						csat = false
-						break
-					}
-					// fmt.Println(i, k, "true:", t0, t1, t2)
-				}
-				if csat {
-					// fmt.Println(i, "sat:", tIdx)
-					sat = true
-					break
-				}
-			}
-			sati := num.FromBool[int32](sat)
-			sats.Set(sati, i)
-			if sat {
-				tsat++
-			}
-			if !sat {
-				selected = append(selected, i)
-				// fmt.Println(i, printProb(i, n))
-			}
+	items = ev.Rand.Perm(pn)
+}
+
+// MakeSats makes Sat problems to solve
+// note: the NAry=5 results are identical to boolean!
+// takes 8 clauses. 40,320 non-sat cases. weirdly,
+// satMax is always 2! why?  For NAry=4, it is 1.
+func (ev *ConSatEnv) MakeSats() {
+	n := ev.NClauses
+	nv := 3 // 3sat
+	nary := ev.NAry
+	naryMax := nary - 1
+	ns := pow(nary, nv)
+	nn := pow(8, n)
+	allnegsN = nn
+	allnegs = tensor.NewInt32(nn, n)
+	for i := range nn {
+		pp := i
+		for k := range n {
+			j := pp % 8
+			pp /= 8
+			allnegs.Set(int32(j), i, k)
 		}
-		// fmt.Println("n:", n, "pn:", pn, "tsat:", tsat, "nsat:", pn-tsat, "pct:", float32(tsat)/float32(pn))
 	}
 
-	selected = ev.Rand.Perm(pn)
-	selUnsatN = len(selected)
-
-	// // select others at random
-	// plist := ev.Rand.Perm(pn)
-	// count := 0
-	// for _, pi := range plist {
-	// 	i := plist[pi]
-	// 	if sats.Value(i) == 0 {
-	// 		continue
-	// 	}
-	// 	selected = append(selected, i)
-	// 	count++
-	// 	if count >= selUnsatN {
-	// 		break
-	// 	}
-	// }
-
-	selPermList = ev.Rand.Perm(selUnsatN) // use for selecting items
+	sats = tensor.NewInt32(nn)
+	// selected = make([]int, 0, 2*40320)
+	tsat := 0
+	for i := range nn {
+		satMax := 0 // max AND value
+		satMaxi := 0
+		_ = satMaxi
+		for tIdx := range ns { // variable "truth" values across 3
+			and := nary
+			for k := range n {
+				t0, t1, t2 := states3At(tIdx)
+				negIdx := int(allnegs.Value(i, k))
+				n0, n1, n2 := bools3At(negIdx)
+				if n0 {
+					t0 = naryMax - t0
+				}
+				if n1 {
+					t1 = naryMax - t1
+				}
+				if n2 {
+					t2 = naryMax - t2
+				}
+				or := max(t0, t1, t2)
+				and = min(and, or)
+			}
+			if and > satMax {
+				satMax = and
+				satMaxi = tIdx
+			}
+		}
+		sat := satMax >= ev.SatThr
+		sati := num.FromBool[int32](sat)
+		sats.Set(sati, i)
+		if sat {
+			tsat++
+		}
+		if !sat {
+			// selected = append(selected, i)
+			fmt.Println(i, "nosat:", satMax)
+		}
+	}
+	fmt.Println("n:", n, "nn:", nn, "tsat:", tsat, "nsat:", nn-tsat, "pct:", float32(tsat)/float32(nn))
 }
 
 // results for different numbers of clauses -- only get non-sat at 8 and above:

@@ -165,7 +165,7 @@ func (ss *Sim) ConfigEnv() {
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(tst, ss.Config.Env.Env)
 		}
-		tst.Config(ndata, di, 181+int64(di)*181)
+		tst.Config(ndata, ndata+di, 181+int64(di)*181) // unique items
 
 		trn.Init(0)
 		tst.Init(0)
@@ -186,14 +186,15 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	n := ev.NClauses
 	nu := ev.NUnitsPer
 	nary := ev.NAry
-	nhidUnits := 20
-	nhid1Units := 10
+	nHidUnits := 20
+	nHid1Units := 20
 
 	inp := net.AddLayer4D("Input", axon.InputLayer, 3, n, nu, nu*nary)
-	// hid1 := net.AddLayer2D("Hidden1", axon.SuperLayer, nhidUnits, nhidUnits)
-	hid1 := net.AddLayer4D("Hidden1", axon.SuperLayer, 1, n, nhid1Units, nhid1Units)
+	// hid1 := net.AddLayer2D("Hidden1", axon.SuperLayer, nHidUnits, nHidUnits)
+	hid1 := net.AddLayer4D("Hidden1", axon.SuperLayer, 1, n, nHidUnits, nHid1Units) // nHidUnits > 1
 	// hid1.SetSampleShape(emer.CenterPoolIndexes(hid1, 2), emer.CenterPoolShape(hid1, 2))
-	hid2 := net.AddLayer2D("Hidden2", axon.SuperLayer, nhidUnits, nhidUnits)
+	// hid2 := net.AddLayer2D("Hidden2", axon.SuperLayer, nHidUnits, nHidUnits)
+	// no hid2 better!
 
 	out := net.AddLayer4D("Output", axon.TargetLayer, 1, 1, nu, nu*nary)
 
@@ -209,8 +210,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_ = topo
 
 	net.ConnectLayers(inp, hid1, topo, axon.ForwardPath)
-	net.BidirConnectLayers(hid1, hid2, full)
-	net.BidirConnectLayers(hid2, out, full)
+	// net.BidirConnectLayers(hid1, hid2, full)
+	// net.BidirConnectLayers(hid2, out, full)
 	net.BidirConnectLayers(hid1, out, full) // shortcut
 
 	net.Build()
@@ -281,7 +282,7 @@ func (ss *Sim) ConfigLoops() {
 	ls.Stacks[Train].OnInit.Add("Init", ss.Init)
 	ls.Loop(Train, Run).OnStart.Add("NewRun", ss.NewRun)
 
-	// trainEpoch := ls.Loop(Train, Epoch)
+	trainEpoch := ls.Loop(Train, Epoch)
 	// trainEpoch.IsDone.AddBool("NZeroStop", func() bool {
 	// 	stopNz := ss.Config.Run.NZero
 	// 	if stopNz <= 0 {
@@ -294,11 +295,11 @@ func (ss *Sim) ConfigLoops() {
 	// 	return false
 	// })
 
-	// trainEpoch.OnStart.Add("TestAtInterval", func() {
-	// 	if (ss.Config.Run.TestInterval > 0) && ((trainEpoch.Counter.Cur+1)%ss.Config.Run.TestInterval == 0) {
-	// 		ss.TestAll()
-	// 	}
-	// })
+	trainEpoch.OnStart.Add("TestAtInterval", func() {
+		if (ss.Config.Run.TestInterval > 0) && ((trainEpoch.Counter.Cur+1)%ss.Config.Run.TestInterval == 0) {
+			ss.TestAll()
+		}
+	})
 
 	ls.AddOnStartToAll("StatsStart", ss.StatsStart)
 	ls.AddOnEndToAll("StatsStep", ss.StatsStep)
@@ -481,6 +482,7 @@ func (ss *Sim) StatsInit() {
 		_, idx := tbs.CurrentTab()
 		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Epoch))
 		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Train, Run))
+		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Test, Epoch))
 		tbs.PlotTensorFS(axon.StatsNode(ss.Stats, Test, Trial))
 		tbs.PlotTensorFS(ss.Stats.Dir("Train/RunAll"))
 		tbs.SelectTabIndex(idx)

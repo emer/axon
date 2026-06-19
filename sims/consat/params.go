@@ -67,11 +67,11 @@ var PathParams = axon.PathSheets{
 	"Base": {
 		{Sel: "Path", Doc: "std",
 			Set: func(pt *axon.PathParams) {
-				pt.Learn.LRate.Base = 0.05 // 0.1 > 0.05
+				pt.Learn.LRate.Base = 0.05 // 0.05 >= 0.1 > 0.02
 				pt.SWts.Adapt.LRate = 0.1
 				pt.SWts.Init.SPct = 1
 				pt.SWts.Adapt.LRate = 0.0001 // 0.005 == .1 == .01
-				pt.Learn.DWt.SubMean = 1
+				pt.Learn.DWt.SubMean = 1     // 1 > 0
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {

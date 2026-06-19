@@ -76,7 +76,7 @@ type RunConfig struct {
 	Runs int `default:"5" min:"1"`
 
 	// Epochs is the total number of epochs per run.
-	Epochs int `default:"200"`
+	Epochs int `default:"100"`
 
 	// Trials is the total number of trials per epoch.
 	// Should be an even multiple of NData.
@@ -91,6 +91,10 @@ type RunConfig struct {
 
 	// PlusCycles is the number of cycles in the plus phase per trial.
 	PlusCycles int `default:"50"`
+
+	// TestInterval is how often (in epochs) to run through all the test patterns,
+	// in terms of training epochs. Can use 0 or -1 for no testing.
+	TestInterval int `default:"10"`
 
 	// PCAInterval is how often (in epochs) to compute PCA on hidden
 	// representations to measure variance.
@@ -115,7 +119,7 @@ type LogConfig struct {
 	Train []string `default:"['Expt', 'Run', 'Epoch']" nest:"+"`
 
 	// Test has the list of Test mode levels to save log files for.
-	Test []string `nest:"+"`
+	Test []string `default:"['Epoch']" nest:"+"`
 }
 
 // Config has the overall Sim configuration options.
@@ -139,5 +143,5 @@ func (cfg *Config) Defaults() {
 	cfg.Name = "ConSat"
 	cfg.Title = "Axon constraint statisfaction"
 	cfg.URL = "https://github.com/emer/axon/blob/main/sims/consat/README.md"
-	cfg.Doc = "This tests constraint satisfaction using the traveling salesperson problem."
+	cfg.Doc = "This tests constraint satisfaction using CNF formulae."
 }

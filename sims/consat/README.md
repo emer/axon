@@ -20,7 +20,12 @@ What about the 3SAT CNF satisfiability problem?? Binary, seems good! Except: bin
 
 Next step is NAry CNF: OR = MAX, AND = MIN. Really the key thing about all these problems is that it needs to depend on the configuration of things, and the MIN and MAX clearly have that character. So, start with just computing MIN and MAX operators and see how that goes.
 
+CNF is too easy: the MIN and MAX operators are easily computed with weights that generalize very well. This is too much pattern recognition and not enough constraint satisfaction.
+
+Per https://en.wikipedia.org/wiki/Constraint_satisfaction_problem -- generic version of CSP is just variables with some kind of arbitrary constraint matricies. So, just need to come up with a bunch of generic variables and then some random constraints, and then have the thing learn this. Don't need any actual semantics. Just need to have relationships and sufficient numbers of constraints to balance things out -- randomly generate constraints until finding one that produces balanced results. Relationships can just be > = <.
+
+Key thing: need the output to be somehow more than binary! Ok, so could define different *classes* according to these constraints, and the problem is to classify. So you have N different sets of constraints, and you need to find the one that fits the best -- that seems good!!
+
 ## TODO
 
-hid1 has pools and connectivity for each clause..
 
