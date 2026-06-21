@@ -8,7 +8,6 @@ package consatenv
 //go:generate core generate -add-types -add-funcs -gosl
 
 import (
-	"embed"
 	"fmt"
 	"slices"
 	"strconv"
@@ -19,8 +18,10 @@ import (
 	"github.com/emer/emergent/v2/env"
 )
 
-//go:embed *.json
-var embedfs embed.FS
+// todo: not working due to simmer issue: go:embed *.json
+// var embedfs embed.FS
+
+var defaultConstr = `[[{"R":"Greater","A":4,"B":1},{"R":"Greater","A":4,"B":2},{"R":"Equal","A":3,"B":3}],[{"R":"Less","A":4,"B":1},{"R":"Greater","A":1,"B":4},{"R":"Greater","A":1,"B":4}],[{"R":"Less","A":1,"B":2},{"R":"Less","A":4,"B":2},{"R":"Less","A":1,"B":4}],[{"R":"Greater","A":0,"B":1},{"R":"Equal","A":4,"B":1},{"R":"Greater","A":0,"B":1}]]`
 
 var (
 	// constraints is a shared list of constraints

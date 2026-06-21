@@ -5,6 +5,7 @@
 package consatenv
 
 import (
+	"bytes"
 	"fmt"
 
 	"cogentcore.org/core/base/errors"
@@ -321,7 +322,8 @@ func (ev *ConSatEnv) InitOpen() {
 		return
 	}
 	ev.MakeStates()
-	errors.Log(jsonx.OpenFS(&constraints, embedfs, ev.Filename()))
+	b := bytes.NewBuffer([]byte(defaultConstr))
+	errors.Log(jsonx.Read(&constraints, b))
 	ev.TestConstraints(constraints)
 	items = ev.Rand.Perm(statesN)
 }
