@@ -13,7 +13,7 @@ func TestMake(t *testing.T) {
 	ev.NVars = 5
 	ev.NConstraints = 4 // 1 extra for none, improves overall "pure" score
 	ev.RelationsPer = 3
-	ev.Config(1, 0, 140) // 140 is good
+	ev.Config(1, 0, 137) // 137 is good
 	ev.Init(0)
 	ev.MakeConstraints()
 	// ev.Step()

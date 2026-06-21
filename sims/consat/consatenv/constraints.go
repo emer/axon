@@ -321,7 +321,8 @@ func (ev *ConSatEnv) InitOpen() {
 		return
 	}
 	ev.MakeStates()
-	constraints = ev.OpenConstraints()
+	errors.Log(jsonx.OpenFS(&constraints, embedfs, ev.Filename()))
+	ev.TestConstraints(constraints)
 	items = ev.Rand.Perm(statesN)
 }
 

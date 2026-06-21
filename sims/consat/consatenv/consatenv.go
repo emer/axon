@@ -8,14 +8,19 @@ package consatenv
 //go:generate core generate -add-types -add-funcs -gosl
 
 import (
+	"embed"
 	"fmt"
 	"slices"
+	"strconv"
 	"sync"
 
 	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/lab/tensor"
 	"github.com/emer/emergent/v2/env"
 )
+
+//go:embed *.json
+var embedfs embed.FS
 
 var (
 	// constraints is a shared list of constraints
@@ -88,6 +93,12 @@ type ConSatEnv struct {
 	// Copy of Items that is permuted after every pass through list.
 	Order []int
 
+	// Current input variables
+	Vars []int
+
+	// Current output value: 0 = no match, 1..nvars
+	Value int
+
 	// Rand is the random number generator for the env.
 	// Created in Init if not already there.
 	Rand randx.Rand `display:"-"`
@@ -121,6 +132,8 @@ func (ev *ConSatEnv) Config(ndata, di int, rndseed int64) {
 	ev.States = make(map[string]*tensor.Float32)
 	ev.States["Input"] = tensor.NewFloat32(n, 1, nu, nu*nary)
 	ev.States["Output"] = tensor.NewFloat32(1, 1, nu, nu*nc)
+	ev.Vars = make([]int, n)
+
 }
 
 func (ev *ConSatEnv) Init(run int) {
@@ -147,7 +160,11 @@ func (ev *ConSatEnv) State(el string) tensor.Values {
 }
 
 func (ev *ConSatEnv) String() string {
-	return fmt.Sprintf("%d", ev.Trial.Cur)
+	vals := ""
+	for _, v := range ev.Vars {
+		vals += strconv.Itoa(v) + " "
+	}
+	return fmt.Sprintf("%d %d: %s", ev.Trial.Cur, ev.Value, vals)
 }
 
 func (ev *ConSatEnv) Render(item int) {
@@ -158,33 +175,27 @@ func (ev *ConSatEnv) Render(item int) {
 	in.SetZeros()
 	out.SetZeros()
 
-	vars := make([]int, nvars)
-	ev.StateVars(item, vars)
-	val, _ := constraints.Eval(vars, nil)
+	ev.StateVars(item, ev.Vars)
+	ev.Value, _ = constraints.Eval(ev.Vars, nil)
+	ev.Value++ // 0 = no value
 
 	for k := range nvars {
 		for uy := range nu {
 			for ux := range nu {
-				in.Set(1, k, 0, uy, vars[k]*nu+ux)
+				in.Set(1, k, 0, uy, ev.Vars[k]*nu+ux)
 			}
 		}
 	}
 	for uy := range nu {
 		for ux := range nu {
-			out.Set(1, 0, 0, uy, (val+1)*nu+ux)
+			out.Set(1, 0, 0, uy, ev.Value*nu+ux)
 		}
 	}
 }
 
 func (ev *ConSatEnv) OutErr(tsr *tensor.Float64) float64 {
-	item := ev.Order[ev.Trial.Cur]
-	nvars := ev.NVars
 	nary := ev.NAry
 	nu := ev.NUnitsPer
-	vars := make([]int, nvars)
-	ev.StateVars(item, vars)
-	val, _ := constraints.Eval(vars, nil)
-	val++
 	maxi := 0
 	maxv := 0.0
 	for o := range nary {
@@ -199,7 +210,7 @@ func (ev *ConSatEnv) OutErr(tsr *tensor.Float64) float64 {
 			maxi = o
 		}
 	}
-	if maxi == val {
+	if maxi == ev.Value {
 		return 0.0
 	}
 	return 1.0

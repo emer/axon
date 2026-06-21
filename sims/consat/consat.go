@@ -194,7 +194,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// hid1 := net.AddLayer2D("Hidden1", axon.SuperLayer, nHidUnits, nHidUnits)
 	hid1 := net.AddLayer2D("Hidden1", axon.SuperLayer, nHidUnits, nHidUnits)
 	// hid1.SetSampleShape(emer.CenterPoolIndexes(hid1, 2), emer.CenterPoolShape(hid1, 2))
-	hid2 := net.AddLayer2D("Hidden2", axon.SuperLayer, nHidUnits, nHidUnits)
+	// hid2 := net.AddLayer2D("Hidden2", axon.SuperLayer, nHidUnits, nHidUnits)
 	// no hid2 better!
 
 	out := net.AddLayer4D("Output", axon.TargetLayer, 1, 1, nu, nu*nc)
@@ -211,9 +211,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_ = topo
 
 	net.ConnectLayers(inp, hid1, topo, axon.ForwardPath)
-	net.BidirConnectLayers(hid1, hid2, full)
-	net.BidirConnectLayers(hid2, out, full)
-	// net.BidirConnectLayers(hid1, out, full) // shortcut
+	// net.BidirConnectLayers(hid1, hid2, full)
+	// net.BidirConnectLayers(hid2, out, full)
+	net.BidirConnectLayers(hid1, out, full) // shortcut
 
 	net.Build()
 	net.Defaults()
