@@ -6,14 +6,15 @@ package consatenv
 
 import "testing"
 
-func TestBruteForce(t *testing.T) {
+func TestMake(t *testing.T) {
 	ev := &ConSatEnv{}
 	ev.Defaults()
-	ev.NAry = 4
-	ev.NClauses = 8
-	ev.DoSat = true
-	ev.SatThr = ev.NAry - 1
-	ev.Config(1, 0, 137)
+	ev.NAry = 5
+	ev.NVars = 5
+	ev.NConstraints = 4 // 1 extra for none, improves overall "pure" score
+	ev.RelationsPer = 3
+	ev.Config(1, 0, 140) // 140 is good
 	ev.Init(0)
+	ev.MakeConstraints()
 	// ev.Step()
 }

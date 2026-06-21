@@ -34,10 +34,10 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.ActAvg.Nominal = 0.05
 				ly.Inhib.ActAvg.Offset = 0.0
 				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
-				ly.Inhib.Layer.On.SetBool(false)
-				ly.Inhib.Pool.On.SetBool(true)
-				ly.Inhib.Pool.Gi = 1.0
-				// ly.Inhib.Layer.Gi = 1.0
+				ly.Inhib.Layer.On.SetBool(true)
+				// ly.Inhib.Pool.On.SetBool(true)
+				// ly.Inhib.Pool.Gi = 1.0
+				ly.Inhib.Layer.Gi = 1.0
 			}},
 		{Sel: "#Hidden2", Doc: "",
 			Set: func(ly *axon.LayerParams) {

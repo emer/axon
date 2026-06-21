@@ -183,20 +183,21 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
 	ev := ss.Envs.ByModeDi(Train, 0).(*consatenv.ConSatEnv)
-	n := ev.NClauses
+	n := ev.NVars
 	nu := ev.NUnitsPer
 	nary := ev.NAry
+	nc := ev.NConstraints + 1
 	nHidUnits := 20
-	nHid1Units := 20
+	// nHid1Units := 20
 
-	inp := net.AddLayer4D("Input", axon.InputLayer, 3, n, nu, nu*nary)
+	inp := net.AddLayer4D("Input", axon.InputLayer, n, 1, nu, nu*nary)
 	// hid1 := net.AddLayer2D("Hidden1", axon.SuperLayer, nHidUnits, nHidUnits)
-	hid1 := net.AddLayer4D("Hidden1", axon.SuperLayer, 1, n, nHidUnits, nHid1Units) // nHidUnits > 1
+	hid1 := net.AddLayer2D("Hidden1", axon.SuperLayer, nHidUnits, nHidUnits)
 	// hid1.SetSampleShape(emer.CenterPoolIndexes(hid1, 2), emer.CenterPoolShape(hid1, 2))
-	// hid2 := net.AddLayer2D("Hidden2", axon.SuperLayer, nHidUnits, nHidUnits)
+	hid2 := net.AddLayer2D("Hidden2", axon.SuperLayer, nHidUnits, nHidUnits)
 	// no hid2 better!
 
-	out := net.AddLayer4D("Output", axon.TargetLayer, 1, 1, nu, nu*nary)
+	out := net.AddLayer4D("Output", axon.TargetLayer, 1, 1, nu, nu*nc)
 
 	// inp.PlaceBehind(pos, 2)
 	// hid1.PlaceAbove(pos)
@@ -210,9 +211,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_ = topo
 
 	net.ConnectLayers(inp, hid1, topo, axon.ForwardPath)
-	// net.BidirConnectLayers(hid1, hid2, full)
-	// net.BidirConnectLayers(hid2, out, full)
-	net.BidirConnectLayers(hid1, out, full) // shortcut
+	net.BidirConnectLayers(hid1, hid2, full)
+	net.BidirConnectLayers(hid2, out, full)
+	// net.BidirConnectLayers(hid1, out, full) // shortcut
 
 	net.Build()
 	net.Defaults()
