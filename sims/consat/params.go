@@ -26,8 +26,11 @@ var LayerParams = axon.LayerSheets{
 		{Sel: "#Input", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Clamp.Ge = 1.5         // 1.5 for fsffffb
-				ly.Inhib.ActAvg.Nominal = 0.15 // 0.15 -- todo lower
-				ly.Inhib.Layer.Gi = 1
+				ly.Inhib.ActAvg.Nominal = 0.15 //
+				ly.Inhib.Layer.On.SetBool(false)
+				ly.Inhib.Pool.On.SetBool(true)
+				ly.Inhib.Pool.Gi = 0.9
+				// ly.Inhib.Layer.Gi = 1
 			}},
 		{Sel: "#Hidden1", Doc: "",
 			Set: func(ly *axon.LayerParams) {

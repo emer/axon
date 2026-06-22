@@ -185,16 +185,16 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ev := ss.Envs.ByModeDi(Train, 0).(*consatenv.ConSatEnv)
 	n := ev.NVars
 	nu := ev.NUnitsPer
-	nary := ev.NAry
+	np := ev.PopCodeUnits
 	nc := ev.NConstraints + 1
-	nHidUnits := 20
+	nHidUnits := 20 // 20 == 30
 	// nHid1Units := 20
 
-	inp := net.AddLayer4D("Input", axon.InputLayer, n, 1, nu, nu*nary)
+	inp := net.AddLayer4D("Input", axon.InputLayer, n, 1, 1, np)
 	// hid1 := net.AddLayer2D("Hidden1", axon.SuperLayer, nHidUnits, nHidUnits)
 	hid1 := net.AddLayer2D("Hidden1", axon.SuperLayer, nHidUnits, nHidUnits)
 	// hid1.SetSampleShape(emer.CenterPoolIndexes(hid1, 2), emer.CenterPoolShape(hid1, 2))
-	hid2 := net.AddLayer2D("Hidden2", axon.SuperLayer, nHidUnits, nHidUnits)
+	// hid2 := net.AddLayer2D("Hidden2", axon.SuperLayer, nHidUnits, nHidUnits)
 	// no hid2 better!
 
 	out := net.AddLayer4D("Output", axon.TargetLayer, 1, 1, nu, nu*nc)
@@ -204,15 +204,15 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	full := paths.NewFull()
 
-	topo := paths.NewPoolTile()
-	topo.Size.Set(1, 3)
-	topo.Skip.Set(1, 0)
-	topo.Start.Set(0, 0)
-	_ = topo
+	// topo := paths.NewPoolTile()
+	// topo.Size.Set(1, 3)
+	// topo.Skip.Set(1, 0)
+	// topo.Start.Set(0, 0)
+	// _ = topo
 
-	net.ConnectLayers(inp, hid1, topo, axon.ForwardPath)
-	net.BidirConnectLayers(hid1, hid2, full)
-	net.BidirConnectLayers(hid2, out, full)
+	net.ConnectLayers(inp, hid1, full, axon.ForwardPath)
+	// net.BidirConnectLayers(hid1, hid2, full)
+	// net.BidirConnectLayers(hid2, out, full)
 	net.BidirConnectLayers(hid1, out, full) // shortcut
 
 	net.Build()

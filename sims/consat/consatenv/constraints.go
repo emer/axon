@@ -184,18 +184,12 @@ func (cs Constraints) RandomTweak(nvar int, rnd randx.Rand) {
 }
 
 // Evaluate given constraints on given variable values.
-// val is the (last) one that matches, -1 if none
+// val is the index+1 of the last one that matches, 0 if none.
 // nmatch is number of matching: if > 1 then there are conflicts.
-// fills in the results from each constraint in all if present,
-// which should be len(cs).
-func (cs Constraints) Eval(vars []int, all []bool) (val, nmatch int) {
-	if all == nil {
-		all = make([]bool, len(cs))
-	}
+func (cs Constraints) Eval(vars []int) (val, nmatch int) {
 	val = -1
 	for i, c := range cs {
 		ev := c.Eval(vars)
-		all[i] = ev
 		if ev {
 			val = i
 			nmatch++
@@ -244,7 +238,6 @@ func (ev *ConSatEnv) MakeConstraints() Constraints {
 	maxPureC = cons.Clone()
 	neval := statesN
 	vars := make([]int, nvar)
-	all := make([]bool, nc)
 	for i := range niter {
 		if i > 0 {
 			cons = maxPureC.Clone() // start from current best
@@ -254,7 +247,7 @@ func (ev *ConSatEnv) MakeConstraints() Constraints {
 		nany := 0
 		for e := range neval {
 			ev.StateVars(e, vars)
-			_, nmatch := cons.Eval(vars, all)
+			_, nmatch := cons.Eval(vars)
 			if nmatch == 1 {
 				npure++
 			}
@@ -286,10 +279,9 @@ func (ev *ConSatEnv) TestConstraints(cons Constraints) {
 	nc := ev.NConstraints
 	vars := make([]int, ev.NVars)
 	stats := make([]int, nc+1)
-	all := make([]bool, nc)
 	for e := range neval {
 		ev.StateVars(e, vars)
-		val, nmatch := cons.Eval(vars, all)
+		val, nmatch := cons.Eval(vars)
 		if nmatch == 0 {
 			stats[0]++
 		} else {

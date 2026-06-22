@@ -16,6 +16,7 @@ import (
 	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/lab/tensor"
 	"github.com/emer/emergent/v2/env"
+	"github.com/emer/emergent/v2/popcode"
 )
 
 // todo: not working due to simmer issue: go:embed *.json
@@ -70,10 +71,14 @@ type ConSatEnv struct {
 	// such that total is NUnitsPer^2
 	NUnitsPer int
 
-	// SatThr is the threshold for considering something to be satisfied.
-	// strictest setting is NAry-1 (full truth). Doesn't make a difference
-	// it turns out, at least for n = 8 with nary = 5 or 4.
-	SatThr int
+	// PopCodeUnits is the number of units to use for population code.
+	PopCodeUnits int
+
+	// PopCodeSigma is the variance of the popcode rep -- broader for low nary
+	PopCodeSigma float32
+
+	// population code for variables.
+	PopCode popcode.OneD
 
 	// data-parallel n
 	NData int
@@ -118,23 +123,25 @@ func (ev *ConSatEnv) Defaults() {
 	ev.RelationsPer = 3
 	ev.NUnitsPer = 2
 	ev.NItems = 1500
-	ev.SatThr = 3
+	ev.PopCodeUnits = 12
+	ev.PopCodeSigma = 0.3
+	ev.PopCode.Defaults()
 }
 
 // Config configures the world
 func (ev *ConSatEnv) Config(ndata, di int, rndseed int64) {
 	n := ev.NVars
 	nu := ev.NUnitsPer
-	nary := ev.NAry
+	np := ev.PopCodeUnits
 	nc := ev.NConstraints + 1
 	ev.NData = ndata
 	ev.Di = di
 	ev.RunRandSeed = rndseed
 	ev.States = make(map[string]*tensor.Float32)
-	ev.States["Input"] = tensor.NewFloat32(n, 1, nu, nu*nary)
+	ev.States["Input"] = tensor.NewFloat32(n, 1, 1, np)
 	ev.States["Output"] = tensor.NewFloat32(1, 1, nu, nu*nc)
 	ev.Vars = make([]int, n)
-
+	ev.PopCode.SetRange(-0.2, 1.2, ev.PopCodeSigma)
 }
 
 func (ev *ConSatEnv) Init(run int) {
@@ -177,15 +184,13 @@ func (ev *ConSatEnv) Render(item int) {
 	out.SetZeros()
 
 	ev.StateVars(item, ev.Vars)
-	ev.Value, _ = constraints.Eval(ev.Vars, nil)
+	ev.Value, _ = constraints.Eval(ev.Vars)
 	ev.Value++ // 0 = no value
 
 	for k := range nvars {
-		for uy := range nu {
-			for ux := range nu {
-				in.Set(1, k, 0, uy, ev.Vars[k]*nu+ux)
-			}
-		}
+		val := float32(ev.Vars[k]) / float32(nvars-1)
+		sv := in.SubSpace(k, 0, 0).(*tensor.Float32)
+		ev.PopCode.Encode(&sv.Values, val, ev.PopCodeUnits, popcode.Set)
 	}
 	for uy := range nu {
 		for ux := range nu {
