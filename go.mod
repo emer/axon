@@ -6,7 +6,7 @@ require (
 	cogentcore.org/core v0.3.37
 	cogentcore.org/lab v0.1.16
 	github.com/cogentcore/yaegi v0.0.0-20260116172027-700fbf8949f3
-	github.com/emer/emergent/v2 v2.0.0-dev0.1.13
+	github.com/emer/emergent/v2 v2.0.0-dev0.1.14
 	github.com/emer/v1vision v0.1.4
 	github.com/stretchr/testify v1.11.1
 	gitlab.com/gomidi/midi/v2 v2.3.18
