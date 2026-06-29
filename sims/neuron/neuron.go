@@ -464,8 +464,8 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	ss.GUI.MakeBody(b, ss, ss.Root, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
 
 	nv := ss.GUI.AddNetView("Network")
-	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles
-	nv.Options.Raster.Max = ss.Config.Run.Cycles
+	nv.Settings.MaxRecs = 2 * ss.Config.Run.Cycles
+	nv.Settings.Raster.Max = ss.Config.Run.Cycles
 	nv.SetNet(ss.Net)
 	ss.NetUpdate.Config(nv, axon.Cycle, ss.StatCounters)
 	ss.GUI.OnStop = func(mode, level enums.Enum) {

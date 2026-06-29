@@ -564,8 +564,8 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	ss.GUI.CycleUpdateInterval = 10
 	ss.GUI.StopLevel = Trial
 	nv := ss.GUI.AddNetView("Network")
-	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles
-	nv.Options.Raster.Max = ss.Config.Run.Cycles
+	nv.Settings.MaxRecs = 2 * ss.Config.Run.Cycles
+	nv.Settings.Raster.Max = ss.Config.Run.Cycles
 	nv.SetNet(ss.Net)
 	ss.TrainUpdate.Config(nv, axon.Theta, ss.StatCounters)
 	ss.TestUpdate.Config(nv, axon.Theta, ss.StatCounters)

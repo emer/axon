@@ -1070,10 +1070,10 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	ss.GUI.MakeBody(b, ss, ss.Root, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
 	ss.GUI.StopLevel = Trial
 	nv := ss.GUI.AddNetView("Network")
-	nv.Options.Paths = false
-	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles()
-	nv.Options.Raster.Max = ss.Config.Run.Cycles()
-	nv.Options.LayerNameSize = 0.03
+	nv.Settings.Paths = false
+	nv.Settings.MaxRecs = 2 * ss.Config.Run.Cycles()
+	nv.Settings.Raster.Max = ss.Config.Run.Cycles()
+	nv.Settings.LayerNameSize = 0.03
 	nv.SetNet(ss.Net)
 	ss.TrainUpdate.Config(nv, axon.Theta, ss.StatCounters)
 	ss.TestUpdate.Config(nv, axon.Theta, ss.StatCounters)

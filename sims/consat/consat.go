@@ -187,7 +187,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	nu := ev.NUnitsPer
 	np := ev.PopCodeUnits
 	nc := ev.NConstraints + 1
-	nHidUnits := 20 // 20 == 30
+	nHidUnits := 20 // 20 == 30 > 10
 	// nHid1Units := 20
 
 	inp := net.AddLayer4D("Input", axon.InputLayer, n, 1, 1, np)
@@ -619,8 +619,8 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	ss.GUI.MakeBody(b, ss, ss.Root, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
 	ss.GUI.StopLevel = Trial
 	nv := ss.GUI.AddNetView("Network")
-	nv.Options.MaxRecs = 2 * ss.Config.Run.Cycles()
-	nv.Options.Raster.Max = ss.Config.Run.Cycles()
+	nv.Settings.MaxRecs = 2 * ss.Config.Run.Cycles()
+	nv.Settings.Raster.Max = ss.Config.Run.Cycles()
 	nv.SetNet(ss.Net)
 	ss.TrainUpdate.Config(nv, axon.Theta, ss.StatCounters)
 	ss.TestUpdate.Config(nv, axon.Theta, ss.StatCounters)
