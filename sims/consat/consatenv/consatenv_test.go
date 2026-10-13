@@ -4,17 +4,17 @@
 
 package consatenv
 
-import "testing"
+import (
+	"testing"
+
+	"cogentcore.org/lab/base/randx"
+)
 
 func TestMake(t *testing.T) {
 	ev := &ConSatEnv{}
 	ev.Defaults()
-	ev.NAry = 5
-	ev.NVars = 5
-	ev.NConstraints = 4 // 1 extra for none, improves overall "pure" score
-	ev.RelationsPer = 3
-	ev.Config(1, 0, 137) // 137 is good
-	ev.Init(0)
-	ev.MakeConstraints()
-	// ev.Step()
+	ev.RunRandSeed = 137
+	randx.InitSysRand(&ev.Rand, ev.RunRandSeed*(int64(0)+1))
+
+	ev.MakeBestLoRandomFeatures(10000)
 }
