@@ -16,5 +16,6 @@ func TestMake(t *testing.T) {
 	ev.RunRandSeed = 137
 	randx.InitSysRand(&ev.Rand, ev.RunRandSeed*(int64(0)+1))
 
-	ev.MakeBestLoRandomFeatures(10000)
+	ev.MakeBestCats(100000)
+	ev.MakeBestPlans(10000)
 }

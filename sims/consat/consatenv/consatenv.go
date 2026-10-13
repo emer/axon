@@ -19,8 +19,11 @@ import (
 )
 
 var (
-	// lofeats is the current features to use
-	lofeats [][][]int
+	// cats is the current sensory input category feature values to use.
+	cats [][][]int
+
+	// plans is the current plan feature values to use.
+	plans [][][]int
 
 	// items is a permuted list of all states, to use
 	// as a master list for selecting items for each Di.
@@ -30,7 +33,33 @@ var (
 )
 
 // ConSatEnv implements a constraint satisfaction environment.
-// The low-level features
+// The low-level _sensory_ input is organized into channels,
+// each of which has a set of features, with specific values.
+// The per-channel features are organized into categories, that define
+// a set of values across features, some of which can be ambiguous
+// and the rest are specific. By changing the number of categories, the
+// ambiguity of any given feature value for determining a category can be
+// adjusted, requiring more constraint satisfaction among the subset of
+// values presented on any given input to determine what the category is.
+//
+// The high-level _plan_ features are designed to be orthogonal to
+// the sensory features, and to match _across_ channels.
+// Each plan looks for _one_ feature value in each channel,
+// which would be consistent with a subset of categories in that channel
+// (else if multiple, it would need to be an OR relationship).
+// As in the sensory case, values are ambiguous for plans, so
+// constraint satisfaction at the plan level is needed to resolve the category,
+// and thus all of the associated sensory-level feature values to look for.
+//
+// The key phenomenon is when a high-level feature value is activated
+// for low-level input that is not present, but is inferred from low-level
+// constraint satisfaction, where the high-level category is also ambiguous
+// and must be inferred.
+//
+// For example, plan needs: water + conspecifics; water is inferred from bank + green
+// plants, conspecifics inferred from dung smell + fresh tracks.
+// Don't actually have either water or conspecifics, but inference supports it.
+// bank or green plants alone doesn't uniquely imply water, etc.
 type ConSatEnv struct {
 	// name of environment -- Train or Test.
 	Name string
