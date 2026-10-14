@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// consatenv implements constraint satisfaction environments.
 package consatenv
 
 import (
@@ -90,12 +89,12 @@ type Config struct {
 }
 
 func (cfg *Config) Defaults() {
-	cfg.NChannels = 6
+	cfg.NChannels = 4
 	cfg.NFeatures = 8 // 6 min
 	cfg.NValues = 4   // lower = more avg overlap
 	cfg.ValueBuffer = 0.1
 	cfg.ValueSigma = 0.3
-	cfg.NCats = 6 // 4 >> 6
+	cfg.NCats = 6 // 6 >> 4
 	cfg.NAmbigFeatures = 2
 	cfg.InputFeatureRange.Set(3, 3)
 	cfg.NPlans = 24
@@ -125,22 +124,22 @@ func (ev *ConSatEnv) MakeCats() {
 	rndFs := ev.Rand.Perm(cfg.NFeatures)
 	rndVs := ev.Rand.Perm(cfg.NValues)
 
-	for i := range cfg.NCats {
+	for c := range cfg.NCats {
 		randx.PermuteInts(rndFs, ev.Rand)
-		for j := range cfg.NAmbigFeatures {
+		for f := range cfg.NAmbigFeatures {
 			nv := 2 + ev.Rand.Intn(cfg.NValues-1)
 			randx.PermuteInts(rndVs, ev.Rand)
 			for k := range nv {
 				if k == 0 {
-					cfg.Cats[i][rndFs[j]] = []int{rndVs[k]}
+					cfg.Cats[c][rndFs[f]] = []int{rndVs[k]}
 				} else {
-					cfg.Cats[i][rndFs[j]] = append(cfg.Cats[i][rndFs[j]], rndVs[k])
+					cfg.Cats[c][rndFs[f]] = append(cfg.Cats[c][rndFs[f]], rndVs[k])
 				}
 			}
 		}
-		for j := cfg.NAmbigFeatures; j < cfg.NFeatures; j++ {
+		for f := cfg.NAmbigFeatures; f < cfg.NFeatures; f++ {
 			v := ev.Rand.Intn(cfg.NValues)
-			cfg.Cats[i][rndFs[j]] = []int{v}
+			cfg.Cats[c][rndFs[f]] = []int{v}
 		}
 	}
 }
@@ -156,19 +155,19 @@ func (ev *ConSatEnv) CatsDist(idm *tensor.Float32) (dm *tensor.Float32, avg, mx 
 	if dm == nil {
 		dm = tensor.NewFloat32(nc, nc)
 	}
-	for i := range nc {
+	for c := range nc {
 		iavg := float32(0)
 		for j := range nc {
-			if j < i {
-				ov := dm.Value(j, i)
+			if j < c {
+				ov := dm.Value(j, c)
 				iavg += ov
-				dm.Set(ov, i, j)
+				dm.Set(ov, c, j)
 				continue
 			}
 			ov := float32(0)
 			for f := range nf {
-				inv := len(cf[i][f])
-				for _, iv := range cf[i][f] {
+				inv := len(cf[c][f])
+				for _, iv := range cf[c][f] {
 					jnv := len(cf[j][f])
 					for _, jv := range cf[j][f] {
 						if iv == jv {
@@ -177,8 +176,8 @@ func (ev *ConSatEnv) CatsDist(idm *tensor.Float32) (dm *tensor.Float32, avg, mx 
 					}
 				}
 			}
-			dm.Set(ov, i, j)
-			if i == j {
+			dm.Set(ov, c, j)
+			if c == j {
 				continue
 			}
 			iavg += ov
@@ -192,42 +191,47 @@ func (ev *ConSatEnv) CatsDist(idm *tensor.Float32) (dm *tensor.Float32, avg, mx 
 
 func (cfg *Config) cloneCats() [][][]int {
 	cf := slices.Clone(cfg.Cats)
-	for i := range cf {
-		cf[i] = slices.Clone(cfg.Cats[i])
-		for j := range cf[i] {
-			cf[i][j] = slices.Clone(cfg.Cats[i][j])
+	for c := range cf {
+		cf[c] = slices.Clone(cfg.Cats[c])
+		for j := range cf[c] {
+			cf[c][j] = slices.Clone(cfg.Cats[c][j])
 		}
 	}
 	return cf
 }
 
-func (ev *ConSatEnv) CatsFilename() string {
+func (ev *ConSatEnv) Filename(prefix string) string {
 	cfg := &ev.Configs
-	return fmt.Sprintf("cats_nc%d_nf%d_nv%d.json", cfg.NCats, cfg.NFeatures, cfg.NValues)
+	return fmt.Sprintf("%s_np%d_nc%d_nf%d_nv%d.json", prefix, cfg.NPlans, cfg.NChannels, cfg.NFeatures, cfg.NValues)
 }
 
 // load shared global config
 func (ev *ConSatEnv) InitOpen() {
 	globalLock.Lock()
 	defer globalLock.Unlock()
-	if cats != nil {
-		ev.Configs.Cats = cats
-		return
+
+	if cats == nil {
+		b := bytes.NewBuffer([]byte(defaultCats))
+		errors.Log(jsonx.Read(&cats, b))
 	}
-	b := bytes.NewBuffer([]byte(defaultCats))
-	errors.Log(jsonx.Read(&cats, b))
-	b = bytes.NewBuffer([]byte(defaultPlans))
-	errors.Log(jsonx.Read(&plans, b))
+	if plans == nil {
+		b := bytes.NewBuffer([]byte(defaultPlans))
+		errors.Log(jsonx.Read(&plans, b))
+	}
+	// todo: train_items etc.
 	// items = ev.Rand.Perm(statesN)
+	cfg := &ev.Configs
+	cfg.Cats = cats
+	cfg.Plans = plans
 }
 
 // PrintCats prints the categories
 func (cfg *Config) PrintCats(cf [][][]int) string {
 	s := "Cat\tFeat\tValues\n"
-	for i := range cfg.NCats {
+	for c := range cfg.NCats {
 		s += "---------------------------\n"
 		for j := range cfg.NFeatures {
-			s += fmt.Sprintf("%d\t%d\t%v\n", i, j, cf[i][j])
+			s += fmt.Sprintf("%d\t%d\t%v\n", c, j, cf[c][j])
 		}
 	}
 	return s
@@ -258,9 +262,10 @@ func (ev *ConSatEnv) MakeBestCats(niter int) {
 			}
 		}
 	}
+	cfg.Cats = bcats
 	bdms := tensor.Sprintf("%.3g", bdm, 0)
 	fmt.Println("Best: max:", bmax, "\tavg:", bavg, "\tdm\n", bdms, cfg.PrintCats(bcats))
-	errors.Log(jsonx.Save(bcats, ev.CatsFilename()))
+	errors.Log(jsonx.Save(bcats, ev.Filename("cats")))
 }
 
 //////// Plans
@@ -270,20 +275,20 @@ func (ev *ConSatEnv) MakePlans() {
 	cfg := &ev.Configs
 	if len(cfg.Plans) != cfg.NPlans {
 		cfg.Plans = make([][][]int, cfg.NPlans)
-		for i := range cfg.NPlans {
-			cfg.Plans[i] = make([][]int, cfg.NChannels)
+		for p := range cfg.NPlans {
+			cfg.Plans[p] = make([][]int, cfg.NChannels)
 			for j := range cfg.NChannels {
-				cfg.Plans[i][j] = make([]int, 2)
+				cfg.Plans[p][j] = make([]int, 2)
 			}
 		}
 	}
 
-	for i := range cfg.NPlans {
+	for p := range cfg.NPlans {
 		for j := range cfg.NChannels {
 			f := ev.Rand.Intn(cfg.NFeatures)
 			v := ev.Rand.Intn(cfg.NValues)
-			cfg.Plans[i][j][0] = f
-			cfg.Plans[i][j][1] = v
+			cfg.Plans[p][j][0] = f
+			cfg.Plans[p][j][1] = v
 		}
 	}
 }
@@ -299,27 +304,27 @@ func (ev *ConSatEnv) PlansDist(idm *tensor.Float32) (dm *tensor.Float32, avg, mx
 	if dm == nil {
 		dm = tensor.NewFloat32(np, np)
 	}
-	for i := range np {
+	for p := range np {
 		iavg := float32(0)
 		for j := range np {
-			if j < i {
-				ov := dm.Value(j, i)
+			if j < p {
+				ov := dm.Value(j, p)
 				iavg += ov
-				dm.Set(ov, i, j)
+				dm.Set(ov, p, j)
 				continue
 			}
 			ov := float32(0)
 			for c := range nc {
-				fi := pf[i][c][0]
-				vi := pf[i][c][1]
+				fi := pf[p][c][0]
+				vi := pf[p][c][1]
 				fj := pf[j][c][0]
 				vj := pf[j][c][1]
 				if fi == fj && vi == vj {
 					ov += 1.0
 				}
 			}
-			dm.Set(ov, i, j)
-			if i == j {
+			dm.Set(ov, p, j)
+			if p == j {
 				continue
 			}
 			iavg += ov
@@ -334,10 +339,10 @@ func (ev *ConSatEnv) PlansDist(idm *tensor.Float32) (dm *tensor.Float32, avg, mx
 // PrintPlans prints the plans
 func (cfg *Config) PrintPlans(cf [][][]int) string {
 	s := "Plan\tChan\tFeat:Value\n"
-	for i := range cfg.NPlans {
+	for p := range cfg.NPlans {
 		s += "---------------------------\n"
 		for j := range cfg.NChannels {
-			s += fmt.Sprintf("%d\t%d\t%d:%d\n", i, j, cf[i][j][0], cf[i][j][1])
+			s += fmt.Sprintf("%d\t%d\t%d:%d\n", p, j, cf[p][j][0], cf[p][j][1])
 		}
 	}
 	return s
@@ -345,18 +350,13 @@ func (cfg *Config) PrintPlans(cf [][][]int) string {
 
 func (cfg *Config) clonePlans() [][][]int {
 	cf := slices.Clone(cfg.Plans)
-	for i := range cf {
-		cf[i] = slices.Clone(cfg.Plans[i])
-		for j := range cf[i] {
-			cf[i][j] = slices.Clone(cfg.Plans[i][j])
+	for p := range cf {
+		cf[p] = slices.Clone(cfg.Plans[p])
+		for j := range cf[p] {
+			cf[p][j] = slices.Clone(cfg.Plans[p][j])
 		}
 	}
 	return cf
-}
-
-func (ev *ConSatEnv) PlansFilename() string {
-	cfg := &ev.Configs
-	return fmt.Sprintf("plans_np%d_nc%d_nf%d_nv%d.json", cfg.NPlans, cfg.NChannels, cfg.NFeatures, cfg.NValues)
 }
 
 // MakeBestPlans iterates for given number of tries to find the
@@ -384,7 +384,8 @@ func (ev *ConSatEnv) MakeBestPlans(niter int) {
 			}
 		}
 	}
+	cfg.Plans = bplans
 	bdms := tensor.Sprintf("%.3g", bdm, 0)
 	fmt.Println("Best: max:", bmax, "\tavg:", bavg, "\tdm\n", bdms, cfg.PrintPlans(bplans))
-	errors.Log(jsonx.Save(bplans, ev.PlansFilename()))
+	errors.Log(jsonx.Save(bplans, ev.Filename("plans")))
 }

@@ -9,7 +9,6 @@ package consatenv
 
 import (
 	"fmt"
-	"slices"
 	"strconv"
 	"sync"
 
@@ -19,15 +18,20 @@ import (
 )
 
 var (
+	Debug = false
+
 	// cats is the current sensory input category feature values to use.
 	cats [][][]int
 
 	// plans is the current plan feature values to use.
 	plans [][][]int
 
-	// items is a permuted list of all states, to use
+	// items is an ordered list of all input items as generated.
+	items []Item
+
+	// order is a permuted list of item indexes, to use
 	// as a master list for selecting items for each Di.
-	items []int
+	order []int
 
 	globalLock sync.Mutex
 )
@@ -84,7 +88,7 @@ type ConSatEnv struct {
 
 	// Items is the index list into allcnfs, for items specific to this env.
 	// uses global selPermList to coordinate non-overlapping items across envs.
-	Items []int
+	Items []Item
 
 	// Copy of Items that is permuted after every pass through list.
 	Order []int
@@ -113,13 +117,14 @@ func (ev *ConSatEnv) Defaults() {
 // Config configures the world
 func (ev *ConSatEnv) Config(ndata, di int, rndseed int64) {
 	cfg := &ev.Configs
+	nc := cfg.NChannels
 	nf := cfg.NFeatures
 	np := cfg.PopCodeUnits
 	ev.NData = ndata
 	ev.Di = di
 	ev.RunRandSeed = rndseed
 	ev.States = make(map[string]*tensor.Float32)
-	ev.States["Input"] = tensor.NewFloat32(nf, 1, 1, np)
+	ev.States["Input"] = tensor.NewFloat32(nc, nf, np, 1)
 	// ev.States["Output"] = tensor.NewFloat32(nf, 1, nu, nu*nc)
 	cfg.PopCode.SetRange(-0.2, 1.2, cfg.PopCodeSigma())
 }
@@ -130,6 +135,7 @@ func (ev *ConSatEnv) Init(run int) {
 	}
 	randx.InitSysRand(&ev.Rand, ev.RunRandSeed*(int64(run)+1))
 	ev.InitOpen()
+	items := items
 	np := len(items)
 	neven := np / (2 * ev.NData) // testing and training
 	ev.NItems = min(ev.NItems, neven)
@@ -137,10 +143,9 @@ func (ev *ConSatEnv) Init(run int) {
 	ev.Trial.Max = ni
 	ev.Trial.Init()
 	st := ni * ev.Di
-	ev.Items = make([]int, ni)
+	ev.Items = make([]Item, ni)
 	copy(ev.Items, items[st:st+ni])
-	ev.Order = slices.Clone(ev.Items)
-	randx.PermuteInts(ev.Order, ev.Rand)
+	ev.Order = ev.Rand.Perm(len(ev.Items))
 }
 
 func (ev *ConSatEnv) State(el string) tensor.Values {
