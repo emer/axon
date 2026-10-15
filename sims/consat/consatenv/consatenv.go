@@ -8,14 +8,18 @@ package consatenv
 //go:generate core generate -add-types -add-funcs -gosl
 
 import (
+	"embed"
 	"fmt"
-	"strconv"
 	"sync"
 
 	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/lab/tensor"
 	"github.com/emer/emergent/v2/env"
+	"github.com/emer/emergent/v2/popcode"
 )
+
+//go:embed *.json
+var embedfs embed.FS
 
 var (
 	Debug = false
@@ -86,9 +90,9 @@ type ConSatEnv struct {
 	// named states
 	States map[string]*tensor.Float32
 
-	// Items is the index list into allcnfs, for items specific to this env.
-	// uses global selPermList to coordinate non-overlapping items across envs.
-	Items []Item
+	// Items is the index list into global items, for items specific to this env.
+	// uses global order to coordinate non-overlapping items across envs.
+	Items []int
 
 	// Copy of Items that is permuted after every pass through list.
 	Order []int
@@ -96,8 +100,8 @@ type ConSatEnv struct {
 	// Current input variables
 	Vars []int
 
-	// Current output value: 0 = no match, 1..nvars
-	Value int
+	// Current output plan
+	Plan int
 
 	// Rand is the random number generator for the env.
 	// Created in Init if not already there.
@@ -119,14 +123,14 @@ func (ev *ConSatEnv) Config(ndata, di int, rndseed int64) {
 	cfg := &ev.Configs
 	nc := cfg.NChannels
 	nf := cfg.NFeatures
-	np := cfg.PopCodeUnits
+	npop := cfg.PopCodeUnits
 	ev.NData = ndata
 	ev.Di = di
 	ev.RunRandSeed = rndseed
 	ev.States = make(map[string]*tensor.Float32)
-	ev.States["Input"] = tensor.NewFloat32(nc, nf, np, 1)
-	// ev.States["Output"] = tensor.NewFloat32(nf, 1, nu, nu*nc)
-	cfg.PopCode.SetRange(-0.2, 1.2, cfg.PopCodeSigma())
+	ev.States["Input"] = tensor.NewFloat32(nf, nc, 1, npop)
+	ev.States["Plan"] = tensor.NewFloat32(1, cfg.NPlans, cfg.UnitsPer, 1)
+	cfg.PopCode.SetRange(-0.1, 1.1, cfg.PopCodeSigma())
 }
 
 func (ev *ConSatEnv) Init(run int) {
@@ -135,75 +139,75 @@ func (ev *ConSatEnv) Init(run int) {
 	}
 	randx.InitSysRand(&ev.Rand, ev.RunRandSeed*(int64(run)+1))
 	ev.InitOpen()
-	items := items
-	np := len(items)
+	np := len(order)
 	neven := np / (2 * ev.NData) // testing and training
-	ev.NItems = min(ev.NItems, neven)
+	if ev.NItems > 0 {
+		ev.NItems = min(ev.NItems, neven)
+	} else {
+		ev.NItems = neven
+	}
 	ni := ev.NItems
 	ev.Trial.Max = ni
 	ev.Trial.Init()
 	st := ni * ev.Di
-	ev.Items = make([]Item, ni)
-	copy(ev.Items, items[st:st+ni])
+	ev.Items = order[st : st+ni]
 	ev.Order = ev.Rand.Perm(len(ev.Items))
 }
 
 func (ev *ConSatEnv) State(el string) tensor.Values {
+	if el == "Recon" {
+		el = "Input"
+	}
 	return ev.States[el]
 }
 
 func (ev *ConSatEnv) String() string {
-	vals := ""
-	for _, v := range ev.Vars {
-		vals += strconv.Itoa(v) + " "
-	}
-	return fmt.Sprintf("%d %d: %s", ev.Trial.Cur, ev.Value, vals)
+	return fmt.Sprintf("%d %d", ev.Trial.Cur, ev.Plan)
 }
 
 func (ev *ConSatEnv) Render(item int) {
-	// cfg := &ev.Configs
+	cfg := &ev.Configs
 	in := ev.States["Input"]
 	in.SetZeros()
-	// out := ev.States["Output"]
-	// out.SetZeros()
-	// nu := cfg.PopCodeUnits
+	pln := ev.States["Plan"]
+	pln.SetZeros()
+	npu := cfg.UnitsPer
 
-	// ev.StateVars(item, ev.Vars)
-	// ev.Value, _ = constraints.Eval(ev.Vars)
-	// ev.Value++ // 0 = no value
-	//
-	// for k := range nvars {
-	// 	val := float32(ev.Vars[k]) / float32(nvars-1)
-	// 	sv := in.SubSpace(k, 0, 0).(*tensor.Float32)
-	// 	ev.PopCode.Encode(&sv.Values, val, ev.PopCodeUnits, popcode.Set)
-	// }
-	// for uy := range nu {
-	// 	for ux := range nu {
-	// 		out.Set(1, 0, 0, uy, ev.Value*nu+ux)
-	// 	}
-	// }
+	it := &items[item]
+	for ch := range it.Values {
+		for ft, v := range it.Values[ch] {
+			if v < 0 {
+				continue
+			}
+			sv := in.SubSpace(ft, ch).(*tensor.Float32)
+			fv := ev.RandVal(v)
+			cfg.PopCode.Encode(&sv.Values, fv, cfg.PopCodeUnits, popcode.Set)
+		}
+	}
+	ev.Plan = it.Plan
+	for ui := range npu {
+		pln.Set(1.0, 0, ev.Plan, ui, 0)
+	}
 }
 
 func (ev *ConSatEnv) OutErr(tsr *tensor.Float64) float64 {
-	// nary := ev.NAry
-	// nu := ev.NUnitsPer
-	// maxi := 0
-	// maxv := 0.0
-	// for o := range nary {
-	// 	sum := float64(0)
-	// 	for uy := range nu {
-	// 		for ux := range nu {
-	// 			sum += tsr.Value(0, 0, uy, o*nu+ux)
-	// 		}
-	// 	}
-	// 	if sum > maxv {
-	// 		maxv = sum
-	// 		maxi = o
-	// 	}
-	// }
-	// if maxi == ev.Value {
-	// 	return 0.0
-	// }
+	cfg := &ev.Configs
+	nu := cfg.UnitsPer
+	maxi := 0
+	maxv := 0.0
+	for p := range cfg.NPlans {
+		sum := float64(0)
+		for ui := range nu {
+			sum += tsr.Value(0, p, ui, 0)
+		}
+		if sum > maxv {
+			maxv = sum
+			maxi = p
+		}
+	}
+	if maxi == ev.Plan {
+		return 0.0
+	}
 	return 1.0
 }
 
@@ -212,6 +216,6 @@ func (ev *ConSatEnv) Step() bool {
 	if ev.Trial.Incr() {
 		randx.PermuteInts(ev.Order, ev.Rand)
 	}
-	ev.Render(ev.Order[ev.Trial.Cur])
+	ev.Render(ev.Items[ev.Order[ev.Trial.Cur]])
 	return true
 }

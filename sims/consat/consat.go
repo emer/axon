@@ -23,10 +23,8 @@ import (
 	"cogentcore.org/core/tree"
 	"cogentcore.org/lab/base/mpi"
 	"cogentcore.org/lab/base/randx"
-	"cogentcore.org/lab/patterns"
 	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/stats/stats"
-	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensorfs"
 	"github.com/emer/axon/v2/axon"
@@ -183,37 +181,50 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
 	ev := ss.Envs.ByModeDi(Train, 0).(*consatenv.ConSatEnv)
-	n := ev.NVars
-	nu := ev.NUnitsPer
-	np := ev.PopCodeUnits
-	nc := ev.NConstraints + 1
+	cfg := &ev.Configs
+	nc := cfg.NChannels
+	nf := cfg.NFeatures
+	npop := cfg.PopCodeUnits
+	nEncUnits := 10
 	nHidUnits := 20 // 20 == 30 > 10
 	// nHid1Units := 20
 
-	inp := net.AddLayer4D("Input", axon.InputLayer, n, 1, 1, np)
+	inp := net.AddLayer4D("Input", axon.InputLayer, nf, nc, 1, npop).AddClass("Input")
+	rec := net.AddLayer4D("Recon", axon.TargetLayer, nf, nc, 1, npop).AddClass("Input")
+	enc := net.AddLayer4D("Encode", axon.SuperLayer, 1, nc, nEncUnits, nEncUnits)
 	// hid1 := net.AddLayer2D("Hidden1", axon.SuperLayer, nHidUnits, nHidUnits)
 	hid1 := net.AddLayer2D("Hidden1", axon.SuperLayer, nHidUnits, nHidUnits)
 	// hid1.SetSampleShape(emer.CenterPoolIndexes(hid1, 2), emer.CenterPoolShape(hid1, 2))
 	// hid2 := net.AddLayer2D("Hidden2", axon.SuperLayer, nHidUnits, nHidUnits)
 	// no hid2 better!
 
-	out := net.AddLayer4D("Output", axon.TargetLayer, 1, 1, nu, nu*nc)
+	pln := net.AddLayer4D("Plan", axon.TargetLayer, 1, cfg.NPlans, cfg.UnitsPer, 1)
 
-	// inp.PlaceBehind(pos, 2)
-	// hid1.PlaceAbove(pos)
+	rec.PlaceBehind(inp, 2)
+	pln.PlaceAbove(inp)
+	enc.PlaceBehind(pln, 2)
+	hid1.PlaceAbove(pln)
 
 	full := paths.NewFull()
 
-	// topo := paths.NewPoolTile()
-	// topo.Size.Set(1, 3)
-	// topo.Skip.Set(1, 0)
-	// topo.Start.Set(0, 0)
-	// _ = topo
+	encRect := paths.NewPoolRect()
+	encRect.Size.Set(1, nf) // note: y is 2nd arg..
+	encRect.Scale.Set(1, 0)
 
-	net.ConnectLayers(inp, hid1, full, axon.ForwardPath)
-	// net.BidirConnectLayers(hid1, hid2, full)
+	encRecip := paths.NewPoolRect()
+	encRecip.Size.Set(1, 1)
+	encRecip.Scale.Set(1, 0)
+
+	net.ConnectLayers(inp, enc, encRect, axon.ForwardPath)
+	net.ConnectLayers(rec, enc, encRect, axon.BackPath)
+	net.ConnectLayers(enc, rec, encRecip, axon.ForwardPath)
+	net.BidirConnectLayers(enc, hid1, full)
 	// net.BidirConnectLayers(hid2, out, full)
-	net.BidirConnectLayers(hid1, out, full) // shortcut
+	net.BidirConnectLayers(hid1, pln, full) // shortcut
+
+	// bidir weaker straight pln <-> rec
+	net.ConnectLayers(pln, rec, full, axon.BackPath)
+	net.ConnectLayers(rec, pln, full, axon.BackPath)
 
 	net.Build()
 	net.Defaults()
@@ -373,24 +384,6 @@ func (ss *Sim) TestAll() {
 	ss.Loops.Mode = Train // important because this is called from Train Run: go back.
 }
 
-////////  Inputs
-
-func (ss *Sim) ConfigInputs() {
-	dt := table.New()
-	metadata.SetName(dt, "Train")
-	metadata.SetDoc(dt, "Training inputs")
-	dt.AddStringColumn("Name")
-	dt.AddFloat32Column("Input", 5, 5)
-	dt.AddFloat32Column("Output", 5, 5)
-	dt.SetNumRows(25)
-
-	patterns.PermutedBinaryMinDiff(dt.Columns.Values[1], 6, 1, 0, 3)
-	patterns.PermutedBinaryMinDiff(dt.Columns.Values[2], 6, 1, 0, 3)
-	dt.SaveCSV("random_5x5_25_gen.tsv", tensor.Tab, table.Headers)
-
-	tensorfs.DirFromTable(ss.Root.Dir("Inputs/Train"), dt)
-}
-
 //////// Stats
 
 // AddStatStd adds a standard stat compute function (defined in axon)
@@ -535,7 +528,7 @@ func (ss *Sim) ConfigStats() {
 			}
 			switch level {
 			case Trial:
-				out := ss.Net.LayerByName("Output")
+				out := ss.Net.LayerByName("Plan")
 				ltsr := curModeDir.Float64(out.Name+"_ActM", out.Shape.Sizes...)
 				for di := range ndata {
 					var stat float64

@@ -23,10 +23,23 @@ var LayerParams = axon.LayerSheets{
 				// ly.Acts.Noise.GiHz = 200
 				// ly.Acts.Noise.Gi = 0.01 // 0.001 min
 			}},
-		{Sel: "#Input", Doc: "",
+		{Sel: ".Input", Doc: "note: class for Input and Recon",
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Clamp.Ge = 1.5         // 1.5 for fsffffb
-				ly.Inhib.ActAvg.Nominal = 0.15 //
+				ly.Inhib.ActAvg.Nominal = 0.01 // low
+				ly.Inhib.Layer.On.SetBool(false)
+				ly.Inhib.Pool.On.SetBool(true)
+				ly.Inhib.Pool.Gi = 0.9
+				// ly.Inhib.Layer.Gi = 1
+			}},
+		{Sel: "#Recon", Doc: "",
+			Set: func(ly *axon.LayerParams) {
+				ly.Acts.Clamp.Add.SetBool(true)
+				ly.Acts.Clamp.Ge = 0.5
+			}},
+		{Sel: "Encode", Doc: "",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.05 // low
 				ly.Inhib.Layer.On.SetBool(false)
 				ly.Inhib.Pool.On.SetBool(true)
 				ly.Inhib.Pool.Gi = 0.9
@@ -42,19 +55,19 @@ var LayerParams = axon.LayerSheets{
 				// ly.Inhib.Pool.Gi = 1.0
 				ly.Inhib.Layer.Gi = 1.0
 			}},
-		{Sel: "#Hidden2", Doc: "",
-			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.03
-				ly.Inhib.ActAvg.Offset = 0.02
-				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
-				ly.Inhib.Layer.Gi = 1.0
-			}},
-		{Sel: "#Output", Doc: "",
+		// {Sel: "#Hidden2", Doc: "",
+		// 	Set: func(ly *axon.LayerParams) {
+		// 		ly.Inhib.ActAvg.Nominal = 0.03
+		// 		ly.Inhib.ActAvg.Offset = 0.02
+		// 		ly.Inhib.ActAvg.AdaptGi.SetBool(true)
+		// 		ly.Inhib.Layer.Gi = 1.0
+		// 	}},
+		{Sel: "#Plan", Doc: "",
 			Set: func(ly *axon.LayerParams) {
 				ly.Inhib.ActAvg.AdaptGi.SetBool(false)
-				ly.Inhib.ActAvg.Nominal = 0.2
-				// ly.Inhib.Layer.On.SetBool(false)
-				// ly.Inhib.Pool.On.SetBool(true)
+				ly.Inhib.ActAvg.Nominal = 0.05
+				ly.Inhib.Layer.On.SetBool(true)
+				ly.Inhib.Pool.On.SetBool(false)
 				// ly.Inhib.Pool.FB = 4
 				// ly.Inhib.Pool.Gi = 1.05
 				// ly.Inhib.Layer.FB = 4

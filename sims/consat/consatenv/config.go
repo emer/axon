@@ -5,7 +5,6 @@
 package consatenv
 
 import (
-	"bytes"
 	"fmt"
 	"math"
 	"slices"
@@ -16,12 +15,6 @@ import (
 	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/lab/tensor"
 	"github.com/emer/emergent/v2/popcode"
-)
-
-var (
-	defaultCats string = `[[[2],[0],[2,0],[0],[2],[0],[0,2,3],[1]],[[3],[2],[1,2,3,0],[0],[0],[3],[1,0],[2]],[[1],[3],[2],[3],[0,2,1,3],[2],[1,2,3,0],[2]],[[1,0,2,3],[0],[1],[2],[3],[3,2,0,1],[2],[3]],[[2,0,3,1],[2],[3],[1],[3],[2],[3],[3,2,1,0]],[[2],[3,0,1,2],[0],[1],[1],[3],[2,1],[0]]]`
-
-	defaultPlans string = `[[[7,3],[3,2],[3,2],[2,1],[5,0],[4,1]],[[6,2],[7,3],[6,1],[7,0],[5,1],[3,0]],[[0,0],[6,0],[0,3],[2,3],[4,3],[1,2]],[[2,0],[0,2],[0,0],[4,3],[3,0],[5,2]],[[0,2],[5,0],[0,2],[2,2],[4,3],[0,1]],[[2,1],[0,3],[4,3],[5,0],[6,3],[3,1]],[[1,2],[2,3],[4,2],[4,3],[7,3],[3,2]],[[7,2],[4,1],[4,1],[6,3],[5,2],[6,2]],[[5,3],[6,2],[2,1],[1,0],[1,0],[5,0]],[[7,3],[0,1],[2,2],[7,2],[2,0],[6,2]],[[6,2],[7,0],[1,1],[0,3],[4,1],[7,2]],[[3,1],[1,2],[6,2],[0,0],[4,0],[5,1]],[[2,0],[3,1],[2,0],[1,2],[6,0],[7,3]],[[5,1],[7,1],[0,1],[6,2],[0,0],[0,1]],[[5,2],[3,0],[1,1],[7,3],[0,3],[4,0]],[[1,3],[1,3],[1,1],[3,1],[4,2],[1,2]],[[0,3],[5,2],[7,2],[5,3],[1,1],[7,2]],[[4,1],[2,0],[0,0],[0,3],[2,3],[3,1]],[[0,2],[7,3],[4,3],[4,3],[7,2],[7,1]],[[6,3],[0,0],[5,1],[0,0],[3,1],[5,0]],[[2,2],[5,0],[1,3],[0,1],[0,0],[2,3]],[[7,0],[2,3],[1,3],[7,3],[6,3],[5,3]],[[1,2],[6,3],[0,0],[5,2],[5,1],[6,0]],[[3,2],[2,1],[6,0],[2,1],[4,0],[4,0]]]`
 )
 
 // Config has configuration parameters for the environment.
@@ -76,6 +69,9 @@ type Config struct {
 	// population code for variables.
 	PopCode popcode.OneD
 
+	// UnitsPer is the number of units to use for discrete features (plans)
+	UnitsPer int
+
 	// Cats holds the list of values values for each feature,
 	// to count as positive evidence for a given category.
 	// only one value is ever generated at a given time.
@@ -92,14 +88,15 @@ func (cfg *Config) Defaults() {
 	cfg.NChannels = 4
 	cfg.NFeatures = 8 // 6 min
 	cfg.NValues = 4   // lower = more avg overlap
-	cfg.ValueBuffer = 0.1
-	cfg.ValueSigma = 0.3
+	cfg.ValueBuffer = 0.0
+	cfg.ValueSigma = 0.5
 	cfg.NCats = 6 // 6 >> 4
 	cfg.NAmbigFeatures = 2
 	cfg.InputFeatureRange.Set(3, 3)
 	cfg.NPlans = 24
 	cfg.PopCodeUnits = 12
 	cfg.PopCode.Defaults()
+	cfg.UnitsPer = 4
 }
 
 func (cfg *Config) ValRange() float32 {
@@ -108,6 +105,16 @@ func (cfg *Config) ValRange() float32 {
 
 func (cfg *Config) PopCodeSigma() float32 {
 	return cfg.ValueSigma * cfg.ValRange()
+}
+
+// RandVal returns a random rendering value for given discrete input value.
+func (ev *ConSatEnv) RandVal(v int) float32 {
+	cfg := &ev.Configs
+	vr := cfg.ValRange()
+	vmin := (float32(v) + cfg.ValueBuffer) * vr
+	vmax := vmin + vr*(1-cfg.ValueBuffer)
+	fv := vmin + ev.Rand.Float32()*(vmax-vmin)
+	return fv
 }
 
 // MakeCats randomly generates values for the sensory input
@@ -211,15 +218,12 @@ func (ev *ConSatEnv) InitOpen() {
 	defer globalLock.Unlock()
 
 	if cats == nil {
-		b := bytes.NewBuffer([]byte(defaultCats))
-		errors.Log(jsonx.Read(&cats, b))
+		errors.Log(jsonx.OpenFS(&cats, embedfs, ev.Filename("cats")))
+		errors.Log(jsonx.OpenFS(&plans, embedfs, ev.Filename("plans")))
+		errors.Log(jsonx.OpenFS(&items, embedfs, ev.Filename("items")))
+		errors.Log(jsonx.OpenFS(&order, embedfs, ev.Filename("order")))
 	}
-	if plans == nil {
-		b := bytes.NewBuffer([]byte(defaultPlans))
-		errors.Log(jsonx.Read(&plans, b))
-	}
-	// todo: train_items etc.
-	// items = ev.Rand.Perm(statesN)
+
 	cfg := &ev.Configs
 	cfg.Cats = cats
 	cfg.Plans = plans
