@@ -97,10 +97,10 @@ type ConSatEnv struct {
 	// Copy of Items that is permuted after every pass through list.
 	Order []int
 
-	// Current input variables
-	Vars []int
+	// Item is the current input item index.
+	Item int
 
-	// Current output plan
+	// Current output plan number.
 	Plan int
 
 	// Rand is the random number generator for the env.
@@ -165,6 +165,16 @@ func (ev *ConSatEnv) String() string {
 	return fmt.Sprintf("%d %d", ev.Trial.Cur, ev.Plan)
 }
 
+// Step does one step.
+func (ev *ConSatEnv) Step() bool {
+	if ev.Trial.Incr() {
+		randx.PermuteInts(ev.Order, ev.Rand)
+	}
+	ev.Item = ev.Items[ev.Order[ev.Trial.Cur]]
+	ev.Render(ev.Item)
+	return true
+}
+
 func (ev *ConSatEnv) Render(item int) {
 	cfg := &ev.Configs
 	in := ev.States["Input"]
@@ -190,7 +200,8 @@ func (ev *ConSatEnv) Render(item int) {
 	}
 }
 
-func (ev *ConSatEnv) OutErr(tsr *tensor.Float64) float64 {
+// PlanErr computes the error for Plan, across UnitsPer per plan.
+func (ev *ConSatEnv) PlanErr(tsr *tensor.Float64) float64 {
 	cfg := &ev.Configs
 	nu := cfg.UnitsPer
 	maxi := 0
@@ -211,11 +222,63 @@ func (ev *ConSatEnv) OutErr(tsr *tensor.Float64) float64 {
 	return 1.0
 }
 
-// Step does one step.
-func (ev *ConSatEnv) Step() bool {
-	if ev.Trial.Incr() {
-		randx.PermuteInts(ev.Order, ev.Rand)
+// ReconOnErr computes the error for the Recon reconstruction of input,
+// for all values that are actually presented in the input.
+// return is a proportion of all active inputs that are in error.
+func (ev *ConSatEnv) ReconOnErr(tsr *tensor.Float32) float64 {
+	cfg := &ev.Configs
+
+	er := 0
+	nin := 0
+
+	it := &items[ev.Item]
+	for ch := range it.Values {
+		for ft, v := range it.Values[ch] {
+			if v < 0 {
+				continue
+			}
+			nin++
+			vmin, vmax := ev.ValMinMax(v)
+			sv := tsr.SubSpace(ft, ch).(*tensor.Float32)
+			dv := cfg.PopCode.Decode(sv.Values)
+			if dv < vmin || dv > vmax {
+				er++
+			}
+		}
 	}
-	ev.Render(ev.Items[ev.Order[ev.Trial.Cur]])
-	return true
+	return float64(er) / float64(nin)
+}
+
+// ReconOffErr computes the error for the Recon reconstruction of input,
+// for all values that are NOT actually presented in the input.
+// return is a proportion of all NON active inputs that are in error.
+func (ev *ConSatEnv) ReconOffErr(tsr *tensor.Float32) float64 {
+	cfg := &ev.Configs
+	er := 0
+	nin := 0
+	it := &items[ev.Item]
+	for ch := range it.Values {
+		for ft, v := range it.Values[ch] {
+			if v >= 0 {
+				continue
+			}
+			nin++
+			sv := tsr.SubSpace(ft, ch).(*tensor.Float32)
+			dv := cfg.PopCode.Decode(sv.Values)
+			c := it.Cats[ch]
+			tvs := cats[c][ft]
+			ok := false
+			for _, v := range tvs {
+				vmin, vmax := ev.ValMinMax(v)
+				if dv >= vmin && dv <= vmax {
+					ok = true
+					break
+				}
+			}
+			if !ok {
+				er++
+			}
+		}
+	}
+	return float64(er) / float64(nin)
 }

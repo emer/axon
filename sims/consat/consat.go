@@ -222,7 +222,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.BidirConnectLayers(hid2, out, full)
 	net.BidirConnectLayers(hid1, pln, full) // shortcut
 
-	// bidir weaker straight pln <-> rec
+	// bidir weaker straight pln <-> rec -- def better
 	net.ConnectLayers(pln, rec, full, axon.BackPath)
 	net.ConnectLayers(rec, pln, full, axon.BackPath)
 
@@ -500,11 +500,13 @@ func (ss *Sim) ConfigStats() {
 
 	// up to a point, it is good to use loops over stats in one function,
 	// to reduce repetition of boilerplate.
-	statNames := []string{"CorSim", "UnitErr", "Err"}
+	statNames := []string{"CorSim", "UnitErr", "Err", "ReconOnErr", "ReconOffErr"}
 	statDocs := map[string]string{
-		"CorSim":  "The correlation-based similarity of the neural activity patterns between the minus and plus phase (1 = patterns are effectively identical). For target layers, this is good continuous, normalized measure of learning performance, which can be more sensitive than thresholded SSE measures.",
-		"UnitErr": "Normalized proportion of neurons with activities on the wrong side of 0.5 relative to the target values. This is a good normalized error measure.",
-		"Err":     "At the trial level this indicates the presence of an error (i.e., UnitErr > 0), and at higher levels, it is the proportion of errors across the epoch. Thus, when this is zero, the network is performing perfectly (with respect to target outputs).",
+		"CorSim":      "The correlation-based similarity of the neural activity patterns between the minus and plus phase (1 = patterns are effectively identical). For target layers, this is good continuous, normalized measure of learning performance, which can be more sensitive than thresholded SSE measures.",
+		"UnitErr":     "Normalized proportion of neurons with activities on the wrong side of 0.5 relative to the target values. This is a good normalized error measure.",
+		"Err":         "At the trial level this indicates the presence of an error (i.e., UnitErr > 0), and at higher levels, it is the proportion of errors across the epoch. Thus, when this is zero, the network is performing perfectly (with respect to target outputs).",
+		"ReconOnErr":  "Recon layer error for input features that are actually present, as computed by pop code value decoding and matching against current input values",
+		"ReconOffErr": "Recon layer error for input features that are NOT actually present, as computed by pop code value decoding and matching against possible input values",
 	}
 	ss.AddStat(func(mode Modes, level Levels, start bool) {
 		for _, name := range statNames {
@@ -529,7 +531,9 @@ func (ss *Sim) ConfigStats() {
 			switch level {
 			case Trial:
 				out := ss.Net.LayerByName("Plan")
-				ltsr := curModeDir.Float64(out.Name+"_ActM", out.Shape.Sizes...)
+				rec := ss.Net.LayerByName("Recon")
+				otsr := curModeDir.Float64(out.Name+"_ActM", out.Shape.Sizes...)
+				rtsr := curModeDir.Float32(rec.Name+"_ActM", rec.Shape.Sizes...)
 				for di := range ndata {
 					var stat float64
 					switch name {
@@ -539,8 +543,16 @@ func (ss *Sim) ConfigStats() {
 						stat = out.PctUnitErr(ss.Net.Context())[di]
 					case "Err":
 						ev := ss.Envs.ByModeDi(mode, di).(*consatenv.ConSatEnv)
-						out.UnitValuesSampleTensor(ltsr, "ActM", di)
-						stat = ev.OutErr(ltsr)
+						out.UnitValuesSampleTensor(otsr, "ActM", di)
+						stat = ev.PlanErr(otsr)
+					case "ReconOnErr":
+						ev := ss.Envs.ByModeDi(mode, di).(*consatenv.ConSatEnv)
+						rec.UnitValuesSampleTensor(rtsr, "ActM", di)
+						stat = ev.ReconOnErr(rtsr)
+					case "ReconOffErr":
+						ev := ss.Envs.ByModeDi(mode, di).(*consatenv.ConSatEnv)
+						rec.UnitValuesSampleTensor(rtsr, "ActM", di)
+						stat = ev.ReconOffErr(rtsr)
 					}
 					curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
 					tsr.AppendRowFloat(stat)

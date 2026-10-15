@@ -107,12 +107,18 @@ func (cfg *Config) PopCodeSigma() float32 {
 	return cfg.ValueSigma * cfg.ValRange()
 }
 
-// RandVal returns a random rendering value for given discrete input value.
-func (ev *ConSatEnv) RandVal(v int) float32 {
+// ValMinMax returns the min / max value for encoding given int value.
+func (ev *ConSatEnv) ValMinMax(v int) (vmin, vmax float32) {
 	cfg := &ev.Configs
 	vr := cfg.ValRange()
-	vmin := (float32(v) + cfg.ValueBuffer) * vr
-	vmax := vmin + vr*(1-cfg.ValueBuffer)
+	vmin = (float32(v) + cfg.ValueBuffer) * vr
+	vmax = vmin + vr*(1-cfg.ValueBuffer)
+	return
+}
+
+// RandVal returns a random rendering value for given discrete input value.
+func (ev *ConSatEnv) RandVal(v int) float32 {
+	vmin, vmax := ev.ValMinMax(v)
 	fv := vmin + ev.Rand.Float32()*(vmax-vmin)
 	return fv
 }
