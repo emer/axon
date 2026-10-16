@@ -10,6 +10,7 @@ package consatenv
 import (
 	"embed"
 	"fmt"
+	"math"
 	"sync"
 
 	"cogentcore.org/lab/base/randx"
@@ -201,8 +202,15 @@ func (ev *ConSatEnv) Render(item int) {
 }
 
 // PlanErr computes the error for Plan, across UnitsPer per plan.
-func (ev *ConSatEnv) PlanErr(tsr *tensor.Float64) float64 {
+func (ev *ConSatEnv) PlanErr(tsr *tensor.Float64, good bool) float64 {
 	cfg := &ev.Configs
+	it := &items[ev.Item]
+	if good && it.PlanFit < cfg.PlanFitGood {
+		return math.NaN()
+	}
+	if !good && it.PlanFit >= cfg.PlanFitGood {
+		return math.NaN()
+	}
 	nu := cfg.UnitsPer
 	maxi := 0
 	maxv := 0.0
@@ -252,11 +260,17 @@ func (ev *ConSatEnv) ReconOnErr(tsr *tensor.Float32) float64 {
 // ReconOffErr computes the error for the Recon reconstruction of input,
 // for all values that are NOT actually presented in the input.
 // return is a proportion of all NON active inputs that are in error.
-func (ev *ConSatEnv) ReconOffErr(tsr *tensor.Float32) float64 {
+func (ev *ConSatEnv) ReconOffErr(tsr *tensor.Float32, good bool) float64 {
 	cfg := &ev.Configs
+	it := &items[ev.Item]
+	if good && it.PlanFit < cfg.PlanFitGood {
+		return math.NaN()
+	}
+	if !good && it.PlanFit >= cfg.PlanFitGood {
+		return math.NaN()
+	}
 	er := 0
 	nin := 0
-	it := &items[ev.Item]
 	for ch := range it.Values {
 		for ft, v := range it.Values[ch] {
 			if v >= 0 {

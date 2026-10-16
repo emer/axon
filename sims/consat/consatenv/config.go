@@ -17,6 +17,9 @@ import (
 	"github.com/emer/emergent/v2/popcode"
 )
 
+// todo: NPlans = 12 instead of 24 -- and add stats to track *plan* values vs. category
+// and also stats on average plan fit with *active* inputs in the input corpus..
+
 // Config has configuration parameters for the environment.
 type Config struct {
 
@@ -60,6 +63,10 @@ type Config struct {
 	// in each Channel.
 	NPlans int
 
+	// Threshold on PlanFit with current input values, to count as a good fit.
+	// Good fit cases are scored differently.
+	PlanFitGood float32
+
 	// Range of number of features to input per channel, on any given input.
 	InputFeatureRange minmax.Int
 
@@ -88,12 +95,13 @@ func (cfg *Config) Defaults() {
 	cfg.NChannels = 4
 	cfg.NFeatures = 8 // 6 min
 	cfg.NValues = 4   // lower = more avg overlap
-	cfg.ValueBuffer = 0.0
+	cfg.ValueBuffer = 0.2
 	cfg.ValueSigma = 0.5
 	cfg.NCats = 6 // 6 >> 4
 	cfg.NAmbigFeatures = 2
 	cfg.InputFeatureRange.Set(3, 3)
-	cfg.NPlans = 24
+	cfg.NPlans = 12
+	cfg.PlanFitGood = 3
 	cfg.PopCodeUnits = 12
 	cfg.PopCode.Defaults()
 	cfg.UnitsPer = 4

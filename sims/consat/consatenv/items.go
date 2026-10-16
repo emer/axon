@@ -26,6 +26,9 @@ type Item struct {
 	// Plan is the plan number, which best matches the current input values.
 	Plan int
 
+	// PlanFit is the match of the plan with the input values. Max is NChannels.
+	PlanFit float32
+
 	// PlanMatch are the Plan values that match the current input.
 	// [NChannels][2], per-channel: [Feature,Value] or -1,-1 for none.
 	PlanMatch [][]int
@@ -112,6 +115,7 @@ func (ev *ConSatEnv) MakeItems() (train, test []Item) {
 	items = make([]Item, 0, nccs)
 
 	pfreq := make([]float32, np)
+	pgood := 0
 
 	for cc := range nccs {
 		rem := cc
@@ -160,6 +164,10 @@ func (ev *ConSatEnv) MakeItems() (train, test []Item) {
 			}
 		}
 		itm.Plan = bplan
+		itm.PlanFit = bfit
+		if bfit >= cfg.PlanFitGood {
+			pgood++
+		}
 		p := bplan
 		for ch := range nch {
 			ft := cfg.Plans[p][ch][0]
@@ -182,7 +190,7 @@ func (ev *ConSatEnv) MakeItems() (train, test []Item) {
 			}
 		}
 		if Debug {
-			fmt.Println("best Plan:", bplan, "fit:", bfit) // , "match:", itm.PlanMatch, "no:", itm.PlanNoMatch)
+			fmt.Println("best Plan:", bplan, "fit:", bfit) // , "match:", itm.PlanMatch, "no:", 	itm.PlanNoMatch)
 			fmt.Println(itm.String())
 			if cc > 100 {
 				break
@@ -197,7 +205,7 @@ func (ev *ConSatEnv) MakeItems() (train, test []Item) {
 	errors.Log(jsonx.Save(order, ev.Filename("order")))
 
 	// if Debug {
-	fmt.Println("pfreq:", pfreq)
+	fmt.Println("pgood:", pgood, "pfreq:", pfreq)
 	// }
 
 	return nil, nil

@@ -26,7 +26,7 @@ var LayerParams = axon.LayerSheets{
 		{Sel: ".Input", Doc: "note: class for Input and Recon",
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Clamp.Ge = 1.5         // 1.5 for fsffffb
-				ly.Inhib.ActAvg.Nominal = 0.01 // low
+				ly.Inhib.ActAvg.Nominal = 0.01 // 0.01 > 0.02
 				ly.Inhib.Layer.On.SetBool(false)
 				ly.Inhib.Pool.On.SetBool(true)
 				ly.Inhib.Pool.Gi = 0.9
@@ -34,12 +34,13 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: "#Recon", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Acts.Clamp.Add.SetBool(true)
+				ly.Inhib.ActAvg.Nominal = 0.2   // 0.2 > lower
+				ly.Acts.Clamp.Add.SetBool(true) // allows off act
 				ly.Acts.Clamp.Ge = 0.5
 			}},
-		{Sel: "Encode", Doc: "",
+		{Sel: "#Encode", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.05 // low
+				ly.Inhib.ActAvg.Nominal = 0.1 // 0.05 actual .1
 				ly.Inhib.Layer.On.SetBool(false)
 				ly.Inhib.Pool.On.SetBool(true)
 				ly.Inhib.Pool.Gi = 0.9
@@ -47,7 +48,7 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: "#Hidden1", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.05
+				ly.Inhib.ActAvg.Nominal = 0.05 // 0.05 >= 0.02 retry
 				ly.Inhib.ActAvg.Offset = 0.0
 				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
 				ly.Inhib.Layer.On.SetBool(true)
@@ -91,7 +92,15 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.2 // 0.2 > 0.3
+				pt.PathScale.Rel = 0.3 // 0.3 > 0.4 with recon cons
+			}},
+		{Sel: "#PlanToRecon", Doc: "direct top-down biasing",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Rel = 0.4 // 0.2 > 0.3
+			}},
+		{Sel: "#ReconToPlan", Doc: "short-cut input",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Rel = 0.4 // 0.2 > 0.3
 			}},
 	},
 }

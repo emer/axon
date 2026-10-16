@@ -154,14 +154,14 @@ func (ss *Sim) ConfigEnv() {
 		trn.Name = env.ModeDi(Train, di)
 		trn.Defaults()
 		if ss.Config.Env.Env != nil {
-			reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
+			reflectx.SetFieldsFromMap(&trn.Configs, ss.Config.Env.Env)
 		}
 		trn.Config(ndata, di, 73+int64(di)*73)
 
 		tst.Name = env.ModeDi(Test, di)
 		tst.Defaults()
 		if ss.Config.Env.Env != nil {
-			reflectx.SetFieldsFromMap(tst, ss.Config.Env.Env)
+			reflectx.SetFieldsFromMap(&tst.Configs, ss.Config.Env.Env)
 		}
 		tst.Config(ndata, ndata+di, 181+int64(di)*181) // unique items
 
@@ -222,9 +222,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.BidirConnectLayers(hid2, out, full)
 	net.BidirConnectLayers(hid1, pln, full) // shortcut
 
-	// bidir weaker straight pln <-> rec -- def better
-	net.ConnectLayers(pln, rec, full, axon.BackPath)
+	// bidir weaker straight pln <-> rec -- both are key
 	net.ConnectLayers(rec, pln, full, axon.BackPath)
+	net.ConnectLayers(pln, rec, full, axon.BackPath)
 
 	net.Build()
 	net.Defaults()
@@ -500,13 +500,15 @@ func (ss *Sim) ConfigStats() {
 
 	// up to a point, it is good to use loops over stats in one function,
 	// to reduce repetition of boilerplate.
-	statNames := []string{"CorSim", "UnitErr", "Err", "ReconOnErr", "ReconOffErr"}
+	statNames := []string{"CorSim", "UnitErr", "ErrGood", "ErrBad", "ReconOnErr", "ReconOffErrGood", "ReconOffErrBad"}
 	statDocs := map[string]string{
-		"CorSim":      "The correlation-based similarity of the neural activity patterns between the minus and plus phase (1 = patterns are effectively identical). For target layers, this is good continuous, normalized measure of learning performance, which can be more sensitive than thresholded SSE measures.",
-		"UnitErr":     "Normalized proportion of neurons with activities on the wrong side of 0.5 relative to the target values. This is a good normalized error measure.",
-		"Err":         "At the trial level this indicates the presence of an error (i.e., UnitErr > 0), and at higher levels, it is the proportion of errors across the epoch. Thus, when this is zero, the network is performing perfectly (with respect to target outputs).",
-		"ReconOnErr":  "Recon layer error for input features that are actually present, as computed by pop code value decoding and matching against current input values",
-		"ReconOffErr": "Recon layer error for input features that are NOT actually present, as computed by pop code value decoding and matching against possible input values",
+		"CorSim":          "The correlation-based similarity of the neural activity patterns between the minus and plus phase (1 = patterns are effectively identical). For target layers, this is good continuous, normalized measure of learning performance, which can be more sensitive than thresholded SSE measures.",
+		"UnitErr":         "Normalized proportion of neurons with activities on the wrong side of 0.5 relative to the target values. This is a good normalized error measure.",
+		"ErrGood":         "For good-fit plans: At the trial level this indicates the presence of an error (i.e., UnitErr > 0), and at higher levels, it is the proportion of errors across the epoch. Thus, when this is zero, the network is performing perfectly (with respect to target outputs).",
+		"ErrBad":          "For bad-fit plans: At the trial level this indicates the presence of an error (i.e., UnitErr > 0), and at higher levels, it is the proportion of errors across the epoch. Thus, when this is zero, the network is performing perfectly (with respect to target outputs).",
+		"ReconOnErr":      "Recon layer error for input features that are actually present, as computed by pop code value decoding and matching against current input values",
+		"ReconOffErrGood": "For good-fit plans: Recon layer error for input features that are NOT actually present, as computed by pop code value decoding and matching against possible input values",
+		"ReconOffErrBad":  "For bad-fit plans: Recon layer error for input features that are NOT actually present, as computed by pop code value decoding and matching against possible input values",
 	}
 	ss.AddStat(func(mode Modes, level Levels, start bool) {
 		for _, name := range statNames {
@@ -521,7 +523,7 @@ func (ss *Sim) ConfigStats() {
 				tsr.SetNumRows(0)
 				plot.SetFirstStyler(tsr, func(s *plot.Style) {
 					s.Range.SetMin(0).SetMax(1)
-					if name != "UnitErr" {
+					if name != "UnitErr" && name != "CorSim" {
 						s.On = true
 					}
 				})
@@ -541,18 +543,20 @@ func (ss *Sim) ConfigStats() {
 						stat = 1.0 - float64(axon.LayerStates.Value(int(out.Index), int(di), int(axon.LayerPhaseDiff)))
 					case "UnitErr":
 						stat = out.PctUnitErr(ss.Net.Context())[di]
-					case "Err":
+					case "ErrGood", "ErrBad":
+						good := name == "ErrGood"
 						ev := ss.Envs.ByModeDi(mode, di).(*consatenv.ConSatEnv)
 						out.UnitValuesSampleTensor(otsr, "ActM", di)
-						stat = ev.PlanErr(otsr)
+						stat = ev.PlanErr(otsr, good)
 					case "ReconOnErr":
 						ev := ss.Envs.ByModeDi(mode, di).(*consatenv.ConSatEnv)
 						rec.UnitValuesSampleTensor(rtsr, "ActM", di)
 						stat = ev.ReconOnErr(rtsr)
-					case "ReconOffErr":
+					case "ReconOffErrGood", "ReconOffErrBad":
+						good := name == "ReconOffErrGood"
 						ev := ss.Envs.ByModeDi(mode, di).(*consatenv.ConSatEnv)
 						rec.UnitValuesSampleTensor(rtsr, "ActM", di)
-						stat = ev.ReconOffErr(rtsr)
+						stat = ev.ReconOffErr(rtsr, good)
 					}
 					curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
 					tsr.AppendRowFloat(stat)
@@ -607,7 +611,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 		return counters
 	}
 	counters += fmt.Sprintf(" TrialName: %s", curModeDir.StringValue("TrialName").String1D(di))
-	statNames := []string{"CorSim", "UnitErr", "Err"}
+	statNames := []string{"ErrGood", "ErrBad"}
 	if level == Cycle || curModeDir.Node(statNames[0]) == nil {
 		return counters
 	}
