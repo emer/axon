@@ -8,7 +8,6 @@ package consatenv
 //go:generate core generate -add-types -add-funcs -gosl
 
 import (
-	"embed"
 	"fmt"
 	"math"
 	"sync"
@@ -19,8 +18,8 @@ import (
 	"github.com/emer/emergent/v2/popcode"
 )
 
-//go:embed *.json
-var embedfs embed.FS
+// //go:embed *.json
+// var embedfs embed.FS
 
 var (
 	Debug = false
@@ -76,17 +75,17 @@ type ConSatEnv struct {
 	// Configuration options.
 	Configs Config
 
-	// NItems is the number of items to use
-	NItems int
-
 	// data-parallel n
 	NData int
 
 	// data-parallel index
 	Di int
 
-	// Trial counts up NItems for indexing
+	// Trial counts for one epoch
 	Trial env.Counter
+
+	// ItemCtr counts over items to present
+	ItemCtr env.Counter
 
 	// named states
 	States map[string]*tensor.Float32
@@ -120,11 +119,12 @@ func (ev *ConSatEnv) Defaults() {
 }
 
 // Config configures the world
-func (ev *ConSatEnv) Config(ndata, di int, rndseed int64) {
+func (ev *ConSatEnv) Config(trials, ndata, di int, rndseed int64) {
 	cfg := &ev.Configs
 	nc := cfg.NChannels
 	nf := cfg.NFeatures
 	npop := cfg.PopCodeUnits
+	ev.Trial.Max = trials
 	ev.NData = ndata
 	ev.Di = di
 	ev.RunRandSeed = rndseed
@@ -135,23 +135,18 @@ func (ev *ConSatEnv) Config(ndata, di int, rndseed int64) {
 }
 
 func (ev *ConSatEnv) Init(run int) {
+	ev.InitOpen()
 	if ev.RunRandSeed == 0 {
 		ev.RunRandSeed = 173
 	}
 	randx.InitSysRand(&ev.Rand, ev.RunRandSeed*(int64(run)+1))
-	ev.InitOpen()
 	np := len(order)
 	neven := np / (2 * ev.NData) // testing and training
-	if ev.NItems > 0 {
-		ev.NItems = min(ev.NItems, neven)
-	} else {
-		ev.NItems = neven
-	}
-	ni := ev.NItems
-	ev.Trial.Max = ni
 	ev.Trial.Init()
-	st := ni * ev.Di
-	ev.Items = order[st : st+ni]
+	ev.ItemCtr.Max = neven
+	ev.ItemCtr.Init()
+	st := neven * ev.Di
+	ev.Items = order[st : st+neven]
 	ev.Order = ev.Rand.Perm(len(ev.Items))
 }
 
@@ -168,10 +163,11 @@ func (ev *ConSatEnv) String() string {
 
 // Step does one step.
 func (ev *ConSatEnv) Step() bool {
-	if ev.Trial.Incr() {
+	ev.Trial.Incr()
+	if ev.ItemCtr.Incr() {
 		randx.PermuteInts(ev.Order, ev.Rand)
 	}
-	ev.Item = ev.Items[ev.Order[ev.Trial.Cur]]
+	ev.Item = ev.Items[ev.Order[ev.ItemCtr.Cur]]
 	ev.Render(ev.Item)
 	return true
 }
@@ -246,7 +242,7 @@ func (ev *ConSatEnv) ReconOnErr(tsr *tensor.Float32) float64 {
 				continue
 			}
 			nin++
-			vmin, vmax := ev.ValMinMax(v)
+			vmin, vmax := ev.ValMinMaxFull(v)
 			sv := tsr.SubSpace(ft, ch).(*tensor.Float32)
 			dv := cfg.PopCode.Decode(sv.Values)
 			if dv < vmin || dv > vmax {
@@ -283,7 +279,7 @@ func (ev *ConSatEnv) ReconOffErr(tsr *tensor.Float32, good bool) float64 {
 			tvs := cats[c][ft]
 			ok := false
 			for _, v := range tvs {
-				vmin, vmax := ev.ValMinMax(v)
+				vmin, vmax := ev.ValMinMaxFull(v)
 				if dv >= vmin && dv <= vmax {
 					ok = true
 					break

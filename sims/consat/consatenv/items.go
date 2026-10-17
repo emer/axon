@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"math"
 
-	"cogentcore.org/core/base/errors"
-	"cogentcore.org/core/base/iox/jsonx"
 	"cogentcore.org/lab/base/randx"
 )
 
@@ -201,8 +199,8 @@ func (ev *ConSatEnv) MakeItems() (train, test []Item) {
 	}
 
 	order = ev.Rand.Perm(nccs)
-	errors.Log(jsonx.Save(items, ev.Filename("items")))
-	errors.Log(jsonx.Save(order, ev.Filename("order")))
+	// errors.Log(jsonx.Save(items, ev.Filename("items")))
+	// errors.Log(jsonx.Save(order, ev.Filename("order")))
 
 	// if Debug {
 	fmt.Println("pgood:", pgood, "pfreq:", pfreq)

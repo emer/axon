@@ -156,14 +156,14 @@ func (ss *Sim) ConfigEnv() {
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(&trn.Configs, ss.Config.Env.Env)
 		}
-		trn.Config(ndata, di, 73+int64(di)*73)
+		trn.Config(ss.Config.Run.Trials, ndata, di, 73+int64(di)*73)
 
 		tst.Name = env.ModeDi(Test, di)
 		tst.Defaults()
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(&tst.Configs, ss.Config.Env.Env)
 		}
-		tst.Config(ndata, ndata+di, 181+int64(di)*181) // unique items
+		tst.Config(ss.Config.Run.Trials, ndata, ndata+di, 181+int64(di)*181) // unique items
 
 		trn.Init(0)
 		tst.Init(0)

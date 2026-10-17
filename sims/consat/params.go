@@ -96,7 +96,7 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: "#PlanToRecon", Doc: "direct top-down biasing",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.4 // 0.2 > 0.3
+				pt.PathScale.Rel = 0.1 // 0.2 > 0.3
 			}},
 		{Sel: "#ReconToPlan", Doc: "short-cut input",
 			Set: func(pt *axon.PathParams) {

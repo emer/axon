@@ -9,8 +9,6 @@ import (
 	"math"
 	"slices"
 
-	"cogentcore.org/core/base/errors"
-	"cogentcore.org/core/base/iox/jsonx"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/lab/tensor"
@@ -92,7 +90,7 @@ type Config struct {
 }
 
 func (cfg *Config) Defaults() {
-	cfg.NChannels = 4
+	cfg.NChannels = 4 // 6 = more
 	cfg.NFeatures = 8 // 6 min
 	cfg.NValues = 4   // lower = more avg overlap
 	cfg.ValueBuffer = 0.2
@@ -100,7 +98,7 @@ func (cfg *Config) Defaults() {
 	cfg.NCats = 6 // 6 >> 4
 	cfg.NAmbigFeatures = 2
 	cfg.InputFeatureRange.Set(3, 3)
-	cfg.NPlans = 12
+	cfg.NPlans = 12 // 12 > 24 for selecting good plans
 	cfg.PlanFitGood = 3
 	cfg.PopCodeUnits = 12
 	cfg.PopCode.Defaults()
@@ -113,6 +111,16 @@ func (cfg *Config) ValRange() float32 {
 
 func (cfg *Config) PopCodeSigma() float32 {
 	return cfg.ValueSigma * cfg.ValRange()
+}
+
+// ValMinMaxFull returns the full min / max value range for encoding given int value.
+// excludes the ValueBuffer
+func (ev *ConSatEnv) ValMinMaxFull(v int) (vmin, vmax float32) {
+	cfg := &ev.Configs
+	vr := cfg.ValRange()
+	vmin = (float32(v)) * vr
+	vmax = vmin + vr
+	return
 }
 
 // ValMinMax returns the min / max value for encoding given int value.
@@ -232,10 +240,19 @@ func (ev *ConSatEnv) InitOpen() {
 	defer globalLock.Unlock()
 
 	if cats == nil {
-		errors.Log(jsonx.OpenFS(&cats, embedfs, ev.Filename("cats")))
-		errors.Log(jsonx.OpenFS(&plans, embedfs, ev.Filename("plans")))
-		errors.Log(jsonx.OpenFS(&items, embedfs, ev.Filename("items")))
-		errors.Log(jsonx.OpenFS(&order, embedfs, ev.Filename("order")))
+		rs := ev.RunRandSeed
+		ev.RunRandSeed = 137
+		randx.InitSysRand(&ev.Rand, ev.RunRandSeed*(int64(0)+1))
+		// Debug = true
+
+		ev.MakeBestCats(100000)
+		ev.MakeBestPlans(10000)
+		ev.MakeItems()
+		// errors.Log(jsonx.OpenFS(&cats, embedfs, ev.Filename("cats")))
+		// errors.Log(jsonx.OpenFS(&plans, embedfs, ev.Filename("plans")))
+		// errors.Log(jsonx.OpenFS(&items, embedfs, ev.Filename("items")))
+		// errors.Log(jsonx.OpenFS(&order, embedfs, ev.Filename("order")))
+		ev.RunRandSeed = rs
 	}
 
 	cfg := &ev.Configs
@@ -281,9 +298,10 @@ func (ev *ConSatEnv) MakeBestCats(niter int) {
 		}
 	}
 	cfg.Cats = bcats
+	cats = cfg.Cats
 	bdms := tensor.Sprintf("%.3g", bdm, 0)
 	fmt.Println("Best: max:", bmax, "\tavg:", bavg, "\tdm\n", bdms, cfg.PrintCats(bcats))
-	errors.Log(jsonx.Save(bcats, ev.Filename("cats")))
+	// errors.Log(jsonx.Save(bcats, ev.Filename("cats")))
 }
 
 //////// Plans
@@ -403,7 +421,8 @@ func (ev *ConSatEnv) MakeBestPlans(niter int) {
 		}
 	}
 	cfg.Plans = bplans
+	plans = cfg.Plans
 	bdms := tensor.Sprintf("%.3g", bdm, 0)
 	fmt.Println("Best: max:", bmax, "\tavg:", bavg, "\tdm\n", bdms, cfg.PrintPlans(bplans))
-	errors.Log(jsonx.Save(bplans, ev.Filename("plans")))
+	// errors.Log(jsonx.Save(bplans, ev.Filename("plans")))
 }
