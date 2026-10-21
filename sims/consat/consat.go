@@ -30,6 +30,7 @@ import (
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/axon/v2/sims/consat/consatenv"
 	"github.com/emer/emergent/v2/egui"
+	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/paths"
@@ -182,49 +183,38 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	ev := ss.Envs.ByModeDi(Train, 0).(*consatenv.ConSatEnv)
 	cfg := &ev.Configs
-	nc := cfg.NChannels
-	nf := cfg.NFeatures
-	npop := cfg.PopCodeUnits
-	nEncUnits := 10
-	nHidUnits := 20 // 20 == 30 > 10
-	// nHid1Units := 20
+	nl := cfg.NLines
+	np := cfg.NPixels
+	nEncUnits := 15 // 15 > 10
+	nHidUnits := 25 // 15 > 20
 
-	inp := net.AddLayer4D("Input", axon.InputLayer, nf, nc, 1, npop).AddClass("Input")
-	rec := net.AddLayer4D("Recon", axon.TargetLayer, nf, nc, 1, npop).AddClass("Input")
-	enc := net.AddLayer4D("Encode", axon.SuperLayer, 1, nc, nEncUnits, nEncUnits)
-	// hid1 := net.AddLayer2D("Hidden1", axon.SuperLayer, nHidUnits, nHidUnits)
+	inp := net.AddLayer4D("Input", axon.InputLayer, nl, nl, np, np).AddClass("Input")
+	rec := net.AddLayer4D("Full", axon.TargetLayer, nl, nl, np, np).AddClass("Input")
+	enc := net.AddLayer4D("Encode", axon.SuperLayer, nl, nl, nEncUnits, nEncUnits)
+	enc.SetSampleShape(emer.CenterPoolIndexes(enc, 1), emer.CenterPoolShape(enc, 1)) // just one pool!
+
 	hid1 := net.AddLayer2D("Hidden1", axon.SuperLayer, nHidUnits, nHidUnits)
-	// hid1.SetSampleShape(emer.CenterPoolIndexes(hid1, 2), emer.CenterPoolShape(hid1, 2))
 	// hid2 := net.AddLayer2D("Hidden2", axon.SuperLayer, nHidUnits, nHidUnits)
 	// no hid2 better!
 
-	pln := net.AddLayer4D("Plan", axon.TargetLayer, 1, cfg.NPlans, cfg.UnitsPer, 1)
-
 	rec.PlaceBehind(inp, 2)
-	pln.PlaceAbove(inp)
-	enc.PlaceBehind(pln, 2)
-	hid1.PlaceAbove(pln)
+	enc.PlaceAbove(inp)
+	hid1.PlaceAbove(enc)
 
 	full := paths.NewFull()
 
 	encRect := paths.NewPoolRect()
-	encRect.Size.Set(1, nf) // note: y is 2nd arg..
-	encRect.Scale.Set(1, 0)
+	encRect.Size.Set(1, 1) // note: y is 2nd arg..
+	encRect.Scale.Set(1, 1)
 
 	encRecip := paths.NewPoolRect()
 	encRecip.Size.Set(1, 1)
-	encRecip.Scale.Set(1, 0)
+	encRecip.Scale.Set(1, 1)
 
 	net.ConnectLayers(inp, enc, encRect, axon.ForwardPath)
 	net.ConnectLayers(rec, enc, encRect, axon.BackPath)
 	net.ConnectLayers(enc, rec, encRecip, axon.ForwardPath)
 	net.BidirConnectLayers(enc, hid1, full)
-	// net.BidirConnectLayers(hid2, out, full)
-	net.BidirConnectLayers(hid1, pln, full) // shortcut
-
-	// bidir weaker straight pln <-> rec -- both are key
-	net.ConnectLayers(rec, pln, full, axon.BackPath)
-	net.ConnectLayers(pln, rec, full, axon.BackPath)
 
 	net.Build()
 	net.Defaults()
@@ -500,15 +490,11 @@ func (ss *Sim) ConfigStats() {
 
 	// up to a point, it is good to use loops over stats in one function,
 	// to reduce repetition of boilerplate.
-	statNames := []string{"CorSim", "UnitErr", "ErrGood", "ErrBad", "ReconOnErr", "ReconOffErrGood", "ReconOffErrBad"}
+	statNames := []string{"CorSim", "UnitErr", "Err"}
 	statDocs := map[string]string{
-		"CorSim":          "The correlation-based similarity of the neural activity patterns between the minus and plus phase (1 = patterns are effectively identical). For target layers, this is good continuous, normalized measure of learning performance, which can be more sensitive than thresholded SSE measures.",
-		"UnitErr":         "Normalized proportion of neurons with activities on the wrong side of 0.5 relative to the target values. This is a good normalized error measure.",
-		"ErrGood":         "For good-fit plans: At the trial level this indicates the presence of an error (i.e., UnitErr > 0), and at higher levels, it is the proportion of errors across the epoch. Thus, when this is zero, the network is performing perfectly (with respect to target outputs).",
-		"ErrBad":          "For bad-fit plans: At the trial level this indicates the presence of an error (i.e., UnitErr > 0), and at higher levels, it is the proportion of errors across the epoch. Thus, when this is zero, the network is performing perfectly (with respect to target outputs).",
-		"ReconOnErr":      "Recon layer error for input features that are actually present, as computed by pop code value decoding and matching against current input values",
-		"ReconOffErrGood": "For good-fit plans: Recon layer error for input features that are NOT actually present, as computed by pop code value decoding and matching against possible input values",
-		"ReconOffErrBad":  "For bad-fit plans: Recon layer error for input features that are NOT actually present, as computed by pop code value decoding and matching against possible input values",
+		"CorSim":  "The correlation-based similarity of the neural activity patterns between the minus and plus phase (1 = patterns are effectively identical). For target layers, this is good continuous, normalized measure of learning performance, which can be more sensitive than thresholded SSE measures.",
+		"UnitErr": "Normalized proportion of neurons with activities on the wrong side of 0.5 relative to the target values. This is a good normalized error measure.",
+		"Err":     "At the trial level this indicates the presence of an error (i.e., UnitErr > 0), and at higher levels, it is the proportion of errors across the epoch. Thus, when this is zero, the network is performing perfectly (with respect to target outputs).",
 	}
 	ss.AddStat(func(mode Modes, level Levels, start bool) {
 		for _, name := range statNames {
@@ -532,10 +518,8 @@ func (ss *Sim) ConfigStats() {
 			}
 			switch level {
 			case Trial:
-				out := ss.Net.LayerByName("Plan")
-				rec := ss.Net.LayerByName("Recon")
-				otsr := curModeDir.Float64(out.Name+"_ActM", out.Shape.Sizes...)
-				rtsr := curModeDir.Float32(rec.Name+"_ActM", rec.Shape.Sizes...)
+				out := ss.Net.LayerByName("Full")
+				// otsr := curModeDir.Float64(out.Name+"_ActM", out.Shape.Sizes...)
 				for di := range ndata {
 					var stat float64
 					switch name {
@@ -543,20 +527,12 @@ func (ss *Sim) ConfigStats() {
 						stat = 1.0 - float64(axon.LayerStates.Value(int(out.Index), int(di), int(axon.LayerPhaseDiff)))
 					case "UnitErr":
 						stat = out.PctUnitErr(ss.Net.Context())[di]
-					case "ErrGood", "ErrBad":
-						good := name == "ErrGood"
-						ev := ss.Envs.ByModeDi(mode, di).(*consatenv.ConSatEnv)
-						out.UnitValuesSampleTensor(otsr, "ActM", di)
-						stat = ev.PlanErr(otsr, good)
-					case "ReconOnErr":
-						ev := ss.Envs.ByModeDi(mode, di).(*consatenv.ConSatEnv)
-						rec.UnitValuesSampleTensor(rtsr, "ActM", di)
-						stat = ev.ReconOnErr(rtsr)
-					case "ReconOffErrGood", "ReconOffErrBad":
-						good := name == "ReconOffErrGood"
-						ev := ss.Envs.ByModeDi(mode, di).(*consatenv.ConSatEnv)
-						rec.UnitValuesSampleTensor(rtsr, "ActM", di)
-						stat = ev.ReconOffErr(rtsr, good)
+					case "Err":
+						uniterr := curModeDir.Float64("UnitErr", ndata).Float1D(di)
+						stat = 1.0
+						if uniterr == 0 {
+							stat = 0
+						}
 					}
 					curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
 					tsr.AppendRowFloat(stat)

@@ -26,6 +26,14 @@ type Config struct {
 	// organized into NCats categories.
 	NChannels int
 
+	// Number of low-level categories, where each category
+	// is associated with a pattern of values across features.
+	NCats int
+
+	// Number of high-level plans. Each plan has a target feature and value
+	// in each Channel.
+	NPlans int
+
 	// Number of different sensory input features.
 	// Each feature has 0-1 population-coded value. -1 means absent.
 	// The 0-1 range is divided into NValues disjoint ranges for
@@ -49,17 +57,9 @@ type Config struct {
 	// for the popcode sigma. 1 = full range, etc.
 	ValueSigma float32
 
-	// Number of low-level categories, where each category
-	// is associated with a pattern of values across features.
-	NCats int
-
 	// NAmbigFeatures is the number of Features that are ambiguous
 	// (i.e., have more than 1 value). Ambiguity is 2 to NValues..
 	NAmbigFeatures int
-
-	// Number of high-level plans. Each plan has a target feature and value
-	// in each Channel.
-	NPlans int
 
 	// Threshold on PlanFit with current input values, to count as a good fit.
 	// Good fit cases are scored differently.
@@ -91,16 +91,17 @@ type Config struct {
 
 func (cfg *Config) Defaults() {
 	cfg.NChannels = 4 // 6 = more
-	cfg.NFeatures = 8 // 6 min
-	cfg.NValues = 4   // lower = more avg overlap
-	cfg.ValueBuffer = 0.2
-	cfg.ValueSigma = 0.5
-	cfg.NCats = 6 // 6 >> 4
-	cfg.NAmbigFeatures = 2
+	cfg.NCats = 8     // 6 >> 4; 8, or 12 = stretch
+	cfg.NPlans = 12   // 12 > 24 for selecting good plans
+
+	cfg.NFeatures = 8      // 8, 6 min
+	cfg.NValues = 4        // 4 min; lower = more avg overlap
+	cfg.ValueBuffer = 0.2  // 0.2 > 0.1 > 0
+	cfg.ValueSigma = 0.5   // 0.5 > 0.8 > 0.3
+	cfg.NAmbigFeatures = 2 // todo: do more stats, tests on ambig!
 	cfg.InputFeatureRange.Set(3, 3)
-	cfg.NPlans = 12 // 12 > 24 for selecting good plans
 	cfg.PlanFitGood = 3
-	cfg.PopCodeUnits = 12
+	cfg.PopCodeUnits = 22
 	cfg.PopCode.Defaults()
 	cfg.UnitsPer = 4
 }
@@ -300,7 +301,11 @@ func (ev *ConSatEnv) MakeBestCats(niter int) {
 	cfg.Cats = bcats
 	cats = cfg.Cats
 	bdms := tensor.Sprintf("%.3g", bdm, 0)
-	fmt.Println("Best: max:", bmax, "\tavg:", bavg, "\tdm\n", bdms, cfg.PrintCats(bcats))
+	fmt.Println("Best: max:", bmax, "\tavg:", bavg, "\tdm")
+	fmt.Println(bdms)
+	if Debug {
+		fmt.Println(cfg.PrintCats(bcats))
+	}
 	// errors.Log(jsonx.Save(bcats, ev.Filename("cats")))
 }
 
@@ -422,7 +427,11 @@ func (ev *ConSatEnv) MakeBestPlans(niter int) {
 	}
 	cfg.Plans = bplans
 	plans = cfg.Plans
+	fmt.Println("Best: max:", bmax, "\tavg:", bavg, "\tdm")
 	bdms := tensor.Sprintf("%.3g", bdm, 0)
-	fmt.Println("Best: max:", bmax, "\tavg:", bavg, "\tdm\n", bdms, cfg.PrintPlans(bplans))
+	fmt.Println(bdms)
+	if Debug {
+		cfg.PrintPlans(bplans)
+	}
 	// errors.Log(jsonx.Save(bplans, ev.Filename("plans")))
 }
