@@ -10,6 +10,6 @@ var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/consat/con
 
 var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/consat/consatenv.Config", IDName: "config", Doc: "Config has configuration parameters for the environment.", Fields: []types.Field{{Name: "NPixels", Doc: "NPixels is the size of one dimension (square) of the\nlowest-level groups where lines are rendered.\nShould be an odd number so there is an ambiguous\ncentral point."}, {Name: "NLines", Doc: "NLines is the number of pixel-groups in each dimension."}}})
 
-var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/consat/consatenv.LineAngles", IDName: "line-angles"})
+var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/consat/consatenv.Angles", IDName: "angles", Doc: "Angles are the different line angles."})
 
 var _ = types.AddType(&types.Type{Name: "github.com/emer/axon/v2/sims/consat/consatenv.Line", IDName: "line", Doc: "Line defines a single line to render.\nThere is full wraparound.", Fields: []types.Field{{Name: "Angle", Doc: "Angle is the angle of the line."}, {Name: "Start", Doc: "Start is the starting point."}, {Name: "Length", Doc: "Length is how long to make the line."}}})

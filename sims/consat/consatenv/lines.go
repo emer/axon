@@ -72,14 +72,14 @@ type Line struct {
 func (cfg *Config) AllLines() []Line {
 	nl := cfg.NLines
 
-	n := nl * nl * (nl - 1) * int(LineAnglesN)
+	n := nl * nl * (nl - 1) * int(AnglesN)
 
 	lns := make([]Line, 0, n)
 
 	for sy := range nl {
 		for sx := range nl {
 			for ln := 2; ln < nl; ln++ { // not len = 3 b/c that needs to be canonicalized
-				for la := range LineAnglesN {
+				for la := range AnglesN {
 					lns = append(lns, Line{Angle: la, Length: ln, Start: vecint.Vec2i(sx, sy)})
 				}
 			}
