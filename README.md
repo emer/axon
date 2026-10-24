@@ -8,6 +8,8 @@
     <a href="https://github.com/emer/axon/tags"><img alt="Version" src="https://img.shields.io/github/v/tag/emer/axon?label=version&color=blue"></a>
 </p>
 
+See: https://compcogneuro.org for full documentation.
+
 This is the Go implementation of the Axon algorithm for spiking, biologically based models of cognition, based on the [emergent](https://github.com/emer/emergent) framework. Development of Axon is supported by the Obelisk project at https://astera.org/ and by collaborations with scientists at the University of California Davis, and other institutions around the world.
 
 Axon is the spiking version of [Leabra](https://github.com/emer/leabra), with several advances. As a backcronym, _Axon_ could stand for _Adaptive eXcitation Of Noise_, reflecting the ability to learn using the power of error-backpropagation in the context of noisy spiking activation. The spiking function of the axon is what was previously missing from Leabra.
