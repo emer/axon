@@ -28,4 +28,6 @@ Key thing: need the output to be somehow more than binary! Ok, so could define d
 
 ## TODO
 
+* Hierarchical hidden -- 2x2 tiled with wrap -- needs more local
+* minus-plus in same layer with soft clamp.
 

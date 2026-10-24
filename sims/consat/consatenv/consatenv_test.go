@@ -17,7 +17,5 @@ func TestMake(t *testing.T) {
 	randx.InitSysRand(&ev.Rand, ev.RunRandSeed*(int64(0)+1))
 	// Debug = true
 
-	ev.MakeBestCats(100000)
-	ev.MakeBestPlans(10000)
-	ev.MakeItems()
+	ev.InitLines()
 }

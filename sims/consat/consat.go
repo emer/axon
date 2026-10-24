@@ -185,21 +185,23 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	cfg := &ev.Configs
 	nl := cfg.NLines
 	np := cfg.NPixels
-	nEncUnits := 15 // 15 > 10
-	nHidUnits := 25 // 15 > 20
+	nEncUnits := 15  // 15 > 10
+	nHid1Units := 15 // 15?
+	nHid2Units := 20 // 20 > 15
 
 	inp := net.AddLayer4D("Input", axon.InputLayer, nl, nl, np, np).AddClass("Input")
 	rec := net.AddLayer4D("Full", axon.TargetLayer, nl, nl, np, np).AddClass("Input")
 	enc := net.AddLayer4D("Encode", axon.SuperLayer, nl, nl, nEncUnits, nEncUnits)
 	enc.SetSampleShape(emer.CenterPoolIndexes(enc, 1), emer.CenterPoolShape(enc, 1)) // just one pool!
 
-	hid1 := net.AddLayer2D("Hidden1", axon.SuperLayer, nHidUnits, nHidUnits)
-	// hid2 := net.AddLayer2D("Hidden2", axon.SuperLayer, nHidUnits, nHidUnits)
-	// no hid2 better!
+	hid1 := net.AddLayer4D("Hidden1", axon.SuperLayer, 3, 3, nHid1Units, nHid1Units)
+	hid1.SetSampleShape(emer.CenterPoolIndexes(enc, 1), emer.CenterPoolShape(enc, 1))
+	hid2 := net.AddLayer2D("Hidden2", axon.SuperLayer, nHid2Units, nHid2Units)
 
 	rec.PlaceBehind(inp, 2)
 	enc.PlaceAbove(inp)
 	hid1.PlaceAbove(enc)
+	hid2.PlaceRightOf(hid1, 2)
 
 	full := paths.NewFull()
 
@@ -211,10 +213,23 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	encRecip.Size.Set(1, 1)
 	encRecip.Scale.Set(1, 1)
 
+	h1Pool := paths.NewPoolTile()
+	h1Pool.Size.Set(2, 2)
+	h1Pool.Skip.Set(1, 1)
+
+	h1Recip := paths.NewPoolTile()
+	*h1Recip = *h1Pool
+	h1Recip.Recip = true
+
 	net.ConnectLayers(inp, enc, encRect, axon.ForwardPath)
 	net.ConnectLayers(rec, enc, encRect, axon.BackPath)
 	net.ConnectLayers(enc, rec, encRecip, axon.ForwardPath)
-	net.BidirConnectLayers(enc, hid1, full)
+
+	net.ConnectLayers(enc, hid1, h1Pool, axon.ForwardPath)
+	net.ConnectLayers(hid1, enc, h1Recip, axon.BackPath)
+	// net.BidirConnectLayers(enc, hid1, full)
+
+	net.BidirConnectLayers(hid1, hid2, full)
 
 	net.Build()
 	net.Defaults()

@@ -50,13 +50,23 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: "#Hidden1", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.05 // 0.05 >= 0.02 retry
+				ly.Inhib.ActAvg.Nominal = 0.03 // 0.5 actual
+				ly.Inhib.ActAvg.Offset = 0.02
+				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
+				ly.Inhib.Layer.On.SetBool(true)
+				ly.Inhib.Pool.On.SetBool(true)
+				ly.Inhib.Layer.Gi = 1.0
+				ly.Inhib.Pool.Gi = 1.05
+			}},
+		{Sel: "#Hidden2", Doc: "",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.08 //
 				ly.Inhib.ActAvg.Offset = 0.0
 				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
 				ly.Inhib.Layer.On.SetBool(true)
 				// ly.Inhib.Pool.On.SetBool(true)
 				// ly.Inhib.Pool.Gi = 1.0
-				ly.Inhib.Layer.Gi = 1.0
+				ly.Inhib.Layer.Gi = 1.05
 			}},
 		// {Sel: "#Hidden2", Doc: "",
 		// 	Set: func(ly *axon.LayerParams) {
@@ -82,7 +92,7 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.3 // 0.3 > 0.4 > 0.2 with recon cons
+				pt.PathScale.Rel = 0.1 // 0.2 > 0.3
 			}},
 	},
 }
