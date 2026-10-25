@@ -1239,8 +1239,8 @@ fn PathParams_DWtCNIO(pt: PathParams, ctx: Context, rlay: LayerParams, syni: u32
 	}
 	var isErrSpike = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ri), u32(di), u32(TimePeak))] == 1;
 	if (!isErrSpike) {
-		learnNow = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], // learn at peak
-		TensorStrides[72], u32(ri), u32(di), u32(MinusCycle))]);
+		learnNow = i32(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // learn at peak
+		u32(ri), u32(di), u32(MinusCycle))]);
 	}
 	var stcyc = learnNow - rlay.Nuclear.SendTimeOff;
 	var nbins = rlay.Nuclear.SendTimeBins;

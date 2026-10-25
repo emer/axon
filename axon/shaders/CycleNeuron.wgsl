@@ -687,8 +687,8 @@ fn ActParams_GvgccFromVm(ac: ActParams, ctx: Context, ni: u32,di: u32) {
 	var dm = VGCCParams_DeltaMFromV(ac.VGCC, v, Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(VgccM))]);
 	var dh = VGCCParams_DeltaHFromV(ac.VGCC, v, Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(VgccH))]);
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(VgccM))] += dm;
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71],
-	TensorStrides[72], u32(ni), u32(di), u32(VgccH))] += dh;
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
+	u32(ni), u32(di), u32(VgccH))] += dh;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(VgccCa))] = VGCCParams_CaFromG(ac.VGCC, v, Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Gvgcc))], Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(VgccCa))]);
 }
 fn ActParams_GkFromVm(ac: ActParams, ctx: Context, ni: u32,di: u32) {
@@ -845,8 +845,8 @@ fn ActParams_VmFromG(ac: ActParams, ctx: Context, ni: u32,di: u32) {
 	if (updtVm) {
 		nvm = ActParams_VmFromInet(ac, nvm, ac.Dt.VmDendDt, ac.Dend.GExp*expi);
 	}
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71],
-	TensorStrides[72], u32(ni), u32(di), u32(VmDend))] = nvm;
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
+	u32(ni), u32(di), u32(VmDend))] = nvm;
 }
 fn ActParams_SpikeFromVmVars(ac: ActParams, nrnISI: ptr<function,f32>,nrnISIAvg: ptr<function,f32>,nrnSpike: ptr<function,f32>,nrnSpiked: ptr<function,f32>,nrnAct: ptr<function,f32>, nrnVm: f32) {
 	var thr: f32;
@@ -1740,8 +1740,8 @@ fn LearnTimingParams_LearnTiming(lt: LearnTimingParams, ctx: Context, ni: u32,di
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(PeakUps))] = 0.0;
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Enabled))] = 0.0;
 			if (learnImmed || refactory) { // can't do this for !learnImmed, b/c could have just learned above, in past..
-				Neurons[Index3D(TensorStrides[70], TensorStrides[71], // clears refactory
-				TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = 0.0;
+				Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // clears refactory
+				u32(ni), u32(di), u32(LearnNow))] = 0.0;
 			}return;
 		}
 	} else {
@@ -1749,8 +1749,8 @@ fn LearnTimingParams_LearnTiming(lt: LearnTimingParams, ctx: Context, ni: u32,di
 			if (ctx.CyclesTotal-minusWinCyc == lt.EnableWindow) {
 				Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Enabled))] = 0.0;
 				if (learnImmed || refactory) { // can't do this for !learnImmed, b/c could have just learned above, in past..
-					Neurons[Index3D(TensorStrides[70], TensorStrides[71], // clears refactory
-					TensorStrides[72], u32(ni), u32(di), u32(LearnNow))] = 0.0;
+					Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // clears refactory
+					u32(ni), u32(di), u32(LearnNow))] = 0.0;
 				}
 			}
 			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(TimePeak))] = 0.0;
@@ -1835,8 +1835,7 @@ fn LearnNeuronParams_GaMFromSpike(ln: LearnNeuronParams, ctx: Context, ni: u32,d
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaM))] = gaM;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaP))] = gaP;
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71],
-	TensorStrides[72],
-	u32(ni), u32(di), u32(GaD))] = gaD;
+	TensorStrides[72], u32(ni), u32(di), u32(GaD))] = gaD;
 }
 struct SWtInitParams {
 	SPct: f32,
@@ -2331,8 +2330,7 @@ fn AvgMaxVarIndex(vr: AvgMaxVars, phase: AvgMaxPhases, am: AvgMax) -> u32 {
 	return u32(poolFloatAvgMaxStart) + u32(vr)*u32(AvgMaxN)*u32(AvgMaxPhasesN) + u32(phase)*u32(AvgMaxN) + u32(am);
 }
 fn PoolAvgMax(vr: AvgMaxVars, phase: AvgMaxPhases, am: AvgMax, pi: u32,di: u32) -> f32 {
-	return Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132],
-	u32(pi), u32(di), u32(AvgMaxVarIndex(vr, phase, am)))];
+	return Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(AvgMaxVarIndex(vr, phase, am)))];
 }
 fn PoolNNeurons(pi: u32) -> i32 {
 	return i32(PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolNeurEd))] - PoolIxs[Index2D(TensorStrides[0], TensorStrides[1],

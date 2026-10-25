@@ -1201,8 +1201,7 @@ fn AvgMaxVarIndex(vr: AvgMaxVars, phase: AvgMaxPhases, am: AvgMax) -> u32 {
 	return u32(poolFloatAvgMaxStart) + u32(vr)*u32(AvgMaxN)*u32(AvgMaxPhasesN) + u32(phase)*u32(AvgMaxN) + u32(am);
 }
 fn PoolAvgMax(vr: AvgMaxVars, phase: AvgMaxPhases, am: AvgMax, pi: u32,di: u32) -> f32 {
-	return Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132],
-	u32(pi), u32(di), u32(AvgMaxVarIndex(vr, phase, am)))];
+	return Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(AvgMaxVarIndex(vr, phase, am)))];
 }
 fn PoolCycleToMinus(pi: u32,di: u32) {
 	for (var vr=0; vr<AMAvgDif; vr++) { // don't do AvgDif

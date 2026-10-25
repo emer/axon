@@ -3,9 +3,9 @@ module github.com/emer/axon/v2
 go 1.27.0
 
 require (
-	cogentcore.org/core v0.5.1
-	cogentcore.org/lab v0.2.1
-	github.com/cogentcore/yaegi v0.0.0-20261024094450-b0c6fff779d9
+	cogentcore.org/core v0.5.5
+	cogentcore.org/lab v0.2.4
+	github.com/cogentcore/yaegi v0.0.0-20261024142200-c0b92ec4f6b6
 	github.com/emer/emergent/v2 v2.0.0
 	github.com/emer/v1vision v0.9.0
 	github.com/stretchr/testify v1.11.1

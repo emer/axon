@@ -84,8 +84,7 @@ fn LayerParams_GiFromSpikes(ly: LayerParams, ctx: Context, ni: u32,di: u32) {
 	var geExt = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeExt))];
 	PoolInhibRawIncrInt(pi, di, spk, geRaw, geExt);
 	PoolAvgMaxUpdate(pi, di, ni);
-	if (PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], // also update layer pool if I am a subpool
-	u32(pi), u32(PoolIsLayer))] == 0) {
+	if (PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolIsLayer))] == 0) { // also update layer pool if I am a subpool
 		var lpi = LayerParams_PoolIndex(ly, u32(u32(0)));
 		PoolInhibRawIncrInt(lpi, di, spk, geRaw, geExt);
 		PoolAvgMaxUpdate(lpi, di, ni);
@@ -1289,9 +1288,13 @@ const  poolFloatAvgMaxStart = InhibVarsN;
 const  PoolVarsTotal = poolFloatAvgMaxStart + InhibVars(i32(AvgMaxVarsN)*i32(AvgMaxN)*i32(AvgMaxPhasesN));
 const  PoolIntVarsTot = PoolIntAvgMaxStart + PoolIntVars(i32(AvgMaxVarsN)*i32(AvgMaxN));
 const avgMaxToNeuron = array(CaP, CaD, CaPMax, Act, GeInt, GiInt);
-fn AvgMaxIntVarIndex(vr: AvgMaxVars, am: AvgMax) -> u32 { return u32(PoolIntAvgMaxStart) + u32(vr)*u32(AvgMaxN) + u32(am); }
-fn PoolNNeurons(pi: u32) -> i32 { return i32(PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolNeurEd))] - PoolIxs[Index2D(TensorStrides[0], TensorStrides[1],
-u32(pi), u32(PoolNeurSt))]); }
+fn AvgMaxIntVarIndex(vr: AvgMaxVars, am: AvgMax) -> u32 {
+	return u32(PoolIntAvgMaxStart) + u32(vr)*u32(AvgMaxN) + u32(am);
+}
+fn PoolNNeurons(pi: u32) -> i32 {
+	return i32(PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolNeurEd))] - PoolIxs[Index2D(TensorStrides[0], TensorStrides[1],
+	u32(pi), u32(PoolNeurSt))]);
+}
 fn PoolAvgMaxUpdateVar(vr: AvgMaxVars, pi: u32,di: u32, val: f32) {
 	var n = f32(PoolNNeurons(pi));
 	var floatToInt = f32(u32(1) << 20);
@@ -1299,8 +1302,7 @@ fn PoolAvgMaxUpdateVar(vr: AvgMaxVars, pi: u32,di: u32, val: f32) {
 	var vis = AvgMaxIntVarIndex(vr, Avg);
 	var vim = AvgMaxIntVarIndex(vr, Max);
 	atomicAdd(&PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(vis))], i32(val*floatToSum));
-	atomicMax(&PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142],
-	u32(pi), u32(di), u32(vim))], i32(val*floatToInt));
+	atomicMax(&PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(vim))], i32(val*floatToInt));
 }
 fn PoolAvgMaxUpdate(pi: u32,di: u32,ni: u32) {
 	PoolAvgMaxUpdateVar(AMCaP, pi, di, abs(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(avgMaxToNeuron[AMCaP]))]));

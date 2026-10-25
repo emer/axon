@@ -220,14 +220,14 @@ func (ws *PathScaleParams) FullScale(savg, snu, ncon float32) float32 {
 // in network level global list of all neurons to receiving
 // layer-specific index.
 func (pt *PathParams) SynRecvLayerIndex(syni uint32) uint32 {
-	return pt.Indexes.RecvNIndexToLayIndex(SynapseIxs.Value(int(syni), int(SynRecvIndex)))
+	return pt.Indexes.RecvNIndexToLayIndex(SynapseIxs.Value2D(int(syni), int(SynRecvIndex)))
 }
 
 // SynSendLayerIndex converts the Synapse SendIndex of sending neuron's index
 // in network level global list of all neurons to sending
 // layer-specific index.
 func (pt *PathParams) SynSendLayerIndex(syni uint32) uint32 {
-	return pt.Indexes.SendNIndexToLayIndex(SynapseIxs.Value(int(syni), int(SynSendIndex)))
+	return pt.Indexes.SendNIndexToLayIndex(SynapseIxs.Value2D(int(syni), int(SynSendIndex)))
 }
 
 //////// Cycle
@@ -237,11 +237,11 @@ func (pt *PathParams) SynSendLayerIndex(syni uint32) uint32 {
 func (pt *PathParams) GatherSpikes(ctx *Context, ly *LayerParams, ni, di, lni uint32) {
 	deli := pt.Com.ReadOff(ctx.CyclesTotal)
 	npti := pt.Indexes.NPathNeurSt + lni
-	gRaw := pt.Com.FloatFromGBuf(PathGBuf.Value(int(npti), int(di), int(deli)))
-	PathGBuf.Set(0, int(npti), int(di), int(deli))
-	gsyn := PathGSyns.Value(int(npti), int(di))
+	gRaw := pt.Com.FloatFromGBuf(PathGBuf.Value3D(int(npti), int(di), int(deli)))
+	PathGBuf.Set3D(0, int(npti), int(di), int(deli))
+	gsyn := PathGSyns.Value2D(int(npti), int(di))
 	pt.GatherSpikesGSyn(ctx, ly, ni, di, gRaw, &gsyn)
-	PathGSyns.Set(gsyn, int(npti), int(di))
+	PathGSyns.Set2D(gsyn, int(npti), int(di))
 }
 
 // GatherSpikesGSyn integrates G*Raw and G*Syn values for given neuron
@@ -251,22 +251,22 @@ func (pt *PathParams) GatherSpikesGSyn(ctx *Context, ly *LayerParams, ni, di uin
 	switch pt.Com.GType {
 	case ExcitatoryG:
 		*gSyn = ly.Acts.Dt.GeSynFromRaw(*gSyn, gRaw)
-		Neurons.SetAdd(gRaw, int(ni), int(di), int(GeRaw))
-		Neurons.SetAdd(*gSyn, int(ni), int(di), int(GeSyn))
+		Neurons.SetAdd3D(gRaw, int(ni), int(di), int(GeRaw))
+		Neurons.SetAdd3D(*gSyn, int(ni), int(di), int(GeSyn))
 	case InhibitoryG:
 		*gSyn = ly.Acts.Dt.GiSynFromRaw(*gSyn, gRaw)
-		Neurons.SetAdd(gRaw, int(ni), int(di), int(GiRaw))
-		Neurons.SetAdd(*gSyn, int(ni), int(di), int(GiSyn))
+		Neurons.SetAdd3D(gRaw, int(ni), int(di), int(GiRaw))
+		Neurons.SetAdd3D(*gSyn, int(ni), int(di), int(GiSyn))
 	case ModulatoryG:
 		*gSyn = ly.Acts.Dt.GeSynFromRaw(*gSyn, gRaw)
-		Neurons.SetAdd(gRaw, int(ni), int(di), int(GModRaw))
-		Neurons.SetAdd(*gSyn, int(ni), int(di), int(GModSyn))
+		Neurons.SetAdd3D(gRaw, int(ni), int(di), int(GModRaw))
+		Neurons.SetAdd3D(*gSyn, int(ni), int(di), int(GModSyn))
 	case MaintG:
 		*gSyn = ly.Acts.Dt.GeSynFromRaw(*gSyn, gRaw)
-		Neurons.SetAdd(gRaw, int(ni), int(di), int(GMaintRaw))
+		Neurons.SetAdd3D(gRaw, int(ni), int(di), int(GMaintRaw))
 	// note: Syn happens via NMDA in Act
 	case ContextG:
-		Neurons.SetAdd(gRaw, int(ni), int(di), int(CtxtGeRaw))
+		Neurons.SetAdd3D(gRaw, int(ni), int(di), int(CtxtGeRaw))
 	default:
 	}
 }
@@ -281,24 +281,24 @@ func (pt *PathParams) SendSpike(ctx *Context, ni, di, lni uint32) {
 		if uint32(ctx.Cycle) != uint32(ctx.ThetaCycles)-1-pt.Com.DelLen {
 			return
 		}
-		sendVal *= Neurons.Value(int(ni), int(di), int(Burst)) // Burst is regular CaP for all non-SuperLayer neurons
+		sendVal *= Neurons.Value3D(int(ni), int(di), int(Burst)) // Burst is regular CaP for all non-SuperLayer neurons
 	} else {
-		if Neurons.Value(int(ni), int(di), int(Spike)) == 0 {
+		if Neurons.Value3D(int(ni), int(di), int(Spike)) == 0 {
 			return
 		}
 	}
 	recvNeurSt := pt.Indexes.RecvNeurSt
 	npst := pt.Indexes.NPathNeurSt
 	cni := pt.Indexes.SendConSt + lni
-	synst := pt.Indexes.SynapseSt + PathSendCon.Value(int(cni), int(StartOff))
-	synn := PathSendCon.Value(int(cni), int(Nitems))
+	synst := pt.Indexes.SynapseSt + PathSendCon.Value2D(int(cni), int(StartOff))
+	synn := PathSendCon.Value2D(int(cni), int(Nitems))
 	for ci := uint32(0); ci < synn; ci++ {
 		syni := synst + ci
-		ri := SynapseIxs.Value(int(syni), int(SynRecvIndex))
+		ri := SynapseIxs.Value2D(int(syni), int(SynRecvIndex))
 		npti := npst + (ri - recvNeurSt)
 		deli := pt.Com.WriteOff(ctx.CyclesTotal)
-		sv := int32(sendVal * Synapses.Value(int(syni), int(Wt)))
-		atomic.AddInt32(PathGBuf.ValuePtr(int(npti), int(di), int(deli)), sv)
+		sv := int32(sendVal * Synapses.Value2D(int(syni), int(Wt)))
+		atomic.AddInt32(PathGBuf.ValuePtr3D(int(npti), int(di), int(deli)), sv)
 	}
 }
 
@@ -315,9 +315,9 @@ func (pt *PathParams) InitGBuffs(ctx *Context) {
 	for ri := uint32(0); ri < rnn; ri++ {
 		for di := uint32(0); di < maxd; di++ {
 			for dl := uint32(0); dl < mdel; dl++ {
-				PathGBuf.Set(0, int(npst+ri), int(di), int(dl))
+				PathGBuf.Set3D(0, int(npst+ri), int(di), int(dl))
 			}
-			PathGSyns.Set(0.0, int(npst+ri), int(di))
+			PathGSyns.Set2D(0.0, int(npst+ri), int(di))
 		}
 	}
 }

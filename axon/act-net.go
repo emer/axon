@@ -192,7 +192,7 @@ func GatherSpikes(i uint32) { //gosl:kernel
 		return
 	}
 	di := ctx.DataIndex(i)
-	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
+	li := NeuronIxs.Value2D(int(ni), int(NrnLayIndex))
 	Layers[li].GatherSpikes(ctx, ni, di)
 }
 
@@ -239,7 +239,7 @@ func CycleNeuron(i uint32) { //gosl:kernel
 		return
 	}
 	di := ctx.DataIndex(i)
-	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
+	li := NeuronIxs.Value2D(int(ni), int(NrnLayIndex))
 	Layers[li].CycleNeuron(ctx, ni, di)
 }
 
@@ -252,7 +252,7 @@ func SendSpike(i uint32) { //gosl:kernel
 		return
 	}
 	di := ctx.DataIndex(i)
-	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
+	li := NeuronIxs.Value2D(int(ni), int(NrnLayIndex))
 	Layers[li].SendSpike(ctx, ni, di)
 }
 
@@ -286,7 +286,7 @@ func ApplyExtsNeuron(i uint32) { //gosl:kernel
 		return
 	}
 	di := ctx.DataIndex(i)
-	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
+	li := NeuronIxs.Value2D(int(ni), int(NrnLayIndex))
 	Layers[li].ApplyExtsNeuron(ni, di)
 }
 
@@ -309,7 +309,7 @@ func NewStateNeuron(i uint32) { //gosl:kernel
 		return
 	}
 	di := ctx.DataIndex(i)
-	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
+	li := NeuronIxs.Value2D(int(ni), int(NrnLayIndex))
 	Layers[li].NewStateNeuron(ctx, ni, di)
 }
 
@@ -332,7 +332,7 @@ func Beta1Neuron(i uint32) { //gosl:kernel
 		return
 	}
 	di := ctx.DataIndex(i)
-	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
+	li := NeuronIxs.Value2D(int(ni), int(NrnLayIndex))
 	Layers[li].Beta1Neuron(ctx, ni, di)
 }
 
@@ -345,7 +345,7 @@ func Beta2Neuron(i uint32) { //gosl:kernel
 		return
 	}
 	di := ctx.DataIndex(i)
-	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
+	li := NeuronIxs.Value2D(int(ni), int(NrnLayIndex))
 	Layers[li].Beta2Neuron(ctx, ni, di)
 }
 
@@ -358,7 +358,7 @@ func MinusPhasePool(pi uint32) { //gosl:kernel
 	if pi >= NetworkIxs[0].NPools {
 		return
 	}
-	li := PoolIxs.Value(int(pi), int(PoolLayerIdx))
+	li := PoolIxs.Value2D(int(pi), int(PoolLayerIdx))
 	Layers[li].MinusPhasePool(ctx, pi)
 }
 
@@ -371,7 +371,7 @@ func MinusPhaseNeuron(i uint32) { //gosl:kernel
 		return
 	}
 	di := ctx.DataIndex(i)
-	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
+	li := NeuronIxs.Value2D(int(ni), int(NrnLayIndex))
 	Layers[li].MinusPhaseNeuron(ctx, ni, di)
 }
 
@@ -402,7 +402,7 @@ func PlusPhaseStartNeuron(i uint32) { //gosl:kernel
 		return
 	}
 	di := ctx.DataIndex(i)
-	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
+	li := NeuronIxs.Value2D(int(ni), int(NrnLayIndex))
 	Layers[li].PlusPhaseStartNeuron(ctx, ni, di)
 }
 
@@ -415,7 +415,7 @@ func PlusPhaseEndPool(i uint32) { //gosl:kernel
 		return
 	}
 	di := ctx.DataIndex(i)
-	li := PoolIxs.Value(int(pi), int(PoolLayerIdx))
+	li := PoolIxs.Value2D(int(pi), int(PoolLayerIdx))
 	Layers[li].PlusPhaseEndPool(ctx, pi, di)
 }
 
@@ -428,7 +428,7 @@ func PlusPhaseEndNeuron(i uint32) { //gosl:kernel
 		return
 	}
 	di := ctx.DataIndex(i)
-	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
+	li := NeuronIxs.Value2D(int(ni), int(NrnLayIndex))
 	Layers[li].PlusPhaseEndNeuron(ctx, ni, di)
 }
 
@@ -451,7 +451,7 @@ func GPUTestWrite(i uint32) { //gosl:kernel
 	}
 	di := ctx.DataIndex(i)
 	for vi := Spike; vi < NeuronVarsN; vi++ {
-		Neurons.Set(float32(ni*1000+uint32(vi)), int(ni), int(di), int(vi))
+		Neurons.Set3D(float32(ni*1000+uint32(vi)), int(ni), int(di), int(vi))
 	}
 }
 

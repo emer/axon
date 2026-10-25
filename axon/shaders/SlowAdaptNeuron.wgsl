@@ -765,9 +765,8 @@ fn PathParams_SynScale(pt: PathParams, ctx: Context, rlay: LayerParams, pti: u32
 	 ci < synn; ci++) {
 		var syni = RecvSynIxs[Index1D(TensorStrides[60], u32(synst + ci))];
 		var lwt = Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(LWt))];
-		var swt = Synapses[Index2D(TensorStrides[170], TensorStrides[171],
-		u32(syni), u32(SWt))];
-		if (adif >= 0) {
+		var swt = Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(SWt))];
+		if (adif >= 0) { // key to have soft bounding on lwt here!
 			Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(LWt))] += (1 - lwt) * adif * swt;
 		} else {
 			Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(LWt))] += lwt * adif * swt;

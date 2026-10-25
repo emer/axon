@@ -43,8 +43,8 @@ fn LayerParams_PlusPhaseStartNeuron(ly: LayerParams, ctx: Context, ni: u32,di: u
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Ext))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Target))];
 		NeuronSetFlag(NeuronHasExt, ni, di);
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(ISI))] = -1.0;
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71],
-		TensorStrides[72], u32(ni), u32(di), u32(ISIAvg))] = -1.0;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
+		u32(ni), u32(di), u32(ISIAvg))] = -1.0;
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(ActInt))] = ly.Acts.Init.Act;
 	}
 }

@@ -113,9 +113,9 @@ func (lc *LearnCaParams) ShouldDisplay(field string) bool {
 // and performs time-integration of VgccCa
 func (lc *LearnCaParams) VgccCaFromSpike(ctx *Context, ni, di uint32) {
 	if lc.SpikeVGCC.IsTrue() {
-		Neurons.Set(lc.SpikeVgccCa*Neurons.Value(int(ni), int(di), int(Spike)), int(ni), int(di), int(VgccCa))
+		Neurons.Set3D(lc.SpikeVgccCa*Neurons.Value3D(int(ni), int(di), int(Spike)), int(ni), int(di), int(VgccCa))
 	}
-	Neurons.SetAdd(Neurons.Value(int(ni), int(di), int(VgccCa))-lc.VgccDt*Neurons.Value(int(ni), int(di), int(VgccCaInt)), int(ni), int(di), int(VgccCaInt))
+	Neurons.SetAdd3D(Neurons.Value3D(int(ni), int(di), int(VgccCa))-lc.VgccDt*Neurons.Value3D(int(ni), int(di), int(VgccCaInt)), int(ni), int(di), int(VgccCaInt))
 	// Dt only affects decay, not rise time
 }
 
@@ -124,23 +124,23 @@ func (lc *LearnCaParams) VgccCaFromSpike(ctx *Context, ni, di uint32) {
 // perform its time-integration.
 func (lc *LearnCaParams) LearnCas(ctx *Context, ni, di uint32) {
 	lc.VgccCaFromSpike(ctx, ni, di)
-	Neurons.Set(lc.NormInv*(Neurons.Value(int(ni), int(di), int(NmdaCa))+Neurons.Value(int(ni), int(di), int(VgccCaInt))), int(ni), int(di), int(LearnCa))
-	Neurons.SetAdd(lc.Dt.MDt*(Neurons.Value(int(ni), int(di), int(LearnCa))-Neurons.Value(int(ni), int(di), int(LearnCaM))), int(ni), int(di), int(LearnCaM))
-	Neurons.SetAdd(lc.Dt.PDt*(Neurons.Value(int(ni), int(di), int(LearnCaM))-Neurons.Value(int(ni), int(di), int(LearnCaP))), int(ni), int(di), int(LearnCaP))
-	Neurons.SetAdd(lc.Dt.DDt*(Neurons.Value(int(ni), int(di), int(LearnCaP))-Neurons.Value(int(ni), int(di), int(LearnCaD))), int(ni), int(di), int(LearnCaD))
-	Neurons.Set(lc.PosBias*Neurons.Value(int(ni), int(di), int(LearnCaP))-Neurons.Value(int(ni), int(di), int(LearnCaD)), int(ni), int(di), int(CaDiff))
+	Neurons.Set3D(lc.NormInv*(Neurons.Value3D(int(ni), int(di), int(NmdaCa))+Neurons.Value3D(int(ni), int(di), int(VgccCaInt))), int(ni), int(di), int(LearnCa))
+	Neurons.SetAdd3D(lc.Dt.MDt*(Neurons.Value3D(int(ni), int(di), int(LearnCa))-Neurons.Value3D(int(ni), int(di), int(LearnCaM))), int(ni), int(di), int(LearnCaM))
+	Neurons.SetAdd3D(lc.Dt.PDt*(Neurons.Value3D(int(ni), int(di), int(LearnCaM))-Neurons.Value3D(int(ni), int(di), int(LearnCaP))), int(ni), int(di), int(LearnCaP))
+	Neurons.SetAdd3D(lc.Dt.DDt*(Neurons.Value3D(int(ni), int(di), int(LearnCaP))-Neurons.Value3D(int(ni), int(di), int(LearnCaD))), int(ni), int(di), int(LearnCaD))
+	Neurons.Set3D(lc.PosBias*Neurons.Value3D(int(ni), int(di), int(LearnCaP))-Neurons.Value3D(int(ni), int(di), int(LearnCaD)), int(ni), int(di), int(CaDiff))
 }
 
 func (lc *LearnCaParams) ETrace(ctx *Context, ni, di uint32, cad float32) {
-	tr := cad - Neurons.Value(int(ni), int(di), int(CaDPrev))
-	et := Neurons.Value(int(ni), int(di), int(ETrace))
+	tr := cad - Neurons.Value3D(int(ni), int(di), int(CaDPrev))
+	et := Neurons.Value3D(int(ni), int(di), int(ETrace))
 	et += lc.ETraceDt * (tr - et)
 	etLrn := 1 + lc.ETraceScale*et
 	if etLrn < 0 {
 		etLrn = 0
 	}
-	Neurons.Set(et, int(ni), int(di), int(ETrace))
-	Neurons.Set(etLrn, int(ni), int(di), int(ETrLearn))
+	Neurons.Set3D(et, int(ni), int(di), int(ETrace))
+	Neurons.Set3D(etLrn, int(ni), int(di), int(ETrLearn))
 }
 
 // LearnTimingParams parameterizes the timing of Ca-driven Kinase
@@ -246,8 +246,8 @@ func (lt *LearnTimingParams) ShouldDisplay(field string) bool {
 
 // LearnNowOff sets [LearnNow] to 0.
 func (lt *LearnTimingParams) LearnNowOff(ctx *Context, ni, di uint32) {
-	Neurons.Set(0.0, int(ni), int(di), int(Enabled))
-	Neurons.Set(0.0, int(ni), int(di), int(LearnNow))
+	Neurons.Set3D(0.0, int(ni), int(di), int(Enabled))
+	Neurons.Set3D(0.0, int(ni), int(di), int(LearnNow))
 }
 
 // | ISI | Minus            | Plus    |
@@ -259,8 +259,8 @@ func (lt *LearnTimingParams) LearnNowOff(ctx *Context, ni, di uint32) {
 func (lt *LearnTimingParams) LearnTrialEnd(ctx *Context, ni, di uint32) bool {
 	if ctx.Cycle == ctx.ThetaCycles-1 {
 		// todo: this is breaking the TestNDataLearn test, for DTr, Tr values :(
-		if Neurons.Value(int(ni), int(di), int(CaD)) > lt.LearnThr {
-			Neurons.Set(float32(ctx.CyclesTotal), int(ni), int(di), int(LearnNow))
+		if Neurons.Value3D(int(ni), int(di), int(CaD)) > lt.LearnThr {
+			Neurons.Set3D(float32(ctx.CyclesTotal), int(ni), int(di), int(LearnNow))
 			return true
 		}
 		lt.LearnNowOff(ctx, ni, di)
@@ -275,38 +275,38 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 		return
 	}
 
-	timeDiff := Neurons.Value(int(ni), int(di), int(TimeDiff))
-	gaDiff := math32.Abs(Neurons.Value(int(ni), int(di), int(GaP)) - Neurons.Value(int(ni), int(di), int(GaD)))
+	timeDiff := Neurons.Value3D(int(ni), int(di), int(TimeDiff))
+	gaDiff := math32.Abs(Neurons.Value3D(int(ni), int(di), int(GaP)) - Neurons.Value3D(int(ni), int(di), int(GaD)))
 	timeDiff += lt.TimeDiffDt * (gaDiff - timeDiff)
-	Neurons.Set(timeDiff, int(ni), int(di), int(TimeDiff))
+	Neurons.Set3D(timeDiff, int(ni), int(di), int(TimeDiff))
 
-	timePeak := Neurons.Value(int(ni), int(di), int(TimePeak))
-	peakCyc := int32(Neurons.Value(int(ni), int(di), int(TPeakCycle)))
+	timePeak := Neurons.Value3D(int(ni), int(di), int(TimePeak))
+	peakCyc := int32(Neurons.Value3D(int(ni), int(di), int(TPeakCycle)))
 
 	minusThr := lt.MinusWindow + lt.EnableWindow
-	minusCyc := int32(Neurons.Value(int(ni), int(di), int(MinusCycle)))
+	minusCyc := int32(Neurons.Value3D(int(ni), int(di), int(MinusCycle)))
 	gotMinus := minusCyc > 0 && ctx.CyclesTotal-minusCyc <= minusThr
 	justGotMinus := false
 
 	if !gotMinus {
 		newPeak := timeDiff > timePeak
 		if lt.NUps > 0 {
-			pups := int32(Neurons.Value(int(ni), int(di), int(PeakUps)))
+			pups := int32(Neurons.Value3D(int(ni), int(di), int(PeakUps)))
 			if pups < lt.NUps {
 				if newPeak {
 					timePeak = timeDiff
 					peakCyc = ctx.CyclesTotal
-					Neurons.Set(timePeak, int(ni), int(di), int(TimePeak))
-					Neurons.Set(float32(peakCyc), int(ni), int(di), int(TPeakCycle))
+					Neurons.Set3D(timePeak, int(ni), int(di), int(TimePeak))
+					Neurons.Set3D(float32(peakCyc), int(ni), int(di), int(TPeakCycle))
 				}
 				if ctx.CyclesTotal-peakCyc >= lt.MaxUpGap || !newPeak {
-					Neurons.Set(timeDiff, int(ni), int(di), int(TimePeak))
-					Neurons.Set(0.0, int(ni), int(di), int(PeakUps))
+					Neurons.Set3D(timeDiff, int(ni), int(di), int(TimePeak))
+					Neurons.Set3D(0.0, int(ni), int(di), int(PeakUps))
 					return
 				}
 				if newPeak {
 					pups++
-					Neurons.Set(float32(pups), int(ni), int(di), int(PeakUps))
+					Neurons.Set3D(float32(pups), int(ni), int(di), int(PeakUps))
 					if pups < lt.NUps {
 						return
 					}
@@ -316,28 +316,28 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 			if newPeak {
 				timePeak = timeDiff
 				peakCyc = ctx.CyclesTotal
-				Neurons.Set(timePeak, int(ni), int(di), int(TimePeak))
-				Neurons.Set(float32(peakCyc), int(ni), int(di), int(TPeakCycle))
+				Neurons.Set3D(timePeak, int(ni), int(di), int(TimePeak))
+				Neurons.Set3D(float32(peakCyc), int(ni), int(di), int(TPeakCycle))
 			}
 		}
 		if ctx.CyclesTotal-peakCyc < lt.MinusWindow {
 			return
 		}
 		minusCyc = peakCyc
-		Neurons.Set(float32(minusCyc), int(ni), int(di), int(MinusCycle))
-		Neurons.Set(float32(ctx.CyclesTotal), int(ni), int(di), int(MinusWindow))
-		Neurons.Set(timePeak, int(ni), int(di), int(MinusPeak))
+		Neurons.Set3D(float32(minusCyc), int(ni), int(di), int(MinusCycle))
+		Neurons.Set3D(float32(ctx.CyclesTotal), int(ni), int(di), int(MinusWindow))
+		Neurons.Set3D(timePeak, int(ni), int(di), int(MinusPeak))
 		justGotMinus = true
 	}
 
 	learnImmed := lt.LearnCycles >= 0 // LearnNow happens immediately after enabled
 	// otherwise, wait for another minus peak and learn *prior* to that
-	caD := Neurons.Value(int(ni), int(di), int(CaD))
-	learnNow := int32(Neurons.Value(int(ni), int(di), int(LearnNow)))
+	caD := Neurons.Value3D(int(ni), int(di), int(CaD))
+	learnNow := int32(Neurons.Value3D(int(ni), int(di), int(LearnNow)))
 	refactory := lt.Refractory.IsTrue() && learnNow > 0 // if any learning has happened before
 
 	if !learnImmed && justGotMinus { // learn on previous enabled state
-		prevEnabled := int32(Neurons.Value(int(ni), int(di), int(Enabled))) // this is *previous* enabled -- not yet updated
+		prevEnabled := int32(Neurons.Value3D(int(ni), int(di), int(Enabled))) // this is *previous* enabled -- not yet updated
 		pe := ctx.CyclesTotal - prevEnabled
 		isPrevEnabled := prevEnabled > 0 && minusCyc > prevEnabled && pe <= ctx.ThetaCycles+ctx.PlusCycles
 		if isPrevEnabled {
@@ -352,16 +352,16 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 			if lnow-ppOff >= 60 { // min limit on bins
 				lnow = ppOff + 59
 			}
-			Neurons.Set(float32(lnow), int(ni), int(di), int(LearnNow))           // will be in the past
-			Neurons.Set(float32(prevEnabled), int(ni), int(di), int(EnabledPrev)) // only save for learning ones
+			Neurons.Set3D(float32(lnow), int(ni), int(di), int(LearnNow))           // will be in the past
+			Neurons.Set3D(float32(prevEnabled), int(ni), int(di), int(EnabledPrev)) // only save for learning ones
 		} else {
-			Neurons.Set(0.0, int(ni), int(di), int(EnabledPrev)) // only save for learning ones
-			Neurons.Set(0.0, int(ni), int(di), int(LearnNow))
+			Neurons.Set3D(0.0, int(ni), int(di), int(EnabledPrev)) // only save for learning ones
+			Neurons.Set3D(0.0, int(ni), int(di), int(LearnNow))
 		}
 	}
 
-	minusWinCyc := int32(Neurons.Value(int(ni), int(di), int(MinusWindow)))
-	enabled := int32(Neurons.Value(int(ni), int(di), int(Enabled)))
+	minusWinCyc := int32(Neurons.Value3D(int(ni), int(di), int(MinusWindow)))
+	enabled := int32(Neurons.Value3D(int(ni), int(di), int(Enabled)))
 	enabWin := enabled - minusWinCyc
 	if enabled > 0 && enabWin >= 0 && enabWin < lt.EnableWindow { // already enabled
 		return
@@ -372,55 +372,55 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 			return
 		}
 		if caD < lt.LearnThr { // didn't get above threshold
-			Neurons.Set(0.0, int(ni), int(di), int(TimePeak))
-			Neurons.Set(0.0, int(ni), int(di), int(PeakUps))
-			Neurons.Set(0.0, int(ni), int(di), int(Enabled))
+			Neurons.Set3D(0.0, int(ni), int(di), int(TimePeak))
+			Neurons.Set3D(0.0, int(ni), int(di), int(PeakUps))
+			Neurons.Set3D(0.0, int(ni), int(di), int(Enabled))
 			if learnImmed || refactory { // can't do this for !learnImmed, b/c could have just learned above, in past..
-				Neurons.Set(0.0, int(ni), int(di), int(LearnNow)) // clears refactory
+				Neurons.Set3D(0.0, int(ni), int(di), int(LearnNow)) // clears refactory
 			}
 			return
 		}
 	} else {
 		if ctx.CyclesTotal-minusWinCyc >= lt.EnableWindow { // not going to happen
 			if ctx.CyclesTotal-minusWinCyc == lt.EnableWindow {
-				Neurons.Set(0.0, int(ni), int(di), int(Enabled))
+				Neurons.Set3D(0.0, int(ni), int(di), int(Enabled))
 				if learnImmed || refactory { // can't do this for !learnImmed, b/c could have just learned above, in past..
-					Neurons.Set(0.0, int(ni), int(di), int(LearnNow)) // clears refactory
+					Neurons.Set3D(0.0, int(ni), int(di), int(LearnNow)) // clears refactory
 				}
 			}
-			Neurons.Set(0.0, int(ni), int(di), int(TimePeak))
-			Neurons.Set(0.0, int(ni), int(di), int(PeakUps))
+			Neurons.Set3D(0.0, int(ni), int(di), int(TimePeak))
+			Neurons.Set3D(0.0, int(ni), int(di), int(PeakUps))
 			return
 		}
 		if caD < lt.LearnThr { // didn't get above threshold *this time*
 			return
 		}
 	}
-	Neurons.Set(0.0, int(ni), int(di), int(TimePeak))
-	Neurons.Set(0.0, int(ni), int(di), int(PeakUps))
+	Neurons.Set3D(0.0, int(ni), int(di), int(TimePeak))
+	Neurons.Set3D(0.0, int(ni), int(di), int(PeakUps))
 	if refactory {
 		return
 	}
-	Neurons.Set(float32(ctx.CyclesTotal), int(ni), int(di), int(Enabled))
+	Neurons.Set3D(float32(ctx.CyclesTotal), int(ni), int(di), int(Enabled))
 	if learnImmed { // set LearnNow immediately when enabled, in the future
 		lnow := minusWinCyc + lt.LearnCycles
 		if lnow <= ctx.ThetaStart {
 			lnow = ctx.ThetaStart + 1
 		}
-		Neurons.Set(float32(lnow), int(ni), int(di), int(LearnNow))
+		Neurons.Set3D(float32(lnow), int(ni), int(di), int(LearnNow))
 	}
 }
 
 // LearnRecvTrace records the RecvLearnTrace value for timing-based learning.
 func (lt *LearnTimingParams) LearnRecvTrace(ctx *Context, ni, di uint32) {
-	lrn := Neurons.Value(int(ni), int(di), int(CaDiff)) * Neurons.Value(int(ni), int(di), int(RLRate)) * Neurons.Value(int(ni), int(di), int(ETrLearn))
+	lrn := Neurons.Value3D(int(ni), int(di), int(CaDiff)) * Neurons.Value3D(int(ni), int(di), int(RLRate)) * Neurons.Value3D(int(ni), int(di), int(ETrLearn))
 	if lt.On.IsFalse() {
 		if ctx.Cycle == ctx.ThetaCycles-1 {
 			NeuronTraceSet(lrn, RecvLearnTrace, ctx.CyclesTotal, ni, di)
 		}
 		return
 	}
-	learnNow := int32(Neurons.Value(int(ni), int(di), int(LearnNow)))
+	learnNow := int32(Neurons.Value3D(int(ni), int(di), int(LearnNow)))
 	if lt.LearnCycles >= 0 { // learn immediately after enabled
 		if learnNow > 0 && ctx.CyclesTotal == learnNow+1 {
 			NeuronTraceSet(lrn, RecvLearnTrace, learnNow, ni, di)
@@ -430,14 +430,14 @@ func (lt *LearnTimingParams) LearnRecvTrace(ctx *Context, ni, di uint32) {
 	ppOff := ctx.ThetaStart + ctx.ISICycles + ctx.MinusCycles + 10 // have to constrain due to RecvTrace recording
 	// this is saved in advance of knowing when learnNow will happen!
 	// and must be when Enabled will be relevant.
-	enabled := int32(Neurons.Value(int(ni), int(di), int(Enabled)))
+	enabled := int32(Neurons.Value3D(int(ni), int(di), int(Enabled)))
 	if enabled == 0 {
 		return
 	}
 	bin := ctx.CyclesTotal - ppOff
 	if bin >= 0 && bin < 60 { // 60 is min for 3 * 20 bins
 		bi := NeuronTraceBinIndex(RecvLearnTrace, bin)
-		Neurons.Set(lrn, int(ni), int(di), int(int(NeuronTraces+NeuronVars(bi))))
+		Neurons.Set3D(lrn, int(ni), int(di), int(int(NeuronTraces+NeuronVars(bi))))
 	}
 }
 
@@ -700,42 +700,42 @@ func (ln *LearnNeuronParams) Defaults() {
 // InitNeuronCa initializes the neuron-level calcium learning and spking variables.
 // Called by InitWeights (at start of learning).
 func (ln *LearnNeuronParams) InitNeuronCa(ctx *Context, ni, di uint32) {
-	Neurons.Set(0, int(ni), int(di), int(GnmdaLrn))
-	Neurons.Set(0, int(ni), int(di), int(NmdaCa))
+	Neurons.Set3D(0, int(ni), int(di), int(GnmdaLrn))
+	Neurons.Set3D(0, int(ni), int(di), int(NmdaCa))
 
-	Neurons.Set(0, int(ni), int(di), int(VgccCa))
-	Neurons.Set(0, int(ni), int(di), int(VgccCaInt))
+	Neurons.Set3D(0, int(ni), int(di), int(VgccCa))
+	Neurons.Set3D(0, int(ni), int(di), int(VgccCaInt))
 
-	Neurons.Set(0, int(ni), int(di), int(LearnCa))
+	Neurons.Set3D(0, int(ni), int(di), int(LearnCa))
 
-	Neurons.Set(0, int(ni), int(di), int(CaM))
-	Neurons.Set(0, int(ni), int(di), int(CaP))
-	Neurons.Set(0, int(ni), int(di), int(CaD))
-	Neurons.Set(0, int(ni), int(di), int(CaDPrev))
+	Neurons.Set3D(0, int(ni), int(di), int(CaM))
+	Neurons.Set3D(0, int(ni), int(di), int(CaP))
+	Neurons.Set3D(0, int(ni), int(di), int(CaD))
+	Neurons.Set3D(0, int(ni), int(di), int(CaDPrev))
 
-	Neurons.Set(0, int(ni), int(di), int(CaSyn))
-	Neurons.Set(0, int(ni), int(di), int(LearnCaM))
-	Neurons.Set(0, int(ni), int(di), int(LearnCaP))
-	Neurons.Set(0, int(ni), int(di), int(LearnCaD))
-	Neurons.Set(0, int(ni), int(di), int(CaDiff))
+	Neurons.Set3D(0, int(ni), int(di), int(CaSyn))
+	Neurons.Set3D(0, int(ni), int(di), int(LearnCaM))
+	Neurons.Set3D(0, int(ni), int(di), int(LearnCaP))
+	Neurons.Set3D(0, int(ni), int(di), int(LearnCaD))
+	Neurons.Set3D(0, int(ni), int(di), int(CaDiff))
 
-	Neurons.Set(0, int(ni), int(di), int(GaM))
-	Neurons.Set(0, int(ni), int(di), int(GaP))
-	Neurons.Set(0, int(ni), int(di), int(GaD))
+	Neurons.Set3D(0, int(ni), int(di), int(GaM))
+	Neurons.Set3D(0, int(ni), int(di), int(GaP))
+	Neurons.Set3D(0, int(ni), int(di), int(GaD))
 
-	Neurons.Set(0.0, int(ni), int(di), int(TimeDiff))
-	Neurons.Set(0, int(ni), int(di), int(TimePeak))
-	Neurons.Set(0.0, int(ni), int(di), int(TPeakCycle))
-	Neurons.Set(0, int(ni), int(di), int(PeakUps))
-	Neurons.Set(0, int(ni), int(di), int(MinusPeak))
-	Neurons.Set(0, int(ni), int(di), int(MinusCycle))
-	Neurons.Set(0, int(ni), int(di), int(MinusWindow))
-	Neurons.Set(0, int(ni), int(di), int(Enabled))
-	Neurons.Set(0, int(ni), int(di), int(EnabledPrev))
-	Neurons.Set(0, int(ni), int(di), int(LearnNow))
+	Neurons.Set3D(0.0, int(ni), int(di), int(TimeDiff))
+	Neurons.Set3D(0, int(ni), int(di), int(TimePeak))
+	Neurons.Set3D(0.0, int(ni), int(di), int(TPeakCycle))
+	Neurons.Set3D(0, int(ni), int(di), int(PeakUps))
+	Neurons.Set3D(0, int(ni), int(di), int(MinusPeak))
+	Neurons.Set3D(0, int(ni), int(di), int(MinusCycle))
+	Neurons.Set3D(0, int(ni), int(di), int(MinusWindow))
+	Neurons.Set3D(0, int(ni), int(di), int(Enabled))
+	Neurons.Set3D(0, int(ni), int(di), int(EnabledPrev))
+	Neurons.Set3D(0, int(ni), int(di), int(LearnNow))
 
-	Neurons.Set(0, int(ni), int(di), int(PoolDAD1))
-	Neurons.Set(0, int(ni), int(di), int(PoolDAD2))
+	Neurons.Set3D(0, int(ni), int(di), int(PoolDAD1))
+	Neurons.Set3D(0, int(ni), int(di), int(PoolDAD2))
 }
 
 // LearnNMDAFromRaw updates the separate NMDA conductance and calcium values
@@ -744,41 +744,41 @@ func (ln *LearnNeuronParams) InitNeuronCa(ctx *Context, ni, di uint32) {
 // for testing learning Ca effects independent of activation effects.
 func (ln *LearnNeuronParams) LearnNMDAFromRaw(ctx *Context, ni, di uint32, geTot float32) {
 	geEff := max(geTot, 0.0)
-	vmd := Neurons.Value(int(ni), int(di), int(VmDend))
-	Neurons.Set(ln.LearnNMDA.NMDASyn(Neurons.Value(int(ni), int(di), int(GnmdaLrn)), geEff), int(ni), int(di), int(GnmdaLrn))
-	gnmda := ln.LearnNMDA.Gnmda(Neurons.Value(int(ni), int(di), int(GnmdaLrn)), vmd)
-	Neurons.Set(float32(gnmda*ln.LearnNMDA.CaFromV(vmd)), int(ni), int(di), int(NmdaCa))
+	vmd := Neurons.Value3D(int(ni), int(di), int(VmDend))
+	Neurons.Set3D(ln.LearnNMDA.NMDASyn(Neurons.Value3D(int(ni), int(di), int(GnmdaLrn)), geEff), int(ni), int(di), int(GnmdaLrn))
+	gnmda := ln.LearnNMDA.Gnmda(Neurons.Value3D(int(ni), int(di), int(GnmdaLrn)), vmd)
+	Neurons.Set3D(float32(gnmda*ln.LearnNMDA.CaFromV(vmd)), int(ni), int(di), int(NmdaCa))
 }
 
 // CaFromSpike updates all spike-driven calcium variables, including LearnCa and CaSpike.
 // Computed after new activation for current cycle is updated.
 func (ln *LearnNeuronParams) CaFromSpike(ctx *Context, ni, di uint32) {
-	caM := Neurons.Value(int(ni), int(di), int(CaM))
-	caP := Neurons.Value(int(ni), int(di), int(CaP))
-	caD := Neurons.Value(int(ni), int(di), int(CaD))
-	spike := Neurons.Value(int(ni), int(di), int(Spike))
+	caM := Neurons.Value3D(int(ni), int(di), int(CaM))
+	caP := Neurons.Value3D(int(ni), int(di), int(CaP))
+	caD := Neurons.Value3D(int(ni), int(di), int(CaD))
+	spike := Neurons.Value3D(int(ni), int(di), int(Spike))
 	ln.CaSpike.CaMFromSpike(spike, &caM, &caP, &caD)
-	Neurons.Set(caM, int(ni), int(di), int(CaM))
-	Neurons.Set(caP, int(ni), int(di), int(CaP))
-	Neurons.Set(caD, int(ni), int(di), int(CaD))
+	Neurons.Set3D(caM, int(ni), int(di), int(CaM))
+	Neurons.Set3D(caP, int(ni), int(di), int(CaP))
+	Neurons.Set3D(caD, int(ni), int(di), int(CaD))
 
-	caSyn := Neurons.Value(int(ni), int(di), int(CaSyn))
+	caSyn := Neurons.Value3D(int(ni), int(di), int(CaSyn))
 	caSyn = ln.CaSpike.CaSynFromSpike(spike, caSyn)
-	Neurons.Set(caSyn, int(ni), int(di), int(CaSyn))
+	Neurons.Set3D(caSyn, int(ni), int(di), int(CaSyn))
 
 	ln.CaLearn.LearnCas(ctx, ni, di)
 }
 
 // GaMFromSpike updates GaM, GaP, and GaD, used for timing learning.
 func (ln *LearnNeuronParams) GaMFromSpike(ctx *Context, ni, di uint32) {
-	ga := Neurons.Value(int(ni), int(di), int(Ge)) + Neurons.Value(int(ni), int(di), int(Gi))
-	gaM := Neurons.Value(int(ni), int(di), int(GaM))
-	gaP := Neurons.Value(int(ni), int(di), int(GaP))
-	gaD := Neurons.Value(int(ni), int(di), int(GaD))
+	ga := Neurons.Value3D(int(ni), int(di), int(Ge)) + Neurons.Value3D(int(ni), int(di), int(Gi))
+	gaM := Neurons.Value3D(int(ni), int(di), int(GaM))
+	gaP := Neurons.Value3D(int(ni), int(di), int(GaP))
+	gaD := Neurons.Value3D(int(ni), int(di), int(GaD))
 	ln.CaSpike.Dt.FromCa(ga, &gaM, &gaP, &gaD)
-	Neurons.Set(gaM, int(ni), int(di), int(GaM))
-	Neurons.Set(gaP, int(ni), int(di), int(GaP))
-	Neurons.Set(gaD, int(ni), int(di), int(GaD))
+	Neurons.Set3D(gaM, int(ni), int(di), int(GaM))
+	Neurons.Set3D(gaP, int(ni), int(di), int(GaP))
+	Neurons.Set3D(gaD, int(ni), int(di), int(GaD))
 }
 
 ////////  SWtParams
@@ -1059,22 +1059,22 @@ func (sp *SWtInitParams) RandVar(rnd randx.Rand) float32 {
 func (sp *SWtParams) InitWeightsSyn(ctx *Context, syni uint32, rnd randx.Rand, mean, spct float32) {
 	wtv := sp.Init.RandVar(rnd)
 	wt := mean + wtv
-	Synapses.Set(wt, int(syni), int(Wt))
-	Synapses.Set(sp.ClipSWt(mean+spct*wtv), int(syni), int(SWt))
+	Synapses.Set2D(wt, int(syni), int(Wt))
+	Synapses.Set2D(sp.ClipSWt(mean+spct*wtv), int(syni), int(SWt))
 	if spct == 0 { // this is critical for weak init wt, SPCt = 0 paths
-		Synapses.Set(0.5, int(syni), int(SWt))
+		Synapses.Set2D(0.5, int(syni), int(SWt))
 	}
-	Synapses.Set(sp.LWtFromWts(wt, Synapses.Value(int(syni), int(SWt))), int(syni), int(LWt))
-	Synapses.Set(0, int(syni), int(DWt))
-	Synapses.Set(0, int(syni), int(DSWt))
+	Synapses.Set2D(sp.LWtFromWts(wt, Synapses.Value2D(int(syni), int(SWt))), int(syni), int(LWt))
+	Synapses.Set2D(0, int(syni), int(DWt))
+	Synapses.Set2D(0, int(syni), int(DSWt))
 }
 
 // InitWeightsSynTrace initializes SynapseTrace values
 // for an individual synapse.
 func (sp *SWtParams) InitWeightsSynTrace(ctx *Context, syni, di uint32) {
-	SynapseTraces.Set(0, int(syni), int(di), int(Tr))
-	SynapseTraces.Set(0, int(syni), int(di), int(DTr))
-	SynapseTraces.Set(0, int(syni), int(di), int(DiDWt))
+	SynapseTraces.Set3D(0, int(syni), int(di), int(Tr))
+	SynapseTraces.Set3D(0, int(syni), int(di), int(DTr))
+	SynapseTraces.Set3D(0, int(syni), int(di), int(DiDWt))
 }
 
 //gosl:start

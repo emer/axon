@@ -233,8 +233,8 @@ fn LayerParams_RLRate(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,di
 		da = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], // our own personal
 		u32(GvVSPatchPosRPE), u32(di))];
 		modlr = NeuroModParams_LRMod(ly.Learn.NeuroMod, da, ach);
-		mlr = RLRateParams_RLRateSigDeriv(ly.Learn.RLRate, Neurons[Index3D(TensorStrides[70], TensorStrides[71], // note: don't have proper max here
-		TensorStrides[72], u32(ni), u32(di), u32(CaDPrev))], f32(f32(1)));
+		mlr = RLRateParams_RLRateSigDeriv(ly.Learn.RLRate, Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // note: don't have proper max here
+		u32(ni), u32(di), u32(CaDPrev))], f32(f32(1)));
 	}
 	case VSMatrixLayer, DSMatrixLayer: {
 		if (hasRew) { // reward time
@@ -1492,10 +1492,10 @@ fn LayerParams_IOLearn(ly: LayerParams, ctx: Context, lpi: u32,pi: u32,ni: u32,d
 	var gaM = modFact * Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaM))];
 	gaM += ly.IO.GDt * (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GiSyn))] - gaM);
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GaM))] = gaM;
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], // set below for display
-	TensorStrides[72], u32(ni), u32(di), u32(TimeDiff))] = 0.0;
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], // default is no spike
-	TensorStrides[72], u32(ni), u32(di), u32(Spike))] = 0.0;
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // set below for display
+	u32(ni), u32(di), u32(TimeDiff))] = 0.0;
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // default is no spike
+	u32(ni), u32(di), u32(Spike))] = 0.0;
 	if (effAct > 0 && envCyc <= ly.IO.EfferentOff+NeuronTraceCycles) {
 		NeuronTraceSet(gaM, CaSynTrace, ctx.CyclesTotal, ni, di);
 	} else {
@@ -1741,8 +1741,7 @@ fn AvgMaxVarIndex(vr: AvgMaxVars, phase: AvgMaxPhases, am: AvgMax) -> u32 {
 	return u32(poolFloatAvgMaxStart) + u32(vr)*u32(AvgMaxN)*u32(AvgMaxPhasesN) + u32(phase)*u32(AvgMaxN) + u32(am);
 }
 fn PoolAvgMax(vr: AvgMaxVars, phase: AvgMaxPhases, am: AvgMax, pi: u32,di: u32) -> f32 {
-	return Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132],
-	u32(pi), u32(di), u32(AvgMaxVarIndex(vr, phase, am)))];
+	return Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(AvgMaxVarIndex(vr, phase, am)))];
 }
 fn PoolNNeurons(pi: u32) -> i32 {
 	return i32(PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolNeurEd))] - PoolIxs[Index2D(TensorStrides[0], TensorStrides[1],

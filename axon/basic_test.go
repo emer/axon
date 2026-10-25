@@ -246,12 +246,12 @@ func TestSpikeProp(t *testing.T) {
 		for cyc := range 100 {
 			net.Cycle(true)
 			// fmt.Println(cyc, Neurons[hidLay.NeurStIndex, 0, Ge], Neurons[hidLay.NeurStIndex, 0, GeRaw])
-			if Neurons.Value(int(inLay.NeurStIndex), int(0), int(Spike)) > 0 {
+			if Neurons.Value3D(int(inLay.NeurStIndex), int(0), int(Spike)) > 0 {
 				// fmt.Println("in spike:", cyc)
 				inCyc = cyc
 			}
 
-			ge := Neurons.Value(int(hidLay.NeurStIndex), int(0), int(Ge))
+			ge := Neurons.Value3D(int(hidLay.NeurStIndex), int(0), int(Ge))
 			if ge > 0 {
 				// fmt.Println("hid recv:", cyc, ge)
 				hidCyc = cyc
@@ -270,11 +270,11 @@ func TestSpikeProp(t *testing.T) {
 func poolValues(pi uint32, di int, vals map[string]float32, key string) {
 	for i := range uint32(PoolVarsTotal) {
 		kk := key + fmt.Sprintf("\t%s", PoolVarName(i))
-		vals[kk] = Pools.Value(int(pi), int(di), int(i))
+		vals[kk] = Pools.Value3D(int(pi), int(di), int(i))
 	}
 	for i := range uint32(PoolIntVarsTot) {
 		kk := key + fmt.Sprintf("\t%s", PoolIntVarName(i))
-		vals[kk] = float32(PoolsInt.Value(int(pi), int(di), int(i)))
+		vals[kk] = float32(PoolsInt.Value3D(int(pi), int(di), int(i)))
 	}
 }
 
@@ -282,7 +282,7 @@ func poolValues(pi uint32, di int, vals map[string]float32, key string) {
 func layerStates(li, di int, vals map[string]float32, key string) {
 	for i := range uint32(LayerVarsN) {
 		kk := key + fmt.Sprintf("\t%s", LayerVars(i).String())
-		vals[kk] = LayerStates.Value(int(li), int(di), int(i))
+		vals[kk] = LayerStates.Value3D(int(li), int(di), int(i))
 	}
 }
 
@@ -1542,7 +1542,7 @@ func TestSendGatherIndexes(t *testing.T) {
 	for cyc := int32(0); cyc < maxCyc; cyc++ {
 		for ni := uint32(0); ni < nni; ni++ {
 			for di := uint32(0); di < nData; di++ {
-				li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
+				li := NeuronIxs.Value2D(int(ni), int(NrnLayIndex))
 				ly := net.Layers[li]
 				if len(ly.SendPaths) > 0 {
 					ptt := ly.SendPaths[0]
@@ -1553,7 +1553,7 @@ func TestSendGatherIndexes(t *testing.T) {
 					for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 						syni := ptt.SynStIndex + syi
 						recvIndex := pt.SynRecvLayerIndex(syni) // note: layer-specific is ok here
-						ri := SynapseIxs.Value(int(syni), int(SynRecvIndex))
+						ri := SynapseIxs.Value2D(int(syni), int(SynRecvIndex))
 						_ = ri
 						npti := pt.Indexes.NPathNeurSt + recvIndex
 						_ = npti

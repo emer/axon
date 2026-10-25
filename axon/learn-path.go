@@ -71,29 +71,29 @@ func (pt *PathParams) SynCa(ctx *Context, si, ri, di uint32, syCaP, syCaD *float
 	b0 := NeuronTraceIndex(CaSynTrace, stcyc)
 
 	// T0
-	r0 := Neurons.Value(int(ri), int(di), int(NeuronTraces+NeuronVars(b0)))
-	s0 := Neurons.Value(int(si), int(di), int(NeuronTraces+NeuronVars(b0)))
+	r0 := Neurons.Value3D(int(ri), int(di), int(NeuronTraces+NeuronVars(b0)))
+	s0 := Neurons.Value3D(int(si), int(di), int(NeuronTraces+NeuronVars(b0)))
 	sp := r0 * s0
-	cp := sp * GlobalScalars.Value(int(GvSynCaWts+GlobalScalarVars(0)), int(0))
-	cd := sp * GlobalScalars.Value(int(cadSt+GlobalScalarVars(0)), int(0))
+	cp := sp * GlobalScalars.Value2D(int(GvSynCaWts+GlobalScalarVars(0)), int(0))
+	cd := sp * GlobalScalars.Value2D(int(cadSt+GlobalScalarVars(0)), int(0))
 
 	syn20 := pt.Learn.DWt.SynCa20.IsTrue()
 
 	for i := int32(1); i < nbins; i++ {
 		bi := NeuronTraceIndex(CaSynTrace, stcyc+i*NeuronTraceCycles)
-		rt := Neurons.Value(int(ri), int(di), int(NeuronTraces+NeuronVars(bi)))
-		st := Neurons.Value(int(si), int(di), int(NeuronTraces+NeuronVars(bi)))
+		rt := Neurons.Value3D(int(ri), int(di), int(NeuronTraces+NeuronVars(bi)))
+		st := Neurons.Value3D(int(si), int(di), int(NeuronTraces+NeuronVars(bi)))
 		sp := float32(0)
 		if syn20 {
 			bm := NeuronTraceIndex(CaSynTrace, stcyc+(i-1)*NeuronTraceCycles)
-			rt1 := Neurons.Value(int(ri), int(di), int(NeuronTraces+NeuronVars(bm)))
-			st1 := Neurons.Value(int(si), int(di), int(NeuronTraces+NeuronVars(bm)))
+			rt1 := Neurons.Value3D(int(ri), int(di), int(NeuronTraces+NeuronVars(bm)))
+			st1 := Neurons.Value3D(int(si), int(di), int(NeuronTraces+NeuronVars(bm)))
 			sp = 0.25 * (rt + rt1) * (st + st1)
 		} else {
 			sp = rt * st
 		}
-		cp += sp * GlobalScalars.Value(int(GvSynCaWts+GlobalScalarVars(i)), int(0))
-		cd += sp * GlobalScalars.Value(int(cadSt+GlobalScalarVars(i)), int(0))
+		cp += sp * GlobalScalars.Value2D(int(GvSynCaWts+GlobalScalarVars(i)), int(0))
+		cd += sp * GlobalScalars.Value2D(int(cadSt+GlobalScalarVars(i)), int(0))
 	}
 	*syCaP = pt.Learn.DWt.CaPScale * cp
 	*syCaD = cd
@@ -109,8 +109,8 @@ func (pt *PathParams) SynCaTotal(ctx *Context, si, ri, di uint32, edcyc, ncyc in
 	sum := float32(0)
 	for i := range nbins {
 		bi := NeuronTraceIndex(CaSynTrace, stcyc+i*NeuronTraceCycles)
-		rc := Neurons.Value(int(ri), int(di), int(NeuronTraces+NeuronVars(bi)))
-		sc := Neurons.Value(int(si), int(di), int(NeuronTraces+NeuronVars(bi)))
+		rc := Neurons.Value3D(int(ri), int(di), int(NeuronTraces+NeuronVars(bi)))
+		sc := Neurons.Value3D(int(si), int(di), int(NeuronTraces+NeuronVars(bi)))
 		sum += rc * sc
 	}
 	return sum * (8.0 / float32(nbins)) // original 150/50 weights sum to 8
@@ -125,16 +125,16 @@ func (pt *PathParams) SynCaTotal(ctx *Context, si, ri, di uint32, edcyc, ncyc in
 // into the zero-sum computation.
 func (pt *PathParams) DWtSynSoftBound(ctx *Context, syni, di uint32, dwt float32) {
 	if dwt == 0 {
-		SynapseTraces.Set(0.0, int(syni), int(di), int(DiDWt))
+		SynapseTraces.Set3D(0.0, int(syni), int(di), int(DiDWt))
 	} else {
-		lwt := Synapses.Value(int(syni), int(LWt)) // linear weight
+		lwt := Synapses.Value2D(int(syni), int(LWt)) // linear weight
 		edw := dwt
 		if edw > 0 {
 			edw *= (1 - lwt)
 		} else {
 			edw *= lwt
 		}
-		SynapseTraces.Set(pt.Learn.LRate.Eff*edw, int(syni), int(di), int(DiDWt))
+		SynapseTraces.Set3D(pt.Learn.LRate.Eff*edw, int(syni), int(di), int(DiDWt))
 	}
 }
 
@@ -143,26 +143,26 @@ func (pt *PathParams) DWtSynSoftBound(ctx *Context, syni, di uint32, dwt float32
 // based on the receiving neuron's [LearnCaP] - [LearnCaD], multiplied by a separate
 // synaptic activation credit assignment factor computed from synaptic co-product CaD values.
 func (pt *PathParams) DWtSynCortex(ctx *Context, rlay *LayerParams, syni, si, ri, di uint32) {
-	learnNow := int32(Neurons.Value(int(ri), int(di), int(LearnNow)))
+	learnNow := int32(Neurons.Value3D(int(ri), int(di), int(LearnNow)))
 	winSt := ctx.CyclesTotal - ctx.ThetaCycles
 	winEd := ctx.CyclesTotal
 	if learnNow == 0 || learnNow < winSt || learnNow > winEd { // not in this time window
-		SynapseTraces.Set(0.0, int(syni), int(di), int(DTr))
-		SynapseTraces.Set(0.0, int(syni), int(di), int(DiDWt))
+		SynapseTraces.Set3D(0.0, int(syni), int(di), int(DTr))
+		SynapseTraces.Set3D(0.0, int(syni), int(di), int(DiDWt))
 		return
 	}
 	syCa := pt.SynCaTotal(ctx, si, ri, di, learnNow, rlay.Learn.Timing.SynCaCycles)
 
 	// integrate synaptic trace over time: this is actually beneficial in certain cases,
 	// in addition to the ETrLearn factor.
-	SynapseTraces.Set(syCa, int(syni), int(di), int(DTr))
-	tr := pt.Learn.DWt.SynTrace(SynapseTraces.Value(int(syni), int(di), int(Tr)), syCa)
-	SynapseTraces.Set(tr, int(syni), int(di), int(Tr))
+	SynapseTraces.Set3D(syCa, int(syni), int(di), int(DTr))
+	tr := pt.Learn.DWt.SynTrace(SynapseTraces.Value3D(int(syni), int(di), int(Tr)), syCa)
+	SynapseTraces.Set3D(tr, int(syni), int(di), int(Tr))
 
 	dwt := float32(0)
 	if syCa > pt.Learn.DWt.LearnThr { // todo: elminate?
 		bi := NeuronTraceIndex(RecvLearnTrace, learnNow)
-		rLrn := Neurons.Value(int(ri), int(di), int(NeuronTraces+NeuronVars(bi))) // TimeDiff * RLRate * ETrLearn
+		rLrn := Neurons.Value3D(int(ri), int(di), int(NeuronTraces+NeuronVars(bi))) // TimeDiff * RLRate * ETrLearn
 		dwt = tr * rLrn
 	}
 	pt.DWtSynSoftBound(ctx, syni, di, dwt)
@@ -170,29 +170,29 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, rlay *LayerParams, syni, si, ri
 
 // DWtSynCortexEnabled is timing enabled version of DWtSynCortex
 func (pt *PathParams) DWtSynCortexEnabled(ctx *Context, rlay *LayerParams, syni, si, ri, di uint32) {
-	learnNow := int32(Neurons.Value(int(ri), int(di), int(LearnNow)))
-	enabled := int32(Neurons.Value(int(ri), int(di), int(EnabledPrev)))
+	learnNow := int32(Neurons.Value3D(int(ri), int(di), int(LearnNow)))
+	enabled := int32(Neurons.Value3D(int(ri), int(di), int(EnabledPrev)))
 	winSt := ctx.CyclesTotal - 2*ctx.ThetaCycles
 	winEd := ctx.CyclesTotal - ctx.ThetaCycles
 	if learnNow == 0 || enabled > learnNow || learnNow < winSt || learnNow > winEd { // not in this time window
-		SynapseTraces.Set(0.0, int(syni), int(di), int(DTr))
-		SynapseTraces.Set(0.0, int(syni), int(di), int(DiDWt))
+		SynapseTraces.Set3D(0.0, int(syni), int(di), int(DTr))
+		SynapseTraces.Set3D(0.0, int(syni), int(di), int(DiDWt))
 		return
 	}
 	syCa := pt.SynCaTotal(ctx, si, ri, di, learnNow, rlay.Learn.Timing.SynCaCycles)
 
 	// integrate synaptic trace over time: this is actually beneficial in certain cases,
 	// in addition to the ETrLearn factor.
-	SynapseTraces.Set(syCa, int(syni), int(di), int(DTr))
-	tr := pt.Learn.DWt.SynTrace(SynapseTraces.Value(int(syni), int(di), int(Tr)), syCa)
-	SynapseTraces.Set(tr, int(syni), int(di), int(Tr))
+	SynapseTraces.Set3D(syCa, int(syni), int(di), int(DTr))
+	tr := pt.Learn.DWt.SynTrace(SynapseTraces.Value3D(int(syni), int(di), int(Tr)), syCa)
+	SynapseTraces.Set3D(tr, int(syni), int(di), int(Tr))
 
 	dwt := float32(0)
 	if syCa > pt.Learn.DWt.LearnThr { // todo: elminate?
 		ppOff := ctx.ThetaStart - ctx.ThetaCycles + ctx.ISICycles + ctx.MinusCycles + 10 // have to constrain due to RecvTrace recording
 		bin := learnNow - ppOff                                                          // guaranteed to be in bounds here
 		bi := NeuronTraceBinIndex(RecvLearnTrace, bin)
-		rLrn := Neurons.Value(int(ri), int(di), int(NeuronTraces+NeuronVars(bi))) // TimeDiff * RLRate * ETrLearn
+		rLrn := Neurons.Value3D(int(ri), int(di), int(NeuronTraces+NeuronVars(bi))) // TimeDiff * RLRate * ETrLearn
 		dwt = tr * rLrn
 	}
 	pt.DWtSynSoftBound(ctx, syni, di, dwt)
@@ -206,11 +206,11 @@ func (pt *PathParams) DWtSynTarget(ctx *Context, syni, si, ri, di uint32) {
 	// caP := Neurons[ri, di, CaP] // significantly worse!
 	// caD := Neurons[ri, di, CaD]
 
-	SynapseTraces.Set(caD, int(syni), int(di), int(DTr))
-	tr := pt.Learn.DWt.SynTrace(SynapseTraces.Value(int(syni), int(di), int(Tr)), caD)
-	SynapseTraces.Set(tr, int(syni), int(di), int(Tr))
+	SynapseTraces.Set3D(caD, int(syni), int(di), int(DTr))
+	tr := pt.Learn.DWt.SynTrace(SynapseTraces.Value3D(int(syni), int(di), int(Tr)), caD)
+	SynapseTraces.Set3D(tr, int(syni), int(di), int(Tr))
 
-	dwt := Neurons.Value(int(ri), int(di), int(RLRate)) * (caP - caD)
+	dwt := Neurons.Value3D(int(ri), int(di), int(RLRate)) * (caP - caD)
 	pt.DWtSynSoftBound(ctx, syni, di, dwt)
 }
 
@@ -220,14 +220,14 @@ func (pt *PathParams) DWtSynTarget(ctx *Context, syni, si, ri, di uint32) {
 // multiplied by a separate synaptic activation credit assignment factor computed
 // from synaptic co-product CaD values.
 func (pt *PathParams) DWtSynCTCtxt(ctx *Context, syni, si, ri, di uint32) {
-	syn := Neurons.Value(int(si), int(di), int(BurstPrv)) // previous burst, not synCa
+	syn := Neurons.Value3D(int(si), int(di), int(BurstPrv)) // previous burst, not synCa
 
-	SynapseTraces.Set(syn, int(syni), int(di), int(DTr))
-	tr := pt.Learn.DWt.SynTrace(SynapseTraces.Value(int(syni), int(di), int(Tr)), syn)
-	SynapseTraces.Set(tr, int(syni), int(di), int(Tr))
+	SynapseTraces.Set3D(syn, int(syni), int(di), int(DTr))
+	tr := pt.Learn.DWt.SynTrace(SynapseTraces.Value3D(int(syni), int(di), int(Tr)), syn)
+	SynapseTraces.Set3D(tr, int(syni), int(di), int(Tr))
 
 	// note: not including RLRate here!
-	dwt := tr * (Neurons.Value(int(ri), int(di), int(LearnCaP)) - Neurons.Value(int(ri), int(di), int(LearnCaD))) * Neurons.Value(int(ri), int(di), int(ETrLearn))
+	dwt := tr * (Neurons.Value3D(int(ri), int(di), int(LearnCaP)) - Neurons.Value3D(int(ri), int(di), int(LearnCaD))) * Neurons.Value3D(int(ri), int(di), int(ETrLearn))
 	pt.DWtSynSoftBound(ctx, syni, di, dwt)
 }
 
@@ -235,12 +235,12 @@ func (pt *PathParams) DWtSynCTCtxt(ctx *Context, syni, si, ri, di uint32) {
 // Uses synaptically integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
 func (pt *PathParams) DWtSynHebb(ctx *Context, syni, si, ri, di uint32) {
-	rLearnCaP := Neurons.Value(int(ri), int(di), int(LearnCaP))
-	sNrnCap := Neurons.Value(int(si), int(di), int(LearnCaP))
-	lwt := Synapses.Value(int(syni), int(LWt)) // linear weight
+	rLearnCaP := Neurons.Value3D(int(ri), int(di), int(LearnCaP))
+	sNrnCap := Neurons.Value3D(int(si), int(di), int(LearnCaP))
+	lwt := Synapses.Value2D(int(syni), int(LWt)) // linear weight
 	hebb := rLearnCaP * (pt.Learn.Hebb.Up*sNrnCap*(1-lwt) - pt.Learn.Hebb.Down*(1-sNrnCap)*lwt)
 	// not: Neurons[ri, di, RLRate]*
-	SynapseTraces.Set(pt.Learn.LRate.Eff*hebb, int(syni), int(di), int(DiDWt))
+	SynapseTraces.Set3D(pt.Learn.LRate.Eff*hebb, int(syni), int(di), int(DiDWt))
 }
 
 // DWtSynHip computes the weight change (learning) at given synapse for cortex + Hip (CPCA Hebb learning).
@@ -298,30 +298,30 @@ func (pt *PathParams) DWtSynHip(ctx *Context, syni, si, ri, di uint32, isTarget 
 // and learning at US / extinction is a function of trace * delta from US activity
 // (temporal difference), which limits learning.
 func (pt *PathParams) DWtSynBLA(ctx *Context, syni, si, ri, di uint32) {
-	ach := GlobalScalars.Value(int(GvACh), int(di))
+	ach := GlobalScalars.Value2D(int(GvACh), int(di))
 	dwt := float32(0)
-	if GlobalScalars.Value(int(GvHasRew), int(di)) > 0 { // learn and reset
-		ract := Neurons.Value(int(ri), int(di), int(CaD))
+	if GlobalScalars.Value2D(int(GvHasRew), int(di)) > 0 { // learn and reset
+		ract := Neurons.Value3D(int(ri), int(di), int(CaD))
 		if ract < pt.Learn.DWt.LearnThr {
 			ract = 0
 		}
-		tr := SynapseTraces.Value(int(syni), int(di), int(Tr))
+		tr := SynapseTraces.Value3D(int(syni), int(di), int(Tr))
 		ustr := pt.BLA.USTrace
-		tr = ustr*Neurons.Value(int(si), int(di), int(Burst)) + (1.0-ustr)*tr
-		delta := Neurons.Value(int(ri), int(di), int(CaP)) - Neurons.Value(int(ri), int(di), int(CaDPrev))
+		tr = ustr*Neurons.Value3D(int(si), int(di), int(Burst)) + (1.0-ustr)*tr
+		delta := Neurons.Value3D(int(ri), int(di), int(CaP)) - Neurons.Value3D(int(ri), int(di), int(CaDPrev))
 		if delta < 0 { // neg delta learns slower in Acq, not Ext
 			delta *= pt.BLA.NegDeltaLRate
 		}
-		dwt = Neurons.Value(int(ri), int(di), int(RLRate)) * tr * delta * ract
-		SynapseTraces.Set(0.0, int(syni), int(di), int(Tr))
+		dwt = Neurons.Value3D(int(ri), int(di), int(RLRate)) * tr * delta * ract
+		SynapseTraces.Set3D(0.0, int(syni), int(di), int(Tr))
 	} else if ach > pt.BLA.AChThr {
 		// note: the former NonUSLRate parameter is not used -- Trace update Tau replaces it..  elegant
-		dtr := ach * Neurons.Value(int(si), int(di), int(Burst))
-		SynapseTraces.Set(dtr, int(syni), int(di), int(DTr))
-		tr := pt.Learn.DWt.SynTrace(SynapseTraces.Value(int(syni), int(di), int(Tr)), dtr)
-		SynapseTraces.Set(tr, int(syni), int(di), int(Tr))
+		dtr := ach * Neurons.Value3D(int(si), int(di), int(Burst))
+		SynapseTraces.Set3D(dtr, int(syni), int(di), int(DTr))
+		tr := pt.Learn.DWt.SynTrace(SynapseTraces.Value3D(int(syni), int(di), int(Tr)), dtr)
+		SynapseTraces.Set3D(tr, int(syni), int(di), int(Tr))
 	} else {
-		SynapseTraces.Set(0.0, int(syni), int(di), int(DTr))
+		SynapseTraces.Set3D(0.0, int(syni), int(di), int(DTr))
 	}
 	pt.DWtSynSoftBound(ctx, syni, di, dwt)
 }
@@ -330,26 +330,26 @@ func (pt *PathParams) DWtSynBLA(ctx *Context, syni, si, ri, di uint32) {
 // for the RWPredPath type
 func (pt *PathParams) DWtSynRWPred(ctx *Context, syni, si, ri, di uint32) {
 	// todo: move all of this into rn.RLRate
-	lda := GlobalScalars.Value(int(GvDA), int(di))
+	lda := GlobalScalars.Value2D(int(GvDA), int(di))
 	da := lda
 	lr := pt.Learn.LRate.Eff
 	eff_lr := lr
-	if NeuronIxs.Value(int(ri), int(NrnNeurIndex)) == 0 {
-		if Neurons.Value(int(ri), int(di), int(Ge)) > Neurons.Value(int(ri), int(di), int(Act)) && da > 0 { // clipped at top, saturate up
+	if NeuronIxs.Value2D(int(ri), int(NrnNeurIndex)) == 0 {
+		if Neurons.Value3D(int(ri), int(di), int(Ge)) > Neurons.Value3D(int(ri), int(di), int(Act)) && da > 0 { // clipped at top, saturate up
 			da = 0
 		}
-		if Neurons.Value(int(ri), int(di), int(Ge)) < Neurons.Value(int(ri), int(di), int(Act)) && da < 0 { // clipped at bottom, saturate down
+		if Neurons.Value3D(int(ri), int(di), int(Ge)) < Neurons.Value3D(int(ri), int(di), int(Act)) && da < 0 { // clipped at bottom, saturate down
 			da = 0
 		}
 		if da < 0 {
 			eff_lr *= pt.RLPred.OppSignLRate
 		}
 	} else {
-		eff_lr = -eff_lr                                                                                    // negative case
-		if Neurons.Value(int(ri), int(di), int(Ge)) > Neurons.Value(int(ri), int(di), int(Act)) && da < 0 { // clipped at top, saturate up
+		eff_lr = -eff_lr                                                                                        // negative case
+		if Neurons.Value3D(int(ri), int(di), int(Ge)) > Neurons.Value3D(int(ri), int(di), int(Act)) && da < 0 { // clipped at top, saturate up
 			da = 0
 		}
-		if Neurons.Value(int(ri), int(di), int(Ge)) < Neurons.Value(int(ri), int(di), int(Act)) && da > 0 { // clipped at bottom, saturate down
+		if Neurons.Value3D(int(ri), int(di), int(Ge)) < Neurons.Value3D(int(ri), int(di), int(Act)) && da > 0 { // clipped at bottom, saturate down
 			da = 0
 		}
 		if da >= 0 {
@@ -357,19 +357,19 @@ func (pt *PathParams) DWtSynRWPred(ctx *Context, syni, si, ri, di uint32) {
 		}
 	}
 
-	dwt := da * Neurons.Value(int(si), int(di), int(CaP)) // no recv unit activation
-	SynapseTraces.Set(eff_lr*dwt, int(syni), int(di), int(DiDWt))
+	dwt := da * Neurons.Value3D(int(si), int(di), int(CaP)) // no recv unit activation
+	SynapseTraces.Set3D(eff_lr*dwt, int(syni), int(di), int(DiDWt))
 }
 
 // DWtSynTDPred computes the weight change (learning) at given synapse,
 // for the TDPredPath type
 func (pt *PathParams) DWtSynTDPred(ctx *Context, syni, si, ri, di uint32) {
 	// todo: move all of this into rn.RLRate
-	lda := GlobalScalars.Value(int(GvDA), int(di))
+	lda := GlobalScalars.Value2D(int(GvDA), int(di))
 	da := lda
 	lr := pt.Learn.LRate.Eff
 	eff_lr := lr
-	ni := NeuronIxs.Value(int(ri), int(NrnNeurIndex))
+	ni := NeuronIxs.Value2D(int(ri), int(NrnNeurIndex))
 	if ni == 0 {
 		if da < 0 {
 			eff_lr *= pt.RLPred.OppSignLRate
@@ -381,8 +381,8 @@ func (pt *PathParams) DWtSynTDPred(ctx *Context, syni, si, ri, di uint32) {
 		}
 	}
 
-	dwt := da * Neurons.Value(int(si), int(di), int(CaDPrev)) // no recv unit activation, prior trial act
-	SynapseTraces.Set(eff_lr*dwt, int(syni), int(di), int(DiDWt))
+	dwt := da * Neurons.Value3D(int(si), int(di), int(CaDPrev)) // no recv unit activation, prior trial act
+	SynapseTraces.Set3D(eff_lr*dwt, int(syni), int(di), int(DiDWt))
 }
 
 // DWtSynVSMatrix computes the weight change (learning) at given synapse,
@@ -390,36 +390,36 @@ func (pt *PathParams) DWtSynTDPred(ctx *Context, syni, si, ri, di uint32) {
 func (pt *PathParams) DWtSynVSMatrix(ctx *Context, syni, si, ri, di uint32) {
 	// note: rn.RLRate already has BurstGain * ACh * DA * (D1 vs. D2 sign reversal) factored in.
 
-	hasRew := GlobalScalars.Value(int(GvHasRew), int(di)) > 0
-	ach := GlobalScalars.Value(int(GvACh), int(di))
+	hasRew := GlobalScalars.Value2D(int(GvHasRew), int(di)) > 0
+	ach := GlobalScalars.Value2D(int(GvACh), int(di))
 	if !hasRew && ach < 0.1 {
-		SynapseTraces.Set(0.0, int(syni), int(di), int(DTr))
+		SynapseTraces.Set3D(0.0, int(syni), int(di), int(DTr))
 		return
 	}
-	rlr := Neurons.Value(int(ri), int(di), int(RLRate))
+	rlr := Neurons.Value3D(int(ri), int(di), int(RLRate))
 
-	rplus := Neurons.Value(int(ri), int(di), int(CaP))
-	rminus := Neurons.Value(int(ri), int(di), int(CaD))
-	sact := Neurons.Value(int(si), int(di), int(CaD))
+	rplus := Neurons.Value3D(int(ri), int(di), int(CaP))
+	rminus := Neurons.Value3D(int(ri), int(di), int(CaD))
+	sact := Neurons.Value3D(int(si), int(di), int(CaD))
 	dtr := ach * (pt.VSMatrix.Delta * sact * (rplus - rminus))
 	if rminus > pt.Learn.DWt.LearnThr { // key: prevents learning if < threshold
 		dtr += ach * (pt.VSMatrix.Credit * sact * rminus)
 	}
 	dwt := float32(0)
 	if hasRew {
-		tr := SynapseTraces.Value(int(syni), int(di), int(Tr))
+		tr := SynapseTraces.Value3D(int(syni), int(di), int(Tr))
 		if pt.VSMatrix.RewActLearn.IsTrue() {
-			tr += (1 - GlobalScalars.Value(int(GvGoalMaint), int(di))) * dtr
+			tr += (1 - GlobalScalars.Value2D(int(GvGoalMaint), int(di))) * dtr
 		}
 		dtr = 0
 		dwt = rlr * pt.Learn.LRate.Eff * tr
-		SynapseTraces.Set(0.0, int(syni), int(di), int(Tr))
+		SynapseTraces.Set3D(0.0, int(syni), int(di), int(Tr))
 	} else {
 		dtr *= rlr
-		SynapseTraces.SetAdd(dtr, int(syni), int(di), int(Tr))
+		SynapseTraces.SetAdd3D(dtr, int(syni), int(di), int(Tr))
 	}
-	SynapseTraces.Set(dwt, int(syni), int(di), int(DiDWt))
-	SynapseTraces.Set(dtr, int(syni), int(di), int(DTr))
+	SynapseTraces.Set3D(dwt, int(syni), int(di), int(DiDWt))
+	SynapseTraces.Set3D(dtr, int(syni), int(di), int(DTr))
 }
 
 // DWtSynDSMatrix computes the weight change (learning) at given synapse,
@@ -428,21 +428,21 @@ func (pt *PathParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, di uint32) {
 	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in,
 	// at time of reward, and otherwise is just the sig deriv mod.
 
-	rlr := Neurons.Value(int(ri), int(di), int(RLRate))
+	rlr := Neurons.Value3D(int(ri), int(di), int(RLRate))
 	dwt := float32(0)
 	dtr := float32(0)
-	if GlobalScalars.Value(int(GvHasRew), int(di)) > 0 { // US time -- use DA and current recv activity
-		tr := SynapseTraces.Value(int(syni), int(di), int(Tr))
+	if GlobalScalars.Value2D(int(GvHasRew), int(di)) > 0 { // US time -- use DA and current recv activity
+		tr := SynapseTraces.Value3D(int(syni), int(di), int(Tr))
 		dwt = rlr * pt.Learn.LRate.Eff * tr
-		SynapseTraces.Set(0.0, int(syni), int(di), int(Tr))
+		SynapseTraces.Set3D(0.0, int(syni), int(di), int(Tr))
 	} else {
-		pfmod := Neurons.Value(int(ri), int(di), int(GModSyn)) // syn value is always better
+		pfmod := Neurons.Value3D(int(ri), int(di), int(GModSyn)) // syn value is always better
 		// todo: move DAD1, DAD2 into Neurons for synaptic plasticity
-		patchDAD1 := Neurons.Value(int(ri), int(di), int(PoolDAD1))
-		patchDAD2 := pt.DSMatrix.D2Scale * Neurons.Value(int(ri), int(di), int(PoolDAD2))
-		rplus := Neurons.Value(int(ri), int(di), int(CaP))
-		rminus := Neurons.Value(int(ri), int(di), int(CaD))
-		sact := Neurons.Value(int(si), int(di), int(CaD))
+		patchDAD1 := Neurons.Value3D(int(ri), int(di), int(PoolDAD1))
+		patchDAD2 := pt.DSMatrix.D2Scale * Neurons.Value3D(int(ri), int(di), int(PoolDAD2))
+		rplus := Neurons.Value3D(int(ri), int(di), int(CaP))
+		rminus := Neurons.Value3D(int(ri), int(di), int(CaD))
+		sact := Neurons.Value3D(int(si), int(di), int(CaD))
 		dtr = rlr * (pt.DSMatrix.Delta * sact * (rplus - rminus)) // always delta
 		if rminus > pt.Learn.DWt.LearnThr {                       // key: prevents learning if < threshold
 			act := pt.DSMatrix.Credit * rlr * sact * rminus  // rlr is sig deriv -- todo: CaSyn??
@@ -464,77 +464,77 @@ func (pt *PathParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, di uint32) {
 				dtr += pt.DSMatrix.OffTrace * pt.DSMatrix.PatchDA * (patchDAD2 - patchDAD1) * act
 			}
 		}
-		SynapseTraces.SetAdd(dtr, int(syni), int(di), int(Tr))
+		SynapseTraces.SetAdd3D(dtr, int(syni), int(di), int(Tr))
 	}
-	SynapseTraces.Set(dwt, int(syni), int(di), int(DiDWt))
-	SynapseTraces.Set(dtr, int(syni), int(di), int(DTr))
+	SynapseTraces.Set3D(dwt, int(syni), int(di), int(DiDWt))
+	SynapseTraces.Set3D(dtr, int(syni), int(di), int(DTr))
 }
 
 // DWtSynVSPatch computes the weight change (learning) at given synapse,
 // for the VSPatchPath type.
 func (pt *PathParams) DWtSynVSPatch(ctx *Context, syni, si, ri, di uint32) {
-	ract := Neurons.Value(int(ri), int(di), int(CaDPrev)) // t-1
+	ract := Neurons.Value3D(int(ri), int(di), int(CaDPrev)) // t-1
 	if ract < pt.Learn.DWt.LearnThr {
 		ract = 0
 	}
 	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
 	// and also the logic that non-positive DA leads to weight decreases.
-	sact := Neurons.Value(int(si), int(di), int(CaDPrev)) // t-1
-	dwt := Neurons.Value(int(ri), int(di), int(RLRate)) * pt.Learn.LRate.Eff * sact * ract
-	SynapseTraces.Set(dwt, int(syni), int(di), int(DiDWt))
+	sact := Neurons.Value3D(int(si), int(di), int(CaDPrev)) // t-1
+	dwt := Neurons.Value3D(int(ri), int(di), int(RLRate)) * pt.Learn.LRate.Eff * sact * ract
+	SynapseTraces.Set3D(dwt, int(syni), int(di), int(DiDWt))
 }
 
 // DWtSynDSPatch computes the weight change (learning) at given synapse,
 // for the DSPatchPath type. Conditioned on PF modulatory inputs.
 func (pt *PathParams) DWtSynDSPatch(ctx *Context, syni, si, ri, di uint32) {
-	ract := Neurons.Value(int(ri), int(di), int(CaD))
+	ract := Neurons.Value3D(int(ri), int(di), int(CaD))
 	if ract < pt.Learn.DWt.LearnThr {
 		ract = 0
 	}
 	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in,
 	// at time of reward; otherwise is just sig deriv.
 
-	rlr := Neurons.Value(int(ri), int(di), int(RLRate))
+	rlr := Neurons.Value3D(int(ri), int(di), int(RLRate))
 	dwt := float32(0)
 	dtr := float32(0)
-	if GlobalScalars.Value(int(GvHasRew), int(di)) > 0 { // US time -- use DA * tr
-		tr := SynapseTraces.Value(int(syni), int(di), int(Tr))
+	if GlobalScalars.Value2D(int(GvHasRew), int(di)) > 0 { // US time -- use DA * tr
+		tr := SynapseTraces.Value3D(int(syni), int(di), int(Tr))
 		dwt = rlr * pt.Learn.LRate.Eff * tr
-		SynapseTraces.Set(0.0, int(syni), int(di), int(Tr))
+		SynapseTraces.Set3D(0.0, int(syni), int(di), int(Tr))
 	} else {
-		pfmod := Neurons.Value(int(ri), int(di), int(GModSyn)) // so much better! todo: why!?
-		sact := Neurons.Value(int(si), int(di), int(CaD))      // todo: use CaSyn instead of sact * ract? But BG is transient, so no?
-		dtr = pfmod * rlr * sact * ract                        // rlr is just sig deriv
-		SynapseTraces.SetAdd(dtr, int(syni), int(di), int(Tr))
+		pfmod := Neurons.Value3D(int(ri), int(di), int(GModSyn)) // so much better! todo: why!?
+		sact := Neurons.Value3D(int(si), int(di), int(CaD))      // todo: use CaSyn instead of sact * ract? But BG is transient, so no?
+		dtr = pfmod * rlr * sact * ract                          // rlr is just sig deriv
+		SynapseTraces.SetAdd3D(dtr, int(syni), int(di), int(Tr))
 	}
-	SynapseTraces.Set(dwt, int(syni), int(di), int(DiDWt))
-	SynapseTraces.Set(dtr, int(syni), int(di), int(DTr))
+	SynapseTraces.Set3D(dwt, int(syni), int(di), int(DiDWt))
+	SynapseTraces.Set3D(dtr, int(syni), int(di), int(DTr))
 }
 
 // DWtCNIO computes the weight change (learning) at given synapse,
 // for cerebellar neurons that learn from IO LearnNow signals.
 func (pt *PathParams) DWtCNIO(ctx *Context, rlay *LayerParams, syni, si, ri, di uint32) {
-	learnNow := int32(Neurons.Value(int(ri), int(di), int(LearnNow)))
+	learnNow := int32(Neurons.Value3D(int(ri), int(di), int(LearnNow)))
 	if learnNow-ctx.ThetaStart < 0 { // not in this time window
-		SynapseTraces.Set(0.0, int(syni), int(di), int(DTr))
-		SynapseTraces.Set(0.0, int(syni), int(di), int(DiDWt))
+		SynapseTraces.Set3D(0.0, int(syni), int(di), int(DTr))
+		SynapseTraces.Set3D(0.0, int(syni), int(di), int(DiDWt))
 		return
 	}
-	isErrSpike := Neurons.Value(int(ri), int(di), int(TimePeak)) == 1
+	isErrSpike := Neurons.Value3D(int(ri), int(di), int(TimePeak)) == 1
 	if !isErrSpike {
-		learnNow = int32(Neurons.Value(int(ri), int(di), int(MinusCycle))) // learn at peak
+		learnNow = int32(Neurons.Value3D(int(ri), int(di), int(MinusCycle))) // learn at peak
 	}
 	stcyc := learnNow - rlay.Nuclear.SendTimeOff
 	nbins := rlay.Nuclear.SendTimeBins
 	sact := float32(0)
 	for i := range nbins {
 		bi := NeuronTraceIndex(CaSynTrace, stcyc+i*NeuronTraceCycles)
-		sact += Neurons.Value(int(si), int(di), int(NeuronTraces+NeuronVars(bi)))
+		sact += Neurons.Value3D(int(si), int(di), int(NeuronTraces+NeuronVars(bi)))
 	}
 	// todo: rlrate? Neurons[ri, di, RLRate]
 	dwt := sact
 	if !isErrSpike {
-		ract := Neurons.Value(int(ri), int(di), int(GaP)) // peak act
+		ract := Neurons.Value3D(int(ri), int(di), int(GaP)) // peak act
 		dwt = -sact * ract * rlay.Nuclear.Decay
 	}
 	pt.DWtSynSoftBound(ctx, syni, di, dwt)
@@ -546,9 +546,9 @@ func (pt *PathParams) DWtCNIO(ctx *Context, rlay *LayerParams, syni, si, ri, di 
 func (pt *PathParams) DWtFromDi(ctx *Context, syni uint32) {
 	dwt := float32(0)
 	for di := uint32(0); di < ctx.NData; di++ {
-		dwt += SynapseTraces.Value(int(syni), int(di), int(DiDWt))
+		dwt += SynapseTraces.Value3D(int(syni), int(di), int(DiDWt))
 	}
-	Synapses.SetAdd(dwt, int(syni), int(DWt))
+	Synapses.SetAdd2D(dwt, int(syni), int(DWt))
 }
 
 // DWtSubMean subtracts the mean for given recv neuron ri,
@@ -563,18 +563,18 @@ func (pt *PathParams) DWtSubMean(ctx *Context, pti, ri, lni uint32) {
 		return
 	}
 	cni := pt.Indexes.RecvConSt + lni
-	synn := PathRecvCon.Value(int(cni), int(Nitems))
+	synn := PathRecvCon.Value2D(int(cni), int(Nitems))
 
 	if synn < 1 {
 		return
 	}
-	synst := pt.Indexes.RecvSynSt + PathRecvCon.Value(int(cni), int(StartOff))
+	synst := pt.Indexes.RecvSynSt + PathRecvCon.Value2D(int(cni), int(StartOff))
 
 	sumDWt := float32(0)
 	nnz := 0 // non-zero
 	for ci := uint32(0); ci < synn; ci++ {
 		syni := RecvSynIxs.Value(int(synst + ci))
-		dw := Synapses.Value(int(syni), int(DWt))
+		dw := Synapses.Value2D(int(syni), int(DWt))
 		if dw != 0 {
 			sumDWt += dw
 			nnz++
@@ -586,8 +586,8 @@ func (pt *PathParams) DWtSubMean(ctx *Context, pti, ri, lni uint32) {
 	sumDWt /= float32(nnz)
 	for ci := uint32(0); ci < synn; ci++ {
 		syni := RecvSynIxs.Value(int(synst + ci))
-		if Synapses.Value(int(syni), int(DWt)) != 0 {
-			Synapses.SetAdd(-sm*sumDWt, int(syni), int(DWt))
+		if Synapses.Value2D(int(syni), int(DWt)) != 0 {
+			Synapses.SetAdd2D(-sm*sumDWt, int(syni), int(DWt))
 		}
 	}
 }
@@ -610,30 +610,30 @@ func (pt *PathParams) WtFromDWtSyn(ctx *Context, syni uint32) {
 
 // WtFromDWtSynCortex updates weights from dwt changes
 func (pt *PathParams) WtFromDWtSynCortex(ctx *Context, syni uint32) {
-	dwt := Synapses.Value(int(syni), int(DWt))
-	Synapses.SetAdd(dwt, int(syni), int(DSWt))
-	wt := Synapses.Value(int(syni), int(Wt))
-	lwt := Synapses.Value(int(syni), int(LWt))
+	dwt := Synapses.Value2D(int(syni), int(DWt))
+	Synapses.SetAdd2D(dwt, int(syni), int(DSWt))
+	wt := Synapses.Value2D(int(syni), int(Wt))
+	lwt := Synapses.Value2D(int(syni), int(LWt))
 
-	pt.SWts.WtFromDWt(&wt, &lwt, dwt, Synapses.Value(int(syni), int(SWt)))
-	Synapses.Set(0.0, int(syni), int(DWt))
-	Synapses.Set(wt, int(syni), int(Wt))
-	Synapses.Set(lwt, int(syni), int(LWt))
+	pt.SWts.WtFromDWt(&wt, &lwt, dwt, Synapses.Value2D(int(syni), int(SWt)))
+	Synapses.Set2D(0.0, int(syni), int(DWt))
+	Synapses.Set2D(wt, int(syni), int(Wt))
+	Synapses.Set2D(lwt, int(syni), int(LWt))
 	// pj.Com.Fail(&sy.Wt, sy.SWt) // skipping for now -- not useful actually
 }
 
 // WtFromDWtSynNoLimits -- weight update without limits
 func (pt *PathParams) WtFromDWtSynNoLimits(ctx *Context, syni uint32) {
-	dwt := Synapses.Value(int(syni), int(DWt))
+	dwt := Synapses.Value2D(int(syni), int(DWt))
 	if dwt == 0 {
 		return
 	}
-	Synapses.SetAdd(dwt, int(syni), int(Wt))
-	if Synapses.Value(int(syni), int(Wt)) < 0 {
-		Synapses.Set(0.0, int(syni), int(Wt))
+	Synapses.SetAdd2D(dwt, int(syni), int(Wt))
+	if Synapses.Value2D(int(syni), int(Wt)) < 0 {
+		Synapses.Set2D(0.0, int(syni), int(Wt))
 	}
-	Synapses.Set(Synapses.Value(int(syni), int(Wt)), int(syni), int(LWt))
-	Synapses.Set(0.0, int(syni), int(DWt))
+	Synapses.Set2D(Synapses.Value2D(int(syni), int(Wt)), int(syni), int(LWt))
+	Synapses.Set2D(0.0, int(syni), int(DWt))
 }
 
 // SlowAdapt does the slow adaptation: SWt learning and SynScale
@@ -657,22 +657,22 @@ func (pt *PathParams) SWtFromWt(ctx *Context, rlay *LayerParams, pti, ri, lni ui
 	lr := pt.SWts.Adapt.LRate
 
 	cni := pt.Indexes.RecvConSt + lni
-	synn := PathRecvCon.Value(int(cni), int(Nitems))
-	synst := pt.Indexes.RecvSynSt + PathRecvCon.Value(int(cni), int(StartOff))
+	synn := PathRecvCon.Value2D(int(cni), int(Nitems))
+	synst := pt.Indexes.RecvSynSt + PathRecvCon.Value2D(int(cni), int(StartOff))
 
 	avgDWt := float32(0)
 	avgWt := float32(0)
 	for ci := uint32(0); ci < synn; ci++ {
 		syni := RecvSynIxs.Value(int(synst + ci))
-		swt := Synapses.Value(int(syni), int(SWt))
+		swt := Synapses.Value2D(int(syni), int(SWt))
 		// softbound for SWt
-		if Synapses.Value(int(syni), int(DSWt)) >= 0 {
-			Synapses.SetMul((mx - swt), int(syni), int(DSWt))
+		if Synapses.Value2D(int(syni), int(DSWt)) >= 0 {
+			Synapses.SetMul2D((mx - swt), int(syni), int(DSWt))
 		} else {
-			Synapses.SetMul((swt - mn), int(syni), int(DSWt))
+			Synapses.SetMul2D((swt - mn), int(syni), int(DSWt))
 		}
-		avgDWt += Synapses.Value(int(syni), int(DSWt))
-		avgWt += Synapses.Value(int(syni), int(Wt))
+		avgDWt += Synapses.Value2D(int(syni), int(DSWt))
+		avgWt += Synapses.Value2D(int(syni), int(Wt))
 	}
 	avgDWt /= float32(synn)
 	avgWt /= float32(synn)
@@ -680,14 +680,14 @@ func (pt *PathParams) SWtFromWt(ctx *Context, rlay *LayerParams, pti, ri, lni ui
 	avgDWt *= pt.SWts.Adapt.SubMean
 	for ci := uint32(0); ci < synn; ci++ {
 		syni := RecvSynIxs.Value(int(synst + ci))
-		Synapses.SetAdd(lr*(Synapses.Value(int(syni), int(DSWt))-avgDWt), int(syni), int(SWt))
-		swt := Synapses.Value(int(syni), int(SWt))
-		Synapses.Set(0.0, int(syni), int(DSWt))
-		wt := Synapses.Value(int(syni), int(Wt))
+		Synapses.SetAdd2D(lr*(Synapses.Value2D(int(syni), int(DSWt))-avgDWt), int(syni), int(SWt))
+		swt := Synapses.Value2D(int(syni), int(SWt))
+		Synapses.Set2D(0.0, int(syni), int(DSWt))
+		wt := Synapses.Value2D(int(syni), int(Wt))
 		lwt := pt.SWts.LWtFromWts(wt, swt)
 		lwt -= hiDk * lwt
-		Synapses.Set(lwt, int(syni), int(LWt))
-		Synapses.Set(pt.SWts.WtValue(swt, lwt), int(syni), int(Wt))
+		Synapses.Set2D(lwt, int(syni), int(LWt))
+		Synapses.Set2D(pt.SWts.WtValue(swt, lwt), int(syni), int(Wt))
 	}
 }
 
@@ -703,19 +703,19 @@ func (pt *PathParams) SynScale(ctx *Context, rlay *LayerParams, pti, ri, lni uin
 	lr := rlay.Learn.TrgAvgAct.SynScaleRate
 
 	cni := pt.Indexes.RecvConSt + lni
-	synn := PathRecvCon.Value(int(cni), int(Nitems))
-	synst := pt.Indexes.RecvSynSt + PathRecvCon.Value(int(cni), int(StartOff))
-	adif := -lr * NeuronAvgs.Value(int(ri), int(AvgDif))
+	synn := PathRecvCon.Value2D(int(cni), int(Nitems))
+	synst := pt.Indexes.RecvSynSt + PathRecvCon.Value2D(int(cni), int(StartOff))
+	adif := -lr * NeuronAvgs.Value2D(int(ri), int(AvgDif))
 	for ci := uint32(0); ci < synn; ci++ {
 		syni := RecvSynIxs.Value(int(synst + ci))
-		lwt := Synapses.Value(int(syni), int(LWt))
-		swt := Synapses.Value(int(syni), int(SWt))
+		lwt := Synapses.Value2D(int(syni), int(LWt))
+		swt := Synapses.Value2D(int(syni), int(SWt))
 		if adif >= 0 { // key to have soft bounding on lwt here!
-			Synapses.SetAdd((1-lwt)*adif*swt, int(syni), int(LWt))
+			Synapses.SetAdd2D((1-lwt)*adif*swt, int(syni), int(LWt))
 		} else {
-			Synapses.SetAdd(lwt*adif*swt, int(syni), int(LWt))
+			Synapses.SetAdd2D(lwt*adif*swt, int(syni), int(LWt))
 		}
-		Synapses.Set(pt.SWts.WtValue(swt, Synapses.Value(int(syni), int(LWt))), int(syni), int(Wt))
+		Synapses.Set2D(pt.SWts.WtValue(swt, Synapses.Value2D(int(syni), int(LWt))), int(syni), int(Wt))
 	}
 }
 

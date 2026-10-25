@@ -16,11 +16,11 @@ func GlobalsReset() {
 	nix := GetNetworkIxs(0)
 	for di := uint32(0); di < nix.MaxData; di++ {
 		for vg := GvRew; vg < GvSynCaWts; vg++ {
-			GlobalScalars.Set(0, int(vg), int(di))
+			GlobalScalars.Set2D(0, int(vg), int(di))
 		}
 		for vn := GvCost; vn < GlobalVectorVarsN; vn++ {
 			for ui := uint32(0); ui < MaxGlobalVecN; ui++ {
-				GlobalVectors.Set(0, int(vn), int(ui), int(di))
+				GlobalVectors.Set3D(0, int(vn), int(ui), int(di))
 			}
 		}
 	}

@@ -151,13 +151,13 @@ func AvgMaxIntVarIndex(vr AvgMaxVars, am AvgMax) uint32 {
 // PoolAvgMax returns an AvgMax value for given variable, phase,
 // and Avg or Max, for given pool index and data index.
 func PoolAvgMax(vr AvgMaxVars, phase AvgMaxPhases, am AvgMax, pi, di uint32) float32 {
-	return Pools.Value(int(pi), int(di), int(AvgMaxVarIndex(vr, phase, am)))
+	return Pools.Value3D(int(pi), int(di), int(AvgMaxVarIndex(vr, phase, am)))
 }
 
 // PoolNNeurons returns the number of neurons in the given pool.
 // pi = global pool index.
 func PoolNNeurons(pi uint32) int32 {
-	return int32(PoolIxs.Value(int(pi), int(PoolNeurEd)) - PoolIxs.Value(int(pi), int(PoolNeurSt)))
+	return int32(PoolIxs.Value2D(int(pi), int(PoolNeurEd)) - PoolIxs.Value2D(int(pi), int(PoolNeurSt)))
 }
 
 // PoolAvgMaxInit initializes the AvgMax Int accumulators for Cycle vals
@@ -165,8 +165,8 @@ func PoolNNeurons(pi uint32) int32 {
 // pi = global pool index.
 func PoolAvgMaxInit(pi, di uint32) {
 	for vr := range AMAvgDif {
-		PoolsInt.Set(0, int(pi), int(di), int(AvgMaxIntVarIndex(vr, Avg)))
-		PoolsInt.Set(0, int(pi), int(di), int(AvgMaxIntVarIndex(vr, Max)))
+		PoolsInt.Set3D(0, int(pi), int(di), int(AvgMaxIntVarIndex(vr, Avg)))
+		PoolsInt.Set3D(0, int(pi), int(di), int(AvgMaxIntVarIndex(vr, Max)))
 	}
 }
 
@@ -176,8 +176,8 @@ func PoolAvgMaxZero(pi, di uint32) {
 	PoolAvgMaxInit(pi, di)
 	for vr := range AMAvgDif {
 		for ph := range AvgMaxPhasesN {
-			Pools.Set(0.0, int(pi), int(di), int(AvgMaxVarIndex(vr, ph, Avg)))
-			Pools.Set(0.0, int(pi), int(di), int(AvgMaxVarIndex(vr, ph, Max)))
+			Pools.Set3D(0.0, int(pi), int(di), int(AvgMaxVarIndex(vr, ph, Avg)))
+			Pools.Set3D(0.0, int(pi), int(di), int(AvgMaxVarIndex(vr, ph, Max)))
 		}
 	}
 }
@@ -190,8 +190,8 @@ func PoolAvgMaxUpdateVar(vr AvgMaxVars, pi, di uint32, val float32) {
 	floatToSum := floatToInt / n
 	vis := AvgMaxIntVarIndex(vr, Avg)
 	vim := AvgMaxIntVarIndex(vr, Max)
-	atomic.AddInt32(PoolsInt.ValuePtr(int(pi), int(di), int(vis)), int32(val*floatToSum))
-	atomicx.MaxInt32(PoolsInt.ValuePtr(int(pi), int(di), int(vim)), int32(val*floatToInt))
+	atomic.AddInt32(PoolsInt.ValuePtr3D(int(pi), int(di), int(vis)), int32(val*floatToSum))
+	atomicx.MaxInt32(PoolsInt.ValuePtr3D(int(pi), int(di), int(vim)), int32(val*floatToInt))
 }
 
 // PoolAvgMaxUpdateVarNonAtomic updates the AvgMax value based on given value.
@@ -203,44 +203,44 @@ func PoolAvgMaxUpdateVarNonAtomic(vr AvgMaxVars, pi, di uint32, val float32) {
 	floatToSum := floatToInt / n
 	vis := AvgMaxIntVarIndex(vr, Avg)
 	vim := AvgMaxIntVarIndex(vr, Max)
-	PoolsInt.SetAdd(int32(val*floatToSum), int(pi), int(di), int(vis))
-	PoolsInt.Set(max(PoolsInt.Value(int(pi), int(di), int(vim)), int32(val*floatToInt)), int(pi), int(di), int(vim))
+	PoolsInt.SetAdd3D(int32(val*floatToSum), int(pi), int(di), int(vis))
+	PoolsInt.Set3D(max(PoolsInt.Value3D(int(pi), int(di), int(vim)), int32(val*floatToInt)), int(pi), int(di), int(vim))
 }
 
 // PoolAvgMaxUpdate updates the AvgMax values based on current neuron values.
 // pi = global pool index.
 func PoolAvgMaxUpdate(pi, di, ni uint32) {
-	PoolAvgMaxUpdateVar(AMCaP, pi, di, math32.Abs(Neurons.Value(int(ni), int(di), int(avgMaxToNeuron[AMCaP]))))
-	PoolAvgMaxUpdateVar(AMCaD, pi, di, math32.Abs(Neurons.Value(int(ni), int(di), int(avgMaxToNeuron[AMCaD]))))
-	PoolAvgMaxUpdateVar(AMCaPMax, pi, di, math32.Abs(Neurons.Value(int(ni), int(di), int(avgMaxToNeuron[AMCaPMax]))))
-	PoolAvgMaxUpdateVar(AMAct, pi, di, math32.Abs(Neurons.Value(int(ni), int(di), int(avgMaxToNeuron[AMAct]))))
-	PoolAvgMaxUpdateVar(AMGeInt, pi, di, math32.Abs(Neurons.Value(int(ni), int(di), int(avgMaxToNeuron[AMGeInt]))))
-	PoolAvgMaxUpdateVar(AMGiInt, pi, di, math32.Abs(Neurons.Value(int(ni), int(di), int(avgMaxToNeuron[AMGiInt]))))
+	PoolAvgMaxUpdateVar(AMCaP, pi, di, math32.Abs(Neurons.Value3D(int(ni), int(di), int(avgMaxToNeuron[AMCaP]))))
+	PoolAvgMaxUpdateVar(AMCaD, pi, di, math32.Abs(Neurons.Value3D(int(ni), int(di), int(avgMaxToNeuron[AMCaD]))))
+	PoolAvgMaxUpdateVar(AMCaPMax, pi, di, math32.Abs(Neurons.Value3D(int(ni), int(di), int(avgMaxToNeuron[AMCaPMax]))))
+	PoolAvgMaxUpdateVar(AMAct, pi, di, math32.Abs(Neurons.Value3D(int(ni), int(di), int(avgMaxToNeuron[AMAct]))))
+	PoolAvgMaxUpdateVar(AMGeInt, pi, di, math32.Abs(Neurons.Value3D(int(ni), int(di), int(avgMaxToNeuron[AMGeInt]))))
+	PoolAvgMaxUpdateVar(AMGiInt, pi, di, math32.Abs(Neurons.Value3D(int(ni), int(di), int(avgMaxToNeuron[AMGiInt]))))
 }
 
 // PoolAvgMaxCalcVar does Calc on Cycle level, and re-inits, for given Var
 func PoolAvgMaxCalcVar(vr AvgMaxVars, pi, di uint32) {
 	floatFromInt := float32(1.0) / float32(uint32(1)<<20)
 	vis := AvgMaxIntVarIndex(vr, Avg)
-	sum := PoolsInt.Value(int(pi), int(di), int(vis))
+	sum := PoolsInt.Value3D(int(pi), int(di), int(vis))
 	if sum < 0 {
 		//gosl:end
 		slog.Warn("PoolAvgMaxCalc overflow in Sum", "pi:", pi, "di:", di, "sum:", sum)
 		//gosl:start
 		sum = int32(uint32(1) << 20)
 	}
-	Pools.Set(float32(sum)*floatFromInt, int(pi), int(di), int(AvgMaxVarIndex(vr, AMCycle, Avg)))
-	PoolsInt.Set(0, int(pi), int(di), int(vis))
+	Pools.Set3D(float32(sum)*floatFromInt, int(pi), int(di), int(AvgMaxVarIndex(vr, AMCycle, Avg)))
+	PoolsInt.Set3D(0, int(pi), int(di), int(vis))
 	vim := AvgMaxIntVarIndex(vr, Max)
-	mx := PoolsInt.Value(int(pi), int(di), int(vim))
+	mx := PoolsInt.Value3D(int(pi), int(di), int(vim))
 	if mx < 0 {
 		//gosl:end
 		slog.Warn("PoolAvgMaxCalc overflow in Max", "pi:", pi, "di:", di, "max:", mx)
 		//gosl:start
 		mx = int32(uint32(1) << 20)
 	}
-	PoolsInt.Set(0, int(pi), int(di), int(vim))
-	Pools.Set(float32(mx)*floatFromInt, int(pi), int(di), int(AvgMaxVarIndex(vr, AMCycle, Max)))
+	PoolsInt.Set3D(0, int(pi), int(di), int(vim))
+	Pools.Set3D(float32(mx)*floatFromInt, int(pi), int(di), int(AvgMaxVarIndex(vr, AMCycle, Max)))
 }
 
 // PoolAvgMaxCalc does Calc on Cycle level, and re-inits
@@ -254,8 +254,8 @@ func PoolAvgMaxCalc(pi, di uint32) {
 // for update start. always left init'd so generally unnecessary.
 // pi = global pool index.
 func PoolAvgDifInit(pi, di uint32) {
-	PoolsInt.Set(0, int(pi), int(di), int(AvgMaxIntVarIndex(AMAvgDif, Avg)))
-	PoolsInt.Set(0, int(pi), int(di), int(AvgMaxIntVarIndex(AMAvgDif, Max)))
+	PoolsInt.Set3D(0, int(pi), int(di), int(AvgMaxIntVarIndex(AMAvgDif, Avg)))
+	PoolsInt.Set3D(0, int(pi), int(di), int(AvgMaxIntVarIndex(AMAvgDif, Max)))
 }
 
 // PoolAvgDifUpdate updates the AvgMax values for AvgDif Var.
@@ -273,39 +273,39 @@ func PoolAvgDifCalc(pi, di uint32) {
 // and Plus values into Prev.
 func PoolCycleToMinus(pi, di uint32) {
 	for vr := range AMAvgDif { // don't do AvgDif
-		Pools.Set(Pools.Value(int(pi), int(di), int(AvgMaxVarIndex(vr, AMCycle, Avg))), int(pi), int(di), int(AvgMaxVarIndex(vr, AMMinus, Avg)))
-		Pools.Set(Pools.Value(int(pi), int(di), int(AvgMaxVarIndex(vr, AMCycle, Max))), int(pi), int(di), int(AvgMaxVarIndex(vr, AMMinus, Max)))
+		Pools.Set3D(Pools.Value3D(int(pi), int(di), int(AvgMaxVarIndex(vr, AMCycle, Avg))), int(pi), int(di), int(AvgMaxVarIndex(vr, AMMinus, Avg)))
+		Pools.Set3D(Pools.Value3D(int(pi), int(di), int(AvgMaxVarIndex(vr, AMCycle, Max))), int(pi), int(di), int(AvgMaxVarIndex(vr, AMMinus, Max)))
 
-		Pools.Set(Pools.Value(int(pi), int(di), int(AvgMaxVarIndex(vr, AMPlus, Avg))), int(pi), int(di), int(AvgMaxVarIndex(vr, AMPrev, Avg)))
-		Pools.Set(Pools.Value(int(pi), int(di), int(AvgMaxVarIndex(vr, AMPlus, Max))), int(pi), int(di), int(AvgMaxVarIndex(vr, AMPrev, Max)))
+		Pools.Set3D(Pools.Value3D(int(pi), int(di), int(AvgMaxVarIndex(vr, AMPlus, Avg))), int(pi), int(di), int(AvgMaxVarIndex(vr, AMPrev, Avg)))
+		Pools.Set3D(Pools.Value3D(int(pi), int(di), int(AvgMaxVarIndex(vr, AMPlus, Max))), int(pi), int(di), int(AvgMaxVarIndex(vr, AMPrev, Max)))
 	}
 }
 
 // PoolCycleToPlus grabs current Cycle values into the Plus phase values.
 func PoolCycleToPlus(pi, di uint32) {
 	for vr := range AMAvgDif { // don't do AvgDif
-		Pools.Set(Pools.Value(int(pi), int(di), int(AvgMaxVarIndex(vr, AMCycle, Avg))), int(pi), int(di), int(AvgMaxVarIndex(vr, AMPlus, Avg)))
-		Pools.Set(Pools.Value(int(pi), int(di), int(AvgMaxVarIndex(vr, AMCycle, Max))), int(pi), int(di), int(AvgMaxVarIndex(vr, AMPlus, Max)))
+		Pools.Set3D(Pools.Value3D(int(pi), int(di), int(AvgMaxVarIndex(vr, AMCycle, Avg))), int(pi), int(di), int(AvgMaxVarIndex(vr, AMPlus, Avg)))
+		Pools.Set3D(Pools.Value3D(int(pi), int(di), int(AvgMaxVarIndex(vr, AMCycle, Max))), int(pi), int(di), int(AvgMaxVarIndex(vr, AMPlus, Max)))
 	}
 }
 
 // PoolInit is callled during InitActs
 func PoolInit(pi, di uint32) {
 	PoolInhibInit(pi, di)
-	PoolsInt.Set(0, int(pi), int(di), int(PoolGated))
+	PoolsInt.Set3D(0, int(pi), int(di), int(PoolGated))
 	PoolAvgMaxZero(pi, di)
 }
 
 // PoolPoolGi computes the total inhibitory conductance for the pool.
 func PoolPoolGi(ctx *Context, pi, di uint32) {
-	if PoolIxs.Value(int(pi), int(PoolIsLayer)) > 0 {
+	if PoolIxs.Value2D(int(pi), int(PoolIsLayer)) > 0 {
 		return
 	}
-	li := PoolIxs.Value(int(pi), int(PoolLayerIdx))
+	li := PoolIxs.Value2D(int(pi), int(PoolLayerIdx))
 	PoolAvgMaxCalc(pi, di)
 	PoolInhibIntToRaw(pi, di)
 	ly := GetLayers(uint32(li))
-	giMult := LayerStates.Value(int(li), int(di), int(LayerGiMult))
+	giMult := LayerStates.Value3D(int(li), int(di), int(LayerGiMult))
 	lyIsOn := (ly.Inhib.Layer.On == 1)
 	lpi := ly.PoolIndex(uint32(0))
 	ly.SubPoolGiFromSpikes(ctx, lpi, pi, di, lyIsOn, giMult)

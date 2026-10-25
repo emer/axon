@@ -32,12 +32,9 @@ type ActAvgParams struct {
 	// If layers receiving from this layer are not getting enough Ge excitation,
 	// then this Nominal level can be lowered to increase pathway strength
 	// (fewer active neurons means each one contributes more, so scaling factor
-	//
-	//	goes as the inverse of activity level), or vice-versa if Ge is too high.
-	//
+	//  goes as the inverse of activity level), or vice-versa if Ge is too high.
 	// It is also the basis for the target activity level used for the AdaptGi
-	//
-	//	option: see the Offset which is added to this value.
+	//  option: see the Offset which is added to this value.
 	Nominal float32 `min:"0" step:"0.01"`
 
 	// RTThr is the reaction time (RT) threshold activity level in the layer,
@@ -62,15 +59,13 @@ type ActAvgParams struct {
 	// HiTol is the tolerance for higher than Target target average activation
 	// as a proportion of that target value (0 = exactly the target, 0.2 = 20%
 	// higher than target). Only once activations move outside this tolerance
-	//
-	//	are inhibitory values adapted.
+	//  are inhibitory values adapted.
 	HiTol float32 `default:"0"`
 
 	// LoTol is the tolerance for lower than Target target average activation
 	// as a proportion of that target value (0 = exactly the target, 0.5 = 50%
 	// lower than target). Only once activations move outside this tolerance are
-	//
-	//	inhibitory values adapted.
+	//  inhibitory values adapted.
 	LoTol float32 `default:"0.8"`
 
 	// AdaptRate is the rate of Gi adaptation as function of
@@ -168,25 +163,25 @@ func PoolInhib(fb *fsfffb.GiParams, pi, di uint32, gimult float32) {
 		PoolInhibZero(pi, di)
 		return
 	}
-	Pools.SetAdd(fb.FFAvgDt*(Pools.Value(int(pi), int(di), int(fsfffb.FFs))-Pools.Value(int(pi), int(di), int(fsfffb.FFAvg))), int(pi), int(di), int(fsfffb.FFAvg))
+	Pools.SetAdd3D(fb.FFAvgDt*(Pools.Value3D(int(pi), int(di), int(fsfffb.FFs))-Pools.Value3D(int(pi), int(di), int(fsfffb.FFAvg))), int(pi), int(di), int(fsfffb.FFAvg))
 
-	fsi := Pools.Value(int(pi), int(di), int(fsfffb.FSi))
-	fsi = fb.FSiFromFFs(fsi, Pools.Value(int(pi), int(di), int(fsfffb.FFs)), Pools.Value(int(pi), int(di), int(fsfffb.FBs)))
-	Pools.Set(fsi, int(pi), int(di), int(fsfffb.FSi))
-	clamped := PoolsInt.Value(int(pi), int(di), int(Clamped)) > 0
-	fsgi := fb.Gi * fb.FS(fsi, Pools.Value(int(pi), int(di), int(fsfffb.GeExts)), clamped)
-	Pools.Set(fsgi, int(pi), int(di), int(fsfffb.FSGi))
+	fsi := Pools.Value3D(int(pi), int(di), int(fsfffb.FSi))
+	fsi = fb.FSiFromFFs(fsi, Pools.Value3D(int(pi), int(di), int(fsfffb.FFs)), Pools.Value3D(int(pi), int(di), int(fsfffb.FBs)))
+	Pools.Set3D(fsi, int(pi), int(di), int(fsfffb.FSi))
+	clamped := PoolsInt.Value3D(int(pi), int(di), int(Clamped)) > 0
+	fsgi := fb.Gi * fb.FS(fsi, Pools.Value3D(int(pi), int(di), int(fsfffb.GeExts)), clamped)
+	Pools.Set3D(fsgi, int(pi), int(di), int(fsfffb.FSGi))
 
-	ssf := Pools.Value(int(pi), int(di), int(fsfffb.SSf))
-	ssi := Pools.Value(int(pi), int(di), int(fsfffb.SSi))
-	fb.SSFromFBs(&ssf, &ssi, Pools.Value(int(pi), int(di), int(fsfffb.FBs)))
+	ssf := Pools.Value3D(int(pi), int(di), int(fsfffb.SSf))
+	ssi := Pools.Value3D(int(pi), int(di), int(fsfffb.SSi))
+	fb.SSFromFBs(&ssf, &ssi, Pools.Value3D(int(pi), int(di), int(fsfffb.FBs)))
 	ssgi := fb.Gi * fb.SS * ssi
-	Pools.Set(ssf, int(pi), int(di), int(fsfffb.SSf))
-	Pools.Set(ssi, int(pi), int(di), int(fsfffb.SSi))
-	Pools.Set(ssgi, int(pi), int(di), int(fsfffb.SSGi))
+	Pools.Set3D(ssf, int(pi), int(di), int(fsfffb.SSf))
+	Pools.Set3D(ssi, int(pi), int(di), int(fsfffb.SSi))
+	Pools.Set3D(ssgi, int(pi), int(di), int(fsfffb.SSGi))
 
-	Pools.Set(fsgi+ssgi+fb.FFPrv*Pools.Value(int(pi), int(di), int(fsfffb.FFAvgPrv)), int(pi), int(di), int(fsfffb.TotalGi))
-	Pools.Set(Pools.Value(int(pi), int(di), int(fsfffb.TotalGi)), int(pi), int(di), int(fsfffb.GiOrig))
+	Pools.Set3D(fsgi+ssgi+fb.FFPrv*Pools.Value3D(int(pi), int(di), int(fsfffb.FFAvgPrv)), int(pi), int(di), int(fsfffb.TotalGi))
+	Pools.Set3D(Pools.Value3D(int(pi), int(di), int(fsfffb.TotalGi)), int(pi), int(di), int(fsfffb.GiOrig))
 }
 
 func PoolInhibInit(pi, di uint32) {
@@ -196,69 +191,69 @@ func PoolInhibInit(pi, di uint32) {
 
 // PoolInhibInitRaw clears raw spike counters -- done every cycle prior to accumulating
 func PoolInhibInitRaw(pi, di uint32) {
-	Pools.Set(0.0, int(pi), int(di), int(fsfffb.FFsRaw))
-	Pools.Set(0.0, int(pi), int(di), int(fsfffb.FBsRaw))
-	Pools.Set(0.0, int(pi), int(di), int(fsfffb.GeExtRaw))
+	Pools.Set3D(0.0, int(pi), int(di), int(fsfffb.FFsRaw))
+	Pools.Set3D(0.0, int(pi), int(di), int(fsfffb.FBsRaw))
+	Pools.Set3D(0.0, int(pi), int(di), int(fsfffb.GeExtRaw))
 
-	PoolsInt.Set(0, int(pi), int(di), int(FFsRawInt))
-	PoolsInt.Set(0, int(pi), int(di), int(FBsRawInt))
-	PoolsInt.Set(0, int(pi), int(di), int(GeExtRawInt))
+	PoolsInt.Set3D(0, int(pi), int(di), int(FFsRawInt))
+	PoolsInt.Set3D(0, int(pi), int(di), int(FBsRawInt))
+	PoolsInt.Set3D(0, int(pi), int(di), int(GeExtRawInt))
 }
 
 // PoolInhibZero resets all accumulating inhibition factors to 0
 func PoolInhibZero(pi, di uint32) {
-	Pools.Set(0.0, int(pi), int(di), int(fsfffb.FFs))
-	Pools.Set(0.0, int(pi), int(di), int(fsfffb.FBs))
-	Pools.Set(0.0, int(pi), int(di), int(fsfffb.GeExts))
-	Pools.Set(0.0, int(pi), int(di), int(fsfffb.FSi))
-	Pools.Set(0.0, int(pi), int(di), int(fsfffb.SSi))
-	Pools.Set(0.0, int(pi), int(di), int(fsfffb.SSf))
-	Pools.Set(0.0, int(pi), int(di), int(fsfffb.FSGi))
-	Pools.Set(0.0, int(pi), int(di), int(fsfffb.SSGi))
-	Pools.Set(0.0, int(pi), int(di), int(fsfffb.TotalGi))
-	Pools.Set(0.0, int(pi), int(di), int(fsfffb.FFAvg))
-	Pools.Set(0.0, int(pi), int(di), int(fsfffb.FFAvgPrv))
-	Pools.Set(0.0, int(pi), int(di), int(fsfffb.GiOrig))
-	Pools.Set(0.0, int(pi), int(di), int(fsfffb.LayGi))
-	PoolsInt.Set(0, int(pi), int(di), int(Clamped))
+	Pools.Set3D(0.0, int(pi), int(di), int(fsfffb.FFs))
+	Pools.Set3D(0.0, int(pi), int(di), int(fsfffb.FBs))
+	Pools.Set3D(0.0, int(pi), int(di), int(fsfffb.GeExts))
+	Pools.Set3D(0.0, int(pi), int(di), int(fsfffb.FSi))
+	Pools.Set3D(0.0, int(pi), int(di), int(fsfffb.SSi))
+	Pools.Set3D(0.0, int(pi), int(di), int(fsfffb.SSf))
+	Pools.Set3D(0.0, int(pi), int(di), int(fsfffb.FSGi))
+	Pools.Set3D(0.0, int(pi), int(di), int(fsfffb.SSGi))
+	Pools.Set3D(0.0, int(pi), int(di), int(fsfffb.TotalGi))
+	Pools.Set3D(0.0, int(pi), int(di), int(fsfffb.FFAvg))
+	Pools.Set3D(0.0, int(pi), int(di), int(fsfffb.FFAvgPrv))
+	Pools.Set3D(0.0, int(pi), int(di), int(fsfffb.GiOrig))
+	Pools.Set3D(0.0, int(pi), int(di), int(fsfffb.LayGi))
+	PoolsInt.Set3D(0, int(pi), int(di), int(Clamped))
 }
 
 // Decay reduces inhibition values by given decay proportion
 func PoolInhibDecay(pi, di uint32, decay float32) {
-	Pools.Set(Pools.Value(int(pi), int(di), int(fsfffb.FFAvg)), int(pi), int(di), int(fsfffb.FFAvgPrv)) // capture prior to decay
+	Pools.Set3D(Pools.Value3D(int(pi), int(di), int(fsfffb.FFAvg)), int(pi), int(di), int(fsfffb.FFAvgPrv)) // capture prior to decay
 
-	Pools.SetSub(decay*Pools.Value(int(pi), int(di), int(fsfffb.FFs)), int(pi), int(di), int(fsfffb.FFs))
-	Pools.SetSub(decay*Pools.Value(int(pi), int(di), int(fsfffb.FBs)), int(pi), int(di), int(fsfffb.FBs))
-	Pools.SetSub(decay*Pools.Value(int(pi), int(di), int(fsfffb.GeExts)), int(pi), int(di), int(fsfffb.GeExts))
-	Pools.SetSub(decay*Pools.Value(int(pi), int(di), int(fsfffb.FSi)), int(pi), int(di), int(fsfffb.FSi))
-	Pools.SetSub(decay*Pools.Value(int(pi), int(di), int(fsfffb.SSi)), int(pi), int(di), int(fsfffb.SSi))
-	Pools.SetSub(decay*Pools.Value(int(pi), int(di), int(fsfffb.SSf)), int(pi), int(di), int(fsfffb.SSf))
-	Pools.SetSub(decay*Pools.Value(int(pi), int(di), int(fsfffb.FSGi)), int(pi), int(di), int(fsfffb.FSGi))
-	Pools.SetSub(decay*Pools.Value(int(pi), int(di), int(fsfffb.SSGi)), int(pi), int(di), int(fsfffb.SSGi))
-	Pools.SetSub(decay*Pools.Value(int(pi), int(di), int(fsfffb.TotalGi)), int(pi), int(di), int(fsfffb.TotalGi))
-	Pools.SetSub(decay*Pools.Value(int(pi), int(di), int(fsfffb.FFAvg)), int(pi), int(di), int(fsfffb.FFAvg))
+	Pools.SetSub3D(decay*Pools.Value3D(int(pi), int(di), int(fsfffb.FFs)), int(pi), int(di), int(fsfffb.FFs))
+	Pools.SetSub3D(decay*Pools.Value3D(int(pi), int(di), int(fsfffb.FBs)), int(pi), int(di), int(fsfffb.FBs))
+	Pools.SetSub3D(decay*Pools.Value3D(int(pi), int(di), int(fsfffb.GeExts)), int(pi), int(di), int(fsfffb.GeExts))
+	Pools.SetSub3D(decay*Pools.Value3D(int(pi), int(di), int(fsfffb.FSi)), int(pi), int(di), int(fsfffb.FSi))
+	Pools.SetSub3D(decay*Pools.Value3D(int(pi), int(di), int(fsfffb.SSi)), int(pi), int(di), int(fsfffb.SSi))
+	Pools.SetSub3D(decay*Pools.Value3D(int(pi), int(di), int(fsfffb.SSf)), int(pi), int(di), int(fsfffb.SSf))
+	Pools.SetSub3D(decay*Pools.Value3D(int(pi), int(di), int(fsfffb.FSGi)), int(pi), int(di), int(fsfffb.FSGi))
+	Pools.SetSub3D(decay*Pools.Value3D(int(pi), int(di), int(fsfffb.SSGi)), int(pi), int(di), int(fsfffb.SSGi))
+	Pools.SetSub3D(decay*Pools.Value3D(int(pi), int(di), int(fsfffb.TotalGi)), int(pi), int(di), int(fsfffb.TotalGi))
+	Pools.SetSub3D(decay*Pools.Value3D(int(pi), int(di), int(fsfffb.FFAvg)), int(pi), int(di), int(fsfffb.FFAvg))
 }
 
 // SpikesFromRaw updates spike values from raw, dividing by given number in pool
 func PoolInhibSpikesFromRaw(pi, di uint32) {
 	fnn := float32(PoolNNeurons(pi))
-	Pools.Set(Pools.Value(int(pi), int(di), int(fsfffb.FBsRaw))/fnn, int(pi), int(di), int(fsfffb.FBs))
-	Pools.Set(Pools.Value(int(pi), int(di), int(fsfffb.FFsRaw)), int(pi), int(di), int(fsfffb.FFs))
-	Pools.Set(Pools.Value(int(pi), int(di), int(fsfffb.GeExtRaw)), int(pi), int(di), int(fsfffb.GeExts))
+	Pools.Set3D(Pools.Value3D(int(pi), int(di), int(fsfffb.FBsRaw))/fnn, int(pi), int(di), int(fsfffb.FBs))
+	Pools.Set3D(Pools.Value3D(int(pi), int(di), int(fsfffb.FFsRaw)), int(pi), int(di), int(fsfffb.FFs))
+	Pools.Set3D(Pools.Value3D(int(pi), int(di), int(fsfffb.GeExtRaw)), int(pi), int(di), int(fsfffb.GeExts))
 	PoolInhibInitRaw(pi, di)
 }
 
 // LayerMax updates given pool-level inhib values from given layer-level Gi
 // with resulting value being the Max of either
 func PoolInhibLayerMax(pi, di uint32, liGi float32) {
-	Pools.Set(liGi, int(pi), int(di), int(fsfffb.LayGi))
-	Pools.Set(math32.Max(Pools.Value(int(pi), int(di), int(fsfffb.TotalGi)), liGi), int(pi), int(di), int(fsfffb.TotalGi))
+	Pools.Set3D(liGi, int(pi), int(di), int(fsfffb.LayGi))
+	Pools.Set3D(math32.Max(Pools.Value3D(int(pi), int(di), int(fsfffb.TotalGi)), liGi), int(pi), int(di), int(fsfffb.TotalGi))
 }
 
 // PoolMax updates given layer-level inhib values from given pool-level
 // with resulting value being the Max of either
 func PoolInhibPoolMax(pi, di uint32, piGi float32) {
-	Pools.Set(math32.Max(Pools.Value(int(pi), int(di), int(fsfffb.TotalGi)), piGi), int(pi), int(di), int(fsfffb.TotalGi))
+	Pools.Set3D(math32.Max(Pools.Value3D(int(pi), int(di), int(fsfffb.TotalGi)), piGi), int(pi), int(di), int(fsfffb.TotalGi))
 }
 
 //////// atomic int safe accumulation
@@ -268,17 +263,17 @@ func PoolInhibPoolMax(pi, di uint32, piGi float32) {
 func PoolInhibRawIncrInt(pi, di uint32, spike, geRaw, geExt float32) {
 	floatToInt := float32(uint32(1) << 24)
 	fnn := float32(PoolNNeurons(pi))
-	atomic.AddInt32(PoolsInt.ValuePtr(int(pi), int(di), int(FBsRawInt)), int32(spike))
-	atomic.AddInt32(PoolsInt.ValuePtr(int(pi), int(di), int(FFsRawInt)), int32((geRaw/fnn)*floatToInt))
-	atomic.AddInt32(PoolsInt.ValuePtr(int(pi), int(di), int(GeExtRawInt)), int32((geExt/fnn)*floatToInt))
+	atomic.AddInt32(PoolsInt.ValuePtr3D(int(pi), int(di), int(FBsRawInt)), int32(spike))
+	atomic.AddInt32(PoolsInt.ValuePtr3D(int(pi), int(di), int(FFsRawInt)), int32((geRaw/fnn)*floatToInt))
+	atomic.AddInt32(PoolsInt.ValuePtr3D(int(pi), int(di), int(GeExtRawInt)), int32((geExt/fnn)*floatToInt))
 }
 
 // IntToRaw computes int values into float32 raw values
 func PoolInhibIntToRaw(pi, di uint32) {
 	floatFromInt := 1.0 / float32(uint32(1)<<24)
-	fbs := PoolsInt.Value(int(pi), int(di), int(FBsRawInt))
-	ffs := PoolsInt.Value(int(pi), int(di), int(FFsRawInt))
-	geExt := PoolsInt.Value(int(pi), int(di), int(GeExtRawInt))
+	fbs := PoolsInt.Value3D(int(pi), int(di), int(FBsRawInt))
+	ffs := PoolsInt.Value3D(int(pi), int(di), int(FFsRawInt))
+	geExt := PoolsInt.Value3D(int(pi), int(di), int(GeExtRawInt))
 	//gosl:end
 	floatToInt := int32(1) << 24
 	if ffs < 0 {
@@ -290,9 +285,9 @@ func PoolInhibIntToRaw(pi, di uint32) {
 		geExt = floatToInt
 	}
 	//gosl:start
-	Pools.Set(float32(fbs), int(pi), int(di), int(fsfffb.FBsRaw))
-	Pools.Set(float32(ffs)*floatFromInt, int(pi), int(di), int(fsfffb.FFsRaw))
-	Pools.Set(float32(geExt)*floatFromInt, int(pi), int(di), int(fsfffb.GeExtRaw))
+	Pools.Set3D(float32(fbs), int(pi), int(di), int(fsfffb.FBsRaw))
+	Pools.Set3D(float32(ffs)*floatFromInt, int(pi), int(di), int(fsfffb.FFsRaw))
+	Pools.Set3D(float32(geExt)*floatFromInt, int(pi), int(di), int(fsfffb.GeExtRaw))
 }
 
 //gosl:end

@@ -39,8 +39,8 @@ fn LayerParams_BetweenGi(ly: LayerParams, ctx: Context, di: u32) {
 	maxGi = LayerParams_BetweenLayerGiMax(ly, di, maxGi, ly.LayInhib.Index2);
 	maxGi = LayerParams_BetweenLayerGiMax(ly, di, maxGi, ly.LayInhib.Index3);
 	maxGi = LayerParams_BetweenLayerGiMax(ly, di, maxGi, ly.LayInhib.Index4);
-	Pools[Index3D(TensorStrides[130], TensorStrides[131], // our inhib is max of us and everyone in the layer pool
-	TensorStrides[132], u32(lpi), u32(di), u32(TotalGi))] = maxGi;
+	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], // our inhib is max of us and everyone in the layer pool
+	u32(lpi), u32(di), u32(TotalGi))] = maxGi;
 }
 fn LayerParams_BetweenLayerGiMax(ly: LayerParams, di: u32, maxGi: f32, layIndex: i32) -> f32 {
 	if (layIndex < 0) {

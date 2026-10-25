@@ -235,7 +235,6 @@ type Network struct {
 	PathGSyns tensor.Float32 `display:"-"`
 
 	//	Synapses are the synapse level variables (weights etc).
-	//
 	// These do not depend on the data parallel index, unlike [SynapseTraces].
 	// [NSyns][Vars]; NSyns = [Layer][SendPaths][SendNeurons][Syns]
 	Synapses tensor.Float32 `display:"-"`
@@ -523,37 +522,37 @@ func (nt *Network) AllGlobals() string {
 	for di := uint32(0); di < md; di++ {
 		str += fmt.Sprintf("\n###############################\nData Index: %02d\n\n", di)
 		for vv := GvRew; vv < GvSynCaWts; vv++ {
-			str += fmt.Sprintf("%20s:\t%7.4f\n", vv.String(), GlobalScalars.Value(int(vv), int(di)))
+			str += fmt.Sprintf("%20s:\t%7.4f\n", vv.String(), GlobalScalars.Value2D(int(vv), int(di)))
 		}
 		for vv := GvCost; vv <= GvCostRaw; vv++ {
 			str += fmt.Sprintf("%20s:\t", vv.String())
 			for ui := uint32(0); ui < nix.RubiconNCosts; ui++ {
-				str += fmt.Sprintf("%d: %7.4f\t", ui, GlobalVectors.Value(int(vv), int(ui), int(di)))
+				str += fmt.Sprintf("%d: %7.4f\t", ui, GlobalVectors.Value3D(int(vv), int(ui), int(di)))
 			}
 			str += "\n"
 		}
 		for vv := GvUSneg; vv <= GvUSnegRaw; vv++ {
 			str += fmt.Sprintf("%20s:\t", vv.String())
 			for ui := uint32(0); ui < nix.RubiconNNegUSs; ui++ {
-				str += fmt.Sprintf("%d: %7.4f\t", ui, GlobalVectors.Value(int(vv), int(ui), int(di)))
+				str += fmt.Sprintf("%d: %7.4f\t", ui, GlobalVectors.Value3D(int(vv), int(ui), int(di)))
 			}
 			str += "\n"
 		}
 		for vv := GvDrives; vv < GlobalVectorVarsN; vv++ {
 			str += fmt.Sprintf("%20s:\t", vv.String())
 			for ui := uint32(0); ui < nix.RubiconNPosUSs; ui++ {
-				str += fmt.Sprintf("%d:\t%7.4f\t", ui, GlobalVectors.Value(int(vv), int(ui), int(di)))
+				str += fmt.Sprintf("%d:\t%7.4f\t", ui, GlobalVectors.Value3D(int(vv), int(ui), int(di)))
 			}
 			str += "\n"
 		}
 	}
 	str += "\n###############################\nSpike Bin Weights\n\n"
 	for i := range nSynCaWts {
-		str += fmt.Sprintf("SynCaWtsCaP%02d:\t%7.4f\n", i, GlobalScalars.Value(int(GvSynCaWts+GlobalScalarVars(i)), int(0)))
+		str += fmt.Sprintf("SynCaWtsCaP%02d:\t%7.4f\n", i, GlobalScalars.Value2D(int(GvSynCaWts+GlobalScalarVars(i)), int(0)))
 	}
 	str += "#### CaD\n"
 	for i := range nSynCaWts {
-		str += fmt.Sprintf("SynCaWtsCaD%02d:\t%7.4f\n", i, GlobalScalars.Value(int(GvSynCaWts+GlobalScalarVars(nSynCaWts+i)), int(0)))
+		str += fmt.Sprintf("SynCaWtsCaD%02d:\t%7.4f\n", i, GlobalScalars.Value2D(int(GvSynCaWts+GlobalScalarVars(nSynCaWts+i)), int(0)))
 	}
 	return str
 }
@@ -572,24 +571,24 @@ func (nt *Network) AllGlobalValues(ctrKey string, vals map[string]float32) {
 	for di := range md {
 		for vv := GvRew; vv < GvSynCaWts; vv++ {
 			key := fmt.Sprintf("%s  Di: %d\t%s", ctrKey, di, vv.String())
-			vals[key] = GlobalScalars.Value(int(vv), int(di))
+			vals[key] = GlobalScalars.Value2D(int(vv), int(di))
 		}
 		for vv := GvCost; vv <= GvCostRaw; vv++ {
 			for ui := uint32(0); ui < nix.RubiconNCosts; ui++ {
 				key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, vv.String(), ui)
-				vals[key] = GlobalVectors.Value(int(vv), int(ui), int(di))
+				vals[key] = GlobalVectors.Value3D(int(vv), int(ui), int(di))
 			}
 		}
 		for vv := GvUSneg; vv <= GvUSnegRaw; vv++ {
 			for ui := uint32(0); ui < nix.RubiconNNegUSs; ui++ {
 				key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, vv.String(), ui)
-				vals[key] = GlobalVectors.Value(int(vv), int(ui), int(di))
+				vals[key] = GlobalVectors.Value3D(int(vv), int(ui), int(di))
 			}
 		}
 		for vv := GvDrives; vv < GlobalVectorVarsN; vv++ {
 			for ui := uint32(0); ui < nix.RubiconNPosUSs; ui++ {
 				key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, vv.String(), ui)
-				vals[key] = GlobalVectors.Value(int(vv), int(ui), int(di))
+				vals[key] = GlobalVectors.Value3D(int(vv), int(ui), int(di))
 			}
 		}
 	}
@@ -811,7 +810,7 @@ func (nt *Network) Build() error { //types:add
 		}
 		for pi := range np {
 			for range maxData {
-				nt.PoolIxs.Set(uint32(li), int(poolIndex+pi), int(PoolLayerIdx))
+				nt.PoolIxs.Set2D(uint32(li), int(poolIndex+pi), int(PoolLayerIdx))
 			}
 		}
 		if ly.Type.IsExt() {
@@ -882,14 +881,14 @@ func (nt *Network) Build() error { //types:add
 			for sni := range ly.NNeurons {
 				si := ly.NeurStIndex + sni
 				scon := pt.SendCon[sni]
-				nt.PathSendCon.Set(scon.Start, int(sendConIndex), int(StartOff))
-				nt.PathSendCon.Set(scon.N, int(sendConIndex), int(Nitems))
+				nt.PathSendCon.Set2D(scon.Start, int(sendConIndex), int(StartOff))
+				nt.PathSendCon.Set2D(scon.N, int(sendConIndex), int(Nitems))
 				sendConIndex++
 				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 					syni := pt.SynStIndex + syi
-					nt.SynapseIxs.Set(uint32(si), int(syni), int(SynSendIndex)) // network-global idx
-					nt.SynapseIxs.Set(pt.SendConIndex[syi]+uint32(rlay.NeurStIndex), int(syni), int(SynRecvIndex))
-					nt.SynapseIxs.Set(uint32(ptidx), int(syni), int(SynPathIndex))
+					nt.SynapseIxs.Set2D(uint32(si), int(syni), int(SynSendIndex)) // network-global idx
+					nt.SynapseIxs.Set2D(pt.SendConIndex[syi]+uint32(rlay.NeurStIndex), int(syni), int(SynRecvIndex))
+					nt.SynapseIxs.Set2D(uint32(ptidx), int(syni), int(SynPathIndex))
 					syIndex++
 				}
 			}
@@ -916,8 +915,8 @@ func (nt *Network) Build() error { //types:add
 					continue
 				}
 				rcon := pt.RecvCon[rni]
-				nt.PathRecvCon.Set(rcon.Start, int(recvConIndex), int(StartOff))
-				nt.PathRecvCon.Set(rcon.N, int(recvConIndex), int(Nitems))
+				nt.PathRecvCon.Set2D(rcon.Start, int(recvConIndex), int(StartOff))
+				nt.PathRecvCon.Set2D(rcon.N, int(recvConIndex), int(Nitems))
 				recvConIndex++
 				syIndexes := pt.RecvSynIxs(rni)
 				for _, ssi := range syIndexes {
@@ -945,8 +944,8 @@ func (nt *Network) SetSynCaWts() {
 	cd := make([]float32, nSynCaWts)
 	kinase.SynCaWts(int(ctx.PlusCycles), cp, cd)
 	for i := range nSynCaWts {
-		nt.GlobalScalars.Set(cp[i], int(GvSynCaWts+GlobalScalarVars(i)), int(0))
-		nt.GlobalScalars.Set(cd[i], int(GvSynCaWts+GlobalScalarVars(nSynCaWts+i)), int(0))
+		nt.GlobalScalars.Set2D(cp[i], int(GvSynCaWts+GlobalScalarVars(i)), int(0))
+		nt.GlobalScalars.Set2D(cd[i], int(GvSynCaWts+GlobalScalarVars(nSynCaWts+i)), int(0))
 	}
 }
 
@@ -1143,7 +1142,7 @@ func (nt *Network) SynsSlice(vals *[]float32, synvar SynapseVars) {
 				scon := pt.SendCon[lni]
 				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 					syni := pt.SynStIndex + syi
-					(*vals)[i] = nt.Synapses.Value(int(syni), int(synvar))
+					(*vals)[i] = nt.Synapses.Value2D(int(syni), int(synvar))
 					i++
 				}
 			}
@@ -1234,7 +1233,6 @@ func (nt *Network) SizeReport(detail bool) string {
 			// We only calculate the size of the important parts of the proj struct:
 			//  1. Synapse slice (consists of Synapse struct)
 			//  2. RecvConIndex + RecvSynIndex + SendConIndex (consists of int32 indices = 4B)
-			//
 			// Everything else (like eg the GBuf) is not included in the size calculation, as their size
 			// doesn't grow quadratically with the number of neurons, and hence pales when compared to the synapses
 			// It's also useful to run a -memprofile=mem.prof to validate actual memory usage
@@ -1290,8 +1288,8 @@ func (nt *Network) DiffFrom(ctx *Context, on *Network, maxDiff int) string {
 	for di := range ctx.NData {
 		for ni := range nix.NNeurons {
 			for nvar := Spike; nvar < NeuronVarsN; nvar++ {
-				nv := nt.Neurons.Value(int(ni), int(di), int(nvar))
-				ov := on.Neurons.Value(int(ni), int(di), int(nvar))
+				nv := nt.Neurons.Value3D(int(ni), int(di), int(nvar))
+				ov := on.Neurons.Value3D(int(ni), int(di), int(nvar))
 				if nv != ov {
 					diffs += fmt.Sprintf("Neuron: di: %d\tni: %d\tvar: %s\tval: %g\toth: %g\n", di, ni, nvar.String(), nv, ov)
 					ndif++
@@ -1304,8 +1302,8 @@ func (nt *Network) DiffFrom(ctx *Context, on *Network, maxDiff int) string {
 	}
 	for ni := range nix.NNeurons {
 		for nvar := ActAvg; nvar < NeuronAvgVarsN; nvar++ {
-			nv := nt.NeuronAvgs.Value(int(ni), int(nvar))
-			ov := on.NeuronAvgs.Value(int(ni), int(nvar))
+			nv := nt.NeuronAvgs.Value2D(int(ni), int(nvar))
+			ov := on.NeuronAvgs.Value2D(int(ni), int(nvar))
 			if nv != ov {
 				diffs += fmt.Sprintf("NeuronAvg: ni: %d\tvar: %s\tval: %g\toth: %g\n", ni, nvar.String(), nv, ov)
 				ndif++
@@ -1317,8 +1315,8 @@ func (nt *Network) DiffFrom(ctx *Context, on *Network, maxDiff int) string {
 	}
 	for si := range nix.NSyns {
 		for svar := Wt; svar < SynapseVarsN; svar++ {
-			sv := nt.Synapses.Value(int(si), int(svar))
-			ov := on.Synapses.Value(int(si), int(svar))
+			sv := nt.Synapses.Value2D(int(si), int(svar))
+			ov := on.Synapses.Value2D(int(si), int(svar))
 			if sv != ov {
 				diffs += fmt.Sprintf("Synapse: si: %d\tvar: %s\tval: %g\toth: %g\n", si, svar.String(), sv, ov)
 				ndif++
@@ -1331,8 +1329,8 @@ func (nt *Network) DiffFrom(ctx *Context, on *Network, maxDiff int) string {
 	for di := range ctx.NData {
 		for si := range nix.NSyns {
 			for svar := Tr; svar < SynapseTraceVarsN; svar++ {
-				sv := nt.SynapseTraces.Value(int(si), int(di), int(svar))
-				ov := on.SynapseTraces.Value(int(si), int(di), int(svar))
+				sv := nt.SynapseTraces.Value3D(int(si), int(di), int(svar))
+				ov := on.SynapseTraces.Value3D(int(si), int(di), int(svar))
 				if sv != ov {
 					diffs += fmt.Sprintf("SynapseTraces: di: %d, si: %d\tvar: %s\tval: %g\toth: %g\n", di, si, svar.String(), sv, ov)
 					ndif++
@@ -1360,9 +1358,8 @@ func (nt *Network) LayersSetOff(off bool) {
 func (nt *Network) UnLesionNeurons() {
 	for _, ly := range nt.Layers {
 		// if ly.Off { // keep all sync'd
-		//
-		//		continue
-		//	}
+		// 	continue
+		// }
 		ly.UnLesionNeurons()
 	}
 }

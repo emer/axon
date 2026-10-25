@@ -95,16 +95,16 @@ func (lp *LDTParams) ACh(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay
 	maxSrcAct = lp.MaxSrcAct(maxSrcAct, srcLay3Act)
 	maxSrcAct = lp.MaxSrcAct(maxSrcAct, srcLay4Act)
 
-	maintInh := lp.MaintInhib * GlobalScalars.Value(int(GvGoalMaint), int(di))
+	maintInh := lp.MaintInhib * GlobalScalars.Value2D(int(GvGoalMaint), int(di))
 	maintInh = min(1.0, maintInh)
 	maxSrcAct *= (1.0 - maintInh)
 
 	ach := maxSrcAct
 
-	if GlobalScalars.Value(int(GvHasRew), int(di)) > 0 {
+	if GlobalScalars.Value2D(int(GvHasRew), int(di)) > 0 {
 		ach = 1
 	} else {
-		ach = math32.Max(ach, GlobalScalars.Value(int(GvUrgency), int(di)))
+		ach = math32.Max(ach, GlobalScalars.Value2D(int(GvUrgency), int(di)))
 	}
 	return ach
 }
@@ -140,13 +140,13 @@ func (vt *VTAParams) Update() {
 // VTADA computes the final DA value from LHb values
 // ACh value from LDT is passed as a parameter.
 func (vt *VTAParams) VTADA(ctx *Context, di uint32, ach float32, hasRew bool) {
-	pvDA := vt.LHbGain * GlobalScalars.Value(int(GvLHbPVDA), int(di))
-	csNet := GlobalScalars.Value(int(GvCeMpos), int(di)) - GlobalScalars.Value(int(GvCeMneg), int(di))
+	pvDA := vt.LHbGain * GlobalScalars.Value2D(int(GvLHbPVDA), int(di))
+	csNet := GlobalScalars.Value2D(int(GvCeMpos), int(di)) - GlobalScalars.Value2D(int(GvCeMneg), int(di))
 	achMod := float32(0)
 	if ach >= vt.AChThr {
 		achMod = ach
 	}
-	vsPatch := GlobalScalars.Value(int(GvVSPatchPosThr), int(di)) // note: critical to use thresholded version
+	vsPatch := GlobalScalars.Value2D(int(GvVSPatchPosThr), int(di)) // note: critical to use thresholded version
 	if csNet > 0 {
 		csNet = max(0.0, csNet-vsPatch) // vspatch can shunt positive CS DA, but no dipping!  that is lhb
 	}
@@ -159,8 +159,8 @@ func (vt *VTAParams) VTADA(ctx *Context, di uint32, ach float32, hasRew bool) {
 	} else {
 		netDA = csDA
 	}
-	GlobalScalars.Set(netDA, int(GvVtaDA), int(di)) // note: keeping this separately just for semantics
-	GlobalScalars.Set(netDA, int(GvDA), int(di))    // general neuromod DA
+	GlobalScalars.Set2D(netDA, int(GvVtaDA), int(di)) // note: keeping this separately just for semantics
+	GlobalScalars.Set2D(netDA, int(GvDA), int(di))    // general neuromod DA
 }
 
 //gosl:end

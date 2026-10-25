@@ -672,8 +672,7 @@ fn LayerParams_AdaptGi(ly: LayerParams, ctx: Context) {
 		var giMult = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(ly.Index), u32(di), u32(LayerGiMult))];
 		var avg = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(ly.Index), u32(di), u32(LayerActMAvg))];
 		ActAvgParams_Adapt(ly.Inhib.ActAvg, &giMult, avg);
-		LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92],
-		u32(ly.Index), u32(di), u32(LayerGiMult))] = giMult;
+		LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(ly.Index), u32(di), u32(LayerGiMult))] = giMult;
 	}
 }
 

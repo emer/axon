@@ -82,9 +82,8 @@ func (nt *Network) AdaptGi() {
 func (nt *Network) LRateMod(mod float32) {
 	for _, ly := range nt.Layers {
 		// if ly.Off { // keep all sync'd
-		//
-		//		continue
-		//	}
+		// 	continue
+		// }
 		ly.LRateMod(mod)
 	}
 }
@@ -96,9 +95,8 @@ func (nt *Network) LRateMod(mod float32) {
 func (nt *Network) LRateSched(sched float32) {
 	for _, ly := range nt.Layers {
 		// if ly.Off { // keep all sync'd
-		//
-		//		continue
-		//	}
+		// 	continue
+		// }
 		ly.LRateSched(sched)
 	}
 }
@@ -111,9 +109,8 @@ func (nt *Network) LRateSched(sched float32) {
 func (nt *Network) SetSubMean(trgAvg, path float32) {
 	for _, ly := range nt.Layers {
 		// if ly.Off { // keep all sync'd
-		//
-		//		continue
-		//	}
+		// 	continue
+		// }
 		ly.SetSubMean(trgAvg, path)
 	}
 }
@@ -148,21 +145,21 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 	}
 	for li, ly := range nt.Layers {
 		nn := ly.NNeurons
-		(*dwts)[idx+0] = LayerStates.Value(int(li), int(0), int(LayerActMAvg))
-		(*dwts)[idx+1] = LayerStates.Value(int(li), int(0), int(LayerActPAvg))
-		(*dwts)[idx+2] = LayerStates.Value(int(li), int(0), int(LayerAvgMaxGeM))
-		(*dwts)[idx+3] = LayerStates.Value(int(li), int(0), int(LayerAvgMaxGiM))
-		(*dwts)[idx+4] = LayerStates.Value(int(li), int(0), int(LayerGiMult))
+		(*dwts)[idx+0] = LayerStates.Value3D(int(li), int(0), int(LayerActMAvg))
+		(*dwts)[idx+1] = LayerStates.Value3D(int(li), int(0), int(LayerActPAvg))
+		(*dwts)[idx+2] = LayerStates.Value3D(int(li), int(0), int(LayerAvgMaxGeM))
+		(*dwts)[idx+3] = LayerStates.Value3D(int(li), int(0), int(LayerAvgMaxGiM))
+		(*dwts)[idx+4] = LayerStates.Value3D(int(li), int(0), int(LayerGiMult))
 		idx += 5
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIndex + lni
-			(*dwts)[idx+int(lni)] = NeuronAvgs.Value(int(ni), int(ActAvg))
+			(*dwts)[idx+int(lni)] = NeuronAvgs.Value2D(int(ni), int(ActAvg))
 		}
 		idx += int(nn)
 		if ly.Params.IsLearnTrgAvg() {
 			for lni := uint32(0); lni < nn; lni++ {
 				ni := ly.NeurStIndex + lni
-				(*dwts)[idx+int(lni)] = NeuronAvgs.Value(int(ni), int(DTrgAvg))
+				(*dwts)[idx+int(lni)] = NeuronAvgs.Value2D(int(ni), int(DTrgAvg))
 			}
 			idx += int(nn)
 		}
@@ -171,7 +168,7 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 				scon := pj.SendCon[lni]
 				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 					syni := pj.SynStIndex + syi
-					(*dwts)[idx+int(syi)] = Synapses.Value(int(syni), int(DWt))
+					(*dwts)[idx+int(syi)] = Synapses.Value2D(int(syni), int(DWt))
 					//	if syni < 100 {
 					//		fmt.Printf("%d: %d = %g\n", syni, syi, (*dwts)[idx+int(syi)])
 					//	}
@@ -192,21 +189,21 @@ func (nt *Network) SetDWts(dwts []float32, navg int) {
 	davg := 1 / float32(navg)
 	for li, ly := range nt.Layers {
 		nn := ly.NNeurons
-		LayerStates.Set(davg*dwts[idx+0], int(li), int(0), int(LayerActMAvg))
-		LayerStates.Set(davg*dwts[idx+1], int(li), int(0), int(LayerActPAvg))
-		LayerStates.Set(davg*dwts[idx+2], int(li), int(0), int(LayerAvgMaxGeM))
-		LayerStates.Set(davg*dwts[idx+3], int(li), int(0), int(LayerAvgMaxGiM))
-		LayerStates.Set(davg*dwts[idx+4], int(li), int(0), int(LayerGiMult))
+		LayerStates.Set3D(davg*dwts[idx+0], int(li), int(0), int(LayerActMAvg))
+		LayerStates.Set3D(davg*dwts[idx+1], int(li), int(0), int(LayerActPAvg))
+		LayerStates.Set3D(davg*dwts[idx+2], int(li), int(0), int(LayerAvgMaxGeM))
+		LayerStates.Set3D(davg*dwts[idx+3], int(li), int(0), int(LayerAvgMaxGiM))
+		LayerStates.Set3D(davg*dwts[idx+4], int(li), int(0), int(LayerGiMult))
 		idx += 5
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIndex + lni
-			NeuronAvgs.Set(davg*dwts[idx+int(lni)], int(ni), int(ActAvg))
+			NeuronAvgs.Set2D(davg*dwts[idx+int(lni)], int(ni), int(ActAvg))
 		}
 		idx += int(nn)
 		if ly.Params.IsLearnTrgAvg() {
 			for lni := uint32(0); lni < nn; lni++ {
 				ni := ly.NeurStIndex + lni
-				NeuronAvgs.Set(dwts[idx+int(lni)], int(ni), int(DTrgAvg))
+				NeuronAvgs.Set2D(dwts[idx+int(lni)], int(ni), int(DTrgAvg))
 			}
 			idx += int(nn)
 		}
@@ -215,7 +212,7 @@ func (nt *Network) SetDWts(dwts []float32, navg int) {
 				scon := pj.SendCon[lni]
 				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 					syni := pj.SynStIndex + syi
-					Synapses.Set(dwts[idx+int(syi)], int(syni), int(DWt))
+					Synapses.Set2D(dwts[idx+int(syi)], int(syni), int(DWt))
 					//	if syni < 100 {
 					//		fmt.Printf("%d: %d = %g = %g\n", syni, syi, dwts[idx+int(syi)], Synapses[syni, DWt])
 					//	}
@@ -240,9 +237,9 @@ func DWtSyn(i uint32) { //gosl:kernel
 		return
 	}
 	di := ctx.DataIndex(i)
-	pti := SynapseIxs.Value(int(syni), int(SynPathIndex))
-	si := SynapseIxs.Value(int(syni), int(SynSendIndex))
-	ri := SynapseIxs.Value(int(syni), int(SynRecvIndex))
+	pti := SynapseIxs.Value2D(int(syni), int(SynPathIndex))
+	si := SynapseIxs.Value2D(int(syni), int(SynSendIndex))
+	ri := SynapseIxs.Value2D(int(syni), int(SynRecvIndex))
 	Paths[pti].DWtSyn(ctx, &Layers[Paths[pti].Indexes.RecvLayer], syni, si, ri, di)
 }
 
@@ -253,7 +250,7 @@ func DWtFromDiSyn(syni uint32) { //gosl:kernel
 	if syni >= NetworkIxs[0].NSyns {
 		return
 	}
-	pti := SynapseIxs.Value(int(syni), int(SynPathIndex))
+	pti := SynapseIxs.Value2D(int(syni), int(SynPathIndex))
 	Paths[pti].DWtFromDi(ctx, syni)
 }
 
@@ -274,7 +271,7 @@ func DWtSubMeanNeuron(ni uint32) { //gosl:kernel
 	if ni >= NetworkIxs[0].NNeurons {
 		return
 	}
-	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
+	li := NeuronIxs.Value2D(int(ni), int(NrnLayIndex))
 	Layers[li].DWtSubMean(ctx, ni)
 }
 
@@ -285,7 +282,7 @@ func WtFromDWtSyn(syni uint32) { //gosl:kernel
 	if syni >= NetworkIxs[0].NSyns {
 		return
 	}
-	pti := SynapseIxs.Value(int(syni), int(SynPathIndex))
+	pti := SynapseIxs.Value2D(int(syni), int(SynPathIndex))
 	Paths[pti].WtFromDWtSyn(ctx, syni)
 }
 
@@ -307,7 +304,7 @@ func SlowAdaptNeuron(ni uint32) { //gosl:kernel
 	if ni >= NetworkIxs[0].NNeurons {
 		return
 	}
-	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
+	li := NeuronIxs.Value2D(int(ni), int(NrnLayIndex))
 	Layers[li].SlowAdaptNeuron(ctx, ni)
 }
 

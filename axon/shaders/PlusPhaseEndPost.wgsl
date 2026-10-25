@@ -1465,14 +1465,12 @@ fn AvgMaxIntVarIndex(vr: AvgMaxVars, am: AvgMax) -> u32 {
 	return u32(PoolIntAvgMaxStart) + u32(vr)*u32(AvgMaxN) + u32(am);
 }
 fn PoolAvgMax(vr: AvgMaxVars, phase: AvgMaxPhases, am: AvgMax, pi: u32,di: u32) -> f32 {
-	return Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132],
-	u32(pi), u32(di), u32(AvgMaxVarIndex(vr, phase, am)))];
+	return Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(AvgMaxVarIndex(vr, phase, am)))];
 }
 fn PoolAvgMaxInit(pi: u32,di: u32) {
 	for (var vr=0; vr<AMAvgDif; vr++) {
 		PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(AvgMaxIntVarIndex(vr, Avg)))] = 0;
-		PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142],
-		u32(pi), u32(di), u32(AvgMaxIntVarIndex(vr, Max)))] = 0;
+		PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(AvgMaxIntVarIndex(vr, Max)))] = 0;
 	}
 }
 fn PoolAvgMaxZero(pi: u32,di: u32) {
@@ -1569,8 +1567,8 @@ fn LayerParams_PhaseDiffFromActs(ly: LayerParams, ctx: Context) {
 			if (NeuronIsOff(ni)) {
 				continue;
 			}
-			var ap = Neurons[Index3D(TensorStrides[70], TensorStrides[71], // zero mean = correl
-			TensorStrides[72], u32(ni), u32(di), u32(ActP))] - avgP;
+			var ap = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // zero mean = correl
+			u32(ni), u32(di), u32(ActP))] - avgP;
 			var am = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(ActM))] - avgM;
 			cosv += ap * am;
 			ssm += am * am;

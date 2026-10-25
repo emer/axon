@@ -156,47 +156,47 @@ func (ly *LayerParams) MatrixGated(ctx *Context) {
 		olpi := oly.PoolSt
 		// note: NoGo layers don't track gating at the sub-pool level!
 		for di := uint32(0); di < ctx.NData; di++ {
-			PoolsInt.Set(PoolsInt.Value(int(olpi), int(di), int(PoolGated)), int(lpi), int(di), int(PoolGated))
+			PoolsInt.Set3D(PoolsInt.Value3D(int(olpi), int(di), int(PoolGated)), int(lpi), int(di), int(PoolGated))
 		}
 		return
 	}
 	for di := uint32(0); di < ctx.NData; di++ {
-		mtxGated := PoolsInt.Value(int(lpi), int(di), int(PoolGated)) > 0
+		mtxGated := PoolsInt.Value3D(int(lpi), int(di), int(PoolGated)) > 0
 		thalGated := false
 		if ly.Striatum.ThalLay1Index >= 0 {
 			tly := Layers[ly.Striatum.ThalLay1Index]
 			tlpi := tly.PoolSt
-			gt := PoolsInt.Value(int(tlpi), int(di), int(PoolGated))
+			gt := PoolsInt.Value3D(int(tlpi), int(di), int(PoolGated))
 			thalGated = thalGated || gt > 0
 		}
 		if ly.Striatum.ThalLay2Index >= 0 {
 			tly := Layers[ly.Striatum.ThalLay2Index]
 			tlpi := tly.PoolSt
-			gt := PoolsInt.Value(int(tlpi), int(di), int(PoolGated))
+			gt := PoolsInt.Value3D(int(tlpi), int(di), int(PoolGated))
 			thalGated = thalGated || gt > 0
 		}
 		if ly.Striatum.ThalLay3Index >= 0 {
 			tly := Layers[ly.Striatum.ThalLay3Index]
 			tlpi := tly.PoolSt
-			gt := PoolsInt.Value(int(tlpi), int(di), int(PoolGated))
+			gt := PoolsInt.Value3D(int(tlpi), int(di), int(PoolGated))
 			thalGated = thalGated || gt > 0
 		}
 		if ly.Striatum.ThalLay4Index >= 0 {
 			tly := Layers[ly.Striatum.ThalLay4Index]
 			tlpi := tly.PoolSt
-			gt := PoolsInt.Value(int(tlpi), int(di), int(PoolGated))
+			gt := PoolsInt.Value3D(int(tlpi), int(di), int(PoolGated))
 			thalGated = thalGated || gt > 0
 		}
 		if ly.Striatum.ThalLay5Index >= 0 {
 			tly := Layers[ly.Striatum.ThalLay5Index]
 			tlpi := tly.PoolSt
-			gt := PoolsInt.Value(int(tlpi), int(di), int(PoolGated))
+			gt := PoolsInt.Value3D(int(tlpi), int(di), int(PoolGated))
 			thalGated = thalGated || gt > 0
 		}
 		if ly.Striatum.ThalLay6Index >= 0 {
 			tly := Layers[ly.Striatum.ThalLay6Index]
 			tlpi := tly.PoolSt
-			gt := PoolsInt.Value(int(tlpi), int(di), int(PoolGated))
+			gt := PoolsInt.Value3D(int(tlpi), int(di), int(PoolGated))
 			thalGated = thalGated || gt > 0
 		}
 
@@ -211,21 +211,21 @@ func (ly *LayerParams) MatrixGated(ctx *Context) {
 		if !mtxGated { // nobody did if thal didn't
 			for spi := uint32(0); spi < ly.Indexes.NPools; spi++ {
 				pi := ly.PoolIndex(spi)
-				PoolsInt.Set(0, int(pi), int(di), int(PoolGated))
+				PoolsInt.Set3D(0, int(pi), int(di), int(PoolGated))
 			}
 		}
 		if ctx.PlusPhase.IsTrue() && ly.Type == VSMatrixLayer {
-			GlobalScalars.Set(num.FromBool[float32](mtxGated), int(GvVSMatrixJustGated), int(di))
+			GlobalScalars.Set2D(num.FromBool[float32](mtxGated), int(GvVSMatrixJustGated), int(di))
 			if mtxGated {
 				poolIndex := int32(-1)
 				for spi := uint32(1); spi < ly.Indexes.NPools; spi++ {
 					pi := ly.PoolIndex(spi)
-					if poolIndex < 0 && PoolsInt.Value(int(pi), int(di), int(PoolGated)) > 0 {
+					if poolIndex < 0 && PoolsInt.Value3D(int(pi), int(di), int(PoolGated)) > 0 {
 						poolIndex = int32(spi)
 					}
 				}
 				if poolIndex > 0 {
-					GlobalVectors.Set(float32(1.0), int(GvVSMatrixPoolGated), int(poolIndex), int(di))
+					GlobalVectors.Set3D(float32(1.0), int(GvVSMatrixPoolGated), int(poolIndex), int(di))
 				}
 			}
 		}
@@ -245,9 +245,9 @@ func (ly *LayerParams) GatedFromCaPMax(ctx *Context, di uint32) {
 			gthr := spkavg > thr
 			if gthr {
 				anyGated = true
-				PoolsInt.Set(1, int(pi), int(di), int(PoolGated))
+				PoolsInt.Set3D(1, int(pi), int(di), int(PoolGated))
 			} else {
-				PoolsInt.Set(0, int(pi), int(di), int(PoolGated))
+				PoolsInt.Set3D(0, int(pi), int(di), int(PoolGated))
 			}
 		}
 	} else {
@@ -257,9 +257,9 @@ func (ly *LayerParams) GatedFromCaPMax(ctx *Context, di uint32) {
 		}
 	}
 	if anyGated {
-		PoolsInt.Set(1, int(lpi), int(di), int(PoolGated))
+		PoolsInt.Set3D(1, int(lpi), int(di), int(PoolGated))
 	} else {
-		PoolsInt.Set(0, int(lpi), int(di), int(PoolGated))
+		PoolsInt.Set3D(0, int(lpi), int(di), int(PoolGated))
 	}
 }
 
@@ -267,14 +267,14 @@ func (ly *LayerParams) GatedFromCaPMax(ctx *Context, di uint32) {
 // which indicates if any of the layers gated.
 func (ly *LayerParams) AnyGated(di uint32) bool {
 	lpi := ly.PoolIndex(0)
-	return PoolsInt.Value(int(lpi), int(di), int(PoolGated)) > 0
+	return PoolsInt.Value3D(int(lpi), int(di), int(PoolGated)) > 0
 }
 
 // CyclePostDSPatchLayer grabs PF activation
 func (ly *LayerParams) CyclePostDSPatchLayer(ctx *Context, pi, di uint32, spi int32) {
 	pf := Layers[ly.Striatum.PFIndex]
 	pfact := PoolAvgMax(AMCaP, AMCycle, Avg, pf.PoolIndex(uint32(spi)), di) // must be CaP, not CaD
-	Pools.Set(pfact, int(pi), int(di), int(fsfffb.ModAct))
+	Pools.Set3D(pfact, int(pi), int(di), int(fsfffb.ModAct))
 }
 
 // CyclePostDSMatrixLayer sets pool-specific DA dopamine signal based on PF
@@ -286,9 +286,9 @@ func (ly *LayerParams) CyclePostDSMatrixLayer(ctx *Context, pi, di uint32, spi i
 	pfact := PoolAvgMax(AMCaP, AMCycle, Avg, pf.PoolIndex(uint32(spi)), di) // must be CaP
 	ptD1act := PoolAvgMax(AMCaP, AMCycle, Avg, patchD1.PoolIndex(uint32(spi)), di)
 	ptD2act := PoolAvgMax(AMCaP, AMCycle, Avg, patchD2.PoolIndex(uint32(spi)), di)
-	Pools.Set(ly.DSMatrix.PatchD1Range.NormValue(ptD1act), int(pi), int(di), int(fsfffb.DAD1))
-	Pools.Set(ly.DSMatrix.PatchD2Range.NormValue(ptD2act), int(pi), int(di), int(fsfffb.DAD2))
-	Pools.Set(pfact, int(pi), int(di), int(fsfffb.ModAct))
+	Pools.Set3D(ly.DSMatrix.PatchD1Range.NormValue(ptD1act), int(pi), int(di), int(fsfffb.DAD1))
+	Pools.Set3D(ly.DSMatrix.PatchD2Range.NormValue(ptD2act), int(pi), int(di), int(fsfffb.DAD2))
+	Pools.Set3D(pfact, int(pi), int(di), int(fsfffb.ModAct))
 }
 
 //gosl:end

@@ -76,7 +76,7 @@ func (dp *DriveParams) Update() {
 // VarToZero sets all values of given drive-sized variable to 0
 func (dp *DriveParams) VarToZero(di uint32, gvar GlobalVectorVars) {
 	for i := range dp.Base {
-		GlobalVectors.Set(0, int(gvar), int(i), int(di))
+		GlobalVectors.Set3D(0, int(gvar), int(i), int(di))
 	}
 }
 
@@ -88,27 +88,27 @@ func (dp *DriveParams) ToZero(di uint32) {
 // ToBaseline sets all drives to their baseline levels
 func (dp *DriveParams) ToBaseline(di uint32) {
 	for i := range dp.Base {
-		GlobalVectors.Set(dp.Base[i], int(GvDrives), int(i), int(di))
+		GlobalVectors.Set3D(dp.Base[i], int(GvDrives), int(i), int(di))
 	}
 }
 
 // AddTo increments drive by given amount, subject to 0-1 range clamping.
 // Returns new val.
 func (dp *DriveParams) AddTo(di uint32, drv uint32, delta float32) float32 {
-	dv := GlobalVectors.Value(int(GvDrives), int(drv), int(di)) + delta
+	dv := GlobalVectors.Value3D(int(GvDrives), int(drv), int(di)) + delta
 	if dv > 1 {
 		dv = 1
 	} else if dv < 0 {
 		dv = 0
 	}
-	GlobalVectors.Set(dv, int(GvDrives), int(drv), int(di))
+	GlobalVectors.Set3D(dv, int(GvDrives), int(drv), int(di))
 	return dv
 }
 
 // SoftAdd increments drive by given amount, using soft-bounding to 0-1 extremes.
 // if delta is positive, multiply by 1-val, else val.  Returns new val.
 func (dp *DriveParams) SoftAdd(di uint32, drv uint32, delta float32) float32 {
-	dv := GlobalVectors.Value(int(GvDrives), int(drv), int(di))
+	dv := GlobalVectors.Value3D(int(GvDrives), int(drv), int(di))
 	if delta > 0 {
 		dv += (1 - dv) * delta
 	} else {
@@ -119,21 +119,21 @@ func (dp *DriveParams) SoftAdd(di uint32, drv uint32, delta float32) float32 {
 	} else if dv < 0 {
 		dv = 0
 	}
-	GlobalVectors.Set(dv, int(GvDrives), int(drv), int(di))
+	GlobalVectors.Set3D(dv, int(GvDrives), int(drv), int(di))
 	return dv
 }
 
 // ExpStep updates drive with an exponential step with given dt value
 // toward given baseline value.
 func (dp *DriveParams) ExpStep(di uint32, drv uint32, dt, base float32) float32 {
-	dv := GlobalVectors.Value(int(GvDrives), int(drv), int(di))
+	dv := GlobalVectors.Value3D(int(GvDrives), int(drv), int(di))
 	dv += dt * (base - dv)
 	if dv > 1 {
 		dv = 1
 	} else if dv < 0 {
 		dv = 0
 	}
-	GlobalVectors.Set(dv, int(GvDrives), int(drv), int(di))
+	GlobalVectors.Set3D(dv, int(GvDrives), int(drv), int(di))
 	return dv
 }
 
@@ -149,9 +149,9 @@ func (dp *DriveParams) ExpStepAll(di uint32) {
 // note that index 0 is the novelty / curiosity drive, which doesn't use DriveMin.
 func (dp *DriveParams) EffectiveDrive(di uint32, i uint32) float32 {
 	if i == 0 {
-		return GlobalVectors.Value(int(GvDrives), int(0), int(di))
+		return GlobalVectors.Value3D(int(GvDrives), int(0), int(di))
 	}
-	return math32.Max(GlobalVectors.Value(int(GvDrives), int(i), int(di)), dp.DriveMin)
+	return math32.Max(GlobalVectors.Value3D(int(GvDrives), int(i), int(di)), dp.DriveMin)
 }
 
 ////////  UrgencyParams
@@ -203,24 +203,24 @@ func (ur *UrgencyParams) UrgeFun(urgency float32) float32 {
 
 // Reset resets the raw urgency back to zero -- at start of new gating event
 func (ur *UrgencyParams) Reset(di uint32) {
-	GlobalScalars.Set(0, int(GvUrgencyRaw), int(di))
-	GlobalScalars.Set(0, int(GvUrgency), int(di))
+	GlobalScalars.Set2D(0, int(GvUrgencyRaw), int(di))
+	GlobalScalars.Set2D(0, int(GvUrgency), int(di))
 }
 
 // Urge computes normalized Urge value from Raw, and sets DAtonic from that
 func (ur *UrgencyParams) Urge(di uint32) float32 {
-	urge := ur.UrgeFun(GlobalScalars.Value(int(GvUrgencyRaw), int(di)))
+	urge := ur.UrgeFun(GlobalScalars.Value2D(int(GvUrgencyRaw), int(di)))
 	if urge < ur.Thr {
 		urge = 0
 	}
-	GlobalScalars.Set(urge, int(GvUrgency), int(di))
-	GlobalScalars.Set(ur.DAtonic*urge, int(GvDAtonic), int(di)) // simple equation for now
+	GlobalScalars.Set2D(urge, int(GvUrgency), int(di))
+	GlobalScalars.Set2D(ur.DAtonic*urge, int(GvDAtonic), int(di)) // simple equation for now
 	return urge
 }
 
 // AddEffort adds an effort increment of urgency and updates the Urge factor
 func (ur *UrgencyParams) AddEffort(di uint32, inc float32) {
-	GlobalScalars.SetAdd(inc, int(GvUrgencyRaw), int(di))
+	GlobalScalars.SetAdd2D(inc, int(GvUrgencyRaw), int(di))
 	ur.Urge(di)
 }
 
@@ -327,37 +327,37 @@ func (us *USParams) Update() {
 // USnegCostFromRaw sets normalized NegUS, Cost values from Raw values
 func (us *USParams) USnegCostFromRaw(di uint32) {
 	for i, ng := range us.USnegGains {
-		raw := GlobalVectors.Value(int(GvUSnegRaw), int(i), int(di))
+		raw := GlobalVectors.Value3D(int(GvUSnegRaw), int(i), int(di))
 		norm := RubiconNormFun(ng * raw)
-		GlobalVectors.Set(norm, int(GvUSneg), int(i), int(di))
+		GlobalVectors.Set3D(norm, int(GvUSneg), int(i), int(di))
 	}
 	for i, ng := range us.CostGains {
-		raw := GlobalVectors.Value(int(GvCostRaw), int(i), int(di))
+		raw := GlobalVectors.Value3D(int(GvCostRaw), int(i), int(di))
 		norm := RubiconNormFun(ng * raw)
-		GlobalVectors.Set(norm, int(GvCost), int(i), int(di))
+		GlobalVectors.Set3D(norm, int(GvCost), int(i), int(di))
 	}
 }
 
 // USnegToZero sets all values of USneg, USnegRaw to zero
 func (us *USParams) USnegToZero(di uint32) {
 	for i := range us.USnegGains {
-		GlobalVectors.Set(0, int(GvUSneg), int(i), int(di))
-		GlobalVectors.Set(0, int(GvUSnegRaw), int(i), int(di))
+		GlobalVectors.Set3D(0, int(GvUSneg), int(i), int(di))
+		GlobalVectors.Set3D(0, int(GvUSnegRaw), int(i), int(di))
 	}
 }
 
 // CostToZero sets all values of Cost, CostRaw to zero
 func (us *USParams) CostToZero(di uint32) {
 	for i := range us.CostGains {
-		GlobalVectors.Set(0, int(GvCost), int(i), int(di))
-		GlobalVectors.Set(0, int(GvCostRaw), int(i), int(di))
+		GlobalVectors.Set3D(0, int(GvCost), int(i), int(di))
+		GlobalVectors.Set3D(0, int(GvCostRaw), int(i), int(di))
 	}
 }
 
 // USposToZero sets all values of USpos to zero
 func (us *USParams) USposToZero(di uint32) {
 	for i := range us.PVposWts {
-		GlobalVectors.Set(0, int(GvUSpos), int(i), int(di))
+		GlobalVectors.Set3D(0, int(GvUSpos), int(i), int(di))
 	}
 }
 
@@ -417,10 +417,10 @@ func (lh *LHbParams) Update() {
 
 // Reset resets all LHb vars back to 0
 func (lh *LHbParams) Reset(di uint32) {
-	GlobalScalars.Set(0, int(GvLHbDip), int(di))
-	GlobalScalars.Set(0, int(GvLHbBurst), int(di))
-	GlobalScalars.Set(0, int(GvLHbPVDA), int(di))
-	GlobalScalars.Set(0, int(GvVSPatchPosRPE), int(di))
+	GlobalScalars.Set2D(0, int(GvLHbDip), int(di))
+	GlobalScalars.Set2D(0, int(GvLHbBurst), int(di))
+	GlobalScalars.Set2D(0, int(GvLHbPVDA), int(di))
+	GlobalScalars.Set2D(0, int(GvVSPatchPosRPE), int(di))
 }
 
 // DAFromPVs computes the overall PV DA in terms of LHb burst and dip
@@ -454,11 +454,11 @@ func (lh *LHbParams) DAFromPVs(pvPos, pvNeg, vsPatchPos, vsPatchPosSum float32) 
 // Returns the overall net reward magnitude, prior to VSPatch discounting.
 func (lh *LHbParams) DAforUS(di uint32, pvPos, pvNeg, vsPatchPos, vsPatchPosSum float32) float32 {
 	burst, dip, da, rew := lh.DAFromPVs(pvPos, pvNeg, vsPatchPos, vsPatchPosSum)
-	GlobalScalars.Set(dip, int(GvLHbDip), int(di))
-	GlobalScalars.Set(burst, int(GvLHbBurst), int(di))
-	GlobalScalars.Set(da, int(GvLHbPVDA), int(di))
-	GlobalScalars.Set(vsPatchPos, int(GvVSPatchPosThr), int(di)) // no thresholding for US
-	GlobalScalars.Set(da, int(GvVSPatchPosRPE), int(di))
+	GlobalScalars.Set2D(dip, int(GvLHbDip), int(di))
+	GlobalScalars.Set2D(burst, int(GvLHbBurst), int(di))
+	GlobalScalars.Set2D(da, int(GvLHbPVDA), int(di))
+	GlobalScalars.Set2D(vsPatchPos, int(GvVSPatchPosThr), int(di)) // no thresholding for US
+	GlobalScalars.Set2D(da, int(GvVSPatchPosRPE), int(di))
 	return rew
 }
 
@@ -470,9 +470,9 @@ func (lh *LHbParams) DAforUS(di uint32, pvPos, pvNeg, vsPatchPos, vsPatchPosSum 
 // there is no response in this case.
 // DA is instead driven by CS-based computation, in rubicon_layers.go, VTAParams.VTADA
 func (lh *LHbParams) DAforNoUS(di uint32) float32 {
-	GlobalScalars.Set(0, int(GvLHbDip), int(di))
-	GlobalScalars.Set(0, int(GvLHbBurst), int(di))
-	GlobalScalars.Set(0, int(GvLHbPVDA), int(di))
+	GlobalScalars.Set2D(0, int(GvLHbDip), int(di))
+	GlobalScalars.Set2D(0, int(GvLHbBurst), int(di))
+	GlobalScalars.Set2D(0, int(GvLHbPVDA), int(di))
 	return 0
 }
 
@@ -553,29 +553,29 @@ func (gp *GiveUpParams) Prob(cnSum, guSum float32, rnd randx.Rand) (float32, boo
 // Sums computes the summed weighting factors that drive continue and give up
 // contributions to the probability function.
 func (gp *GiveUpParams) Sums(di uint32) (cnSum, guSum float32) {
-	negSum := GlobalScalars.Value(int(GvPVnegSum), int(di))
+	negSum := GlobalScalars.Value2D(int(GvPVnegSum), int(di))
 	guU := gp.Utility * max(gp.MinUtility, negSum)
-	cnU := gp.Utility * max(gp.MinUtility, GlobalScalars.Value(int(GvPVposEst), int(di))) // todo: var?
-	GlobalScalars.Set(guU, int(GvGiveUpUtility), int(di))
-	GlobalScalars.Set(cnU, int(GvContUtility), int(di))
+	cnU := gp.Utility * max(gp.MinUtility, GlobalScalars.Value2D(int(GvPVposEst), int(di))) // todo: var?
+	GlobalScalars.Set2D(guU, int(GvGiveUpUtility), int(di))
+	GlobalScalars.Set2D(cnU, int(GvContUtility), int(di))
 
-	vspSum := min(GlobalScalars.Value(int(GvVSPatchPosSum), int(di)), gp.VSPatchSumMax) / gp.VSPatchSumMax
-	vspVar := min(GlobalScalars.Value(int(GvVSPatchPosVar), int(di)), gp.VSPatchVarMax) / gp.VSPatchVarMax
+	vspSum := min(GlobalScalars.Value2D(int(GvVSPatchPosSum), int(di)), gp.VSPatchSumMax) / gp.VSPatchSumMax
+	vspVar := min(GlobalScalars.Value2D(int(GvVSPatchPosVar), int(di)), gp.VSPatchVarMax) / gp.VSPatchVarMax
 	guT := gp.Timing * vspSum * (1 - vspVar)
 	cnT := gp.Timing * (1 - vspSum) * vspVar
-	GlobalScalars.Set(guT, int(GvGiveUpTiming), int(di))
-	GlobalScalars.Set(cnT, int(GvContTiming), int(di))
+	GlobalScalars.Set2D(guT, int(GvGiveUpTiming), int(di))
+	GlobalScalars.Set2D(cnT, int(GvContTiming), int(di))
 
-	prog := GlobalScalars.Value(int(GvProgressRate), int(di))
+	prog := GlobalScalars.Value2D(int(GvProgressRate), int(di))
 	guP := -gp.Progress * prog
 	cnP := gp.Progress * prog
-	GlobalScalars.Set(guP, int(GvGiveUpProgress), int(di))
-	GlobalScalars.Set(cnP, int(GvContProgress), int(di))
+	GlobalScalars.Set2D(guP, int(GvGiveUpProgress), int(di))
+	GlobalScalars.Set2D(cnP, int(GvContProgress), int(di))
 
 	guSum = guU + guT + guP
 	cnSum = cnU + cnT + cnP
-	GlobalScalars.Set(guSum, int(GvGiveUpSum), int(di))
-	GlobalScalars.Set(cnSum, int(GvContSum), int(di))
+	GlobalScalars.Set2D(guSum, int(GvGiveUpSum), int(di))
+	GlobalScalars.Set2D(cnSum, int(GvContSum), int(di))
 
 	if guSum < gp.MinGiveUpSum {
 		guSum = gp.MinGiveUpSum
@@ -623,9 +623,7 @@ type Rubicon struct {
 	Drive DriveParams `display:"inline"`
 
 	// urgency (increasing pressure to do something) and parameters for
-	//
-	//	updating it. Raw urgency is incremented by same units as effort,
-	//
+	//  updating it. Raw urgency is incremented by same units as effort,
 	// but is only reset with a positive US.
 	Urgency UrgencyParams `display:"inline"`
 
@@ -715,10 +713,10 @@ func (rp *Rubicon) Reset(di uint32) {
 	rp.Drive.VarToZero(di, GvVSPatchD1)
 	rp.Drive.VarToZero(di, GvVSPatchD2)
 	rp.ResetGoalState(di)
-	GlobalScalars.Set(0, int(GvVtaDA), int(di))
-	GlobalScalars.Set(0, int(GvVSMatrixJustGated), int(di))
-	GlobalScalars.Set(0, int(GvVSMatrixHasGated), int(di))
-	GlobalScalars.Set(0, int(GvHadRew), int(di))
+	GlobalScalars.Set2D(0, int(GvVtaDA), int(di))
+	GlobalScalars.Set2D(0, int(GvVSMatrixJustGated), int(di))
+	GlobalScalars.Set2D(0, int(GvVSMatrixHasGated), int(di))
+	GlobalScalars.Set2D(0, int(GvHadRew), int(di))
 	// pp.HasPosUSPrev.SetBool(false) // key to not reset!!
 }
 
@@ -727,8 +725,8 @@ func (rp *Rubicon) InitUS(di uint32) {
 	rp.USs.USposToZero(di)
 	rp.USs.USnegToZero(di)
 	rp.USs.CostToZero(di)
-	GlobalScalars.Set(0, int(GvHasRew), int(di))
-	GlobalScalars.Set(0, int(GvRew), int(di))
+	GlobalScalars.Set2D(0, int(GvHasRew), int(di))
+	GlobalScalars.Set2D(0, int(GvRew), int(di))
 }
 
 // InitDrives initializes all the Drives to baseline values (default = 0)
@@ -738,13 +736,13 @@ func (rp *Rubicon) InitDrives(di uint32) {
 
 // AddTimeEffort adds a unit of time and an increment of effort
 func (rp *Rubicon) AddTimeEffort(di uint32, effort float32) {
-	GlobalScalars.SetAdd(1, int(GvTime), int(di))
-	tm := GlobalScalars.Value(int(GvTime), int(di))
-	GlobalVectors.Set(tm, int(GvCostRaw), int(0), int(di)) // time is neg 0
+	GlobalScalars.SetAdd2D(1, int(GvTime), int(di))
+	tm := GlobalScalars.Value2D(int(GvTime), int(di))
+	GlobalVectors.Set3D(tm, int(GvCostRaw), int(0), int(di)) // time is neg 0
 
-	GlobalScalars.SetAdd(effort, int(GvEffort), int(di))
-	eff := GlobalScalars.Value(int(GvEffort), int(di))
-	GlobalVectors.Set(eff, int(GvCostRaw), int(1), int(di)) // effort is neg 1
+	GlobalScalars.SetAdd2D(effort, int(GvEffort), int(di))
+	eff := GlobalScalars.Value2D(int(GvEffort), int(di))
+	GlobalVectors.Set3D(eff, int(GvCostRaw), int(1), int(di)) // effort is neg 1
 }
 
 // EffortUrgencyUpdate updates the Effort or Urgency based on
@@ -754,7 +752,7 @@ func (rp *Rubicon) AddTimeEffort(di uint32, effort float32) {
 // Call this at the start of the trial, in ApplyRubicon method,
 // after NewState.
 func (rp *Rubicon) EffortUrgencyUpdate(di uint32, effort float32) {
-	if GlobalScalars.Value(int(GvVSMatrixHasGated), int(di)) > 0 {
+	if GlobalScalars.Value2D(int(GvVSMatrixHasGated), int(di)) > 0 {
 		rp.AddTimeEffort(di, effort)
 	} else {
 		rp.Urgency.AddEffort(di, effort)
@@ -764,10 +762,10 @@ func (rp *Rubicon) EffortUrgencyUpdate(di uint32, effort float32) {
 // TimeEffortReset resets the raw time and effort back to zero,
 // at start of new gating event
 func (rp *Rubicon) TimeEffortReset(di uint32) {
-	GlobalScalars.Set(0, int(GvTime), int(di))
-	GlobalScalars.Set(0, int(GvEffort), int(di))
-	GlobalVectors.Set(0, int(GvCostRaw), int(0), int(di)) // effort is neg 0
-	GlobalVectors.Set(0, int(GvCost), int(0), int(di))
+	GlobalScalars.Set2D(0, int(GvTime), int(di))
+	GlobalScalars.Set2D(0, int(GvEffort), int(di))
+	GlobalVectors.Set3D(0, int(GvCostRaw), int(0), int(di)) // effort is neg 0
+	GlobalVectors.Set3D(0, int(GvCost), int(0), int(di))
 }
 
 // PVposFromDriveEffort returns the net primary value ("reward") based on
@@ -783,7 +781,7 @@ func (rp *Rubicon) TimeEffortReset(di uint32) {
 
 // RubiconSetDrive sets given Drive to given value
 func (rp *Rubicon) SetDrive(di uint32, dr uint32, val float32) {
-	GlobalVectors.Set(val, int(GvDrives), int(dr), int(di))
+	GlobalVectors.Set3D(val, int(GvDrives), int(dr), int(di))
 }
 
 // SetDrives is used when directly controlling drive levels externally.
@@ -805,12 +803,12 @@ func (rp *Rubicon) DriveUpdate(di uint32) {
 	rp.Drive.ExpStepAll(di)
 	nd := rp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
-		us := GlobalVectors.Value(int(GvUSpos), int(i), int(di))
-		nwdrv := GlobalVectors.Value(int(GvDrives), int(i), int(di)) - us*rp.Drive.Satisfaction[i]
+		us := GlobalVectors.Value3D(int(GvUSpos), int(i), int(di))
+		nwdrv := GlobalVectors.Value3D(int(GvDrives), int(i), int(di)) - us*rp.Drive.Satisfaction[i]
 		if nwdrv < 0 {
 			nwdrv = 0
 		}
-		GlobalVectors.Set(nwdrv, int(GvDrives), int(i), int(di))
+		GlobalVectors.Set3D(nwdrv, int(GvDrives), int(i), int(di))
 	}
 }
 
@@ -821,14 +819,14 @@ func (rp *Rubicon) DriveUpdate(di uint32) {
 // Note that costs can be used to track negative USs that are not strong
 // enough to trigger a US learning event.
 func (rp *Rubicon) SetUS(di uint32, valence ValenceTypes, usIndex int, magnitude float32) {
-	GlobalScalars.Set(1, int(GvHasRew), int(di))
+	GlobalScalars.Set2D(1, int(GvHasRew), int(di))
 	if valence == Positive {
 		usIndex = rp.USposIndex(usIndex)
-		GlobalVectors.Set(magnitude, int(GvUSpos), int(usIndex), int(di))
+		GlobalVectors.Set3D(magnitude, int(GvUSpos), int(usIndex), int(di))
 	} else {
 		usIndex = rp.USnegIndex(usIndex)
-		GlobalVectors.Set(magnitude, int(GvUSnegRaw), int(usIndex), int(di))
-		GlobalScalars.Set(1, int(GvNegUSOutcome), int(di))
+		GlobalVectors.Set3D(magnitude, int(GvUSnegRaw), int(usIndex), int(di))
+		GlobalScalars.Set2D(1, int(GvNegUSOutcome), int(di))
 	}
 }
 
@@ -836,58 +834,58 @@ func (rp *Rubicon) SetUS(di uint32, valence ValenceTypes, usIndex int, magnitude
 // Critically, this is only called after goal accomplishment,
 // not after goal gating -- prevents "shortcutting" by re-gating.
 func (rp *Rubicon) ResetGoalState(di uint32) {
-	GlobalScalars.Set(0, int(GvVSMatrixHasGated), int(di))
+	GlobalScalars.Set2D(0, int(GvVSMatrixHasGated), int(di))
 	rp.Urgency.Reset(di)
 	rp.TimeEffortReset(di)
 	rp.USs.USnegToZero(di) // all negs restart
 	rp.USs.CostToZero(di)
 	rp.ResetGiveUp(di)
-	GlobalScalars.Set(0, int(GvVSPatchPos), int(di))
-	GlobalScalars.Set(0, int(GvVSPatchPosSum), int(di))
-	GlobalScalars.Set(0, int(GvVSPatchPosPrev), int(di))
-	GlobalScalars.Set(0, int(GvVSPatchPosVar), int(di))
-	GlobalScalars.Set(0, int(GvRewPred), int(di))
-	GlobalScalars.Set(0, int(GvGoalDistEst), int(di))
-	GlobalScalars.Set(0, int(GvGoalDistPrev), int(di))
-	GlobalScalars.Set(0, int(GvProgressRate), int(di))
+	GlobalScalars.Set2D(0, int(GvVSPatchPos), int(di))
+	GlobalScalars.Set2D(0, int(GvVSPatchPosSum), int(di))
+	GlobalScalars.Set2D(0, int(GvVSPatchPosPrev), int(di))
+	GlobalScalars.Set2D(0, int(GvVSPatchPosVar), int(di))
+	GlobalScalars.Set2D(0, int(GvRewPred), int(di))
+	GlobalScalars.Set2D(0, int(GvGoalDistEst), int(di))
+	GlobalScalars.Set2D(0, int(GvGoalDistPrev), int(di))
+	GlobalScalars.Set2D(0, int(GvProgressRate), int(di))
 	nd := rp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
-		GlobalVectors.Set(0, int(GvOFCposPTMaint), int(i), int(di))
-		GlobalVectors.Set(0, int(GvVSMatrixPoolGated), int(i), int(di))
+		GlobalVectors.Set3D(0, int(GvOFCposPTMaint), int(i), int(di))
+		GlobalVectors.Set3D(0, int(GvVSMatrixPoolGated), int(i), int(di))
 	}
 }
 
 // ResetGiveUp resets all the give-up related global values.
 func (rp *Rubicon) ResetGiveUp(di uint32) {
-	GlobalScalars.Set(0, int(GvPVposEst), int(di))
-	GlobalScalars.Set(0, int(GvPVposVar), int(di))
-	GlobalScalars.Set(0, int(GvGiveUpProb), int(di))
-	GlobalScalars.Set(0, int(GvGiveUp), int(di))
+	GlobalScalars.Set2D(0, int(GvPVposEst), int(di))
+	GlobalScalars.Set2D(0, int(GvPVposVar), int(di))
+	GlobalScalars.Set2D(0, int(GvGiveUpProb), int(di))
+	GlobalScalars.Set2D(0, int(GvGiveUp), int(di))
 }
 
 // NewState is called at very start of new state (trial) of processing.
 // sets HadRew = HasRew from last trial -- used to then reset various things
 // after reward.
 func (rp *Rubicon) NewState(di uint32, rnd randx.Rand) {
-	hadRewF := GlobalScalars.Value(int(GvHasRew), int(di))
+	hadRewF := GlobalScalars.Value2D(int(GvHasRew), int(di))
 	hadRew := num.ToBool(hadRewF)
-	GlobalScalars.Set(hadRewF, int(GvHadRew), int(di))
-	GlobalScalars.Set(GlobalScalars.Value(int(GvHasPosUS), int(di)), int(GvHadPosUS), int(di))
-	GlobalScalars.Set(GlobalScalars.Value(int(GvNegUSOutcome), int(di)), int(GvHadNegUSOutcome), int(di))
-	GlobalScalars.Set(GlobalScalars.Value(int(GvGiveUp), int(di)), int(GvGaveUp), int(di))
+	GlobalScalars.Set2D(hadRewF, int(GvHadRew), int(di))
+	GlobalScalars.Set2D(GlobalScalars.Value2D(int(GvHasPosUS), int(di)), int(GvHadPosUS), int(di))
+	GlobalScalars.Set2D(GlobalScalars.Value2D(int(GvNegUSOutcome), int(di)), int(GvHadNegUSOutcome), int(di))
+	GlobalScalars.Set2D(GlobalScalars.Value2D(int(GvGiveUp), int(di)), int(GvGaveUp), int(di))
 
-	GlobalScalars.Set(0, int(GvHasRew), int(di))
-	GlobalScalars.Set(0, int(GvNegUSOutcome), int(di))
+	GlobalScalars.Set2D(0, int(GvHasRew), int(di))
+	GlobalScalars.Set2D(0, int(GvNegUSOutcome), int(di))
 
 	rp.VSPatchNewState(di)
 
 	if hadRew {
 		rp.ResetGoalState(di)
-	} else if GlobalScalars.Value(int(GvVSMatrixJustGated), int(di)) > 0 {
-		GlobalScalars.Set(1, int(GvVSMatrixHasGated), int(di))
+	} else if GlobalScalars.Value2D(int(GvVSMatrixJustGated), int(di)) > 0 {
+		GlobalScalars.Set2D(1, int(GvVSMatrixHasGated), int(di))
 		rp.Urgency.Reset(di)
 	}
-	GlobalScalars.Set(0, int(GvVSMatrixJustGated), int(di))
+	GlobalScalars.Set2D(0, int(GvVSMatrixJustGated), int(di))
 	rp.USs.USposToZero(di) // pos USs must be set fresh every time
 }
 
@@ -918,7 +916,7 @@ func (rp *Rubicon) SetGoalMaintFromLayer(di uint32, net *Network, layName string
 	} else {
 		gm = act / maxAct
 	}
-	GlobalScalars.Set(gm, int(GvGoalMaint), int(di))
+	GlobalScalars.Set2D(gm, int(GvGoalMaint), int(di))
 	return nil
 }
 
@@ -942,14 +940,14 @@ func (rp *Rubicon) DecodeFromLayer(di uint32, net *Network, layName string) (val
 func (rp *Rubicon) DecodePVEsts(di uint32, net *Network) {
 	posEst, posVar, err := rp.DecodeFromLayer(di, net, "PVposP")
 	if err == nil {
-		GlobalScalars.Set(posEst, int(GvPVposEst), int(di))
-		GlobalScalars.Set(posVar, int(GvPVposVar), int(di))
+		GlobalScalars.Set2D(posEst, int(GvPVposEst), int(di))
+		GlobalScalars.Set2D(posVar, int(GvPVposVar), int(di))
 	}
 
 	negEst, negVar, err := rp.DecodeFromLayer(di, net, "PVnegP")
 	if err == nil {
-		GlobalScalars.Set(negEst, int(GvPVnegEst), int(di))
-		GlobalScalars.Set(negVar, int(GvPVnegVar), int(di))
+		GlobalScalars.Set2D(negEst, int(GvPVnegEst), int(di))
+		GlobalScalars.Set2D(negVar, int(GvPVnegVar), int(di))
 	}
 }
 
@@ -958,19 +956,19 @@ func (rp *Rubicon) DecodePVEsts(di uint32, net *Network) {
 // This should be set at the start of every trial.
 // Also computes the ProgressRate.
 func (rp *Rubicon) SetGoalDistEst(di uint32, dist float32) {
-	if GlobalScalars.Value(int(GvVSMatrixHasGated), int(di)) == 0 {
-		GlobalScalars.Set(dist, int(GvGoalDistPrev), int(di))
-		GlobalScalars.Set(dist, int(GvGoalDistEst), int(di))
-		GlobalScalars.Set(0, int(GvProgressRate), int(di))
+	if GlobalScalars.Value2D(int(GvVSMatrixHasGated), int(di)) == 0 {
+		GlobalScalars.Set2D(dist, int(GvGoalDistPrev), int(di))
+		GlobalScalars.Set2D(dist, int(GvGoalDistEst), int(di))
+		GlobalScalars.Set2D(0, int(GvProgressRate), int(di))
 		return
 	}
-	prev := GlobalScalars.Value(int(GvGoalDistEst), int(di))
-	GlobalScalars.Set(prev, int(GvGoalDistPrev), int(di))
-	GlobalScalars.Set(dist, int(GvGoalDistEst), int(di))
-	rate := GlobalScalars.Value(int(GvProgressRate), int(di))
+	prev := GlobalScalars.Value2D(int(GvGoalDistEst), int(di))
+	GlobalScalars.Set2D(prev, int(GvGoalDistPrev), int(di))
+	GlobalScalars.Set2D(dist, int(GvGoalDistEst), int(di))
+	rate := GlobalScalars.Value2D(int(GvProgressRate), int(di))
 	del := prev - dist
 	rate += rp.GiveUp.ProgressRateDt * (del - rate)
-	GlobalScalars.Set(rate, int(GvProgressRate), int(di))
+	GlobalScalars.Set2D(rate, int(GvProgressRate), int(di))
 }
 
 ////////    methods below used in computing Rubicon state, not generally called from sims
@@ -979,7 +977,7 @@ func (rp *Rubicon) SetGoalDistEst(di uint32, dist float32) {
 func (rp *Rubicon) HasPosUS(di uint32) bool {
 	nd := rp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
-		if GlobalVectors.Value(int(GvUSpos), int(i), int(di)) > 0 {
+		if GlobalVectors.Value3D(int(GvUSpos), int(i), int(di)) > 0 {
 			return true
 		}
 	}
@@ -995,7 +993,7 @@ func (rp *Rubicon) PVpos(di uint32) (pvPosSum, pvPos float32) {
 	nd := rp.NPosUSs
 	wts := rp.USs.PVposWts
 	for i := uint32(0); i < nd; i++ {
-		pvPosSum += wts[i] * GlobalVectors.Value(int(GvUSpos), int(i), int(di)) * rp.Drive.EffectiveDrive(di, i)
+		pvPosSum += wts[i] * GlobalVectors.Value3D(int(GvUSpos), int(i), int(di)) * rp.Drive.EffectiveDrive(di, i)
 	}
 	pvPos = RubiconNormFun(rp.USs.PVposGain * pvPosSum)
 	return
@@ -1010,12 +1008,12 @@ func (rp *Rubicon) PVneg(di uint32) (pvNegSum, pvNeg float32) {
 	nn := rp.NNegUSs
 	wts := rp.USs.PVnegWts
 	for i := uint32(0); i < nn; i++ {
-		pvNegSum += wts[i] * GlobalVectors.Value(int(GvUSnegRaw), int(i), int(di))
+		pvNegSum += wts[i] * GlobalVectors.Value3D(int(GvUSnegRaw), int(i), int(di))
 	}
 	nn = rp.NCosts
 	wts = rp.USs.PVcostWts
 	for i := uint32(0); i < nn; i++ {
-		pvNegSum += wts[i] * GlobalVectors.Value(int(GvCostRaw), int(i), int(di))
+		pvNegSum += wts[i] * GlobalVectors.Value3D(int(GvCostRaw), int(i), int(di))
 	}
 	pvNeg = RubiconNormFun(rp.USs.PVnegGain * pvNegSum)
 	return
@@ -1025,48 +1023,48 @@ func (rp *Rubicon) PVneg(di uint32) (pvNegSum, pvNeg float32) {
 // from the underlying US values.
 func (rp *Rubicon) PVsFromUSs(di uint32) {
 	pvPosSum, pvPos := rp.PVpos(di)
-	GlobalScalars.Set(pvPosSum, int(GvPVposSum), int(di))
-	GlobalScalars.Set(pvPos, int(GvPVpos), int(di))
-	GlobalScalars.Set(num.FromBool[float32](rp.HasPosUS(di)), int(GvHasPosUS), int(di))
+	GlobalScalars.Set2D(pvPosSum, int(GvPVposSum), int(di))
+	GlobalScalars.Set2D(pvPos, int(GvPVpos), int(di))
+	GlobalScalars.Set2D(num.FromBool[float32](rp.HasPosUS(di)), int(GvHasPosUS), int(di))
 
 	pvNegSum, pvNeg := rp.PVneg(di)
-	GlobalScalars.Set(pvNegSum, int(GvPVnegSum), int(di))
-	GlobalScalars.Set(pvNeg, int(GvPVneg), int(di))
+	GlobalScalars.Set2D(pvNegSum, int(GvPVnegSum), int(di))
+	GlobalScalars.Set2D(pvNeg, int(GvPVneg), int(di))
 }
 
 // VSPatchNewState does VSPatch processing in NewState:
 // updates global VSPatchPos and VSPatchPosSum, sets to RewPred.
 // uses max across recorded VSPatch activity levels.
 func (rp *Rubicon) VSPatchNewState(di uint32) {
-	prev := GlobalScalars.Value(int(GvVSPatchPos), int(di))
-	GlobalScalars.Set(prev, int(GvVSPatchPosPrev), int(di))
+	prev := GlobalScalars.Value2D(int(GvVSPatchPos), int(di))
+	GlobalScalars.Set2D(prev, int(GvVSPatchPosPrev), int(di))
 	mx := float32(0)
 	nd := rp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
-		vsD1 := GlobalVectors.Value(int(GvVSPatchD1), int(i), int(di))
-		vsD2 := GlobalVectors.Value(int(GvVSPatchD2), int(i), int(di))
+		vsD1 := GlobalVectors.Value3D(int(GvVSPatchD1), int(i), int(di))
+		vsD2 := GlobalVectors.Value3D(int(GvVSPatchD2), int(i), int(di))
 		vs := rp.LHb.VSPatchGain * (vsD1 - vsD2)
 		if vs > mx {
 			mx = vs
 		}
 	}
 	v := math32.Abs(mx - prev)
-	pv := GlobalScalars.Value(int(GvVSPatchPosVar), int(di))
+	pv := GlobalScalars.Value2D(int(GvVSPatchPosVar), int(di))
 	if v > pv {
 		pv = v
 	} else {
 		pv += rp.LHb.VSPatchVarDt * (v - pv) // decay -- negative
 	}
-	GlobalScalars.Set(pv, int(GvVSPatchPosVar), int(di))
-	GlobalScalars.Set(mx, int(GvVSPatchPos), int(di))
-	GlobalScalars.Set(mx, int(GvRewPred), int(di))
+	GlobalScalars.Set2D(pv, int(GvVSPatchPosVar), int(di))
+	GlobalScalars.Set2D(mx, int(GvVSPatchPos), int(di))
+	GlobalScalars.Set2D(mx, int(GvRewPred), int(di))
 	thr := mx
 	if mx < rp.LHb.VSPatchNonRewThr {
 		thr = 0
 	}
-	GlobalScalars.Set(-mx, int(GvVSPatchPosRPE), int(di)) // default for non-us cases
-	GlobalScalars.Set(thr, int(GvVSPatchPosThr), int(di))
-	GlobalScalars.SetAdd(thr, int(GvVSPatchPosSum), int(di)) // key: use thresholded!
+	GlobalScalars.Set2D(-mx, int(GvVSPatchPosRPE), int(di)) // default for non-us cases
+	GlobalScalars.Set2D(thr, int(GvVSPatchPosThr), int(di))
+	GlobalScalars.SetAdd2D(thr, int(GvVSPatchPosSum), int(di)) // key: use thresholded!
 }
 
 // PVposEstFromUSs returns the estimated positive PV value
@@ -1140,8 +1138,8 @@ func (rp *Rubicon) DAFromPVs(pvPos, pvNeg, vsPatchPos, vsPatchPosSum float32) (b
 func (rp *Rubicon) GiveUpOnGoal(di uint32, rnd randx.Rand) bool {
 	cnSum, guSum := rp.GiveUp.Sums(di)
 	prob, giveUp := rp.GiveUp.Prob(cnSum, guSum, rnd)
-	GlobalScalars.Set(prob, int(GvGiveUpProb), int(di))
-	GlobalScalars.Set(num.FromBool[float32](giveUp), int(GvGiveUp), int(di))
+	GlobalScalars.Set2D(prob, int(GvGiveUpProb), int(di))
+	GlobalScalars.Set2D(num.FromBool[float32](giveUp), int(GvGiveUp), int(di))
 	return giveUp
 }
 
@@ -1155,42 +1153,42 @@ func (rp *Rubicon) PVDA(di uint32, rnd randx.Rand) {
 	rp.USs.USnegCostFromRaw(di)
 	rp.PVsFromUSs(di)
 
-	hasRew := (GlobalScalars.Value(int(GvHasRew), int(di)) > 0)
-	pvPos := GlobalScalars.Value(int(GvPVpos), int(di))
-	pvNeg := GlobalScalars.Value(int(GvPVneg), int(di))
-	vsPatchPos := GlobalScalars.Value(int(GvVSPatchPos), int(di))
-	vsPatchPosSum := GlobalScalars.Value(int(GvVSPatchPosSum), int(di))
+	hasRew := (GlobalScalars.Value2D(int(GvHasRew), int(di)) > 0)
+	pvPos := GlobalScalars.Value2D(int(GvPVpos), int(di))
+	pvNeg := GlobalScalars.Value2D(int(GvPVneg), int(di))
+	vsPatchPos := GlobalScalars.Value2D(int(GvVSPatchPos), int(di))
+	vsPatchPosSum := GlobalScalars.Value2D(int(GvVSPatchPosSum), int(di))
 
 	if hasRew {
 		rp.ResetGiveUp(di)
 		rew := rp.LHb.DAforUS(di, pvPos, pvNeg, vsPatchPos, vsPatchPosSum) // only when actual pos rew
-		GlobalScalars.Set(rew, int(GvRew), int(di))
+		GlobalScalars.Set2D(rew, int(GvRew), int(di))
 		return
 	}
 
-	if GlobalScalars.Value(int(GvVSMatrixHasGated), int(di)) > 0 {
+	if GlobalScalars.Value2D(int(GvVSMatrixHasGated), int(di)) > 0 {
 		giveUp := rp.GiveUpOnGoal(di, rnd)
 		if giveUp {
-			GlobalScalars.Set(1, int(GvHasRew), int(di))                       // key for triggering reset
+			GlobalScalars.Set2D(1, int(GvHasRew), int(di))                     // key for triggering reset
 			rew := rp.LHb.DAforUS(di, pvPos, pvNeg, vsPatchPos, vsPatchPosSum) // only when actual rew
-			GlobalScalars.Set(rew, int(GvRew), int(di))
+			GlobalScalars.Set2D(rew, int(GvRew), int(di))
 			return
 		}
 	}
 
 	// no US regular case
 	rp.LHb.DAforNoUS(di)
-	GlobalScalars.Set(0, int(GvRew), int(di))
+	GlobalScalars.Set2D(0, int(GvRew), int(di))
 }
 
 // GlobalSetRew is a convenience function for setting the external reward
 // state in Globals variables
 func GlobalSetRew(di uint32, rew float32, hasRew bool) {
-	GlobalScalars.Set(num.FromBool[float32](hasRew), int(GvHasRew), int(di))
+	GlobalScalars.Set2D(num.FromBool[float32](hasRew), int(GvHasRew), int(di))
 	if hasRew {
-		GlobalScalars.Set(rew, int(GvRew), int(di))
+		GlobalScalars.Set2D(rew, int(GvRew), int(di))
 	} else {
-		GlobalScalars.Set(0, int(GvRew), int(di))
+		GlobalScalars.Set2D(0, int(GvRew), int(di))
 	}
 }
 
@@ -1204,15 +1202,15 @@ func RubiconUSStimValue(di uint32, usIndex uint32, valence ValenceTypes) float32
 	switch valence {
 	case Positive:
 		if usIndex < nix.RubiconNPosUSs {
-			us = GlobalVectors.Value(int(GvUSpos), int(usIndex), int(di))
+			us = GlobalVectors.Value3D(int(GvUSpos), int(usIndex), int(di))
 		}
 	case Negative:
 		if usIndex < nix.RubiconNNegUSs {
-			us = GlobalVectors.Value(int(GvUSneg), int(usIndex), int(di))
+			us = GlobalVectors.Value3D(int(GvUSneg), int(usIndex), int(di))
 		}
 	case Cost:
 		if usIndex < nix.RubiconNCosts {
-			us = GlobalVectors.Value(int(GvCost), int(usIndex), int(di))
+			us = GlobalVectors.Value3D(int(GvCost), int(usIndex), int(di))
 		}
 	default:
 	}
