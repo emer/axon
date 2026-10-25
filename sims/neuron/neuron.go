@@ -141,9 +141,9 @@ type Sim struct {
 	RandSeeds randx.Seeds `display:"-"`
 }
 
-func Embed(b tree.Node)               { egui.Embed[Sim, Config](b) }
-func (ss *Sim) SetConfig(cfg *Config) { ss.Config = cfg }
-func (ss *Sim) Body() *core.Body      { return ss.GUI.Body }
+func Embed(b tree.Node, configFun func(ss *Sim, cfg *Config)) { egui.Embed[Sim, Config](b, configFun) }
+func (ss *Sim) SetConfig(cfg *Config)                         { ss.Config = cfg }
+func (ss *Sim) Body() *core.Body                              { return ss.GUI.Body }
 
 func (ss *Sim) Defaults() {
 	ss.Config.Defaults()
