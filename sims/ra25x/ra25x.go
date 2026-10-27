@@ -115,6 +115,11 @@ type Sim struct {
 func (ss *Sim) SetConfig(cfg *Config) { ss.Config = cfg }
 func (ss *Sim) Body() *core.Body      { return ss.GUI.Body }
 
+// Destroy releases the GPU resources of the sim when its GUI is destroyed,
+// as when its page in a content app is left (see egui.Embed), so that the
+// next sim initializes the GPU for itself.
+func (ss *Sim) Destroy() { axon.GPURelease() }
+
 func (ss *Sim) ConfigSim() {
 	ss.Root, _ = tensorfs.NewDir("Root")
 	tensorfs.CurRoot = ss.Root

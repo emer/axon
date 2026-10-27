@@ -4,7 +4,7 @@ go 1.27.0
 
 require (
 	cogentcore.org/core v0.5.9
-	cogentcore.org/lab v0.2.7
+	cogentcore.org/lab v0.2.8
 	github.com/cogentcore/mvm v0.0.0-20261026193832-5ebd19c3fa21
 	github.com/emer/emergent/v2 v2.0.2
 	github.com/emer/v1vision v0.9.0

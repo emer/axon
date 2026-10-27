@@ -74,9 +74,14 @@ func LooperCycleGetNeurons(ls *looper.Stacks, net *Network, viewFunc func(mode e
 }
 
 // LooperCycleStartFunc returns a standard looper OnStart function at Cycle level,
-// which runs every cycle and updates the view.
+// which runs every cycle and updates the view. It makes the network the
+// current one first, in case another sim has made its own network current
+// since this one last ran.
 func LooperCycleStartFunc(ls *looper.Stacks, net *Network, viewFunc func(mode enums.Enum) *NetViewUpdate, cycle, mode enums.Enum) func() {
 	return func() {
+		if CurrentNetwork != net {
+			net.SetAsCurrent()
+		}
 		getNeurons := LooperCycleGetNeurons(ls, net, viewFunc, cycle, mode)
 		net.Cycle(getNeurons)
 		if UseGPU && !getNeurons {

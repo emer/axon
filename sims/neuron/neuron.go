@@ -145,6 +145,11 @@ func Embed(b tree.Node, configFun func(ss *Sim, cfg *Config)) { egui.Embed[Sim, 
 func (ss *Sim) SetConfig(cfg *Config)                         { ss.Config = cfg }
 func (ss *Sim) Body() *core.Body                              { return ss.GUI.Body }
 
+// Destroy releases the GPU resources of the sim when its GUI is destroyed,
+// as when its page in a content app is left (see egui.Embed), so that the
+// next sim initializes the GPU for itself.
+func (ss *Sim) Destroy() { axon.GPURelease() }
+
 func (ss *Sim) Defaults() {
 	ss.Config.Defaults()
 	ss.Ge = 0.15
@@ -268,6 +273,9 @@ func (ss *Sim) RunCycles() {
 
 // NeuronUpdate updates the neuron.
 func (ss *Sim) NeuronUpdate(nt *axon.Network, inputOn bool) {
+	if axon.CurrentNetwork != nt { // another sim can have made its network current
+		nt.SetAsCurrent()
+	}
 	ly := nt.LayerByName("Neuron")
 	ni := int(ly.NeurStIndex)
 	di := 0
