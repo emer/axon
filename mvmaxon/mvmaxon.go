@@ -16,6 +16,7 @@ import (
 	"cogentcore.org/core/text/textcore"
 	"cogentcore.org/lab/goal/interpreter"
 	"cogentcore.org/lab/mvmlab"
+	"github.com/emer/emergent/v2/mvmemergent"
 )
 
 func init() {
@@ -52,13 +53,14 @@ type Interpreter struct {
 }
 
 // NewInterpreter returns a new [Interpreter] writing its output to out, with
-// the symbols of the axon packages imported, in addition to those of
+// the symbols of the axon and emergent packages imported, in addition to those of
 // [mvmlab.UseGUI], and the names of [mvmcore.DotPackage], such as b, the
 // parent widget of the code.
 func NewInterpreter(out io.Writer) (*Interpreter, error) {
 	in := &Interpreter{interpreter.NewInterpreter(interpreter.Options{Stdout: out})}
 	Load()
-	mvmlab.UseGUI(in.Interpreter, Values, map[string]map[string]reflect.Value{mvmcore.DotPackage: mvmcore.DotValues()})
+	mvmemergent.Load()
+	mvmlab.UseGUI(in.Interpreter, Values, mvmemergent.Values, map[string]map[string]reflect.Value{mvmcore.DotPackage: mvmcore.DotValues()})
 	in.Config()
 	if _, err := in.Interp.Eval("goal", fmt.Sprintf("import . %q\n", mvmcore.DotPackage)); err != nil {
 		return nil, err

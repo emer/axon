@@ -3,7 +3,7 @@ module github.com/emer/axon/v2
 go 1.27.0
 
 require (
-	cogentcore.org/core v0.5.8
+	cogentcore.org/core v0.5.9
 	cogentcore.org/lab v0.2.7
 	github.com/cogentcore/mvm v0.0.0-20261026193832-5ebd19c3fa21
 	github.com/emer/emergent/v2 v2.0.2
@@ -29,9 +29,9 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dlclark/regexp2/v2 v2.7.1 // indirect
 	github.com/ericchiang/css v1.4.0 // indirect
-	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-gl/glfw/v3.4/glfw v0.1.0-pre.1.0.20260628091122-0bd588dc30cf // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
+	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/gomarkdown/markdown v0.0.0-20260724235538-61af6e1e6971 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/h2non/filetype v1.1.3 // indirect
@@ -54,6 +54,7 @@ require (
 	github.com/pkg/sftp v1.13.12 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
+	github.com/sgtdi/fswatcher v1.3.0 // indirect
 	github.com/tdewolff/parse/v2 v2.8.5 // indirect
 	golang.org/x/crypto v0.58.0 // indirect
 	golang.org/x/mod v0.42.0 // indirect

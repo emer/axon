@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestInterpreter checks that Goal code can use the axon package
+// TestInterpreter checks that Goal code can use the axon and egui packages
 // without importing it, and that math mode works without tensorfs.
 func TestInterpreter(t *testing.T) {
 	var out bytes.Buffer
@@ -22,5 +22,7 @@ func TestInterpreter(t *testing.T) {
 	require.NoError(t, err)
 	_, err = in.Eval("# x := linspace(0, 1, 3, true)\nfmt.Println(x)")
 	require.NoError(t, err)
-	assert.Equal(t, "true SuperLayer\n[3]   0 0.5   1 \n\n", out.String())
+	_, err = in.Eval("fmt.Println(egui.ActiveRunning)")
+	require.NoError(t, err)
+	assert.Equal(t, "true SuperLayer\n[3]   0 0.5   1 \n\nActiveRunning\n", out.String())
 }
