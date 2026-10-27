@@ -1,0 +1,11 @@
+#!/bin/sh
+# make generates the symbols of the axon packages, one gen_*.go file per
+# package, with mvm extract -register.
+set -e
+cd "$(dirname "$0")"
+/bin/rm -f gen_*.go
+
+axon="fsfffb chans chans/chanplots kinase axon"
+pkgs=""
+for p in $axon; do pkgs="$pkgs github.com/emer/axon/v2/$p"; done
+go run github.com/cogentcore/mvm/cmd/extract -register -pkg mvmaxon $pkgs

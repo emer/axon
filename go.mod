@@ -3,10 +3,10 @@ module github.com/emer/axon/v2
 go 1.27.0
 
 require (
-	cogentcore.org/core v0.5.5
-	cogentcore.org/lab v0.2.4
-	github.com/cogentcore/yaegi v0.0.0-20261024142200-c0b92ec4f6b6
-	github.com/emer/emergent/v2 v2.0.1
+	cogentcore.org/core v0.5.8
+	cogentcore.org/lab v0.2.7
+	github.com/cogentcore/mvm v0.0.0-20261026193832-5ebd19c3fa21
+	github.com/emer/emergent/v2 v2.0.2
 	github.com/emer/v1vision v0.9.0
 	github.com/stretchr/testify v1.11.1
 	gitlab.com/gomidi/midi/v2 v2.3.18
@@ -23,7 +23,6 @@ require (
 	github.com/anthonynsimon/bild v0.14.0 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
-	github.com/bramvdbogaerde/go-scp v1.6.0 // indirect
 	github.com/chewxy/math32 v1.11.2 // indirect
 	github.com/cogentcore/readline v0.1.3 // indirect
 	github.com/cogentcore/typesetting v0.0.0-20261022123550-2cd93a91580e // indirect
@@ -40,6 +39,7 @@ require (
 	github.com/hack-pad/hackpadfs v0.2.4 // indirect
 	github.com/hack-pad/safejs v0.1.1 // indirect
 	github.com/jeandeaual/go-locale v0.0.0-20250612000132-0ef82f21eade // indirect
+	github.com/kr/fs v0.1.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-shellwords v1.0.12 // indirect
@@ -51,6 +51,7 @@ require (
 	github.com/oliverbestmann/webgpu/libs-ios v0.0.0-20260628152757-fe2537e7ddac // indirect
 	github.com/oliverbestmann/webgpu/libs-linux v0.0.0-20260628152803-421b8a341d08 // indirect
 	github.com/oliverbestmann/webgpu/libs-windows v0.0.0-20260628152801-f47d1b682eb8 // indirect
+	github.com/pkg/sftp v1.13.12 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/tdewolff/parse/v2 v2.8.5 // indirect

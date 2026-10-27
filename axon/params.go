@@ -11,7 +11,8 @@ import (
 
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/lab/base/mpi"
-	"github.com/cogentcore/yaegi/interp"
+	"github.com/cogentcore/mvm/interp"
+	"github.com/cogentcore/mvm/lang/golang"
 	"github.com/emer/emergent/v2/params"
 )
 
@@ -65,11 +66,11 @@ type Params struct {
 	// typically using the "Script" set name.
 	Script string `display:"-"`
 
-	// Interp is the yaegi interpreter for running the script.
-	Interp *interp.Interpreter `display:"-"`
+	// Interp is the mvm interpreter for running the script.
+	Interp *interp.Interp `display:"-"`
 }
 
-// ScriptParams is a template for yaegi interpreted parameters
+// ScriptParams is a template for mvm interpreted parameters
 var ScriptParams = `sim.Sim.Params.Layer["Script"] = &axon.LayerSheet{
 	&axon.LayerSel{Sel:"Layer", Set: func(ly *axon.LayerParams) {
 		// set params
@@ -83,8 +84,9 @@ sim.Sim.Params.Path["Script"] = &axon.PathSheet{
 `
 
 // Config configures the ExtraSheets, Tag, and Network fields, and
-// initializes the yaegi interpreter for dynamic parameter scripts.
-// Pass a reflect.ValueOf(*Sim) to initialize the yaegi interpreter.
+// initializes the mvm interpreter for dynamic parameter scripts.
+// Pass a reflect.ValueOf(*Sim) to initialize the mvm interpreter:
+// the script uses it as the variable sim.Sim.
 // Sim must have Params in a field called Params.
 func (pr *Params) Config(layer LayerSheets, path PathSheets, extraSheets, tag string, sim reflect.Value) {
 	pr.Layer = layer
@@ -101,9 +103,9 @@ func (pr *Params) Config(layer LayerSheets, path PathSheets, extraSheets, tag st
 	if report != "" {
 		mpi.Printf("Params Set: %s\n", report)
 	}
-	pr.Interp = interp.New(interp.Options{})
-	pr.Interp.Use(interp.Exports{
-		"github.com/emer/axon/axon": map[string]reflect.Value{
+	pr.Interp = interp.NewInterpreter(golang.GoSpec)
+	pr.Interp.ImportPackageValues(map[string]map[string]reflect.Value{
+		"github.com/emer/axon/axon": {
 			"LayerParams": reflect.ValueOf((*LayerParams)(nil)),
 			"PathParams":  reflect.ValueOf((*PathParams)(nil)),
 			"LayerSel":    reflect.ValueOf((*LayerSel)(nil)),
@@ -113,11 +115,13 @@ func (pr *Params) Config(layer LayerSheets, path PathSheets, extraSheets, tag st
 			"PathSheet":   reflect.ValueOf((*PathSheet)(nil)),
 			"PathSheets":  reflect.ValueOf((*PathSheets)(nil)),
 		},
-		"github.com/emer/axon/sim/sim": map[string]reflect.Value{
+		// mvm binds a pointer as a variable of its element type.
+		"github.com/emer/axon/sim/sim": {
 			"Sim": sim,
 		},
 	})
-	pr.Interp.ImportUsed()
+	// The script uses the packages without importing them.
+	pr.Interp.AutoImportPackages()
 }
 
 // Name returns name of current set of parameters, including Tag.
@@ -151,7 +155,7 @@ func (pr *Params) ApplyAll(net *Network) {
 		return
 	}
 	if pr.Script != "" {
-		_, err := pr.Interp.Eval(pr.Script)
+		_, err := pr.Interp.Eval("params", pr.Script)
 		if err != nil {
 			fmt.Println(pr.Script)
 			errors.Log(err)
