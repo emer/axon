@@ -53,6 +53,53 @@ func (i *PathGTypes) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "PathGTypes")
 }
 
+var _ClampPlusValues = []ClampPlus{0, 1, 2}
+
+// ClampPlusN is the highest valid value for type ClampPlus, plus one.
+//
+//gosl:start
+const ClampPlusN ClampPlus = 3
+
+//gosl:end
+
+var _ClampPlusValueMap = map[string]ClampPlus{`Add`: 0, `Mod`: 1, `Clamp`: 2}
+
+var _ClampPlusDescMap = map[ClampPlus]string{0: `Add adds the external input EXT to the Ge, as it works in the minus phase, when the Add option is activated.`, 1: `Mod makes the total net Ge modulated by the Ext external input value: i.e., if there is a zero in Ext, then the corresponding Ge is 0`, 2: `Clamp does hard-clamping of external input in the plus phase, as if the Add option was not selected.`}
+
+var _ClampPlusMap = map[ClampPlus]string{0: `Add`, 1: `Mod`, 2: `Clamp`}
+
+// String returns the string representation of this ClampPlus value.
+func (i ClampPlus) String() string { return enums.String(i, _ClampPlusMap) }
+
+// SetString sets the ClampPlus value from its string representation,
+// and returns an error if the string is invalid.
+func (i *ClampPlus) SetString(s string) error {
+	return enums.SetString(i, s, _ClampPlusValueMap, "ClampPlus")
+}
+
+// Int64 returns the ClampPlus value as an int64.
+func (i ClampPlus) Int64() int64 { return int64(i) }
+
+// SetInt64 sets the ClampPlus value from an int64.
+func (i *ClampPlus) SetInt64(in int64) { *i = ClampPlus(in) }
+
+// Desc returns the description of the ClampPlus value.
+func (i ClampPlus) Desc() string { return enums.Desc(i, _ClampPlusDescMap) }
+
+// ClampPlusValues returns all possible values for the type ClampPlus.
+func ClampPlusValues() []ClampPlus { return _ClampPlusValues }
+
+// Values returns all possible values for the type ClampPlus.
+func (i ClampPlus) Values() []enums.Enum { return enums.Values(_ClampPlusValues) }
+
+// MarshalText implements the [encoding.TextMarshaler] interface.
+func (i ClampPlus) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
+
+// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
+func (i *ClampPlus) UnmarshalText(text []byte) error {
+	return enums.UnmarshalText(i, text, "ClampPlus")
+}
+
 var _GlobalScalarVarsValues = []GlobalScalarVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57}
 
 // GlobalScalarVarsN is the highest valid value for type GlobalScalarVars, plus one.

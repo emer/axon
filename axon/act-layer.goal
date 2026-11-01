@@ -6,6 +6,7 @@ package axon
 
 import (
 	// "fmt"
+
 	"cogentcore.org/core/gpu"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/tensor"
@@ -62,7 +63,7 @@ func (ly *LayerParams) ApplyExtValue(ni, di uint32, val float32) {
 }
 
 func (ly *LayerParams) ApplyExtsNeuron(ni, di uint32) {
-	lni := ni - ly.Indexes.NeurSt // layer-based 
+	lni := ni - ly.Indexes.NeurSt // layer-based
 	ly.InitExt(ni, di)
 	if IsExtLayerType(ly.Type) {
 		ei := ly.Indexes.ExtsSt + lni
@@ -139,7 +140,7 @@ func (ly *LayerParams) GatherSpikes(ctx *Context, ni, di uint32) {
 	lni := ni - ly.Indexes.NeurSt
 	ly.GatherSpikesInit(ctx, ni, di)
 	for pti := uint32(0); pti < ly.Indexes.RecvN; pti++ {
-		npti := RecvPathIxs.Value1D(int(ly.Indexes.RecvSt+pti))
+		npti := RecvPathIxs.Value1D(int(ly.Indexes.RecvSt + pti))
 		pt := GetPaths(npti)
 		pt.GatherSpikes(ctx, ly, ni, di, lni)
 	}
@@ -267,7 +268,7 @@ func (ly *LayerParams) GInteg(ctx *Context, pi, ni, di uint32) {
 // conductance values prior to doing the standard updates in GFromRawSyn
 // drvAct is for Pulvinar layers, activation of driving neuron
 func (ly *LayerParams) SpecialPreGs(ctx *Context, pi, ni, di uint32, drvGe float32, nonDrivePct float32) float32 {
-	saveVal := float32(0)               // sometimes we need to use a value computed here, for the post Gs step
+	saveVal := float32(0) // sometimes we need to use a value computed here, for the post Gs step
 	pil := pi - ly.PoolSt
 	pnn := uint32(PoolNNeurons(pi))
 	pni := NeuronIxs[ni, NrnNeurIndex] - uint32(PoolIxs[pi, PoolNeurSt])
@@ -419,7 +420,7 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni, di uint32, saveVal float3
 			ly.GNeuroMod(ctx, ni, di)
 		} else {
 			nda := ly.DSMatrix.PatchBurstGain*dad1 - dad2
-			ggain := 1.0 + ly.Learn.NeuroMod.DASign() * ly.DSMatrix.PatchDAModGain * nda
+			ggain := 1.0 + ly.Learn.NeuroMod.DASign()*ly.DSMatrix.PatchDAModGain*nda
 			Neurons[ni, di, Ge] *= ggain
 			Neurons[ni, di, Gi] *= ggain
 		}
@@ -432,7 +433,7 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni, di uint32, saveVal float3
 		}
 		Neurons[ni, di, Ge] = geb + ge * ggain
 		Neurons[ni, di, Gi] = 0.0
-		
+
 	default:
 	}
 }
@@ -468,7 +469,7 @@ func (ly *LayerParams) GFromRawSyn(ctx *Context, ni, di uint32) {
 		extraSyn = md * nrnGModSyn * ly.Acts.Dend.ModGain
 	default:
 		if ly.Acts.Dend.HasMod.IsTrue() {
-			md := ly.Acts.Dend.ModBase + ly.Acts.Dend.ModGain * nrnGModSyn
+			md := ly.Acts.Dend.ModBase + ly.Acts.Dend.ModGain*nrnGModSyn
 			if md > 1 {
 				md = 1
 			}
@@ -537,7 +538,7 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, lpi, ni, di uint32) {
 			ly.Learn.Timing.LearnTiming(ctx, ni, di)
 		}
 	}
-	
+
 	lmax := PoolAvgMax(AMGeInt, AMCycle, Max, lpi, di)
 	if lmax > 0 {
 		Neurons[ni, di, GeIntNorm] = Neurons[ni, di, GeInt] / lmax
@@ -710,7 +711,7 @@ func (ly *LayerParams) RLRate(ctx *Context, lpi, pi, ni, di uint32) {
 	nrnCaP := Neurons[ni, di, CaP]
 	nrnCaD := Neurons[ni, di, CaD]
 	ly.Learn.CaLearn.ETrace(ctx, ni, di, nrnCaD)
-	
+
 	da := GlobalScalars[GvDA, di]
 	ach := GlobalScalars[GvACh, di]
 	mlr := ly.Learn.RLRate.RLRateSigDeriv(nrnCaD, PoolAvgMax(AMCaD, AMCycle, Max, lpi, di))
@@ -846,7 +847,6 @@ func (ly *LayerParams) LDTSrcLayAct(layIndex int32, di uint32) float32 {
 	return PoolAvgMax(AMCaP, AMCycle, Avg, opi, di)
 }
 
-
 func (ly *LayerParams) CyclePostLDTLayer(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act float32) {
 	ach := ly.LDT.ACh(ctx, di, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act)
 
@@ -905,7 +905,7 @@ func (ly *LayerParams) CyclePostTDDaLayer(ctx *Context, di uint32) {
 }
 
 func (ly *LayerParams) CyclePostCeMLayer(ctx *Context, lpi, di uint32) {
-	casd := PoolAvgMax(AMCaD, AMCycle, Max, lpi, di)	
+	casd := PoolAvgMax(AMCaD, AMCycle, Max, lpi, di)
 	if ly.Learn.NeuroMod.Valence == Positive {
 		GlobalScalars[GvCeMpos, di] = casd
 	} else {
@@ -947,12 +947,12 @@ func (ly *LayerParams) DecayStateNeuronsAll(ctx *Context, decay, glong, ahp floa
 	}
 }
 
-// NewStateLayer does NewState at the layer level, called 
-func (ly *LayerParams) NewStateLayer(ctx *Context) {
+// MinusPhaseStartLayer does MinusPhaseStart at the layer level, called
+func (ly *LayerParams) MinusPhaseStartLayer(ctx *Context) {
 	actMinusAvg := float32(0)
 	actPlusAvg := float32(0)
 	np := uint32(ly.Indexes.NPools)
-	
+
 	for di := uint32(0); di < ctx.NData; di++ {
 		lpi := ly.PoolIndex(0)
 
@@ -964,7 +964,7 @@ func (ly *LayerParams) NewStateLayer(ctx *Context) {
 
 		for spi := uint32(0); spi < np; spi++ {
 			pi := ly.PoolIndex(spi)
-			ly.NewStatePool(ctx, pi, di) // also calls DecayState on pool
+			ly.MinusPhaseStartPool(ctx, pi, di) // also calls DecayState on pool
 		}
 	}
 
@@ -974,21 +974,21 @@ func (ly *LayerParams) NewStateLayer(ctx *Context) {
 	actMinusAvg *= davg
 	actPlusAvg *= davg
 	for di := uint32(0); di < ctx.NData; di++ {
-		ly.NewStateLayerActAvg(ctx, di, actMinusAvg, actPlusAvg)
+		ly.MinusPhaseStartLayerActAvg(ctx, di, actMinusAvg, actPlusAvg)
 	}
 
 	if ly.Acts.Decay.GBuffs.IsTrue() {
 		for pti := uint32(0); pti < ly.Indexes.RecvN; pti++ {
-			npti := RecvPathIxs.Value1D(int(ly.Indexes.RecvSt+pti))
+			npti := RecvPathIxs.Value1D(int(ly.Indexes.RecvSt + pti))
 			pt := GetPaths(npti)
 			pt.InitGBuffs(ctx)
 		}
 	}
 }
 
-// NewStateLayerActAvg updates ActAvg.ActMAvg and ActPAvg based on current values
+// MinusPhaseStartLayerActAvg updates ActAvg.ActMAvg and ActPAvg based on current values
 // that have been averaged across NData already.
-func (ly *LayerParams) NewStateLayerActAvg(ctx *Context, di uint32, actMinusAvg, actPlusAvg float32) {
+func (ly *LayerParams) MinusPhaseStartLayerActAvg(ctx *Context, di uint32, actMinusAvg, actPlusAvg float32) {
 	mavg := LayerStates[ly.Index, di, LayerActMAvg]
 	pavg := LayerStates[ly.Index, di, LayerActPAvg]
 	ly.Inhib.ActAvg.AvgFromAct(&mavg, actMinusAvg, ly.Acts.Dt.LongAvgDt)
@@ -997,7 +997,7 @@ func (ly *LayerParams) NewStateLayerActAvg(ctx *Context, di uint32, actMinusAvg,
 	LayerStates[ly.Index, di, LayerActPAvg] = pavg
 }
 
-func (ly *LayerParams) NewStatePool(ctx *Context, pi, di uint32) {
+func (ly *LayerParams) MinusPhaseStartPool(ctx *Context, pi, di uint32) {
 	PoolsInt[pi, di, Clamped] = 0
 	if ly.Acts.Clamp.Add.IsFalse() && ly.IsInput() {
 		PoolsInt[pi, di, Clamped] = 1
@@ -1006,9 +1006,9 @@ func (ly *LayerParams) NewStatePool(ctx *Context, pi, di uint32) {
 	PoolsInt[pi, di, PoolGated] = 0
 }
 
-// NewStateNeuron handles all initialization at start of new input pattern.
+// MinusPhaseStartNeuron handles all initialization at start of new input pattern.
 // Should already have presented the external input to the network at this point.
-func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32) {
+func (ly *LayerParams) MinusPhaseStartNeuron(ctx *Context, ni, di uint32) {
 	Neurons[ni, di, BurstPrv] = Neurons[ni, di, Burst]
 	Neurons[ni, di, CaDPrev] = Neurons[ni, di, CaD]
 	Neurons[ni, di, CaPMax] = 0.0
@@ -1033,12 +1033,9 @@ func (ly *LayerParams) Beta2Neuron(ctx *Context, ni, di uint32) {
 
 ////////  Minus Phase
 
-func (ly *LayerParams) MinusPhasePool(ctx *Context, pi uint32) {
+func (ly *LayerParams) MinusPhaseEndPool(ctx *Context, pi uint32) {
 	for di := uint32(0); di < ctx.NData; di++ {
 		PoolCycleToMinus(pi, di)
-		if ly.Acts.Clamp.Add.IsFalse() && ly.IsTarget() {
-			PoolsInt[pi, di, Clamped] = 1
-		}
 	}
 	if PoolIxs[pi, PoolIsLayer] == 0 {
 		return
@@ -1052,8 +1049,8 @@ func (ly *LayerParams) MinusPhasePool(ctx *Context, pi uint32) {
 	for di := uint32(0); di < ctx.NData; di++ {
 		ly.AvgGeM(ctx, di, geIntMinusMax, giIntMinusMax)
 	}
-}	
-	
+}
+
 // AvgGeM computes the average and max GeInt, GiInt in minus phase
 // (AvgMaxGeM, AvgMaxGiM) stats, updated in MinusPhase,
 // using values that already max across NData.
@@ -1066,8 +1063,8 @@ func (ly *LayerParams) AvgGeM(ctx *Context, di uint32, geIntMinusMax, giIntMinus
 	LayerStates[ly.Index, di, LayerAvgMaxGiM] = gim
 }
 
-// MinusPhaseNeuron does neuron level minus-phase updating
-func (ly *LayerParams) MinusPhaseNeuron(ctx *Context, ni, di uint32) {
+// MinusPhaseEndNeuron does neuron level minus-phase updating
+func (ly *LayerParams) MinusPhaseEndNeuron(ctx *Context, ni, di uint32) {
 	Neurons[ni, di, ActM] = Neurons[ni, di, ActInt]
 }
 
@@ -1079,6 +1076,18 @@ func (ly *LayerParams) MinusPhasePost(ctx *Context) {
 	case PulvinarLayer:
 		ly.DecayStateNeuronsAll(ctx, 1, 1, 0)
 	default:
+	}
+}
+
+// PlusPhaseStartPool does pool level plus-phase start:
+// sets clamping for Clamp.Add = true, ClampPlus = Clamp layers.
+func (ly *LayerParams) PlusPhaseStartPool(ctx *Context, pi uint32) {
+	if !ly.IsInputOrTarget() || (ly.Acts.Clamp.Add.IsTrue() && ly.Acts.Clamp.ClampPlus != ClampPlusClamp) {
+		return
+	}
+
+	for di := uint32(0); di < ctx.NData; di++ {
+		PoolsInt[pi, di, Clamped] = 1
 	}
 }
 
@@ -1143,7 +1152,7 @@ func (ly *LayerParams) PlusPhaseEndPost(ctx *Context) {
 		}
 	}
 	if ly.Type == VSMatrixLayer || ly.Type == DSMatrixLayer {
-		ly.MatrixGated(ctx) 
+		ly.MatrixGated(ctx)
 	}
 }
 
@@ -1411,4 +1420,3 @@ func (ly *Layer) ClearTargExt(ctx *Context) {
 		}
 	}
 }
-

@@ -57,9 +57,9 @@ func TestLayer_SendSpike(t *testing.T) {
 	net.InitWeights()
 
 	ctx := NewContext()
-	net.NewState(ctx)
+	net.MinusPhaseStart(ctx)
 
-	// spike the neurons. Do this after NewState(), so that the spike is not decayed away
+	// spike the neurons. Do this after MinusPhaseStart(), so that the spike is not decayed away
 	inputLayer1.Neurons[1].Spike = 1.0
 	inputLayer2.Neurons[0].Spike = 1.0
 

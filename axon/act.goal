@@ -7,10 +7,10 @@ package axon
 import (
 	"math"
 
-	"cogentcore.org/lab/base/randx"
-	"cogentcore.org/lab/gosl/slbool"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
+	"cogentcore.org/lab/base/randx"
+	"cogentcore.org/lab/gosl/slbool"
 	"github.com/emer/axon/v2/chans"
 )
 
@@ -199,7 +199,7 @@ type DendParams struct {
 	// ModACh if true, modulatory signal also includes ACh multiplicative factor.
 	ModACh slbool.Bool
 
-	// ModBase is the baseline modulatory level for modulatory effects. 
+	// ModBase is the baseline modulatory level for modulatory effects.
 	// Net modulation is ModBase + ModGain * GModSyn
 	ModBase float32
 
@@ -344,7 +344,7 @@ type DecayParams struct {
 	// GBuffs resets the spike conductance buffers for receiving pathways into
 	// this layer, creating a mild form of decay that cuts off prior inputs.
 	GBuffs slbool.Bool
-	
+
 	pad, pad1 float32
 }
 
@@ -372,7 +372,7 @@ type DtParams struct {
 	// to 0.5 or possibly even lower (typically however this is not necessary).
 	Integ float32 `default:"1" min:"0"`
 
-	// VmC is the membrane potential capacitance in pF (picofarads), which 
+	// VmC is the membrane potential capacitance in pF (picofarads), which
 	// determines the rate of Vm updating over time.
 	VmC float32 `default:"281" min:"1"`
 
@@ -435,7 +435,7 @@ type DtParams struct {
 
 	// MaxI = VmC * 100 nS nominal max conductance = maximum I current step.
 	MaxI float32 `display:"-" json:"-" xml:"-"`
-	
+
 	pad, pad1, pad2 float32
 }
 
@@ -598,6 +598,25 @@ func (an *SpikeNoiseParams) PGi(ctx *Context, p *float32, ni, di uint32) float32
 
 ////////  ClampParams
 
+// ClampPlus are options for clamping in the plus phase, only applicable
+// for the Add option in [ClampParams].
+type ClampPlus int32 //enums:enum -trimprefix=ClampPlus
+
+const (
+	// Add adds the external input EXT to the Ge, as it works
+	// in the minus phase, when the Add option is activated.
+	ClampPlusAdd ClampPlus = iota
+
+	// Mod makes the total net Ge modulated by the Ext external
+	// input value: i.e., if there is a zero in Ext, then the corresponding
+	// Ge is 0
+	ClampPlusMod
+
+	// Clamp does hard-clamping of external input in the plus phase,
+	// as if the Add option was not selected.
+	ClampPlusClamp
+)
+
 // ClampParams specify how external inputs drive excitatory conductances
 // (like a current clamp) -- either adds or overwrites existing conductances.
 // Noise is added in either case.
@@ -614,11 +633,13 @@ type ClampParams struct {
 	// but may be ok for input layers.
 	Add slbool.Bool `default:"false"`
 
+	// ClampPlus are options for clamping in the plus phase, only applicable
+	// for the Add option in [ClampParams].
+	ClampPlus ClampPlus
+
 	// ErrThr is the threshold on neuron Act activity to count as active for
 	// computing the error relative to target in PctErr method.
 	ErrThr float32 `default:"0.5"`
-
-	pad float32
 }
 
 func (cp *ClampParams) Update() {
@@ -627,6 +648,25 @@ func (cp *ClampParams) Update() {
 func (cp *ClampParams) Defaults() {
 	cp.Ge = 0.8
 	cp.ErrThr = 0.5
+}
+
+func (cp *ClampParams) ShouldDisplay(field string) bool {
+	switch field {
+	case "ClampPlus":
+		return cp.Add.IsTrue()
+	default:
+		return true
+	}
+}
+
+func (cp *ClampParams) IsAdd(plusPhase bool) bool {
+	if cp.Add.IsFalse() {
+		return false
+	}
+	if !plusPhase {
+		return true
+	}
+	return cp.ClampPlus != ClampPlusClamp
 }
 
 ////////  SMaintParams
@@ -857,7 +897,7 @@ type ActParams struct {
 	// Noise specifies how, where, when, and how much noise to add.
 	Noise SpikeNoiseParams `display:"inline"`
 
-	// VmRange constrains the range of the Vm membrane potential, 
+	// VmRange constrains the range of the Vm membrane potential,
 	// which helps to prevent numerical instability.
 	VmRange minmax.F32 `display:"inline"`
 
@@ -883,7 +923,7 @@ type ActParams struct {
 	Kir chans.KirParams `display:"inline"`
 
 	// NMDA has channel parameters used in computing the Gnmda conductance
-	// that is maximal for more depolarized neurons (due to unblocking of 
+	// that is maximal for more depolarized neurons (due to unblocking of
 	// Mg++ ions), and thus helps keep active neurons active, thereby promoting
 	// overall neural stability over time. See also Learn.LearnNMDA for
 	// distinct parameters used for Ca++ influx driving learning, and
@@ -932,7 +972,7 @@ func (ac *ActParams) Defaults() {
 	ac.Decay.Defaults()
 	ac.Dt.Defaults()
 	ac.Gbar.SetAll(100, 20, 100, 100) // E, L, I, K
-	ac.Erev.SetAll(0,  -70, -90, -90) // E, L, I, K: K = hyperpolarized -90mv
+	ac.Erev.SetAll(0, -70, -90, -90)  // E, L, I, K: K = hyperpolarized -90mv
 	ac.Clamp.Defaults()
 	ac.Noise.Defaults()
 	ac.VmRange.Set(-100, 0)
@@ -1332,21 +1372,31 @@ func (ac *ActParams) GeFromSyn(ctx *Context, ni, di uint32, geSyn, geExt float32
 	Neurons[ni, di, GeExt] = 0.0
 	geS := geSyn
 	geE := geExt
-	if ac.Clamp.Add.IsTrue() && NeuronHasFlag(NeuronHasExt, ni, di) {
-		Neurons[ni, di, GeExt] = Neurons[ni, di, Ext] * ac.Clamp.Ge
-		geS += Neurons[ni, di, GeExt]
+	geNew := geS + geE
+
+	if NeuronHasFlag(NeuronHasExt, ni, di) {
+		ext := Neurons[ni, di, Ext] 
+		pp := ctx.PlusPhase.IsTrue()
+		if ac.Clamp.IsAdd(pp) {
+			geExt := ext * ac.Clamp.Ge
+			Neurons[ni, di, GeExt] = geExt
+			geS += geExt
+			geNew = geS + geE
+			if pp && ac.Clamp.ClampPlus == ClampPlusMod {
+				geNew *= ext
+			}
+		} else {
+			geS = ext * ac.Clamp.Ge
+			Neurons[ni, di, GeExt] = geS
+			geE = 0 // no extra in this case
+			geNew = geS + geE
+		}
 	}
 
-	if ac.Clamp.Add.IsFalse() && NeuronHasFlag(NeuronHasExt, ni, di) {
-		geS = Neurons[ni, di, Ext] * ac.Clamp.Ge
-		Neurons[ni, di, GeExt] = geS
-		geE = 0 // no extra in this case
+	if geNew < 0.0 {
+		geNew = 0.0
 	}
-
-	Neurons[ni, di, Ge] = geS + geE
-	if Neurons[ni, di, Ge] < 0.0 {
-		Neurons[ni, di, Ge] = 0.0
-	}
+	Neurons[ni, di, Ge] = geNew
 	ac.AddGeNoise(ctx, ni, di)
 }
 
@@ -1429,9 +1479,9 @@ func (ac *ActParams) VmFromG(ctx *Context, ni, di uint32) {
 		if updtVm && ac.Spikes.Exp.IsTrue() { // add spike current if relevant
 			var exVm float32
 			exVm = 0.5 * (nvm + Neurons[ni, di, Vm]) // midpoint for this
-			expi = ac.Gbar.L*ac.Spikes.ExpSlope *
+			expi = ac.Gbar.L * ac.Spikes.ExpSlope *
 				math32.FastExp((exVm-ac.Spikes.Thr)/ac.Spikes.ExpSlope)
-			if expi > ac.Dt.MaxI  {
+			if expi > ac.Dt.MaxI {
 				expi = ac.Dt.MaxI
 			}
 			inet += expi
@@ -1505,7 +1555,7 @@ func (ac *ActParams) SpikeFromVmVars(nrnISI, nrnISIAvg, nrnSpike, nrnSpiked, nrn
 	if nwAct > 1 {
 		nwAct = 1
 	}
-	nwAct = *nrnAct + 100 * ac.Dt.VmDt*(nwAct-*nrnAct) // 100 restores to prior behavior
+	nwAct = *nrnAct + 100*ac.Dt.VmDt*(nwAct-*nrnAct) // 100 restores to prior behavior
 	*nrnAct = nwAct
 }
 

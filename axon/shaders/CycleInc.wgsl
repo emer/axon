@@ -130,11 +130,15 @@ struct SpikeNoiseParams {
 	GeExpInt: f32,
 	GiExpInt: f32,
 }
+alias ClampPlus = i32; //enums:enum -trimprefix=ClampPlus
+const  ClampPlusAdd: ClampPlus = 0;
+const  ClampPlusMod: ClampPlus = 1;
+const  ClampPlusClamp: ClampPlus = 2;
 struct ClampParams {
 	Ge: f32,
 	Add: i32,
+	ClampPlus: ClampPlus,
 	ErrThr: f32,
-	pad: f32,
 }
 struct SMaintParams {
 	On: i32,
@@ -362,6 +366,7 @@ struct PulvinarParams {
 
 //////// import: "enumgen.go"
 const PathGTypesN: PathGTypes = 5;
+const ClampPlusN: ClampPlus = 3;
 const GlobalScalarVarsN: GlobalScalarVars = 58;
 const GlobalVectorVarsN: GlobalVectorVars = 10;
 const GPUVarsN: GPUVars = 23;

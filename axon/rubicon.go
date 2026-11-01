@@ -596,7 +596,7 @@ func (gp *GiveUpParams) Sums(di uint32) (cnSum, guSum float32) {
 // are computed in equations using inputs from specialized network layers
 // (LDTLayer driven by BLA, CeM layers, VSPatchLayer).
 // The Drives, Effort, US and resulting LHb PV dopamine computation all happens at the
-// at the start of each trial (NewState, Step).  The LV / CS dopamine is computed
+// at the start of each trial (MinusPhaseStart, Step).  The LV / CS dopamine is computed
 // cycle-by-cycle by the VTA layer using parameters set by the VTA layer.
 // Renders USLayer, PVLayer, DrivesLayer representations based on state updated here.
 type Rubicon struct {

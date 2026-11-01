@@ -4,7 +4,7 @@
 
 package axon
 
-import 	"cogentcore.org/core/math32"
+import "cogentcore.org/core/math32"
 
 //gosl:start
 
@@ -97,7 +97,6 @@ func (ly *LayerParams) TrgAvgFromD(ctx *Context) {
 func (ly *LayerParams) WtFromDWtLayer(ctx *Context) {
 	ly.TrgAvgFromD(ctx)
 }
-
 
 // DWtSubMean subtracts the mean DWt for each recv neuron.
 func (ly *LayerParams) DWtSubMean(ctx *Context, ri uint32) {
@@ -254,5 +253,3 @@ func (ly *Layer) SetSubMean(trgAvg, path float32) {
 		pj.Params.Learn.DWt.SubMean = path
 	}
 }
-
-

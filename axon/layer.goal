@@ -16,9 +16,9 @@ import (
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/tree"
+	"github.com/emer/axon/v2/fsfffb"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/weights"
-	"github.com/emer/axon/v2/fsfffb"
 )
 
 // index naming:
@@ -52,7 +52,7 @@ type Layer struct {
 	// and 4D shaped layers have sub-pools after that.
 	NPools uint32 `display:"-"`
 
-	// MaxData is the maximum amount of input data that can be processed in 
+	// MaxData is the maximum amount of input data that can be processed in
 	// parallel in one pass of the network (copied from [NetworkIndexes]).
 	// Neuron, Pool, Values storage is allocated to hold this amount.
 	MaxData uint32 `display:"-"`
@@ -121,7 +121,7 @@ func (ly *Layer) Defaults() { //types:add
 	case TargetLayer:
 		ly.Params.Acts.Clamp.Ge = 0.8
 		ly.Params.Learn.TrgAvgAct.SubMean = 0
-		// ly.Params.Learn.RLRate.SigmoidMin = 1
+	// ly.Params.Learn.RLRate.SigmoidMin = 1
 
 	case CTLayer:
 		ly.Params.CTDefaults()
@@ -148,14 +148,14 @@ func (ly *Layer) Defaults() { //types:add
 	case IOLayer:
 		ly.Params.IODefaults()
 	case CNiIOLayer:
-	 	ly.Params.CNiIODefaults()
+		ly.Params.CNiIODefaults()
 	case CNiUpLayer:
-	 	ly.Params.CNiUpDefaults()
+		ly.Params.CNiUpDefaults()
 	case CNeUpLayer:
-	 	ly.Params.NuclearDefaults()
+		ly.Params.NuclearDefaults()
 	case CNeDnLayer:
 		ly.Params.CNeDnDefaults()
-		
+
 	case LDTLayer:
 		ly.LDTDefaults()
 	case BLALayer:
@@ -349,7 +349,7 @@ func (ly *Layer) BuildSubPools(ctx *Context) {
 	for py := 0; py < spy; py++ {
 		for px := 0; px < spx; px++ {
 			soff := uint32(ly.Shape.IndexTo1D(py, px, 0, 0))
-			eoff := uint32(ly.Shape.IndexTo1D(py, px, sh[2] - 1, sh[3] - 1) + 1)
+			eoff := uint32(ly.Shape.IndexTo1D(py, px, sh[2]-1, sh[3]-1) + 1)
 			pi := ly.Params.PoolIndex(spi)
 			PoolIxs[pi, PoolNeurSt] = soff
 			PoolIxs[pi, PoolNeurEd] = eoff
@@ -368,8 +368,8 @@ func (ly *Layer) BuildPools(ctx *Context, nn uint32) error {
 	for di := uint32(0); di < ly.MaxData; di++ {
 		lpi := ly.Params.PoolIndex(0)
 		PoolIxs[lpi, PoolNeurSt] = 0
- 		PoolIxs[lpi, PoolNeurEd] = nn
- 		PoolIxs[lpi, PoolIsLayer] = 1
+		PoolIxs[lpi, PoolNeurEd] = nn
+		PoolIxs[lpi, PoolIsLayer] = 1
 	}
 	if np > 1 {
 		ly.BuildSubPools(ctx)
@@ -427,7 +427,7 @@ func (ly *Layer) PostBuild() {
 	switch ly.Type {
 	case PulvinarLayer:
 		ly.PulvinarPostBuild()
-		
+
 	case DSMatrixLayer:
 		ly.DSMatrixPostBuild()
 	case VSMatrixLayer:
@@ -438,8 +438,8 @@ func (ly *Layer) PostBuild() {
 		ly.GPPostBuild()
 
 	case CNiIOLayer, CNiUpLayer, CNeUpLayer, CNeDnLayer:
-	 	ly.NuclearPostBuild()
-		
+		ly.NuclearPostBuild()
+
 	case LDTLayer:
 		ly.LDTPostBuild()
 	case RWDaLayer:
@@ -494,7 +494,7 @@ func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
 	ni := ly.NeurStIndex + uint32(idx)
 	nvars := ly.UnitVarNum()
 	neurVars := int(NeuronTraces) + int(NeuronTracesVarsN)*NNeuronTraces
-	layVarSt := nvars-NNeuronLayerVars
+	layVarSt := nvars - NNeuronLayerVars
 	pi := ly.Params.PoolIndex(NeuronIxs[ni, NrnSubPool])
 	if varIndex >= layVarSt {
 		lvi := varIndex - layVarSt
@@ -536,7 +536,7 @@ func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
 			return math32.NaN()
 		}
 		vi := (varIndex - int(NeuronTraces)) / NNeuronTraces
-		bin := NeuronTraceIndex(NeuronTracesVars(vi), int32(bi * NeuronTraceCycles))
+		bin := NeuronTraceIndex(NeuronTracesVars(vi), int32(bi*NeuronTraceCycles))
 		return Neurons[ni, di, int(NeuronTraces) + int(bin)]
 	}
 	return math32.NaN()
@@ -837,4 +837,3 @@ func (ly *Layer) MakeToolbar(p *tree.Plan) {
 		w.SetFunc(ly.UnLesionNeurons).SetIcon(icons.Cut)
 	})
 }
-

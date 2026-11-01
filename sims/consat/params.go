@@ -25,12 +25,14 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: ".Input", Doc: "note: class for Input and Recon",
 			Set: func(ly *axon.LayerParams) {
-				ly.Acts.Clamp.Ge = 1.5          // 1.5 for fsffffb
+				ly.Acts.Clamp.Add.SetBool(true) // allows off act
+				ly.Acts.Clamp.ClampPlus = axon.ClampPlusMod
+				ly.Acts.Clamp.Ge = 1.5 // 1.5 for hard
+				ly.Inhib.Layer.Gi = 1.3
+				ly.Inhib.Pool.Gi = 1.1
 				ly.Inhib.ActAvg.Nominal = 0.005 // 0.01 actual
 				ly.Inhib.Layer.On.SetBool(true)
 				ly.Inhib.Pool.On.SetBool(true)
-				ly.Inhib.Layer.Gi = 0.9
-				ly.Inhib.Pool.Gi = 0.95
 				// ly.Inhib.Layer.Gi = 1
 			}},
 		{Sel: "#Full", Doc: "",
@@ -41,11 +43,11 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: "#Encode", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.01 // 0.02 actual
+				ly.Inhib.ActAvg.Nominal = 0.02 // 0.02 actual
 				ly.Inhib.Layer.On.SetBool(true)
 				ly.Inhib.Pool.On.SetBool(true)
 				ly.Inhib.Layer.Gi = 1.0
-				ly.Inhib.Pool.Gi = 0.95
+				ly.Inhib.Pool.Gi = 1.0
 				// ly.Inhib.Layer.Gi = 1
 			}},
 		{Sel: "#Hidden1", Doc: "",
@@ -93,6 +95,14 @@ var PathParams = axon.PathSheets{
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 0.1 // 0.2 > 0.3
+			}},
+		{Sel: ".LateralPath", Doc: "weaker?",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Rel = 0.1 // 0.2 > 0.3
+			}},
+		{Sel: "#EncodeToHidden1", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1.5
 			}},
 	},
 }

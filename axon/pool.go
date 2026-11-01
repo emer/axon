@@ -7,11 +7,12 @@
 package axon
 
 import (
+	"log/slog"
+	"sync/atomic"
+
 	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/base/atomicx"
 	"github.com/emer/axon/v2/fsfffb"
-	"log/slog"
-	"sync/atomic"
 )
 
 //gosl:start

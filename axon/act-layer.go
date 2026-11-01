@@ -8,6 +8,7 @@ package axon
 
 import (
 	// "fmt"
+
 	"cogentcore.org/core/gpu"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/tensor"
@@ -948,8 +949,8 @@ func (ly *LayerParams) DecayStateNeuronsAll(ctx *Context, decay, glong, ahp floa
 	}
 }
 
-// NewStateLayer does NewState at the layer level, called
-func (ly *LayerParams) NewStateLayer(ctx *Context) {
+// MinusPhaseStartLayer does MinusPhaseStart at the layer level, called
+func (ly *LayerParams) MinusPhaseStartLayer(ctx *Context) {
 	actMinusAvg := float32(0)
 	actPlusAvg := float32(0)
 	np := uint32(ly.Indexes.NPools)
@@ -965,7 +966,7 @@ func (ly *LayerParams) NewStateLayer(ctx *Context) {
 
 		for spi := uint32(0); spi < np; spi++ {
 			pi := ly.PoolIndex(spi)
-			ly.NewStatePool(ctx, pi, di) // also calls DecayState on pool
+			ly.MinusPhaseStartPool(ctx, pi, di) // also calls DecayState on pool
 		}
 	}
 
@@ -975,7 +976,7 @@ func (ly *LayerParams) NewStateLayer(ctx *Context) {
 	actMinusAvg *= davg
 	actPlusAvg *= davg
 	for di := uint32(0); di < ctx.NData; di++ {
-		ly.NewStateLayerActAvg(ctx, di, actMinusAvg, actPlusAvg)
+		ly.MinusPhaseStartLayerActAvg(ctx, di, actMinusAvg, actPlusAvg)
 	}
 
 	if ly.Acts.Decay.GBuffs.IsTrue() {
@@ -987,9 +988,9 @@ func (ly *LayerParams) NewStateLayer(ctx *Context) {
 	}
 }
 
-// NewStateLayerActAvg updates ActAvg.ActMAvg and ActPAvg based on current values
+// MinusPhaseStartLayerActAvg updates ActAvg.ActMAvg and ActPAvg based on current values
 // that have been averaged across NData already.
-func (ly *LayerParams) NewStateLayerActAvg(ctx *Context, di uint32, actMinusAvg, actPlusAvg float32) {
+func (ly *LayerParams) MinusPhaseStartLayerActAvg(ctx *Context, di uint32, actMinusAvg, actPlusAvg float32) {
 	mavg := LayerStates.Value3D(int(ly.Index), int(di), int(LayerActMAvg))
 	pavg := LayerStates.Value3D(int(ly.Index), int(di), int(LayerActPAvg))
 	ly.Inhib.ActAvg.AvgFromAct(&mavg, actMinusAvg, ly.Acts.Dt.LongAvgDt)
@@ -998,7 +999,7 @@ func (ly *LayerParams) NewStateLayerActAvg(ctx *Context, di uint32, actMinusAvg,
 	LayerStates.Set3D(pavg, int(ly.Index), int(di), int(LayerActPAvg))
 }
 
-func (ly *LayerParams) NewStatePool(ctx *Context, pi, di uint32) {
+func (ly *LayerParams) MinusPhaseStartPool(ctx *Context, pi, di uint32) {
 	PoolsInt.Set3D(0, int(pi), int(di), int(Clamped))
 	if ly.Acts.Clamp.Add.IsFalse() && ly.IsInput() {
 		PoolsInt.Set3D(1, int(pi), int(di), int(Clamped))
@@ -1007,9 +1008,9 @@ func (ly *LayerParams) NewStatePool(ctx *Context, pi, di uint32) {
 	PoolsInt.Set3D(0, int(pi), int(di), int(PoolGated))
 }
 
-// NewStateNeuron handles all initialization at start of new input pattern.
+// MinusPhaseStartNeuron handles all initialization at start of new input pattern.
 // Should already have presented the external input to the network at this point.
-func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32) {
+func (ly *LayerParams) MinusPhaseStartNeuron(ctx *Context, ni, di uint32) {
 	Neurons.Set3D(Neurons.Value3D(int(ni), int(di), int(Burst)), int(ni), int(di), int(BurstPrv))
 	Neurons.Set3D(Neurons.Value3D(int(ni), int(di), int(CaD)), int(ni), int(di), int(CaDPrev))
 	Neurons.Set3D(0.0, int(ni), int(di), int(CaPMax))
@@ -1034,12 +1035,9 @@ func (ly *LayerParams) Beta2Neuron(ctx *Context, ni, di uint32) {
 
 ////////  Minus Phase
 
-func (ly *LayerParams) MinusPhasePool(ctx *Context, pi uint32) {
+func (ly *LayerParams) MinusPhaseEndPool(ctx *Context, pi uint32) {
 	for di := uint32(0); di < ctx.NData; di++ {
 		PoolCycleToMinus(pi, di)
-		if ly.Acts.Clamp.Add.IsFalse() && ly.IsTarget() {
-			PoolsInt.Set3D(1, int(pi), int(di), int(Clamped))
-		}
 	}
 	if PoolIxs.Value2D(int(pi), int(PoolIsLayer)) == 0 {
 		return
@@ -1067,8 +1065,8 @@ func (ly *LayerParams) AvgGeM(ctx *Context, di uint32, geIntMinusMax, giIntMinus
 	LayerStates.Set3D(gim, int(ly.Index), int(di), int(LayerAvgMaxGiM))
 }
 
-// MinusPhaseNeuron does neuron level minus-phase updating
-func (ly *LayerParams) MinusPhaseNeuron(ctx *Context, ni, di uint32) {
+// MinusPhaseEndNeuron does neuron level minus-phase updating
+func (ly *LayerParams) MinusPhaseEndNeuron(ctx *Context, ni, di uint32) {
 	Neurons.Set3D(Neurons.Value3D(int(ni), int(di), int(ActInt)), int(ni), int(di), int(ActM))
 }
 
@@ -1080,6 +1078,18 @@ func (ly *LayerParams) MinusPhasePost(ctx *Context) {
 	case PulvinarLayer:
 		ly.DecayStateNeuronsAll(ctx, 1, 1, 0)
 	default:
+	}
+}
+
+// PlusPhaseStartPool does pool level plus-phase start:
+// sets clamping for Clamp.Add = true, ClampPlus = Clamp layers.
+func (ly *LayerParams) PlusPhaseStartPool(ctx *Context, pi uint32) {
+	if !ly.IsInputOrTarget() || (ly.Acts.Clamp.Add.IsTrue() && ly.Acts.Clamp.ClampPlus != ClampPlusClamp) {
+		return
+	}
+
+	for di := uint32(0); di < ctx.NData; di++ {
+		PoolsInt.Set3D(1, int(pi), int(di), int(Clamped))
 	}
 }
 

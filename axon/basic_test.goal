@@ -13,8 +13,8 @@ import (
 	"strings"
 	"testing"
 
-	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/lab/tensor"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/etime"
@@ -46,54 +46,52 @@ var layerParams = LayerSheets{
 	"Base": {
 		{Sel: "Layer", Doc: "layer defaults",
 			Set: func(ly *LayerParams) {
-				ly.Acts.Gbar.L =      20
+				ly.Acts.Gbar.L = 20
 				ly.Acts.Decay.GBuffs.SetBool(true)
 				ly.Learn.RLRate.On.SetBool(false)
-				ly.Inhib.Layer.FB =   0.5
+				ly.Inhib.Layer.FB = 0.5
 			}},
 	},
 	"InhibOff": {
 		{Sel: "Layer", Doc: "layer defaults",
 			Set: func(ly *LayerParams) {
-				ly.Acts.Gbar.L =    20
+				ly.Acts.Gbar.L = 20
 				ly.Inhib.Layer.On.SetBool(false)
 			}},
 	},
 	"FullDecay": {
 		{Sel: "Layer", Doc: "layer defaults",
 			Set: func(ly *LayerParams) {
-				ly.Acts.Decay.Act =    1
-				ly.Acts.Decay.Glong =  1
-				ly.Acts.Decay.AHP =    1
+				ly.Acts.Decay.Act = 1
+				ly.Acts.Decay.Glong = 1
+				ly.Acts.Decay.AHP = 1
 			}},
 	},
-	"SubMean": {
-	},
+	"SubMean": {},
 }
 
 var pathParams = PathSheets{
 	"Base": {
 		{Sel: "Path", Doc: "for reproducibility, identical weights",
 			Set: func(pt *PathParams) {
-				pt.SWts.Init.Var =  0
+				pt.SWts.Init.Var = 0
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *PathParams) {
-				pt.PathScale.Rel =  0.2
+				pt.PathScale.Rel = 0.2
 			}},
 	},
 	"InhibOff": {
 		{Sel: ".InhibPath", Doc: "weaker inhib",
 			Set: func(pt *PathParams) {
-				pt.PathScale.Abs =  0.1
+				pt.PathScale.Abs = 0.1
 			}},
 	},
-	"FullDecay": {
-	},
+	"FullDecay": {},
 	"SubMean": {
 		{Sel: "Path", Doc: "submean used in some models but not by default",
 			Set: func(pt *PathParams) {
-				pt.Learn.DWt.SubMean =  1
+				pt.Learn.DWt.SubMean = 1
 			}},
 	},
 }
@@ -118,7 +116,7 @@ func newTestNet(nData int) *Network {
 	testNet.Build()
 	testNet.Defaults()
 	ApplyParamSheets(testNet, layerParams["Base"], pathParams["Base"])
-	testNet.InitWeights()  // get GScale here
+	testNet.InitWeights() // get GScale here
 	testNet.ThetaCycleStart(etime.Train, false)
 	return testNet
 }
@@ -141,7 +139,7 @@ func newTestNetFull(nData int) *Network {
 	testNet.Build()
 	testNet.Defaults()
 	ApplyParamSheets(testNet, layerParams["Base"], pathParams["Base"])
-	testNet.InitWeights()                      // get GScale here
+	testNet.InitWeights() // get GScale here
 	testNet.ThetaCycleStart(etime.Train, false)
 	return testNet
 }
@@ -235,7 +233,7 @@ func TestSpikeProp(t *testing.T) {
 	for del := range 5 {
 		pt.Params.Com.Delay = uint32(del)
 		pt.Params.Com.MaxDelay = uint32(del) // now need to ensure that >= Delay
-		net.InitWeights()                  // resets Gbuf
+		net.InitWeights()                    // resets Gbuf
 		net.ThetaCycleStart(etime.Train, false)
 		net.MinusPhaseStart()
 
@@ -256,8 +254,8 @@ func TestSpikeProp(t *testing.T) {
 				// fmt.Println("hid recv:", cyc, ge)
 				hidCyc = cyc
 				break
-			// } else {
-			// 	fmt.Println("hid not recv:", cyc, ge)
+				//	} else {
+				//		fmt.Println("hid not recv:", cyc, ge)
 			}
 		}
 		if hidCyc-inCyc != del+1 {
@@ -364,9 +362,9 @@ func TestGPUState(t *testing.T) {
 	if os.Getenv("TEST_GPU") != "true" {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
-	
+
 	testNetA := newTestNet(1)
-	
+
 	GPUInit()
 	UseGPU = true
 
@@ -568,7 +566,7 @@ func NetActTestShort(t *testing.T, tol float32, gpu bool) {
 
 	p1qtr0HidActs := []float32{1.2693764e-08, 0.56647456, 0, 0}
 	p1qtr0HidGes := []float32{0.0060101417, 0.6999332, 0, 0}
-	p1qtr0HidGis :=  []float32{0.22110817, 0.22110817, 0.22110817, 0.22110817}
+	p1qtr0HidGis := []float32{0.22110817, 0.22110817, 0.22110817, 0.22110817}
 	p1qtr0OutActs := []float32{1.0103845e-08, 0.4298971, 0, 0}
 	p1qtr0OutGes := []float32{0.005442092, 0.2531417, 0, 0}
 	p1qtr0OutGis := []float32{0.08388885, 0.08388885, 0.08388885, 0.08388885}
@@ -677,10 +675,10 @@ func NetDebugAct(t *testing.T, printValues bool, gpu bool, nData int, initWts bo
 		GPUInit()
 		UseGPU = true
 	}
-	
+
 	testNet := newTestNet(nData)
 	ApplyParamSheets(testNet, layerParams["FullDecay"], pathParams["FullDecay"])
-	
+
 	return RunDebugAct(t, testNet, printValues, gpu, initWts)
 }
 
@@ -702,12 +700,12 @@ func RunDebugAct(t *testing.T, testNet *Network, printValues bool, gpu bool, ini
 	// these control what is printed.
 	// the whole thing is run and returned in the valMap
 	valsPerRow := 4
-	nQtrs := 1     // max 4
+	nQtrs := 1      // max 4
 	cycPerQtr := 40 // max 50
-	nPats := 1     // max 4
-	stLayer := 1   // max 2
-	edLayer := 2   // max 3
-	nNeurs := 1    // max 4 -- number of neuron values to print
+	nPats := 1      // max 4
+	stLayer := 1    // max 2
+	edLayer := 2    // max 3
+	nNeurs := 1     // max 4 -- number of neuron values to print
 
 	for pi := 0; pi < nPats; pi++ {
 		if initWts {
@@ -859,7 +857,7 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 	qtr3HidCaD := []float32{0.52224743, 0.49780282, 0.49890643, 0.50385964}
 	qtr3OutCaP := []float32{0.58267534, 0.56314445, 0.5760921, 0.57729626}
 	qtr3OutCaD := []float32{0.50602317, 0.4639777, 0.4770922, 0.47976217}
- 
+
 	q3hidCaP := make([]float32, 4*nLearnParams)
 	q3hidCaD := make([]float32, 4*nLearnParams)
 	q3outCaP := make([]float32, 4*nLearnParams)
@@ -1002,7 +1000,7 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 	printQtrs := false
 
 	patHidRLRates := []float32{5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 0.00018922218, 0.003436682, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 0.00016346086, 0.0029788367, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 0.00018306368, 0.0037452176}
-	
+
 	// these are organized by pattern within and then by test iteration (params) outer
 	// only the single active synapse is represented -- one per pattern
 	// if there are differences, they will multiply over patterns and layers..
@@ -1011,7 +1009,7 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 	qtr3HidCaD := []float32{0.52224743, 0.49780282, 0.49890643, 0.50385964}
 	qtr3OutCaP := []float32{0.58267534, 0.56314445, 0.5760921, 0.57729626}
 	qtr3OutCaD := []float32{0.50602317, 0.4639777, 0.4770922, 0.47976217}
- 
+
 	q3hidCaP := make([]float32, 4*nLearnParams)
 	q3hidCaD := make([]float32, 4*nLearnParams)
 	q3outCaP := make([]float32, 4*nLearnParams)
@@ -1049,7 +1047,7 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 	for pi := 0; pi < 4; pi++ {
 		testNet.ThetaCycleStart(etime.Train, false)
 		testNet.MinusPhaseStart()
-		
+
 		inpat := inPats.SubSpace(pi)
 		testNet.InitExt()
 		inLay.ApplyExt(0, inpat)
@@ -1568,22 +1566,28 @@ func TestSendGatherIndexes(t *testing.T) {
 						// vl, ok := bivals[bi]
 						// vl = append(vl, vals{cyc: cyc, ri: ri, bi: bi})
 						// bivals[bi] = vl
-// 
+						//
 						// cur, ok := bimap[bi]
-						// if !ok {
-						// 	bimap[bi] = key
-						// } else {
-						// 	bimap[bi] = cur + key
-						// }
+						//
+						//	if !ok {
+						//		bimap[bi] = key
+						//	} else {
+						//
+						//		bimap[bi] = cur + key
+						//	}
+						//
 						// cur, ok = rimap[ri]
-						// if !ok {
-						// 	rimap[ri] = key
-						// } else {
-						// 	rimap[ri] = cur + key
-						// }
-						// if pj.Send.Index == 42 && pj.Recv.Index == 44 && di == 0 && ri == 2783 {
-						// 	fmt.Printf("send: cyc: %d  bi: %d  di: %02d  ni: %04d  scale: %g  sv: %d\n", ctx.CyclesTotal, bi, di, ni, scale, sv)
-						// }
+						//
+						//	if !ok {
+						//		rimap[ri] = key
+						//	} else {
+						//
+						//		rimap[ri] = cur + key
+						//	}
+						//
+						//	if pj.Send.Index == 42 && pj.Recv.Index == 44 && di == 0 && ri == 2783 {
+						//		fmt.Printf("send: cyc: %d  bi: %d  di: %02d  ni: %04d  scale: %g  sv: %d\n", ctx.CyclesTotal, bi, di, ni, scale, sv)
+						//	}
 					}
 				}
 				if len(ly.RecvPaths) > 0 {
@@ -1591,23 +1595,28 @@ func TestSendGatherIndexes(t *testing.T) {
 					// pj := ly.RecvPaths[0]
 					// bi := pt.Indexes.GBufSt + pt.Com.ReadIndex(lni, di, int32(cyc), pt.Indexes.RecvNeurN, nData)
 					// key := fmt.Sprintf("recv: cyc: %d  bi: %03d  di: %d  ri: %02d\n", cyc, bi, di, ni)
-// 
+					//
 					// vl, ok := bivals[bi]
 					// vl = append(vl, vals{cyc: cyc, ri: ni, bi: bi})
 					// bivals[bi] = vl
-// 
+					//
 					// cur, ok := bimap[bi]
-					// if !ok {
-					// 	bimap[bi] = key
-					// } else {
-					// 	bimap[bi] = cur + key
-					// }
+					//
+					//	if !ok {
+					//		bimap[bi] = key
+					//	} else {
+					//
+					//		bimap[bi] = cur + key
+					//	}
+					//
 					// cur, ok = rimap[ni]
-					// if !ok {
-					// 	rimap[ni] = key
-					// } else {
-					// 	rimap[ni] = cur + key
-					// }
+					//
+					//	if !ok {
+					//		rimap[ni] = key
+					//	} else {
+					//
+					//		rimap[ni] = cur + key
+					//	}
 				}
 			}
 		}
@@ -1725,23 +1734,23 @@ func TestRubiconGiveUp(t *testing.T) {
 // func TestSWtInit(t *testing.T) {
 // 	pj := &PathParams{}
 // 	pj.Defaults()
-// 
+//
 // 	nsamp := 100
 // 	dt := table.New()
 // 	dt.AddFloat32Column("Wt")
 // 	dt.AddFloat32Column("LWt")
 // 	dt.AddFloat32Column("SWt")
 // 	dt.SetNumRows(nsamp)
-// 
+//
 // 	/////////////////////////////////////////////
 // 	mean := float32(0.5)
 // 	vr := float32(0.25)
 // 	spct := float32(0.5)
 // 	pj.SWts.Init.Var = vr
-// 
+//
 // 	nt := NewNetwork("test")
 // 	nt.SetRandSeed(1)
-// 
+//
 // 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 // 	for i := 0; i < nsamp; i++ {
 // 		pj.SWts.InitWeightsSyn(&nt.Rand, sy, mean, spct)
@@ -1751,12 +1760,12 @@ func TestRubiconGiveUp(t *testing.T) {
 // 	}
 // 	ix := table.NewIndexView(dt)
 // 	desc := stats.DescAll(ix)
-// 
+//
 // 	meanRow := desc.RowsByString("Agg", "Mean", table.Equals, table.UseCase)[0]
 // 	minRow := desc.RowsByString("Agg", "Min", table.Equals, table.UseCase)[0]
 // 	maxRow := desc.RowsByString("Agg", "Max", table.Equals, table.UseCase)[0]
 // 	semRow := desc.RowsByString("Agg", "Sem", table.Equals, table.UseCase)[0]
-// 
+//
 // 	if desc.Float("Wt", minRow) > 0.3 || desc.Float("Wt", maxRow) < 0.7 {
 // 		t.Errorf("SPct: %g\t Wt Min and Max should be < 0.3, > 0.7 not: %g, %g\n", spct, desc.Float("Wt", minRow), desc.Float("Wt", maxRow))
 // 	}
@@ -1766,17 +1775,17 @@ func TestRubiconGiveUp(t *testing.T) {
 // 	if desc.Float("Wt", semRow) < 0.01 || desc.Float("Wt", semRow) > 0.02 {
 // 		t.Errorf("SPct: %g\t Wt SEM should be > 0.01, < 0.02 not: %g\n", spct, desc.Float("Wt", semRow))
 // 	}
-// 
+//
 // 	// b := bytes.NewBuffer(nil)
 // 	// desc.WriteCSV(b, table.Tab, table.Headers)
 // 	// fmt.Printf("%s\n", string(b.Bytes()))
-// 
+//
 // 	/////////////////////////////////////////////
 // 	mean = float32(0.5)
 // 	vr = float32(0.25)
 // 	spct = float32(1.0)
 // 	pj.SWts.Init.Var = vr
-// 
+//
 // 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 // 	for i := 0; i < nsamp; i++ {
 // 		pj.SWts.InitWeightsSyn(&nt.Rand, sy, mean, spct)
@@ -1800,13 +1809,13 @@ func TestRubiconGiveUp(t *testing.T) {
 // 	// b.Reset()
 // 	// desc.WriteCSV(b, table.Tab, table.Headers)
 // 	// fmt.Printf("%s\n", string(b.Bytes()))
-// 
+//
 // 	/////////////////////////////////////////////
 // 	mean = float32(0.5)
 // 	vr = float32(0.25)
 // 	spct = float32(0.0)
 // 	pj.SWts.Init.Var = vr
-// 
+//
 // 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 // 	for i := 0; i < nsamp; i++ {
 // 		pj.SWts.InitWeightsSyn(&nt.Rand, sy, mean, spct)
@@ -1830,13 +1839,13 @@ func TestRubiconGiveUp(t *testing.T) {
 // 	// b.Reset()
 // 	// desc.WriteCSV(b, table.Tab, table.Headers)
 // 	// fmt.Printf("%s\n", string(b.Bytes()))
-// 
+//
 // 	/////////////////////////////////////////////
 // 	mean = float32(0.1)
 // 	vr = float32(0.05)
 // 	spct = float32(0.0)
 // 	pj.SWts.Init.Var = vr
-// 
+//
 // 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 // 	for i := 0; i < nsamp; i++ {
 // 		pj.SWts.InitWeightsSyn(&nt.Rand, sy, mean, spct)
@@ -1857,13 +1866,13 @@ func TestRubiconGiveUp(t *testing.T) {
 // 	// b.Reset()
 // 	// desc.WriteCSV(b, table.Tab, table.Headers)
 // 	// fmt.Printf("%s\n", string(b.Bytes()))
-// 
+//
 // 	/////////////////////////////////////////////
 // 	mean = float32(0.8)
 // 	vr = float32(0.05)
 // 	spct = float32(0.5)
 // 	pj.SWts.Init.Var = vr
-// 
+//
 // 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 // 	for i := 0; i < nsamp; i++ {
 // 		pj.SWts.InitWeightsSyn(&nt.Rand, sy, mean, spct)
@@ -1885,16 +1894,16 @@ func TestRubiconGiveUp(t *testing.T) {
 // 	// desc.WriteCSV(b, table.Tab, table.Headers)
 // 	// fmt.Printf("%s\n", string(b.Bytes()))
 // }
-// 
-// 
+//
+//
 // func TestSWtLinLearn(t *testing.T) {
 // 	pj := &PathParams{}
 // 	pj.Defaults()
 // 	sy := &Synapse{}
-// 
+//
 // 	nt := NewNetwork("test")
 // 	nt.SetRandSeed(1)
-// 
+//
 // 	/////////////////////////////////////////////
 // 	mean := float32(0.1)
 // 	vr := float32(0.05)
@@ -1904,7 +1913,7 @@ func TestRubiconGiveUp(t *testing.T) {
 // 	pj.SWts.Adapt.SigGain = 1
 // 	nlrn := 10
 // 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
-// 
+//
 // 	pj.SWts.InitWeightsSyn(&nt.Rand, sy, mean, spct)
 // 	// fmt.Printf("Wt: %g\t LWt: %g\t SWt: %g\n", sy.Wt, sy.LWt, sy.SWt)
 // 	for i := 0; i < nlrn; i++ {
@@ -1922,4 +1931,3 @@ func TestRubiconGiveUp(t *testing.T) {
 // 		t.Errorf("SPct: %g\t SWt should be 0.5 not: %g\n", spct, sy.SWt)
 // 	}
 // }
-

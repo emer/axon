@@ -554,11 +554,23 @@ fn SpikeNoiseParams_PGi(an: SpikeNoiseParams, ctx: Context, p: ptr<function,f32>
 	}return f32(
 0);
 }
+alias ClampPlus = i32; //enums:enum -trimprefix=ClampPlus
+const  ClampPlusAdd: ClampPlus = 0;
+const  ClampPlusMod: ClampPlus = 1;
+const  ClampPlusClamp: ClampPlus = 2;
 struct ClampParams {
 	Ge: f32,
 	Add: i32,
+	ClampPlus: ClampPlus,
 	ErrThr: f32,
-	pad: f32,
+}
+fn ClampParams_IsAdd(cp: ClampParams, plusPhase: bool) -> bool {
+	if (cp.Add == 0) {
+		return false;
+	}
+	if (!plusPhase) {
+		return true;
+	}return cp.ClampPlus != ClampPlusClamp;
 }
 struct SMaintParams {
 	On: i32,
@@ -735,20 +747,30 @@ fn ActParams_GeFromSyn(ac: ActParams, ctx: Context, ni: u32,di: u32, geSyn: f32,
 	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeExt))] = 0.0;
 	var geS = geSyn;
 	var geE = geExt;
-	if (ac.Clamp.Add == 1 && NeuronHasFlag(NeuronHasExt, ni, di)) {
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeExt))] = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Ext))] * ac.Clamp.Ge;
-		geS += Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeExt))];
+	var geNew = geS + geE;
+	if (NeuronHasFlag(NeuronHasExt, ni, di)) {
+		var ext = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Ext))];
+		var pp = ctx.PlusPhase == 1;
+		if (ClampParams_IsAdd(ac.Clamp, pp)) {
+			var geExt = ext * ac.Clamp.Ge;
+			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeExt))] = geExt;
+			geS += geExt;
+			geNew = geS + geE;
+			if (pp && ac.Clamp.ClampPlus == ClampPlusMod) {
+				geNew *= ext;
+			}
+		} else {
+			geS = ext * ac.Clamp.Ge;
+			Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
+			u32(ni), u32(di), u32(GeExt))] = geS;
+			geE = f32(0);
+			geNew = geS + geE;
+		}
 	}
-	if (ac.Clamp.Add == 0 && NeuronHasFlag(NeuronHasExt, ni, di)) {
-		geS = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Ext))] * ac.Clamp.Ge;
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
-		u32(ni), u32(di), u32(GeExt))] = geS;
-		geE = f32(0);
+	if (geNew < 0.0) {
+		geNew = f32(0.0);
 	}
-	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Ge))] = geS + geE;
-	if (Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Ge))] < 0.0) {
-		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Ge))] = 0.0;
-	}
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Ge))] = geNew;
 	ActParams_AddGeNoise(ac, ctx, ni, di);
 }
 fn ActParams_AddGeNoise(ac: ActParams, ctx: Context, ni: u32,di: u32) {
@@ -1269,6 +1291,7 @@ fn LayerParams_PulvinarDriver(ly: LayerParams, ctx: Context, lni: u32,di: u32, d
 
 //////// import: "enumgen.go"
 const PathGTypesN: PathGTypes = 5;
+const ClampPlusN: ClampPlus = 3;
 const GlobalScalarVarsN: GlobalScalarVars = 58;
 const GlobalVectorVarsN: GlobalVectorVars = 10;
 const GPUVarsN: GPUVars = 23;

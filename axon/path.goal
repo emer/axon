@@ -550,7 +550,6 @@ func (pt *Path) SetWeights(pw *weights.Path) error {
 	return err
 }
 
-
 // ParamsString returns a listing of all parameters in the Layer and
 // pathways within the layer. If nonDefault is true, only report those
 // not at their default values.
@@ -590,5 +589,3 @@ func (pt *Path) SetSynValue(varNm string, sidx, ridx int, val float32) error {
 	}
 	return nil
 }
-
-

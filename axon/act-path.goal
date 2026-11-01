@@ -262,7 +262,7 @@ func (pt *PathParams) GatherSpikesGSyn(ctx *Context, ly *LayerParams, ni, di uin
 	case MaintG:
 		*gSyn = ly.Acts.Dt.GeSynFromRaw(*gSyn, gRaw)
 		Neurons[ni, di, GMaintRaw] += gRaw
-		// note: Syn happens via NMDA in Act
+	// note: Syn happens via NMDA in Act
 	case ContextG:
 		Neurons[ni, di, CtxtGeRaw] += gRaw
 	default:

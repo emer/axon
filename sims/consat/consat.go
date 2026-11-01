@@ -195,7 +195,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	nHid2Units := 20 // 20 > 15
 
 	inp := net.AddLayer4D("Input", axon.InputLayer, nl, nl, np, np).AddClass("Input")
-	rec := net.AddLayer4D("Full", axon.TargetLayer, nl, nl, np, np).AddClass("Input")
+	rec := net.AddLayer4D("Full", axon.InputLayer, nl, nl, np, np).AddClass("Input")
 	enc := net.AddLayer4D("Encode", axon.SuperLayer, nl, nl, nEncUnits, nEncUnits)
 	enc.SetSampleShape(emer.CenterPoolIndexes(enc, 1), emer.CenterPoolShape(enc, 1)) // just one pool!
 
@@ -227,8 +227,11 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	h1Recip.Recip = true
 
 	net.ConnectLayers(inp, enc, encRect, axon.ForwardPath)
-	net.ConnectLayers(rec, enc, encRect, axon.BackPath)
-	net.ConnectLayers(enc, rec, encRecip, axon.ForwardPath)
+	net.ConnectLayers(enc, inp, encRect, axon.BackPath)
+	net.LateralConnectLayer(inp, encRect)
+
+	// net.ConnectLayers(rec, enc, encRect, axon.BackPath)
+	// net.ConnectLayers(enc, rec, encRecip, axon.ForwardPath)
 
 	net.ConnectLayers(enc, hid1, h1Pool, axon.ForwardPath)
 	net.ConnectLayers(hid1, enc, h1Recip, axon.BackPath)
@@ -304,19 +307,16 @@ func (ss *Sim) ConfigLoops() {
 	ls.Stacks[Train].OnInit.Add("Init", ss.Init)
 	ls.Loop(Train, Run).OnStart.Add("NewRun", ss.NewRun)
 
+	for mode, st := range ls.Stacks {
+		plusPhase := st.Loops[Cycle].EventByName("MinusPhase:End")
+		plusPhase.OnEvent.InsertBefore("PlusPhase:Start", "TakeAction", func() bool {
+			// note: critical to have this happen *after* MinusPhase:End and *before* PlusPhase:Start
+			// because minus phase end has gated info, and plus phase start applies action input
+			ss.ApplyFullInput(mode.(Modes))
+			return false
+		})
+	}
 	trainEpoch := ls.Loop(Train, Epoch)
-	// trainEpoch.IsDone.AddBool("NZeroStop", func() bool {
-	// 	stopNz := ss.Config.Run.NZero
-	// 	if stopNz <= 0 {
-	// 		return false
-	// 	}
-	// 	curModeDir := ss.Current.Dir(Train.String())
-	// 	curNZero := int(curModeDir.Value("NZero").Float1D(-1))
-	// 	stop := curNZero >= stopNz
-	// 	return stop
-	// 	return false
-	// })
-
 	trainEpoch.OnStart.Add("TestAtInterval", func() {
 		if (ss.Config.Run.TestInterval > 0) && ((trainEpoch.Counter.Cur+1)%ss.Config.Run.TestInterval == 0) {
 			ss.TestAll()
@@ -359,6 +359,29 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 		for _, lnm := range lays {
 			ly := ss.Net.LayerByName(lnm)
 			st := ev.State(ly.Name)
+			if st != nil {
+				ly.ApplyExt(uint32(di), st)
+			}
+		}
+	}
+	net.ApplyExts()
+}
+
+// ApplyFullInput applies full input in the plus phase
+func (ss *Sim) ApplyFullInput(mode Modes) {
+	net := ss.Net
+	ndata := int(net.Context().NData)
+	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
+	net.InitExt()
+	for di := range ndata {
+		ev := ss.Envs.ByModeDi(mode, di)
+		for _, lnm := range lays {
+			ly := ss.Net.LayerByName(lnm)
+			stnm := ly.Name
+			if lnm == "Input" {
+				stnm = "Full"
+			}
+			st := ev.State(stnm)
 			if st != nil {
 				ly.ApplyExt(uint32(di), st)
 			}
@@ -529,7 +552,7 @@ func (ss *Sim) ConfigStats() {
 				tsr.SetNumRows(0)
 				plot.SetFirstStyler(tsr, func(s *plot.Style) {
 					s.Range.SetMin(0).SetMax(1)
-					if name != "UnitErr" && name != "CorSim" {
+					if name == "CorSim" {
 						s.On = true
 					}
 				})
@@ -538,7 +561,7 @@ func (ss *Sim) ConfigStats() {
 			}
 			switch level {
 			case Trial:
-				out := ss.Net.LayerByName("Full")
+				out := ss.Net.LayerByName("Input")
 				// otsr := curModeDir.Float64(out.Name+"_ActM", out.Shape.Sizes...)
 				for di := range ndata {
 					var stat float64

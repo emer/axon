@@ -7,8 +7,9 @@ package axon
 import (
 	"log/slog"
 	"sync/atomic"
-	"cogentcore.org/lab/base/atomicx"
+
 	"cogentcore.org/core/math32"
+	"cogentcore.org/lab/base/atomicx"
 	"github.com/emer/axon/v2/fsfffb"
 )
 
@@ -124,10 +125,10 @@ const (
 const (
 	// poolFloatAvgMaxStart is the starting index for AvgMax float32 variables.
 	poolFloatAvgMaxStart = fsfffb.InhibVarsN
-	
-	PoolVarsTotal = poolFloatAvgMaxStart + fsfffb.InhibVars(int32(AvgMaxVarsN) * int32(AvgMaxN)*int32(AvgMaxPhasesN))
-	
-	PoolIntVarsTot = PoolIntAvgMaxStart + PoolIntVars(int32(AvgMaxVarsN) * int32(AvgMaxN))
+
+	PoolVarsTotal = poolFloatAvgMaxStart + fsfffb.InhibVars(int32(AvgMaxVarsN)*int32(AvgMaxN)*int32(AvgMaxPhasesN))
+
+	PoolIntVarsTot = PoolIntAvgMaxStart + PoolIntVars(int32(AvgMaxVarsN)*int32(AvgMaxN))
 )
 
 // avgMaxToNeuron is the mapping from AvgMaxVars to neuron vars.
@@ -218,7 +219,7 @@ func PoolAvgMaxUpdate(pi, di, ni uint32) {
 
 // PoolAvgMaxCalcVar does Calc on Cycle level, and re-inits, for given Var
 func PoolAvgMaxCalcVar(vr AvgMaxVars, pi, di uint32) {
-	floatFromInt := float32(1.0) / float32(uint32(1) << 20)
+	floatFromInt := float32(1.0) / float32(uint32(1)<<20)
 	vis := AvgMaxIntVarIndex(vr, Avg)
 	sum := PoolsInt[pi, di, vis] 
 	if sum < 0 {
@@ -229,7 +230,7 @@ func PoolAvgMaxCalcVar(vr AvgMaxVars, pi, di uint32) {
 	}
 	Pools[pi, di, AvgMaxVarIndex(vr, AMCycle, Avg)] = float32(sum) * floatFromInt
 	PoolsInt[pi, di, vis] = 0 
-	vim := AvgMaxIntVarIndex(vr, Max)	
+	vim := AvgMaxIntVarIndex(vr, Max)
 	mx := PoolsInt[pi, di, vim] 
 	if mx < 0 {
 		//gosl:end
@@ -314,8 +315,8 @@ func PoolPoolGi(ctx *Context, pi, di uint32) {
 // IndexToAvgMaxVar returns the AvgMaxVar indexes from overall Pool variable index.
 func IndexToAvgMaxVar(vi uint32) (vr AvgMaxVars, phase AvgMaxPhases, am AvgMax) {
 	vi -= uint32(poolFloatAvgMaxStart)
-	vr = AvgMaxVars(vi / (uint32(AvgMaxN)*uint32(AvgMaxPhasesN)))
-	rmdr := vi % (uint32(AvgMaxN)*uint32(AvgMaxPhasesN))
+	vr = AvgMaxVars(vi / (uint32(AvgMaxN) * uint32(AvgMaxPhasesN)))
+	rmdr := vi % (uint32(AvgMaxN) * uint32(AvgMaxPhasesN))
 	phase = AvgMaxPhases(rmdr / uint32(AvgMaxN))
 	am = AvgMax(rmdr % uint32(AvgMaxN))
 	return
@@ -350,4 +351,3 @@ func PoolIntVarName(vi uint32) string {
 func PoolTestValues(pi, di uint32, layKey string, vals map[string]float32) {
 	vals[layKey+" CaD Avg"] = PoolAvgMax(AMCaD, AMCycle, Avg, pi, di)
 }
-

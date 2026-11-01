@@ -64,7 +64,7 @@ type Context struct { //types:add -setters
 	PhaseCycle int32
 
 	// Cycle within Trial: number of iterations of activation updating (settling)
-	// on the current state. This is reset at NewState.
+	// on the current state. This is reset at MinusPhaseStart.
 	Cycle int32
 
 	// ThetaCycles is the length of the theta cycle (i.e., Trial),
@@ -97,7 +97,7 @@ type Context struct { //types:add -setters
 	// in simulation-time (not real world time), in seconds.
 	Time float32
 
-	// TrialsTotal is the total trial count, which increments continuously in NewState
+	// TrialsTotal is the total trial count, which increments continuously in MinusPhaseStart
 	// _only in Train mode_ from whenever it was last reset. Can be used for synchronizing
 	// weight updates across nodes.
 	TrialsTotal int32

@@ -54,8 +54,8 @@ func (nt *Network) MinusPhaseStart() {
 	nd := int(nix.NNeurons * ctx.NData)
 	ctx.MinusPhaseStart()
 	ToGPUCtxGlobal()
-	RunNewStateLayer(int(nix.NLayers))
-	RunNewStateNeuron(nd)
+	RunMinusPhaseStartLayer(int(nix.NLayers))
+	RunMinusPhaseStartNeuron(nd)
 }
 
 // InitExt initializes external input state.
@@ -114,8 +114,8 @@ func (nt *Network) MinusPhaseEnd() {
 	nix := nt.NetIxs()
 	ctx := nt.Context()
 	nd := int(nix.NNeurons * ctx.NData)
-	RunMinusPhasePool(int(nix.NPools))
-	RunMinusPhaseNeuron(nd)
+	RunMinusPhaseEndPool(int(nix.NPools))
+	RunMinusPhaseEndNeuron(nd)
 	RunMinusPhasePost(int(nix.NLayers))
 	RunDoneLayersNeurons() // this is critical for action-taking models to have the minus phase state
 }
@@ -128,6 +128,7 @@ func (nt *Network) PlusPhaseStart() {
 	nd := int(nix.NNeurons * ctx.NData)
 
 	RunPlusPhaseStartContext(1)
+	RunPlusPhaseStartPool(int(nix.NPools))
 	RunPlusPhaseStartNeuron(nd)
 }
 
@@ -290,19 +291,19 @@ func ApplyExtsNeuron(i uint32) { //gosl:kernel
 	Layers[li].ApplyExtsNeuron(ni, di)
 }
 
-// NewStateLayer is the kernel over Layers (not Data)
+// MinusPhaseStartLayer is the kernel over Layers (not Data)
 // which does new state on pools as well.
-func NewStateLayer(li uint32) { //gosl:kernel
+func MinusPhaseStartLayer(li uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	if li >= NetworkIxs[0].NLayers {
 		return
 	}
-	Layers[li].NewStateLayer(ctx)
+	Layers[li].MinusPhaseStartLayer(ctx)
 }
 
-// NewStateNeuron is the kernel over Neurons * Data to
+// MinusPhaseStartNeuron is the kernel over Neurons * Data to
 // do new state on neurons (decay).
-func NewStateNeuron(i uint32) { //gosl:kernel
+func MinusPhaseStartNeuron(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	ni := ctx.ItemIndex(i)
 	if ni >= NetworkIxs[0].NNeurons {
@@ -310,7 +311,7 @@ func NewStateNeuron(i uint32) { //gosl:kernel
 	}
 	di := ctx.DataIndex(i)
 	li := NeuronIxs.Value2D(int(ni), int(NrnLayIndex))
-	Layers[li].NewStateNeuron(ctx, ni, di)
+	Layers[li].MinusPhaseStartNeuron(ctx, ni, di)
 }
 
 // InitGBuffsPath is the kernel over Paths to
@@ -351,20 +352,20 @@ func Beta2Neuron(i uint32) { //gosl:kernel
 
 ////////  Minus Phase
 
-// MinusPhasePool is the kernel over Pools to
+// MinusPhaseEndPool is the kernel over Pools to
 // do pool-level updating after end of minus phase.
-func MinusPhasePool(pi uint32) { //gosl:kernel
+func MinusPhaseEndPool(pi uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	if pi >= NetworkIxs[0].NPools {
 		return
 	}
 	li := PoolIxs.Value2D(int(pi), int(PoolLayerIdx))
-	Layers[li].MinusPhasePool(ctx, pi)
+	Layers[li].MinusPhaseEndPool(ctx, pi)
 }
 
-// MinusPhaseNeuron is the kernel over Neurons * Data to
+// MinusPhaseEndNeuron is the kernel over Neurons * Data to
 // do neuron-level updating after end of minus phase.
-func MinusPhaseNeuron(i uint32) { //gosl:kernel
+func MinusPhaseEndNeuron(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	ni := ctx.ItemIndex(i)
 	if ni >= NetworkIxs[0].NNeurons {
@@ -372,7 +373,7 @@ func MinusPhaseNeuron(i uint32) { //gosl:kernel
 	}
 	di := ctx.DataIndex(i)
 	li := NeuronIxs.Value2D(int(ni), int(NrnLayIndex))
-	Layers[li].MinusPhaseNeuron(ctx, ni, di)
+	Layers[li].MinusPhaseEndNeuron(ctx, ni, di)
 }
 
 // MinusPhasePost does special algorithm post processing.
@@ -391,6 +392,17 @@ func PlusPhaseStartContext(i uint32) { //gosl:kernel read-write:Ctx
 	}
 	ctx := GetCtx(0)
 	ctx.PlusPhaseStart()
+}
+
+// PlusPhaseStartPool is the kernel over Pools to
+// do pool-level updating at start of plus phase.
+func PlusPhaseStartPool(pi uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	if pi >= NetworkIxs[0].NPools {
+		return
+	}
+	li := PoolIxs.Value2D(int(pi), int(PoolLayerIdx))
+	Layers[li].PlusPhaseStartPool(ctx, pi)
 }
 
 // PlusPhaseStartNeuron is the kernel over Neurons * Data to

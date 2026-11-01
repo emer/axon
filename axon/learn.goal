@@ -144,10 +144,10 @@ func (lc *LearnCaParams) ETrace(ctx *Context, ni, di uint32, cad float32) {
 // LearnTimingParams parameterizes the timing of Ca-driven Kinase
 // algorithm learning, based on detecting the first major peak of
 // differential fast - slow activity associated with the start of
-// the minus phases: [MinusPeak]. Learning is enabled if CaD is above 
+// the minus phases: [MinusPeak]. Learning is enabled if CaD is above
 // threshold a given number of Cycles (ms) after that peak.
 // Learning can actually occur a given number of cycles after that,
-// or at a negative offset from the _subsequent_ minus peak, which 
+// or at a negative offset from the _subsequent_ minus peak, which
 // should follow the subsequent plus phase, and thus work better in
 // more variable timing contexts.
 type LearnTimingParams struct {
@@ -318,7 +318,7 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 				Neurons[ni, di, TPeakCycle] = float32(peakCyc)
 			}
 		}
-		if ctx.CyclesTotal - peakCyc < lt.MinusWindow {
+		if ctx.CyclesTotal-peakCyc < lt.MinusWindow {
 			return
 		}
 		minusCyc = peakCyc
@@ -328,7 +328,7 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 		justGotMinus = true
 	}
 
-	learnImmed := lt.LearnCycles >= 0  // LearnNow happens immediately after enabled
+	learnImmed := lt.LearnCycles >= 0 // LearnNow happens immediately after enabled
 	// otherwise, wait for another minus peak and learn *prior* to that
 	caD := Neurons[ni, di, CaD]
 	learnNow := int32(Neurons[ni, di, LearnNow])
@@ -336,8 +336,8 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 
 	if !learnImmed && justGotMinus { // learn on previous enabled state
 		prevEnabled := int32(Neurons[ni, di, Enabled]) // this is *previous* enabled -- not yet updated
-		pe := ctx.CyclesTotal-prevEnabled
-		isPrevEnabled := prevEnabled > 0 && minusCyc > prevEnabled && pe <= ctx.ThetaCycles + ctx.PlusCycles
+		pe := ctx.CyclesTotal - prevEnabled
+		isPrevEnabled := prevEnabled > 0 && minusCyc > prevEnabled && pe <= ctx.ThetaCycles+ctx.PlusCycles
 		if isPrevEnabled {
 			ppOff := ctx.ThetaStart - ctx.ThetaCycles + ctx.ISICycles + ctx.MinusCycles + 10 // have to constrain due to RecvTrace recording
 			lnow := minusCyc + lt.LearnCycles
@@ -347,7 +347,7 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 			if lnow < ppOff {
 				lnow = ppOff // can't go back before that!
 			}
-			if lnow - ppOff >= 60 { // min limit on bins
+			if lnow-ppOff >= 60 { // min limit on bins
 				lnow = ppOff + 59
 			}
 			Neurons[ni, di, LearnNow] = float32(lnow) // will be in the past
@@ -364,9 +364,9 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 	if enabled > 0 && enabWin >= 0 && enabWin < lt.EnableWindow { // already enabled
 		return
 	}
-	
+
 	if lt.EnableAtEnd.IsTrue() {
-		if ctx.CyclesTotal - minusWinCyc < lt.EnableWindow {
+		if ctx.CyclesTotal-minusWinCyc < lt.EnableWindow {
 			return
 		}
 		if caD < lt.LearnThr { // didn't get above threshold
@@ -379,8 +379,8 @@ func (lt *LearnTimingParams) LearnTiming(ctx *Context, ni, di uint32) {
 			return
 		}
 	} else {
-		if ctx.CyclesTotal - minusWinCyc >= lt.EnableWindow { // not going to happen
-			if ctx.CyclesTotal - minusWinCyc == lt.EnableWindow {
+		if ctx.CyclesTotal-minusWinCyc >= lt.EnableWindow { // not going to happen
+			if ctx.CyclesTotal-minusWinCyc == lt.EnableWindow {
 				Neurons[ni, di, Enabled] = 0.0
 				if learnImmed || refactory { // can't do this for !learnImmed, b/c could have just learned above, in past..
 					Neurons[ni, di, LearnNow] = 0.0 // clears refactory
@@ -731,7 +731,7 @@ func (ln *LearnNeuronParams) InitNeuronCa(ctx *Context, ni, di uint32) {
 	Neurons[ni, di, Enabled] = 0
 	Neurons[ni, di, EnabledPrev] = 0
 	Neurons[ni, di, LearnNow] = 0
-	
+
 	Neurons[ni, di, PoolDAD1] = 0
 	Neurons[ni, di, PoolDAD2] = 0
 }

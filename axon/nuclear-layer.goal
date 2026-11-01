@@ -27,7 +27,7 @@ type NuclearParams struct {
 	// SendTimeWindow is the time window to integrate sending activations
 	// used in learning. Must be an even multiple of [NeuronTraceCycles].
 	SendTimeWindow int32 `default:"30" min:"0"`
-	
+
 	// ActTarget is the target activity level, as measured by CaD.
 	// GeBase is adapted, along with excitatory MF inputs in proportion to activity,
 	// which is the source of very slow synaptic decay in these pathways.
@@ -36,7 +36,7 @@ type NuclearParams struct {
 	// Decay is the rate of decay (prior to the learning rate multiplier)
 	// for baseline non-learning trials.
 	Decay float32 `default:"0.01"`
-	
+
 	// GeBaseLRate is the learning rate for neuron-level [GeBase] baseline
 	// excitatory conductance, to maintain target activity levels.
 	GeBaseLRate float32 `default:"0.01"`
@@ -45,14 +45,14 @@ type NuclearParams struct {
 	// in CNeCn excitatory downbound forward-model neurons, which are disinhibited
 	// by CNiIO -> CNiDn. Lower values are more stringent (more disinhibition).
 	CNeDnGiThr float32 `default:"0.2"`
-	
+
 	// IOLayIndex of IO (inferior olive) layer for sending error signals
 	// to this layer. Set via SetBuildConfig(IOLayName) setting.
 	IOLayIndex int32 `edit:"-"`
 
 	// SendTimeBins = SendTimeWindow / [NeuronTraceCycles].
 	SendTimeBins int32 `edit:"-"`
-	
+
 	pad, pad1, pad2 int32
 }
 
@@ -76,13 +76,12 @@ func (ly *LayerParams) IsNuclear() bool {
 	return ly.Type >= IOLayer && ly.Type <= CNeDnLayer
 }
 
-
 // NuclearLearnReset resets LearnNow if past envelope time, in new state
 func (ly *LayerParams) NuclearLearnReset(ctx *Context, ni, di uint32) {
 	if Neurons[ni, di, LearnNow] == 0.0 { // not done yet
 		return
 	}
-	
+
 	if ly.Type == CNeUpLayer || ly.Type == CNeDnLayer {
 		Neurons[ni, di, LearnNow] = 0.0
 		Neurons[ni, di, TimePeak] = 0.0
@@ -91,17 +90,17 @@ func (ly *LayerParams) NuclearLearnReset(ctx *Context, ni, di uint32) {
 		Neurons[ni, di, GaD] = 0.0
 		return
 	}
-	
+
 	effAct := int32(Neurons[ni, di, MinusCycle]) 
 	if effAct == 0 {
 		return
 	}
-	envCyc := ctx.CyclesTotal-effAct // cycle within envelope
+	envCyc := ctx.CyclesTotal - effAct // cycle within envelope
 	if envCyc >= ly.Nuclear.ActionEnv {
 		Neurons[ni, di, MinusCycle] = 0.0
 		Neurons[ni, di, TimePeak] = 0.0
 		Neurons[ni, di, LearnNow] = 0.0
-	}		
+	}
 }
 
 // NuclearDWtNeuron is the neuron-level learning rule for tonically-active
@@ -142,11 +141,11 @@ type IOParams struct {
 	// The integration causes this value to be lower than the driving
 	// inhibitory input from the CNiIO neurons.
 	InhibGain float32 `default:"1.5" min:"0"`
-	
+
 	// ErrThr is the threshold on the GeSyn - GiSyn_(t-TimeOff) difference
 	// to trigger an error.
 	ErrThr float32 `default:"0.01" min:"0.0"`
-	
+
 	// EfferentThr is the threshold for modulatory [GMaintRaw] from efferent copy
 	// inputs to trigger an activated IO window where error comparison occurs.
 	// Efferent inputs can continue post-threshold, but this is the point at which
@@ -160,13 +159,13 @@ type IOParams struct {
 	EfferentOff int32 `default:"20" min:"0"`
 
 	// GTau is the time constant in ms for integrating [GeSyn] and [GiSyn]
-	// excitatory and inhibitory conductances for comparison. 
+	// excitatory and inhibitory conductances for comparison.
 	// Integration goes into GaM (only for IO neurons).
 	GTau float32 `default:"20"`
-	
+
 	// Dt = 1 / Tau
 	GDt float32 `display:"-"`
-	
+
 	pad float32
 }
 
@@ -196,7 +195,7 @@ func (ly *LayerParams) IOCopy(ctx *Context, lpi, pi, ni, di uint32) {
 
 // TODO: IO neurons integrate across many distinct comparisons!
 // here, we just have 1 IO per pairwise comparison.
-// Need to get layer and do indexing or something. Figure out 
+// Need to get layer and do indexing or something. Figure out
 // best way to organize later.
 
 // IOLearn computes when an IO learning spike occurs.
@@ -204,15 +203,15 @@ func (ly *LayerParams) IOCopy(ctx *Context, lpi, pi, ni, di uint32) {
 func (ly *LayerParams) IOLearn(ctx *Context, lpi, pi, ni, di uint32) {
 	cycTot := float32(ctx.CyclesTotal)
 	effAct := int32(Neurons[ni, di, MinusCycle])
-	envCyc := ctx.CyclesTotal-effAct // cycle within envelope
+	envCyc := ctx.CyclesTotal - effAct // cycle within envelope
 
 	gMod := Neurons[ni, di, GModSyn] // modulatory = shunting from control layers
 	modFact := float32(1.0) - min(gMod, 1.0)
-	
+
 	gaP := modFact * Neurons[ni, di, GaP] // IOe excitatory input
 	gaP += ly.IO.GDt * (Neurons[ni, di, GeSyn] - gaP)
 	Neurons[ni, di, GaP] = gaP
-	
+
 	gaM := modFact * Neurons[ni, di, GaM]
 	gaM += ly.IO.GDt * (Neurons[ni, di, GiSyn] - gaM)
 	Neurons[ni, di, GaM] = gaM
@@ -221,18 +220,18 @@ func (ly *LayerParams) IOLearn(ctx *Context, lpi, pi, ni, di uint32) {
 	Neurons[ni, di, Spike] = 0.0 // default is no spike
 
 	// NeuronTraceCycles to ensure that full bin is filled
-	if effAct > 0 && envCyc <= ly.IO.EfferentOff + NeuronTraceCycles {
+	if effAct > 0 && envCyc <= ly.IO.EfferentOff+NeuronTraceCycles {
 		NeuronTraceSet(gaM, CaSynTrace, ctx.CyclesTotal, ni, di)
 	} else {
 		NeuronTraceIncrement(gaM, CaSynTrace, ctx.CyclesTotal, ni, di)
 	}
-	
+
 	// this does a precise waveform: has lots of issues..
 	// 	binsPer := NetworkIxs[0].NNeuronTraceBins
 	// rBin := (ctx.CyclesTotal - ly.IO.TimeOff) % binsPer // ly.IO.TimeOff < NeuronTraceCycles
 	// rBi := NeuronTraceBinIndex(CaSynTrace, rBin)
 	// oldInhib := Neurons[ni, di, int(NeuronTraces+NeuronVars(rBi))]
-	// 
+	//
 	// wBin := ctx.CyclesTotal % binsPer
 	// wBi := NeuronTraceBinIndex(CaSynTrace, wBin)
 	// Neurons[ni, di, int(NeuronTraces+NeuronVars(wBi))] = inhibAct // write to new
@@ -244,7 +243,7 @@ func (ly *LayerParams) IOLearn(ctx *Context, lpi, pi, ni, di uint32) {
 	nbins = max(2, nbins+1)
 	stcyc := ctx.CyclesTotal - ly.IO.TimeOff
 	for i := range nbins {
-		bi := NeuronTraceIndex(CaSynTrace, stcyc + i * NeuronTraceCycles)
+		bi := NeuronTraceIndex(CaSynTrace, stcyc+i*NeuronTraceCycles)
 		tr := Neurons[ni, di, NeuronTraces + NeuronVars(bi)]
 		if i < nbins-1 {
 			oldInhib += tr
@@ -253,14 +252,14 @@ func (ly *LayerParams) IOLearn(ctx *Context, lpi, pi, ni, di uint32) {
 			oldInhibP += tr
 		}
 	}
-	oldInhibP /= float32(nbins-1)
-	oldInhib /= float32(nbins-1)
+	oldInhibP /= float32(nbins - 1)
+	oldInhib /= float32(nbins - 1)
 	cySt := stcyc - ((stcyc / NeuronTraceCycles) * NeuronTraceCycles)
 	mix := float32(cySt) / float32(NeuronTraceCycles)
-	oldInhib = ly.IO.InhibGain * ((1-mix) * oldInhib + mix * oldInhibP)
-	
+	oldInhib = ly.IO.InhibGain * ((1-mix)*oldInhib + mix*oldInhibP)
+
 	Neurons[ni, di, GaD] = oldInhib
-	
+
 	if Neurons[ni, di, LearnNow] > 0 { // already learned, done until cleared in NuclearLearnReset
 		Neurons[ni, di, Spike] = 0.0
 		return
@@ -274,7 +273,7 @@ func (ly *LayerParams) IOLearn(ctx *Context, lpi, pi, ni, di uint32) {
 		}
 		return
 	}
-	if envCyc <= (ly.IO.TimeOff+ly.IO.EfferentOff) { // nothing until min
+	if envCyc <= (ly.IO.TimeOff + ly.IO.EfferentOff) { // nothing until min
 		return
 	}
 	if envCyc >= ly.Nuclear.ActionEnv { // no errors until the end of envelope: baseline spike
@@ -305,7 +304,7 @@ func (ly *LayerParams) CNeLearn(ctx *Context, lpi, pi, ni, di uint32) {
 
 	act := Neurons[ni, di, CaP]
 	dev := ly.Nuclear.ActTarget - act // deviation
-	adev := math32.Abs(dev) 
+	adev := math32.Abs(dev)
 	if adev > Neurons[ni, di, GaP] {
 		Neurons[ni, di, GaP] = adev
 		Neurons[ni, di, GaM] = dev // actual direction for learning
@@ -316,7 +315,7 @@ func (ly *LayerParams) CNeLearn(ctx *Context, lpi, pi, ni, di uint32) {
 	}
 }
 
-// CNiLearn updates LearnNow for CNiLayer, based on maximum 
+// CNiLearn updates LearnNow for CNiLayer, based on maximum
 // activity time.
 // called in LayerParams::PostSpikeSpecial
 func (ly *LayerParams) CNiLearn(ctx *Context, lpi, pi, ni, di uint32) {
@@ -335,7 +334,7 @@ func (ly *LayerParams) CNiLearn(ctx *Context, lpi, pi, ni, di uint32) {
 
 //gosl:end
 
-// NuclearPostBuild does post-Build config of Nuclear models of the 
+// NuclearPostBuild does post-Build config of Nuclear models of the
 // cerebellum based on BuildConfig options.
 func (ly *Layer) NuclearPostBuild() {
 	ly.Params.Nuclear.IOLayIndex = ly.BuildConfigFindLayer("IOLayName", true)
@@ -365,20 +364,20 @@ func (ly *LayerParams) NuclearDefaults() {
 
 	ly.Acts.Dend.ModBase = 1
 	ly.Acts.Dend.ModGain = 0
-	
+
 	ly.LinearDefaults()
-	
+
 	// ly.Learn.RLRate.SigmoidMin = 1.0 // 1.0 generally better but worth trying 0.05 too
-	
-	// for _, pj := range lly.RecvPaths {
-	// 	pj.Params.SWts.Init.Mean = 0.8
-	// 	pj.Params.SWts.Init.Var = 0.0
-	// 	if pj.Send.Type != CNiIOLayer {
-	// 		pj.Params.SetFixedWts()
-	// 	} else {
-	// 		pj.Params.SWts.Init.Mean = 0.5
-	// 	}
-	// }
+
+	//	for _, pj := range lly.RecvPaths {
+	//		pj.Params.SWts.Init.Mean = 0.8
+	//		pj.Params.SWts.Init.Var = 0.0
+	//		if pj.Send.Type != CNiIOLayer {
+	//			pj.Params.SetFixedWts()
+	//		} else {
+	//			pj.Params.SWts.Init.Mean = 0.5
+	//		}
+	//	}
 }
 
 // called in Defaults for [IOLayer] type
@@ -412,5 +411,3 @@ func (ly *LayerParams) CNeDnDefaults() {
 	ly.Nuclear.GeBaseLRate = 0
 	ly.Nuclear.SendTimeOff = 20
 }
-
-
