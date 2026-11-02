@@ -639,9 +639,15 @@ type ClampParams struct {
 	// for the Add option in [ClampParams].
 	ClampPlus ClampPlus
 
+	// GePlus is the contribution to Ge(t) for clamped external input,
+	// in the plus phase, for Add only.
+	GePlus float32 `default:"0.8,1.5"`
+
 	// ErrThr is the threshold on neuron Act activity to count as active for
 	// computing the error relative to target in PctErr method.
 	ErrThr float32 `default:"0.5"`
+
+	pad, pad1, pad2 float32
 }
 
 func (cp *ClampParams) Update() {
@@ -650,11 +656,12 @@ func (cp *ClampParams) Update() {
 func (cp *ClampParams) Defaults() {
 	cp.Ge = 0.8
 	cp.ErrThr = 0.5
+	cp.GePlus = 0.8
 }
 
 func (cp *ClampParams) ShouldDisplay(field string) bool {
 	switch field {
-	case "ClampPlus":
+	case "ClampPlus", "GePlus":
 		return cp.Add.IsTrue()
 	default:
 		return true
@@ -1246,6 +1253,7 @@ func (ac *ActParams) InitLongActs(ctx *Context, ni, di uint32) {
 	Neurons.Set3D(0, int(ni), int(di), int(Beta1))
 	Neurons.Set3D(0, int(ni), int(di), int(Beta2))
 	Neurons.Set3D(0, int(ni), int(di), int(ActM))
+	Neurons.Set3D(0, int(ni), int(di), int(GeM))
 	Neurons.Set3D(0, int(ni), int(di), int(ActP))
 	Neurons.Set3D(0, int(ni), int(di), int(ETrace))
 	Neurons.Set3D(1, int(ni), int(di), int(ETrLearn))
@@ -1380,7 +1388,12 @@ func (ac *ActParams) GeFromSyn(ctx *Context, ni, di uint32, geSyn, geExt float32
 		ext := Neurons.Value3D(int(ni), int(di), int(Ext))
 		pp := ctx.PlusPhase.IsTrue()
 		if ac.Clamp.IsAdd(pp) {
-			geExt := ext * ac.Clamp.Ge
+			var geExt float32
+			if pp {
+				geExt = ext * ac.Clamp.GePlus
+			} else {
+				geExt = ext * ac.Clamp.Ge
+			}
 			Neurons.Set3D(geExt, int(ni), int(di), int(GeExt))
 			geS += geExt
 			geNew = geS + geE
@@ -1388,7 +1401,11 @@ func (ac *ActParams) GeFromSyn(ctx *Context, ni, di uint32, geSyn, geExt float32
 				geNew *= ext
 			}
 		} else {
-			geS = ext * ac.Clamp.Ge
+			if ac.Clamp.Add.IsTrue() && pp {
+				geS = ext * ac.Clamp.GePlus
+			} else {
+				geS = ext * ac.Clamp.Ge
+			}
 			Neurons.Set3D(geS, int(ni), int(di), int(GeExt))
 			geE = 0 // no extra in this case
 			geNew = geS + geE

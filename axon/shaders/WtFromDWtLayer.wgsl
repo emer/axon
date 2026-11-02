@@ -171,7 +171,11 @@ struct ClampParams {
 	Ge: f32,
 	Add: i32,
 	ClampPlus: ClampPlus,
+	GePlus: f32,
 	ErrThr: f32,
+	pad: f32,
+	pad1: f32,
+	pad2: f32,
 }
 struct SMaintParams {
 	On: i32,
@@ -402,7 +406,7 @@ const ViewTimesN: ViewTimes = 7;
 const DAModTypesN: DAModTypes = 4;
 const ValenceTypesN: ValenceTypes = 3;
 const NeuronFlagsN: NeuronFlags = 9;
-const NeuronVarsN: NeuronVars = 100;
+const NeuronVarsN: NeuronVars = 101;
 const NeuronTracesVarsN: NeuronTracesVars = 2;
 const NeuronAvgVarsN: NeuronAvgVars = 7;
 const NeuronIndexVarsN: NeuronIndexVars = 3;
@@ -1078,25 +1082,26 @@ const  Beta1: NeuronVars = 77;
 const  Beta2: NeuronVars = 78;
 const  CaPMax: NeuronVars = 79;
 const  CaPMaxCa: NeuronVars = 80;
-const  GeNoise: NeuronVars = 81;
-const  GeNoiseP: NeuronVars = 82;
-const  GiNoise: NeuronVars = 83;
-const  GiNoiseP: NeuronVars = 84;
-const  GeExt: NeuronVars = 85;
-const  GeRaw: NeuronVars = 86;
-const  GeSyn: NeuronVars = 87;
-const  GiRaw: NeuronVars = 88;
-const  GiSyn: NeuronVars = 89;
-const  GeInt: NeuronVars = 90;
-const  GeIntNorm: NeuronVars = 91;
-const  GiInt: NeuronVars = 92;
-const  GModRaw: NeuronVars = 93;
-const  GModSyn: NeuronVars = 94;
-const  SMaintP: NeuronVars = 95;
-const  GMaintRaw: NeuronVars = 96;
-const  GMaintSyn: NeuronVars = 97;
-const  NeurFlags: NeuronVars = 98;
-const  NeuronTraces: NeuronVars = 99;
+const  GeM: NeuronVars = 81;
+const  GeNoise: NeuronVars = 82;
+const  GeNoiseP: NeuronVars = 83;
+const  GiNoise: NeuronVars = 84;
+const  GiNoiseP: NeuronVars = 85;
+const  GeExt: NeuronVars = 86;
+const  GeRaw: NeuronVars = 87;
+const  GeSyn: NeuronVars = 88;
+const  GiRaw: NeuronVars = 89;
+const  GiSyn: NeuronVars = 90;
+const  GeInt: NeuronVars = 91;
+const  GeIntNorm: NeuronVars = 92;
+const  GiInt: NeuronVars = 93;
+const  GModRaw: NeuronVars = 94;
+const  GModSyn: NeuronVars = 95;
+const  SMaintP: NeuronVars = 96;
+const  GMaintRaw: NeuronVars = 97;
+const  GMaintSyn: NeuronVars = 98;
+const  NeurFlags: NeuronVars = 99;
+const  NeuronTraces: NeuronVars = 100;
 alias NeuronTracesVars = i32; //enums:enum
 const  CaSynTrace: NeuronTracesVars = 0;
 const  RecvLearnTrace: NeuronTracesVars = 1;

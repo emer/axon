@@ -450,6 +450,11 @@ const (
 	// significant carryover. This is the input to CaPMax.
 	CaPMaxCa
 
+	// GeM is the Ge total excitatory conductance from the minus phase.
+	// This is the most relevant value for determining the excitatory
+	// strength tuning parameters in the network.
+	GeM
+
 	//////// Noise
 
 	// GeNoise is integrated noise excitatory conductance, added into Ge.
@@ -759,6 +764,7 @@ var NeuronVarProps = map[string]string{
 	"Beta2":    `cat:"Act"`,
 	"CaPMax":   `cat:"Act"`,
 	"CaPMaxCa": `cat:"Act"`,
+	"GeM":      `cat:"Act" range:"2"`,
 
 	//////// Noise
 

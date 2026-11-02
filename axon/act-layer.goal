@@ -1066,6 +1066,7 @@ func (ly *LayerParams) AvgGeM(ctx *Context, di uint32, geIntMinusMax, giIntMinus
 // MinusPhaseEndNeuron does neuron level minus-phase updating
 func (ly *LayerParams) MinusPhaseEndNeuron(ctx *Context, ni, di uint32) {
 	Neurons[ni, di, ActM] = Neurons[ni, di, ActInt]
+	Neurons[ni, di, GeM] = Neurons[ni, di, Ge]
 }
 
 // MinusPhasePost does special algorithm processing at end of minus

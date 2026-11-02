@@ -1,9 +1,9 @@
 codeberg.org/go-pdf/fpdf v0.11.1 h1:U8+coOTDVLxHIXZgGvkfQEi/q0hYHYvEHFuGNX2GzGs=
 codeberg.org/go-pdf/fpdf v0.11.1/go.mod h1:Y0DGRAdZ0OmnZPvjbMp/1bYxmIPxm0ws4tfoPOc4LjU=
-cogentcore.org/core v0.5.19 h1:uJgAslx3VEIoOC0Z6D0snYIFtzVH78/fXFQLLkBcDRM=
-cogentcore.org/core v0.5.19/go.mod h1:/7sY306Q8+QxmzwBha2wEF3r4ccF+T1Nop+JuoKUtT4=
-cogentcore.org/lab v0.2.14 h1:J0dMNVECeQ1xJBJsdFb7reSmo65mhwetlLWDhpYOVfc=
-cogentcore.org/lab v0.2.14/go.mod h1:sNIDtu9/s4XICAaD182c6etZq3jib1L6JWHKN/1OgxY=
+cogentcore.org/core v0.5.22 h1:0ne/IiKyL+4lqVX4WxjCJLZlG1JYASHxIxaP2ZzJQSE=
+cogentcore.org/core v0.5.22/go.mod h1:/7sY306Q8+QxmzwBha2wEF3r4ccF+T1Nop+JuoKUtT4=
+cogentcore.org/lab v0.2.15 h1:nwB2YhVbBNBQpjz1+MytfM4dLflhaRpo+4sxecMSuWA=
+cogentcore.org/lab v0.2.15/go.mod h1:s5q01HLvYcC3ZuozKGw6ZGAN1DHfH5aASKBGMC9Co/U=
 git.sr.ht/~sbinet/overlayfs v0.1.1 h1:HvCHXT1cs8RMSjNLQXxPPosB2hgR3tRC8RniH0f3ESg=
 git.sr.ht/~sbinet/overlayfs v0.1.1/go.mod h1:TmrIWKlxyPJJ7vchTqk85DUcW6IDsIa7ONLvSGIw438=
 github.com/Bios-Marcel/wastebasket/v2 v2.0.3 h1:TkoDPcSqluhLGE+EssHu7UGmLgUEkWg7kNyHyyJ3Q9g=
@@ -56,8 +56,8 @@ github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dlclark/regexp2/v2 v2.7.1 h1:yqDtwI1ptXXvEUNpYTk2lad4jLtAcKqkzepn4savSk4=
 github.com/dlclark/regexp2/v2 v2.7.1/go.mod h1:avUrQvPaLz2DrFNHJF0taWAFFX2C1GMSSoeiqFjcBmU=
-github.com/emer/emergent/v2 v2.0.2 h1:GdZzwsyAijU/Uf/shoz4GWq5V/Ehe4zgCjfkreIzW8g=
-github.com/emer/emergent/v2 v2.0.2/go.mod h1:2Tn7pWgwp6HiMG8jnwsEoHop7xKUMo8uCm0vf+KkO90=
+github.com/emer/emergent/v2 v2.0.3 h1:6etBqD76TLXeIUaz5SNSZYLdifYlp70QZOrL75pYH2g=
+github.com/emer/emergent/v2 v2.0.3/go.mod h1:Y+87wkBb9KjHcOg1tYoJu+E/kSw3Vtk/RCORZTcboaA=
 github.com/emer/v1vision v0.9.0 h1:pnP+1zv6bqRvdDCc45DTejIMUG6KCgDjCMRM8DLZuIo=
 github.com/emer/v1vision v0.9.0/go.mod h1:X0MAJNMW1eVlrXYSvQ131oyLeUloDomZwM5LGQEyOmI=
 github.com/ericchiang/css v1.4.0 h1:OlkWiPGHZpWIthKa2YBSAh00XwOT1PUtaoye9bKkTqw=
