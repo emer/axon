@@ -1593,7 +1593,8 @@ fn LayerParams_PhaseDiffFromActs(ly: LayerParams, ctx: Context) {
 		var vr = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(li), u32(di), u32(LayerPhaseDiffVar))];
 		DtParams_AvgVarUpdate(ly.Acts.Dt, &avg, &vr, 1-cosv);
 		LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(li), u32(di), u32(LayerPhaseDiffAvg))] = avg;
-		LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(li), u32(di), u32(LayerPhaseDiffVar))] = vr;
+		LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92],
+		u32(li), u32(di), u32(LayerPhaseDiffVar))] = vr;
 	}
 }
 

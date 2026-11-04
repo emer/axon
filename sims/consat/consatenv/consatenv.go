@@ -114,7 +114,7 @@ func (ev *ConSatEnv) Defaults() {
 func (ev *ConSatEnv) Config(trials, ndata, di int, rndseed int64) {
 	cfg := &ev.Configs
 	np := cfg.NPixels
-	nl := cfg.NLines
+	nl := cfg.NHypers
 	ev.Trial.Max = trials
 	ev.NData = ndata
 	ev.Di = di

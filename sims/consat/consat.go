@@ -159,6 +159,7 @@ func (ss *Sim) ConfigEnv() {
 		// note: names must be standard here!
 		trn.Name = env.ModeDi(Train, di)
 		trn.Defaults()
+		trn.Configs.Partial = true
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(&trn.Configs, ss.Config.Env.Env)
 		}
@@ -166,6 +167,7 @@ func (ss *Sim) ConfigEnv() {
 
 		tst.Name = env.ModeDi(Test, di)
 		tst.Defaults()
+		tst.Configs.Partial = false
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(&tst.Configs, ss.Config.Env.Env)
 		}
@@ -188,7 +190,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	ev := ss.Envs.ByModeDi(Train, 0).(*consatenv.ConSatEnv)
 	cfg := &ev.Configs
-	nl := cfg.NLines
+	nl := cfg.NHypers
 	np := cfg.NPixels
 	nEncUnits := 15  // 15 > 10
 	nHid1Units := 15 // 15?
@@ -533,11 +535,14 @@ func (ss *Sim) ConfigStats() {
 
 	// up to a point, it is good to use loops over stats in one function,
 	// to reduce repetition of boilerplate.
-	statNames := []string{"CorSim", "UnitErr", "Err"}
+	statNames := []string{"CorSim", "CorSimP", "OnWasOff", "OffWasOn", "OnWasOffP", "OffWasOnP"}
 	statDocs := map[string]string{
-		"CorSim":  "The correlation-based similarity of the neural activity patterns between the minus and plus phase (1 = patterns are effectively identical). For target layers, this is good continuous, normalized measure of learning performance, which can be more sensitive than thresholded SSE measures.",
-		"UnitErr": "Normalized proportion of neurons with activities on the wrong side of 0.5 relative to the target values. This is a good normalized error measure.",
-		"Err":     "At the trial level this indicates the presence of an error (i.e., UnitErr > 0), and at higher levels, it is the proportion of errors across the epoch. Thus, when this is zero, the network is performing perfectly (with respect to target outputs).",
+		"CorSim":    "The correlation-based similarity of the neural activity patterns between the minus activity and plus-phase ext (1 = patterns are effectively identical).",
+		"CorSimP":   "The correlation-based similarity of the neural activity patterns between the plus activity and ext, which checks how well the training signal is actually being represented.",
+		"OnWasOff":  "Proportion of neurons that should have been active (on) according to Target, but were not.",
+		"OffWasOn":  "Proportion of neurons that should have been off according to Target but were active.",
+		"OnWasOffP": "Plus-phase version of OnWasOff -- to verify plus-phase signal",
+		"OffWasOnP": "Plus-phase version of OffWasOn -- to verify plus-phase signal.",
 	}
 	ss.AddStat(func(mode Modes, level Levels, start bool) {
 		for _, name := range statNames {
@@ -546,36 +551,40 @@ func (ss *Sim) ConfigStats() {
 			levelDir := modeDir.Dir(level.String())
 			subDir := modeDir.Dir((level - 1).String()) // note: will fail for Cycle
 			tsr := levelDir.Float64(name)
-			ndata := int(ss.Net.Context().NData)
+			ctx := ss.Net.Context()
+			ndata := int(ctx.NData)
 			var stat float64
 			if start {
 				tsr.SetNumRows(0)
 				plot.SetFirstStyler(tsr, func(s *plot.Style) {
 					s.Range.SetMin(0).SetMax(1)
-					if name == "CorSim" {
-						s.On = true
-					}
+					s.On = true
 				})
 				metadata.SetDoc(tsr, statDocs[name])
 				continue
 			}
 			switch level {
 			case Trial:
-				out := ss.Net.LayerByName("Input")
-				// otsr := curModeDir.Float64(out.Name+"_ActM", out.Shape.Sizes...)
+				ly := ss.Net.LayerByName("Input")
 				for di := range ndata {
 					var stat float64
 					switch name {
 					case "CorSim":
-						stat = 1.0 - float64(axon.LayerStates.Value(int(out.Index), int(di), int(axon.LayerPhaseDiff)))
-					case "UnitErr":
-						stat = out.PctUnitErr(ss.Net.Context())[di]
-					case "Err":
-						uniterr := curModeDir.Float64("UnitErr", ndata).Float1D(di)
-						stat = 1.0
-						if uniterr == 0 {
-							stat = 0
-						}
+						stat = float64(ly.Params.Correlation(ctx, uint32(di), axon.Ext, axon.ActM, true))
+					case "CorSimP":
+						stat = float64(ly.Params.Correlation(ctx, uint32(di), axon.Ext, axon.ActP, true))
+					case "OnWasOff":
+						onWasOff, offWasOn := ly.Params.TargetOnOff(ctx, uint32(di), axon.Ext, axon.ActM, 0.4, 0.5)
+						curModeDir.Float64("OffWasOn", ndata).SetFloat1D(float64(offWasOn), di)
+						stat = float64(onWasOff)
+					case "OffWasOn":
+						stat = curModeDir.Float64("OffWasOn", ndata).Float1D(di)
+					case "OnWasOffP":
+						onWasOff, offWasOn := ly.Params.TargetOnOff(ctx, uint32(di), axon.Ext, axon.ActM, 0.4, 0.5)
+						curModeDir.Float64("OffWasOnP", ndata).SetFloat1D(float64(offWasOn), di)
+						stat = float64(onWasOff)
+					case "OffWasOnP":
+						stat = curModeDir.Float64("OffWasOnP", ndata).Float1D(di)
 					}
 					curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
 					tsr.AppendRowFloat(stat)
@@ -630,7 +639,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 		return counters
 	}
 	counters += fmt.Sprintf(" TrialName: %s", curModeDir.StringValue("TrialName").String1D(di))
-	statNames := []string{"ErrGood", "ErrBad"}
+	statNames := []string{"CorSim", "OnWasOff", "OffWasOn"}
 	if level == Cycle || curModeDir.Node(statNames[0]) == nil {
 		return counters
 	}

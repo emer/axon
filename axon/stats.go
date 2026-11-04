@@ -167,7 +167,7 @@ func (ly *Layer) AvgMaxVarByPool(varNm string, poolIndex, di int) minmax.AvgMax3
 // PhaseDiffFromActs computes the phase-wise difference in the
 // activity state between the minus [ActM] and plus [ActP] phases,
 // measured using 1 minus the correlation (centered cosine aka
-// normalized dot product).  0 = no difference, 2 = maximum difference.
+// normalized dot product). 0 = no difference, 2 = maximum difference.
 func (ly *LayerParams) PhaseDiffFromActs(ctx *Context) {
 	li := ly.Index
 	for di := uint32(0); di < ctx.NData; di++ {
@@ -202,4 +202,86 @@ func (ly *LayerParams) PhaseDiffFromActs(ctx *Context) {
 	}
 }
 
+// Correlation computes the correlation (-1, 1) between any two
+// neuron variables. Correlation is the (centered cosine aka
+// normalized dot product). The ctr flag can be used to
+// compute cosine instead of correlation (ctr = false).
+func (ly *LayerParams) Correlation(ctx *Context, di uint32, aVar, bVar NeuronVars, center bool) float32 {
+	avgA := float32(0)
+	avgB := float32(0)
+	nn := ly.Indexes.NNeurons
+	if center {
+		nact := 0
+		for lni := uint32(0); lni < nn; lni++ {
+			ni := ly.Indexes.NeurSt + lni
+			if NeuronIsOff(ni) {
+				continue
+			}
+			avgA += Neurons.Value3D(int(ni), int(di), int(aVar))
+			avgB += Neurons.Value3D(int(ni), int(di), int(bVar))
+			nact++
+		}
+		if nact > 0 {
+			avgA /= float32(nact)
+			avgB /= float32(nact)
+		}
+	}
+	cosv := float32(0)
+	ssa := float32(0)
+	ssb := float32(0)
+	for lni := uint32(0); lni < nn; lni++ {
+		ni := ly.Indexes.NeurSt + lni
+		if NeuronIsOff(ni) {
+			continue
+		}
+		a := Neurons.Value3D(int(ni), int(di), int(aVar)) - avgA
+		b := Neurons.Value3D(int(ni), int(di), int(bVar)) - avgB
+		cosv += a * b
+		ssa += a * a
+		ssb += b * b
+	}
+	dist := math32.Sqrt(ssa * ssb)
+	if dist != 0 {
+		cosv /= dist
+	}
+	return cosv
+}
+
 //gosl:end
+
+// TargetOnOff returns the extent to which, according to the target activation,
+// neurons were active when they should have been, and not-active where they
+// should have been inactive. OnWasOff = proportion that were off and should
+// have been on; OffWasOn = proportion that were on and should have been off.
+// actThr, targThr are thresholds on the ActM, Targ activity to count as active.
+func (ly *LayerParams) TargetOnOff(ctx *Context, di uint32, targVar, actVar NeuronVars, actThr, targThr float32) (onWasOff, offWasOn float32) {
+	nn := ly.Indexes.NNeurons
+	trgOnSum := float32(0)
+	trgOffSum := float32(0)
+	for lni := uint32(0); lni < nn; lni++ {
+		ni := ly.Indexes.NeurSt + lni
+		if NeuronIsOff(ni) {
+			continue
+		}
+		trg := Neurons.Value3D(int(ni), int(di), int(targVar))
+		am := Neurons.Value3D(int(ni), int(di), int(actVar))
+		if trg >= targThr {
+			trgOnSum += 1
+			if am < actThr {
+				onWasOff += 1
+			}
+		} else {
+			trgOffSum += 1
+			if am >= actThr {
+				offWasOn += 1
+			}
+		}
+	}
+	if trgOnSum > 0 {
+		onWasOff /= trgOnSum
+	}
+	if trgOffSum > 0 {
+		offWasOn /= trgOffSum
+	}
+	return
+}

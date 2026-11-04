@@ -7,14 +7,16 @@ package consatenv
 import (
 	"fmt"
 
+	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/math32/vecint"
 	"cogentcore.org/lab/base/randx"
 )
 
-// partial lines are rendered across different "hypercolumn" groups
+// partial lines are rendered across different hypercolumn groups
 // where the maximally ambiguous bottom-up input is just the central
 // point across groups, with horizontal, vertical, and diagonal lines
-// possible as larger-scale structure. use full wrap-around.
+// possible as larger-scale structure.
+// do not use wraparound due to ambiguity.
 //
 //         o
 //        / \
@@ -35,13 +37,22 @@ type Config struct {
 	// central point.
 	NPixels int
 
-	// NLines is the number of pixel-groups in each dimension.
-	NLines int
+	// NHypers is the number of hypercolumn groups in each dimension.
+	NHypers int
+
+	// Partial renders partial amounts of the full line -- if false,
+	// then only the fully ambiguous points.
+	Partial bool
+
+	// PartialRange is the uniformly-sampled range of probability
+	// to add partial line pixels, when Partial = true.
+	PartialRange minmax.F32
 }
 
 func (cfg *Config) Defaults() {
 	cfg.NPixels = 5
-	cfg.NLines = 3
+	cfg.NHypers = 5
+	cfg.PartialRange.Set(0, 1)
 }
 
 // Angles are the different line angles.
@@ -54,6 +65,21 @@ const (
 	// DiagL is up-left-going diagonal
 	DiagL
 )
+
+// Delta returns the X,Y line delta per step.
+func (la Angles) Delta() vecint.Vector2i {
+	switch la {
+	case Horiz:
+		return vecint.Vec2i(1, 0)
+	case Vert:
+		return vecint.Vec2i(0, 1)
+	case DiagR:
+		return vecint.Vec2i(1, 1)
+	case DiagL:
+		return vecint.Vec2i(-1, 1)
+	}
+	return vecint.Vec2i(0, 0)
+}
 
 // Line defines a single line to render.
 // There is full wraparound.
@@ -70,30 +96,22 @@ type Line struct {
 
 // AllLines generates all line starting positions and lengths.
 func (cfg *Config) AllLines() []Line {
-	nl := cfg.NLines
+	nl := cfg.NHypers
 
-	n := nl * nl * (nl - 1) * int(AnglesN)
+	n := (nl - 1) * (nl - 1) * (nl - 2) * int(AnglesN)
 
 	lns := make([]Line, 0, n)
 
-	for sy := range nl {
-		for sx := range nl {
-			for ln := 2; ln < nl; ln++ { // not len = 3 b/c that needs to be canonicalized
+	for sy := range nl - 1 { // -1 so that there is min 2 len line, no wrap
+		for sx := range nl - 1 {
+			for ll := 2; ll <= nl; ll++ {
 				for la := range AnglesN {
-					lns = append(lns, Line{Angle: la, Length: ln, Start: vecint.Vec2i(sx, sy)})
+					d := la.Delta()
+					ep := vecint.Vec2i(sx, sy).Add(d.MulScalar(ll))
+					if ep.X < nl && ep.Y < nl && ep.X >= 0 && ep.Y >= 0 {
+						lns = append(lns, Line{Angle: la, Length: ll, Start: vecint.Vec2i(sx, sy)})
+					}
 				}
-			}
-			if sy == 0 {
-				lns = append(lns, Line{Angle: Vert, Length: nl, Start: vecint.Vec2i(sx, sy)})
-			}
-			if sx == 0 {
-				lns = append(lns, Line{Angle: Horiz, Length: nl, Start: vecint.Vec2i(sx, sy)})
-			}
-			if sx == 0 && sy == 0 {
-				lns = append(lns, Line{Angle: DiagR, Length: nl, Start: vecint.Vec2i(sx, sy)})
-			}
-			if sx == nl-1 && sy == 0 {
-				lns = append(lns, Line{Angle: DiagL, Length: nl, Start: vecint.Vec2i(sx, sy)})
 			}
 		}
 	}
@@ -119,26 +137,21 @@ func (ev *ConSatEnv) InitLines() {
 }
 
 func (ev *ConSatEnv) RenderLine(ln Line) {
+	cfg := &ev.Configs
 	in := ev.States["Input"]
 	in.SetZeros()
 	full := ev.States["Full"]
 	full.SetZeros()
-	var inc vecint.Vector2i
-	switch ln.Angle {
-	case Horiz:
-		inc.Set(1, 0)
-	case Vert:
-		inc.Set(0, 1)
-	case DiagR:
-		inc.Set(1, 1)
-	case DiagL:
-		inc.Set(-1, 1)
-	}
+	inc := ln.Angle.Delta()
 	pt := ln.Start
-	nl := ev.Configs.NLines
-	np := ev.Configs.NPixels
+	nl := cfg.NHypers
+	np := cfg.NPixels
 	pc := np / 2
 	pp := vecint.Vec2i(pc, pc)
+	partp := float32(0)
+	if cfg.Partial {
+		partp = cfg.PartialRange.Min + ev.Rand.Float32()*cfg.PartialRange.Range()
+	}
 	for i := range ln.Length {
 		in.Set(1.0-float32(i)*.1, pt.Y, pt.X, pp.Y, pp.X) // todo spread around here too..
 		full.Set(1.0, pt.Y, pt.X, pp.Y, pp.X)
@@ -162,6 +175,11 @@ func (ev *ConSatEnv) RenderLine(ln Line) {
 		}
 		for range n {
 			full.Set(1.0, pt.Y, pt.X, pn.Y, pn.X)
+			if partp > 0 {
+				if randx.BoolP32(partp, ev.Rand) {
+					in.Set(1.0, pt.Y, pt.X, pn.Y, pn.X)
+				}
+			}
 			pn.SetAdd(inc)
 		}
 		pt.SetAdd(inc)

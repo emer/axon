@@ -27,11 +27,11 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Clamp.Add.SetBool(true) // allows off act
 				ly.Acts.Clamp.ClampPlus = axon.ClampPlusClamp
-				ly.Acts.Clamp.Ge = 0.5 // 0.5 > 0.8 > 1 > 1.2 > 1.5
-				ly.Acts.Clamp.GePlus = 1.5
+				ly.Acts.Clamp.Ge = 0.5         // 0.5 > 0.4 > 0.8 > 1 > 1.2 > 1.5
+				ly.Acts.Clamp.GePlus = 0.5     // 0.5 > 0.6 > 0.4 > 0.8 > 1
 				ly.Inhib.Layer.Gi = 3.0        // 3.0 > 4 for sure
 				ly.Inhib.Pool.Gi = 0.9         // 0.9 > 0.85, 0.95
-				ly.Inhib.ActAvg.Nominal = 0.01 // 0.01 >> 0.005, 0.01 actual
+				ly.Inhib.ActAvg.Nominal = 0.01 // 0.01 -- this is very nonlinear due to small size -- use prjn scaling instead
 				ly.Inhib.Layer.On.SetBool(true)
 				ly.Inhib.Pool.On.SetBool(true)
 				// ly.Inhib.Layer.Gi = 1
@@ -47,7 +47,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.ActAvg.Nominal = 0.02 // 0.02 actual
 				ly.Inhib.Layer.On.SetBool(true)
 				ly.Inhib.Pool.On.SetBool(true)
-				ly.Inhib.Layer.Gi = 1.0
+				ly.Inhib.Layer.Gi = 1.2
 				ly.Inhib.Pool.Gi = 1.0
 				// ly.Inhib.Layer.Gi = 1
 			}},
@@ -58,7 +58,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
 				ly.Inhib.Layer.On.SetBool(true)
 				ly.Inhib.Pool.On.SetBool(true)
-				ly.Inhib.Layer.Gi = 1.0
+				ly.Inhib.Layer.Gi = 1.2
 				ly.Inhib.Pool.Gi = 1.05
 			}},
 		{Sel: "#Hidden2", Doc: "",
@@ -95,11 +95,11 @@ var PathParams = axon.PathSheets{
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.4 // 0.4 > lower
+				pt.PathScale.Rel = 0.4 // 0.4 > 0.3, 0.5
 			}},
 		{Sel: ".LateralPath", Doc: "weaker?",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.3 // 0.2 > 0.3
+				pt.PathScale.Rel = 0.3 // 0.3 > 0.2, 0.4
 			}},
 		{Sel: "#EncodeToHidden1", Doc: "",
 			Set: func(pt *axon.PathParams) {
