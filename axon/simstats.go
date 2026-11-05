@@ -724,12 +724,15 @@ func StatLevelAll(statsDir *tensorfs.Node, srcMode, srcLevel enums.Enum, styleFu
 // source mode and level, into given target mode at the same level.
 // The styleFunc, if non-nil, does plot styling based on the current column name.
 // Due to asymmetries in timing for when stats are made, this assumes a Float64
-// scalar stat value.
-func StatCopyLevel(statsDir *tensorfs.Node, trgMode, srcMode, srcLevel enums.Enum, styleFunc func(s *plot.Style, stName string), statNames ...string) func(mode, level enums.Enum, start bool) {
+// scalar stat value. runLevel is used for getting a final value, else an average.
+func StatCopyLevel(statsDir *tensorfs.Node, trgMode, srcMode, srcLevel, runLevel enums.Enum, styleFunc func(s *plot.Style, stName string), statNames ...string) func(mode, level enums.Enum, start bool) {
+	levels := make([]enums.Enum, 10) // should be enough
 	return func(mode, level enums.Enum, start bool) {
-		if trgMode.Int64() != mode.Int64() || srcLevel.Int64() != level.Int64() {
+		levi := int(level.Int64() - srcLevel.Int64())
+		if trgMode.Int64() != mode.Int64() || levi < 0 {
 			return
 		}
+		levels[levi] = level
 		modeDir := statsDir.Dir(mode.String())
 		levelDir := modeDir.Dir(level.String())
 
@@ -737,8 +740,8 @@ func StatCopyLevel(statsDir *tensorfs.Node, trgMode, srcMode, srcLevel enums.Enu
 		srcLevelDir := srcModeDir.Dir(srcLevel.String())
 		for _, snm := range statNames {
 			name := srcMode.String() + "_" + snm
+			tsr := levelDir.Float64(name)
 			if start {
-				tsr := levelDir.Float64(name)
 				if tsr.Len() == 0 {
 					if styleFunc != nil {
 						plot.SetFirstStyler(tsr, func(s *plot.Style) {
@@ -747,7 +750,10 @@ func StatCopyLevel(statsDir *tensorfs.Node, trgMode, srcMode, srcLevel enums.Enu
 					}
 				}
 				tsr.SetNumRows(0)
-			} else {
+				continue
+			}
+			switch levi {
+			case 0:
 				cl := srcLevelDir.Node(snm)
 				if cl == nil || cl.Tensor == nil {
 					continue
@@ -756,8 +762,14 @@ func StatCopyLevel(statsDir *tensorfs.Node, trgMode, srcMode, srcLevel enums.Enu
 				if clv.NumDims() == 0 || clv.DimSize(0) == 0 {
 					continue
 				}
-				tsr := levelDir.Float64(name, clv.ShapeSizes()...)
+				tsr := levelDir.Float64(name)
 				tsr.AppendRow(clv.RowTensor(clv.DimSize(0) - 1))
+			case int(runLevel.Int64() - srcLevel.Int64()):
+				subDir := modeDir.Dir(levels[levi-1].String())
+				tsr.AppendRow(stats.StatFinal.Call(subDir.Value(name)))
+			default:
+				subDir := modeDir.Dir(levels[levi-1].String())
+				tsr.AppendRow(stats.StatMean.Call(subDir.Value(name)))
 			}
 		}
 	}

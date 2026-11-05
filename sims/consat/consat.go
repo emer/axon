@@ -600,7 +600,7 @@ func (ss *Sim) ConfigStats() {
 	})
 
 	// get test stats in train log
-	ss.AddStatStd(axon.StatCopyLevel(ss.Stats, Train, Test, Epoch, func(s *plot.Style, stName string) {
+	ss.AddStatStd(axon.StatCopyLevel(ss.Stats, Train, Test, Epoch, Run, func(s *plot.Style, stName string) {
 		s.On = true
 	}, "CorSim", "OnWasOff", "OffWasOn"))
 
