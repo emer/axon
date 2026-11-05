@@ -620,6 +620,9 @@ func (ss *Sim) ConfigStats() {
 		}
 	})
 
+	ss.AddStatStd(axon.StatCopyLevel(ss.Stats, Train, Test, Epoch, func(s *plot.Style, stName string) {
+	}, "CorSim", "UnitErr", "Err"))
+
 	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
 	ss.AddStatStd(axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...))
 

@@ -720,6 +720,49 @@ func StatLevelAll(statsDir *tensorfs.Node, srcMode, srcLevel enums.Enum, styleFu
 	}
 }
 
+// StatCopyLevel returns a Stats function that copies given stat names from given
+// source mode and level, into given target mode at the same level.
+// The styleFunc, if non-nil, does plot styling based on the current column name.
+// Due to asymmetries in timing for when stats are made, this assumes a Float64
+// scalar stat value.
+func StatCopyLevel(statsDir *tensorfs.Node, trgMode, srcMode, srcLevel enums.Enum, styleFunc func(s *plot.Style, stName string), statNames ...string) func(mode, level enums.Enum, start bool) {
+	return func(mode, level enums.Enum, start bool) {
+		if trgMode.Int64() != mode.Int64() || srcLevel.Int64() != level.Int64() {
+			return
+		}
+		modeDir := statsDir.Dir(mode.String())
+		levelDir := modeDir.Dir(level.String())
+
+		srcModeDir := statsDir.Dir(srcMode.String())
+		srcLevelDir := srcModeDir.Dir(srcLevel.String())
+		for _, snm := range statNames {
+			name := srcMode.String() + "_" + snm
+			if start {
+				tsr := levelDir.Float64(name)
+				if tsr.Len() == 0 {
+					if styleFunc != nil {
+						plot.SetFirstStyler(tsr, func(s *plot.Style) {
+							styleFunc(s, snm)
+						})
+					}
+				}
+				tsr.SetNumRows(0)
+			} else {
+				cl := srcLevelDir.Node(snm)
+				if cl == nil || cl.Tensor == nil {
+					continue
+				}
+				clv := cl.Tensor.(tensor.Values)
+				if clv.NumDims() == 0 || clv.DimSize(0) == 0 {
+					continue
+				}
+				tsr := levelDir.Float64(name, clv.ShapeSizes()...)
+				tsr.AppendRow(clv.RowTensor(clv.DimSize(0) - 1))
+			}
+		}
+	}
+}
+
 // StatLearnTiming returns a Stats function that records the learning timing
 // parameters, including the MinusCycle (and StdDev) and LearnNow values
 // in the given layers.

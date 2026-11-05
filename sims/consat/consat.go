@@ -580,7 +580,7 @@ func (ss *Sim) ConfigStats() {
 					case "OffWasOn":
 						stat = curModeDir.Float64("OffWasOn", ndata).Float1D(di)
 					case "OnWasOffP":
-						onWasOff, offWasOn := ly.Params.TargetOnOff(ctx, uint32(di), axon.Ext, axon.ActM, 0.4, 0.5)
+						onWasOff, offWasOn := ly.Params.TargetOnOff(ctx, uint32(di), axon.Ext, axon.ActP, 0.4, 0.5)
 						curModeDir.Float64("OffWasOnP", ndata).SetFloat1D(float64(offWasOn), di)
 						stat = float64(onWasOff)
 					case "OffWasOnP":
@@ -598,6 +598,11 @@ func (ss *Sim) ConfigStats() {
 			}
 		}
 	})
+
+	// get test stats in train log
+	ss.AddStatStd(axon.StatCopyLevel(ss.Stats, Train, Test, Epoch, func(s *plot.Style, stName string) {
+		s.On = true
+	}, "CorSim", "OnWasOff", "OffWasOn"))
 
 	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.InputLayer, axon.TargetLayer)
 	ss.AddStatStd(axon.StatLayerActGe(ss.Stats, net, Train, Trial, Run, lays...))
