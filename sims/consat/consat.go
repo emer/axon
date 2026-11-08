@@ -253,6 +253,20 @@ func (ss *Sim) ApplyParams() {
 	ss.Params.ApplyAll(ss.Net)
 }
 
+func (ss *Sim) ApplyModeParams(mode enums.Enum) {
+	if mode.Int64() != Train.Int64() {
+		ss.Params.ExtraSheets = mode.String()
+	} else {
+		ss.Params.ExtraSheets = ""
+	}
+	ss.Params.ApplyAll(ss.Net)
+	ss.Net.InitGScale()
+	// in := ss.Net.LayerByName("Input")
+	// fmEnc := errors.Log1(in.RecvPathBySendName("Encode")).(*axon.Path)
+	// fmt.Println(mode, fmEnc.Params.PathScale.Rel, fmEnc.Params.GScale.Scale)
+	axon.ToGPUParams()
+}
+
 ////////  Init, utils
 
 // Init restarts the run, and initializes everything, including network weights
@@ -415,8 +429,10 @@ func (ss *Sim) TestAll() {
 	for di := 0; di < int(ctx.NData); di++ {
 		ss.Envs.ByModeDi(Test, di).Init(0)
 	}
+	ss.ApplyModeParams(Test)
 	ss.Loops.ResetAndRun(Test)
 	ss.Loops.Mode = Train // important because this is called from Train Run: go back.
+	ss.ApplyModeParams(Train)
 }
 
 //////// Stats
@@ -545,6 +561,7 @@ func (ss *Sim) ConfigStats() {
 		"OffWasOnP": "Plus-phase version of OffWasOn -- to verify plus-phase signal.",
 	}
 	ss.AddStat(func(mode Modes, level Levels, start bool) {
+		onOffThr := ss.Config.Log.OnOffThr
 		for _, name := range statNames {
 			modeDir := ss.Stats.Dir(mode.String())
 			curModeDir := ss.Current.Dir(mode.String())
@@ -574,13 +591,13 @@ func (ss *Sim) ConfigStats() {
 					case "CorSimP":
 						stat = float64(ly.Params.Correlation(ctx, uint32(di), axon.Ext, axon.ActP, true))
 					case "OnWasOff":
-						onWasOff, offWasOn := ly.Params.TargetOnOff(ctx, uint32(di), axon.Ext, axon.ActM, 0.4, 0.5)
+						onWasOff, offWasOn := ly.Params.TargetOnOff(ctx, uint32(di), axon.Ext, axon.ActM, onOffThr, 0.5)
 						curModeDir.Float64("OffWasOn", ndata).SetFloat1D(float64(offWasOn), di)
 						stat = float64(onWasOff)
 					case "OffWasOn":
 						stat = curModeDir.Float64("OffWasOn", ndata).Float1D(di)
 					case "OnWasOffP":
-						onWasOff, offWasOn := ly.Params.TargetOnOff(ctx, uint32(di), axon.Ext, axon.ActP, 0.4, 0.5)
+						onWasOff, offWasOn := ly.Params.TargetOnOff(ctx, uint32(di), axon.Ext, axon.ActP, onOffThr, 0.5)
 						curModeDir.Float64("OffWasOnP", ndata).SetFloat1D(float64(offWasOn), di)
 						stat = float64(onWasOff)
 					case "OffWasOnP":

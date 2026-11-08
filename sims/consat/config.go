@@ -112,6 +112,10 @@ func (rc *RunConfig) Cycles() int {
 // LogConfig has config parameters related to logging data.
 type LogConfig struct {
 
+	// OnOffThr is the on-off ActM threshold for computing the OnWasOff and OffWasOn stat.
+	// 0.25 seems fine..
+	OnOffThr float32 `default:"0.25"`
+
 	// SaveWeights will save final weights after each run.
 	SaveWeights bool
 

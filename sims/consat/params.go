@@ -27,9 +27,9 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Clamp.Add.SetBool(true) // allows off act
 				ly.Acts.Clamp.ClampPlus = axon.ClampPlusClamp
-				ly.Acts.Clamp.Ge = 0.5         // 0.5 > 0.4 > 0.8 > 1 > 1.2 > 1.5
+				ly.Acts.Clamp.Ge = 0.4         // 0.4 > 0.5 now
 				ly.Acts.Clamp.GePlus = 0.8     // 0.5 > 0.6 > 0.4 > 0.8 > 1
-				ly.Inhib.Layer.Gi = 2.0        // 2.0 > 3.0
+				ly.Inhib.Layer.Gi = 1.5        // 1.5 > 2.0 > 3.0
 				ly.Inhib.Pool.Gi = 0.9         // 0.9 > 0.85, 0.95
 				ly.Inhib.ActAvg.Nominal = 0.01 // 0.01 -- this is very nonlinear due to small size; .02 is ==
 				ly.Inhib.Layer.On.SetBool(true)
@@ -79,6 +79,7 @@ var LayerParams = axon.LayerSheets{
 		// 		ly.Inhib.Layer.Gi = 1.0
 		// 	}},
 	},
+	"Test": {},
 }
 
 // PathParams sets the minimal non-default params.
@@ -88,16 +89,11 @@ var PathParams = axon.PathSheets{
 		{Sel: "Path", Doc: "std",
 			Set: func(pt *axon.PathParams) {
 				pt.Learn.LRate.Base = 0.05 // 0.05 >= 0.1 > 0.02
-				pt.SWts.Adapt.LRate = 0.1
 				pt.SWts.Init.SPct = 1
 				pt.SWts.Adapt.LRate = 0.0001 // 0.005 == .1 == .01
 				pt.Learn.DWt.SubMean = 1     // 1 > 0
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
-			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Rel = 0.2 // 0.2 > 0.3..
-			}},
-		{Sel: ".LateralPath", Doc: "weaker?",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Rel = 0.2 // 0.2 > 0.3..
 			}},
@@ -108,6 +104,24 @@ var PathParams = axon.PathSheets{
 		{Sel: "#EncodeToHidden1", Doc: "",
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 1.0
+			}},
+		{Sel: ".LateralPath", Doc: "note: rel only vs. back -- need abs",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 0.5 // .5 best
+			}},
+		{Sel: "#EncodeToInput", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 0.5 // 0.3 > 0.5 train, but worse for test!
+			}},
+	},
+	"Test": {
+		{Sel: ".LateralPath", Doc: "note: rel only vs. back -- need abs",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 1.0 // 1.0 > 0.5
+			}},
+		{Sel: "#EncodeToInput", Doc: "",
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Abs = 0.5 // 0.5 > 1.0
 			}},
 	},
 }
