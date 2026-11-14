@@ -343,7 +343,9 @@ func (ss *Sim) StatsStart(lmd, ltm enums.Enum) {
 	if level <= Trial {
 		return
 	}
+	unlock := ss.GUI.LockGUI()
 	ss.RunStats(mode, level-1, axon.Start)
+	unlock()
 }
 
 // StatsStep is called by Looper at each step of iteration,
@@ -354,8 +356,11 @@ func (ss *Sim) StatsStep(lmd, ltm enums.Enum) {
 	if level == Cycle {
 		return
 	}
+	unlock := ss.GUI.LockGUI()
 	ss.RunStats(mode, level, axon.Step)
+	unlock()
 	tensorfs.DirTable(axon.StatsNode(ss.Stats, mode, level), nil).WriteToLog()
+	ss.UpdatePlots(mode, level)
 }
 
 // RunStats runs the StatFuncs for given mode, level and phase.
@@ -363,12 +368,19 @@ func (ss *Sim) RunStats(mode Modes, level Levels, start bool) {
 	for _, sf := range ss.StatFuncs {
 		sf(mode, level, start)
 	}
-	if !start && ss.GUI.Tabs != nil {
-		nm := mode.String() + " " + level.String() + " Plot"
-		ss.GUI.Tabs.AsLab().GoUpdatePlot(nm)
-		if level == Run {
-			ss.GUI.Tabs.AsLab().GoUpdatePlot("Train RunAll Plot")
-		}
+}
+
+// UpdatePlots updates the GUI plots for given mode and level, after the
+// stats have been computed in StatsStep. It must be called after the
+// LockGUI unlock, because the plot updates take the same GUI lock.
+func (ss *Sim) UpdatePlots(mode Modes, level Levels) {
+	if ss.GUI.Tabs == nil {
+		return
+	}
+	nm := mode.String() + " " + level.String() + " Plot"
+	ss.GUI.Tabs.AsLab().GoUpdatePlot(nm)
+	if level == Run {
+		ss.GUI.Tabs.AsLab().GoUpdatePlot("Train RunAll Plot")
 	}
 }
 

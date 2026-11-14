@@ -96,19 +96,19 @@ type Line struct {
 
 // AllLines generates all line starting positions and lengths.
 func (cfg *Config) AllLines() []Line {
-	nl := cfg.NHypers
+	nh := cfg.NHypers
 
-	n := (nl - 1) * (nl - 1) * (nl - 2) * int(AnglesN)
+	n := (nh - 1) * (nh - 1) * (nh - 2) * int(AnglesN)
 
 	lns := make([]Line, 0, n)
 
-	for sy := range nl - 1 { // -1 so that there is min 2 len line, no wrap
-		for sx := range nl - 1 {
-			for ll := 2; ll <= nl; ll++ {
+	for sy := range nh - 1 { // -1 so that there is min 2 len line, no wrap
+		for sx := range nh - 1 {
+			for ll := 2; ll <= nh; ll++ {
 				for la := range AnglesN {
 					d := la.Delta()
 					ep := vecint.Vec2i(sx, sy).Add(d.MulScalar(ll))
-					if ep.X < nl && ep.Y < nl && ep.X >= 0 && ep.Y >= 0 {
+					if ep.X < nh && ep.Y < nh && ep.X >= 0 && ep.Y >= 0 {
 						lns = append(lns, Line{Angle: la, Length: ll, Start: vecint.Vec2i(sx, sy)})
 					}
 				}
@@ -144,7 +144,7 @@ func (ev *ConSatEnv) RenderLine(ln Line) {
 	full.SetZeros()
 	inc := ln.Angle.Delta()
 	pt := ln.Start
-	nl := cfg.NHypers
+	nh := cfg.NHypers
 	np := cfg.NPixels
 	pc := np / 2
 	pp := vecint.Vec2i(pc, pc)
@@ -184,14 +184,14 @@ func (ev *ConSatEnv) RenderLine(ln Line) {
 		}
 		pt.SetAdd(inc)
 		if pt.X < 0 {
-			pt.X += nl
+			pt.X += nh
 		} else {
-			pt.X = pt.X % nl // wrap
+			pt.X = pt.X % nh // wrap
 		}
 		if pt.Y < 0 {
-			pt.Y += nl
+			pt.Y += nh
 		} else {
-			pt.Y = pt.Y % nl
+			pt.Y = pt.Y % nh
 		}
 	}
 }

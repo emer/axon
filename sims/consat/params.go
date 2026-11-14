@@ -27,7 +27,7 @@ var LayerParams = axon.LayerSheets{
 			Set: func(ly *axon.LayerParams) {
 				ly.Acts.Clamp.Add.SetBool(true) // allows off act
 				ly.Acts.Clamp.ClampPlus = axon.ClampPlusClamp
-				ly.Acts.Clamp.Ge = 0.4         // 0.4 > 0.5 now
+				ly.Acts.Clamp.Ge = 0.4         // 0.4 > 0.3 > 0.5 now
 				ly.Acts.Clamp.GePlus = 0.8     // 0.5 > 0.6 > 0.4 > 0.8 > 1
 				ly.Inhib.Layer.Gi = 1.5        // 1.5 > 2.0 > 3.0
 				ly.Inhib.Pool.Gi = 0.9         // 0.9 > 0.85, 0.95
@@ -44,7 +44,7 @@ var LayerParams = axon.LayerSheets{
 			}},
 		{Sel: "#Encode", Doc: "",
 			Set: func(ly *axon.LayerParams) {
-				ly.Inhib.ActAvg.Nominal = 0.02 // 0.02 > 0.03 actual
+				ly.Inhib.ActAvg.Nominal = 0.04 // 0.05 accurate
 				ly.Inhib.Layer.On.SetBool(true)
 				ly.Inhib.Pool.On.SetBool(true)
 				ly.Inhib.Layer.Gi = 1.1
@@ -105,23 +105,27 @@ var PathParams = axon.PathSheets{
 			Set: func(pt *axon.PathParams) {
 				pt.PathScale.Abs = 1.0
 			}},
+
+		// paths: lateral > encode better -- try various other ratios!
 		{Sel: ".LateralPath", Doc: "note: rel only vs. back -- need abs",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 0.5 // .5 best
+				pt.PathScale.Rel = 1.0
+				pt.PathScale.Abs = 1.5 // .5 best
 			}},
 		{Sel: "#EncodeToInput", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 0.5 // 0.3 > 0.5 train, but worse for test!
+				pt.PathScale.Abs = 1.0 // 0.3 > 0.5 train, but worse for test!
 			}},
 	},
 	"Test": {
 		{Sel: ".LateralPath", Doc: "note: rel only vs. back -- need abs",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 1.0 // 1.0 > 0.5
+				pt.PathScale.Rel = 1.0
+				pt.PathScale.Abs = 1.5 // 1.0 > 0.5
 			}},
 		{Sel: "#EncodeToInput", Doc: "",
 			Set: func(pt *axon.PathParams) {
-				pt.PathScale.Abs = 0.5 // 0.5 > 1.0
+				pt.PathScale.Abs = 1.0 // 0.5 > 1.0
 			}},
 	},
 }

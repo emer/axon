@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// consat: This simulation tests axon on constraint satisfaction
+// package consat: This simulation tests axon on constraint satisfaction
 // using the traveling salesperson problem.
 package consat
 
@@ -190,18 +190,18 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	ev := ss.Envs.ByModeDi(Train, 0).(*consatenv.ConSatEnv)
 	cfg := &ev.Configs
-	nl := cfg.NHypers
+	nh := cfg.NHypers
 	np := cfg.NPixels
 	nEncUnits := 15  // 15 > 10
 	nHid1Units := 15 // 15?
 	nHid2Units := 20 // 20 > 15
 
-	inp := net.AddLayer4D("Input", axon.InputLayer, nl, nl, np, np).AddClass("Input")
-	rec := net.AddLayer4D("Full", axon.InputLayer, nl, nl, np, np).AddClass("Input")
-	enc := net.AddLayer4D("Encode", axon.SuperLayer, nl, nl, nEncUnits, nEncUnits)
+	inp := net.AddLayer4D("Input", axon.InputLayer, nh, nh, np, np).AddClass("Input")
+	rec := net.AddLayer4D("Full", axon.InputLayer, nh, nh, np, np).AddClass("Input")
+	enc := net.AddLayer4D("Encode", axon.SuperLayer, nh-1, nh-1, nEncUnits, nEncUnits)
 	enc.SetSampleShape(emer.CenterPoolIndexes(enc, 1), emer.CenterPoolShape(enc, 1)) // just one pool!
 
-	hid1 := net.AddLayer4D("Hidden1", axon.SuperLayer, 3, 3, nHid1Units, nHid1Units)
+	hid1 := net.AddLayer4D("Hidden1", axon.SuperLayer, nh-2, nh-2, nHid1Units, nHid1Units)
 	hid1.SetSampleShape(emer.CenterPoolIndexes(enc, 1), emer.CenterPoolShape(enc, 1))
 	hid2 := net.AddLayer2D("Hidden2", axon.SuperLayer, nHid2Units, nHid2Units)
 
@@ -212,31 +212,29 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	full := paths.NewFull()
 
-	encRect := paths.NewPoolRect()
-	encRect.Size.Set(1, 1) // note: y is 2nd arg..
-	encRect.Scale.Set(1, 1)
+	pool1 := paths.NewPoolTile()
+	pool1.Size.Set(1, 1)
+	pool1.Skip.Set(1, 1)
+	pool1.Start.Set(0, 0)
 
-	encRecip := paths.NewPoolRect()
-	encRecip.Size.Set(1, 1)
-	encRecip.Scale.Set(1, 1)
+	pool2 := paths.NewPoolTile()
+	pool2.Size.Set(2, 2)
+	pool2.Skip.Set(1, 1)
+	pool2.Start.Set(0, 0)
 
-	h1Pool := paths.NewPoolTile()
-	h1Pool.Size.Set(2, 2)
-	h1Pool.Skip.Set(1, 1)
+	pool2recip := paths.NewPoolTile()
+	*pool2recip = *pool2
+	pool2recip.Recip = true
 
-	h1Recip := paths.NewPoolTile()
-	*h1Recip = *h1Pool
-	h1Recip.Recip = true
+	net.ConnectLayers(inp, enc, pool2, axon.ForwardPath)
+	net.ConnectLayers(enc, inp, pool2recip, axon.BackPath)
+	net.LateralConnectLayer(inp, pool1)
 
-	net.ConnectLayers(inp, enc, encRect, axon.ForwardPath)
-	net.ConnectLayers(enc, inp, encRect, axon.BackPath)
-	net.LateralConnectLayer(inp, encRect)
+	// net.ConnectLayers(rec, enc, pool2, axon.BackPath)
+	// net.ConnectLayers(enc, rec, pool2recip, axon.ForwardPath)
 
-	// net.ConnectLayers(rec, enc, encRect, axon.BackPath)
-	// net.ConnectLayers(enc, rec, encRecip, axon.ForwardPath)
-
-	net.ConnectLayers(enc, hid1, h1Pool, axon.ForwardPath)
-	net.ConnectLayers(hid1, enc, h1Recip, axon.BackPath)
+	net.ConnectLayers(enc, hid1, pool2, axon.ForwardPath)
+	net.ConnectLayers(hid1, enc, pool2recip, axon.BackPath)
 	// net.BidirConnectLayers(enc, hid1, full)
 
 	net.BidirConnectLayers(hid1, hid2, full)
@@ -458,7 +456,9 @@ func (ss *Sim) StatsStart(lmd, ltm enums.Enum) {
 	if level <= Trial {
 		return
 	}
+	unlock := ss.GUI.LockGUI()
 	ss.RunStats(mode, level-1, axon.Start)
+	unlock()
 }
 
 // StatsStep is called by Looper at each step of iteration,
@@ -469,8 +469,11 @@ func (ss *Sim) StatsStep(lmd, ltm enums.Enum) {
 	if level == Cycle {
 		return
 	}
+	unlock := ss.GUI.LockGUI()
 	ss.RunStats(mode, level, axon.Step)
+	unlock()
 	tensorfs.DirTable(axon.StatsNode(ss.Stats, mode, level), nil).WriteToLog()
+	ss.UpdatePlots(mode, level)
 }
 
 // RunStats runs the StatFuncs for given mode, level and phase.
@@ -478,22 +481,29 @@ func (ss *Sim) RunStats(mode Modes, level Levels, start bool) {
 	for _, sf := range ss.StatFuncs {
 		sf(mode, level, start)
 	}
-	if !start && ss.GUI.Tabs != nil {
-		tbs := ss.GUI.Tabs.AsLab()
-		_, idx := tbs.CurrentTab()
-		nm := mode.String() + " " + level.String() + " Plot"
-		tbs.GoUpdatePlot(nm)
-		switch level {
-		// case Trial:
-		// 	ev := ss.Envs.ByModeDi(Train, 0).(*consatenv.ConSatEnv)
-		// 	ev.UpdatePlot()
-		// 	fr := tbs.TabByName("Optimal")
-		// 	fr.Update()
-		case Run:
-			tbs.GoUpdatePlot("Train RunAll Plot")
-		}
-		tbs.SelectTabIndex(idx)
+}
+
+// UpdatePlots updates the GUI plots for given mode and level, after the
+// stats have been computed in StatsStep. It must be called after the
+// LockGUI unlock, because the plot updates take the same GUI lock.
+func (ss *Sim) UpdatePlots(mode Modes, level Levels) {
+	if ss.GUI.Tabs == nil {
+		return
 	}
+	tbs := ss.GUI.Tabs.AsLab()
+	_, idx := tbs.CurrentTab()
+	nm := mode.String() + " " + level.String() + " Plot"
+	tbs.GoUpdatePlot(nm)
+	switch level {
+	// case Trial:
+	// 	ev := ss.Envs.ByModeDi(Train, 0).(*consatenv.ConSatEnv)
+	// 	ev.UpdatePlot()
+	// 	fr := tbs.TabByName("Optimal")
+	// 	fr.Update()
+	case Run:
+		tbs.GoUpdatePlot("Train RunAll Plot")
+	}
+	tbs.SelectTabIndex(idx)
 }
 
 // SetRunName sets the overall run name, used for naming output logs and weight files
