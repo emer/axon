@@ -74,6 +74,10 @@ struct SynComParams {
 	Delay: u32,
 	MaxDelay: u32,
 	DelLen: u32,
+	PFail: f32,
+	PFailSWt: i32,
+	pad: f32,
+	pad1: f32,
 }
 struct PathScaleParams {
 	Rel: f32,
@@ -748,10 +752,16 @@ fn PathParams_SWtFromWt(pt: PathParams, ctx: Context, rlay: LayerParams, pti: u3
 	for (var ci = u32(0);
 	 ci < synn; ci++) {
 		var syni = RecvSynIxs[Index1D(TensorStrides[60], u32(synst + ci))];
-		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(SWt))] += lr * (Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(DSWt))] - avgDWt);
-		var swt = Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(SWt))];
-		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(DSWt))] = 0.0;
 		var wt = Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(Wt))];
+		var swt = Synapses[Index2D(TensorStrides[170], TensorStrides[171],
+		u32(syni), u32(SWt))];
+		if (wt == 0) {
+			var lwt = Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(LWt))];
+			wt = SWtParams_WtValue(pt.SWts, swt, lwt);
+		}
+		swt += lr * (Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(DSWt))] - avgDWt);
+		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(SWt))] = swt;
+		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(DSWt))] = 0.0;
 		var lwt = SWtParams_LWtFromWts(pt.SWts, wt, swt);
 		lwt -= hiDk * lwt;
 		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(LWt))] = lwt;
@@ -1348,7 +1358,8 @@ alias RandFunIndex = u32;
 const  RandFunActPGe: RandFunIndex = 0;
 const  RandFunActPGi: RandFunIndex = 1;
 const  RandFunActSMaintP: RandFunIndex = 2;
-const  RandFunIndexN: RandFunIndex = 3;
+const  RandFunSynWtFail: RandFunIndex = 3;
+const  RandFunIndexN: RandFunIndex = 4;
 
 //////// import: "rl-layer.go"
 struct RWPredParams {
@@ -1472,7 +1483,7 @@ fn RandFloat32(counter: su64, funcIndex: u32, key: u32) -> f32 {
 	return Uint32ToFloat32(RandUint32(counter, funcIndex, key));
 }
 fn RandFloat32Range11Vec2(counter: su64, funcIndex: u32, key: u32) -> vec2<f32> {
-	return Uint32ToFloat32Vec2(RandUint32Vec2(counter, funcIndex, key));
+	return Uint32ToFloat32Range11Vec2(RandUint32Vec2(counter, funcIndex, key));
 }
 fn RandFloat32Range11(counter: su64, funcIndex: u32, key: u32) -> f32 { 
 	return Uint32ToFloat32Range11(RandUint32(counter, funcIndex, key));
@@ -1494,7 +1505,7 @@ fn RandFloat32NormVec2(counter: su64, funcIndex: u32, key: u32) -> vec2<f32> {
 	return f * r;
 }
 fn RandFloat32Norm(counter: su64, funcIndex: u32, key: u32) -> f32 { 
-	return RandFloat32Vec2(counter, funcIndex, key).x;
+	return RandFloat32NormVec2(counter, funcIndex, key).x;
 }
 fn RandUint32N(counter: su64, funcIndex: u32, key: u32, n: u32) -> u32 { 
 	let v = RandFloat32(counter, funcIndex, key);

@@ -16,6 +16,7 @@ const (
 	RandFunActPGe RandFunIndex = iota
 	RandFunActPGi
 	RandFunActSMaintP
+	RandFunSynWtFail
 	RandFunIndexN
 )
 

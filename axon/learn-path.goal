@@ -592,6 +592,13 @@ func (pt *PathParams) DWtSubMean(ctx *Context, pti, ri, lni uint32) {
 
 // WtFromDWtSyn is the overall entry point for updating weights from weight changes.
 func (pt *PathParams) WtFromDWtSyn(ctx *Context, syni uint32) {
+	wt := Synapses[syni, Wt]
+	swt := Synapses[syni, SWt]
+	if wt == 0 { // restore failed wts
+		lwt := Synapses[syni, LWt]
+		wt = pt.SWts.WtValue(swt, lwt)
+		Synapses[syni, Wt] = wt
+	}
 	switch pt.Type {
 	case RWPath:
 		pt.WtFromDWtSynNoLimits(ctx, syni)
@@ -603,6 +610,9 @@ func (pt *PathParams) WtFromDWtSyn(ctx *Context, syni uint32) {
 		pt.WtFromDWtSynNoLimits(ctx, syni)
 	default:
 		pt.WtFromDWtSynCortex(ctx, syni)
+	}
+	if pt.Com.WtFail(ctx, &wt, swt, syni) {
+		Synapses[syni, Wt] = wt
 	}
 }
 
@@ -678,10 +688,15 @@ func (pt *PathParams) SWtFromWt(ctx *Context, rlay *LayerParams, pti, ri, lni ui
 	avgDWt *= pt.SWts.Adapt.SubMean
 	for ci := uint32(0); ci < synn; ci++ {
 		syni := RecvSynIxs.Value(int(synst + ci))
-		Synapses[syni, SWt] += lr * (Synapses[syni, DSWt] - avgDWt)
-		swt := Synapses[syni, SWt]
-		Synapses[syni, DSWt] = 0.0
 		wt := Synapses[syni, Wt]
+		swt := Synapses[syni, SWt]
+		if wt == 0 { // restore failed wts
+			lwt := Synapses[syni, LWt]
+			wt = pt.SWts.WtValue(swt, lwt)
+		}
+		swt += lr * (Synapses[syni, DSWt] - avgDWt)
+		Synapses[syni, SWt] = swt
+		Synapses[syni, DSWt] = 0.0
 		lwt := pt.SWts.LWtFromWts(wt, swt)
 		lwt -= hiDk * lwt
 		Synapses[syni, LWt] = lwt

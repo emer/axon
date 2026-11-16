@@ -78,6 +78,10 @@ struct SynComParams {
 	Delay: u32,
 	MaxDelay: u32,
 	DelLen: u32,
+	PFail: f32,
+	PFailSWt: i32,
+	pad: f32,
+	pad1: f32,
 }
 struct PathScaleParams {
 	Rel: f32,
@@ -1330,7 +1334,8 @@ alias RandFunIndex = u32;
 const  RandFunActPGe: RandFunIndex = 0;
 const  RandFunActPGi: RandFunIndex = 1;
 const  RandFunActSMaintP: RandFunIndex = 2;
-const  RandFunIndexN: RandFunIndex = 3;
+const  RandFunSynWtFail: RandFunIndex = 3;
+const  RandFunIndexN: RandFunIndex = 4;
 
 //////// import: "rl-layer.go"
 struct RWPredParams {
@@ -1454,7 +1459,7 @@ fn RandFloat32(counter: su64, funcIndex: u32, key: u32) -> f32 {
 	return Uint32ToFloat32(RandUint32(counter, funcIndex, key));
 }
 fn RandFloat32Range11Vec2(counter: su64, funcIndex: u32, key: u32) -> vec2<f32> {
-	return Uint32ToFloat32Vec2(RandUint32Vec2(counter, funcIndex, key));
+	return Uint32ToFloat32Range11Vec2(RandUint32Vec2(counter, funcIndex, key));
 }
 fn RandFloat32Range11(counter: su64, funcIndex: u32, key: u32) -> f32 { 
 	return Uint32ToFloat32Range11(RandUint32(counter, funcIndex, key));
@@ -1476,7 +1481,7 @@ fn RandFloat32NormVec2(counter: su64, funcIndex: u32, key: u32) -> vec2<f32> {
 	return f * r;
 }
 fn RandFloat32Norm(counter: su64, funcIndex: u32, key: u32) -> f32 { 
-	return RandFloat32Vec2(counter, funcIndex, key).x;
+	return RandFloat32NormVec2(counter, funcIndex, key).x;
 }
 fn RandUint32N(counter: su64, funcIndex: u32, key: u32, n: u32) -> u32 { 
 	let v = RandFloat32(counter, funcIndex, key);
