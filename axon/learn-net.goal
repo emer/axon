@@ -46,6 +46,17 @@ func (nt *Network) DWtToWt() {
 	RunDone()
 }
 
+// SynFail resamples the synaptic failures in all pathways with
+// Com.PFail > 0, without any learning or slow adaptation, so that
+// testing can have new random failures on each trial (failures are
+// otherwise only resampled by the weight update after learning).
+// The synapses are not synced back from the GPU.
+func (nt *Network) SynFail() {
+	nix := nt.NetIxs()
+	RunSynFailSyn(int(nix.NSyns))
+	RunDone()
+}
+
 // SlowUpdate does ctx.SlowInc() and calls SlowAdapt at SlowInterval
 // and AdaptGi at AdaptGiInterval.
 func (nt *Network) SlowUpdate() {
@@ -282,6 +293,17 @@ func WtFromDWtSyn(syni uint32) { //gosl:kernel
 	}
 	pti := SynapseIxs[syni, SynPathIndex]
 	Paths[pti].WtFromDWtSyn(ctx, syni)
+}
+
+// SynFailSyn is the kernel over Synapses (not * Data) to
+// resample synaptic failures, without learning.
+func SynFailSyn(syni uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	if syni >= NetworkIxs[0].NSyns {
+		return
+	}
+	pti := SynapseIxs[syni, SynPathIndex]
+	Paths[pti].SynFailSyn(ctx, syni)
 }
 
 // SlowAdaptLayer is the kernel over Layers (not * Data) to

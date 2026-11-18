@@ -316,13 +316,25 @@ func (nt *Network) LayerByName(name string) *Layer {
 }
 
 // LayersByType returns a list of layer names by given layer type(s).
+// It panics if there are no such layers: see [Network.LayersByTypeTry].
 func (nt *Network) LayersByType(layType ...LayerTypes) []string {
+	layers := nt.LayersByTypeTry(layType...)
+	if len(layers) == 0 {
+		panic(fmt.Sprintf("No Layers found for query: %#v.", layType))
+	}
+	return layers
+}
+
+// LayersByTypeTry returns a list of layer names by given layer type(s),
+// which is empty if there are no such layers (whereas
+// [Network.LayersByType] panics).
+func (nt *Network) LayersByTypeTry(layType ...LayerTypes) []string {
 	var nms []string
 	for _, tp := range layType {
 		nm := tp.String()
 		nms = append(nms, nm)
 	}
-	return nt.LayersByClass(nms...)
+	return nt.LayersByClassTry(nms...)
 }
 
 func (nt *Network) UpdateLayerMaps() {
@@ -348,7 +360,19 @@ func (nt *Network) UpdateLayerMaps() {
 // The layer Type is always included as a Class, along with any other
 // space-separated strings specified in Class for parameter styling, etc.
 // If no classes are passed, all layer names in order are returned.
+// It panics if there are no such layers: see [Network.LayersByClassTry].
 func (nt *Network) LayersByClass(classes ...string) []string {
+	layers := nt.LayersByClassTry(classes...)
+	if len(layers) == 0 {
+		panic(fmt.Sprintf("No Layers found for query: %#v.", classes))
+	}
+	return layers
+}
+
+// LayersByClassTry returns a list of layer names by given class(es),
+// as in [Network.LayersByClass], which is empty if there are no such
+// layers (whereas LayersByClass panics).
+func (nt *Network) LayersByClassTry(classes ...string) []string {
 	if nt.LayerClassMap == nil {
 		nt.UpdateLayerMaps()
 	}
@@ -374,9 +398,6 @@ func (nt *Network) LayersByClass(classes ...string) []string {
 		}
 		layers = append(layers, nm)
 		has[nm] = true
-	}
-	if len(layers) == 0 {
-		panic(fmt.Sprintf("No Layers found for query: %#v.", classes))
 	}
 	return layers
 }

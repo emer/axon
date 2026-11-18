@@ -5,7 +5,6 @@
 package axon
 
 import (
-	// "fmt"
 	"cogentcore.org/core/math32"
 )
 
@@ -610,6 +609,26 @@ func (pt *PathParams) WtFromDWtSyn(ctx *Context, syni uint32) {
 		pt.WtFromDWtSynNoLimits(ctx, syni)
 	default:
 		pt.WtFromDWtSynCortex(ctx, syni)
+	}
+	if pt.Com.WtFail(ctx, &wt, swt, syni) {
+		Synapses[syni, Wt] = wt
+	}
+}
+
+// SynFailSyn resamples the synaptic failure of the given synapse
+// (see [SynComParams.PFail]): it restores a failed weight from its
+// SWt and LWt values, and then fails it again at random,
+// without any learning or other changes to the weights.
+func (pt *PathParams) SynFailSyn(ctx *Context, syni uint32) {
+	if pt.Com.PFail == 0 {
+		return
+	}
+	wt := Synapses[syni, Wt]
+	swt := Synapses[syni, SWt]
+	if wt == 0 { // restore failed wts
+		lwt := Synapses[syni, LWt]
+		wt = pt.SWts.WtValue(swt, lwt)
+		Synapses[syni, Wt] = wt
 	}
 	if pt.Com.WtFail(ctx, &wt, swt, syni) {
 		Synapses[syni, Wt] = wt

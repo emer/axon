@@ -426,6 +426,13 @@ func GPUInit() {
 		pl.AddVarUsed(1, "RecvPathIxs")
 		pl.AddVarUsed(1, "RecvSynIxs")
 		pl.AddVarUsed(3, "Synapses")
+		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/SynFailSyn.wgsl", sy)
+		pl.AddVarUsed(0, "TensorStrides")
+		pl.AddVarUsed(2, "Ctx")
+		pl.AddVarUsed(1, "NetworkIxs")
+		pl.AddVarUsed(0, "Paths")
+		pl.AddVarUsed(1, "SynapseIxs")
+		pl.AddVarUsed(3, "Synapses")
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/WtFromDWtLayer.wgsl", sy)
 		pl.AddVarUsed(0, "TensorStrides")
 		pl.AddVarUsed(2, "Ctx")
@@ -1721,6 +1728,48 @@ func RunOneSlowAdaptNeuron(n int, syncVars ...GPUVars) {
 		RunDone(syncVars...)
 	} else {
 		RunSlowAdaptNeuronCPU(n)
+	}
+}
+// RunSynFailSyn runs the SynFailSyn kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOneSynFailSyn call does Run and Done for a
+// single run-and-sync case.
+func RunSynFailSyn(n int) {
+	if UseGPU {
+		RunSynFailSynGPU(n)
+	} else {
+		RunSynFailSynCPU(n)
+	}
+}
+
+// RunSynFailSynGPU runs the SynFailSyn kernel on the GPU. See [RunSynFailSyn] for more info.
+func RunSynFailSynGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["SynFailSyn"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunSynFailSynCPU runs the SynFailSyn kernel on the CPU.
+func RunSynFailSynCPU(n int) {
+	gpu.VectorizeFunc(0, n, SynFailSyn)
+}
+
+// RunOneSynFailSyn runs the SynFailSyn kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOneSynFailSyn(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunSynFailSynGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunSynFailSynCPU(n)
 	}
 }
 // RunWtFromDWtLayer runs the WtFromDWtLayer kernel with given number of elements,
