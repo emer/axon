@@ -59,6 +59,23 @@ func (nt *Network) SynFail() {
 	RunDone()
 }
 
+// SynFailReset restores all failed synaptic weights (Wt = 0 from
+// Com.PFail) in all pathways from their SWt and LWt values, regardless of
+// the current PFail, without any new failures. Failures are otherwise
+// only restored when they are resampled (by the weight update after
+// learning, or SynFail) for a pathway with PFail > 0, so after training
+// with PFail > 0, setting PFail = 0 for testing leaves the last
+// training failure pattern in place. Call this at the start of testing
+// (followed by SynFail to resample failures for a testing PFail > 0).
+// Only pathways whose weights are computed from SWt and LWt are restored
+// (not RWPath, TDPredPath, BLAPath, HipPath).
+// The synapses are not synced back from the GPU.
+func (nt *Network) SynFailReset() {
+	nix := nt.NetIxs()
+	RunSynFailResetSyn(int(nix.NSyns))
+	RunDone()
+}
+
 // SlowUpdate does ctx.SlowInc() and calls SlowAdapt at SlowInterval
 // and AdaptGi at AdaptGiInterval.
 func (nt *Network) SlowUpdate() {
@@ -306,6 +323,17 @@ func SynFailSyn(syni uint32) { //gosl:kernel
 	}
 	pti := SynapseIxs.Value2D(int(syni), int(SynPathIndex))
 	Paths[pti].SynFailSyn(ctx, syni)
+}
+
+// SynFailResetSyn is the kernel over Synapses (not * Data) to
+// restore failed synaptic weights, without new failures.
+func SynFailResetSyn(syni uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	if syni >= NetworkIxs[0].NSyns {
+		return
+	}
+	pti := SynapseIxs.Value2D(int(syni), int(SynPathIndex))
+	Paths[pti].SynFailResetSyn(ctx, syni)
 }
 
 // SlowAdaptLayer is the kernel over Layers (not * Data) to

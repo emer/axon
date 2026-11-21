@@ -5,8 +5,6 @@
 package axon
 
 import (
-	// "fmt"
-
 	"cogentcore.org/core/gpu"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/tensor"

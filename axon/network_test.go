@@ -82,8 +82,13 @@ func TestDelete(t *testing.T) {
 	shape := []int{5, 5}
 	net.AddLayer("Input", InputLayer, shape...)
 	assert.Equal(t, 1, net.NumLayers())
+	assert.NotNil(t, net.LayerByName("Input"))
 	net.DeleteAll()
 	assert.Equal(t, 0, net.NumLayers())
+	assert.Nil(t, net.LayerByName("Input"))
+	net.AddLayer("Output", TargetLayer, shape...)
+	assert.Nil(t, net.LayerByName("Input"))
+	assert.NotNil(t, net.LayerByName("Output"))
 }
 
 var stdWeights = `{

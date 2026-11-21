@@ -108,6 +108,10 @@ type EmeryEnv struct {
 	// RunRandSeed is the random seed multiplier for run counter.
 	// It is set to 173 if 0 at start for consistent results by default.
 	RunRandSeed int64 `edit:"-"`
+
+	// device is the GPU device made in Config for the offscreen
+	// physics scene, released in Release.
+	device *gpu.Device
 }
 
 func (ev *EmeryEnv) Label() string { return ev.Name }
@@ -176,8 +180,22 @@ func (ev *EmeryEnv) Config(ndata, ncycles int, dataNode *tensorfs.Node, netGPU *
 	if err != nil {
 		panic(err)
 	}
+	ev.device = dev
 	sc := phyxyz.NoDisplayScene(gp, dev)
 	ev.ConfigPhysics(sc)
+}
+
+// Release releases the GPU resources made in Config: the offscreen
+// physics scene and its device. Call it when the env is no longer used,
+// e.g., before making new envs when the sim is configured again.
+func (ev *EmeryEnv) Release() {
+	if ev.Physics.Scene != nil && ev.Physics.Scene.Scene != nil {
+		ev.Physics.Scene.Scene.Destroy()
+	}
+	if ev.device != nil {
+		ev.device.Release()
+		ev.device = nil
+	}
 }
 
 func (ev *EmeryEnv) Init(run int) {

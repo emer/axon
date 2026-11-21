@@ -17,6 +17,7 @@ import (
 	"reflect"
 	"slices"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/enums"
@@ -38,6 +39,7 @@ import (
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/looper"
+	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/paths"
 )
 
@@ -129,7 +131,7 @@ func (ss *Sim) ConfigSim() {
 	tensorfs.CurRoot = ss.Root
 	ss.Paths.Defaults()
 	ss.Net = axon.NewNetwork(ss.Config.Name)
-	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag, reflect.ValueOf(ss))
+	ss.configParams()
 	ss.RandSeeds.Init(100) // max 100 runs
 	ss.InitRandSeed(0)
 	if ss.Config.GPU {
@@ -152,17 +154,47 @@ func (ss *Sim) ConfigSim() {
 	ss.RSAInit()
 }
 
+func (ss *Sim) configParams() {
+	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag, reflect.ValueOf(ss))
+}
+
+// ReConfig applies the current Config to the sim, as the Config button
+// does: it makes new environments, rebuilds the network (with new
+// weights), loops, and stats (deleting all the data in Root, so all
+// stats data is reset), and then calls Init. The GPU buffers are
+// resized as needed when the network state is copied up.
+// Config.GPU and Config.GUI cannot be changed this way.
+func (ss *Sim) ReConfig() {
+	errors.Log(ss.Root.DeleteAll())
+	ss.configParams()
+	ss.ConfigEnv()
+	ss.Net.DeleteAll()
+	ss.ConfigNet(ss.Net)
+	ss.ConfigLoops()
+	ss.ConfigStats()
+	ss.RSAInit()
+	if ss.GUI.Active {
+		ss.configNetView(ss.GUI.NetViews[0])
+		_, idx := ss.GUI.Tabs.AsLab().CurrentTab()
+		ss.configImageTab() // new Train env image
+		ss.GUI.Tabs.SelectTabIndex(idx)
+		ss.RSAGUI()
+		ss.GUI.UpdateFiles()
+	}
+	ss.Init()
+	if ss.GUI.Active {
+		ss.GUI.Toolbar.Update() // the looper controls show the loops' step settings
+		ss.GUI.UpdateWindow()
+	}
+}
+
+// ConfigEnv makes new environments, replacing any existing ones
+// (see [Sim.ReConfig]).
 func (ss *Sim) ConfigEnv() {
 	ndata := ss.Config.Run.NData
-	// Can be called multiple times -- don't re-create
-	var trn, tst *Obj3DSacEnv
-	if len(ss.Envs) == 0 {
-		trn = &Obj3DSacEnv{}
-		tst = &Obj3DSacEnv{}
-	} else {
-		trn = ss.Envs.ByMode(Train).(*Obj3DSacEnv)
-		tst = ss.Envs.ByMode(Test).(*Obj3DSacEnv)
-	}
+	ss.Envs = env.Envs{}
+	trn := &Obj3DSacEnv{}
+	tst := &Obj3DSacEnv{}
 	trn.Name = Train.String()
 	trn.Defaults()
 	if ss.Config.Env.Env != nil {
@@ -577,8 +609,11 @@ func (ss *Sim) NetViewUpdater(mode enums.Enum) *axon.NetViewUpdate {
 }
 
 // ConfigLoops configures the control loops: Training, Testing
+// When called again (see [Sim.ReConfig]), it recycles the existing
+// ss.Loops, keeping the step settings of the GUI.
 func (ss *Sim) ConfigLoops() {
-	ls := looper.NewStacks()
+	ls, prev := looper.RecycleStacks(ss.Loops)
+	ss.Loops = ls
 
 	trials := int(math32.IntMultipleGE(float32(ss.Config.Run.Trials), float32(ss.Config.Run.NData)))
 	cycles := ss.Config.Run.Cycles()
@@ -658,7 +693,7 @@ func (ss *Sim) ConfigLoops() {
 	if ss.Config.Debug {
 		mpi.Println(ls.DocString())
 	}
-	ss.Loops = ls
+	ls.CopyStepSettings(prev)
 }
 
 // ApplyInputs applies input patterns from given environment for given mode.
@@ -812,6 +847,7 @@ func (ss *Sim) StatsInit() {
 // in the tensorfs system.
 func (ss *Sim) ConfigStats() {
 	net := ss.Net
+	ss.StatFuncs = nil
 	ss.Stats = ss.Root.Dir("Stats")
 	ss.Current = ss.Stats.Dir("Current")
 
@@ -1038,12 +1074,8 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	ss.GUI.MakeBody(b, ss, ss.Root, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
 	ss.GUI.StopLevel = Trial
 	nv := ss.GUI.AddNetView("Network")
-	nv.Settings.MaxRecs = 2 * ss.Config.Run.Cycles()
-	nv.Settings.Raster.Max = ss.Config.Run.Cycles()
 	nv.Settings.LayerNameSize = 0.03
-	nv.SetNet(ss.Net)
-	ss.TrainUpdate.Config(nv, axon.Theta, ss.StatCounters)
-	ss.TestUpdate.Config(nv, axon.Theta, ss.StatCounters)
+	ss.configNetView(nv)
 	ss.GUI.OnStop = func(mode, level enums.Enum) {
 		vu := ss.NetViewUpdater(mode)
 		vu.UpdateWhenStopped(mode, level)
@@ -1053,7 +1085,24 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 	nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, -.1, .05), math32.Vec3(0, 1, 0))
 
 	ss.StatsInit()
+	ss.configImageTab()
+	ss.RSAGUI()
 
+	ss.GUI.Tabs.SelectTabIndex(0)
+	ss.GUI.FinalizeGUI(false)
+}
+
+// configNetView configures the network view for the current network.
+func (ss *Sim) configNetView(nv *netview.NetView) {
+	nv.Settings.MaxRecs = 2 * ss.Config.Run.Cycles()
+	nv.Settings.Raster.Max = ss.Config.Run.Cycles()
+	nv.SetNet(ss.Net)
+	ss.TrainUpdate.Config(nv, axon.Theta, ss.StatCounters)
+	ss.TestUpdate.Config(nv, axon.Theta, ss.StatCounters)
+}
+
+// configImageTab shows the image of the current Train environment.
+func (ss *Sim) configImageTab() {
 	trn := ss.Envs.ByMode(Train).(*Obj3DSacEnv)
 	img := trn.V1c.Image.Tsr.SubSpace(0).(*tensor.Float32)
 	tensorcore.AddGridStylerTo(img, func(s *tensorcore.GridStyle) {
@@ -1061,11 +1110,6 @@ func (ss *Sim) ConfigGUI(b tree.Node) {
 		s.Range.SetMin(0)
 	})
 	ss.GUI.Tabs.TensorGrid("Image", img)
-
-	ss.RSAGUI()
-
-	ss.GUI.Tabs.SelectTabIndex(0)
-	ss.GUI.FinalizeGUI(false)
 }
 
 func (ss *Sim) UpdateImage() {
@@ -1079,6 +1123,15 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 	ss.GUI.AddLooperCtrl(p, ss.Loops)
 
 	tree.Add(p, func(w *core.Separator) {})
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{
+		Label:   "Config",
+		Icon:    icons.Settings,
+		Tooltip: "Applies the current Config settings: makes new environments, rebuilds the network (with new weights), loops, and stats (resetting all stats data), and then does Init. GPU and GUI cannot be changed.",
+		Active:  egui.ActiveStopped,
+		Func: func() {
+			ss.ReConfig()
+		},
+	})
 	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{
 		Label:   "New Seed",
 		Icon:    icons.Add,

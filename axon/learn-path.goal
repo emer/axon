@@ -635,6 +635,23 @@ func (pt *PathParams) SynFailSyn(ctx *Context, syni uint32) {
 	}
 }
 
+// SynFailResetSyn restores the weight of the given synapse from its SWt
+// and LWt values if it has failed (Wt = 0; see [SynComParams.PFail]),
+// regardless of the current PFail, without any new failure. Pathways
+// whose weights are not computed from SWt and LWt are skipped.
+func (pt *PathParams) SynFailResetSyn(ctx *Context, syni uint32) {
+	if pt.Type == RWPath || pt.Type == TDPredPath || pt.Type == BLAPath || pt.Type == HipPath {
+		return
+	}
+	wt := Synapses[syni, Wt]
+	if wt != 0 {
+		return
+	}
+	swt := Synapses[syni, SWt]
+	lwt := Synapses[syni, LWt]
+	Synapses[syni, Wt] = pt.SWts.WtValue(swt, lwt)
+}
+
 // WtFromDWtSynCortex updates weights from dwt changes
 func (pt *PathParams) WtFromDWtSynCortex(ctx *Context, syni uint32) {
 	dwt := Synapses[syni, DWt]

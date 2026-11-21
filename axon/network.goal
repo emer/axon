@@ -1133,6 +1133,34 @@ func (nt *Network) DeleteAll() {
 
 	nt.LayerParams = nil
 	nt.PathParams = nil
+
+	// the name maps only add entries when updated, so a layer that is not
+	// re-added would otherwise still be found by name.
+	nt.LayerNameMap = nil
+	nt.LayerClassMap = nil
+
+	// new, empty state tensors, as in a new network: Build resizes the
+	// existing ones, which would otherwise keep their old values where
+	// they are not all initialized (e.g., when MaxData changes).
+	nt.PoolIxs = tensor.Uint32{}
+	nt.NeuronIxs = tensor.Uint32{}
+	nt.SynapseIxs = tensor.Uint32{}
+	nt.PathSendCon = tensor.Uint32{}
+	nt.RecvPathIxs = tensor.Uint32{}
+	nt.PathRecvCon = tensor.Uint32{}
+	nt.RecvSynIxs = tensor.Uint32{}
+	nt.Neurons = tensor.Float32{}
+	nt.NeuronAvgs = tensor.Float32{}
+	nt.Pools = tensor.Float32{}
+	nt.PoolsInt = tensor.Int32{}
+	nt.LayerStates = tensor.Float32{}
+	nt.GlobalScalars = tensor.Float32{}
+	nt.GlobalVectors = tensor.Float32{}
+	nt.Exts = tensor.Float32{}
+	nt.PathGBuf = tensor.Int32{}
+	nt.PathGSyns = tensor.Float32{}
+	nt.Synapses = tensor.Float32{}
+	nt.SynapseTraces = tensor.Float32{}
 }
 
 func (nt *Network) WriteWeightsJSON(w io.Writer) error {

@@ -14,7 +14,7 @@ You can also run the [Python](https://github.com/emer/axon/blob/main/python/READ
 
 ## Basic running and graphing
 
-The basic interface has a toolbar across the top, a set of `Sim` fields on the left, and a tab bar with the network view and various log graphs on the right.  The toolbar actions all have tooltips so just hover over those to see what they do.  To speed up processing, you'll want to either turn off the `ViewOn` flag or switch to a graph tab instead of the `NetVew` tab.
+The basic interface has a toolbar across the top, a set of `Sim` fields on the left, and a tab bar with the network view and various log graphs on the right.  The toolbar actions all have tooltips so just hover over those to see what they do. The `Config` button applies changes made to the `Config` settings (e.g., the hidden layer sizes or `NData`) without restarting: it rebuilds the environments, network (with new weights), loops, and stats, and then does Init (`GPU` and `GUI` cannot be changed this way).  To speed up processing, you'll want to either turn off the `ViewOn` flag or switch to a graph tab instead of the `NetVew` tab.
 
 ## Testing
 
