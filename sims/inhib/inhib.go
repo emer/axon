@@ -451,7 +451,7 @@ func (ss *Sim) ConfigInputs() {
 	metadata.SetName(dt, "Test")
 	metadata.SetDoc(dt, "Testing inputs")
 	dt.AddStringColumn("Name")
-	dt.AddFloat32Column("Input", 10, 10)
+	dt.AddFloat32Column("Input", ss.Config.Params.HiddenSize.Y, ss.Config.Params.HiddenSize.X)
 	dt.SetNumRows(25)
 
 	patterns.PermutedBinaryMinDiff(dt.Columns.Values[1], int(ss.Config.Params.InputPct), 1, 0, int(ss.Config.Params.InputPct)/2)
