@@ -3,10 +3,10 @@ module github.com/emer/axon/v2
 go 1.27.0
 
 require (
-	cogentcore.org/core v0.5.51
-	cogentcore.org/lab v0.2.25
+	cogentcore.org/core v0.5.53
+	cogentcore.org/lab v0.2.28
 	github.com/cogentcore/mvm v0.0.0-20261120030535-e3f31e8a9ab5
-	github.com/emer/emergent/v2 v2.0.7
+	github.com/emer/emergent/v2 v2.0.8
 	github.com/emer/v1vision v0.9.0
 	github.com/stretchr/testify v1.11.1
 	gitlab.com/gomidi/midi/v2 v2.3.18

@@ -87,7 +87,7 @@ type RunConfig struct {
 	// Run is the _starting_ run number, which determines the random seed.
 	// Runs counts up from there. Can do all runs in parallel by launching
 	// separate jobs with each starting Run, Runs = 1.
-	Run int `default:"0" flag:"run"`
+	Run int `default:"0"`
 
 	// Runs is the total number of runs to do when running Train, starting from Run.
 	Runs int `default:"25" min:"1"`
